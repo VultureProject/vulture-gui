@@ -1,0 +1,160 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="netif_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="panel">
+              <div class="panel-heading">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Network" %}</h1>
+              </div>
+              <div class="panel-body">
+                <div class="row">
+                  <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                        <div class="col-sm-5">
+                          {{form.name}}
+                          {{form.name.errors}}
+                        </div>
+                      </div>
+                      <div class="form-group" id="device_selector">
+                        <label class="col-sm-4 control-label">{% trans "Network Interface Card(s)" %}</label>
+                        <div class="col-sm-5">
+                          {{form.nic}}
+                          {{form.nic.errors}}
+                        </div>
+                      </div>
+                      {% if not is_system %}
+                      <div class="form-group" id="carp_info">
+                        <label class="col-sm-4 control-label">{% trans "CARP vhid" %}</label>
+                        <div class="col-sm-5">
+                          {{form.carp_vhid}}
+                          {{form.carp_vhid.errors}}
+                        </div>
+                        <div class="form-group" id="container_carp"></div>
+                      </div>
+                      {% endif %}
+
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{% trans "IP Address" %}</label>
+                        <div class="col-sm-5">
+                          {{form.ip}}
+                          {{form.ip.errors}}
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{% trans "Netmask / Prefix" %}</label>
+                        <div class="col-sm-5">
+                          {{form.prefix_or_netmask}}
+                          {{form.prefix_or_netmask.errors}}
+                        </div>
+                      </div>
+                  </div>
+                </div>
+              </div>
+              <div class="panel-footer">
+                <a type="button" href="{% url 'system.netif.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              </div>
+            </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  $(function() {
+    $('.select2').select2();
+
+    var is_carp = false;
+
+    $('#id_nic').on('change', function(e){
+      //$('#id_nic').select2('destroy');
+
+      if_carp = false;
+      $('#carp_info').hide();
+      var val = $(this).val();
+
+      $('#id_nic option').each(function(){
+        $(this).prop('disabled', false);
+      });
+
+      if (val === null){
+        $('.select2').select2();
+        return;
+      }
+
+      if (val.length > 1){
+        $('#carp_info').show();
+        is_carp = true;
+      }
+
+      var ids = [];
+      var node_names = [];
+      $("#id_nic option:selected").each(function(){
+        $(this).prop('disabled', false);
+      
+        ids.push($(this).val());
+        node_names.push($(this).text().split(' - ')[1]);
+      })
+
+      $('#id_nic option').each(function(){
+        if ($.inArray($(this).val(), ids) === -1){
+          $(this).prop('disabled', false);
+          for (var i in node_names){
+            if ($(this).text().endsWith(node_names[i])){
+              $(this).prop('disabled', true);
+            }
+          }
+        }
+      })
+
+      $('.select2').select2();
+    })
+    $('#id_nic').trigger('change');
+
+    $('#netif_edit_form').on('submit', function(e){
+      PNotify().removeAll()
+      e.preventDefault();
+      if (is_carp && $('#id_carp_vhid').val() === "0"){
+        notify('error', gettext('Error'), gettext('Define a VHID > 0 for a CARP network address'))
+        return false;
+      }
+
+      return true;
+    })
+  });
+
+
+
+{% endblock %}

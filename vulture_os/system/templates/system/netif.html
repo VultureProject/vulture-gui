@@ -1,0 +1,162 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.netif.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                        <a class="btn btn-flat btn-secondary" href="{% url 'system.netif.refresh' %}"><i class="fas fa-sync-alt">&nbsp;</i>{% trans "Refresh NIC" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "Network" %}</h1>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="interface_list">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+        </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+   var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name", aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Type" %}',
+      name: "is_system", aTargets: [2],
+      defaultContent: "",
+      mData: "is_system",
+      mRender: function(data, type, row) {
+        if (data == true) {
+            return "system";
+        }
+        else {
+            return "alias";
+        }
+      }
+    },
+    {
+      sTitle: '{% trans "NIC" %}',
+      name: "nic", aTargets: [3],
+      defaultContent: "",
+      mData: "nic"
+    },
+    {
+      sTitle: '{% trans "IP Address" %}',
+      name: "ip", aTargets: [4],
+      defaultContent: "",
+      mData: "ip"
+    },
+    {
+      sTitle: '{% trans "Netmask or prefix" %}',
+      name: "prefix_or_netmask", aTargets: [5],
+      defaultContent: "",
+      mData: "prefix_or_netmask"
+    },
+    {
+      sTitle: '{% trans "CARP Redundancy" %}',
+      name: "carp_vhid", aTargets: [6],
+      defaultContent: "",
+      mData: "carp_vhid",
+      mRender: function(data, type, row) {
+        if (data > 0) {
+            return "Enabled with Virtual Host ID = " + data;
+        }
+        else {
+            return "Disabled";
+        }
+      }
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [7],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        if (row.is_system) {
+            return '';
+        }
+        else {
+            return '<a class="btn btn-flat btn-xs btn-danger" href="/system/netif/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+        }
+      }
+    }
+  ];
+
+  var columns = [];
+  for (var i in aoColumns){
+    columns.push(aoColumns[i].mData);
+  }
+
+  var netif_table = $("#interface_list").dataTable({
+      bServerSide   : true,
+      order         : [[1, 'desc']],
+      iDisplayLength: 10,
+      bProcessing   : true,
+      bSort         : true,
+      sAjaxSource   : '',
+      sServerMethod : 'POST',
+      aoColumnDefs: aoColumns,
+      language: language_datatable,
+      fnServerData  : function(sSource, aoData, fnCallback){
+
+        aoData.push({
+          name: 'columns',
+          value: JSON.stringify(columns)
+        })
+
+        $.ajax({
+          type   : "POST",
+          url    : sSource,
+          data   : aoData,
+          success: function(data, callback){
+            if (check_json_error(data))
+              fnCallback(data);
+          }
+        })
+      },
+      fnCreatedRow: function(nRow, aData, iDataIndex){
+          $(nRow).on('click', function(e){
+              var id = aData['id'];
+              window.location.href = "/system/netif/edit/" + id;
+          });
+      }
+  });
+
+{% endblock %}

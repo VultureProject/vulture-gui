@@ -1,0 +1,63 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block navleft %}
+    <li><h3><i class="fa fa-folder-open"></i>Applications -> Log Forwarders -> Delete</h3></li>
+{% endblock %}
+
+{% block content %}
+
+    <div class="row">
+        {% if used_frontends %}
+        <div class="panel">
+          <div class="panel-body">
+              <div class="alert alert-danger alert-dismissible">
+                <h4><i class="icon fa fa-ban"></i> Cannot delete {{ logom.name }} </h4>
+                <div class="tab-content no-padding">
+                  The following frontends are using this log forwarder :
+                  {% for f in used_frontends %}
+                    - {{ f }}
+                  {% endfor %}
+                </div>
+              </div>
+          </div> <!-- /.box-body -->
+        </div> <!-- /.box -->
+        {% else %}
+            <form class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+            {% csrf_token %}
+                <input type="hidden" name="confirm" value="yes" />
+                <fieldset class="col-sm-12">
+                    <legend>{% trans "Confirm delete" %}</legend>
+                    <div class="form-group">
+                        <label class="col-sm-12 text-center">
+                            {% trans "Are you sure you want to delete Log forwarder named " %}{{ logom.name }} ? <br/>
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="form-group">
+                    <div class="col-sm-12 text-center">
+                        <a href="{% url 'applications.logfwd.list' %}"><button class="btn-cancel" type="button">{% trans "CANCEL"  %}</button></a>
+                        <button id="submit" class="btn-save" type="submit">
+                        <span><i class="fa fa-check"></i></span>
+                        {% trans "YES" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+
+{% endblock %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+{% block jquery_code  %}
+  
+{% endblock %}

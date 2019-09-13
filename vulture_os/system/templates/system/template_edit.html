@@ -1,0 +1,437 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    {% if form.non_field_errors %}
+      <div class="row">
+        <div class="col-md-12">
+          <div class="panel">
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              <div class="alert alert-danger alert-dismissible">
+                <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                <div class="tab-content no-padding">
+                  {{ form.non_field_errors|safe }}
+                </div>
+              </div>
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+                  <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                    <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                    <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
+                    <li class="pull-left header"><i class="fa fa-inbox"></i>{% trans "Configuration error" %}</li>
+                  </ul>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre>{{ save_error.0 }}</pre>
+                    </div>
+                    <div class="tab-pane" id="tab_2">
+                      <pre>{{ save_error.1 }}</pre>
+                    </div>
+                  </div>
+                </div> <!-- /.alert -->
+              {% endif %}
+            </div> <!-- /.box-body -->
+          </div> <!-- /.box -->
+        </div>
+      </div>
+    {% endif %}
+    <div class="row">
+      <div class="col-md-12">
+        <form id="template_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+              <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+              <li><a href="#tab_errors" data-toggle="tab">{% trans "Errors" %}</a></li>
+            </ul>
+            <div class="tab-content">
+              <div class="tab-pane active" id="tab_general">
+                <div class="panel">
+                  <div class="panel-body">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                          <div class="col-sm-5">
+                            {{form.name}}
+                            {{form.name.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.box-body -->
+                  <div class="panel-footer">
+                    <a type="button" href="{% url 'system.error_templates.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                    <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+                  </div> <!-- /.box-footer -->
+                </div> <!-- /.box -->
+              </div> <!-- /.tab-pane -->
+              <div class="tab-pane" id="tab_errors">
+                <div class="panel">
+                  <div class="panel-body">
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "400 (Bad Request)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_400_mode}}
+                              {{form.error_400_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_400_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_400_html}}
+                              {{form.error_400_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_400_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_400_url}}
+                              {{form.error_400_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "403 (Forbidden)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_403_mode}}
+                              {{form.error_403_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_403_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_403_html}}
+                              {{form.error_403_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_403_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_403_url}}
+                              {{form.error_403_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "405 (Method Not Allowed)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_405_mode}}
+                              {{form.error_405_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_405_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_405_html}}
+                              {{form.error_405_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_405_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_405_url}}
+                              {{form.error_405_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "408 (Request Timeout)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_408_mode}}
+                              {{form.error_408_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_408_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_408_html}}
+                              {{form.error_408_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_408_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_408_url}}
+                              {{form.error_408_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "425 (Too Early)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_425_mode}}
+                              {{form.error_425_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_425_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_425_html}}
+                              {{form.error_425_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_425_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_425_url}}
+                              {{form.error_425_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "429 (Too Many Requests)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_429_mode}}
+                              {{form.error_429_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_429_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_429_html}}
+                              {{form.error_429_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_429_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_429_url}}
+                              {{form.error_429_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "500 (Internal Server Error)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_500_mode}}
+                              {{form.error_500_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_500_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_500_html}}
+                              {{form.error_500_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_500_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_500_url}}
+                              {{form.error_500_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "502 (Bad Gateway)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_502_mode}}
+                              {{form.error_502_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_502_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_502_html}}
+                              {{form.error_502_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_502_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_502_url}}
+                              {{form.error_502_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "503 (Service Unavailable)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_503_mode}}
+                              {{form.error_503_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_503_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_503_html}}
+                              {{form.error_503_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_503_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_503_url}}
+                              {{form.error_503_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "504 (Gateway Timeout)" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Return mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_504_mode}}
+                              {{form.error_504_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_504_html">
+                            <label class="col-sm-4 control-label">{% trans "HTML code" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_504_html}}
+                              {{form.error_504_html.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group error_504_url">
+                            <label class="col-sm-4 control-label">{% trans "Redirect URL" %}</label>
+                            <div class="col-sm-5">
+                              {{form.error_504_url}}
+                              {{form.error_504_url.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                  </div> <!-- /.box-body -->
+                  <div class="panel-footer">
+                    <a type="button" href="{% url 'system.error_templates.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                    <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+                  </div> <!-- /.box-footer -->
+                </div> <!-- /.box -->
+              </div> <!-- /.tab-pane -->
+            </div> <!-- /.tab-content -->
+          </div> <!-- /.nav-tabs-custom -->
+        </form>
+      </div> <!-- /.col-md-12 -->
+    </div> <!-- /.row -->
+  </section> <!-- /.content -->
+
+{% endblock %}
+
+{% block jquery_code %}
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  //$(function() {
+
+    /* Switchery mandatory code */
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(html) {
+      var switchery = new Switchery(html, {
+        'color': '#FA9834',
+      });
+    });
+
+
+    /* Initialize select2 objects */
+    $('.select2').select2();
+
+
+    /* Error modes bind */
+    $('.mode').on("change", function(e) {
+      var value = $(this).val();
+      // Retrieve the id of the selected item
+      var id = $(this).attr('id');
+
+      // With its id, retrieve the 2 associated inputs (_html and _url)
+      var code = id.substring(3, id.lastIndexOf("_mode"));
+      console.log(code);
+
+      if( value === "display" ) {
+        $('.'+code+'_html').show();
+        $('.'+code+'_url').hide();
+      } else {
+        $('.'+code+'_html').hide();
+        $('.'+code+'_url').show();
+      }
+    });
+    $('.mode').trigger("change");
+
+
+    $('.tag-editor').css({"min-width": "100px"});
+
+
+  //}); // end of function()
+
+{% endblock %}

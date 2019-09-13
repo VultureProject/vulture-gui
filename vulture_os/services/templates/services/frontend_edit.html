@@ -1,0 +1,1105 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <form id="frontend_edit_form" class="form-horizontal bootstrap-validator-form" action="{% url 'services.frontend.edit' object_id %}" method="post" novalidate="novalidate">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          {% if save_error or form.non_field_errors %}
+          <div class="panel panel-danger">
+            <div class="panel-heading">
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                </ul>
+                <h4 class="panel-title">{% trans "Configuration error" %}</h4>
+              {% endif %}
+              {% if form.non_field_errors %}
+                <h4 class="panel-title"><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+              {% endif %}
+            </div>
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {% if form.non_field_errors %}
+                <div>
+                  {{ form.non_field_errors|safe }}
+                </div>
+              {% endif %}
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre class="console-type">{{ save_error.0 }}</pre>
+                    </div>
+                    <div class="tab-pane" id="tab_2">
+                      <pre class="console-type">{{ save_error.1 }}</pre>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <div class="panel">
+            <div class="panel-body">
+              <div class="nav-tabs-custom nav-tabs-no-margin">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+                  <li><a href="#tab_network" data-toggle="tab" class="network-mode">{% trans "Listeners" %}</a></li>
+                  <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% trans "HTTP Options" %}</a></li>
+                  <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% trans "HTTP Headers" %}</a></li>
+                  <li><a href="#tab_enrichment" data-toggle="tab" class="logging">{% trans "Logs Enrichment" %}</a></li>
+                  <li><a href="#tab_logging" data-toggle="tab" class="logging">{% trans "Logs Forwarder" %}</a></li>
+                  <li><a href="#tab_custom" data-toggle="tab" class="haproxy-conf">{% trans "Custom conf" %}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <br/>
+                  <div class="tab-pane active" id="tab_general">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Enable listener" %}</label>
+                          <div class="col-sm-5">
+                            {{form.enabled}}
+                            {{form.enabled.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <div class="col-sm-5">
+                              {{form.name}}
+                              {{form.name.errors|safe}}
+                            </div>
+                          </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Mode" %}</label>
+                          <div class="col-sm-5">
+                            {{form.mode}}
+                            {{form.mode.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row tcp-mode log-mode http-mode impcap-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Enable logging" %}</label>
+                          <div class="col-sm-5">
+                          {{form.enable_logging}}
+                          {{form.enable_logging.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode http-mode -->
+                    <div class="row http-mode-logging">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Log level" %}</label>
+                          <div class="col-sm-5">
+                            {{form.log_level}}
+                            {{form.log_level.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode-logging -->
+                    <div class="row http-mode-logging">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Extended logs (body & cookies)" %}</label>
+                          <div class="col-sm-5">
+                            {{form.enable_logging_body}}
+                            {{form.enable_logging_body.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode-logging -->
+                    <div class="row logging http-mode-logging">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label id="store_logs_label" class="col-sm-4 control-label">{% trans "Stock logs locally" %}</label>
+                          <div class="col-sm-5">
+                            <input type="checkbox" class="js-switch" id="stock_logs_localy"/>
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode-logging -->
+                    <div class="row log-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Input logs type" %}</label>
+                          <div class="col-sm-5">
+                            {{form.ruleset}}
+                            {{form.ruleset.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode forwarder-tag">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.parser_tag.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.parser_tag}}
+                            {{form.parser_tag.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Listening mode" %}</label>
+                          <div class="col-sm-5">
+                            {{form.listening_mode}}
+                            {{form.listening_mode.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode file-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.node.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.node}}
+                            {{form.node.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode file-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.file_path.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.file_path}}
+                            {{form.file_path.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode listening-tcp">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Disable 'Octet-counted framing' (advanced) :" %}</label>
+                          <div class="col-sm-5">
+                            {{form.disable_octet_counting_framing}}
+                            {{form.disable_octet_counting_framing.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Tags" %}</label>
+                          <div class="col-sm-5">
+                            {{form.tags}}
+                            {{form.tags.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row impcap-mode log-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Darwin policy" %}</label>
+                          <div class="col-sm-5">
+                            {{form.darwin_policy}}
+                            {{form.darwin_policy.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row impcap-mode -->
+                  </div> <!-- /.tab-pane -->
+                  <div class="tab-pane" id="tab_network">
+
+                    <div class="panel-heading">
+                      <div class="panel-control">
+                        <a class="btn btn-flat btn-primary" id="add_listener"><i class="fa fa-plus-circle">&nbsp;</i>Add an entry</a>
+                      </div>
+                    </div>
+                    <div class="row http-mode log-mode tcp-mode">
+                      <div class="col-md-12">
+                        <table id="listener_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                          <!-- Here are the attributes of Listener class -->
+                          <thead>
+                            <tr>
+                              <th style="visibility:hidden;">Id</th>
+                              <th>{% trans "Listen Address(es)" %}</th>
+                              <th>{% trans "Port" %}</th>
+                              <th>{% trans "TLS Profile" %}</th>
+                              <th>{% trans "Allow from" %}</th>
+                              <th>{% trans "Max src" %}</th>
+                              <th>{% trans "Max rate" %}</th>
+                              <th>{% trans "Delete" %}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for l in listeners %}
+                              {{ l.as_table_td|safe }}
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                        {{ form.listeners.errors|safe }}
+                        <input id="listeners" name="listeners" value="" type="hidden">
+                      </div>
+                    </div>
+                    <div class="row impcap-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.impcap_intf.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.impcap_intf}}
+                            {{form.impcap_intf.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row impcap-mode -->
+                    <div class="row impcap-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.impcap_filter_type.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.impcap_filter_type}}
+                            {{form.impcap_filter_type.errors|safe}}
+                          </div>
+                        </div>
+                      </div> <!-- col-md-12 -->
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.impcap_filter.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.impcap_filter}}
+                            {{form.impcap_filter.errors|safe}}
+                          </div>
+                        </div>
+                      </div> <!-- col-md-12 -->
+                    </div> <!-- /.row impcap-mode -->
+                  <fieldset class="col-lg-12 sol-sm-12 haproxy-conf">
+                      <legend>{% trans "Timeout options" %}</legend>
+                      <div class="row haproxy-conf">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Timeout connect" %}</label>
+                            <div class="col-sm-5">
+                              {{form.timeout_connect}}
+                              {{form.timeout_connect.errors|safe}}
+                            </div>
+                            <div class="col-sm-2">
+                              {% trans " ms" %}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                      <div class="row haproxy-conf">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Timeout client" %}</label>
+                            <div class="col-sm-5">
+                              {{form.timeout_client}}
+                              {{form.timeout_client.errors|safe}}
+                            </div>
+                            <div class="col-sm-2">
+                              {% trans " s" %}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                      <div class="row http-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{form.timeout_keep_alive.label}}</label>
+                            <div class="col-sm-5">
+                              {{form.timeout_keep_alive}}
+                              {{form.timeout_keep_alive.errors|safe}}
+                            </div>
+                            <div class="col-sm-2">
+                              {% trans " ms" %}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
+                    </fieldset>
+                  </div>
+                  <div class="tab-pane" id="tab_http">
+                    <div class="row http-mode">
+                     <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.https_redirect.label}}</label>
+                        <div class="col-md-5">
+                          {{form.https_redirect}}
+                          {{form.https_redirect.errors|safe}}
+                        </div>
+                      </div>
+                     </div>
+                    </div>
+                    <div class="row http-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Enable cache" %}</label>
+                          <div class="col-sm-5">
+                            {{form.enable_cache}}
+                            {{form.enable_cache.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode -->
+                    <div class="row http-mode cache">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Cache total max size (Mb)" %}</label>
+                          <div class="col-sm-5">
+                            {{form.cache_total_max_size}}
+                            {{form.cache_total_max_size.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode cache -->
+                    <div class="row http-mode cache">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Cache max age (seconds)" %}</label>
+                          <div class="col-sm-5">
+                            {{form.cache_max_age}}
+                            {{form.cache_max_age.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode cache -->
+                    <div class="row http-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Enable compression" %}</label>
+                          <div class="col-sm-5">
+                            {{form.enable_compression}}
+                            {{form.enable_compression.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode -->
+                    <div class="row http-mode compression">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Supported compression algorithms" %}</label>
+                          <div class="col-sm-5">
+                            {{form.compression_algos}}
+                            {{form.compression_algos.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode compression -->
+                    <div class="row http-mode compression">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "MIME types compressed" %}</label>
+                          <div class="col-sm-5">
+                            {{form.compression_mime_types}}
+                            {{form.compression_mime_types.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode compression -->
+                    <div class="row http-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Error template" %}</label>
+                          <div class="col-sm-5">
+                            {{form.error_template}}
+                            {{form.error_template.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode -->
+                  </div> <!-- /.tab-pane tab_http -->
+                  <div class="tab-pane" id="tab_headers">
+                    <div class="row http-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Headers" %}</label>
+                        </div>
+                        <table id="header_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                          <thead>
+                            <tr>
+                              <th style="visibility:hidden;">Id</th>
+                              <th>{% trans "Type" %}</th>
+                              <th>{% trans "Action" %}</th>
+                              <th>{% trans "Name" %}</th>
+                              <th>{% trans "Match" %}</th>
+                              <th>{% trans "Replace" %}</th>
+                              <th>{% trans "Condition type" %}</th>
+                              <th>{% trans "Condition" %}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for h in headers %}
+                              {{ h.as_table_td|safe }}
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                        <div style="text-align:right;margin-top:10px;">
+                          <div class="add-group">
+                            <button class="addplus addlink" id="add_header" type="button">{% trans "Add an Entry" %}</button>
+                          </div>
+                        </div>
+                        {{ form.headers.errors|safe }}
+                        <input id="headers" name="headers" value="" type="hidden">
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane tab_headers -->
+                  <div class="tab-pane" id="tab_logging">
+                    <div class="row logging">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.log_forwarders.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.log_forwarders}}
+                            {{form.log_forwarders.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-12 log-failure">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.log_forwarders_parse_failure.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.log_forwarders_parse_failure}}
+                            {{form.log_forwarders_parse_failure.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-sm-4 pull-right">
+                        <div class="form-group">
+                          <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".browsers-compat">
+                            <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                          </button>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row logging">
+                      <div class="col-md-12">
+                        <div class="form-group collapse browsers-compat">
+                          <table id="log_forwarders_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                            <thead>
+                              {{ log_om_table.as_table_headers|safe }}
+                            </thead>
+                            <tbody>
+                            {{ log_om_table.as_table_td|safe }}
+                            </tbody>
+                          </table>
+                          <div style="text-align:right;margin-top:10px;">
+                            <div class="add-group">
+                              <button class="addplus addlink" id="add_log_fwd_entry" data-id="request_data_get" type="button">{% trans "Add an Entry" %}</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row logging">
+                      <div class="col-md-12">
+                        <div class="form-group collapse browsers-compat">
+                          <label class="col-sm-4 control-label">{% trans "Logging conditions" %}</label>
+                          <div class="col-sm-5">
+                            {{form.log_condition}}
+                            {{form.log_condition.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane tab_logging -->
+                  <div class="tab-pane" id="tab_enrichment">
+                    <div class="row logging http-mode-logging">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Enable reputation logging" %}</label>
+                          <div class="col-sm-5">
+                            {{form.enable_logging_reputation}}
+                            {{form.enable_logging_reputation.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row reputation-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Reputation database IPv4" %}</label>
+                          <div class="col-sm-5">
+                            {{form.logging_reputation_database_v4}}
+                            {{form.logging_reputation_database_v4.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row reputation-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Reputation database IPv6" %}</label>
+                          <div class="col-sm-5">
+                            {{form.logging_reputation_database_v6}}
+                            {{form.logging_reputation_database_v6.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row logging http-mode-logging">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Geoip database (v4 & v6)" %}</label>
+                          <div class="col-sm-5">
+                            {{form.logging_geoip_database}}
+                            {{form.logging_geoip_database.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row logging">
+                      {% if not reputationctx_form.reputation_ctx.field.choices %}
+                        <a class="btn btn-flat btn-primary" href="{% url 'applications.reputation_ctx.edit' %}">
+                          <i class="fa fa-plus-circle">&nbsp;
+                          </i>
+                          {% trans "No custom tags for now, create a new <b>Custom tags</b> object." %}
+                        </a>
+                      {% else %}
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <table id="reputationctx_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                              <thead>
+                                {{ reputationctx_form.as_table_headers|safe }}
+                              </thead>
+                              <tbody>
+                              {% for reputationctx in reputation_contexts %}
+                                {{ reputationctx.as_table_td|safe }}
+                              {% endfor %}
+                              </tbody>
+                            </table>
+                            <div style="text-align:right;margin-top:10px;">
+                              <div class="add-group">
+                                <button class="addplus addlink" id="add_reputationctx_entry" data-id="request_data_get" type="button">{% trans "Add an Entry" %}</button>
+                              </div>
+                            </div>
+                            {{ form.reputation_ctx.errors|safe }}
+                            <input id="reputation_contexts" name="reputation_contexts" value="" type="hidden">
+                          </div>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="tab-pane" id="tab_custom">
+                    <div class="row haproxy-conf">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{% trans "HAProxy Frontend Config" %}</label>
+                          <div class="col-sm-8">
+                            {{form.custom_haproxy_conf}}
+                            {{form.custom_haproxy_conf.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane tab_custom -->
+                </div>
+              </div>
+            </div>
+            <div class="panel-footer">
+              <a type="button" href="{% url 'services.frontend.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+  {% if save_error %}
+    notify('error', '{% trans "Error" %}', '{{ save_error.0 }}');
+  {% endif %}
+
+  {% if errors %}
+    notify('error', '{% trans "Error" %}', '{{ errors }}');
+  {% endif %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  $(function() {
+
+    toggle_impcap_filter_type();
+
+    /* All events to refresh (re-apply) after a table is modified */
+    function refresh_table_events() {
+
+      /* Function used to delete an object .btnDelete */
+      $('.btnDelete').on('click', function(e) {
+        $(this).parent().parent().remove();
+      });
+
+      /* Re-initialize select2 objects */
+      $('.select2').select2();
+
+      /* Re-initialize Tag-Editor events */
+      /* Try to destroy old tag-editor elements */
+      try { $(".tag-editor-space").tagEditor('destroy');
+      } catch(e) {};
+      try { $(".tag-editor-comma").tagEditor('destroy');
+      } catch(e) {};
+      /* And re-add TagEditor behavior for tag-editor custom classes */
+      $(".tag-editor-space").tagEditor({
+        delimiter: ' '
+      });
+      $(".tag-editor-comma").tagEditor({
+        delimiter: ','
+      });
+    }
+
+    $('#stock_logs_localy').on('change', function(){
+      var selected_forwarders = $('#id_log_forwarders').val();
+
+      if (selected_forwarders === null)
+        selected_forwarders = [];
+
+      if (!$(this).is(':checked')){
+        var new_selected_forwarders = [];
+        for (var i in selected_forwarders){
+          if (selected_forwarders[i] !== "1")
+            new_selected_forwarders.push(selected_forwarders[i]);
+        }
+
+        selected_forwarders = new_selected_forwarders;
+      } else {
+        if ($.inArray("1", selected_forwarders) === -1)
+          selected_forwarders.push("1");
+      }
+
+      $('#id_log_forwarders').val(selected_forwarders).trigger('change');
+    })
+
+    var log_fwds = $('#id_log_forwarders').val();
+    for (var i in log_fwds){
+      if (log_fwds[i] === "1")
+        $('#stock_logs_localy').prop('checked', true);
+    }
+
+    /* Function used to auto-complete tagEditor */
+    function autoComplete(list, begin) {
+      var result = Array();
+      var size_list = list.length;
+      for( i=0 ; i<size_list ; i++ )
+        if( list[i].startsWith(begin) )
+          result.push(list[i]);
+      return result;
+    }
+
+    /* Show network only fields, or hide them */
+    function show_network_conf(mode, listening_mode) {
+      /* If it is an rsyslog / File only conf */
+      if(mode === "log" && listening_mode === "file") {
+        $('.network-mode').hide();
+        $('.file-mode').show();
+      } else {
+        $('.network-mode').show();
+        $('.file-mode').hide();
+      }
+    }
+
+    /* Show rsyslog only fields, or hide them */
+    function show_custom_conf(mode, listening_mode) {
+      /* If it is an Rsyslog only conf */
+      if( (mode === "log" && (listening_mode === "udp" || listening_mode === "file")) || mode === "impcap") {
+        $('.haproxy-conf').hide();
+      } else {
+        $('.haproxy-conf').show();
+      }
+    }
+
+
+    /* Show fields, or hide them, depending on chosen listening mode */
+    function show_listening_mode(mode, listening_mode) {
+      /* If listening mode is TCP, show according options */
+      if( mode == "log" && listening_mode === "tcp" ) {
+        $('.listening-tcp').show();
+      } else {
+        $('.listening-tcp').hide();
+      }
+    }
+
+
+    /* Refresh http sub-class attributes show/hide */
+    function refresh_http() {
+      if( $('#id_enable_cache').is(':checked') ) {
+        $('.cache').show();
+      } else {
+        $('.cache').hide();
+      }
+      if( $('#id_enable_compression').is(':checked') ) {
+        $('.compression').show();
+      } else {
+        $('.compression').hide();
+      }
+    }
+
+    /* Do NOT touch this method ! */
+    var filter_displayed = "false";
+    /* Show impcap_filter depending on what filter_type is chosen */
+    function toggle_impcap_filter_type() {
+      let impcap_filter_type = $('#id_impcap_filter_type').val();
+      if( impcap_filter_type === "custom" ) {
+        $('#id_impcap_filter').prop("readonly", false);
+        $('#id_impcap_filter').val("");
+      } else {
+        $('#id_impcap_filter').prop("readonly", true);
+        $('#id_impcap_filter').val($('#id_impcap_filter_type').val());
+        toggle_impcap_filter();
+      }
+    }
+    $('#id_impcap_filter_type').on('change', toggle_impcap_filter_type);
+
+
+    /* Show darwin option depending on enable checkbox */
+    function toggle_impcap_darwin() {
+      if( $('#id_enable_impcap_darwin_dns').is(":checked") ) {
+        $('#impcap-dns').show();
+      } else {
+        $('#impcap-dns').hide();
+      }
+    }
+    $('#id_enable_impcap_darwin_dns').on('change', toggle_impcap_darwin);
+
+    /* Show darwin content inspection option depending on enable checkbox */
+    function toggle_impcap_pkt_inspect() {
+      if( $('#id_enable_pkt_inspect').is(":checked") ) {
+        $('#pkt-inspect').show();
+      } else {
+        $('#pkt-inspect').hide();
+      }
+    }
+    $('#id_enable_pkt_inspect').on('change', toggle_impcap_pkt_inspect);
+
+    var port_regex = /\bport\s+53\b/;
+    var udp_regex = /\budp\b/;
+
+    /* Show DNS options in "udp" and "port 53" is in impcap_filter */
+    function toggle_impcap_filter() {
+      var impcap_filter_val = $('#id_impcap_filter').val();
+
+      if (impcap_filter_val.match(port_regex) !== null && impcap_filter_val.match(udp_regex) !== null) {
+        $('.impcap-dns-mode').show();
+      } else {
+        $('#id_enable_impcap_darwin_dns').prop("checked", false);
+        toggle_impcap_darwin();
+        $('.impcap-dns-mode').hide();
+      }
+    }
+    $('#id_impcap_filter').on('keyup', toggle_impcap_filter);
+
+
+    function refresh_impcap_options() {
+      toggle_impcap_filter_type();
+      toggle_impcap_darwin();
+      toggle_impcap_pkt_inspect();
+    }
+
+
+    /* Show fields depending on chosen mode */
+    var last_enable_log = ($('#id_mode').val()!=="log") ? ($('#id_enable_logging').is(":checked")) : (false);
+    $('#id_mode').on('change', function(event) {
+      var mode = $(this).val();
+      $('.http-mode').hide();
+      $('.tcp-mode').hide();
+      $('.log-mode').hide();
+      $('.impcap-mode').hide();
+      $('.'+mode+'-mode').show();
+
+      if( mode === "log" )
+        $('#store_logs_label').html("{% trans "Archive logs on system" %}");
+      else
+        $('#store_logs_label').html("{% trans "Store logs into cluster database" %}");
+
+      /* If mode = LOG => Activate logging automatically */
+      var log_enabled = $('#id_enable_logging').is(":checked");
+      if( (mode === "log" || mode === "impcap") && !log_enabled ) {
+        $('#id_enable_logging').trigger('click');
+        $('#id_enable_logging').prop("disabled", true);
+        last_enable_log = log_enabled;
+        if( mode === "impcap" )
+          refresh_impcap_options();
+      } else if( mode !== "log" && mode !== "impcap" ) {
+        if( mode === "http" ) {
+          refresh_http();
+          $('#id_enable_logging').prop("disabled", false);
+          if( last_enable_log != log_enabled )
+            $('#id_enable_logging').trigger('click');
+        }
+      } else if ( mode === "log" ) {
+        last_enable_log = log_enabled;
+        $('#id_enable_logging').prop("disabled", true);
+      }
+      $('#id_enable_logging').trigger("change");
+
+      show_custom_conf(mode, $('#id_listening_mode').val());
+      show_listening_mode(mode, $('#id_listening_mode').val());
+      show_network_conf(mode, $('#id_listening_mode').val());
+      show_log_condition_failure();
+    });
+    $('#id_mode').trigger('change');
+
+
+    /* Show logging options if logging enabled */
+    $('#id_enable_logging').on("change", function(e) {
+      $('.log-mode-logging').hide();
+      $('.http-mode-logging').hide();
+      if( $('#id_enable_logging').is(":checked") ) {
+        $('.logging').show();
+        $('.'+$('#id_mode').val()+'-mode-logging').show();
+      } else {
+        $('.logging').hide();
+        if( $('#id_enable_logging_reputation').is(":checked") ) {
+          $('#id_enable_logging_reputation').trigger("click");
+        }
+      }
+    });
+    $('#id_enable_logging').trigger("change");
+
+
+    /* Parser type bind */
+    $('#id_ruleset').on("change", function(e) {
+      if( $(this).val() === "forwarder" ) {
+        $('.forwarder-tag').show();
+      } else {
+        $('.forwarder-tag').hide();
+      }
+      show_log_condition_failure();
+    });
+
+
+    /* Show log_condition_failure depending on mode and ruleset */
+    function show_log_condition_failure() {
+      if( $('#id_mode').val() == "log" && ['raw_to_json', 'impcap'].indexOf($('#id_ruleset').val()) < 0 ) {
+        $('.log-failure').show();
+      } else {
+        $('.log-failure').hide();
+      }
+    }
+
+
+    /* Listening_mode bind */
+    $('#id_listening_mode').on("change", function(e) {
+      show_custom_conf($('#id_mode').val(), $(this).val());
+      show_listening_mode($('#id_mode').val(), $(this).val());
+      show_network_conf($('#id_mode').val(), $(this).val());
+    });
+
+
+    /* Listeners code */
+    var id = 0;
+    /* Add default ListenerForm to listener_table */
+    $("#add_listener").on("click", function(e) {
+      $('#listener_table').append(`{{listener_form.as_table_td|safe}}`);
+
+      refresh_table_events();
+      id++;
+    });
+
+
+    /* Cache enable bind */
+    $('#id_enable_cache').on("change", function(e) {
+      refresh_http();
+    });
+    $('#id_enable_cache').trigger("change");
+
+
+    /* Compression enable bind */
+    $('#id_enable_compression').on("change", function(e) {
+      refresh_http();
+    });
+    $('#id_enable_compression').trigger("change");
+
+
+    /* Reputation logging enable bind */
+    $('#id_enable_logging_reputation').on("change", function(e) {
+      if( $(this)[0].checked )
+        $('.reputation-mode').show();
+      else
+        $('.reputation-mode').hide();
+    });
+    $('#id_enable_logging_reputation').trigger("change");
+
+
+    /* Request-headers code */
+    var id2 = 0;
+    /* Add default HeaderForm to headers_table */
+    $("#add_header").on("click", function(e) {
+      $('#header_table').append(`{{header_form.as_table_td|safe}}`);
+      refresh_table_events();
+      id2++;
+    });
+
+    /* Build request-headers and listeners fields with tables content */
+    $('#frontend_edit_form').submit(function(event) {
+      var listeners = new Array();
+      $('#listener_table tbody tr').each(function(index, tr) {
+        var id = tr.children[0].innerHTML;
+        var network_address_id = tr.children[1].children[0].value;
+        var port = tr.children[2].children[0].valueAsNumber;
+        var tls_profiles = $(tr.children[3].children[0]).val();
+        // It's a bootstrap-tagsinput, so retrieve the second child
+        // Temporary fix suggested by KGU to prevent bugs with the tagsinput lib imported
+        var wl_ips = undefined;
+        if (tr.children[4].children[1] !== undefined) {
+            wl_ips = tr.children[4].children[1].value;
+        } else {
+            wl_ips = tr.children[4].children[0].value;
+        }
+
+        var max_src = tr.children[5].children[0].valueAsNumber;
+        var max_rate = tr.children[6].children[0].valueAsNumber;
+        listeners.push({'id': id, 'network_address': network_address_id, 'port': port, 'tls_profiles': tls_profiles,
+                        'whitelist_ips': wl_ips, 'max_src': max_src, 'max_rate': max_rate});
+      });
+      $('#listeners').val(JSON.stringify(listeners));
+
+      if( $('#id_mode').val() == "http" ) {
+        var headers = new Array();
+        $('#header_table tbody tr').each(function(index, tr) {
+          var id = tr.children[0].innerHTML;
+          var enabled = tr.children[1].children[0].checked;
+          var type = tr.children[2].children[0].value;
+          var action = tr.children[3].children[0].value;
+          var header_name = tr.children[4].children[0].value;
+          var match = tr.children[5].children[0].value;
+          var replace = tr.children[6].children[0].value;
+          var condition_action = tr.children[7].children[0].value;
+          var condition = tr.children[8].children[0].value;
+          headers.push({'id': id, 'enabled': enabled, 'type': type, 'action': action, 'header_name': header_name,
+                        'match': match, 'replace': replace, 'condition_action': condition_action,
+                        'condition': condition});
+        });
+        $('#headers').val(JSON.stringify(headers));
+      }
+      var reputation_ctxs = new Array();
+      $('#reputationctx_table tbody tr').each(function(index, tr) {
+        var enabled = tr.children[0].children[0].value;
+        var reputation_ctx = tr.children[1].children[0].value;
+        var arg_field = tr.children[2].children[0].value;
+        reputation_ctxs.push({'enabled': enabled, 'reputation_ctx': reputation_ctx, 'arg_field': arg_field});
+      });
+      $('#reputation_contexts').val(JSON.stringify(reputation_ctxs));
+
+      /* Enable button before posting, it won't be in post data otherwize */
+      $('#id_enable_logging').prop('disabled', false);
+      // event.preventDefault();
+    });
+
+    $('.tag-editor').css({"min-width": "100px"});
+
+
+    $('#add_log_fwd_entry').on('click', function(e) {
+      $('#log_forwarders_table').append(`{{log_om_table.as_table_td|safe}}`);
+      refresh_table_events();
+      $('#log_forwarders_table').trigger('change');
+    });
+
+
+    $('#add_reputationctx_entry').on('click', function(e) {
+      $('#reputationctx_table').append(`{{reputationctx_form.as_table_td|safe}}`);
+      refresh_table_events();
+      $('#reputationctx_table').trigger('change');
+    });
+
+
+    /* Returns log_forwarders_table tr rules as string */
+    function get_forwarders_table_rules() {
+      var result = "";
+      /* Loop over log_forwarders MultipleSelect selected options */
+      $('#id_log_forwarders > option:selected').each(function() {
+        {% verbatim %}
+        result += "{{" + $(this).text() + "}} \n";
+        {% endverbatim %}
+      });
+      /* Loop over data table */
+      $('#log_forwarders_table > tbody > tr').each(function() {
+        /* Get select action(s) */
+        var actions = $(this).children('td:eq(4)').children('select').children('option:selected');
+        /* If no action, no need to display element */
+        if( actions.length > 0 ) {
+          /* Condition -> first td + select input */
+          var condition = $(this).children('td:eq(0)').children('select').val();
+          result += condition + "( ";
+          var name = $(this).children('td:eq(1)').children('select').val();
+          result += name + " ";
+          var operator = $(this).children('td:eq(2)').children('select').val();
+          result += operator + " ";
+          var value = $(this).children('td:eq(3)').children('input').val()
+          result += value + " ) then { \n";
+
+          actions.each( function(index, item) {
+            {% verbatim %}
+            result += "        {{"+item.text+"}} \n";
+            {% endverbatim %}
+          });
+          result += "} \n";
+        }
+      });
+      return result;
+    }
+
+
+    /* Format log_forwarders_table as text and render in textArea */
+    $('#log_forwarders_table').on('change', function(e) {
+      var result = get_forwarders_table_rules();
+      $('#id_log_condition').val(result);
+    });
+    /* Format log_forwarders as text and render in textArea */
+    $('#id_log_forwarders').on('change', function(e) {
+      var result = get_forwarders_table_rules();
+      $('#id_log_condition').val(result);
+    });
+
+    /* Initialize all custom fields */
+    refresh_table_events();
+
+  }); // end of function()
+
+  $(function(){
+      var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(html) {
+        var switchery = new Switchery(html);
+      });
+  })
+
+{% endblock %}

@@ -1,0 +1,48 @@
+### BASIC UNDERSTANDING OF TESTING MODULES ###
+
+I - Creation of a basic testing module
+
+This part is really simple:
+    - First, import the TestingModule class ("from testing.core.testing_module import TestingModule")
+    - Then create a class named "Module" in your file which inherit from TestingModule ("class Module(TestingModule):")
+    - You can now name your test module using the __str__ method
+    - Finally, create a new method for each test (Don't forget the python doc to have a description of your methods ;)
+
+
+
+II - More advanced modules
+
+A - The corresponding setup / cleanup modules
+
+    Simply define an __init__ method as follow and fill the self.setup list with the name of the setup modules:
+
+example:
+
+def __init__(self):
+    super(Module, self).__init__()
+    self.setup = [
+        'setup_Test',
+    ]
+
+
+B - Defining the importance of a testing module
+
+    The importance of a testing module is defined by the level of the logger used in error case.
+    The default logger for a failed test is error, for a failure out of testing scope the logger is critical and for a
+successful test module execution (no error at all), the logger is info.
+    That's why we advice to use the 'warning', 'error'(default) or 'critical' loggers.
+
+    To define the importance of the module, define an __init__ method as follow and fill the self.log_level:
+
+example:
+
+def __init__(self):
+    super(Module, self).__init__()
+    self.log_level = 'warning'
+
+
+C - The set_up and tear_down methods
+
+    The set_up() method is called before every testing method of the module.
+    The tear_down() method is called after every testing method of the module.
+    By default, these methods are empty.

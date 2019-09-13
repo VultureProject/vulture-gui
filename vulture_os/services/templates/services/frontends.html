@@ -1,0 +1,339 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                      <a id="reload_all" class="btn btn-flat btn-primary"><i class="fa fa-sync">&nbsp;</i>{% trans "Reload all" %}</a>
+                      <a class="btn btn-flat btn-primary" href="{% url 'services.frontend.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Listeners" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="frontend_list">
+                  </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<i class="fa fa-fw fa-fighter-jet"></i>-->
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "", 
+      mData: "id",
+      bVisible: false,
+    },
+    {
+      sTitle: '{% trans "Status" %}',
+      defaultContent: "",
+      name: "status",
+      mData: "status",
+      aTargets: [1],
+      bSearchable: false,
+      mRender: function(data, type, row) {
+        var cpt = 0;
+        var result = "";
+        $.each(data, function(key, value) {
+          if( cpt > 0 )
+            result += "</br>";
+          switch( value ) {
+            case "OPEN":
+              result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+            case "STOP":
+              result += '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+            case "UNKNOWN":
+              result += '<i class="icon fa fa-question-circle"></i>&nbsp;';
+              break;
+            case "ERROR":
+              result += '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+            case "DISABLED":
+              result += '<i class="icon fa fa-toggle-off"></i>&nbsp;';
+              break;
+            case "WAITING":
+              result += '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
+              break;
+          }
+          result += key+':<font size="-2">'+value+'</font>';
+          cpt++;
+        });
+        return result;
+      }
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Tags" %}',
+      name: "tags",
+      aTargets: [3],
+      defaultContent: "",
+      mData: "tags"
+    },
+    {
+      sTitle: '{% trans "Binding" %}',
+      name: "listeners",
+      aTargets: [4],
+      defaultContent: "",
+      mData: "listeners",
+      mRender: function(data, type, row) {
+        var result = "";
+        for( l of data ) {
+          result = result + l + "<br>";
+        }
+        return result;
+      }
+    },
+    {
+      sTitle: '{% trans "Mode" %}',
+      name: "mode",
+      aTargets: [5],
+      defaultContent: "",
+      mData: "mode"
+    },
+    {
+      sTitle: '{% trans "Additional infos" %}',
+      name: "additional_infos",
+      aTargets: [6],
+      defaultContent: "",
+      mData: "additional_infos",
+      mRender: function(data, type, row) {
+        if( $.type(data) == "array" )
+          return data.join("</br>");
+        return data;
+      }
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [7],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        var statuses = Object.values(row.status);
+        result = '<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/services/frontend/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/services/frontend/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+        if( statuses.indexOf("OPEN") >= 0 ) {
+          result += '&nbsp;<button id="pause_'+data+'" type="button" data-toggle="tooltip" data-placement="top" title="Pause" class="btn btn-flat btn-xs btn-primary action pause"><i class="fa fa-pause"></i></button>';
+        } else if( statuses.indexOf("STOP") >= 0 )
+          result += '&nbsp;<button id="start_'+data+'" type="button" class="btn btn-flat btn-xs btn-success action start"><i class="fa fa-play"></i></button>';
+        return result;
+      }
+    }
+  ];
+
+  var frontends_table = $("#frontend_list").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+          columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      });
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (!data.status){
+            notify('error', "{% trans 'Error' %}", data.error);
+          } else {
+            fnCallback(data);
+          }
+        }
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+      }) // /$.fail
+      .done( function( data ) {
+        if (!data.status){
+          notify('error', "{% trans 'Error' %}", data.error);
+        } else {
+          fnCallback(data);
+        }
+      }); // /$.done
+    }, // /fnServerData
+
+    fnCreatedRow: function(nRow, aData, iDataIndex){
+
+      /* Events binding to start a frontend */
+      $(nRow).on('click', '.action', function(e) {
+        /* Request start of the selected frontend */
+        /* First, retrieve the action to do */
+        var action = ($(this).hasClass('start') ? "start" : ($(this).hasClass('pause') ? "pause" : ($(this).hasClass('disable') ? "disable" : "")));
+        $.ajax({
+          type   : "GET",
+          url    : "/services/frontend/"+action+"/"+aData.id,
+        }) // /$.ajax
+        .fail( function( jqXHR, textStatus ) {
+          new PNotify({
+            title: 'Unknown error occured',
+            text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+jqXHR.responseText
+                  +'</a>',
+            type: 'error',
+            styling: 'bootstrap3',
+            width: '500px',
+            buttons: {
+                closer: true,
+                sticker: false
+            }
+          });
+        }) // /$.fail
+        .done( function( msg ) {
+          if( msg.status ) {
+            new PNotify({
+              title: "Success",
+              text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+msg.message+'</a>',
+              type: 'success',
+              styling: 'bootstrap3',
+              width: '500px',
+              buttons: {
+                  closer: true,
+                  sticker: false
+              }
+            });
+          } else {
+            new PNotify({
+              title: msg.error.split(':').join('</br>'), // Replace : by return for better view,
+              text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+msg.error_details+'</a>',
+              type: 'error',
+              styling: 'bootstrap3',
+              width: '500px',
+              buttons: {
+                  closer: true,
+                  sticker: false
+              }
+            });
+          }
+        }); // /$.done
+        e.stopPropagation();
+      }); // /$(nRow).on('click', '.action'
+
+
+      /* Events binding to edit a frontend */
+      $(nRow).on('click', function(e){
+          var id = aData['id'];
+          window.location.href = "/services/frontend/edit/" + id;
+      });
+
+      /* Events binding to print a frontend conf
+      $(nRow).on('mouseover', function(e) {
+          $('#details_frontend').html("");
+
+          var conf = aData['conf'];
+          $('#details_frontend').append("<pre>"+conf+"</pre>");
+
+          $('#details_frontend').show();
+        });
+        $(nRow).on('mouseout', function(e){
+          $('#details_frontend').hide();
+      }); // $(nRow).on('mouseover'
+      */
+    } // fnCreatedRow: function
+  }); // var frontends_table = $("#frontend_list").dataTable
+
+
+  /* Reload table data every 5 seconds */
+  setInterval( function() {
+    frontends_table.fnDraw();
+  }, 5000);
+
+
+  /* Listener to reload haproxy service on all nodes */
+  $('#reload_all').on('click', function(event) {
+    $.ajax({
+      type   : "GET",
+      url    : "{% url 'services.haproxy.reload' %}",
+    }) // /$.ajax
+    .fail( function( jqXHR, textStatus ) {
+      new PNotify({
+        title: 'Unknown error occured',
+        text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+jqXHR.responseText
+              +'</a>',
+        type: 'error',
+        styling: 'bootstrap3',
+        width: '500px',
+        buttons: {
+            closer: true,
+            sticker: false
+        }
+      });
+    }) // /$.fail
+    .done( function( msg ) {
+      if( msg.status ) {
+        new PNotify({
+          title: "Success",
+          text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+msg.message+'</a>',
+          type: 'success',
+          styling: 'bootstrap3',
+          width: '500px',
+          buttons: {
+              closer: true,
+              sticker: false
+          }
+        });
+      } else {
+        new PNotify({
+          title: msg.error,
+          text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+msg.error_details+'</a>',
+          type: 'error',
+          styling: 'bootstrap3',
+          width: '500px',
+          buttons: {
+              closer: true,
+              sticker: false
+          }
+        });
+      }
+    }); // /$.done
+  }); // $('#reload_all').on('click'
+
+
+{% endblock %}

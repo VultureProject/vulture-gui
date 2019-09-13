@@ -1,0 +1,244 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <form id="parser_edit_form" class="form-horizontal bootstrap-validator-form" action='{% if cloned %}{% url  "applications.parser.edit" %}{% endif %}' method="post" novalidate="novalidate">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          {% if form.non_field_errors or save_error %}
+          <div class="panel panel-colorful panel-danger">
+            <div class="panel-heading">
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                </ul>
+                <h4 class="panel-title">Configuration error</h4>
+              {% endif %}
+            </div>
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {% if form.non_field_errors %}
+                <div>
+                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <div class="tab-content no-padding">
+                    {{ form.non_field_errors|safe }}
+                  </div>
+                </div>
+              {% endif %}
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre class="console-type">{{ save_error.0 }}</pre>
+                    </div>
+                    <div class="tab-pane" id="tab_2">
+                      <pre class="console-type">{{ save_error.1 }}</pre>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <div class="panel">
+            <div class="panel-body">
+              <div class="nav-tabs-custom nav-tabs-no-margin">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <br/>
+                  <div class="tab-pane active" id="tab_general">
+                    <div class="row">
+                      <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <div class="col-sm-5">
+                              {{form.name}}
+                              {{form.name.errors|safe}}
+                            </div>
+                          </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group" style="text-align:center">
+                          <label style="text-align:center" class="col-sm-8">{{ form.rulebase.label }}</label>
+                          <div style="text-align:center" class="col-sm-10">
+                            {{form.rulebase}}
+                            {{form.rulebase.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group" style="text-align:center">
+                          <label style="text-align:center" class="col-sm-8">{{ form.to_test.label }}</label>
+                          <div style="text-align:center" class="col-sm-12">
+                            {{form.to_test}}
+                            {{form.to_test.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row">
+                      <div class="col-sm-12" style="text-align:center;">
+                        <button name="parser_test" id="parser_test" class="btn btn-success btn-flat"><span>{% trans "Test rules" %}</span></button>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-12 control-label">{% trans "Result"  %}</label>
+                          <div class="col-sm-12">
+                             <div id="parser_status">
+                             </div>
+                             <pre id="result">
+                             </pre>
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                  </div> <!-- /.tab-pane -->
+                </div>
+              </div>
+            </div>
+            <div class="panel-footer">
+              <a type="button" href="{% url 'applications.parser.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  $(function() {
+
+    /* Switchery mandatory code */
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(html) {
+      var switchery = new Switchery(html, {
+        'color': '#FA9834',
+      });
+    });
+
+
+    function handle_form_errors(data){
+      if (typeof(data['form_errors']) !== 'undefined'){
+        $('.errorlist').remove();
+        $.each(data['form_errors'], function(field_name, error_list){
+          field_selector = $('#id_'+field_name);
+          var ul = $('<ul/>').insertAfter(field_selector);
+          $.each(error_list, function(idx, err_msg){
+            console.log(err_msg);
+            var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
+            var group = $('<span/>').text(err_msg).appendTo(li);
+          });
+        });
+      }
+    }
+
+
+    /* All events to refresh (re-apply) after a table is modified */
+    function refresh_table_events() {
+
+      /* Function used to delete an object .btnDelete */
+      $('.btnDelete').on('click', function(e) {
+        $(this).parent().parent().remove();
+      });
+      /* Re-initialize select2 objects */
+      $('.select2').select2();
+
+      /* Re-initialize Tag-Editor events */
+      /* Try to destroy old tag-editor elements */
+      try { $(".tag-editor-space").tagEditor('destroy');
+      } catch(e) {};
+      try { $(".tag-editor-comma").tagEditor('destroy');
+      } catch(e) {};
+      /* And re-add TagEditor behavior for tag-editor custom classes */
+      $(".tag-editor-space").tagEditor({
+        delimiter: ' '
+      });
+      $(".tag-editor-comma").tagEditor({
+        delimiter: ','
+      });
+    }
+
+    /* Parser test */
+    $('#parser_test').on("click", function(e) {
+      $('#parser_status').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Testing ..." %}');
+      $('#result').val('');
+
+      url = "/apps/parser/test/";
+      form_data = $('#parser_edit_form').serializeArray();
+      $.ajax({
+        type   : "POST",
+        url    : url,
+        data: form_data
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        $('#parser_status').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+                                     "Status code : " + jqXHR.status + "</br>" +
+                                     "Message : " + jqXHR.statusText);
+      }) // /$.fail
+      .done( function( msg ) {
+        handle_form_errors(msg);
+        if( msg['status'] ) {
+          $('#parser_status').html('<b style="color:green;">{% trans "Successful connection" %}</b>');
+          const message_type = $.type(msg['message']);
+          if( message_type === "object" || message_type === "array" ) {
+            $('#result').html(JSON.stringify(msg['message'], undefined, 4));
+          } else {
+            $('#result').html(msg['message']);
+          }
+        } else {
+          reason = msg['error'];
+          $('#parser_status').html("<b style='color:red;'>{% trans 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
+        }
+      }); // /$.done
+      e.preventDefault();
+    });
+
+    $('.tag-editor').css({"min-width": "100px"});
+
+    /* Initialize all custom fields */
+    refresh_table_events();
+
+  }); // end of function()
+
+{% endblock %}

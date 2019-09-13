@@ -1,0 +1,229 @@
+#predator_tab{
+    position: fixed;
+    padding: 0;
+    top: 60px;
+    right: -50%;
+    width: 50%;
+    bottom: 0;
+    background: #FFF;
+    transition-duration: 0.5s;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+    overflow-y: auto;
+    z-index: 1100;
+    overflow-x: hidden;
+}
+
+.box-no-border{
+    border: 0px;
+}
+
+.predator_info:hover{
+    cursor: pointer;
+}
+
+.pagination>.active>a, .pagination>.active>a:focus, .pagination>.active>a:hover, .pagination>.active>span, .pagination>.active>span:focus, .pagination>.active>span:hover{
+    z-index: 0 !important;
+}
+
+#predator_tab .box-body{
+    padding: 0px !important;
+}
+
+#predator_tab .box-body .nav-tabs-custom{
+    box-shadow: none;
+    margin-bottom: 0px !important;
+}
+
+#predator_tab .table{
+    margin-bottom: 0px !important;
+}
+
+.port_box{
+    height: 48px;
+    width: 48px;
+    float: left;
+    color: #fff;
+    margin-left: 5px;
+    margin-bottom: 5px;
+    line-height: 48px;
+    text-align: center;
+    background: #3C8DBC;
+}
+
+.port_box a, .port_box a:hover, .port_box a:visited{
+    color: #fff;
+}
+
+.label-block{
+    display: block;
+}
+
+.indent_info{
+    text-indent: 25px;
+    margin: 0;
+}
+
+.service_fieldset{
+    margin-bottom: 5px;
+}
+
+.margin-left-small{
+    margin-left: 30px;
+}
+
+.padding_small{
+    padding: 10px;
+}
+
+.bg-low .info-box-icon{
+    background-color: #008548;
+    color: #fff !important;
+}
+
+.bg-low, .bg-low .info-box-content{
+    background-color: #00A65A;
+    color: #fff !important;
+}
+
+.bg-partial .info-box-icon{
+    background-color: #008548;
+    color: #fff !important;
+}
+
+.bg-partial, .bg-partial .info-box-content{
+    background-color: #00A65A;
+    color: #fff !important;
+}
+
+.bg-medium .info-box-icon{
+    background-color: #CC6B16;
+    color: #fff !important;
+}
+
+.bg-medium, .bg-medium .info-box-content{
+    background-color: #FF851B;
+    color: #fff !important;
+}
+
+.bg-high .info-box-icon{
+    background-color: #B13C2E;
+    color: #fff !important;
+}
+
+.bg-high, .bg-high .info-box-content{
+    background-color: #DD4B39;
+    color: #fff !important;
+}
+
+.bg-low-inverse .info-box-icon{
+    background-color: #B13C2E;
+    color: #fff !important;
+}
+
+.bg-low-inverse, .bg-low-inverse .info-box-content{
+    background-color: #DD4B39;
+    color: #fff !important;
+}
+
+.bg-partial-inverse .info-box-icon{
+    background-color: #008548;
+    color: #fff !important;
+}
+
+.bg-partial-inverse, .bg-partial-inverse .info-box-content{
+    background-color: #00A65A;
+    color: #fff !important;
+}
+
+.bg-medium-inverse .info-box-icon{
+    background-color: #CC6B16;
+    color: #fff !important;
+}
+
+.bg-medium-inverse, .bg-medium-inverse .info-box-content{
+    background-color: #FF851B;
+    color: #fff !important;
+}
+
+.bg-high-inverse .info-box-icon{
+    background-color: #008548;
+    color: #fff !important;
+}
+
+.bg-high-inverse, .bg-high-inverse .info-box-content{
+    background-color: #00A65A;
+    color: #fff !important;
+}
+
+.info-box-sm{
+    min-height: 50px !important;
+    max-height: 50px !important;
+}
+
+.info-box-sm .info-box-icon{
+    width: 50px !important;
+    height: 50px !important;
+    line-height: 45px;
+}
+
+.info-box-sm .info-box-content{
+    margin-left: 50px !important;
+}
+
+.info-box-sm .info-box-number{
+    font-size: 14px;
+}
+
+.info-box-sm .fa{
+    font-size: 35px;
+}
+
+.info-box{
+    display: block;
+    width: 100%;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    border-radius: 2px;
+    margin-bottom: 15px;
+}
+
+.info-box-icon{
+    border-top-left-radius: 2px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 2px;
+    display: block;
+    float: left;
+    text-align: center;
+    font-size: 45px;
+    background: rgba(0,0,0,0.2);
+}
+
+.info-box-content{
+    padding: 5px 10px;
+}
+
+.info-box-text{
+    display: block;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-box-number{
+    font-weight: bold;
+    display: block;
+}
+
+#vuln_accordion .predator_info{
+    float: left !important;
+}
+
+#vuln_accordion .float-right{
+    line-height: 38px;
+    float: right !important;
+}
+
+#vuln_accordion .panel-title{
+    border: 1px solid;
+}

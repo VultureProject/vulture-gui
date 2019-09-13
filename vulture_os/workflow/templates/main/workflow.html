@@ -1,0 +1,248 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        {# If there is save/configuration errors #}
+        <div class="panel">
+          <div class="panel-heading">
+              <div class="panel-control">
+                <a class="btn btn-flat btn-primary" href="{% url 'workflow.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+              </div>
+              <h1 class="panel-title"><i class="fab fa-hubspot">&nbsp;</i>{% trans "Workflow" %}</h1>
+          </div>
+          <div class="panel-body">
+            <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="workflow_table">
+                  </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+    var aoColumns = [
+      {
+        sTitle: '{% trans "Enabled" %}',
+        name: "enabeld",
+        aTargets: [0],
+        defaultContent: "",
+        sWidth: 5,
+        mData: "enabled",
+        mRender: function(data, type, row){
+          if (data)
+            return "<i class='fa fa-check'></i>";
+          return "<i class='fa fa-times'></i>";
+        }
+      },
+      {
+        sTitle: '{% trans "Name" %}',
+        name: "name",
+        aTargets: [1],
+        defaultContent: "",
+        mData: "name"
+      },
+      {
+        sTitle: '{% trans "Frontend" %}',
+        name: "frontend",
+        aTargets: [2],
+        defaultContent: "",
+        sWidth: "20%",
+        mData: "frontend",
+        mRender: function(data, type, row){
+          var cpt = 0;
+          var result = "";
+          $.each(row.frontend_status, function(key, value) {
+            if( cpt > 0 )
+              result += "</br>";
+            switch( value ) {
+              case "OPEN":
+                result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "STOP":
+                result += '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "UNKNOWN":
+                result += '<i class="icon fa fa-question-circle"></i>&nbsp;';
+                break;
+              case "ERROR":
+                result += '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "DISABLED":
+                result += '<i class="icon fa fa-toggle-off"></i>&nbsp;';
+                break;
+              case "WAITING":
+                result += '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
+                break;
+            }
+            result += key+':<font size="-2">'+value+'</font>';
+            cpt++;
+          });
+          return data + "&nbsp;&nbsp;<span class='pull-right'>" + result + "</span>";
+        }
+      },
+      {
+        sTitle: '{% trans "Backend" %}',
+        name: "backend",
+        aTargets: [3],
+        defaultContent: "",
+        mData: "backend",
+        sWidth: "20%",
+        mRender: function(data, type, row){
+          var cpt = 0;
+          var result = "";
+          $.each(row.backend_status, function(key, value) {
+            if( cpt > 0 )
+              result += "</br>";
+            switch( value ) {
+              case "UP":
+                result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "DOWN":
+                result += '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "UNKNOWN":
+                result += '<i class="icon fa fa-question-circle"></i>&nbsp;';
+                break;
+              case "ERROR":
+                result += '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "DISABLED":
+                result += '<i class="icon fa fa-toggle-off"></i>&nbsp;';
+                break;
+              case "WAITING":
+                result += '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
+                break;
+            }
+            result += key+':<font size="-2">'+value+'</font>';
+            cpt++;
+          });
+          return data + "&nbsp;&nbsp;<span class='pull-right'>" + result + "</span>";
+        }
+      },
+      {
+        sTitle: '{% trans "FQDN" %}',
+        name: "fqdn",
+        aTargets: [4],
+        defaultContent: "",
+        mData: "fqdn"
+      },
+      {
+        sTitle: '{% trans "Public Directory" %}',
+        name: "public_dir",
+        aTargets: [5],
+        defaultContent: "",
+        mData: "public_dir"
+      },
+      {
+        sTitle: '{% trans "WAF Policy" %}',
+        name: "defender_policy",
+        aTargets: [6],
+        defaultContent: "",
+        mData: "defender_policy",
+        mRender: function(data, type, row){
+          if (data === "None")
+            return "<i class='fa fa-ban'></i>";
+          return data;
+        }
+      },
+      {
+        sTitle: '{% trans "ACLs" %}',
+        name: "acls",
+        aTargets: [7],
+        defaultContent: "",
+        mData: "acls"
+      },
+      {
+        sTitle: '{% trans "Action" %}',
+        mData:"id",
+        aTargets: [8],
+        sWidth: "5%",
+        defaultContent: "",
+        mRender: function(data, type, row) {
+          return '<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/workflow/delete/' + data + '"" title="{% trans 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+        }
+      }
+    ];
+
+    var workflow_table = $("#workflow_table").dataTable({
+      bServerSide   : true,
+      order         : [[1, 'desc']],
+      iDisplayLength: 10,
+      bProcessing   : true,
+      bSort         : true,
+      sAjaxSource   : '',
+      sServerMethod : 'POST',
+      aoColumnDefs: aoColumns,
+      language: language_datatable,
+      fnServerData  : function(sSource, aoData, fnCallback){
+
+        var columns = [];
+        for (var i in aoColumns){
+          if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+            columns.push(aoColumns[i].mData);
+        }
+
+        aoData.push({
+          name: 'columns',
+          value: JSON.stringify(columns)
+        });
+
+        $.ajax({
+          type   : "POST",
+          url    : sSource,
+          data   : aoData,
+          success: function(data, callback){
+            if (check_json_error(data)){
+              fnCallback(data);
+            }
+          }
+        }) // /$.ajax
+        .fail( function( jqXHR, textStatus ) {
+          check_json_error(data)
+        }) // /$.fail
+        .done( function( data ) {
+          if (!data.status){
+            check_json_error(data);
+          } else {
+            fnCallback(data);
+          }
+        }); // /$.done
+      }, // /fnServerData
+
+      fnCreatedRow: function(nRow, aData, iDataIndex){
+
+        /* Events binding to edit a template */
+        $(nRow).on('click', function(e){
+            var id = aData.id;
+            window.location.href = "/workflow/edit/" + id;
+        });
+      } 
+    });
+  });
+
+  setInterval(function(){
+    workflow_table.fnDraw()
+  }, 5000)
+
+
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="radius_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-12">
+              {% if form.non_field_errors %}
+              <div class="panel">
+                <div class="panel-body">
+                  {# Print form errors correctly #}
+                  {% if form.non_field_errors %}
+                    <div class="alert alert-danger alert-dismissible">
+                      <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %}</h4>
+                      <div class="tab-content no-padding">
+                        {{ form.non_field_errors|safe }}
+                      </div>
+                    </div>
+                  {% endif %}
+                </div> <!-- /.box-body -->
+              </div> <!-- /.box -->
+              {% endif %}
+              <div class="panel">
+                <div class="panel-header with-border">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Radius Repository edition" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.name.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.name}}
+                            {{form.name.errors|safe}}
+                          </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                      <label class="col-sm-4 control-label">{{ form.host.label }}</label>
+                        <div class="col-sm-5">
+                          {{form.host}}
+                          {{form.host.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.port.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.port}}
+                            {{form.port.errors|safe}}
+                          </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.nas_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.nas_id}}
+                            {{form.nas_id.errors|safe}}
+                          </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.secret.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.secret}}
+                            {{form.secret.errors|safe}}
+                          </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.retry.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.retry}}
+                            {{form.retry.errors|safe}}
+                          </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.timeout.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.timeout}}
+                            {{form.timeout.errors|safe}}
+                          </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-sm-12" style="text-align:center;">
+                      <button name="user_search_test" id="user_search_test" class="btn btn-success btn-flat"><span>{% trans "Test User authentication settings" %}</span></button>
+                    </div>
+                  </div> <!-- /.row -->
+                </div> <!-- /.panel-body -->
+                <div class="panel-footer">
+                  <a type="button" href="{% url 'authentication.radius.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                  <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Save" %}</button>
+                </div> <!-- /.box-footer -->
+              </div> <!-- /.box -->
+            </div>
+          </div>
+        </form>
+      </div> <!-- /.col-md-12 -->
+    </div> <!-- /.row -->
+
+
+  <div id="modal_test_user_search" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title">{% trans "User authentication test" %}</h4>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <label class="col-sm-6 control-label">{% trans "Username" %}</label>
+              <div class="col-sm-6 form-group">
+                <input type="text" name="test_username" id="test_username" data-placement="right" container="body" class="form-control has-popover" data-original-title="" title="">
+              </div>
+          </div>
+          <div class="row">
+            <label class="col-sm-6 control-label">{% trans "Password" %}</label>
+            <div class="col-sm-6 form-group">
+              <input type="password" name="test_password" id="test_password" data-placement="right" container="body" class="form-control has-popover" data-original-title="" title="">
+            </div>
+          </div>
+          <br/>
+          <div class="row">
+            <div class="col-sm-12">
+              <p id="user_search_test_msg" class="test_user"></p>
+              <div id="user_phone" class="test_user"></div>
+              <div id="user_email" class="test_user"></div>
+              <div id="account_locked" class="test_user"></div>
+              <div id="password_expired" class="test_user"></div>
+              <div id="user_groups" class="test_user"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
+          <button type="button" id="btn_send_user_search" class="btn btn-success btn-flat">{% trans "Test credentials" %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  /* Initialize select2 objects */
+  $('.select2').select2();
+
+  /* Switchery mandatory code */
+  var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+    elems.forEach(function(html) {
+    var switchery = new Switchery(html, {
+      'color': '#FA9834',
+    });
+  });
+
+
+  function handle_form_errors(data){
+    if (typeof(data['form_errors']) !== 'undefined'){
+      $('.errorlist').remove();
+      $.each(data['form_errors'], function(field_name, error_list){
+        field_selector = $('#id_'+field_name);
+        var ul = $('<ul/>').insertAfter(field_selector);
+        $.each(error_list, function(idx, err_msg){
+          console.log(err_msg);
+          var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
+          var group = $('<span/>').text(err_msg).appendTo(li);
+        });
+      });
+    }
+  }
+
+
+  /* User search test */
+  $('#user_search_test').on("click", function(e) {
+      $('.test_user').html('');
+      $('.errorlist').remove();
+      $("#modal_test_user_search").modal('show');
+      e.preventDefault()
+  });
+
+  $('#btn_send_user_search').on("click", function(e){
+      $('.test_user').html('');
+      username = $('#test_username').val();
+      password = $('#test_password').val();
+      url = "/authentication/radius/user_search_test/";
+      form_data = $('#radius_edit_form').serializeArray();
+      var indexed_data = {};
+      $.map(form_data, function(n, i){
+          indexed_data[n['name']] = n['value'];
+      });
+      indexed_data['username'] = username;
+      indexed_data['password'] = password;
+      $.post(url, indexed_data, function(data){
+          status = data['status'];
+          handle_form_errors(data);
+          reason = data['reason'];
+          if(status == 'true'){
+              $('#user_search_test_msg').html('<b style="color:green;">{% trans "Successful connection : " %}' + reason + '</b>');
+              $(".btn-save").removeAttr('disabled');
+              $(".btn-save").removeAttr('style');
+          }
+          else{
+              $('#user_search_test_msg').html("<b style='color:red;'>{% trans 'Unable to authenticate user, reason: '%}" + reason + "</b>");
+          }
+      });
+  });
+
+  //}); // end of function()
+
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="netif_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="panel">
+            <div class="panel-heading">
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Node settings" %}</h1>
+            </div>
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {{ form.errors|safe }}
+              <div class="nav-tabs-custom nav-tabs-no-margin">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Main settings" %}</a></li>
+                  <li><a href="#tab_network" data-toggle="tab">{% trans "Network" %}</a></li>
+                  <li><a href="#tab_firewall" data-toggle="tab">{% trans "Firewall" %}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane active" id="tab_general">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Hostname" %}</label>
+                          <div class="col-sm-5">
+                          {{form.name}}
+                          {{form.name.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane -->
+                  <div class="tab-pane" id="tab_network">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Internet IP Address" %}</label>
+                          <div class="col-sm-5">
+                          {{form.internet_ip}}
+                          {{form.internet_ip.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "InterCluster IP Address" %}</label>
+                          <div class="col-sm-5">
+                          {{form.management_ip}}
+                          {{form.management_ip.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Default router" %}</label>
+                          <div class="col-sm-5">
+                          {{form.gateway}}
+                          {{form.gateway.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Default IPV6 router" %}</label>
+                          <div class="col-sm-5">
+                          {{form.gateway_ipv6}}
+                          {{form.gateway_ipv6.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Static network routes" %}</label>
+                          <div class="col-sm-5">
+                          {{form.static_routes}}
+                          {{form.static_routes.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Scanner IP Address" %}</label>
+                          <div class="col-sm-5">
+                          {{form.scanner_ip}}
+                          {{form.scanner_ip.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane -->
+                  <div class="tab-pane" id="tab_firewall">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Max. entries for PF state table" %}</label>
+                          <div class="col-sm-5">
+                          {{form.pf_limit_states}}
+                          {{form.pf_limit_states.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Max. entries for PF packet reassembly" %}</label>
+                          <div class="col-sm-5">
+                          {{form.pf_limit_frags}}
+                          {{form.pf_limit_frags.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Max. entries for PF source tracking" %}</label>
+                          <div class="col-sm-5">
+                          {{form.pf_limit_src}}
+                          {{form.pf_limit_src.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Custom PF Configuration" %}</label>
+                          <div class="col-sm-5">
+                          {{form.pf_custom_config}}
+                          {{form.pf_custom_config.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane -->
+                </div> <!-- /.tab-content -->
+              </div> <!-- /.nav-tabs-custom -->
+            </div> <!-- /.box-body -->
+            <div class="panel-footer">
+            <a href="{% url 'system.cluster.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+            <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+          </div> <!-- /.box-footer -->
+          </div> <!-- /.box -->
+        </form>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+    $(function() {
+        $('.select2').select2();
+
+        $('#id_nic').change(function(e) {
+
+            {{ nic_map_js|safe }}
+
+            var selected = $(this).val();
+            if (! selected) {
+                $("#carp_info").hide();
+                return;
+            }
+            nb_nic = selected.length;
+
+            //This is a CARP configuration
+            if (nb_nic > 1) {
+                $("#carp_info").show();
+            }
+            else {
+                $("#carp_info").hide();
+            }
+
+        });
+
+        $('#id_nic').trigger('change');
+    });
+
+{% endblock %}

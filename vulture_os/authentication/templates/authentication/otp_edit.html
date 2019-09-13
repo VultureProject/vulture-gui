@@ -1,0 +1,171 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="otp_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-12">
+              {% if form.non_field_errors %}
+              <div class="panel">
+                <div class="panel-body">
+                  {# Print form errors correctly #}
+                  <div class="alert alert-danger alert-dismissible">
+                    <h4><i class="icon fa fa-ban"></i> Form errors </h4>
+                    <div class="tab-content no-padding">
+                      {{ form.non_field_errors|safe }}
+                    </div>
+                  </div>
+                </div> <!-- /.box-body -->
+              </div> <!-- /.box -->
+              {% endif %}
+              <div class="panel">
+                <div class="panel-heading">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "OTP Repository edition" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.name.label }}</label>
+                        <div class="col-sm-5">
+                          {{form.name}}
+                          {{form.name.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                      <label class="col-sm-4 control-label">{{ form.otp_type.label }}</label>
+                      <div class="col-sm-5">
+                        {{form.otp_type}}
+                        {{form.otp_type.errors|safe}}
+                      </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row phone">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.api_key.label }}</label>
+                        <div class="col-sm-5">
+                          {{form.api_key}}
+                          {{form.api_key.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row phone">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.otp_phone_service.label }}</label>
+                        <div class="col-sm-5">
+                          {{form.otp_phone_service}}
+                          {{form.otp_phone_service.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row email">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.otp_mail_service.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.otp_mail_service}}
+                          {{form.otp_mail_service.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row email">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.key_length.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.key_length}}
+                          {{form.key_length.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                </div> <!-- /.box-body -->
+                <div class="panel-footer">
+                  <a type="button" href="{% url 'authentication.otp.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                  <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Save" %}</button>
+                </div> <!-- /.box-footer -->
+              </div> <!-- /.box -->
+            </div>
+          </div>
+        </form>
+      </div> <!-- /.col-md-12 -->
+    </div> <!-- /.row -->
+  </section> <!-- /.content -->
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  /* Initialize select2 objects */
+  $('.select2').select2();
+
+  /* Switchery mandatory code */
+  var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+    elems.forEach(function(html) {
+    var switchery = new Switchery(html, {
+      'color': '#FA9834',
+    });
+  });
+
+
+  /* Change fields showing according to chosen type */
+  function otp_type_handle(e) {
+    var otp_type = $('#id_otp_type').val();
+    if( otp_type === "email" ) {
+      $('.email').show();
+      $('.phone').hide();
+    }
+    else if( otp_type === "phone" || otp_type === "onetouch" ) {
+      $('.email').hide();
+      $('.phone').show();
+    }
+    else {
+      $('.email').hide();
+      $('.phone').hide();
+    }
+  }
+  $('#id_otp_type').on("change", otp_type_handle);
+  otp_type_handle();
+
+
+  //}); // end of function()
+
+{% endblock %}

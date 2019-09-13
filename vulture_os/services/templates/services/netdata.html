@@ -1,0 +1,312 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+  
+<section class="content">
+  <div class="row">
+    <div class="col-md-12">
+      <form method="post" class="form-horizontal" action="{% url 'services.netdata' %}">
+        {% csrf_token %}
+        <div class="panel">
+          <div class="panel-heading">
+              <h1 class="panel-title"><i class="fa fa-eye">&nbsp;</i>{% trans "Netdata" %}</h1>
+          </div>
+          <div class="panel-body">
+            <div class="row">
+              <div class="col-md-12">
+                <fieldset class="col-md-8">
+                  <legend>{% trans "Netdata configuration" %}</legend>
+                  <div class="form-group">
+                    <label class="col-md-2 control-label">{{ netdata_form.history.label }}</label>
+
+                    <div class="col-md-5">
+                      {{ netdata_form.history }}
+                    </div>
+                    <div class="col-md-10 col-md-offset-2">
+                      <small style="color: grey;">{{ netdata_form.history.help_text }}</small>
+                    </div>
+                    {% if netdata_form.history.error %}
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: red;">{{ netdata_form.history.error }}</small>
+                      </div>
+                    {% endif %}
+                  </div>
+                </fieldset>
+
+                <fieldset class="col-md-4">
+                  <legend>{% trans "Netdata status" %}</legend>
+                  {% for node, tmp_status in status.items %}
+                    <div  class="col-sm-12">
+                      {% if tmp_status == 'UP' %}
+                        <p><img src="{% static 'img/status_green.png' %}" class="img_responsive" />
+                        {% trans "Netdata is running on node " %} <b>{{ node }}</b></p>
+                      {% elif tmp_status == 'NEED_UPDATE' %}
+                        <p><img src="{% static 'img/status_red.png' %}" class="img_responsive" />
+                        {% trans "Netdata need a restart to apply new configuration on node " %} <b>{{ node }}</b></p>
+                      {% else %}
+                        <p><img src="{% static 'img/status_red.png' %}" class="img_responsive" />
+                        {% trans "Netdata status is: " %} {{ tmp_status }} {% trans "on node" %} <b>{{ node }}</b></p>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </fieldset>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-12">
+                <fieldset class="col-md-8">
+                  <legend>{% trans "Netdata backend configuration" %}</legend>
+                  <div class="row">
+                    <div class="form-group">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_enabled.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_enabled }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_enabled.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_enabled.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_enabled.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="row backend">
+                    <div class="form-group">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_type.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_type }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_type.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_type.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_type.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="row backend">
+                    <div class="form-group">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_destination.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_destination }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_destination.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_destination.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_destination.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="row backend">
+                    <div class="form-group">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_data_source.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_data_source }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_data_source.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_data_source.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_data_source.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="row backend">
+                    <div class="form-group">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_prefix.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_prefix }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_prefix.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_prefix.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_prefix.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="row backend">
+                    <div class="form-group">
+                      <div class="col-md-5 col-md-offset-2">
+                        <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".browsers-compat">
+                          <i class="fa fa-plus"></i> Advanced
+                        </button>
+                      </div>
+                    </div>
+                    <div class="form-group browsers-compat collapse" aria-expanded="false">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_update_every.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_update_every }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_update_every.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_update_every.error %}
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: red;">{{ netdata_form.backend_update_every.error }}</small>
+                      </div>
+                      {% endif %}
+                    </div>
+                    <div class="form-group browsers-compat collapse" aria-expanded="false">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_buffer_on_failure.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_buffer_on_failure }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_buffer_on_failure.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_buffer_on_failure.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_buffer_on_failure.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="form-group browsers-compat collapse" aria-expanded="false">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_timeout.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_timeout }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_timeout.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_timeout.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_timeout.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="form-group browsers-compat collapse" aria-expanded="false">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_send_hosts_matching.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_send_hosts_matching }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_send_hosts_matching.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_send_hosts_matching.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_send_hosts_matching.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="form-group browsers-compat collapse" aria-expanded="false">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_send_charts_matching.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_send_charts_matching }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_send_charts_matching.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_send_charts_matching.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_send_charts_matching.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="form-group browsers-compat collapse" aria-expanded="false">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_send_names_or_ids.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_send_names_or_ids }}
+                      </div>
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_send_names_or_ids.help_text }}</small>
+                      </div>
+                      {% if netdata_form.backend_send_names_or_ids.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_send_names_or_ids.error }}</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="form-group browsers-compat collapse" aria-expanded="false">
+                      <label class="col-md-2 control-label">{{ netdata_form.backend_host_tags.label }}</label>
+
+                      <div class="col-md-5">
+                        {{ netdata_form.backend_host_tags }}
+                      </div>
+
+                      <div class="col-md-10 col-md-offset-2">
+                        <small style="color: grey;">{{ netdata_form.backend_host_tags.help_text }}</small>
+                      </div>
+
+                      {% if netdata_form.backend_host_tags.error %}
+                        <div class="col-md-10 col-md-offset-2">
+                          <small style="color: red;">{{ netdata_form.backend_host_tags.error }}</small>
+                        </div>
+                      {% endif %}
+
+                    </div>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+
+          </div>
+          <div class="panel-footer text-right">
+            <input value="Save" type="submit" class="btn btn-success btn-flat"/>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $('.select2').select2();
+
+  $('.tags-input-comma').tagsinput({'delimiter': ','});
+
+  $('.tags-input-space').tagsinput({'delimiter': ' '});
+
+  /* Show darwin option depending on enable checkbox */
+  function toggle_backend_enabled() {
+    if( document.querySelector('#id_backend_enabled').checked ) {
+      $('.backend').show();
+      if( $('.browsers-compat2').attr("aria-expanded") === "false" ) {
+        $('.browsers-compat').collapse('toggle');
+      }
+    } else {
+      $('.backend').hide();
+    }
+  }
+  $('#id_backend_enabled').on('change', toggle_backend_enabled);
+
+  toggle_backend_enabled();
+
+{% endblock %}

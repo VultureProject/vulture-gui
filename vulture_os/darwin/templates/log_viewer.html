@@ -1,0 +1,314 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+    <link rel="stylesheet" href="{% static 'plugins/daterangepicker/daterangepicker.css' %}"/>
+    <link rel="stylesheet" href="{% static 'plugins/gridstack/gridstack.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'plugins/contextMenu/jquery.contextMenu.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'plugins/queryBuilder/query-builder.default.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'plugins/visjs/visjs.min.css' %}"/>
+{% endblock %}
+
+{% block js_include %}
+    <script type="text/javascript" src="{% static 'plugins/DOMPurify/purify.min.js' %}"></script>
+    <script src="{% static 'plugins/daterangepicker/daterangepicker.js' %}"></script>
+    <script src="{% static 'plugins/gridstack/lodash.min.js' %}"></script>
+    <script src="{% static 'plugins/gridstack/gridstack.min.js' %}"></script>
+    <script src="{% static 'plugins/gridstack/gridstack.jQueryUI.min.js' %}"></script>
+    <script src="{% static 'plugins/contextMenu/jquery.contextMenu.min.js' %}"></script>
+    <script src="{% static 'plugins/queryBuilder/query-builder.standalone.min.js' %}"></script>
+    <script src="{% static 'plugins/queryBuilder/query-builder.elasticsearch.js' %}"></script>
+    <script src="{% static 'plugins/queryBuilder/interact.min.js' %}"></script>
+    <script src="{% static 'plugins/gridstack/lodash.min.js' %}"></script>
+    <script src="{% static 'plugins/echarts4.all.min.js' %}"></script>
+    <script src="{% static 'plugins/visjs/visjs.min.js' %}"></script>
+    <!--<script src="{% static 'js/wl_bl.js' %}"></script>-->
+	<script src="{% static 'js/log_viewer.js' %}"></script>
+	<script src="{% static 'js/defender_logs.js' %}"></script>
+{% endblock %}
+
+
+{% block content %}
+
+	<section class="content" id="log_viewer">
+
+		<div class="row" id="row-navbar">
+	        <div class="col-md-12">
+	            <input type="hidden" id="static_url" value="{% static 'img/flags/' %}"/>
+	            <div class="row">
+	                <div class="col-sm-12" id="navbarlogs">
+	                    <div class="input-group input-group-lg">
+	                      <span class="input-group-btn">
+                            <button class="btn btn-default btn-open" id="btn-configuration" data-state="close" title="{% trans 'Configuration' %}" data-placement="bottom" data-type="tooltip" data-row="row-configuration" type="button"><i class="fas fa-cog"></i></button>
+                            <button class="btn btn-default" title="{% trans 'Realtime' %}" data-placement="bottom" data-type="tooltip" id="real_time" data-active="false" type="button"><i id="spinner_ajax" class="fa fa-spinner"></i></button>
+	                        <button class="btn btn-default" title="{% trans 'Graph' %}" data-toggle="button" aria-pressed="false" data-placement="bottom" data-type="tooltip" id="btn-graph" type="button"><i class="fa fa-sitemap"></i></button>
+	                        <button class="btn btn-default btn-font-xs" title="{% trans 'Date' %}" data-placement="bottom" data-type="tooltip" id="reportrange_logs" type="button"></button>
+	                        <div class="btn-group">
+	                            <button class="btn btn-default btn-font-xs dropdown-toggle" id="btn-type-logs" data-toggle="dropdown" type="button">{% trans "Log type" %} <span class="caret"></span></button>
+	                            <ul class="dropdown-menu dropdown-menu-left" id="list-type-logs">
+                                </ul>
+	                        </div>
+                            <div class="btn-group">
+                                <button class="btn btn-default btn-font-xs dropdown-toggle" id="btn-applications" data-toggle="dropdown" type="button">{% trans "Application" %} <span class="caret"></span></button>
+                                <ul class="dropdown-menu dropdown-menu-left" id="list-applications">
+                                </ul>
+                            </div>
+	                      </span>
+	                      <input type="text" class="form-control preview_rules" id="logs_preview_rule" readonly="readonly">
+	                      <span class="input-group-btn">
+                            <button class="btn btn-default btn-open" data-state="close" data-type="tooltip" title="{% trans 'Search' %}" data-placement="bottom" data-row="row-search" type="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-search"></i></button>
+	                        <button type="button" id="btn-reset" class="btn btn-default" title="{% trans 'Reinit search' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-ban"></i></button>
+	                        <button type="button" id="btn-execute" class="btn btn-default" title="{% trans 'Execute search' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-bolt"></i></button>
+	                        <button type="button" id="btn-defender" class="btn btn-default" title="{% trans 'Generate learning logs' %}" data-placement="bottom" data-type="tooltip"><i class="fas fa-brain"></i></button>
+	                        <button type="button" id="btn-export" class="btn btn-default" title="{% trans 'CSV Export' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-download"></i></button>
+	                      </span>
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
+
+	    <div class="row" id="row-configuration">
+            <div class="col-md-12">
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div class="panel-control">
+                            <button class="btn btn-box-tool text-green" id="save_config" type="button"><i class="fa fa-save">&nbsp;{% trans "Save" %}</i></button>
+                            <button class="btn btn-box-tool btn-close" data-row="row-configuration" type="button"><i class="fa fa-times">&nbsp;{% trans "Close" %}</i></button>
+                        </div>
+                        <h3 class="panel-title"><i class="fa fa-cog">&nbsp;</i>{% trans "Configuration" %}</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group col-md-4">
+                                    <label>{% trans "Displayed columns" %}:</label>
+                                    <div class="input-group">
+                                        <select class="form-control select-improve" id="selected-fields"></select>
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-success btn-flat" id="add_field"><i class="fa fa-plus"></i></button>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label>{% trans "Number of lines" %}:</label>
+                                    <input type="number" class="form-control" id="lengthtable" min="10" max="200"/>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label>{% trans "Font size" %}:</label><br/>
+                                    <div class="btn-group">
+                                        <button class="btn btn-default resize-font" data-type="bigger">A&nbsp;<i class='fa fa-caret-up'></i></button>
+                                        <button class="btn btn-default resize-font" data-type="origin">A</button>
+                                        <button class="btn btn-default resize-font" data-type="smaller">A&nbsp;<i class='fa fa-caret-down'></i></button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>{% trans "Table configuration" %}</h4>
+                                <div class="grid-stack"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" id="row-search">
+            <div class="col-md-6 col-md-offset-3">
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div class="panel-control">
+                            <button class="btn btn-box-tool btn-close" data-row="row-search" type="button"><i class="fa fa-times">&nbsp;{% trans "Close" %}</i></button>
+                        </div>
+                        <h3 class="panel-title"><i class="fa fa-search">&nbsp;</i>{% trans "Search" %}</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="panel panel-colorful panel-dark">
+                                    <div class="panel-body">
+                                        <div class="form-group col-md-8">
+                                            <label>{% trans "Saved searches" %}</label>
+                                            <div class="input-group">
+                                                <select class="form-control select-improve" id="saved-search">
+                                                    <option value="">---</option>
+                                                </select>
+                                                <span class="input-group-btn">
+                                                    <button type="button" class="btn btn-danger btn-flat" id="delete_search"><i class="fas fa-trash-alt"></i></button>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>{% trans "Save research" %}:</label>
+                                            <div class="input-group">
+                                                <input type="text" id="search_name" class="form-control"/>
+                                                <span class="input-group-btn">
+                                                    <button type="button" class="btn btn-success btn-flat" id="save_search"><i class="fa fa-plus"></i></button>
+                                                    <button type="button" class="btn btn-warning btn-flat" id="edit_search" data-uid=""><i class="fa fa-edit"></i></button>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div id="queryBuilder"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="traffic" style="width: 100%; height: 0px;"></div>
+                            </div>
+                        </div><br/>
+                        <div class="row" id="graph_logs_div">
+                            <div class="col-md-12">
+                                <div id="graph_logs" style="width:100%;height:150px"></div>
+                            </div>
+                        </div><br/>
+                        <div class="row" id="table_logs_div">
+                            <div class="col-md-12">
+                                <table id="table_logs" class="table table-bordered table-striped table-hover table-heading table-datatable compact"></table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="whitelist-confirmation-box" class="overlay">
+                        <i class="fa fa-refresh fa-spin"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+	</section>
+
+    <div id="wlbl_tab">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div class="panel-control">
+                            <button class="btn btn-box-tool btn-close-wlbl_tab" type="button"><i class="fa fa-times">&nbsp;{% trans "Close" %}</i></button>
+                        </div>
+                        <h3 class="panel-title"><i class="fa fa-ruler-vertical">&nbsp;</i>{% trans "WAF Blacklist/Whitelist" %}</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button class="btn btn-success" v-on:click="save_rules">{% trans "Apply rules" %}</button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="query-builder-waf"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <pre v-html="resume_rule"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for displaying our whitelist -->
+    <div class="modal fade" id="modal-whitelist" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content -->
+            <div class="modal-content modal-whitelist" id="modal-whitelist-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <button type="button" class="btn-whitelist-datatable-first btn btn-primary pull-right whitelist-rules-content" id="btn-reset-whitelist-datatable">{% trans "Reset" %}</button>
+                    <button type="button" class="btn-whitelist-datatable btn btn-primary pull-right whitelist-rules-content" id="btn-merge-whitelist-datatable">{% trans "Merge" %}</button>
+                    <button type="button" class="btn-whitelist-datatable btn btn-primary pull-right whitelist-rules-content" id="btn-next-whitelist-datatable"><i class="fas fa-redo-alt" aria-hidden="true"></i></button>
+                    <button type="button" class="btn-whitelist-datatable btn btn-primary pull-right whitelist-rules-content" id="btn-previous-whitelist-datatable"><i class="fas fa-undo-alt" aria-hidden="true"></i></button>
+                    <h4 class="modal-title whitelist-rules-content">{% trans "Whitelist" %}</h4>
+                    <h4 class="whitelist-overlay-save-dialog">{% trans "Save whitelist" %}</h4>
+                </div>
+
+                <!-- Where to display the whitelist -->
+                <div class="modal-body" id="whitelist-datatable-container">
+                    <div class="whitelist-overlay-save-dialog">
+                        <select id="save-whitelist-type" name="save-whitelist-type" class="form-control">
+                            <option value="create">Create new ruleset</option>
+                            <option value="edit">Add selected rules to existing ruleset</option>
+                            <option value="replace">Replace existing ruleset with selected rules</option>
+                        </select>
+
+                        <div class="whitelist-name-container input-whitelist-savebox">
+                            <input type="text" id="whitelist-name" name="whitelist-name" class="form-control" placeholder="Ruleset name">
+                        </div>
+                        <div class="existing-ruleset-container input-whitelist-savebox">
+                            <select id="existing-ruleset" class="existing-ruleset form-control"></select>
+                        </div>
+                    </div>
+                    <div class="whitelist-rules-content">
+                        <table style="width:100%" id="whitelist-datatable" class="table table-bordered table-striped table-hover table-heading table-datatable compact" width="100%"></table>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <div class="whitelist-overlay-save-dialog">
+                        <button type="button" id="cancel-btn-send-whitelist" class="btn btn-default pull-left">{% trans "Return" %}</button>
+                        <button type="button" id="confirm-btn-send-whitelist" class="btn btn-success pull-right">{% trans "Save" %}</button>
+                    </div>
+                    <div class="whitelist-rules-content">
+                        <button type="button" class="btn btn-default pull-left" data-dismiss="modal">{% trans "Close" %}</button>
+                        <button type="button" id="btn-send-whitelist" class="btn btn-success pull-right">{% trans "Save ruleset" %}</button>
+                    </div>
+                </div>
+
+                <div id="whitelist-datatable-loading" class="overlay">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+    var system_pf_list_uri = '{% url "system.pf.list" %}';
+    //var waf_rules_uri = '{# url "darwin.waf_rules.add" #}';
+    var request_defender_whitelist = '{% url "darwin.request_defender_wl" %}';
+    var get_defender_whitelist = '/darwin/defender/get/';
+    var submit_defender_whitelist = '{% url "darwin.submit_defender_wl" %}';
+    var get_defender_rulesets = '{% url "darwin.get_defender_rulesets" %}';
+    var access_rule_uri = "{% url 'darwin.access_control.edit' %}";
+
+	var ranges = {
+        '{% trans "Last 5 minutes" %}': [moment().subtract(5, 'minutes'), moment()],
+        '{% trans "Last 15 minutes" %}': [moment().subtract(15, 'minutes'), moment()],
+        '{% trans "Last 30 minutes" %}': [moment().subtract(30, 'minutes'), moment()],
+        '{% trans "Last hour" %}'    : [moment().subtract(1, 'hours'), moment()],
+        '{% trans "Last 4 hours" %}'   : [moment().subtract(4, 'hours'), moment()],
+        '{% trans "Last 12 hours" %}'  : [moment().subtract(12, 'hours'), moment()],
+        '{% trans "Last 24 hours" %}'  : [moment().subtract(24, 'hours'), moment()],
+        '{% trans "Today" %}'          : [moment().startOf('day'), moment().endOf('day')],
+        '{% trans "Yesterday" %}'      : [moment().subtract(1,'days').startOf('day'), moment().subtract(1,'days').endOf('day')],
+        '{% trans "Last 7 days" %}'    : [moment().subtract(6, 'days'), moment()],
+        '{% trans "Last 30 days" %}'   : [moment().subtract(29, 'days'), moment()],
+        '{% trans "This month" %}'     : [moment().startOf('month'), moment().endOf('month')],
+        '{% trans "Last month" %}'     : [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+    }
+
+    var default_type;
+    var selected_type;
+    var columns;
+
+{% endblock %}

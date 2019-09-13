@@ -1,0 +1,207 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.pki.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "X509 Certificates" %}</h1>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="pki_list">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+        </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+   var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false
+    },
+    {
+      sTitle: '{% trans "Type" %}',
+      name: "name", aTargets: [1],
+      defaultContent: "",
+      mData: "name",
+      mRender: function(data, type, row) {
+        if (row.is_vulture_ca) {
+            return '<span class="btn btn-flat btn-xs btn-warning">Vulture CA</span>';
+        }
+        else if (row.is_ca) {
+            return '<span class="btn btn-flat btn-xs btn-warning">Trusted CA</span>';
+        }
+        else if (row.is_external) {
+            return '<span class="btn btn-flat btn-xs btn-warning">External</span>';
+        }
+        else {
+            return '<span class="btn btn-flat btn-xs btn-warning">Internal</span>';
+        }
+      }
+    },
+    {
+      sTitle: '{% trans "Status" %}',
+      name: "status", aTargets: [2],
+      defaultContent: "",
+      mData: "status",
+      mRender: function(data, type, row) {
+        if (row.status=='V') {
+          return "<label class='label label-success'><i class='fa fa-check'></i></label>"
+        }
+        else if (row.status=='R') {
+          return "<label class='label label-danger'><i class='fa fa-times'></i></label>"
+        }
+      }
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name", aTargets: [3],
+      defaultContent: "",
+      mData: "name",
+      mRender: function(data, type, row) {
+        return data.replace(/Vulture_PKI_.*/,"Vulture_PKI");
+      }
+    },
+    {
+      sTitle: '{% trans "Subject" %}',
+      name: "subject", aTargets: [4],
+      defaultContent: "",
+      mData: "subject",
+      mRender: function(data, type, row){
+        return data.split(',').join('<br/>')
+      }
+    },
+    {
+      sTitle: '{% trans "Issuer" %}',
+      name: "issuer", aTargets: [5],
+      defaultContent: "",
+      mData: "issuer",
+      mRender: function(data, type, row){
+        return data.split(',').join('<br/>')
+      }
+    },
+    {
+      sTitle: '{% trans "Valid from" %}',
+      name: "validfrom", aTargets: [6],
+      defaultContent: "",
+      mData: "validfrom",
+    },
+    {
+      sTitle: '{% trans "Valid untill" %}',
+      name: "validtill", aTargets: [7],
+      defaultContent: "",
+      mData: "validtill",
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [8],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        if (row.is_vulture_ca) {
+            return '<a class="btn btn-flat btn-xs btn-primary" title="{% trans "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-warning" title="{% trans "Download CRL" %}" href="/system/pki/getcrl/' + data + '"><span><i class="fa fa-list"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-success" title="{% trans "Generate CRL" %}" href="/system/pki/gencrl/' + data + '"><span><i class="fa fa-history"></i></span></a>';
+        }
+        else if (row.is_external) {
+            buffer = '<a class="btn btn-flat btn-xs btn-primary" title="{% trans "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>';
+            if (row.crl) {
+                buffer = buffer + '<a class="btn btn-flat btn-xs btn-warning" title="{% trans "Download CRL" %}" href="/system/pki/getcrl/' + data + '"><span><i class="fa fa-list"></i></span></a>';
+            }
+            if (row.crl_uri) {
+                buffer = buffer + '<a class="btn btn-flat btn-xs btn-success" title="{% trans "Update CRL" %}" href="/system/pki/gencrl/' + data + '"><span><i class="fa fa-history"></i></span></a>';
+            }
+            buffer = buffer + '<a class="btn btn-flat btn-xs btn-danger" title="{% trans "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+            return buffer;
+        }
+        //Vulture internal valid certificates
+        else if (row.status=='V') {
+            return '<a class="btn btn-flat btn-xs btn-primary" title="{% trans "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Revoke" %}" href="/system/pki/revoke/' + data + '"><span><i class="fa fa-unlink"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+        }
+        //Vulture's internal revoked certificate
+        else {
+            return '<a class="btn btn-flat btn-xs btn-danger" title="{% trans "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+        }
+      }
+    }
+  ];
+
+  var netif_table = $("#pki_list").dataTable({
+      bServerSide   : true,
+      order         : [[1, 'desc']],
+      iDisplayLength: 10,
+      bProcessing   : true,
+      bSort         : true,
+      sAjaxSource   : '',
+      sServerMethod : 'POST',
+      aoColumnDefs: aoColumns,
+      language: language_datatable,
+      fnServerData  : function(sSource, aoData, fnCallback){
+
+        var columns = [];
+        for (var i in aoColumns){
+          columns.push(aoColumns[i].mData);
+        }
+
+        aoData.push({
+          name: 'columns',
+          value: JSON.stringify(columns)
+        })
+
+        $.ajax({
+          type   : "POST",
+          url    : sSource,
+          data   : aoData,
+          success: function(data, callback){
+            if (check_json_error(data))
+              fnCallback(data);
+          }
+        })
+      },
+      fnCreatedRow: function(nRow, aData, iDataIndex){
+          $(nRow).on('click', function(e){
+              var id = aData['id'];
+              if (aData.is_external) {
+                window.location.href = "/system/pki/edit/" + id;
+              }
+          });
+      }
+  });
+
+{% endblock %}

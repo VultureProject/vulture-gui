@@ -1,0 +1,58 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block navleft %}
+    <li><h3><i class="fa fa-folder-open"></i>Applications -> Backends -> Delete</h3></li>
+{% endblock %}
+
+{% block content %}
+    
+    <div class="row">
+        <div class="panel box-delete">
+            <form class="form-horizontal bootstrap-validator-form" action="{{ delete_url }}{{ object_id }}" method="post" novalidate="novalidate">
+            {% csrf_token %}
+                <input type="hidden" name="confirm" value="yes" />
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">{% trans "Confirm delete" %}</h3>                        
+                </div>
+
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="col-sm-12 text-center">
+                            {% trans "The following backend will be deleted : " %} {{backend}} <br/>
+                            {% trans "Are you sure you want to delete it permanently ?" %}
+                        </label>
+                    </div>
+                </div>
+
+                <div class="panel-footer">
+                    {% if is_protected %}
+                        <a href="{{ redirect_url }}"><button class="btn btn-warning btn-cancel" type="button">
+                            <i class="fas fa-times">&nbsp;&nbsp;</i>{% trans "RETURN"  %}</button></a>
+                    {% else %}
+                        <a href="{{ redirect_url }}"><button class="btn btn-warning btn-cancel" type="button">
+                            <i class="fas fa-times">&nbsp;&nbsp;</i>{% trans "CANCEL"  %}</button></a>
+                        <button id="submit" class="btn btn-danger pull-right btn-save" type="submit">
+                            <i class="fas fa-check">&nbsp;&nbsp;</i>{% trans "Yes" %}
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+{% block jquery_code  %}
+  
+{% endblock %}

@@ -1,0 +1,26 @@
+#documentation_tab{
+    position: fixed;
+    padding: 0;
+    top: 77px;
+    right: -50%;
+    width: 50%;
+    bottom: 0;
+    background: #FFF;
+    transition-duration: 0.5s;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+    overflow-y: auto;
+    z-index: 1100;
+    overflow-x: hidden;
+}
+
+.box-no-border{
+    border: 0px;
+}
+
+#documentation_tab .box_header{
+	border-bottom: 1px solid #F39C12;
+}
+
+.logo_full_doc_not_found{
+    width: 50%;
+}

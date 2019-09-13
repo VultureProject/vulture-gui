@@ -1,0 +1,94 @@
+{% load static i18n %}
+
+<nav id="mainnav-container">
+    <div id="mainnav">
+
+        <div id="mainnav-menu-wrap">
+            <div class="nano">
+                <div class="nano-content">
+
+                    <!--<div id="mainnav-shortcut" class="">
+                        <ul class="list-unstyled shortcut-wrap">
+                            <li class="col-xs-3" data-content="My Profile">
+                                <a class="shortcut-grid" href="#">
+                                    <div class="icon-wrap icon-wrap-sm">
+                                    <i class="demo-pli-male"></i>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="col-xs-3" data-content="Messages">
+                                <a class="shortcut-grid" href="#">
+                                    <div class="icon-wrap icon-wrap-sm">
+                                    <i class="demo-pli-speech-bubble-3"></i>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="col-xs-3" data-content="Activity">
+                                <a class="shortcut-grid" href="#">
+                                    <div class="icon-wrap icon-wrap-sm">
+                                    <i class="demo-pli-thunder"></i>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="col-xs-3" data-content="Lock Screen">
+                                <a class="shortcut-grid" href="#">
+                                    <div class="icon-wrap icon-wrap-sm">
+                                    <i class="demo-pli-lock-2"></i>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>-->
+                    <br/>
+                    <ul id="mainnav-menu" class="list-group">
+                        <li class="link_gui">
+                            <a href="{% url 'gui.dashboard.services' %}">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span class="menu-title">{% trans "Monitoring" %}</span>
+                                <i class="arrow"></i>
+                            </a>
+            
+                            <!--Submenu-->
+                            <ul class="collapse_gui collapse">
+                                <li class="link_dashboard_services"><a href="{% url 'gui.dashboard.services' %}">{% trans "Services" %}</a></li>
+                            </ul>
+                        </li>
+
+                        {% for menu in MENUS %}
+                            <li class="link_{{ menu.link }}">
+                              <a href="{{ menu.url }}">
+                                <i class="{{ menu.icon }}"></i>
+                                <span class="menu-title">{{ menu.text }}
+                                    {% if menu.coming_soon %}
+                                    <br/><label class="label label-warning label-sm pull-right">{% trans "Coming Soon" %}</label>
+                                    {% endif %}
+                                </span>
+                                {% if menu.submenu %}
+                                   <i class="arrow"></i>
+                                {% endif %}
+                              </a>
+
+                              {% if menu.submenu %}
+                                <ul class="collapse_{{ menu.link }} collapse">
+                                  {% for submenu in menu.submenu %}
+                                    <li class="link_{{ menu.link }}_{{ submenu.link }}">
+                                      <a href="{{ submenu.url }}">
+                                        {{ submenu.text }}
+                                      </a>
+                                    </li>
+                                  {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+
+                    </ul>
+
+                    <div class="mainnav-widget">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </nav>

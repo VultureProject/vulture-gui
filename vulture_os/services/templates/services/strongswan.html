@@ -1,0 +1,269 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                      <a class="btn btn-flat btn-primary" href="{% url 'services.strongswan.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>IPSEC Configuration</h1>
+                </div>
+                <div class="panel-body">
+                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="strongswan_list">
+                  </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="details_strongswan" hidden></div>
+    <!--<i class="fa fa-fw fa-fighter-jet"></i>-->
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "", 
+      mData: "id",
+      bVisible: false,
+    },
+    {
+      sTitle: '{% trans "Status" %}',
+      defaultContent: "",
+      name: "status",
+      mData: "status",
+      aTargets: [1],
+      bSearchable: false,
+      mRender: function(data, type, row) {
+        /* Status of service itself, not of tunnel */
+        var icon = "";
+        switch( data ) {
+          case "UP":
+            icon = '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+            break;
+          case "DOWN":
+            icon = '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
+            break;
+          case "ERROR":
+            icon = '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
+            break;
+          case "CONNECTING":
+            icon = '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
+            break;
+          default:
+            icon = '<i class="icon fa fa-question-circle"></i>&nbsp;';
+        }
+        return icon + "Service status : " + data + "</br>Security associations connected: "+row.tunnels_up+"</br>Security associations connecting: "+row.tunnels_connecting;
+      }
+    },
+    {
+      sTitle: '{% trans "Tunnels status" %}',
+      defaultContent: "",
+      name: "tunnels_status",
+      mData: "tunnels_status",
+      aTargets: [2],
+      bSearchable: false,
+      mRender: function(data, type, row) {
+        var cpt = 0;
+        var result = "";
+        $.each(data, function(key, value) {
+          if( cpt > 0 )
+            result += "</br>";
+          var state = value[0];
+          var reason = value[1];
+          switch( state ) {
+            case "UP":
+              result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+            case "STOP":
+              result += '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+          }
+          result += key+':&nbsp;&nbsp;<font size="+1">'+state+'</font>&nbsp;<font size="-1">'+reason+'</font>';
+          cpt++;
+        });
+        return result;
+      }
+    },
+    {
+      sTitle: '{% trans "Node" %}',
+      name: "node", aTargets: [3],
+      defaultContent: "",
+      mData: "node",
+      mRender: function(data, type, row) {
+        return data;
+      }
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [4],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        result = '<a class="btn btn-flat btn-xs btn-primary" href="/services/strongswan/clone/' + data + '" data-toggle="tooltip" data-placement="top" title="Clone"><span><i class="fa fa-copy"></i></span></a>' +
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger" href="/services/strongswan/delete/' + data + '"><span><i class="fas fa-trash-alt" data-toggle="tooltip" data-placement="top" title="Delete"></i></span></a>';
+        if( $('#details_strongswan').is(":hidden") ) {
+          result += '&nbsp;<a class="btn btn-flat btn-xs btn-info show-status" data-toggle="tooltip" data-placement="top" title="Show status"><span><i class="fa fa-search-plus"></i></span></a>';
+        } else {
+          result += '&nbsp;<a class="btn btn-flat btn-xs btn-info hide-status" data-toggle="tooltip" data-placement="top" title="Hide status"><span><i class="fa fa-search-minus"></i></span></a>';
+        }
+        if( row.status === "UP" ) {
+          result += '&nbsp;<button id="stop_'+data+'" type="button" class="btn btn-flat btn-xs btn-primary action stop" data-toggle="tooltip" data-placement="top" title="Stop"><i class="fa fa-stop"></i></button>';
+          result += '&nbsp;<button id="reload_'+data+'" type="button" class="btn btn-flat btn-xs btn-primary action reload" data-toggle="tooltip" data-placement="top" title="Reload"><i class="fa fa-sync"></i></button>';
+        } else if( row.status === "DOWN" )
+          result += '&nbsp;<button id="start_'+data+'" type="button" class="btn btn-flat btn-xs btn-success action start" data-toggle="tooltip" data-placement="top" title="Start"><i class="fa fa-play"></i></button>';
+        return result;
+      }
+    }
+  ];
+
+  var strongswan_table = $("#strongswan_list").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+          columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      });
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (!data.status){
+            notify('error', "{% trans 'Error' %}", data.error);
+          } else {
+            fnCallback(data);
+          }
+        }
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+      }) // /$.fail
+      .done( function( data ) {
+        if (!data.status){
+          notify('error', "{% trans 'Error' %}", data.error);
+        } else {
+          fnCallback(data);
+        }
+      }); // /$.done
+    }, // /fnServerData
+    fnCreatedRow: function(nRow, aData, iDataIndex){
+
+      /* Events binding to start a strongswan config */
+      $(nRow).on('click', '.action', function(e) {
+        /* Request start of the selected strongswan process */
+        /* First, retrieve the action to do */
+        var action = ($(this).hasClass('start') ? "start" : ($(this).hasClass('stop') ? "stop" : ($(this).hasClass('reload') ? "reload" : "")));
+        $.ajax({
+          type   : "GET",
+          url    : "/services/strongswan/"+action+"/"+aData.id,
+        }) // /$.ajax
+        .fail( function( jqXHR, textStatus ) {
+          new PNotify({
+            title: 'Unknown error occured',
+            text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+jqXHR.responseText
+                  +'</a>',
+            type: 'error',
+            styling: 'bootstrap3',
+            width: '500px',
+            buttons: {
+                closer: true,
+                sticker: false
+            }
+          });
+        }) // /$.fail
+        .done( function( msg ) {
+          if( msg.status ) {
+            new PNotify({
+              title: "Success",
+              text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+msg.message+'</a>',
+              type: 'success',
+              styling: 'bootstrap3',
+              width: '500px',
+              buttons: {
+                  closer: true,
+                  sticker: false
+              }
+            });
+          } else {
+            new PNotify({
+              title: msg.error,
+              text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+msg.error_details+'</a>',
+              type: 'error',
+              styling: 'bootstrap3',
+              width: '500px',
+              buttons: {
+                  closer: true,
+                  sticker: false
+              }
+            });
+          }
+        }); // /$.done
+        e.stopPropagation();
+      }); // /$(nRow).on('click', '.action'
+
+      /* Events binding to edit a strongswan config */
+      $(nRow).on('click', function(e){
+          var id = aData['id'];
+          window.location.href = "/services/strongswan/edit/" + id;
+      });
+
+      /* Events binding to print a strongswan conf */
+      $(nRow).on('click', '.show-status', function(e) {
+        $('#details_strongswan').html("");
+
+        var conf = aData['statusall'];
+        $('#details_strongswan').append("<pre>"+conf+"</pre>");
+
+        $('#details_strongswan').show();
+        e.stopPropagation();
+      });
+      $(nRow).on('click', '.hide-status', function(e){
+        $('#details_strongswan').hide();
+        e.stopPropagation();
+      });
+    }
+  }); // var strongswan_table = $("#strongswan_list").dataTable
+
+  /* Reload table data every 5 seconds */
+  setInterval( function() {
+    strongswan_table.fnDraw();
+  }, 5000);
+
+
+{% endblock %}

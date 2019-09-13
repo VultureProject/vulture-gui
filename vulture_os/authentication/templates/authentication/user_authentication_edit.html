@@ -1,0 +1,360 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="user_authentication_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-12">
+              {% if form.non_field_errors or save_error %}
+              <div class="panel">
+                <div class="panel-body">
+                  {# Print form errors correctly #}
+                  {% if form.non_field_errors %}
+                    <div class="alert alert-danger alert-dismissible">
+                      <h4><i class="icon fa fa-ban"></i> Form errors </h4>
+                      <div class="tab-content no-padding">
+                        {{ form.non_field_errors|safe }}
+                      </div>
+                    </div>
+                  {% endif %}
+                  {# If there is save/configuration errors #}
+                  {% if save_error %}
+                    <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+                      <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                        <li><a href="#tab_2" data-toggle="tab">Advanced informations</a></li>
+                        <li class="active"><a href="#tab_1" data-toggle="tab">Message</a></li>
+                        <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
+                      </ul>
+                      <div class="tab-content no-padding">
+                        <div class="tab-pane active" id="tab_1">
+                          <pre>{{ save_error.0 }}</pre>
+                        </div>
+                        <div class="tab-pane" id="tab_2">
+                          <pre>{{ save_error.1 }}</pre>
+                        </div>
+                      </div>
+                    </div> <!-- /.alert -->
+                  {% endif %}
+                </div> <!-- /.box-body -->
+              </div> <!-- /.box -->
+              {% endif %}
+              <div class="panel">
+                <div class="panel-header with-border">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "User Authentication edition" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <div class="nav-tabs-custom nav-tabs-no-margin">
+                    <ul class="nav nav-tabs">
+                      <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Main settings" %}</a></li>
+                      <li><a href="#tab_otp" data-toggle="tab">{% trans "OTP" %}</a></li>
+                      <li><a href="#tab_disconnect" data-toggle="tab">{% trans "Disconnect" %}</a></li>
+                      <li><a href="#tab_registration" data-toggle="tab">{% trans "Auto-registration" %}</a></li>
+                    </ul>
+                    <div class="tab-content">
+                      <div class="tab-pane active" id="tab_general">
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.name.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.name}}
+                                {{form.name.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.enable_tracking.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.enable_tracking}}
+                              {{form.enable_tracking.errors|safe}}
+                            </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.repository.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.repository}}
+                                {{form.repository.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.repositories_fallback.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.repositories_fallback}}
+                                  {{form.repositories_fallback.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.auth_type.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.auth_type}}
+                                  {{form.auth_type.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row form-auth">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.portal_template.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.portal_template}}
+                                  {{form.portal_template.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.auth_timeout.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.auth_timeout}}
+                                {{form.auth_timeout.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.enable_timeout_restart.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_timeout_restart}}
+                                  {{form.enable_timeout_restart.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.enable_captcha.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_captcha}}
+                                  {{form.enable_captcha.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                      </div> <!-- /.tab-pane -->
+                      <div class="tab-pane" id="tab_otp">
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.otp_repository.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.otp_repository}}
+                                {{form.otp_repository.errors|safe}}
+                              </div>
+                              <div class="col-sm-3">
+                                <a class="btn btn-flat btn-primary" href="{% url 'authentication.otp.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row otp">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.otp_max_retry.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.otp_max_retry}}
+                                {{form.otp_max_retry.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row otp -->
+                      </div> <!-- /.tab-pane -->
+                      <div class="tab-pane" id="tab_disconnect">
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.disconnect_url.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.disconnect_url}}
+                                  {{form.disconnect_url.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row disconnect">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.enable_disconnect_message.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_disconnect_message}}
+                                  {{form.enable_disconnect_message.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row disconnect">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.enable_disconnect_portal.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_disconnect_portal}}
+                                  {{form.enable_disconnect_portal.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                      </div> <!-- /.tab-pane -->
+                      <div class="tab-pane" id="tab_registration">
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.enable_registration.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_registration}}
+                                  {{form.enable_registration.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row registration">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.group_registration.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.group_registration}}
+                                {{form.group_registration.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row registration">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.update_group_registration.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.update_group_registration}}
+                                  {{form.update_group_registration.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                      </div> <!-- /.tab-pane -->
+                    </div> <!-- /.tab-content -->
+                  </div> <!-- /.nav-tabs-custom -->
+                </div> <!-- /.box-body -->
+                <div class="panel-footer">
+                  <a type="button" href="{% url 'portal.user_authentication.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                  <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Save" %}</button>
+                </div> <!-- /.box-footer -->
+              </div> <!-- /.box -->
+            </div>
+          </div>
+        </form>
+      </div> <!-- /.col-md-12 -->
+    </div> <!-- /.row -->
+</section> <!-- /.content -->
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  /* Initialize select2 objects */
+  $('.select2').select2();
+
+  /* Switchery mandatory code */
+  var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+    elems.forEach(function(html) {
+    var switchery = new Switchery(html, {
+      'color': '#FA9834',
+    });
+  });
+
+
+  /* Show fields depending on auth_type chosen */
+  function toggle_auth_type() {
+    var auth_type = $('#id_auth_type').val();
+    $('.form-auth').hide();
+    $('.basic-auth').hide();
+    $('.kerberos-auth').hide();
+    if( $('.'+auth_type+'-auth') ) {
+      $('.'+auth_type+'-auth').show();
+}
+  }
+  $('#id_auth_type').on('change', toggle_auth_type);
+  toggle_auth_type("");
+
+
+  /* Show or hide otp_max_retry depending on otp_repository chosen */
+  function toggle_otp(event) {
+    if( $('#id_otp_repository').val() === "" )
+      $('.otp').hide();
+    else
+      $('.otp').show();
+  }
+  $('#id_otp_repository').on("change", toggle_otp);
+  toggle_otp();
+
+
+  /* Show or hide disconnect fields depending on disconnect_url */
+  function toggle_disconnect(event) {
+    if( $('#id_disconnect_url').val() === "" )
+      $('.disconnect').hide();
+    else
+      $('.disconnect').show();
+  }
+  $('#id_disconnect_url').on("change", toggle_disconnect);
+  toggle_disconnect();
+
+
+  /* Show or hide registration fields depending on enable_registration */
+  function toggle_registration(event) {
+    if( document.querySelector('#id_enable_registration').checked )
+      $('.registration').show();
+    else
+      $('.registration').hide();
+  }
+  $('#id_enable_registration').on("change", toggle_registration);
+  toggle_registration();
+
+
+  //}); // end of function()
+
+{% endblock %}

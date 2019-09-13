@@ -1,0 +1,40 @@
+[
+  {
+    "model": "services.PFSettings",
+    "pk": 1,
+    "fields": {
+    }
+  },
+  {
+    "model": "services.RsyslogSettings",
+    "pk": 1,
+    "fields": {
+    }
+  },
+  {
+    "model": "services.DarwinSettings",
+    "pk": 1,
+    "fields": {
+    }
+  },
+  {
+    "model": "services.HAProxySettings",
+    "pk": 1,
+    "fields": {
+    }
+  },
+  {
+    "model": "services.ApacheSettings",
+    "pk": 1,
+    "fields": {
+    }
+  },
+  {
+    "model": "services.NetdataSettings",
+    "pk": 1,
+    "fields": {
+      "history": 3600,
+      "backend_enabled": false
+    }
+  }
+]

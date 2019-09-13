@@ -1,0 +1,542 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <form id="backend_edit_form" class="form-horizontal bootstrap-validator-form"
+    {% if cloned %}action='{% url  "applications.backend.edit" %}'{% else %}action=''{% endif %} method="post" novalidate="novalidate">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          {% if form.non_field_errors or save_error %}
+          <div class="panel">
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger alert-dismissible">
+                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <div class="tab-content no-padding">
+                    {{ form.non_field_errors|safe }}
+                  </div>
+                </div>
+              {% endif %}
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+                  <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                    <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                    <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
+                    <li class="pull-left header"><i class="fa fa-inbox"></i>{% trans "Configuration error" %}</li>
+                  </ul>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre class="console-type">{{ save_error.0 }}</pre>
+                    </div>
+                    <div class="tab-pane" id="tab_2">
+                      <pre class="console-type">{{ save_error.1 }}</pre>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <div class="panel">
+            <div class="panel-body">
+              <div class="nav-tabs-custom nav-tabs-no-margin">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+                  <li><a href="#tab_servers" data-toggle="tab">{% trans "Servers" %}</a></li>
+                  <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% trans "HTTP Options" %}</a></li>
+                  <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% trans "HTTP Headers" %}</a></li>
+                  <li><a href="#tab_custom" data-toggle="tab">{% trans "Custom conf" %}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane active" id="tab_general"><br/>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Enable backend" %}</label>
+                          <div class="col-sm-5">
+                            {{form.enabled}}
+                            {{form.enabled.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <div class="col-sm-5">
+                              {{form.name}}
+                              {{form.name.errors|safe}}
+                            </div>
+                          </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Mode" %}</label>
+                          <div class="col-sm-5">
+                            {{form.mode}}
+                            {{form.mode.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Timeout connect" %}</label>
+                          <div class="col-sm-5">
+                            {{form.timeout_connect}}
+                            {{form.timeout_connect.errors|safe}}
+                          </div>
+                          <div class="col-sm-2">
+                            {% trans " ms" %}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Timeout server" %}</label>
+                          <div class="col-sm-5">
+                            {{form.timeout_server}}
+                            {{form.timeout_server.errors|safe}}
+                          </div>
+                          <div class="col-sm-2">
+                            {% trans " s" %}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Tags" %}</label>
+                          <div class="col-sm-5">
+                            {{form.tags}}
+                            {{form.tags.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                  </div> <!-- /.tab-pane -->
+                  <div class="tab-pane" id="tab_servers">
+
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group"><br/>
+                            <label class="col-sm-4 control-label">{{ form.balancing_mode.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.balancing_mode}}
+                              {{form.balancing_mode.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group http-mode">
+                            <label class="col-sm-4 control-label">{{ form.http_backend_dir.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.http_backend_dir}}
+                              {{form.http_backend_dir.errors|safe}}
+                            </div>
+                          </div>
+                          <div class="form-group" id="balancing_param">
+                            <label id="balancing_param_label" class="col-sm-4 control-label">{{ form.balancing_param.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.balancing_param}}
+                              {{form.balancing_param.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row  -->
+
+                    <fieldset class="col-lg-12 sol-sm-12">
+                      <legend>{% trans "Backend servers" %}</legend>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <table id="server_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                            <!-- Here are the attributes of Server class -->
+                            <thead>
+                              {{ server_form.as_table_headers|safe }}
+                            </thead>
+                            <tbody>
+                              {% for s in servers %}
+                                {{ s.as_table_td|safe }}
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                          <button class="addlink addplus" id="add_server" type="button">{% trans "Add an Entry" %}</button>
+                          {{ form.servers.errors|safe }}
+                          <input id="servers" name="servers" value="" type="hidden">
+                        </div>
+                      </div>
+                    </fieldset>
+                  </div>
+                  <div class="tab-pane" id="tab_http">
+                  <br/>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{form.accept_invalid_http_response.label}}</label>
+                          <div class="col-sm-4">
+                            {{form.accept_invalid_http_response}}
+                            {{form.accept_invalid_http_response.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{form.http_forwardfor_header.label}}</label>
+                          <div class="col-sm-3">
+                            {{form.http_forwardfor_header}}
+                            {{form.http_forwardfor_header.errors|safe}}
+                          </div>
+                          <label class="col-sm-3 control-label">{{form.http_forwardfor_except.label}}</label>
+                          <div class="col-sm-3">
+                            {{form.http_forwardfor_except}}
+                            {{form.http_forwardfor_except.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{form.enable_http_keep_alive.label}}</label>
+                          <div class="col-sm-3">
+                            {{form.enable_http_keep_alive}}
+                            {{form.enable_http_keep_alive.errors|safe}}
+                          </div>
+                        </div>
+                        <div class="form-group http-keep-alive">
+                          <label class="col-sm-3 control-label">{{form.http_keep_alive_timeout.label}}</label>
+                          <div class="col-sm-3">
+                            {{form.http_keep_alive_timeout}}
+                            {{form.http_keep_alive_timeout.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{form.enable_http_health_check.label}}</label>
+                          <div class="col-sm-1">
+                            {{form.enable_http_health_check}}
+                          </div>
+                          <div class="col-sm-6 http-health-check">
+                            <div class="row col-sm-12">
+                              <div class="col-sm-4">
+                                {{form.http_health_check_method}}
+                                {{form.http_health_check_method.errors|safe}}
+                              </div>
+                              <div class="col-sm-4">
+                                {{form.http_health_check_uri}}
+                                {{form.http_health_check_uri.errors|safe}}
+                              </div>
+                              <div class="col-sm-4">
+                                {{form.http_health_check_version}}
+                                {{form.http_health_check_version.errors|safe}}
+                              </div>
+                            </div>
+                            <div class="col-sm-12" style="padding-top: 10px">
+                              <table id="http_health_check_headers_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                                <thead>
+                                  {{ http_health_check_headers_form.as_table_headers|safe }}
+                                </thead>
+                                <tbody>
+                                  {% for header in http_health_check_headers %}
+                                    {{header.as_table_td|safe}}
+                                  {% endfor %}
+                                </tbody>
+                              </table>
+                            </div>
+                            <button class="addlink addplus" id="add_http_health_check_header" type="button">{% trans "Add an Entry" %}</button>
+                            <input id="http_health_check_headers" name="http_health_check_headers" value="" type="hidden">
+                            {{ http_health_check_headers.errors|safe }}
+                            {{form.enable_http_health_check.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row http-health-check">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.http_health_check_expect_match.label}}</label>
+                          <div class="col-sm-4">
+                            {{form.http_health_check_expect_match}}
+                            {{form.http_health_check_expect_match.errors|safe}}
+                          </div>
+                          <div class="col-sm-4">
+                            {{form.http_health_check_expect_pattern}}
+                            {{form.http_health_check_expect_pattern.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+
+                  </div> <!-- /.tab-pane tab_http -->
+                  <div class="tab-pane" id="tab_headers"><br/>
+                    <div class="row http-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <table id="header_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                            <thead>
+                              {{ header_form.as_table_headers|safe }}
+                            </thead>
+                            <tbody>
+                              {% for h in headers %}
+                                {{ h.as_table_td|safe }}
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                          <button class="btn btn-flat btn-primary addplus" id="add_header" type="button">{% trans "Add an Entry" %}</button>
+                          {{ form.headers.errors|safe }}
+                          <input id="headers" name="headers" value="" type="hidden">
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane tab_headers -->
+                  <div class="tab-pane" id="tab_custom"><br/>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{% trans "HAProxy Backend Config" %}</label>
+                          <div class="col-sm-8">
+                            {{form.custom_haproxy_conf}}
+                            {{form.custom_haproxy_conf.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane tab_custom -->
+                </div>
+              </div>
+            </div>
+            </div>
+            <div class="panel-footer">
+              <a type="button" href="{% url 'applications.backend.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  //$(function() {
+
+    /* Switchery mandatory code */
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(html) {
+      var switchery = new Switchery(html, {
+        'color': '#FA9834',
+      });
+    });
+
+    /* All events to refresh (re-apply) after a table is modified */
+    function refresh_table_events() {
+
+      /* Function used to delete an object .btnDelete */
+      $('.btnDelete').on('click', function(e) {
+        $(this).parent().parent().remove();
+      });
+
+      /* Re-initialize select2 objects */
+      $('.select2').select2();
+
+      /* Re-initialize Tag-Editor events */
+      /* Try to destroy old tag-editor elements */
+      try { $(".tag-editor-space").tagEditor('destroy');
+      } catch(e) {};
+      try { $(".tag-editor-comma").tagEditor('destroy');
+      } catch(e) {};
+      /* And re-add TagEditor behavior for tag-editor custom classes */
+      $(".tag-editor-space").tagEditor({
+        delimiter: ' '
+      });
+      $(".tag-editor-comma").tagEditor({
+        delimiter: ','
+      });
+    }
+
+
+    /* Function used to auto-complete tagEditor */
+    function autoComplete(list, begin) {
+      var result = Array();
+      var size_list = list.length;
+      for( i=0 ; i<size_list ; i++ )
+        if( list[i].startsWith(begin) )
+          result.push(list[i]);
+      return result;
+    }
+
+
+    /* Show fields depending on chosen mode */
+    $('#id_mode').on('change', function(event) {
+      var mode = $(this).val();
+      $('.http-mode').hide();
+      $('.tcp-mode').hide();
+      $('.'+mode+'-mode').show();
+    });
+    $('#id_mode').trigger('change');
+
+
+    /* Show balancing_params depending on balancing_mode chosen */
+    var is_last_mode_cookie=false;
+    function toggle_balancing_mode() {
+      var balancing_mode = $('#id_balancing_mode').val();
+      if( balancing_mode === "url_param" )
+        $('#balancing_param_label').html("URL parameter");
+      if( balancing_mode === "hdr" )
+        $('#balancing_param_label').html("Header");
+      if( balancing_mode === "rdp-cookie" ) {
+        $('#balancing_param_label').html("Cookie");
+        $('#id_balancing_param').val("mstshash");
+        is_last_mode_cookie = true;
+      } else if( is_last_mode_cookie ) {
+        is_last_mode_cookie = false;
+        $('#id_balancing_param').val("");
+      }
+      if( ["url_param", "hdr", "rdp-cookie"].indexOf(balancing_mode) != -1 ) {
+        $('#balancing_param').show();
+      } else {
+        $('#balancing_param').hide();
+      }
+    }
+    $('#id_balancing_mode').on('change', toggle_balancing_mode);
+    toggle_balancing_mode();
+
+
+    /* Show HTTP fields depending on switches state */
+    function http_health_check_toggle(){
+      if( document.querySelector('#id_enable_http_health_check').checked )
+        $('.http-health-check').show();
+      else
+        $('.http-health-check').hide();
+    }
+    function http_keep_alive_toggle(){
+      if( document.querySelector('#id_enable_http_keep_alive').checked )
+        $('.http-keep-alive').show();
+      else
+        $('.http-keep-alive').hide();
+    }
+    $('#id_enable_http_health_check').on('change', http_health_check_toggle);
+    $('#id_enable_http_keep_alive').on('change', http_keep_alive_toggle);
+    http_health_check_toggle();
+    http_keep_alive_toggle();
+
+    /* Servers code */
+    var id = 0;
+    /* Add default ServerForm to server_table */
+    $("#add_server").on("click", function(e) {
+      $('#server_table').append(`{{server_form.as_table_td|safe}}`);
+      refresh_table_events();
+      id++;
+    });
+
+
+    /* Request-headers code */
+    var id2 = 0;
+    /* Add default HeaderForm to headers_table */
+    $("#add_header").on("click", function(e) {
+      $('#header_table').append(`{{header_form.as_table_td|safe}}`);
+      refresh_table_events();
+      id2++;
+    });
+
+    /* Http-health-check-headers code*/
+    $("#add_http_health_check_header").on("click", function(e) {
+      $('#http_health_check_headers_table').append(`{{http_health_check_headers_form.as_table_td|safe}}`);
+      refresh_table_events();
+    });
+
+    /* Build http_headers and servers fields with tables content */
+    $('#backend_edit_form').submit(function(event) {
+      var servers = new Array();
+
+      $('#server_table tbody tr').each(function(index, tr) {
+        // TODO : Do this as generic
+        var id = tr.children[0].innerHTML;
+        var target = tr.children[1].children[0].value;
+        var port = tr.children[2].children[0].valueAsNumber;
+        var tls_profile = tr.children[3].children[0].value;
+        var weight = tr.children[4].children[0].valueAsNumber;
+        var source = tr.children[5].children[0].value;
+        servers.push({'id': id, 'target': target, 'port': port, 'tls_profile': tls_profile,
+                        'weight': weight, 'source': source});
+      });
+      $('#servers').val(JSON.stringify(servers));
+      if( $('#id_mode').val() == "http" ) {
+        var headers = new Array();
+        $('#header_table tbody tr').each(function(index, tr) {
+          var id = tr.children[0].innerHTML;
+          var enabled = tr.children[1].children[0].checked;
+          var type = tr.children[2].children[0].value;
+          var action = tr.children[3].children[0].value;
+          var header_name = tr.children[4].children[0].value;
+          var match = tr.children[5].children[0].value;
+          var replace = tr.children[6].children[0].value;
+          var condition_action = tr.children[7].children[0].value;
+          var condition = tr.children[8].children[0].value;
+          headers.push({'id': id, 'enabled': enabled, 'type': type, 'action': action, 'header_name': header_name,
+                        'match': match, 'replace': replace, 'condition_action': condition_action,
+                        'condition': condition});
+        });
+        $('#headers').val(JSON.stringify(headers));
+        let check_headers = new Array()
+        $('#http_health_check_headers_table tbody tr').each(function(index, tr){
+          let check_header_name = tr.children[0].children[0].value
+          let check_header_value = tr.children[1].children[0].value
+          check_headers.push({'check_header_name': check_header_name, 'check_header_value': check_header_value});
+        })
+        $('#http_health_check_headers').val(JSON.stringify(check_headers));
+      }
+      // event.preventDefault();
+    });
+
+    $('.tag-editor').css({"min-width": "100px"});
+
+    /* Initialize all custom fields */
+    refresh_table_events();
+
+    /* temp fix to remove red error color over red background */
+    $('.errorlist li').css("color", "#fff")
+
+  //}); // end of function()
+
+{% endblock %}

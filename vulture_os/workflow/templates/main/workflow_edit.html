@@ -1,0 +1,108 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+    <link rel="stylesheet" href="{% static 'plugins/visjs/visjs.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'plugins/jquery-confirm/jquery-confirm.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'plugins/jstree/themes/default/style.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome4/css/font-awesome.min.css' %}"/>
+{% endblock %}
+
+{% block js_include %}
+    <script src="{% static 'plugins/jstree/jstree.min.js' %}"></script>
+    <script src="{% static 'plugins/jquery-confirm/jquery-confirm.min.js' %}"></script>
+    <script src="{% static 'plugins/jquery-match-height/jquery-match-height.min.js' %}"></script>
+    <script src="{% static 'plugins/visjs/visjs.min.js' %}"></script>
+    <script src="{% static 'js/workflow_form.js' %}"></script>
+    <script src="{% static 'js/workflow.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+  <section class="content form-horizontal" id="workflow_vue">
+    <div class="row">
+        <form id="workflow_save_form" action="#">
+            {% csrf_token %}
+            <div class="col-md-12">
+                <div class="panel">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"><i class="fab fa-hubspot">&nbsp;</i>{% trans "Workflow" %}</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="panel panel-colorful panel-dark" id="block-tree">
+                                    <div class="panel-body" id="toolbox">
+                                        <div class="form-group">
+                                            <label>{% trans "Enabled" %}:</label>
+                                            <input type="checkbox" class="js-switch" id="id_enabled" name="enabled" {% if workflow.enabled %} checked="checked" {% endif %}/>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>{% trans "Workflow name" %}:</label>
+                                            <input type="text" class="form-control" id="id_name" name="name" value="{{ workflow.name }}"/>
+                                        </div>
+                                        <div class="input-group" id="toolbox-workflow">
+                                            <input type="text" id="search-toolbox" placeholder="{% trans 'Search' %}" class="form-control input-sm"/>
+                                            <span class="input-group-btn">
+                                                <button class="btn btn-success btn-sm" id="search-toolbox-btn" type="button"><i class="fa fa-search"></i>&nbsp;Search</button>
+                                                <button class="btn btn-purple btn-sm" v-on:click="get_dependencies()" type="button"><i class="fas fa-sync"></i></button>
+                                            </span>
+                                        </div>
+                                        <hr/>
+                                        <div id="toolbox-jstree">
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-9">
+                                <div class="panel panel-bordered-primary" id="block-visualisation">
+                                    <div class="panel-body">
+                                        <div class="row">
+                                            <div id="workflow-visualisation" style="height: 600px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="pull-right">
+                                    <label><i class="fa fa-cloud fa-2x"></i>&nbsp;&nbsp;{% trans "Internet" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-sitemap fa-2x"></i>&nbsp;&nbsp;{% trans "Frontend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-lock fa-2x"></i>&nbsp;&nbsp;{% trans "ACL" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-server fa-2x"></i>&nbsp;&nbsp;{% trans "Backend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-database fa-2x"></i>&nbsp;&nbsp;{% trans "Logs" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><img id="favicon-legend" src="{% static 'img/favicon.ico' %}"/>&nbsp;&nbsp;{% trans "Defender Policy" %}</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <a href="{% url 'workflow.list' %}" class="btn btn-flat btn-default"><i class="fa fa-times">&nbsp;&nbsp;</i>{% trans "Cancel" %}</a>
+                        <button type="submit" id="btn-save-workflow" class="btn btn-flat btn-success pull-right"><i class="fa fa-check">&nbsp;&nbsp;</i>{% trans "Save" %}</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+  </section>
+
+{% endblock %}
+
+
+{% block jquery_code %}
+
+    var workflow_id = "{{ workflow.pk }}";
+    var vulture_logo = "{% static 'img/vulture-logo.png' %}";
+    var server_icon = "{% static 'plugins/visjs/img/network/server-icon.jpg' %}";
+    var favicon = "{% static 'img/favicon.ico' %}";
+    var access_control_add_uri = "{% url 'darwin.access_control.edit' %}";
+    var defender_policy_add_uri = "{% url 'darwin.defender_policy.edit' %}";
+    var frontend_add_uri = "{% url 'services.frontend.edit' %}";
+    var backend_add_uri = "{% url 'applications.backend.edit' %}";
+    var worflow_list_uri = "{% url 'workflow.list' %}";
+
+{% endblock %}

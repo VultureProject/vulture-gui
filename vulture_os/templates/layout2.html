@@ -1,0 +1,330 @@
+{% load i18n static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Vulture Project | {% trans "Control Panel" %}</title>
+    <link rel='shortcut icon' href="{% static 'img/favicon.ico' %}" type='image/png'/>
+    <link rel='stylesheet' href="{% static 'css/open_sans.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'css/nifty.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'css/demo/nifty-demo-icons.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/pnotify/pnotify.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/select2/css/select2.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/switchery/switchery.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/font-awesome/css/all.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'css/themes/type-d/theme-dark.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'css/themes/type-e/theme-dark.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/contextMenu/jquery.contextMenu.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-tagsinput/bootstrap-tagsinput.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/datatables/datatable.bootstrap.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/jquery-ui/jquery-ui.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'plugins/switchery/switchery.min.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'css/predator.css' %}" type='text/css'/>
+    <link rel="stylesheet" href="{% static 'css/doc.css' %}"/>
+
+    {% block css_include %}{% endblock %}
+</head>
+
+<body>
+  <div id="container" class="effect {% if COLLAPSE %}mainnav-sm{% else %} mainnav-lg{% endif %} {% if aside %} aside-in{% endif %} {% if aside_left %} aside-left {% endif %}">
+      
+      {% include "header.html" %}
+
+      <div class="boxed">
+        <div id="content-container">
+
+          <div id="page-content">
+              {% block content %}{% endblock %}    
+          </div>
+
+        </div>
+
+        {% if aside %}
+          <aside id="aside-container">
+            <div id="aside">
+              {% block aside %}{% endblock %}
+            </div>
+          </aside>
+        {% endif %}
+
+        <div id="predator_tab"></div>
+        <div id="documentation_tab"></div>
+
+        {% include "sidebar2.html" %}
+
+      </div>
+
+      <footer id="footer">
+      </footer>
+
+      <button class="scroll-top btn">
+          <i class="pci-chevron chevron-up"></i>
+      </button>
+
+  </div>
+
+  <script src="{% static 'js/jquery.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'js/nifty.min.js' %}"></script>
+  <script src="{% static 'js/enrich.js' %}"></script>
+  <script src="{% static 'plugins/datatables/jquery.dataTables.js' %}"></script>  
+  <script src="{% static 'plugins/datatables/dataTables.bootstrap.js' %}"></script>
+  <script src="{% static 'plugins/tageditor/jquery.tag-editor.min.js' %}"></script>
+  <script src="{% static 'plugins/switchery/switchery.min.js' %}"></script>
+  <script src="{% static 'plugins/contextMenu/jquery.contextMenu.min.js' %}"></script>
+  <script src="{% static 'plugins/bootstrap-tagsinput/typeahead.bundle.js' %}"></script>
+  <script src="{% static 'plugins/bootstrap-tagsinput/bootstrap-tagsinput.min.js' %}"></script>
+  <script src="{% static 'plugins/jquery-ui/jquery-ui.min.js' %}"></script>
+  <script src="{% static 'js/showdown.min.js' %}"></script>
+  <script src="{% static 'js/doc.js' %}"></script>
+  <script src="{% static 'plugins/momentjs/moment.min.js' %}"></script>
+  <script src="{% static 'plugins/select2/js/select2.min.js' %}"></script>
+  <script src="{% static 'plugins/switchery/switchery.min.js' %}"></script>
+  <script src="{% static 'plugins/pnotify/pnotify.min.js' %}"></script>
+  <script src="//cdn.datatables.net/plug-ins/1.10.19/api/fnReloadAjax.js"></script>
+  <script src="{% url 'javascript-catalog' %}"></script>
+
+  {% if DEV_MODE %}
+    <script src="{% static 'plugins/vue/vue.js' %}"></script>
+  {% else %}
+    <script src="{% static 'plugins/vue/vue.min.js' %}"></script>
+  {% endif %}
+
+  <script>
+
+    PNotify.prototype.options.styling = "bootstrap3";
+    PNotify.prototype.options.styling = "fontawesome";
+
+    function notify(type, title, message){
+      PNotify.removeAll();
+
+      var config = {
+        title: title,
+        type: type,
+        buttons: {
+          close: true,
+          sticker: false
+        },
+        nonblock:{
+          nonblock: false
+        }
+      }
+
+      if (type === "error")
+        config.hide = false;
+
+      if (message)
+        config.text = message;
+
+      if (type !== "error"){
+        new PNotify(config).get().click(function(){
+          this.remove();
+        })
+      } else {
+        new PNotify(config);
+      }
+    }
+
+    String.prototype.format = function() {
+      var args = arguments;
+      return this.replace(/{(\d+)}/g, function(match, number) { 
+        return typeof args[number] != 'undefined'
+          ? args[number]
+          : match
+        ;
+      });
+    };
+
+    function check_json_error(response){
+      if (!response.status){
+        if (response.error === "need_login"){
+          window.location.href = window.location.href;
+        } else {
+          notify('error', '{% trans "Error" %}', response.error);
+        }
+        return false;
+      }
+
+      return true;
+    }
+
+    $(document).ready(function() {
+        $('[data-toggle="tooltip"]').tooltip({placement:"bottom"});
+    });
+
+    $(function(){
+      
+      var page = "{{ request.resolver_match.url_name }}";
+
+      page = page.split('.')
+
+      {% if DEV_MODE %}
+        console.log(page);
+      {% endif %}
+
+      for (var i in page){
+        if (i > 0){
+          $(".link_{0}_{1}".format(page[i-1], page[i])).addClass('active active-link');
+        } else {
+          $('.collapse_{0}'.format(page[i])).addClass('in')
+          $(".link_{0}".format(page[i])).addClass('active active-sub');
+        }
+      }
+
+      // Menu collapse
+      $('#collapse-menu').on('click', function(){
+
+        setTimeout(function(){
+          var collapse = $('#container').hasClass('mainnav-sm');
+
+          $.get(
+            "{% url 'gui.collapse_menu' %}", 
+            {
+              collapse: collapse
+            },
+
+            function(response){}
+          )
+        }, 200);
+      })
+    });
+
+    var rss_vue = new Vue({
+      el: "#menu_rss",
+      delimiters: ["${", "}"],
+      data: {
+        rss_list: []
+      },
+
+      methods: {
+        width_tasks: function(val){
+          if (val > 0)
+            return 'col-md-9';
+
+          return 'col-md-12';
+        },
+
+        label_rss_li: function(type){
+          return 'task-{0}'.format(type);
+        },
+
+        label_rss: function(type){
+          return "label label-{0}".format(type);
+        },
+
+        del_notif: function(rss){
+          var self = this;
+
+          var data = {
+            csrfmiddlewaretoken: getCookie('csrftoken'),
+            rss: rss.id
+          }
+
+          $.post(
+            '{% url "gui.rss" %}',
+            data,
+
+            function(response){
+              if (check_json_error(response)){
+                for (var i in self.rss_list){
+                  if (self.rss_list[i].id === rss.id)
+                    self.rss_list.splice(i, 1);
+                }
+              }
+            }
+          )
+        },
+
+        fetch_rss: function(){
+          var self = this;
+          
+          $.getJSON('{% url "gui.rss" %}', null, function(response){
+            if (check_json_error(response))
+              self.rss_list = response.rss;
+          })  
+        }
+      },
+
+      mounted: function(){
+        var self = this;
+
+        self.fetch_rss();
+        setInterval(function(){
+          self.fetch_rss();
+        }, 30000)
+      },
+
+      updated: function(){
+        $('.li-notif').on('click', function(e){
+          e.stopPropagation();
+        })
+      }
+    })
+
+
+    function csrfSafeMethod(method) {
+      // these HTTP methods do not require CSRF protection
+      return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+          var cookie = jQuery.trim(cookies[i]);
+          // Does this cookie string begin with the name we want?
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    var csrftoken = $('input[name=csrfmiddlewaretoken]').val();
+
+    $.ajaxSetup({
+      beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+        }
+      }           
+    });
+
+    /* DATATABLE */
+    var language_datatable = {
+      sLengthMenu: '_MENU_',
+      oPaginate  :{
+        sNext    : '',
+        sPrevious: ''
+      }
+    }
+    /* DATATABLE */
+
+    var documentation_uri = "{% url 'documentation' %}";
+    var predator_uri = "{% url 'darwin.predator' %}";
+    var predator_submit_uri = "{% url 'darwin.predator_submit' %}";
+    var system_pf_list_uri = '{% url "system.pf.list" %}';
+
+    {% block jquery_code %}{% endblock %}
+
+    $($('.dataTables_filter').find('input')[0]).addClass('form-control');
+    $($('.dataTables_length').find('select')[0]).addClass('form-control');
+  </script>
+
+  <script src="{% static 'js/layout.js' %}"></script>
+
+  {% block js_include %}{% endblock %}
+
+</body>
+</html>
