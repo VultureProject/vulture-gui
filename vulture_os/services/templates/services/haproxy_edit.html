@@ -1,0 +1,86 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+    <link rel="stylesheet" href="{% static 'plugins/datatables/datatables.min.css' %}">
+
+{% endblock %}
+
+{% block js_include %}
+
+    <script src="{% static 'plugins/datatables/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'plugins/datatables/dataTables.bootstrap.js' %}"></script>
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="haproxy_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="panel">
+              <div class="panel-heading">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>HAProxy</h1>
+              </div>
+              <div class="panel-body">
+
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="nav-tabs-custom">
+                      <ul class="nav nav-tabs">
+                        <li class="active"><a href="#general" data-toggle="tab">{% trans "General" %}</a></li>
+                        <li><a href="#tab_front" data-toggle="tab">{% trans "Listeners" %}</a></li>
+                        <li><a href="#tab_back" data-toggle="tab">{% trans "Applications" %}</a></li>
+                      </ul>
+                      <div class="tab-content">
+                        <div class="tab-pane active" id="general">
+                          <div class="form-group">
+                            <label class="col-md-4 control-label">{% trans "Name" %}</label>
+                            <div class="col-md-5">
+                              {{form.name}}
+                              {{form.name.errors}}
+                            </div>
+                          </div>
+                        </div>
+                        <!-- /.tab-pane -->
+                        <div class="tab-pane" id="tab_front">
+                          <div class="form-group">
+                            <label class="col-md-4 control-label">{% trans "Listeners" %}</label>
+                            <div class="col-md-5">
+                              {{form.listeners}}
+                              {{form.listeners.errors}}
+                            </div>
+                          </div>
+                        </div>
+                        <!-- /.tab-pane -->
+                        <div class="tab-pane" id="tab_back">
+
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="panel-footer">
+                <a href="{% url 'services.haproxy.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              </div>
+            </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  // Load select2 for the MultipleSelect fields
+  $('.select2').select2();
+
+{% endblock %}

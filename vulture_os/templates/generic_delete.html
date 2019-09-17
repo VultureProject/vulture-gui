@@ -1,0 +1,94 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block navleft %}
+    <li><h3><i class="fa fa-folder-open"></i>&nbsp;{{menu_name}}</h3></li>
+{% endblock %}
+
+{% block content %}
+
+<section class="content">
+    <form id="edit_form" class="form-horizontal bootstrap-validator-form" action="{{ delete_url }}{{ object_id }}" method="post" novalidate="novalidate">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          {% if error %}
+            <div class="panel panel-colorful panel-danger">
+              <div class="panel-heading">
+                <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
+                </ul>
+                <h4 class="panel-title">Deletion error</h4>
+              </div>
+              <div class="panel-body">
+                <div>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre class="console-type">{{ error }}</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+          <div class="panel box-delete">
+            <div class="panel-heading">
+              <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{{ menu_name }}</h1>
+            </div>
+            <div class="panel-body">
+              <input type="hidden" name="confirm" value="yes" />
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-12 text-center">
+                      {% if not used_by %}
+                      {% trans "Are you sure you want to delete " %}{{ obj_inst }} ? <br />
+                      {% if related_objs %}
+                            {% trans "All related objects will be destroyed : " %}
+                            <ul>{% for related in related_objs %}
+                                <li>{{ related }}</li>
+                                {% endfor %}</ul>
+                            {% endif %}
+                      {% else %}
+                      {% trans "Cannot delete " %}{{ obj_inst }} <br/>
+                      {% trans "This object is currently used by " %}
+                        <ul>
+                          {% for used in used_by %}
+                            <li><b>{{used}}<b></li>
+                          {% endfor %}
+                        </ul>
+                      {% endif %}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div> <!-- /.tab-pane tab_custom -->
+            <div class="panel-footer">
+              <a href="{{ redirect_url }}"><button class="btn btn-warning btn-cancel" type="button">
+                <i class="fas fa-times">&nbsp;&nbsp;</i>{% trans "CANCEL"  %}</button></a>
+                {% if not used_by %}
+                <button id="submit" class="btn btn-danger pull-right btn-save" type="submit">
+                    <i class="fas fa-check">&nbsp;&nbsp;</i>{% trans "Yes" %}
+                </button>
+                {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+{% endblock %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+{% block jquery_code  %}
+  
+{% endblock %}

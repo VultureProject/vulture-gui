@@ -1,0 +1,243 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="netif_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="panel">
+              <div class="panel-heading">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Cluster Configuration" %}</h1>
+              </div>
+              <div class="panel-body">
+                <div class="row">
+                    {# Print form errors correctly #}
+                    {% for error in form.errors.values %}
+                      {{  error|safe }}
+                    {%  endfor %}
+                    {{api_error}}
+                  <div class="col-md-12 nav-tabs-custom">
+                      <ul class="nav nav-tabs">
+                        <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+                        <li><a href="#tab_network" data-toggle="tab">{% trans "Network" %}</a></li>
+                        <li><a href="#tab_api" data-toggle="tab">{% trans "REST Api" %}</a></li>
+                        <li><a href="#tab_auth" data-toggle="tab">{% trans "Authentication" %}</a></li>
+                        <li><a href="#tab_sso" data-toggle="tab">{% trans "SSO" %}</a></li>
+                        <li><a href="#tab_logs" data-toggle="tab">{% trans "Logs settings" %}</a></li>
+                      </ul>
+                      <div class="tab-content">
+                        <br/>
+                        <div class="tab-pane active" id="tab_general">
+                          <div class="row">
+                            <div class="form-group col-md-12">
+                              <label class="col-sm-4 control-label">{% trans "Customer name" %}</label>
+                              <div class="col-sm-5">
+                                {{form.customer_name}}
+                                {{form.customer_name.errors|safe}}
+                              </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                              <label class="col-sm-4 control-label">{% trans "Release branch" %}</label>
+                              <div class="col-sm-5">
+                                {{form.branch}}
+                                {{form.branch.errors|safe}}
+                              </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                              <label class="col-sm-4 control-label">{% trans "Predator API KEY" %}</label>
+                              <div class="col-sm-5">
+                                <div class="input-group">
+                                  {{form.predator_apikey}}
+                                  <span class="input-group-btn">
+                                    <button class="btn btn-primary" type="button" id="reinit_predator_key" data-key="fdsqJr_45;..">{% trans "Reinit" %}</button>
+                                  </span>
+                                </div>
+                                {{form.predator_apikey.errors|safe}}
+                              </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                              <label class="col-sm-4 control-label">{% trans "Shodan API KEY" %}</label>
+                              <div class="col-sm-5">
+                                {{form.shodan_apikey}}
+                                {{form.shodan_apikey.errors|safe}}
+                                <span class="text-primary">{% trans "Connect to" %} <a href="https://shodan.io">Shodan.io</a> {% trans "to get an API KEY" %}</span>
+                              </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                              <label class="col-sm-4 control-label">{% trans "vlt-adm SSH authorized_keys" %}</label>
+                              <div class="col-sm-5">
+                                {{form.ssh_authorized_key}}
+                                {{form.ssh_authorized_key.errors|safe}}
+                              </div>
+                            </div>
+                            </div>
+                          </div>
+                          <div class="tab-pane" id="tab_network">
+                              <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "SMTP server" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.smtp_server}}
+                                        {{form.smtp_server.errors|safe}}
+                                      </div>
+                                    </div>
+                                    <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "Allowed sources for SSH connexion" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.pf_ssh_restrict}}
+                                        {{form.pf_ssh_restrict.errors|safe}}
+                                      </div>
+                                    </div>
+                                    <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "Allowed sources for GUI connexion" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.pf_admin_restrict}}
+                                        {{form.pf_admin_restrict.errors|safe}}
+                                      </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "Packet Filter Whitelist" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.pf_whitelist}}
+                                        {{form.pf_whitelist.errors|safe}}
+                                      </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "Packet Filter Blacklist" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.pf_blacklist}}
+                                        {{form.pf_blacklist.errors|safe}}
+                                      </div>
+                                    </div>
+                                </div>
+                              </div>
+                          </div>
+                          <div class="tab-pane" id="tab_api">
+                              <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "API Key for Cluster Management" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.cluster_api_key}}
+                                        {{form.cluster_api_key.errors|safe}}
+                                      </div>
+                                    </div>
+                                </div>
+                              </div>
+                          </div>
+                          <div class="tab-pane" id="tab_auth">
+                              <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "LDAP repository for GUI authentication" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.ldap_repository}}
+                                        {{form.ldap_repository.errors|safe}}
+                                      </div>
+                                    </div>
+                                </div>
+                              </div>
+                          </div>
+                          <div class="tab-pane" id="tab_sso">
+                              <div class="row">
+                                <div class="col-md-12">
+                                     <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "Header name for OAuth2 authentication" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.oauth2_header_name}}
+                                        {{form.oauth2_header_name.errors|safe}}
+                                      </div>
+                                    </div>
+                                     <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "Portal cookie name" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.portal_cookie_name}}
+                                        {{form.portal_cookie_name.errors|safe}}
+                                      </div>
+                                    </div>
+                                     <div class="form-group">
+                                      <label class="col-sm-4 control-label">{% trans "Public token" %}</label>
+                                      <div class="col-sm-5">
+                                        {{form.public_token}}
+                                        {{form.public_token.errors|safe}}
+                                      </div>
+                                    </div>
+                                </div>
+                              </div>
+                          </div>
+                        <div class="tab-pane" id="tab_logs">
+                          <div class="row">
+                            <div class="form-group col-md-12">
+                              <label class="col-sm-4 control-label">{{ form.logs_ttl.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.logs_ttl}}
+                                <small style="color: grey;">{{ form.logs_ttl.help_text }}</small>
+                                {{form.logs_ttl.errors|safe}}
+                              </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                              <label class="col-sm-4 control-label">{% trans "Logs encryption PEM certificate" %}</label>
+                              <div class="col-sm-5">
+                                {{form.rsa_encryption_key}}
+                                {{form.rsa_encryption_key.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+
+              </div>
+              <div class="panel-footer">
+                <a type="button" href="{% url 'system.netif.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $('.tageditor').tagEditor();
+
+  $('#reinit_predator_key').on('click', function(){
+    $('#id_predator_apikey').val($(this).data('key'));
+  });
+
+  {% if success %}
+  new PNotify({
+    title: "Success",
+    text: '<a style="color:white; font-weight: bold;">Form saved</a>',
+    type: 'success',
+    styling: 'bootstrap3',
+    width: '500px',
+    buttons: {
+        closer: true,
+        sticker: false
+    }
+  });
+  {% endif %}
+
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.tls_profile.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "TLS Profile" %}</h1>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="tls_list">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+        </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name", aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Certificate" %}',
+      name: "subject", aTargets: [2],
+      defaultContent: "",
+      mData: "x509_certificate",
+      mRender: function(data, type, row) {
+        return data.replace(/Vulture_PKI_.*/,"Vulture_PKI");
+      }
+    },
+    {
+      sTitle: '{% trans "Protocols" %}',
+      name: "issuer", aTargets: [3],
+      defaultContent: "",
+      mData: "protocols",
+    },
+    {
+      sTitle: '{% trans "Verify client" %}',
+      name: "verify_client", aTargets: [4],
+      defaultContent: "",
+      mData: "verify_client",
+    },
+    {
+      sTitle: '{% trans "Client CA" %}',
+      name: "ca_cert", aTargets: [5],
+      defaultContent: "",
+      mData: "ca_cert",
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [6],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        return '<a class="btn btn-flat btn-xs btn-primary" href="/system/tls_profile/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger" href="/system/tls_profile/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+      }
+    }
+  ];
+
+  var tls_table = $("#tls_list").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      })
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (check_json_error(data))
+            fnCallback(data);
+        }
+      })
+    },
+    fnCreatedRow: function(nRow, aData, iDataIndex){
+      $(nRow).on('click', function(e){
+        var id = aData['id'];
+        window.location.href = "{% url 'system.tls_profile.edit' %}" + id;
+      });
+    }
+  });
+
+{% endblock %}

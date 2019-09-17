@@ -1,0 +1,41 @@
+[
+    {
+        "model": "applications.logom",
+        "pk": 1,
+        "fields": {
+            "name": "Internal_MongoDB",
+            "internal": true
+        }
+    },
+    {
+        "model": "applications.logommongodb",
+        "pk": 1,
+        "fields": {
+            "logom_ptr_id": 1,
+            "db": "logs",
+            "collection": "access",
+            "uristr": "mongodb://",
+            "enabled": true,
+            "x509_certificate": null
+        }
+    },
+    {
+        "model": "applications.logom",
+        "pk": 2,
+        "fields": {
+            "name": "Internal_File",
+            "internal": true
+        }
+    },
+    {
+        "model": "applications.logomfile",
+        "pk": 2,
+        "fields": {
+            "logom_ptr_id": 2,
+            "file": "/var/log/internal/{{ruleset}}.log",
+            "flush_interval": 5,
+            "async_writing": true,
+            "enabled": true
+        }
+    }
+]

@@ -1,0 +1,274 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="policy_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="panel">
+            <div class="panel-title">
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Darwin Security policies" %}</h1>
+            </div>
+            <div class="panel-body">
+              <div class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                  <li class="active">
+                    <a href="#tab_general" data-toggle="tab">{% trans "General" %}</a>
+                  </li>
+                  <li>
+                    <a href="#tab_filters" data-toggle="tab">{% trans "Filters selection" %}</a>
+                  </li>
+
+                </ul>
+                {# Print form errors correctly #}
+                {% if form.non_field_errors %}
+                  <div class="alert alert-danger alert-dismissible">
+                    <h4><i class="icon fa fa-ban"></i> Form errors </h4>
+                    <div class="tab-content no-padding">
+                      {{ form.non_field_errors|safe }}
+                    </div>
+                  </div>
+                {% endif %}
+                {# If there is save/configuration errors #}
+                {% if save_error %}
+                  <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+                    <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                      <li><a href="#tab_2" data-toggle="tab">Advanced informations</a></li>
+                      <li class="active"><a href="#tab_1" data-toggle="tab">Message</a></li>
+                      <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
+                    </ul>
+                    <div class="tab-content no-padding">
+                      <div class="tab-pane active" id="tab_1">
+                        <pre>{{ save_error.0 }}</pre>
+                      </div>
+                      <div class="tab-pane" id="tab_2">
+                        <pre>{{ save_error.1 }}</pre>
+                      </div>
+                    </div>
+                  </div> <!-- /.alert -->
+                {% endif %}
+                {# If there is connection test errors #}
+                {% if connection_error %}
+                  <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+                    <h4>Connection error</h4>
+                    {{ connection_error }}
+                  </div> <!-- /.alert -->
+                {% endif %}
+                {# If there is success message #}
+                {% if success %}
+                  <div class="alert alert-success alert-dismissible nav-tabs-custom">
+                    <h4>Success</h4>
+                    <pre>{{ success }}</pre>
+                  </div> <!-- /.alert -->
+                {% endif %}
+                <div class="tab-content">
+                  <div class="tab-pane active" id="tab_general">
+                    <br/>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.name.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.name}}
+                              {{form.name.errors|safe}}
+                            </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.description.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.description}}
+                            {{form.description.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane -->
+                  <div class="tab-pane " id="tab_filters">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <p>
+                            {% for filterpolicy in filterpolicies %}
+                              {% if filterpolicy.errors %}
+                            <label>Filter {{ filterpolicy.filter_name.initial }}</label>
+                                {{ filterpolicy.errors|safe }}
+                              {% endif %}
+                            {% endfor %}
+                            <table class="table">
+                            <thead>
+                              {{ filterpolicies.0.as_table_headers|safe }}
+                            </thead>
+                            <tbody>
+                              {% for filterpolicy in filterpolicies %}
+                                  {{ filterpolicy.as_table_td|safe }}
+                              {% endfor %}
+                            </tbody>
+                            </table>
+                          </p>
+                        </div>
+                        <div>
+                          {% for filterpolicy in filterpolicies %}
+                            {% if filterpolicy.is_custom_fields %}
+                              <div class="modal fade" id="{{ filterpolicy.initial.filter_name }}_modal" role="dialog">
+                                <div class="modal-dialog">
+                                  <div class="modal-content">
+
+                                    <div class="modal-header">
+                                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">×</span></button>
+                                      <h4 class="modal-title">Configure {{ filterpolicy.initial.filter_name }} filter</h4>
+                                    </div>
+
+                                    <div class="modal-body">
+                                      {{ filterpolicy.as_custom_fields|safe }}
+                                    </div>
+
+                                    <div class="modal-footer">
+                                      <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane -->
+                  <div class="tab-pane" id="tab_group">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.filters.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.filters}}
+                              {{form.filters.errors|safe}}
+                            </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane -->
+                </div> <!-- /.tab-content -->
+              </div>
+            </div>
+            <div class="panel-footer">
+              <a type="button" href="{% url 'darwin.policy.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+            </div> <!-- /.box-footer -->
+          </div>
+        </form>
+      </div> <!-- /.col-md-12 -->
+    </div> <!-- /.row -->
+</section> <!-- /.content -->
+
+{% endblock %}
+
+{% block jquery_code %}
+$(document).ready(function () {
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  /* Initialize select2 objects */
+  $('.select2').select2();
+
+  /* Initialize Switchery of decision_enabled element
+  var decision_enabled_js = new Switchery(document.querySelector('#decision_enabled'), {
+    'color': '#FA9834',
+  });
+   And disable the button
+  decision_enabled_js.disable(); */
+
+  /* Re-enable decision */
+  $('#policy_edit_form').submit(function(event) {
+    decision_enabled_js.enable();
+  });
+
+
+  function handle_form_errors(data){
+    if (typeof(data['form_errors']) !== 'undefined'){
+      $('.errorlist').remove();
+      $.each(data['form_errors'], function(field_name, error_list){
+        field_selector = $('#id_'+field_name);
+        var ul = $('<ul/>').insertAfter(field_selector);
+        $.each(error_list, function(idx, err_msg){
+          console.log(err_msg);
+          var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
+          var group = $('<span/>').text(err_msg).appendTo(li);
+        });
+      });
+    }
+  }
+
+let is_switchery = true;
+
+$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+  var target = $(e.target).attr("href") // activated tab
+  if (target !== '#tab_filters' || !is_switchery) return;
+
+  is_switchery = false;
+
+  /* Switchery mandatory code */
+  var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch:not(#decision_enabled)'));
+
+    elems.forEach(function(html) {
+    var switchery = new Switchery(html, {
+      'color': '#FA9834',
+    });
+  });
+});
+
+$('.tags-input').tagsinput({
+  allowDuplicates: true
+});
+
+$('.mmdarwin-enabled-btn').each((index, element) => {
+  element = $(element)
+
+  const element_id = element.attr('id');
+  const filter_name = element_id.substr(0, element_id.indexOf('_mmdarwin_enabled'));
+  let mmdarwin_parameters_input = $(`#${filter_name}_mmdarwin_parameters`);
+
+  element.on('change', (event) => {
+    handleMMDarwinEvent(element, mmdarwin_parameters_input);
+  });
+
+  handleMMDarwinEvent(element, mmdarwin_parameters_input);
+});
+
+}); // end of function()
+
+function handleMMDarwinEvent (element, mmdarwin_parameters_input) {
+  if (element.is(':checked')) {
+      mmdarwin_parameters_input.show();
+  } else {
+    mmdarwin_parameters_input.hide();
+  }
+}
+
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="frontend_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="panel">
+            <div class="panel-heading">
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "RELP log forwarder" %}</h1>
+            </div>
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger alert-dismissible">
+                  <h4><i class="icon fa fa-ban"></i> Form errors </h4>
+                  <div class="tab-content no-padding">
+                    {{ form.non_field_errors|safe }}
+                  </div>
+                </div>
+              {% endif %}
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+                  <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                    <li><a href="#tab_2" data-toggle="tab">Advanced informations</a></li>
+                    <li class="active"><a href="#tab_1" data-toggle="tab">Message</a></li>
+                    <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
+                  </ul>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre>{{ save_error.0 }}</pre>
+                    </div>
+                    <!-- /.tab-pane -->
+                    <div class="tab-pane" id="tab_2">
+                      <pre>{{ save_error.1 }}</pre>
+                    </div>
+                    <!-- /.tab-pane -->
+                  </div>
+                </div>
+              {% endif %}
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans "Enable forwarder" %}</label>
+                    <div class="col-sm-5">
+                      {{form.enabled}}
+                      {{form.enabled.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                    <div class="col-sm-5">
+                      {{form.name}}
+                      {{form.name.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans "Remote IP" %}</label>
+                    <div class="col-sm-5">
+                      {{form.target}}
+                      {{form.target.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans "Remote TCP port" %}</label>
+                    <div class="col-sm-5">
+                      {{form.port}}
+                      {{form.port.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans "Enable TLS encryption" %}</label>
+                    <div class="col-sm-5">
+                      {{form.tls_enabled}}
+                      {{form.tls_enabled.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row tls">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans "Use TLS Certificate or CA" %}</label>
+                    <div class="col-sm-5">
+                      {{form.x509_certificate}}
+                      {{form.x509_certificate.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel-footer">
+              <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  $(function() {
+
+    $('.select2').select2();
+
+    /* Switchery mandatory code */
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(html) {
+      var switchery = new Switchery(html, {
+        'color': '#FA9834'
+      });
+    });
+
+  /* Show or hide registration fields depending on enable_registration */
+  function toggle_tls(event) {
+    if( document.querySelector('#id_tls_enabled').checked )
+      $('.tls').show();
+    else
+      $('.tls').hide();
+  }
+  $('#id_tls_enabled').on("change", toggle_tls);
+  toggle_tls();
+
+  }); // end of function()
+
+{% endblock %}

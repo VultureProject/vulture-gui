@@ -1,0 +1,46 @@
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture OS.
+
+Vulture OS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture OS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
+"""
+
+__author__ = "Jérémie JOURDIN"
+__credits__ = []
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture OS"
+__email__ = ""
+__doc__ = 'Join this node into an existing Vulture cluster'
+
+import os
+import sys
+
+if len(sys.argv) != 4:
+    print("Usage: /home/vlt-adm/gui/cluster_join <master_hostname> <master_ip> <secret_key>")
+    print("")
+    print("This command will join the current node into an existing Vulture cluster. It requires bootstrap first.")
+    sys.exit(1)
+
+if not os.path.isfile('/home/vlt-os/vulture_os/.install'):
+    print("Error: This node is not bootstraped.")
+    sys.exit(1)
+
+sys.path.append("/home/vlt-os/vulture_os/")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
+
+import django
+django.setup()
+
+from gui.views.install import cluster_join
+cluster_join(sys.argv[1], sys.argv[2], sys.argv[3])

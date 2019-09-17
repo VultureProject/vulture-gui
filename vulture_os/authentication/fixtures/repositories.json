@@ -1,0 +1,17 @@
+[
+    {
+        "model": "authentication.baserepository",
+        "pk": 1,
+        "fields": {
+            "name": "Internal Repository",
+            "subtype": "internal"
+        }
+    },
+    {
+        "model": "authentication.internalrepository",
+        "pk": 1,
+        "fields": {
+            "baserepository_ptr_id": 1
+        }
+    }
+]

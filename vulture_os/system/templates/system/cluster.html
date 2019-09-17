@@ -1,0 +1,272 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "Nodes" %}</h1>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="node_list">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+        </div>
+    </div>
+
+    <div id="modal_node" class="modal fade">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"><i class="pci-cross pci-circle"></i></button>
+            <h4 class="modal-title">{% trans "Cluster configuration" %}</h4>
+          </div>
+          <div class="modal-body" style="text-align: center">
+            <div class="row">
+              <div class="col-sm-12">
+                <p id="node_msg"></p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+   var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name", aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Network Interfaces" %}',
+      name: "addresses", aTargets: [2],
+      defaultContent: "",
+      mData: "addresses"
+    },
+     {
+      sTitle: '{% trans "MongoDB" %}',
+      name: "name", aTargets: [3],
+      defaultContent: "",
+      mData: "name",
+      mRender: function(data, type, row) {
+        buffer =  '';
+        if (row.is_master_mongo) {
+            buffer = buffer + '<label class="label label-success">PRIMARY</label>&nbsp;&nbsp;<button class="btn btn-flat btn-xs btn-danger" id="stepdown" title="{% trans "Step Down" %}"><span><i class="fa fa-chevron-down"></i></span></button>';
+        }
+        else if (row.addresses) {
+            buffer = buffer + '<label class="label label-warning">SECONDARY</label>';
+        }
+        else {
+            buffer = 'Not configured';
+        }
+        if (!row.is_master_mongo && !row.is_standalone) {
+            buffer = buffer + '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" id="remove" title="{% trans "Remove from replicaset" %}"><i class="fa fa-unlink"></i></a>';
+        }
+        else if (!row.is_master_mongo && row.is_standalone && row.addresses) {
+            buffer = buffer + '<a class="btn btn-flat btn-xs btn-danger" id="join" title="{% trans "Add to replicaset" %}"><i class="fa fa-link"></i></a>';
+        }
+        return buffer;
+      }
+    },
+     {
+      sTitle: '{% trans "Redis" %}',
+      name: "name", aTargets: [4],
+      defaultContent: "",
+      mData: "name",
+      mRender: function(data, type, row) {
+        buffer =  '';
+        if (row.is_master_redis === true) {
+            buffer = buffer + '<label class="label label-success">MASTER</label>';
+        }
+        else if (row.is_master_redis === false) {
+            buffer = buffer + '<label class="label label-warning">SLAVE</label>';
+        }
+        else if (row.addresses) {
+            buffer = buffer + '<label class="label label-danger">UNKNOWN</label>';
+        }
+        else {
+            buffer = 'Not configured';
+        }
+        return buffer;
+      }
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [5],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        var result = '<a class="btn btn-flat btn-xs btn-dark btn-console" target="_blank" href="/console/' + row.name + '/" title="{% trans 'Console' %}"><i class="fas fa-terminal"></i></a>';
+        result += '    <a class="btn btn-flat btn-xs btn-dark btn-console" target="_blank" href="/netdata/' + row.name + '/" title="{% trans 'Netdata' %}"><i class="fas fa-tachometer-alt"></i></a>';
+        result += '    <a class="btn btn-flat btn-default btn-haproxy btn-console" target="_blank" href="/haproxy-stats/' + row.name + '/" title="{% trans 'HAProxy' %}"><img class="haproxy-icon" src="{% static 'img/haproxy.ico' %}"/></a>';
+        if ( !row.is_master_redis && !row.is_master_mongo) {
+            result += '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" href="/system/cluster/delete/' + row.id + '" title="{% trans "delete" %}"><i class="fas fa-trash-alt"></i></a>';
+        }
+        return result;
+      }
+    }
+  ];
+
+  var columns = [];
+  for (var i in aoColumns){
+    var col = aoColumns[i].mData;
+    columns.push(col);
+  }
+
+  console.log(columns)
+
+  var cluster_table = $("#node_list").dataTable({
+      bServerSide   : true,
+      order         : [[1, 'desc']],
+      iDisplayLength: 10,
+      bProcessing   : true,
+      bSort         : true,
+      sAjaxSource   : '',
+      sServerMethod : 'POST',
+      aoColumnDefs: aoColumns,
+      language: language_datatable,
+      fnServerData  : function(sSource, aoData, fnCallback){
+        aoData.push({
+          name: 'columns',
+          value: JSON.stringify(columns)
+        })
+
+        $.ajax({
+          type   : "POST",
+          url    : sSource,
+          data   : aoData,
+          success: function(data, callback){
+            if (check_json_error(data))
+              fnCallback(data);
+          }
+        })
+      },
+      fnCreatedRow: function(nRow, aData, iDataIndex){
+
+        $(nRow).find(".btn-console").on('click', function(e){
+          e.stopPropagation();
+        })
+
+        /* REPL Step DOWN */
+        $(nRow).find("#stepdown").on("click", function(e) {
+          e.stopPropagation();
+
+          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Please wait ..." %}');
+          $("#modal_node").modal('show');
+
+          var id = aData['id'];
+          url = "/system/cluster/stepdown/" + id ;
+          $.ajax({
+            type   : "GET",
+            url    : url,
+            success: function(data, callback){
+                if (check_json_error(data))
+                  fnCallback(data);
+            }
+          }).fail( function( jqXHR, textStatus ) {
+            $('#node_msg').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+                                     "Status code : " + jqXHR.status + "</br>" +
+                                     "Message : " + jqXHR.statusText);
+          }).done( function( msg ) {
+            $('#node_msg').html('<p>' + msg['message'] + '</p>')
+          });
+        });
+
+        /* REMOVE From Cluster */
+        $(nRow).find("#remove").on("click", function(e) {
+          e.stopPropagation();
+
+          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Please wait ..." %}');
+          $("#modal_node").modal('show');
+
+          var id = aData['id'];
+          url = "/system/cluster/remove/" + id ;
+          $.ajax({
+            type   : "GET",
+            url    : url,
+            success: function(data, callback){
+                if (check_json_error(data))
+                  fnCallback(data);
+            }
+          }).fail( function( jqXHR, textStatus ) {
+            $('#node_msg').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+                                     "Status code : " + jqXHR.status + "</br>" +
+                                     "Message : " + jqXHR.statusText);
+          }).done( function( msg ) {
+            $('#node_msg').html('<p>' + msg['message'] + '</p>')
+          });
+        });
+
+        /* JOIN into Cluster */
+        $(nRow).find("#join").on("click", function(e) {
+          e.stopPropagation();
+
+          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Please wait ..." %}');
+          $("#modal_node").modal('show');
+
+          var id = aData['id'];
+          url = "/system/cluster/join/" + id ;
+          $.ajax({
+            type   : "GET",
+            url    : url,
+            success: function(data, callback){
+                if (check_json_error(data))
+                  fnCallback(data);
+            }
+          }).fail( function( jqXHR, textStatus ) {
+            $('#node_msg').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+                                     "Status code : " + jqXHR.status + "</br>" +
+                                     "Message : " + jqXHR.statusText);
+          }).done( function( msg ) {
+            $('#node_msg').html('<p>' + msg['message'] + '</p>')
+          });
+        });
+
+
+
+        $(nRow).on('click', function(e){
+          var id = aData['id'];
+          window.location.href = "/system/cluster/edit/" + id;
+        });
+      }
+  });
+
+{% endblock %}

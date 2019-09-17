@@ -1,0 +1,152 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.zfs.refresh' %}"><i class="fas fa-sync-alt">&nbsp;</i>{% trans "Refresh LIST" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "ZFS datasets" %}</h1>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="zfs_list">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+        </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+   var aoColumns = [
+    {
+      sTitle: '{% trans "Node" %}',
+      name: "node", 
+      aTargets: [0],
+      defaultContent: "",
+      mData: "node"
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name", 
+      aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Used" %}',
+      name: "used", 
+      aTargets: [2],
+      defaultContent: "",
+      mData: "used"
+    },
+    {
+      sTitle: '{% trans "Available" %}',
+      name: "avail", 
+      aTargets: [3],
+      defaultContent: "",
+      mData: "avail"
+    },
+    {
+      sTitle: '{% trans "Refer" %}',
+      name: "refer", 
+      aTargets: [4],
+      defaultContent: "",
+      mData: "refer"
+    },
+    {
+      sTitle: '{% trans "Mount point" %}',
+      name: "mount", 
+      aTargets: [5],
+      defaultContent: "",
+      mData: "mount"
+    },
+    {
+      sTitle: '{% trans "Type" %}',
+      name: "type", 
+      aTargets: [6],
+      defaultContent: "",
+      mData: "type"
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [7],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        if (row.type == "snapshot") {
+            res = '<a class="btn btn-flat btn-xs btn-danger" href="/system/zfs/restore/' + row.id + '" title="{% trans "Restore the snaphot" %}"><span><i class="fas fa-window-restore"></i></span></a>';
+            return res + ' ' + '<a class="btn btn-flat btn-xs btn-danger" href="/system/zfs/delete/' + row.id + '" title="{% trans "Delete the snaphot" %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+
+        }
+        else {
+            return '<a class="btn btn-flat btn-xs btn-warning" href="/system/zfs/snapshot/' + row.id + '" title="{% trans "Take a snaphot" %}"><span><i class="fas fa-camera"></i></span></a>';
+        }
+
+      }
+    }
+  ];
+
+  var columns = [];
+  for (var i in aoColumns){
+    columns.push(aoColumns[i].mData);
+  }
+
+  var zfs_table = $("#zfs_list").dataTable({
+      bServerSide   : true,
+      bOrder         : [[0, 'desc']],
+      iDisplayLength: 10,
+      bProcessing   : true,
+      bSort         : true,
+      sAjaxSource   : '',
+      sServerMethod : 'POST',
+      aoColumnDefs: aoColumns,
+      language: language_datatable,
+      fnServerData  : function(sSource, aoData, fnCallback){
+        aoData.push({
+          name: 'columns',
+          value: JSON.stringify(columns)
+        })
+
+        $.ajax({
+          type   : "POST",
+          url    : sSource,
+          data   : aoData,
+          success: function(data, callback){
+            if (check_json_error(data))
+              fnCallback(data);
+          }
+        })
+      },
+
+  });
+
+   /* Reload table data every 5 seconds */
+  setInterval( function() {
+    zfs_table.fnDraw();
+  }, 60000);
+
+{% endblock %}

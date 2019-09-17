@@ -1,0 +1,187 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+
+{% block content %}
+
+  <div class="row">
+      <div class="col-md-12">
+          <div class="panel">
+              <div class="panel-heading">
+                  <div class="panel-control">
+                    <a class="btn btn-flat btn-primary" href="{% url 'darwin.policy.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                  </div>
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Darwin Security Policies" %}</h1>
+              </div>
+              <div class="panel-body">
+                <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="policy_list">
+                </table>
+              </div>
+          </div>
+      </div>
+  </div>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false,
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name",
+      aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Status" %}',
+      defaultContent: "",
+      name: "status",
+      mData: "status",
+      aTargets: [2],
+      bSearchable: false,
+      mRender: function(data, type, row) {
+        var cpt = 0;
+        var result = "<ul>";
+        $.each(data, function(fname, statuses) {
+          result += "<li>" + fname;
+          if( !jQuery.isEmptyObject(statuses) )
+            result += '<ul id="ul_policy">';
+          $.each(statuses, function(node, status) {
+            result += "<li>";
+            switch( status ) {
+              case "UP":
+                result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "DOWN":
+                result += '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "ERROR":
+                result += '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
+                break;
+              case "DISABLED":
+                result += '<i class="icon fa fa-toggle-off"></i>&nbsp;';
+                break;
+              case "WAITING":
+                result += '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
+                break;
+            }
+            result += node + "</li>";
+            if( statuses.length > 0 )
+              result += "</ul>";
+            result += "</li>";
+          });
+          result += "</ul>";
+          cpt++;
+        });
+        return result;
+      }
+    },
+    {
+      sTitle: '{% trans "Filters" %}',
+      name: "filters",
+      aTargets: [3],
+      defaultContent: "",
+      mData: "filters",
+      mRender: function(data, type, row) {
+        var result = "<ul>";
+        for( l of data )
+          result += "<li>" + l + "</li>";
+        return result + "</ul>";
+      }
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [4],
+      defaultContent: "",
+      sWidth: "5%",
+      mRender: function(data, type, row) {
+        return '<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/darwin/policy/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/darwin/policy/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+      }
+    }
+  ];
+
+  var policy_table = $("#policy_list").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+          columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      });
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (!data.status){
+            notify('error', "{% trans 'Error' %}", data.error);
+          } else {
+            fnCallback(data);
+          }
+        }
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+      }) // /$.fail
+      .done( function( data ) {
+        if (!data.status){
+          notify('error', "{% trans 'Error' %}", data.error);
+        } else {
+          fnCallback(data);
+        }
+      }); // /$.done
+    }, // /fnServerData
+
+    fnCreatedRow: function(nRow, aData, iDataIndex){
+
+      /* Events binding to edit a template */
+      $(nRow).on('click', function(e){
+          var id = aData['id'];
+          window.location.href = "/darwin/policy/edit/" + id;
+      });
+    }
+  });
+
+  /* Reload table data every 5 seconds */
+  setInterval( function() {
+    policy_table.fnDraw();
+  }, 5000);
+
+{% endblock %}

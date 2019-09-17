@@ -1,0 +1,208 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                      <a class="btn btn-flat btn-primary" href="{% url 'portal.user_authentication.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Authentication Portal" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="user_authentication_list">
+                  </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<i class="fa fa-fw fa-fighter-jet"></i>-->
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false,
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name",
+      aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Tracking" %}',
+      name: "enable_tracking",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "enable_tracking",
+      mRender: function(data, type, row) {
+        if (data)
+          return "<label class='label label-success'><i class='fas fa-check-circle'></i></label>";
+        else
+          return "<label class='label label-default'><i class='fas fa-times-circle'></i></label>";
+      }
+    },
+    {
+      sTitle: '{% trans "Authentication type" %}',
+      name: "auth_type",
+      aTargets: [3],
+      defaultContent: "",
+      mData: "auth_type"
+    },
+    {
+      sTitle: '{% trans "Repositories" %}',
+      name: "repositories",
+      aTargets: [4],
+      defaultContent: "",
+      mData: "repositories",
+      mRender: function(data, type, row) {
+        result = "<ul>";
+        for( repo of row.repositories ) {
+          result += "<li>" + repo + "</li>";
+        }
+        return result + "</ul>";
+      }
+    },
+    {
+      sTitle: '{% trans "Captcha" %}',
+      name: "enable_captcha",
+      aTargets: [5],
+      defaultContent: "",
+      mData: "enable_captcha",
+      mRender: function(data, type, row) {
+        if (row.enable_captcha)
+          return "<label class='label label-success'><i class='fas fa-check-circle'></i></label>";
+        else
+          return "<label class='label label-default'><i class='fas fa-times-circle'></i></label>";
+      }
+    },
+    {
+      sTitle: '{% trans "OTP repository" %}',
+      name:"otp_repository",
+      aTargets: [6],
+      defaultContent: "",
+      mData:"otp_repository",
+      mRender: function(data, type, row) {
+        if (!data)
+          return "<label class='label label-default'><i class='fas fa-times-circle'></i></label>";
+        else
+          return row.otp_repository;
+      }
+    },
+    {
+      sTitle: '{% trans "Registration" %}',
+      name: "enable_registration",
+      aTargets: [7],
+      defaultContent: "",
+      mData: "enable_registration",
+      mRender: function(data, type, row) {
+        if (row.enable_registration)
+          return "<label class='label label-success'><i class='fas fa-check-circle'></i></label>";
+        else
+          return "<label class='label label-default'><i class='fas fa-times-circle'></i></label>";
+      }
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [8],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        return  '<a class="btn btn-flat btn-xs btn-primary" href="/portal/user_authentication/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
+                '&nbsp;<a class="btn btn-flat btn-xs btn-danger" href="/portal/user_authentication/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+      }
+    }
+  ];
+
+  var user_authentication_table = $("#user_authentication_list").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+          columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      });
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (!data.status){
+            notify('error', "{% trans 'Error' %}", data.error);
+          } else {
+            fnCallback(data);
+          }
+        }
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+      }) // /$.fail
+      .done( function( data ) {
+        if (!data.status){
+          notify('error', "{% trans 'Error' %}", data.error);
+        } else {
+          fnCallback(data);
+        }
+      }); // /$.done
+    }, // /fnServerData
+
+    fnCreatedRow: function(nRow, aData, iDataIndex){
+
+      /* Events binding to edit a template */
+      $(nRow).on('click', function(e){
+          var id = aData['id'];
+          window.location.href = "{% url 'portal.user_authentication.edit' %}" + id;
+      });
+    } // fnCreatedRow: function
+  }); // var user_authentication_table = $("#user_authentication_list").dataTable
+
+
+  /* Reload table data every 5 seconds
+  setInterval( function() {
+    user_authentication_table.fnDraw();
+  }, 5000);
+*/
+
+{% endblock %}

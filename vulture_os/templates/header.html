@@ -1,0 +1,68 @@
+{% load static i18n %}
+
+<header id="navbar">
+    <div id="navbar-container" class="boxed">
+
+        <div class="navbar-header">
+            <a href="{% url 'gui.dashboard.services' %}" class="navbar-brand">
+                <img src="{% static 'img/vulture-logo-large.png' %}" alt="Vulture Logo" id="logo_sidebar">
+            </a>
+        </div>
+
+        <div class="navbar-content">
+            <ul class="nav navbar-top-links">
+                <li class="tgl-menu-btn">
+                    <a class="mainnav-toggle" id="collapse-menu" href="#">
+                        <i class="demo-pli-list-view"></i>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="nav navbar-top-links" id="menu_rss">
+
+                <li class="mega-dropdown">
+                    <a href="#" id="reload_process_queue" class="mega-dropdown-toggle">
+                        <i class="demo-pli-layout-grid"></i>
+                        <span v-if="rss_list.length" class="label label-success">${rss_list.length}</span>
+                    </a>
+                    <div class="dropdown-menu mega-dropdown-menu">
+                        <div class="row">
+                            <div v-bind:class="width_tasks(rss_list.length)">
+                                <h3 class="text-main"><i class="fas fa-tasks">&nbsp;&nbsp;</i>{% trans "Tasks" %}</h3>
+                                <div class="process-queue">
+                                  <div id="handle" class="ui-resizable-handle ui-resizable-n"></div>
+                                  <table class="table tabled-striped table-condensed" id="table-process"></table>
+                                </div>
+                            </div>
+                            <div class="col-md-3" v-if="rss_list.length">
+                                <ul class="tasklist list-unstyled">
+                                    <li v-for="rss in rss_list" v-bind:class="label_rss_li(rss.level)">
+                                        <p class="text-bold text-main">
+                                            ${ rss.title }   <span class="rss-date">${ rss.date }</span>
+                                        </p>
+
+                                        <p class="pad-btm bord-btm">
+                                            ${ rss.content }
+                                        </p>
+                                        <p class="task-footer">
+                                            <span v-bind:class="label_rss(rss.level)">${ rss.level }</span>
+                                            <button class="btn btn-danger btn-xs btn-flat btn-notif" v-on:click="del_notif(rss)"><i class="fas fa-trash-alt"></i></button>
+                                        </p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
+                <li>
+                    <a href="#" id="documentation"><i class="fa fa-question-circle"></i></a>
+                </li>
+
+                <li>
+                    <a href="/logout"><i class="fas fa-sign-out-alt"></i></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>

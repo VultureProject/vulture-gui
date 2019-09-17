@@ -1,0 +1,136 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/File/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "File" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/RELP/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "RELP" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Redis/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Redis" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Syslog/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Syslog" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Elasticsearch/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Elasticsearch" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/MongoDB/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "MongoDB" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Logs Forwarders" %}</h1>
+                </div>
+
+                <div class="panel-body">
+                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="logfwd_list">
+                  </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+   var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name", aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Internal" %}',
+      name: "internal",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "internal"
+    },
+    {
+      sTitle: '{% trans "Type" %}',
+      name: "type", aTargets: [3],
+      defaultContent: "",
+      mData: "type",
+    },
+    {
+      sTitle: '{% trans "Output" %}',
+      name: "output", aTargets: [4],
+      defaultContent: "",
+      mData: "output"
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [5],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        var type = row.type;
+
+        if (row.internal)
+          return "";
+
+        return  '<a class="btn btn-flat btn-xs btn-primary" href="/apps/logfwd/clone/' + type + '/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
+                '&nbsp;<a class="btn btn-flat btn-xs btn-danger" href="/apps/logfwd/delete/' + type + '/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+      }
+    }
+  ];
+
+  var logfwd_table = $("#logfwd_list").dataTable({
+      bServerSide   : true,
+      order         : [[1, 'desc']],
+      iDisplayLength: 10,
+      bProcessing   : true,
+      bSort         : true,
+      sAjaxSource   : '',
+      sServerMethod : 'POST',
+      aoColumnDefs: aoColumns,
+      language: language_datatable,
+      fnServerData  : function(sSource, aoData, fnCallback){
+
+        var columns = [];
+        for (var i in aoColumns){
+          columns.push(aoColumns[i].mData);
+        }
+
+        aoData.push({
+          name: 'columns',
+          value: JSON.stringify(columns)
+        })
+
+        $.ajax({
+          type   : "POST",
+          url    : sSource,
+          data   : aoData,
+          success: function(data, callback){
+            if (check_json_error(data))
+              fnCallback(data);
+          }
+        })
+      },
+      fnCreatedRow: function(nRow, aData, iDataIndex){
+        $(nRow).on('click', function(e){
+          var id = aData['id'];
+          var type = aData['type'];
+          window.location.href = "/apps/logfwd/edit/" + type + "/" + id;
+        });
+      }
+  });
+
+{% endblock %}

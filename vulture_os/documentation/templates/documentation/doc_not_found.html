@@ -1,0 +1,25 @@
+{% load static i18n %}
+
+<div class="panel">
+	<div class="panel-heading">
+		<div class="panel-control">
+			<button class="btn" id="close_documentation_tab"><i class="fa fa-times"></i></button>
+		</div>
+		<h3 class="panel-title">
+			<i class="fa fa-question-circle">&nbsp;&nbsp;</i>{% trans "Documentation" %}
+		</h3>
+	</div>
+	<div class="panel-body">
+		<div class="row">
+			<div class="col-md-12" id="documentation_content">
+				<p class="center">
+					<img class="logo_full_doc_not_found" src="{% static 'img/logo_full.png' %}"/>
+				</p>
+
+				<p>{% trans "The documentation for this has not been written yet. If you want to contribute go " %}<a target="_blank" href="https://github.com/VultureProject/vulture-doc">{% trans "THERE" %}</a></p>
+
+				<p>{% trans "The documentation for this part must be located in this directory" %}: <br/><pre>{{ path }}</pre></p>
+			</div>
+		</div>
+	</div>
+</div>

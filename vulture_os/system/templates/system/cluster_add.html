@@ -1,0 +1,97 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+    <link rel="stylesheet" href="{% static 'plugins/datatables/datatables.min.css' %}">
+
+{% endblock %}
+
+{% block js_include %}
+
+    <script src="{% static 'plugins/datatables/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'plugins/datatables/dataTables.bootstrap.js' %}"></script>
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="netif_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="panel">
+              <div class="panel-heading">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Create a node" %}</h1>
+              </div>
+              <div class="panel-body">
+                <div class="row">
+                  <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{% trans "Hostname" %}</label>
+                        <div class="col-sm-5">
+                        {{form.name}}
+                        {{form.name.errors|safe}}
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        {{form.pf_limit_states}}
+                      </div>
+                      <div class="form-group">
+                        {{form.pf_limit_frags}}
+                      </div>
+                      <div class="form-group">
+                        {{form.pf_limit_src}}
+                      </div>
+                      <div class="form-group">
+                        {{form.pf_custom_config}}
+                      </div>
+                  </div>
+                </div>
+              </div>
+              <div class="panel-footer">
+                <a href="{% url 'system.cluster.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              </div>
+            </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+    $(function() {
+
+        $('#id_nic').change(function(e) {
+
+            {{ nic_map_js|safe }}
+
+            var selected = $(this).val();
+            if (! selected) {
+                $("#carp_info").hide();
+                return;
+            }
+            nb_nic = selected.length;
+
+            //This is a CARP configuration
+            if (nb_nic > 1) {
+                $("#carp_info").show();
+            }
+            else {
+                $("#carp_info").hide();
+            }
+
+        });
+
+        $('#id_nic').trigger('change');
+    });
+
+
+
+{% endblock %}

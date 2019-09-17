@@ -1,0 +1,433 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <form id="reputation_ctx_edit_form" class="form-horizontal bootstrap-validator-form" action='{% if cloned %}{% url  "applications.reputation_ctx.edit" %}{% endif %}' method="post" novalidate="novalidate">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          {% if form.non_field_errors or save_error %}
+          <div class="panel panel-colorful panel-danger">
+            <div class="panel-heading">
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                </ul>
+                <h4 class="panel-title">Configuration error</h4>
+              {% endif %}
+            </div>
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {% if form.non_field_errors %}
+                <div>
+                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <div class="tab-content no-padding">
+                    {{ form.non_field_errors|safe }}
+                  </div>
+                </div>
+              {% endif %}
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre class="console-type">{{ save_error.0 }}</pre>
+                    </div>
+                    <div class="tab-pane" id="tab_2">
+                      <pre class="console-type">{{ save_error.1 }}</pre>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <div class="panel">
+            <div class="panel-body">
+              <div class="nav-tabs-custom nav-tabs-no-margin">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+                  <li><a href="#tab_http" data-toggle="tab">{% trans "HTTP Options" %}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <br/>
+                  <div class="tab-pane active" id="tab_general">
+                    <div class="row">
+                      <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <div class="col-sm-5">
+                              {{form.name}}
+                              {{form.name.errors|safe}}
+                            </div>
+                          </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.db_type.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.db_type}}
+                            {{form.db_type.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.method.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.method}}
+                            {{form.method.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.url.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.url}}
+                            {{form.url.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row https">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.verify_cert.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.verify_cert}}
+                            {{form.verify_cert.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Tags" %}</label>
+                          <div class="col-sm-5">
+                            {{form.tags}}
+                            {{form.tags.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                  </div> <!-- /.tab-pane -->
+                  <div class="tab-pane" id="tab_http">
+                    <div class="row method-post">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.post_datas.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.post_datas}}
+                            {{form.post_datas.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.auth_type.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.auth_type}}
+                            {{form.auth_type.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row auth">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.user.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.user}}
+                            {{form.user.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row auth">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.password.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.password}}
+                            {{form.password.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <label class="col-sm-4 control-label">{% trans "HTTP Headers" %}</label>
+                        <div class="col-sm-5">
+                          <table id="headers_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                            <thead>
+                              {{ headers_form.as_table_headers|safe }}
+                            </thead>
+                            <tbody>
+                              {% for header in headers %}
+                                {{header.as_table_td|safe}}
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                          <button class="addlink addplus" id="add_header" type="button">{% trans "Add an Entry" %}</button>
+                          {{ form.servers.errors|safe }}
+                          <input id="custom_headers" name="custom_headers" value="" type="hidden">
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane tab_http -->
+                </div>
+              </div>
+            </div>
+            <div class="panel-footer">
+              <div class="row">
+                <div class="col-sm-12" style="text-align:center;">
+                  <button name="download_test" id="download_test" class="btn btn-success btn-flat"><span>{% trans "Get MMDB info" %}</span></button>
+                </div>
+              </div> <!-- /.row -->
+              <a type="button" href="{% url 'applications.reputation_ctx.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div id="modal_test_download" class="modal fade">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"><i class="pci-cross pci-circle"></i></button>
+            <h4 class="modal-title">{% trans "Download result" %}</h4>
+          </div>
+          <div class="modal-body" style="text-align: center">
+            <div class="row">
+              <div class="col-sm-12">
+                <p id="download_test_msg" class="test_user">
+                </p>
+                <div id="downloaded_content"></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  $(function() {
+
+    /* Switchery mandatory code */
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(html) {
+      var switchery = new Switchery(html, {
+        'color': '#FA9834',
+      });
+    });
+
+
+    function handle_form_errors(data){
+      if (typeof(data['form_errors']) !== 'undefined'){
+        $('.errorlist').remove();
+        $.each(data['form_errors'], function(field_name, error_list){
+          field_selector = $('#id_'+field_name);
+          var ul = $('<ul/>').insertAfter(field_selector);
+          $.each(error_list, function(idx, err_msg){
+            console.log(err_msg);
+            var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
+            var group = $('<span/>').text(err_msg).appendTo(li);
+          });
+        });
+      }
+    }
+
+
+    /* All events to refresh (re-apply) after a table is modified */
+    function refresh_table_events() {
+
+      /* Function used to delete an object .btnDelete */
+      $('.btnDelete').on('click', function(e) {
+        $(this).parent().parent().remove();
+      });
+      /* Re-initialize select2 objects */
+      $('.select2').select2();
+
+      /* Re-initialize Tag-Editor events */
+      /* Try to destroy old tag-editor elements */
+      try { $(".tag-editor-space").tagEditor('destroy');
+      } catch(e) {};
+      try { $(".tag-editor-comma").tagEditor('destroy');
+      } catch(e) {};
+      /* And re-add TagEditor behavior for tag-editor custom classes */
+      $(".tag-editor-space").tagEditor({
+        delimiter: ' '
+      });
+      $(".tag-editor-comma").tagEditor({
+        delimiter: ','
+      });
+    }
+
+
+    /* Show .https class if url begins with https:// */
+    function toggle_url() {
+      let url_val = $('#id_url').val();
+      if( url_val.startsWith("https://") ) {
+        $('.https').show();
+      } else {
+        $('.https').hide();
+      }
+    }
+    $('#id_url').on('change', toggle_url);
+    $('#id_url').keyup(toggle_url);
+    toggle_url();
+
+
+    /* Show fields depending on chosen method */
+    function toggle_method() {
+      var method = $('#id_method').val();
+      if( method === "POST" )
+        $('.method-post').show();
+      else
+        $('.method-post').hide();
+    }
+    $('#id_method').on('change', toggle_method);
+    toggle_method();
+
+    /* Show Auth fields depending on auth type choice */
+    function toggle_auth_type(){
+      var auth_type = $('#id_auth_type').val();
+      if( auth_type === "" )
+        $('.auth').hide();
+      else
+        $('.auth').show();
+    }
+    $('#id_auth_type').on('change', toggle_auth_type);
+    toggle_auth_type();
+
+
+    /* Download test */
+    $('#download_test').on("click", function(e) {
+      $('#download_test_msg').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Downloading ..." %}');
+      $('#downloaded_content').html('');
+      $("#modal_test_download").modal('show');
+
+      url = "/apps/reputation_ctx/download_test/";
+      form_data = $('#reputation_ctx_edit_form').serializeArray();
+      var indexed_data = {};
+      $.map(form_data, function(n, i){
+          indexed_data[n['name']] = n['value'];
+      });
+      indexed_data['headers'] = get_headers();
+      $.ajax({
+        type   : "POST",
+        url    : url,
+        data: indexed_data
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        $('#download_test_msg').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+                                     "Status code : " + jqXHR.status + "</br>" +
+                                     "Message : " + jqXHR.statusText);
+      }) // /$.fail
+      .done( function( msg ) {
+        handle_form_errors(msg);
+        if( msg['status'] ) {
+          $('#download_test_msg').html('<b style="color:green;">{% trans "Successful connection" %}</b>');
+          var result = "";
+          if( $.type(msg['message']) == "object" ) {
+            result += '<table style="margin: 0 auto">';
+            for( key in msg['message'] ) {
+              if( $.type(msg['message'][key]) == "object" )
+                result += "<tr><td>" + key + " </td><td> " + JSON.stringify(msg['message'][key]) + "</td></tr>";
+              else
+                result += "<tr><td>" + key + " </td><td> " + msg['message'][key] + "</td></tr>";
+            }
+            result += "</table>";
+          } else {
+            result = msg['message'];
+          }
+          $('#downloaded_content').html('<p>' + result + '</p>');
+        } else {
+          reason = msg['error'];
+          $('#download_test_msg').html("<b style='color:red;'>{% trans 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
+        }
+      }); // /$.done
+      e.preventDefault();
+    });
+
+
+    /* Headers code */
+    var id = 0;
+    /* Add default HeaderForm to headers_table */
+    $("#add_header").on("click", function(e) {
+      $('#headers_table').append(`{{header_form.as_table_td|safe}}`);
+      refresh_table_events();
+      id++;
+    });
+
+    function get_headers() {
+      let headers = new Array()
+      $('#headers_table tbody tr').each(function(index, tr){
+        let header_name = tr.children[0].children[0].value
+        let header_value = tr.children[1].children[0].value
+        headers.push({'check_header_name': header_name, 'check_header_value': header_value});
+      });
+      return headers;
+    }
+
+    /* Build http_headers fields with tables content */
+    $('#reputation_ctx_edit_form').submit(function(event) {
+      $('#custom_headers').val(JSON.stringify(get_headers()));
+
+      //event.preventDefault();
+    });
+
+    $('.tag-editor').css({"min-width": "100px"});
+
+    /* Initialize all custom fields */
+    refresh_table_events();
+
+  }); // end of function()
+
+{% endblock %}

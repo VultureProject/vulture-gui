@@ -1,0 +1,128 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.users.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-users">&nbsp;</i>{% trans "Users" %}</h1>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="users_list">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+        </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+   var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false
+    },
+    {
+      sTitle: '{% trans "Username" %}',
+      name: "username", aTargets: [1],
+      defaultContent: "",
+      mData: "username"
+    },
+    {
+      sTitle: '{% trans "Groups" %}',
+      name: "groups", aTargets: [2],
+      defaultContent: "",
+      mData: "groups"
+    },
+    {
+      sTitle: '{% trans "Super user" %}',
+      name: "groups", aTargets: [3],
+      defaultContent: "is_superuser",
+      mData: "is_superuser",
+      mRender: function(data, type, row){
+        if (data)
+          return "<label class='label label-success'><i class='fa fa-check'></i></label>";
+        else
+          return "<label class='label label-danger'><i class='fa fa-times'></i></label>";
+      }
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [4],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        return  '<a class="btn btn-flat btn-xs btn-danger" href="/system/users/delete/' + data + '" title="{% trans "delete" %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+      }
+    }
+  ];
+
+  var users_table = $("#users_list").dataTable({
+      bServerSide   : true,
+      order         : [[1, 'desc']],
+      iDisplayLength: 10,
+      bProcessing   : true,
+      bSort         : true,
+      sAjaxSource   : '',
+      sServerMethod : 'POST',
+      aoColumnDefs: aoColumns,
+      language: language_datatable,
+      fnServerData  : function(sSource, aoData, fnCallback){
+
+        var columns = [];
+        for (var i in aoColumns){
+          columns.push(aoColumns[i].mData);
+        }
+
+        aoData.push({
+          name: 'columns',
+          value: JSON.stringify(columns)
+        })
+
+        $.ajax({
+          type   : "POST",
+          url    : sSource,
+          data   : aoData,
+          success: function(data, callback){
+            if (check_json_error(data))
+              fnCallback(data);
+          }
+        })
+      },
+      fnCreatedRow: function(nRow, aData, iDataIndex){
+        $(nRow).on('click', function(e){
+          var id = aData['id'];
+          window.location.href = "/system/users/edit/" + id;
+        });
+      }
+  });
+
+{% endblock %}

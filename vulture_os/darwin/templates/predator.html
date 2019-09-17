@@ -1,0 +1,520 @@
+{% load static i18n %}
+
+<div class="panel">
+  <div class="panel-heading with-border">
+    <div class="panel-control">
+    	{% if old_column and old_info %}
+    		<button class="btn btn-box-tool predator_info" data-column="{{ old_column }}" data-info="{{ old_info }}"><i class="fa fa-arrow-circle-left"></i></button>
+    	{% endif %}
+
+    	<button class="btn btn-box-tool" id="close_predator_tab"><i class="fa fa-times"></i>&nbsp;{% trans "Close" %}</button>
+    </div>
+    <h3 class="panel-title">
+    	<i class="fa fa-tags">&nbsp;&nbsp;</i><span id="tag_info_value" data-info="{{ tag_info }}" data-column="{{ column }}">{{ tag_info }}</span>
+    </h3>
+  </div>
+  <div class="panel-body">
+
+  	{% if cve %}
+  		<div class="padding_small">
+
+	  		{% if cve.impact.baseMetricV3 or cve.impact.baseMetricV2 %}
+		  		<div class="row">
+	  				{% if cve.impact.baseMetricV3 %}
+
+	  					<div class="col-lg-3 col-md-6 col-sm-12">
+				          <div class="info-box info-box-sm {% if cve.impact.baseMetricV3.cvssV3.baseScore > 7 %}bg-danger{% elif cve.impact.baseMetricV3.cvssV3.baseScore > 3 %}bg-warning{% else %}bg-success{% endif %}">
+				            <span class="info-box-icon"><i class="fa fa-exclamation-circle"></i></span>
+
+				            <div class="info-box-content">
+				              <span class="info-box-text">{% trans "CVSS" %}</span>
+				              <span class="info-box-number">{{ cve.impact.baseMetricV3.cvssV3.baseScore }}</span>
+				            </div>
+				          </div>
+				        </div>
+
+	  					<div class="col-lg-3 col-md-6 col-sm-12">
+				          <div class="info-box info-box-sm bg-danger">
+				            <span class="info-box-icon"><i class="fa fa-user-secret"></i></span>
+
+				            <div class="info-box-content">
+				              <span class="info-box-text">{% trans "Exploitability" %}</span>
+				              <span class="info-box-number">{{ cve.impact.baseMetricV3.exploitabilityScore }}</span>
+				            </div>
+				          </div>
+				        </div>
+
+				        <div class="col-lg-3 col-md-6 col-sm-12">
+				          <div class="info-box info-box-sm bg-danger">
+				            <span class="info-box-icon"><i class="fa fa-bomb"></i></span>
+
+				            <div class="info-box-content">
+				              <span class="info-box-text">{% trans "Impact" %}</span>
+				              <span class="info-box-number">{{ cve.impact.baseMetricV3.impactScore }}</span>
+				            </div>
+				          </div>
+				        </div>
+
+				        {% if cve.impact.baseMetricV3.cvssV3.integrityImpact %}
+					        <div class="col-lg-3 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-{{ cve.impact.baseMetricV3.cvssV3.integrityImpact|lower }}">
+					            <span class="info-box-icon"><i class="fa fa-star"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Integrity" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV3.cvssV3.integrityImpact }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+					    {% if cve.impact.baseMetricV3.cvssV3.baseSeverity %}
+					        <div class="col-lg-3 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-{{ cve.impact.baseMetricV3.cvssV3.baseSeverity|lower }}">
+					            <span class="info-box-icon"><i class="fa fa-eye"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Severity" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV3.cvssV3.baseSeverity }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+					    {% if cve.impact.baseMetricV3.cvssV3.accessComplexity %}
+					        <div class="col-lg-4 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-{{ cve.impact.baseMetricV3.cvssV3.accessComplexity|lower }}-inverse">
+					            <span class="info-box-icon"><i class="fa fa-door-open"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Complexity of access" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV3.cvssV3.accessComplexity }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+
+				        {% if cve.impact.baseMetricV3.cvssV3.attackComplexity %}
+					        <div class="col-lg-4 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-{{ cve.impact.baseMetricV3.cvssV3.attackComplexity|lower }}">
+					            <span class="info-box-icon"><i class="fa fa-bolt"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Complexity of attack" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV3.cvssV3.attackComplexity }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+					    {% if cve.impact.baseMetricV3.cvssV3.attackVector %}
+					    	<div class="col-lg-4 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-warning">
+					            <span class="info-box-icon"><i class="fa fa-location-arrow"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Attack vector" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV3.cvssV3.attackVector }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+	  				{% elif cve.impact.baseMetricV2 %}
+
+	  					<div class="col-lg-3 col-md-6 col-sm-12">
+				          <div class="info-box info-box-sm {% if cve.impact.baseMetricV2.cvssV2.baseScore > 7 %}bg-danger{% elif cve.impact.baseMetricV2.cvssV2.baseScore > 3 %}bg-warning{% else %}bg-success{% endif %}">
+				            <span class="info-box-icon"><i class="fa fa-exclamation-circle"></i></span>
+
+				            <div class="info-box-content">
+				              <span class="info-box-text">{% trans "CVSS" %}</span>
+				              <span class="info-box-number">{{ cve.impact.baseMetricV2.cvssV2.baseScore }}</span>
+				            </div>
+				          </div>
+				        </div>
+
+	  					<div class="col-lg-3 col-md-6 col-sm-12">
+				          <div class="info-box info-box-sm bg-danger">
+				            <span class="info-box-icon"><i class="fa fa-user-secret"></i></span>
+
+				            <div class="info-box-content">
+				              <span class="info-box-text">{% trans "Exploitability" %}</span>
+				              <span class="info-box-number">{{ cve.impact.baseMetricV2.exploitabilityScore }}</span>
+				            </div>
+				          </div>
+				        </div>
+
+				        <div class="col-lg-3 col-md-6 col-sm-12">
+				          <div class="info-box info-box-sm bg-danger">
+				            <span class="info-box-icon"><i class="fa fa-bomb"></i></span>
+
+				            <div class="info-box-content">
+				              <span class="info-box-text">{% trans "Impact" %}</span>
+				              <span class="info-box-number">{{ cve.impact.baseMetricV2.impactScore }}</span>
+				            </div>
+				          </div>
+				        </div>
+
+				        {% if cve.impact.baseMetricV2.cvssV2.integrityImpact %}
+					        <div class="col-lg-3 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-{{ cve.impact.baseMetricV2.cvssV2.integrityImpact|lower }}">
+					            <span class="info-box-icon"><i class="fa fa-star"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Integrity" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV2.cvssV2.integrityImpact }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+					    {% if cve.impact.baseMetricV2.cvssV2.accessComplexity %}
+					        <div class="col-lg-4 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-{{ cve.impact.baseMetricV2.cvssV2.accessComplexity|lower }}-inverse">
+					            <span class="info-box-icon"><i class="fa fa-door-open"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Complexity of access" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV2.cvssV2.accessComplexity }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+					    {% if cve.impact.baseMetricV2.cvssV2.baseSeverity %}
+					        <div class="col-lg-3 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-{{ cve.impact.baseMetricV2.cvssV2.baseSeverity|lower }}">
+					            <span class="info-box-icon"><i class="fa fa-eye"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Severity" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV2.cvssV2.baseSeverity }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+				        {% if cve.impact.baseMetricV2.cvssV2.attackComplexity %}
+					        <div class="col-lg-4 col-md-6 col-sm-12">
+					          <div class="info-box info-box-sm bg-{{ cve.impact.baseMetricV2.cvssV2.attackComplexity|lower }}">
+					            <span class="info-box-icon"><i class="fa fa-bolt"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{% trans "Complexity of attack" %}</span>
+					              <span class="info-box-number">{{ cve.impact.baseMetricV2.cvssV2.attackComplexity }}</span>
+					            </div>
+					          </div>
+					        </div>
+					    {% endif %}
+
+	  				{% endif %}
+		  		</div>	
+			{% endif %}
+
+	  		<div class="row">
+	  			<div class="col-md-12">
+	  				<h3><i class="fa fa-align-justify"></i> {% trans "Description" %}</h3>
+	  				{% for desc in cve.cve.description.description_data %}
+		  				<p>{{ desc.value }}</p>
+		  			{% endfor %}
+	  			</div>
+	  		</div>
+
+	  		<div class="row">
+	  			<div class="col-md-12">
+	  				<h3><i class="fab fa-servicestack"></i> {% trans "Services" %}:</h3>
+
+	  				{% for tmp in cve.cve.affects.vendor.vendor_data %}
+		  				{% for product in tmp.product.product_data %}
+							<h4>{{ product.product_name }}</h4>
+	  						{% for version in product.version.version_data %}
+						  		<div class="port_box">{{ version.version_value }}</div>
+						  	{% endfor %}
+						{% endfor %}
+	  				{% endfor %}
+	  			</div>
+	  		</div>
+
+	  		<div class="row">
+	  			<div class="col-md-12">
+	  				<h3><i class="fa fa-link"></i> {% trans "References" %}:</h3>
+	  				<table class="table">
+	  					<thead>
+	  						<tr>
+	  							<th>{% trans "Source" %}</th>
+	  							<th>{% trans "URL" %}</th>
+	  						</tr>
+	  					</thead>
+	  					<tbody>
+			  				{% for ref in cve.cve.references.reference_data %}
+			  					<tr>
+			  						<td><b>{{ ref.refsource }}</b></td>
+			  						<td><a target="_blank" href="{{ ref.url }}">{{ ref.url }}</a></td>
+			  					</tr>
+			  				{% endfor %}
+	  					</tbody>
+	  				</table>
+	  			</div>
+	  		</div>
+	  	</div>
+
+  	{% else %}
+  		<div class="tab-base">	
+            <!--Nav Tabs-->
+            <ul class="nav nav-tabs" id="tab_enrich">
+            	{% if shodan %}
+	                <li class="active"><a data-toggle="tab" href="#shodan_tab">Shodan</a></li>
+		    	{% endif %}
+		    	{% if reputation %}
+	                <li><a data-toggle="tab" href="#reputation_tab">{% trans "Reputation" %}</a></li>
+		    	{% endif %}
+		      	{% if whois %}
+	                <li><a data-toggle="tab" href="#whois_tab">{% trans "Whois" %}</a></li>
+		    	{% endif %}
+		    	{% if typo %}
+	                <li><a data-toggle="tab" href="#typo_tab">{% trans "Typo squatting detection" %}</a></li>
+		    	{% endif %}
+		    	{% if blacklisted %}
+	                <li><a data-toggle="tab" href="#blacklisted_tab">{% trans "Domain" %}</a></li>
+		    	{% endif %}
+
+            </ul>
+
+            <!--Tabs Content-->
+            <div class="tab-content">
+
+            	{% if shodan %}
+	                <div id="shodan_tab" class="tab-pane fade active in">
+	                	<div class="row">
+							<div class="col-md-12">
+								<table class="table">
+									<thead>
+										<tr>
+											<th>{% trans "Country" %}</th>
+											<th>{% trans "Last update" %}</th>
+											<th>{% trans "Hostnames" %}</th>
+											<th>{% trans "Organisation" %}</th>
+											<th>{% trans "ISP" %}</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td><img src="{% static 'img/flags/' %}{{ shodan.country_code|lower }}.png"/>&nbsp;&nbsp;{{ shodan.country_name }}</td>
+											<td>{{ shodan.last_update }}</td>
+											<td>
+												{% for host in shodan.hostnames %}
+													<p>{{ host|safe }}</p>
+												{% endfor %}
+											</td>
+											<td>{{ shodan.org }}</td>
+											<td>{{ shodan.isp }}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+						
+						<hr/>
+
+						<div class="row">
+							{% if shodan.longitude and shodan.latitude %}
+								<div class="col-md-12">
+									<input type="hidden" id="shodan_longitude" value="{{ shodan.longitude }}"/>
+									<input type="hidden" id="shodan_latitude" value="{{ shodan.latitude }}"/>
+									<div id="geomap_shodan" style="height: 400px; width: 100%;"></div>
+								</div>
+							{% endif %}
+
+							<div class="col-md-12">
+								<h3><i class="fa fa-circle"></i>&nbsp;{% trans "Ports" %}</h3>
+								{% for data in shodan.data %}
+									<div class="port_box">
+										<a href="#link_{{ data.port }}">{{ data.port }}</a>
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+
+						<hr/>
+
+						{% if shodan.vulns %}
+							<div class="row">
+								<div class="col-md-12">
+									<h3><i class="fa fa-bug"></i>&nbsp;{% trans "Vulnerabilities" %}</h3>
+									<p><small>{% trans "NP: The host may not be impacted by all the vulnerabilities discovered. These vulnerabilities are based on the software version detected." %}</small></p>
+
+									{% for service in shodan.data %}
+										<div class="panel-group accordion" id="vuln_accordion">
+											{% for vuln_name, infos in service.vulns.items %}
+								            	<div class="panel">
+								
+									                <!--Accordion title-->
+									                <div class="panel-heading">
+									                	<h3 class="panel-title">
+									                		<a class="predator_info float-left" data-column="cve" data-info="{{ vuln_name }}">
+									                			{{ vuln_name }}
+									                		</a>
+															<a href="#{{ vuln_name }}" class="btn btn-box-tool float-right" data-toggle="collapse" data-widget="collapse" data-parent="vuln_accordion">
+																<i class="fa fa-plus"></i>
+															</a>
+									                	</h3>
+									                </div>
+									
+									                <!--Accordion content-->
+									                <div class="panel-collapse collapse" id="{{ vuln_name }}" aria-expanded="false">
+									                    <div class="panel-body">
+									                        <div class="col-md-12">
+																<p>{{ infos.summary }}</p>
+
+																<h3>{% trans "References" %}:</h3>
+																{% for ref in infos.references %}
+																	<p><a target="_blank" href="{{ ref }}">{{ ref }}</a></p>
+																{% endfor %}
+															</div>
+									                    </div>
+									                </div>
+								            	</div>
+								            {% endfor %}
+								        </div>
+									{% endfor %}
+								</div>
+							</div>
+
+							<br/>
+						{% endif %}
+
+						<div class="row">
+							<div class="col-md-12">
+								<h3><i class="fab fa-servicestack"></i>&nbsp;{% trans "Services" %}</h3>
+							</div>
+						</div>
+						
+						{% for service in shodan.data %}
+							<div class="row" id="link_{{ service.port }}">
+								<div class="col-md-12">
+									<div class="col-md-2">
+										<label class="label label-warning label-block">{{ service.port }}</label>
+										<label class="label label-primary label-block">{{ service.transport }}</label>
+										<label class="label label-danger label-block">{{ service.shodan_info.module }}</label>
+									</div>
+									<div class="col-md-10">
+										<h4>{{ service.product }}</h4>
+										{{ service.data|safe }}
+
+										{% if service.shodan_info.module == "https" %}
+											<h4>Cipher:</h4>
+											{% for k, v in service.ssl.cipher.items %}
+												<p class="indent_info">{{ k }}: {{ v }}</p>
+											{% endfor %}
+
+											<h4>Certificats:</h4>
+											{% for cert in service.ssl.chain %}
+												<p class="margin-left-small">{{ cert|safe }}</p>
+											{% endfor %}
+
+										{% endif %}
+									</div>
+								</div>
+							</div>
+							<hr/>
+						{% endfor %}
+	                </div>
+	            {% endif %}
+
+                {% if reputation %}
+			        <div class="tab-pane" id="reputation_tab">
+			        	{% for base_name, reput in reputation.items %}
+			        		<div class="col-lg-3 col-md-6 col-sm-12">
+					            <div class="info-box info-box-sm {% if "not in the database" in reput %}bg-success{% else %}bg-danger{% endif %}">
+					            	<span class="info-box-icon"><i class="fa fa-star"></i></span>
+
+					            <div class="info-box-content">
+					              <span class="info-box-text">{{ base_name }}</span>
+					              <span class="info-box-number">{% if "not in the database" in reput %} {% trans "No threat found" %} {% else %}{{ reput }}{% endif %}</span>
+					            </div>
+					          </div>
+					        </div>
+			        	{% endfor %}
+			        </div>
+			    {% endif %}
+                
+               	{% if blacklisted %}
+		    	<div class="tab-pane" id="blacklisted_tab">
+		    		<div class="col-md-12">
+						<div class="info-box info-box-sm {% if blacklisted == "blacklisted" %}bg-danger{% else %}bg-success{% endif %}">
+							<span class="info-box-icon"><i class="fa fa-star"></i></span>
+
+							<div class="info-box-content">
+								<span class="info-box-text">{% if blacklisted == "blacklisted" %} {% trans "Blacklisted" %} {% else %} {% trans "Not blacklisted" %} {% endif %}</span>
+								<span class="info-box-number"></span>
+							</div>
+						</div>
+		    		</div>
+		    	</div>
+		    {% endif %}
+
+		    {% if whois %}
+		        <div class="tab-pane" id="whois_tab">
+		        	<fieldset class="col-md-6">
+		        		<legend>{% trans "Noms" %}</legend>
+		        		{% for info in whois.name_servers %}
+		        			<p><a class="predator_info" data-column="host" data-info="{{ info }}">{{ info }}</a></p>
+		        		{% endfor %}
+		        	</fieldset>
+
+		        	<fieldset class="col-md-6">
+		        		<legend>{% trans "Registre" %}</legend>
+	        			<p>{{ whois.registrar }}</p>
+		        	</fieldset>
+
+		        	<fieldset class="col-md-6">
+		        		<legend>{% trans "Name" %}</legend>
+	        			<p>{{ whois.name }}</p>
+		        	</fieldset>
+
+		        	<fieldset class="col-md-6">
+		        		<legend>{% trans "Last update" %}</legend>
+	        			<p>{{ whois.last_updated }}</p>
+		        	</fieldset>
+
+		        	<fieldset class="col-md-6">
+		        		<legend>{% trans "Creation date" %}</legend>
+	        			<p>{{ whois.create_date }}</p>
+		        	</fieldset>
+		        </div>
+		    {% endif %}
+
+		    {% if typo %}
+		    	<div class="tab-pane" id="typo_tab">
+		    		{% for key, ips in typo.items %}
+		    			<p>
+		    				<b><a class="predator_info" data-column="host" data-info="{{ key }}">{{ key }}</a></b>
+		    				{% for ip in ips %}
+		    					<a class="predator_info" data-column="ip" data-info="{{ ip }}">{{ ip }}
+		    				{% endfor %}
+		    			</p>
+		    		{% endfor %}
+		    	</div>
+		    {% endif %}
+            </div>
+        </div>
+
+	{% endif %}
+  </div>
+</div>
+
+<script>
+	
+	var tag_name = "{{ info }}";
+
+	{% if shodan %}
+		var shodan = true;
+	{% else %}
+		var shodan = false;
+	{% endif %}
+</script>
+
+<script src="{% static 'plugins/jvectormap/jquery-jvectormap-1.2.2.min.js' %}"/>
+<script src="{% static 'plugins/jvectormap/jquery-jvectormap-world-mill-en.js' %}"/>
+<script src="{% static 'js/predator.js' %}"/>

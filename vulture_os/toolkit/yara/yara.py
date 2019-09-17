@@ -1,0 +1,153 @@
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture 3.
+
+Vulture 3 is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture 3 is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
+"""
+__author__ = "Théo BERTIN"
+__credits__ = []
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture Project"
+__email__ = "contact@vultureproject.org"
+__doc__ = 'System Utils Yara Toolkit'
+
+# Django project imports
+from darwin.inspection.models import InspectionPolicy, InspectionRule, PACKET_INSPECTION_TECHNO, DEFAULT_YARA_CATEGORIES
+from django.core.exceptions import ObjectDoesNotExist
+
+import subprocess
+from toolkit.network.network import get_proxy
+import requests
+import logging
+import os
+import re
+import zipfile
+
+logger = logging.getLogger('system')
+
+
+def fetch_yara_rules(logger):
+    logger.info("getting updated yara rules...")
+
+    proxy = get_proxy()
+    try:
+        doc_uri = "https://github.com/Yara-Rules/rules/archive/master.zip"
+        doc = requests.get(doc_uri, proxies=proxy)
+    except Exception as e:
+        logger.error("Yara::fetch_yara_rules:: {}".format(e), exc_info=1)
+        raise
+
+    logger.info("Yara::fetch_yara_rules:: extracting them...")
+    try:
+        with open("/var/tmp/yara_rules.zip", "wb") as f:
+            f.write(doc.content)
+        with zipfile.ZipFile("/var/tmp/yara_rules.zip") as z:
+            z.extractall("/var/tmp/yara_rules/")
+    except Exception as e:
+        logger.error("Yara::fetch_yara_rules:: {}".format(e), exc_info=1)
+        raise
+
+    new_rules = []
+    all_rules = []
+
+    fileset = set()
+
+    rule_regex = re.compile(r'^\s*rule .*$')
+
+    for (baseRoot, baseDirs, baseFiles) in os.walk("/var/tmp/yara_rules/rules-master/"):
+        for dir in baseDirs:
+            for (root, dirs, files) in os.walk(os.path.join(baseRoot, dir)):
+                for filename in files:
+                    contains_rules = False
+                    fullpath = os.path.join(root, filename)
+                    name, extension = os.path.splitext(filename)
+                    with open(fullpath, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            if rule_regex.search(line):
+                                contains_rules = True
+                                continue
+                    if contains_rules:
+                        try:
+                            subprocess.check_output(["/usr/local/bin/yara", fullpath, fullpath])
+                            with open(fullpath, 'r', encoding='utf-8') as content_file:
+                                filtered_lines = [line for line in content_file if "import " not in line]
+                                rule, created = InspectionRule.objects.get_or_create(
+                                    name=name,
+                                    techno="yara",
+                                    defaults={
+                                        "category": dir,
+                                        "content": ''.join(filtered_lines),
+                                        "source": "github"
+                                    }
+                                )
+                                if created:
+                                    new_rules.append(rule)
+                                all_rules.append(rule)
+                                rule.save()
+                        except subprocess.CalledProcessError:
+                            pass
+                        except Exception as e:
+                            logger.error(e)
+
+    logger.info("Yara::fetch_yara_rules:: finished importing new rules")
+
+    if not new_rules and InspectionPolicy.objects.filter(name__exact='github_policy').count() != 0:
+        return
+
+    newInspectionPolicy, created = InspectionPolicy.objects.get_or_create(
+        name="github_policy",
+        defaults={
+            "techno": "yara",
+            "description": "automatic ruleset created from Yara rules on https://github.com/Yara-Rules/rules"
+        }
+    )
+    if not created:
+        for rule in new_rules:
+            newInspectionPolicy.rules.add(rule)
+    else:
+        for rule in all_rules:
+            if rule.category in DEFAULT_YARA_CATEGORIES:
+                newInspectionPolicy.rules.add(rule)
+    newInspectionPolicy.save()
+    newInspectionPolicy.try_compile()
+
+
+def try_compile_yara_rules(logger, policy_id):
+    logger.info("Yara::try_compile_yara_rules:: trying to compile yara rules for policy {}".format(policy_id))
+    try:
+        policy = InspectionPolicy.objects.get(pk=policy_id)
+        filepath = policy.get_full_test_filename()
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(policy.generate_content())
+
+        subprocess.check_output(["/usr/local/bin/yara", filepath, filepath], stderr=subprocess.STDOUT)
+    except ObjectDoesNotExist:
+        logger.error("Yara::try_compile_yara_rules:: could not find inspection policy {} to check conf")
+        return
+    except subprocess.CalledProcessError as e:
+        logger.error("Yara::try_compile_yara_rules:: could not compile rules !")
+        policy.compilable = "KO"
+        policy.compile_status = e.output.decode('utf-8')
+        policy.save()
+        return
+    except Exception as e:
+        logger.error(e)
+        return
+
+    logger.info("Yara::try_compile_yara_rules:: yara rule successfully compiled rules, saving rule file...")
+    policy.compilable = "OK"
+    policy.compile_status = ''
+    policy.save_policy_file()
+    policy.save()

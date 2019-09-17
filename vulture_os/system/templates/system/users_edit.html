@@ -1,0 +1,119 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+{% block content %}
+    <section class="content">
+        <div class="row">
+          <div class="col-md-12">
+            <form id="user_edit_form" action="" method="POST" novalidate="novalidate">
+                {% csrf_token %}
+                <div class="panel">
+                    <div class="panel-heading">
+                        <h1 class="panel-title"><i class="fa fa-users">&nbsp;</i>{% trans "User edition" %}</h1>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="col-lg-4 col-md-6 col-lg-offset-2">
+                                    <div class="form-group">
+                                        <label>{{ user_form.username.label }}</label>
+                                        {{ user_form.username }}
+                                        {% if user_form.username.help_text %}
+                                            <small style="color: grey;">{{ user_form.username.help_text }}</small><br/>
+                                          {% endif %}
+                                        {% if user_form.username.errors %}
+                                            <small style="color: red;">{{ user_form.username.errors }}</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label>{{ user_form.groups.label }}</label>
+                                        {{ user_form.groups }}
+                                        {% if user_form.groups.help_text %}
+                                            <small style="color: grey;">{{ user_form.groups.help_text }}</small><br/>
+                                          {% endif %}
+                                        {% if user_form.groups.errors %}
+                                            <small style="color: red;">{{ user_form.groups.errors }}</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-sm-5">
+                                        <label>{{ user_form.is_superuser.label }}</label><br/>
+                                        {{ user_form.is_superuser }}
+                                        {% if user_form.is_superuser.help_text %}
+                                            <small style="color: grey;">{{ user_form.is_superuser.help_text }}</small><br/>
+                                          {% endif %}
+                                        {% if user_form.is_superuser.errors %}
+                                            <small style="color: red;">{{ user_form.is_superuser.errors }}</small>
+                                        {% endif %}
+                                        </div>
+                                        <div class="col-sm-5">
+                                        <label>{{ user_form.is_active.label }}</label><br/>
+                                        {{ user_form.is_active }}
+                                        {% if user_form.is_active.help_text %}
+                                            <small style="color: grey;">{{ user_form.is_active.help_text }}</small><br/>
+                                        {% endif %}
+                                        {% if user_form.is_active.errors %}
+                                            <small style="color: red;">{{ user_form.is_active.errors }}</small>
+                                        {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="form-group">
+                                        <label>{{ user_form.password1.label }}</label>
+                                        {{ user_form.password1 }}
+                                        {% if user_form.password1.help_text %}
+                                            <small style="color: grey;">{{ user_form.password1.help_text }}</small><br/>
+                                          {% endif %}
+                                        {% if user_form.password1.errors %}
+                                            <small style="color: red;">{{ user_form.password1.errors }}</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label>{{ user_form.password2.label }}</label>
+                                        {{ user_form.password2 }}
+                                        {% if user_form.password2.help_text %}
+                                            <small style="color: grey;">{{ user_form.password2.help_text }}</small><br/>
+                                          {% endif %}
+                                        {% if user_form.password2.errors %}
+                                            <small style="color: red;">{{ user_form.password2.errors }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <a href="{% url 'system.users.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+                    </div>
+                </div>
+            </form>
+          </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block jquery_code %}
+    
+    $(function(){
+        $('.select2').select2();
+
+        var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+        elems.forEach(function(html) {
+          var switchery = new Switchery(html, {
+            'color': '#FA9834'
+          });
+        });
+    })
+
+{% endblock %}

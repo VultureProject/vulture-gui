@@ -1,0 +1,66 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+  
+
+{% endblock %}
+
+
+{% block content %}
+  <script>
+    var netdataTheme = 'slate';
+    var netdataNoFontAwesome = true;
+    var netdataNoBootstrap = true;
+  </script>
+  
+  <script src="/netdata/{{ CURRENT_NODE }}/dashboard.js?v20180326-2"></script>
+  <script>
+
+    // --- OPTIONS FOR THE CHARTS --
+
+    // destroy charts not shown (lowers memory on the browsers)
+    // set this to 'true' to destroy, 'false' to hide the charts
+    NETDATA.options.current.destroy_on_hide = false;
+    
+    // set this to false, to always show all dimensions
+    NETDATA.options.current.eliminate_zero_dimensions = true;
+    
+    // set this to false, to lower the pressure on the browser
+    NETDATA.options.current.concurrent_refreshes = true;
+
+    // if you need to support slow mobile phones, set this to false
+    NETDATA.options.current.parallel_refresher = true;
+
+    // set this to false, to always update the charts, even if focus is lost
+    NETDATA.options.current.stop_updates_when_focus_is_lost = true;
+
+    // since we have many servers and limited sockets,
+    // abort ajax calls when we scroll
+    NETDATA.options.current.abort_ajax_on_scroll = true;
+    
+  </script>
+
+  <section class="content">
+    <div class="row">
+      {% for node in nodes %}
+        <div class="col-md-{{ cols }}">
+
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+  
+  $('.content-wrapper').css('backgroundColor', '#263135');
+  $('.content-wrapper').css('color', '#fff');
+
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+    <link rel="stylesheet" href="{% static 'plugins/datatables/datatables.min.css' %}">
+{% endblock %}
+
+{% block js_include %}
+    <script src="{% static 'plugins/datatables/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'plugins/datatables/dataTables.bootstrap.js' %}"></script>
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                      <a class="btn btn-flat btn-primary" href="{% url 'applications.reputation_ctx.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Context Tags" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="reputation_ctx_list">
+                  </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<i class="fa fa-fw fa-fighter-jet"></i>-->
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "", 
+      mData: "id",
+      bVisible: false,
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name",
+      aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Tags" %}',
+      name: "tags",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "tags"
+    },
+    {
+      sTitle: '{% trans "DB Type" %}',
+      name: "db_type",
+      aTargets: [3],
+      defaultContent: "",
+      mData: "db_type"
+    },
+    {
+      sTitle: '{% trans "URL" %}',
+      name: "uri",
+      aTargets: [4],
+      defaultContent: "",
+      mData: "uri"
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [5],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        result = '<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/apps/reputation_ctx/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/apps/reputation_ctx/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+        //result = result + '&nbsp;<button id="download_'+data+'" type="button" data-toggle="tooltip" data-placement="top" title="Force download" class="btn btn-flat btn-xs btn-primary download"><i class="fas fa-file-download"></i></button>';
+        return result;
+      }
+    }
+  ];
+
+  var reputation_ctx_table = $("#reputation_ctx_list").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+          columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      });
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (!data.status){
+            notify('error', "{% trans 'Error' %}", data.error);
+          } else {
+            fnCallback(data);
+          }
+        }
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+      }) // /$.fail
+      .done( function( data ) {
+        if (!data.status){
+          notify('error', "{% trans 'Error' %}", data.error);
+        } else {
+          fnCallback(data);
+        }
+      }); // /$.done
+    }, // /fnServerData
+
+    fnCreatedRow: function(nRow, aData, iDataIndex){
+
+      /* Events binding to start a reputation_ctx */
+      $(nRow).on('click', '.action', function(e) {
+        /* Request download of the selected reputation_context */
+        /* First, retrieve the action to do */
+        var action = ($(this).hasClass('download') ? "download" : "");
+        $.ajax({
+          type   : "GET",
+          url    : "/api/v1/apps/reputation_ctx/"+action+"/"+aData.id,
+        }) // /$.ajax
+        .fail( function( jqXHR, textStatus ) {
+          new PNotify({
+            title: 'Unknown error occured',
+            text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+jqXHR.responseText
+                  +'</a>',
+            type: 'error',
+            styling: 'bootstrap3',
+            width: '500px',
+            buttons: {
+                closer: true,
+                sticker: false
+            }
+          });
+        }) // /$.fail
+        .done( function( msg ) {
+          if( msg.status ) {
+            new PNotify({
+              title: "Success",
+              text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+msg.message+'</a>',
+              type: 'success',
+              styling: 'bootstrap3',
+              width: '500px',
+              buttons: {
+                  closer: true,
+                  sticker: false
+              }
+            });
+          } else {
+            new PNotify({
+              title: msg.error.split(':').join('</br>'), // Replace : by return for better view,
+              text: '<a style="color:white; text-decoration: underline; font-weight: bold;">'+msg.error_details+'</a>',
+              type: 'error',
+              styling: 'bootstrap3',
+              width: '500px',
+              buttons: {
+                  closer: true,
+                  sticker: false
+              }
+            });
+          }
+        }); // /$.done
+        e.stopPropagation();
+      }); // /$(nRow).on('click', '.action'
+
+
+      /* Events binding to edit a reputation_context */
+      $(nRow).on('click', function(e){
+          var id = aData['id'];
+          window.location.href = "{% url 'applications.reputation_ctx.edit' %}" + id;
+      });
+
+
+    } // fnCreatedRow: function
+  }); // var reputation_ctx_table = $("#backend_list").dataTable
+
+
+  /* Reload table data every 5 seconds */
+  setInterval( function() {
+    reputation_ctx_table.fnDraw();
+  }, 5000);
+
+
+{% endblock %}
