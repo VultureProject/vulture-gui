@@ -102,58 +102,65 @@ class FrontendForm(ModelForm):
     headers = NoValidationField()
     reputation_ctx = NoValidationField()
 
-    """ Impcap/Log Darwin policy """
-    darwin_policy = ModelChoiceField(
-        label=_("Darwin policy"),
-        queryset=DarwinPolicy.objects.all(),
-        widget=Select(attrs={'class': 'form-control select2'}),
-        required=False
-    )
-    """ Log forwarders """
-    log_forwarders = ModelMultipleChoiceField(
-        label=_("Log forwarders"),
-        queryset=LogOM.objects.all().only(*LogOM.str_attrs()),
-        widget=SelectMultiple(attrs={'class': 'form-control select2'}),
-        required=False
-    )
-    """ Log forwarders """
-    log_forwarders_parse_failure = ModelMultipleChoiceField(
-        label=_("Log forwarders - parse failure"),
-        queryset=LogOM.objects.all().only(*LogOM.str_attrs()),
-        widget=SelectMultiple(attrs={'class': 'form-control select2'}),
-        required=False
-    )
-    """ MMDP Reputation database IPv4 """
-    # Defined here AND in model, to use queryset
-    logging_reputation_database_v4 = ModelChoiceField(
-        label=_("Rsyslog IPv4 reputation database"),
-        # queryset=[(f.get('id'), str(f)) for f in Feed.objects.mongo_find({"filename": {"$regex": r"\.mmdb$"},  # MMDB database
-        #                                   "label": {"$regex": r"^((?![iI][Pp][Vv]6).)*$"}},  # Excude IPv6
-        #                                  {"filename": 1, "label": 1})],  # .only( label, filename )
-        # queryset=Feed.objects.filter(filename__iregex="^((?![iI][Pp][Vv]6).)*\.mmdb$"),
-        # queryset=Feed.objects.exclude(filename__iregex="^((?![iI][Pp][Vv]6).)*$").filter(filename__endswith=".mmdb"),
-        queryset=Feed.objects.filter(type="ipv4", filename__endswith=".mmdb"),
-        widget=Select(attrs={'class': 'form-control select2'}),
-        empty_label="No IPv4",
-        required=False
-    )
-    """ MMDP Reputation database IPv6 """
-    # Defined here AND in model, to use queryset
-    logging_reputation_database_v6 = ModelChoiceField(
-        label=_("Rsyslog IPv6 reputation database"),
-        queryset=Feed.objects.filter(type="ipv6", filename__endswith=".mmdb")  # MMDP database & IPv6
-                             .only(*(Feed.str_attrs() + ['filename', 'type'])),
-        widget=Select(attrs={'class': 'form-control select2'}),
-        empty_label="No IPv6",
-        required=False
-    )
-    logging_geoip_database = ModelChoiceField(
-        label=_("Rsyslog GeoIP database"),
-        queryset=Feed.objects.filter(type="GeoIP").only(*(Feed.str_attrs() + ['filename', 'type'])),
-        widget=Select(attrs={'class': 'form-control select2'}),
-        empty_label="No GeoIP",
-        required=False
-    )
+    def __init__(self, *args, **kwargs):
+        """ Impcap/Log Darwin policy """
+        self.fields['darwin_policy'] = ModelChoiceField(
+            label=_("Darwin policy"),
+            queryset=DarwinPolicy.objects.all(),
+            widget=Select(attrs={'class': 'form-control select2'}),
+            required=False
+        )
+        """ Log forwarders """
+        self.fields['log_forwarders'] = ModelMultipleChoiceField(
+            label=_("Log forwarders"),
+            queryset=LogOM.objects.all().only(*LogOM.str_attrs()),
+            widget=SelectMultiple(attrs={'class': 'form-control select2'}),
+            required=False
+        )
+        """ Log forwarders """
+        self.fields['log_forwarders_parse_failure'] = ModelMultipleChoiceField(
+            label=_("Log forwarders - parse failure"),
+            queryset=LogOM.objects.all().only(*LogOM.str_attrs()),
+            widget=SelectMultiple(attrs={'class': 'form-control select2'}),
+            required=False
+        )
+        """ MMDP Reputation database IPv4 """
+        # Defined here AND in model, to use queryset
+        self.fields['logging_reputation_database_v4'] = ModelChoiceField(
+            label=_("Rsyslog IPv4 reputation database"),
+            # queryset=[(f.get('id'), str(f)) for f in Feed.objects.mongo_find({"filename": {"$regex": r"\.mmdb$"},  # MMDB database
+            #                                   "label": {"$regex": r"^((?![iI][Pp][Vv]6).)*$"}},  # Excude IPv6
+            #                                  {"filename": 1, "label": 1})],  # .only( label, filename )
+            # queryset=Feed.objects.filter(filename__iregex="^((?![iI][Pp][Vv]6).)*\.mmdb$"),
+            # queryset=Feed.objects.exclude(filename__iregex="^((?![iI][Pp][Vv]6).)*$").filter(filename__endswith=".mmdb"),
+            queryset=Feed.objects.filter(type="ipv4", filename__endswith=".mmdb"),
+            widget=Select(attrs={'class': 'form-control select2'}),
+            empty_label="No IPv4",
+            required=False
+        )
+        """ MMDP Reputation database IPv6 """
+        # Defined here AND in model, to use queryset
+        self.fields['logging_reputation_database_v6'] = ModelChoiceField(
+            label=_("Rsyslog IPv6 reputation database"),
+            queryset=Feed.objects.filter(type="ipv6", filename__endswith=".mmdb")  # MMDP database & IPv6
+                                 .only(*(Feed.str_attrs() + ['filename', 'type'])),
+            widget=Select(attrs={'class': 'form-control select2'}),
+            empty_label="No IPv6",
+            required=False
+        )
+        self.fields['logging_geoip_database'] = ModelChoiceField(
+            label=_("Rsyslog GeoIP database"),
+            queryset=Feed.objects.filter(type="GeoIP").only(*(Feed.str_attrs() + ['filename', 'type'])),
+            widget=Select(attrs={'class': 'form-control select2'}),
+            empty_label="No GeoIP",
+            required=False
+        )
+
+        self.fields['node'] = ModelChoiceField(
+            label=_('Node'),
+            queryset=Node.objects.all(),
+            widget=Select(attrs={'class': 'form-control select2'})
+        )
 
     class Meta:
         model = Frontend
@@ -196,8 +203,7 @@ class FrontendForm(ModelForm):
             'timeout_keep_alive': NumberInput(attrs={'class': 'form-control'}),
             'https_redirect': CheckboxInput(attrs={'class': 'js-switch'}),
             'parser_tag': TextInput(attrs={'class': 'form-control'}),
-            'file_path': TextInput(attrs={'class': 'form-control'}),
-            'node': Select(choices=Node.objects.all(), attrs={'class': 'form-control select2'})
+            'file_path': TextInput(attrs={'class': 'form-control'})
         }
 
     def __init__(self, *args, **kwargs):

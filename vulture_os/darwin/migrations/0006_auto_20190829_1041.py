@@ -11,15 +11,19 @@ def update_conf_path(apps, schema_editor):
     filters = FilterPolicy.objects.all()
 
     for filter in filters:
-        filter.conf_path = "/home/darwin/conf/f" + filter.name + "/f" + filter.name + "_" + filter.policy.id + ".conf"
+        filter.conf_path = "/home/darwin/conf/f{name}/f{name}_{id}.conf".format(
+            name=filter.policy.name,
+            id=filter.policy.id
+        )
         filter.save()
 
 
 def remove_session_and_logs_filters(apps, schema_editor):
     DarwinFilter = apps.get_model('darwin', 'DarwinFilter')
+    FilterPolicy = apps.get_model('darwin', 'FilterPolicy')
 
     for filter_obj in DarwinFilter.objects.filter(name__in=['session', 'logs']):
-        filter_obj.filterpolicy_set.remove()
+        FilterPolicy.objects.filter(filter=filter_obj).delete()
 
 def initial_access_control(apps, schema_editor):
     AccessControl = apps.get_model('darwin', 'AccessControl')
