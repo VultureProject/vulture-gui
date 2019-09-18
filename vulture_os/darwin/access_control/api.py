@@ -28,6 +28,8 @@ from django.views import View
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from darwin.access_control.models import AccessControl
@@ -39,8 +41,8 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class ACLAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
@@ -69,7 +71,6 @@ class ACLAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request, object_id=None):
         try:

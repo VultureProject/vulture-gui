@@ -36,6 +36,7 @@ from applications.parser.views import COMMAND_LIST, parser_edit, parser_delete
 from gui.decorators.apicall import api_need_key
 from toolkit.log.lognormalizer import test_lognormalizer
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 # Required exceptions imports
 from services.exceptions import ServiceError
@@ -75,8 +76,8 @@ def parser_test(request):
                              'error_details': str.join('', format_exception(*exc_info()))})
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class ParserAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
@@ -106,7 +107,6 @@ class ParserAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request, object_id=None, action=None):
         try:
@@ -136,7 +136,6 @@ class ParserAPIv1(View):
             'error': error
         }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
@@ -153,7 +152,6 @@ class ParserAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def delete(self, request, object_id):
         try:

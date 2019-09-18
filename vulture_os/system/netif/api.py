@@ -25,6 +25,7 @@ __doc__ = 'Network API'
 from system.cluster.models import Cluster, NetworkInterfaceCard, NetworkAddress
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from gui.decorators.apicall import api_need_key
 from system.netif import views as netif_views
 from django.http import JsonResponse
@@ -36,8 +37,8 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class NetworkInterfaceCardAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0")
@@ -103,8 +104,8 @@ def netif_refresh(request):
     })
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class NetworkAddressAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
@@ -140,7 +141,6 @@ class NetworkAddressAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request):
         try:
@@ -161,7 +161,6 @@ class NetworkAddressAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request, object_id=None):
         try:
@@ -182,7 +181,6 @@ class NetworkAddressAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def delete(self, request, object_id=None):
         try:

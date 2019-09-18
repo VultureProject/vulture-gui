@@ -24,6 +24,7 @@ __doc__ = 'VM API'
 
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from gui.decorators.apicall import api_need_key
 from django.http import JsonResponse
 from django.conf import settings
@@ -35,9 +36,8 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class VMAPIv1(View):
-
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
