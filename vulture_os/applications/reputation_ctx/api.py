@@ -30,6 +30,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.crypto import get_random_string
 from django.views import View
 from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
 
 # Django project imports
 from gui.decorators.apicall import api_need_key
@@ -54,6 +55,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def reputation_ctx_download_test(request):
     """
@@ -95,8 +97,8 @@ def reputation_ctx_download_test(request):
                              'error_details': str.join('', format_exception(*exc_info()))})
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class ReputationContextAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
@@ -126,7 +128,6 @@ class ReputationContextAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request, object_id=None, action=None):
         try:
@@ -156,7 +157,6 @@ class ReputationContextAPIv1(View):
             'error': error
         }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
@@ -173,7 +173,6 @@ class ReputationContextAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def delete(self, request, object_id):
         try:

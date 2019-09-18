@@ -35,6 +35,7 @@ from darwin.inspection.models import InspectionPolicy
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 # Logger configuration imports
 import logging
@@ -42,8 +43,8 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class InspectionPolicyAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
