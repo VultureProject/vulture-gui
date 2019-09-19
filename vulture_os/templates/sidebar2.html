@@ -41,17 +41,11 @@
                     </div>-->
                     <br/>
                     <ul id="mainnav-menu" class="list-group">
-                        <li class="link_gui">
+                        <li class="link_gui link_dashboard_services">
                             <a href="{% url 'gui.dashboard.services' %}">
                                 <i class="fas fa-tachometer-alt"></i>
-                                <span class="menu-title">{% trans "Monitoring" %}</span>
-                                <i class="arrow"></i>
+                                <span class="menu-title">{% trans "General" %}</span>
                             </a>
-            
-                            <!--Submenu-->
-                            <ul class="collapse_gui collapse">
-                                <li class="link_dashboard_services"><a href="{% url 'gui.dashboard.services' %}">{% trans "Services" %}</a></li>
-                            </ul>
                         </li>
 
                         {% for menu in MENUS %}
