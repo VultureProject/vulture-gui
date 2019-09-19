@@ -26,6 +26,7 @@ __doc__ = 'Strongswan API'
 from services.strongswan import views as strongswan_view
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from services.strongswan.models import Strongswan
 from gui.decorators.apicall import api_need_key
 from django.http import JsonResponse
@@ -37,8 +38,8 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class StrongswanAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
@@ -68,7 +69,6 @@ class StrongswanAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request, object_id=None, action=None):
         try:
@@ -106,7 +106,6 @@ class StrongswanAPIv1(View):
             'error': error
         }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
@@ -123,7 +122,6 @@ class StrongswanAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def patch(self, request, object_id):
         allowed_fields = ('ipsec_type', 'ipsec_keyexchange', 'ipsec_authby', 'ipsec_psk', 'ipsec_fragmentation',
@@ -149,7 +147,6 @@ class StrongswanAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def delete(self, request, object_id):
         try:

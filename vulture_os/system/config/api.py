@@ -29,6 +29,7 @@ from system.config.models import Config
 from gui.decorators.apicall import api_need_key
 from django.http import JsonResponse
 from system.config.views import config_edit, pf_whitelist_blacklist
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 # Logger configuration imports
@@ -37,8 +38,8 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class ConfigAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request):
         try:
@@ -58,7 +59,6 @@ class ConfigAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request, list_type=None):
         try:
@@ -75,7 +75,6 @@ class ConfigAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request):
         try:
@@ -91,7 +90,6 @@ class ConfigAPIv1(View):
             'error': error
         }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def patch(self, request):
         allowed_fields = ('pf_ssh_restrict', 'pf_admin_restrict', 'pf_whitelist', 'pf_blacklist',

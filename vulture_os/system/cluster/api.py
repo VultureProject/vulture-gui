@@ -25,6 +25,7 @@ __doc__ = 'Cluster API'
 
 # Django system imports
 from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -137,8 +138,8 @@ def cluster_info(request):
         }, 500)
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class NodeAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
@@ -168,7 +169,6 @@ class NodeAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request, object_id, action=None):
         try:
@@ -198,7 +198,6 @@ class NodeAPIv1(View):
             'error': error
         }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
@@ -215,7 +214,6 @@ class NodeAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def patch(self, request, object_id):
         allowed_fields = ('pf_limit_states', 'pf_limit_frags', 'pf_limit_src', 'pf_custom_config', 'gateway',

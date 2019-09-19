@@ -89,16 +89,27 @@ def parser_delete(request, object_id, api=False):
     if ((request.method == "POST" and request.POST.get('confirm', "").lower() == "yes")
             or (api and request.method == "DELETE" and request.JSON.get('confirm', "").lower() == "yes")):
 
-        """ Delete the object """
-        parser_name = parser.name
-        parser.delete()
-        logger.info("Parser '{}' deleted.".format(parser_name))
+        try:
+            # Firstly, try to delete the conf before deleting the object
+            parser.delete_conf()
 
-        if api:
-            return JsonResponse({
-                'status': True
-            }, status=204)
-        return HttpResponseRedirect(reverse('applications.parser.list'))
+            """ Delete the object """
+            parser_name = parser.name
+            parser.delete()
+            logger.info("Parser '{}' deleted.".format(parser_name))
+        except Exception as e:
+            error = "Fail to delete the object : {}".format(e)
+            if api:
+                return JsonResponse({
+                    'status': False,
+                    'error': str(e)
+                }, status=500)
+        else:
+            if api:
+                return JsonResponse({
+                    'status': True
+                }, status=204)
+            return HttpResponseRedirect(reverse('applications.parser.list'))
 
     if api:
         return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
@@ -156,7 +167,6 @@ def parser_edit(request, object_id=None, api=False):
         """ Generate the non-yet saved object conf """
         try:
             logger.debug("Trying  '{}'".format(parser.name))
-            # TODO by GCA: Non-used variable?
             content = parser.test_conf()
             logger.info("Parser '{}' conf ok".format(parser.name))
         except VultureSystemError as e:
@@ -175,7 +185,6 @@ def parser_edit(request, object_id=None, api=False):
 
         first_save = not object_id
         try:
-            # TODO by GCA: Empty function called. Did not exist before
             parser.save_conf()
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """

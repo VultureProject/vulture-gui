@@ -203,6 +203,7 @@ def delete_conf(logger, filename):
     from darwin.defender_policy.models import DEFENDER_PATH
     from darwin.defender_policy.policy import HAPROXY_PATH
     from services.darwin.darwin import DARWIN_PATH
+    from services.rsyslogd.rsyslog import RSYSLOG_PATH
 
     allowed_files_regex = ["{}/\w+_\d+\.html".format(ERROR_TPL_PATH),
                            "{}/reputation_ctx_\d+\.mmdb".format(REPUTATION_CTX_DB_PATH),
@@ -210,6 +211,7 @@ def delete_conf(logger, filename):
                            "{}/defender_[0-9]+?\.conf".format(DEFENDER_PATH),
                            "{}/spoe_defender_[0-9]+?\.txt".format(HAPROXY_PATH),
                            "{}/backend_defender_[0-9]+?\.cfg".format(HAPROXY_PATH),
+                           "{}/parser_[0-9]+\.rb".format(RSYSLOG_PATH),
                            "{}/f[\w-]+/f[\w-]+_[0-9]+.conf".format(DARWIN_PATH)]
 
     allowed = False

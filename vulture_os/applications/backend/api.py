@@ -29,6 +29,7 @@ from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbi
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
 
 # Django project imports
 from gui.decorators.apicall import api_need_key
@@ -93,9 +94,8 @@ def backend_test_conf(request):
                              'error_details': str.join('', format_exception(*exc_info()))})
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class BackendAPIv1(View):
-
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
@@ -125,7 +125,6 @@ class BackendAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request, object_id=None, action=None):
         try:
@@ -155,7 +154,6 @@ class BackendAPIv1(View):
             'error': error
         }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
@@ -172,7 +170,6 @@ class BackendAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def delete(self, request, object_id):
         try:

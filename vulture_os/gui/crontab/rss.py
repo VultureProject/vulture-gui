@@ -42,7 +42,7 @@ def rss_fetch():
 
     proxy = get_proxy()
     try:
-        rss_uri = "https://dl.vultureproject.org/news.json"
+        rss_uri = "https://predator.vultureproject.org/news.json"
         infos = requests.get(rss_uri, proxies=proxy).json()
         logger.debug("Crontab::rss_fetch: Received {} RSS feed".format(len(infos)))
         for info in infos:
