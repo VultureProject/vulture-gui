@@ -120,11 +120,6 @@
     }
   ];
 
-  var columns = [];
-  for (var i in aoColumns){
-    columns.push(aoColumns[i].mData);
-  }
-
   var netif_table = $("#interface_list").dataTable({
       bServerSide   : true,
       order         : [[1, 'desc']],
@@ -136,6 +131,11 @@
       aoColumnDefs: aoColumns,
       language: language_datatable,
       fnServerData  : function(sSource, aoData, fnCallback){
+
+        var columns = [];
+        for (var i in aoColumns){
+          columns.push(aoColumns[i].mData);
+        }
 
         aoData.push({
           name: 'columns',
