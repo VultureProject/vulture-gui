@@ -1173,6 +1173,7 @@ function prepare_type_logs_selector(){
                 })
 
                 $('.choice-type-logs').on('click', function(){
+                    selected_app = null;
                     selected_type = $(this).data('type');
                     sessionStorage.setItem('default_type', selected_type);
 

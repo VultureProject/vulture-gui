@@ -137,7 +137,7 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
 
         """ After saving, reload the Rsyslog conf of all Frontends that uses this LogForwarder """
         """ For each node """
-        for node in Node.objects.all().only():
+        for node in Node.objects.all():
             """ If the LogForwarder is used by an enable frontend on this node """
             frontends = []
             # FIXME : Add .distinct("frontend"):
