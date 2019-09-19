@@ -25,7 +25,6 @@ __doc__ = 'Cluster dedicated form class'
 # Django system imports
 from django.conf import settings
 from django.forms import ModelForm, TextInput, Textarea, HiddenInput, ModelChoiceField, Select, ValidationError
-from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
 from system.cluster.models import Node, NetworkAddress
@@ -72,13 +71,23 @@ class NodeForm(ModelForm):
             raise ValidationError("This field does not support non IPv4 address")
         return value
 
+    def clean_static_routes(self):
+        value = self.cleaned_data.get('static_routes')
+        value = value.replace('\r', '')
+        return value
+
+    def clean_pf_custom_config(self):
+        value = self.cleaned_data.get('pf_custom_config')
+        value = value.replace('\r', '')
+        return value
+
 
 class NodeAddForm(ModelForm):
 
     class Meta:
         model = Node
 
-        fields = ['name', 'pf_limit_states','pf_custom_config',
+        fields = ['name', 'pf_limit_states', 'pf_custom_config',
                   'pf_limit_frags', 'pf_limit_src']
 
         widgets = {

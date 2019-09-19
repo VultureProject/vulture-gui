@@ -928,9 +928,14 @@ var workflow_vue = new Vue({
                         for (var i in self.frontend_choices){
                             var f = self.frontend_choices[i];
                             if (f.id === parseInt(step.data.object_id)){
-                                var label = "";
+                                var label = ["\n"];
                                 for (var j in f.listeners){
                                     var listener = f.listeners[j];
+
+                                    if (j > 1){
+                                        label.push("...");
+                                        break;
+                                    }
 
                                     var mode = f.mode;
                                     if (mode === "http"){
@@ -938,10 +943,10 @@ var workflow_vue = new Vue({
                                             mode = "https://"
                                     }
 
-                                    label += "\n" + mode + "://" + listener.addr_port;
+                                    label.push(mode + "://" + listener.addr_port)
                                 }
 
-                                tmp.label = label;
+                                tmp.label = label.join('\n');
 
                                 if (f.enable_logging){
                                     var node_tmp = {
@@ -950,13 +955,18 @@ var workflow_vue = new Vue({
                                         icon: icon_by_type['log']
                                     }
 
-                                    var label = [];
+                                    var label = ["\n"];
                                     for (var j in f.log_forwarders[0]){
+                                        if (j > 1){
+                                            label.push('...');
+                                            break;
+                                        }
+
                                         var log = f.log_forwarders[0][j];
                                         label.push(log.type + " - " + log.name)
                                     }
 
-                                    node_tmp.label = "\n" + label.join('\n');
+                                    node_tmp.label = label.join('\n');
                                     nodes.push(node_tmp)
 
                                     edges.push({
@@ -997,16 +1007,18 @@ var workflow_vue = new Vue({
                         for (var i in self.backend_choices){
                             var b = self.backend_choices[i];
                             if (parseInt(b.id) === step.data.object_id){
-                                var label = "";
+                                var label = ["\n"];
                                 for (var j in b.servers){
-                                    if (j > 0)
-                                        label += "\n";
+                                    if (j > 1){
+                                        label.push("...");
+                                        break;
+                                    }
 
                                     var server = b.servers[j];
-                                    label += b.mode + "://" + server.target + ":" + server.port;
+                                    label.push(b.mode + "://" + server.target + ":" + server.port);
                                 }
 
-                                tmp.label = label;
+                                tmp.label = label.join('\n');
                                 break;
                             }
                         }
