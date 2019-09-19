@@ -25,19 +25,15 @@ __doc__ = 'Log Forwarders View'
 
 # Django system imports
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.db.models.deletion import ProtectedError
-from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
-from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic import View
 
 # Django project imports
 from applications.logfwd.form import (LogOMFileForm, LogOMRELPForm, LogOMHIREDISForm, LogOMFWDForm,
                                       LogOMElasticSearchForm, LogOMMongoDBForm)
-from applications.logfwd.models import LogOM, LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB
+from applications.logfwd.models import LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB
 from gui.forms.form_utils import DivErrorList
 from services.frontend.models import Frontend, Listener
 from system.cluster.models import Node
@@ -76,9 +72,9 @@ LOGFWD_FORMS = {
 
 def logfwd_clone(request, fw_type, object_id):
     """ LogFwd view used to clone an object
-    N.B: Do not totally clone the object and save-it in MongoDB 
+    N.B: Do not totally clone the object and save-it in MongoDB
         because some attributes are unique constraints
- 
+
     :param request: Django request object
     :param fw_type:    Type of LogOM object
     :param object_id: MongoDB object_id of a LogOM object
@@ -203,8 +199,8 @@ def logfwd_delete(request, fw_type, object_id, api=False):
 
             if api:
                 return JsonResponse({
-                        'status': True
-                    }, status=204)
+                    'status': True
+                }, status=204)
             return HttpResponseRedirect('/apps/logfwd')
         except ProtectedError as e:
             logger.error("Error trying to delete Log Forwarder '{}': Object is currently used :".format(log_om.name))
@@ -219,8 +215,7 @@ def logfwd_delete(request, fw_type, object_id, api=False):
     if api:
         return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
 
-    return render(request, "generic_delete.html",
-    {
+    return render(request, "generic_delete.html", {
         'obj_inst': log_om,
         'used_by': used_frontends,
         'error': error,
@@ -231,6 +226,7 @@ def logfwd_delete(request, fw_type, object_id, api=False):
 
 def logfwd_enable(request, fw_type, object_id):
     raise NotImplementedError()
+
 
 def logfwd_disable(request, fw_type, object_id):
     raise NotImplementedError()
