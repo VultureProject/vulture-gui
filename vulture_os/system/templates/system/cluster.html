@@ -79,7 +79,10 @@
       sTitle: '{% trans "Network Interfaces" %}',
       name: "addresses", aTargets: [2],
       defaultContent: "",
-      mData: "addresses"
+      mData: "addresses",
+      mRender: function(data, type, row){
+        return data.join('<br/>')
+      }
     },
      {
       sTitle: '{% trans "MongoDB" %}',
@@ -150,8 +153,6 @@
     var col = aoColumns[i].mData;
     columns.push(col);
   }
-
-  console.log(columns)
 
   var cluster_table = $("#node_list").dataTable({
       bServerSide   : true,
