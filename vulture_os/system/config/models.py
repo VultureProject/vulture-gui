@@ -14,7 +14,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
-
 __author__ = "Jérémie JOURDIN"
 __credits__ = []
 __license__ = "GPLv3"
@@ -23,11 +22,11 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Global Configuration main models'
 
+from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
 # Django project imports
 from authentication.ldap.models import LDAPRepository
-from django.utils.translation import ugettext_lazy as _
 from toolkit.mongodb.mongo_base import MongoBase
 
 # Required exceptions imports
@@ -62,6 +61,7 @@ class Config(models.Model):
     branch = models.TextField(default="community")
     predator_apikey = models.TextField(default="fdsqJr_45;..", blank=True)
     shodan_apikey = models.TextField(default="", blank=True)
+    chameleon_apikey = models.TextField(default="", blank=True)
     smtp_server = models.TextField(blank=True, default="")
     pf_whitelist = models.TextField(blank=True, null=True, default="")
     pf_blacklist = models.TextField(blank=True, null=True, default="")
