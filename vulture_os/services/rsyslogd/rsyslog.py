@@ -28,7 +28,7 @@ from django.conf import settings
 # Django project imports
 from gui.models.feed import DATABASES_PATH
 from services.service import Service
-from services.frontend.models import Frontend, Listener
+from services.frontend.models import Frontend
 from services.rsyslogd.models import RsyslogSettings
 from system.cluster.models import Cluster
 from system.config.models import write_conf
@@ -36,8 +36,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from services.exceptions import (ServiceError, ServiceConfigError, ServiceJinjaError, ServiceStartError,
-                                 ServiceStatusError, ServiceStopError, ServiceTestConfigError)
+from services.exceptions import ServiceError
 from subprocess import CalledProcessError
 from system.exceptions import VultureSystemError
 
