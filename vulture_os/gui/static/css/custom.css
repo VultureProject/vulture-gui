@@ -467,6 +467,7 @@ table.dataTable.compact tbody th, table.dataTable.compact tbody td{
 
 .value{
     margin-right: 10px;
+    word-break: break-all;
 }
 
 .pagination{

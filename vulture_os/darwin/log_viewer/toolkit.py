@@ -24,6 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Log Viewer view'
 
 
+from applications.logfwd.models import LogOMMongoDB
 from django.utils.translation import ugettext as _
 from toolkit.mongodb.mongo_base import MongoBase
 from requests.exceptions import ConnectionError

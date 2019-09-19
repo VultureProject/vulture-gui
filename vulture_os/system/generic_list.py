@@ -77,7 +77,7 @@ class ListView(View):
         search = request.POST['sSearch']
         columns = json_loads(request.POST['columns'])
 
-        col_sort = columns[int(request.POST["iSortCol_0"])]
+        col_sort = columns[int(request.POST["iSortingCols"])]
         col_order = "{}{}".format(order[request.POST['sSortDir_0']], col_sort)
 
         s = Q()

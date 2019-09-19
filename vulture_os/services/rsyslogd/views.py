@@ -38,7 +38,6 @@ from bson.errors import InvalidId
 
 # Logger configuration imports
 import logging
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
