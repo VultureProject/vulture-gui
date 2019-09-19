@@ -87,6 +87,15 @@ CRONJOBS = (
     ("1 * * * *",   "gui.crontab.documentation.doc_update") #Every hour
 )
 
+# Extend cronjobs with custom cronjobs
+if os.path.exists(os.path.dirname(os.path.abspath(__file__))+"/custom_cronjobs.py"):
+    try:
+        from .custom_cronjobs import CUSTOM_CRONJOBS
+        CRONJOBS.extend(CUSTOM_CRONJOBS)
+    except:
+        pass
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
