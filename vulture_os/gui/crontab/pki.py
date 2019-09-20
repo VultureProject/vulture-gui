@@ -51,8 +51,8 @@ def acme_update():
     for cert in X509Certificate.objects.filter(is_vulture_ca=False, is_external=True):
         tmp_crt = X509.load_cert_string(cert.cert)
         cn = str(tmp_crt.get_subject()).replace("/CN=", "")
-        if os.path.isfile("/home/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)):
-            with open("/home/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)) as file_cert:
+        if os.path.isfile("/var/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)):
+            with open("/var/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)) as file_cert:
                 pem_cert = file_cert.read()
                 cert.cert = pem_cert
                 cert.save()
