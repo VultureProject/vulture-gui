@@ -208,7 +208,7 @@ class FrontendForm(ModelForm):
                   'log_forwarders', 'enable_logging_reputation', 'logging_reputation_database_v4',
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
-                  'disable_octet_counting_framing', 'enable_logging_body', 'https_redirect',
+                  'disable_octet_counting_framing', 'https_redirect',
                   'log_forwarders_parse_failure', 'parser_tag', 'file_path', 'node')
 
         widgets = {
@@ -222,7 +222,6 @@ class FrontendForm(ModelForm):
             'impcap_intf': Select(choices=NetworkInterfaceCard.objects.all(), attrs={'class': "form-control select2"}),
             'enable_logging_reputation': CheckboxInput(attrs={'class': "js-switch"}),
             'log_level': Select(choices=LOG_LEVEL_CHOICES, attrs={'class': 'form-control select2'}),
-            'enable_logging_body': CheckboxInput(attrs={'class': "js-switch"}),
             'log_condition': Textarea(attrs={'class': 'form-control'}),
             'ruleset': Select(attrs={'class': 'form-control select2'}),
             'listening_mode': Select(choices=LISTENING_MODE_CHOICES, attrs={'class': 'form-control select2'}),
