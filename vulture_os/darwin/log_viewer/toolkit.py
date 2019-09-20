@@ -24,7 +24,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Log Viewer view'
 
 
-from applications.logfwd.models import LogOMMongoDB
 from django.utils.translation import ugettext as _
 from toolkit.mongodb.mongo_base import MongoBase
 from requests.exceptions import ConnectionError
@@ -57,7 +56,8 @@ class LogViewerMongo:
         'access': 'haproxy',
         'access_tcp': 'haproxy_tcp',
         'impcap': 'impcap',
-        'darwin': 'darwin'
+        'darwin': 'darwin',
+        'message_queue': 'system_messagequeue'
     }
 
     TIME_FIELD = {
@@ -66,7 +66,8 @@ class LogViewerMongo:
         'access_tcp': 'time',
         'internal': 'timestamp',
         'impcap': 'time',
-        'darwin': 'time'
+        'darwin': 'time',
+        'message_queue': 'date_add'
     }
 
     DATABASE = "logs"
@@ -110,6 +111,9 @@ class LogViewerMongo:
         if self.frontend:
             if self.frontend.mode == 'tcp':
                 type_logs += "_" + self.frontend.mode
+
+        if type_logs == "message_queue":
+            self.DATABASE = "vulture"
 
         self.COLLECTION = self.COLLECTIONS_NAME[type_logs]
         self.client = MongoBase()

@@ -1,6 +1,16 @@
+var mapping_text = {
+    "date_add": gettext("Start time"),
+    "modified": gettext("End time"),
+    "node_id": gettext("Node"),
+    "status": gettext("Status"),
+    "result": gettext("Results"),
+    'action': gettext('Action')
+}
+
 var reportrange;
 var gridster;
 
+var nodes_id;
 var network;
 var vis_nodes = [];
 var vis_edges = [];
@@ -632,7 +642,7 @@ function delete_grid(e){
     }
 }
 
-function render_col(col){
+function render_col(col, mapping){
     var render = function(data, type, row){
         if (data === null)
             return "";
@@ -642,7 +652,7 @@ function render_col(col){
         return data;
     }
 
-    if ($.inArray(col, ['time', '@timestamp', 'timestamp_app', 'timestamp', 'unix_timestamp', 'date_time']) > -1){
+    if ($.inArray(col, ['date_add', 'modified', 'time', '@timestamp', 'timestamp_app', 'timestamp', 'unix_timestamp', 'date_time']) > -1){
         render = function(data, type, row){
             try{
                 var date = moment(data);
@@ -690,6 +700,14 @@ function render_col(col){
             if (data)
                 return "<label class='label label-danger'>" + data + "</label>";
             return "";
+        }
+    } else if (Array.isArray(mapping)){
+        render = function(data, type, row){
+            if (mapping[0] === "foreign_key" && mapping[1] === "Node"){
+                return nodes_id[data]
+            }
+
+            return data;
         }
     }
 
@@ -882,10 +900,14 @@ function init_datatable(data){
 
         triable_columns.push(field.name);
 
-        if ($.inArray(field.name, ['unix_timestamp', 'timestamp_app', 'time']) > -1)
+        if ($.inArray(field.name, ['unix_timestamp', 'timestamp_app', 'time']) > -1){
             var human_label = gettext('Date')
-        else
-            var human_label = field.name.toLowerCase()
+        } else {
+            if (mapping_text[field.name])
+                var human_label = mapping_text[field.name];
+            else
+                var human_label = field.name.toLowerCase()
+        }
 
         columnsDefs.push({
             sTitle: human_label,
@@ -893,7 +915,7 @@ function init_datatable(data){
             aTargets: [i],
             mData: field.name,
             sWidth: (field.width/12) * 100 + "%",
-            mRender: render_col(field.name),
+            mRender: render_col(field.name, mapping[field.name]),
             defaultContent: '-'
         })
 
@@ -1168,6 +1190,8 @@ function prepare_type_logs_selector(){
 
         function(response){
             if (check_json_error(response)){
+                nodes_id = response.nodes;
+
                 $.each(response.logs, function(type, text){
                     $('#list-type-logs').append(`<li><a class='choice-type-logs' href='#' data-type='${type}'>${text}</a></li>`);
                 })
@@ -1250,6 +1274,11 @@ function init_search(data){
             if (selected_type === "pf" && field == "hostname"){
                 filter.input = "select";
                 filter.values = nodes;
+            }
+
+            if (Array.isArray(type)){
+                filter.input = "number"
+                filter.type = "integer"
             }
 
             filters.push(filter)

@@ -25,6 +25,7 @@ __doc__ = 'Log Viewer utilities'
 
 
 from django.utils.translation import ugettext as _
+from system.cluster.models import Node
 
 
 PREDATOR_COLUMNS = (
@@ -414,11 +415,56 @@ DEFAULT_IMPCAP_COLUMNS = {
     }
 }
 
+MESSAGE_QUEUE_COLUMNS = {
+    "date_add": "datetime",
+    "node_id": ["foreign_key", "Node"],
+    "status": "integer",
+    "result": "boolean",
+    "action": "string",
+    "config": "string",
+    "modified": "datetime",
+    "internal": "boolean"
+}
+
+DEFAULT_MESSAGE_QUEUE_COLUMNS = {
+    "0": {
+        'name': 'date_add',
+        'width': 2,
+        "x": 0
+    },
+    "1": {
+        'name': 'modified',
+        'width': 2,
+        "x": 2
+    },
+    "2": {
+        'name': 'node_id',
+        'width': 2,
+        'x': 4
+    },
+    "3": {
+        "name": "action",
+        "width": 2,
+        "x": 6
+    },
+    "4": {
+        'name': 'status',
+        'width': 1,
+        'x': 8
+    },
+    "5": {
+        'name': 'result',
+        'width': 3,
+        'x': 9
+    },
+}
+
 AVAILABLE_LOGS = {
     'access': _('Reverse Proxy'),
     'pf': _('Packet Filter'),
     'internal': _('Internal'),
-    'impcap': _('Network capture')
+    'impcap': _('Network capture'),
+    'message_queue': _('Internal tasks')
 }
 
 MAPPING = {
@@ -426,7 +472,8 @@ MAPPING = {
     'access_tcp': ACCESS_TCP_COLUMNS,
     'pf': PF_COLUMNS,
     'internal': INTERNAL_COLUMNS,
-    'impcap': IMPCAP_COLUMNS
+    'impcap': IMPCAP_COLUMNS,
+    'message_queue': MESSAGE_QUEUE_COLUMNS
 }
 
 DEFAULT_COLUMNS = {
@@ -434,7 +481,8 @@ DEFAULT_COLUMNS = {
     'access_tcp': DEFAULT_ACCESS_TCP_COLUMNS,
     'pf': DEFAULT_PF_COLUMNS,
     'internal': DEFAULT_INTERNAL_COLUMNS,
-    'impcap': DEFAULT_IMPCAP_COLUMNS
+    'impcap': DEFAULT_IMPCAP_COLUMNS,
+    'message_queue': DEFAULT_MESSAGE_QUEUE_COLUMNS
 }
 
 
