@@ -77,9 +77,14 @@ def log_viewer(request):
             if not access:
                 del available_logs['access']
 
+            nodes = {}
+            for n in Node.objects.all():
+                nodes[n.id] = n.name
+
             data = {
                 'status': True,
-                'logs': available_logs
+                'logs': available_logs,
+                'nodes': nodes
             }
 
         elif action == "get_available_apps":
