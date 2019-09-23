@@ -669,244 +669,6 @@ var workflow_vue = new Vue({
             return indices_to_remove;
         },
 
-        edit_node(data, callback){
-            PNotify.removeAll();
-
-            var self = this;
-            var node = self.get_node(data.id);
-
-            if (!node.data){
-                callback();
-                return;
-            }
-
-            var node_type = node.data.type;
-            if (node_type === "start"){
-                node_type = "frontend";
-                for (var i in self.workflow){
-                    var step = self.workflow[i];
-                    if (step.data.type === "frontend"){
-                        node = step;
-                        break;
-                    }
-                }
-            } else if (node_type === "action"){
-                node_type = "acl";
-                for (var i in self.workflow){
-                    var step = self.workflow[i];
-                    if (step.id === node.parent){
-                        node = step;
-                        break;
-                    }
-                }
-            }
-
-            switch(node_type){
-                case "frontend":
-                    $.confirm({
-                        title: gettext('Listener'),
-                        columnClass: 'medium',
-                        content: form_frontend(true, self.frontend_choices, node.data.object_id, self.workflow_mode, node.data.fqdn, node.data.public_dir),
-                        buttons: {
-                            formSubmit: {
-                                text: gettext('Save'),
-                                btnClass: 'btn-blue',
-                                action: function () {
-                                    var frontend_id = this.$content.find('.frontend').val();
-                                    var fqdn = this.$content.find('.fqdn').val();
-                                    var public_dir = this.$content.find('.public_dir').val();
-
-                                    node.data.fqdn = fqdn;
-                                    node.data.public_dir = public_dir;
-                                    node.data.object_id = frontend_id
-                                    self.workflow[0].label = fqdn + public_dir;
-
-
-                                    var index_frontend = self.get_node(node.id, true);
-                                    self.workflow[index_frontend] = node;
-                                    self.redraw_workflow();
-                                }
-                            },
-                            cancel: function () {
-                                //close
-                                return true;
-                            }
-                        },
-                        onContentReady: onContentReady
-                    })
-                    break;
-                case "acl":
-                    var actions = self.get_actions(node);
-
-                    var form = form_acl(
-                        self.workflow_mode,
-                        true,
-                        self.access_control_choices,
-                        node.data.object_id,
-                        node.data.action_satisfy,
-                        node.data.redirect_url_satisfy,
-                        node.data.action_not_satisfy,
-                        node.data.redirect_url_not_satisfy
-                    )
-
-                    $.confirm({
-                        title: gettext('Access Control List'),
-                        columnClass: 'large',
-                        content: form,
-                        buttons: {
-                            formSubmit: {
-                                text: gettext('Save'),
-                                btnClass: 'btn-blue',
-                                action: function () {
-                                    var acl_id = this.$content.find('.access_control').val();
-                                    var action_satisfy = this.$content.find('.action_satisfy').val();
-                                    var action_not_satisfy = this.$content.find('.action_not_satisfy').val();
-
-                                    var redirect_url_satisfy = this.$content.find('.redirect_url_satisfy').val();
-                                    var redirect_url_not_satisfy = this.$content.find('.redirect_url_not_satisfy').val();
-
-                                    if (!self.check_action(action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy))
-                                        return false;
-
-                                    self.define_acl(node, acl_id, action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy)
-                                }
-                            },
-                            cancel: function(){
-                                return true;
-                            },
-                        },
-                        onContentReady: onContentReady
-                    });
-                    break;
-                case "waf":
-                    $.confirm({
-                        title: gettext('Defender Policy'),
-                        columnClass: "medium",
-                        content: form_waf(self.waf_policy_choices, node.data.object_id),
-                        buttons: {
-                            formSubmit: {
-                                text: gettext('Save'),
-                                btnClass: 'btn-blue',
-                                action: function(){
-                                    var waf_id = this.$content.find('.waf_policy').val();
-
-                                    node.data.object_id = waf_id;
-
-                                    for (var i in self.waf_policy_choices){
-                                        var waf = self.waf_policy_choices[i];
-                                        if (waf.id === waf_id){
-                                            node.label = waf.name;
-                                            node.data.name = waf.name;
-                                        }
-                                    }
-
-                                    var index_waf = self.get_node(node.id, true);
-                                    self.workflow[index_waf] = node;
-                                    self.redraw_workflow();
-                                }
-                            },
-                            cancel: function(){
-                                return true;
-                            }
-                        }
-                    })
-                    break;
-                case "backend":
-                    $.confirm({
-                        title: gettext('Applications'),
-                        columnClass: "medium",
-                        content: form_backend(self.backend_choices, node.data.object_id),
-                        buttons: {
-                            formSubmit: {
-                                text: gettext('Save'),
-                                btnClass: 'btn-blue',
-                                action: function(){
-                                    var backend_id = this.$content.find('.backend').val();
-
-                                    node.data.object_id = backend_id;
-
-                                    var index_backend = self.get_node(data.id, true);
-                                    self.workflow[index_backend] = node;
-                                    self.redraw_workflow();
-                                }
-                            },
-                            cancel: function(){
-                                return true;
-                            }
-                        }
-                    })
-                    break;
-            }
-            callback();
-        },
-
-        delete_node(data, callback){
-            var self = this;
-            PNotify.removeAll();
-            if (data.nodes.length > 1){
-                self.error(gettext("You can't delete several nodes at once"))
-                callback();
-                return false;
-            }
-
-            var node_id = data.nodes[0];
-            var node_to_delete = self.get_node(node_id);
-            self.last_node_append = node_to_delete.parent;
-
-            if (!node_to_delete.data){
-                callback();
-                return;
-            }
-
-            switch(node_to_delete.data.type){
-                case "start":
-                    callback();
-                    return false;
-                case "frontend":
-                    self.frontend_set = false;
-                    self.backend_set = false;
-                    self.workflow_mode = null;
-                    break;
-                case "backend":
-                    self.backend_set = false;
-                    break;
-                case "waf":
-                    self.policy_set= false;
-                    self.backend_set = false;
-                    break;
-                case "action":
-                    self.error(gettext("An action can not be deleted. Delete the Access Control instead."))
-                    callback();
-                    return false;
-            }
-
-            for (var i in self.workflow){
-                var node = self.workflow[i];
-                if (node.id === node_id){
-                    indices_to_remove = self.remove_children(node.id);
-                    indices_to_remove.push(node.id)
-                }
-            }
-
-            for (var i in indices_to_remove){
-                var id = indices_to_remove[i];
-                indice = self.get_node(id, true);
-                var node = self.get_node(id);
-                if (node.data.type === "frontend")
-                    self.frontend_set = false;
-                else if (node.data.type === "backend")
-                    self.backend_set = false;
-                else if (node.data.type === "waf")
-                    self.policy_set = false;
-
-                self.workflow.splice(indice, 1);
-            }
-
-            self.init_toolbox_tree();
-            self.redraw_workflow();
-            callback();
-        },
-
         redraw_workflow(){
             var self = this;
 
@@ -1075,10 +837,242 @@ var workflow_vue = new Vue({
                     addNode: false,
                     initiallyActive: true,
                     addEdge: false,
-                    editNode: self.edit_node,
+                    editNode: function(data, callback){
+                        PNotify.removeAll();
+
+                        var node = self.get_node(data.id);
+
+                        if (!node.data){
+                            callback();
+                            return;
+                        }
+
+                        var node_type = node.data.type;
+                        if (node_type === "start"){
+                            node_type = "frontend";
+                            for (var i in self.workflow){
+                                var step = self.workflow[i];
+                                if (step.data.type === "frontend"){
+                                    node = step;
+                                    break;
+                                }
+                            }
+                        } else if (node_type === "action"){
+                            node_type = "acl";
+                            for (var i in self.workflow){
+                                var step = self.workflow[i];
+                                if (step.id === node.parent){
+                                    node = step;
+                                    break;
+                                }
+                            }
+                        }
+
+                        switch(node_type){
+                            case "frontend":
+                                $.confirm({
+                                    title: gettext('Listener'),
+                                    columnClass: 'medium',
+                                    content: form_frontend(true, self.frontend_choices, node.data.object_id, self.workflow_mode, node.data.fqdn, node.data.public_dir),
+                                    buttons: {
+                                        formSubmit: {
+                                            text: gettext('Save'),
+                                            btnClass: 'btn-blue',
+                                            action: function () {
+                                                var frontend_id = this.$content.find('.frontend').val();
+                                                var fqdn = this.$content.find('.fqdn').val();
+                                                var public_dir = this.$content.find('.public_dir').val();
+
+                                                node.data.fqdn = fqdn;
+                                                node.data.public_dir = public_dir;
+                                                node.data.object_id = frontend_id
+                                                self.workflow[0].label = fqdn + public_dir;
+
+
+                                                var index_frontend = self.get_node(node.id, true);
+                                                self.workflow[index_frontend] = node;
+                                                self.redraw_workflow();
+                                            }
+                                        },
+                                        cancel: function () {
+                                            //close
+                                            return true;
+                                        }
+                                    },
+                                    onContentReady: onContentReady
+                                })
+                                break;
+                            case "acl":
+                                var actions = self.get_actions(node);
+
+                                var form = form_acl(
+                                    self.workflow_mode,
+                                    true,
+                                    self.access_control_choices,
+                                    node.data.object_id,
+                                    node.data.action_satisfy,
+                                    node.data.redirect_url_satisfy,
+                                    node.data.action_not_satisfy,
+                                    node.data.redirect_url_not_satisfy
+                                )
+
+                                $.confirm({
+                                    title: gettext('Access Control List'),
+                                    columnClass: 'large',
+                                    content: form,
+                                    buttons: {
+                                        formSubmit: {
+                                            text: gettext('Save'),
+                                            btnClass: 'btn-blue',
+                                            action: function () {
+                                                var acl_id = this.$content.find('.access_control').val();
+                                                var action_satisfy = this.$content.find('.action_satisfy').val();
+                                                var action_not_satisfy = this.$content.find('.action_not_satisfy').val();
+
+                                                var redirect_url_satisfy = this.$content.find('.redirect_url_satisfy').val();
+                                                var redirect_url_not_satisfy = this.$content.find('.redirect_url_not_satisfy').val();
+
+                                                if (!self.check_action(action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy))
+                                                    return false;
+
+                                                self.define_acl(node, acl_id, action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy)
+                                            }
+                                        },
+                                        cancel: function(){
+                                            return true;
+                                        },
+                                    },
+                                    onContentReady: onContentReady
+                                });
+                                break;
+                            case "waf":
+                                $.confirm({
+                                    title: gettext('Defender Policy'),
+                                    columnClass: "medium",
+                                    content: form_waf(self.waf_policy_choices, node.data.object_id),
+                                    buttons: {
+                                        formSubmit: {
+                                            text: gettext('Save'),
+                                            btnClass: 'btn-blue',
+                                            action: function(){
+                                                var waf_id = this.$content.find('.waf_policy').val();
+
+                                                node.data.object_id = waf_id;
+
+                                                for (var i in self.waf_policy_choices){
+                                                    var waf = self.waf_policy_choices[i];
+                                                    if (waf.id === waf_id){
+                                                        node.label = waf.name;
+                                                        node.data.name = waf.name;
+                                                    }
+                                                }
+
+                                                var index_waf = self.get_node(node.id, true);
+                                                self.workflow[index_waf] = node;
+                                                self.redraw_workflow();
+                                            }
+                                        },
+                                        cancel: function(){
+                                            return true;
+                                        }
+                                    }
+                                })
+                                break;
+                            case "backend":
+                                $.confirm({
+                                    title: gettext('Applications'),
+                                    columnClass: "medium",
+                                    content: form_backend(self.backend_choices, node.data.object_id),
+                                    buttons: {
+                                        formSubmit: {
+                                            text: gettext('Save'),
+                                            btnClass: 'btn-blue',
+                                            action: function(){
+                                                var backend_id = this.$content.find('.backend').val();
+
+                                                node.data.object_id = backend_id;
+
+                                                var index_backend = self.get_node(data.id, true);
+                                                self.workflow[index_backend] = node;
+                                                self.redraw_workflow();
+                                            }
+                                        },
+                                        cancel: function(){
+                                            return true;
+                                        }
+                                    }
+                                })
+                                break;
+                        }
+                        callback();
+                    },
                     editEdge: false,
                     deleteEdge: false,
-                    deleteNode: self.delete_node
+                    deleteNode: function(data, callback){
+                        PNotify.removeAll();
+                        if (data.nodes.length > 1){
+                            self.error(gettext("You can't delete several nodes at once"))
+                            callback();
+                            return false;
+                        }
+
+                        var node_id = data.nodes[0];
+                        var node_to_delete = self.get_node(node_id);
+                        self.last_node_append = node_to_delete.parent;
+
+                        if (!node_to_delete.data){
+                            callback();
+                            return;
+                        }
+
+                        switch(node_to_delete.data.type){
+                            case "start":
+                                callback();
+                                return false;
+                            case "frontend":
+                                self.frontend_set = false;
+                                self.backend_set = false;
+                                self.workflow_mode = null;
+                                break;
+                            case "backend":
+                                self.backend_set = false;
+                                break;
+                            case "waf":
+                                self.policy_set= false;
+                                self.backend_set = false;
+                                break;
+                            case "action":
+                                self.error(gettext("An action can not be deleted. Delete the Access Control instead."))
+                                callback();
+                                return false;
+                        }
+
+                        for (var i in self.workflow){
+                            var node = self.workflow[i];
+                            if (node.id === node_id){
+                                indices_to_remove = self.remove_children(node.id);
+                                indices_to_remove.push(node.id)
+                            }
+                        }
+
+                        for (var i in indices_to_remove){
+                            var id = indices_to_remove[i];
+                            indice = self.get_node(id, true);
+                            var node = self.get_node(id);
+                            if (node.data.type === "frontend")
+                                self.frontend_set = false;
+                            else if (node.data.type === "backend")
+                                self.backend_set = false;
+                            else if (node.data.type === "waf")
+                                self.policy_set = false;
+
+                            self.workflow.splice(indice, 1);
+                        }
+
+                        self.init_toolbox_tree();
+                        self.redraw_workflow();
+                        callback();
+                    }
                 }
             }
 
