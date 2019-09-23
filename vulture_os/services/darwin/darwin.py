@@ -133,10 +133,11 @@ def update_filter(node_logger, filter_id):
         raise ServiceDarwinUpdateFilterError("FilterPolicy with id {} not found, ".format(filter_id), traceback=" ")
     try:
         """ Connect to Darwin manager and try to update filter """
-        cmd_res = check_output("/bin/echo '{{\"type\": \"update_filters\","
-                               "\"filters\": [\"{}\"]}}' | /usr/bin/nc -U {}".format(darwin_filter.name,
-                                                                                     MANAGEMENT_SOCKET),
-                               stderr=PIPE, shell=True).decode('utf8')
+        cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
+                               stderr=PIPE,
+                               input="{{\"type\": \"update_filters\", " \
+                                     "\"filters\": [\"{}\"]}}\n".format(darwin_filter.name).encode('utf8')
+                               ).decode('utf8')
         node_logger.info("Connection to darwin management socket succeed.")
         """ Darwin manager always answer in JSON """
         try:
@@ -169,9 +170,8 @@ def monitor_filters():
     """
     try:
         """ Connect to Darwin manager and try to monitor filters """
-        cmd_res = check_output("/bin/echo '{{\"type\": \"monitor\"}}' | "
-                               "/usr/bin/nc -U {}".format(MANAGEMENT_SOCKET),
-                               stderr=PIPE, shell=True).decode('utf8')
+        cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
+                               stderr=PIPE, input="{\"type\": \"monitor\"}\n".encode('utf8')).decode('utf8')
         logger.debug("Connection to darwin management socket succeed.")
         """ Darwin manager always answer in JSON """
         try:

@@ -34,7 +34,7 @@ from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, Us
 
 # Extern modules imports
 from base64      import b64decode
-from subprocess  import CalledProcessError, check_output, PIPE
+from subprocess  import CalledProcessError, check_output, PIPE, Popen
 from os          import system
 from kerberos    import authGSSServerInit, authGSSServerStep, authGSSServerUserName, authGSSServerResponse, authGSSServerClean, changePassword
 from hashlib     import sha1
@@ -169,10 +169,9 @@ class KerberosClient(BaseAuth):
         #tgt = self.retrieve_tgt_from_cache(ccname, service)
 
         """Create the tgt with kinit"""
-        proc = Popen(['/bin/echo "' + password + '" | /usr/bin/kinit -S '+service+
-                                 ' -c '+ccname+' --password-file=STDIN ' + username],
-                                stdout=PIPE, stderr=PIPE, shell=True)
-        success, error = proc.communicate()
+        proc = Popen(["/usr/bin/kinit", '-S', service, '-c', ccname, '--password-file', 'STDIN', username],
+                     stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        success, error = proc.communicate(input=password.encode('utf8'))
 
         if not error:
             tgt = self.retrieve_tgt_from_cache(ccname, service)

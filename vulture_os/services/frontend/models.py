@@ -711,7 +711,11 @@ class Frontend(models.Model):
                     raise ServiceTestConfigError("on node '{}'\n{}".format(node_name, infos.get('error')), "haproxy",
                                                  traceback=infos.get('error_details'))
             else:
-                test_haproxy_conf(test_filename, conf, disabled=(not self.enabled))
+                # Replace name of frontend to prevent duplicate frontend while testing conf
+                test_haproxy_conf(test_filename,
+                                  conf.replace("frontend {}".format(self.name),
+                                               "frontend test_{}".format(self.id or "test")),
+                                  disabled=(not self.enabled))
 
     def get_base_filename(self):
         """ Return the base filename (without path) """

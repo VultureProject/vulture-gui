@@ -157,6 +157,7 @@ def security_update(node_logger=None):
             logger.info("Crontab::security_update: Database {} saved.".format(filename))
 
             """ Immediatly reload the rsyslog service to prevent crash on MMDB access """
+            # Filename is a variable of us (not injectable)
             reload_rsyslog = subprocess.run(['/usr/local/bin/sudo /bin/mv /tmp/{}.mmdb {}'
                                              '&& /usr/local/bin/sudo /usr/sbin/jexec '
                                              'rsyslog /usr/sbin/service rsyslogd reload'.format(filename, DATABASES_PATH)],
@@ -257,6 +258,7 @@ def security_update(node_logger=None):
                 f.write(content)
 
             """ Immediatly reload the rsyslog service to prevent crash on MMDB access """
+            # Filename is a variable of us (not injectable)
             reload_rsyslog = subprocess.run(['/usr/local/bin/sudo /bin/mv /tmp/{} {}'
                                              '&& /usr/local/bin/sudo /usr/sbin/jexec '
                                              'rsyslog /usr/sbin/service rsyslogd reload'.format(filename, DATABASES_PATH)],

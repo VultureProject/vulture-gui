@@ -53,6 +53,7 @@ TEST_CONF_PATH = "/var/tmp/haproxy"
 
 HAPROXY_OWNER = "vlt-os:vlt-web"
 HAPROXY_PERMS = "644"
+MANAGEMENT_SOCKET = "/var/sockets/haproxy/haproxy.sock"
 
 JINJA_PATH = "/home/vlt-os/vulture_os/services/haproxy/config/"
 JINJA_TEMPLATE = "spoe_session.txt"
@@ -120,15 +121,11 @@ def test_haproxy_conf(filename, conf, disabled=False):
 
     """ Then test the conf with HAProxy command """
     try:
-        needed_files_command = ""
-        if "frontend_" in filename:
-            needed_files_command = "$(for i in $(/usr/bin/find {} -name \"workflow_*.cfg\" -o -name \"backend_*.cfg\")"\
-                                   "; do printf %s \"-f $i \" ; done)".format(HAPROXY_PATH)
         """ Test haproxy config file with -c option """
         # check_call raise CallProcessError if return code is not 0
-        return check_output(['/usr/local/sbin/haproxy -c -C {} -f {}/{} {}'.format(HAPROXY_PATH, TEST_CONF_PATH,
-                                                                                   filename, needed_files_command)],
-                            stderr=PIPE, shell=True).decode('utf8')
+        return check_output(['/usr/local/sbin/haproxy', '-c', '-f', HAPROXY_PATH,
+                             '-f', "{}/{}".format(TEST_CONF_PATH, filename)],
+                            stderr=PIPE).decode('utf8')
 
     except CalledProcessError as e:
         stdout = e.stdout.decode('utf8')
@@ -148,8 +145,8 @@ def get_stats():
     :return Status of frontends as dict {frontend_name: frontend_status, ...}
     """
     try:
-        cmd_res = check_output("/bin/echo \"show stat\" | /usr/bin/nc -U /var/sockets/haproxy/haproxy.sock",
-                               stderr=PIPE, shell=True).decode('utf8')
+        cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
+                               stderr=PIPE, input="show stat\n".encode('utf-8')).decode('utf8')
 
         statuses = {"FRONTEND": {}, "BACKEND": {}}
         """ cmd_res will be the form : <frontend_name> <status> """
@@ -202,9 +199,10 @@ def hot_action_frontend(frontend_name, action):
                            traceback="Action not allowed. Allowed actions are 'enable' or 'disable'")
 
     try:
-        cmd_res = check_output("/bin/echo \"{} frontend {}\" | "
-                               "/usr/bin/nc -U /var/sockets/haproxy/haproxy.sock".format(action, frontend_name),
-                               stderr=PIPE, shell=True).decode('utf8')
+        cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
+                               stderr=PIPE,
+                               input="{} frontend {}\n".format(action, frontend_name).encode('utf8')
+                               ).decode('utf8')
 
         """ If no return (or just a \n) : command has normally succeed """
         if not cmd_res.strip():
@@ -230,8 +228,9 @@ def hot_action_frontend(frontend_name, action):
         if not stdout and not stderr:
             logger.error("The haproxy enable command failed due to insufficient rights.")
             raise ServiceError(error_msg, "haproxy", "{} frontend".format(frontend_name),
-                               traceback="Connection failure to /var/sockets/haproxy/haproxy.sock\nInsufficient rights.\n"
-                                         "Make sure vlt-os is in vlt-web group and this socket has group vlt-web.")
+                               traceback="Connection failure to {}\n"
+                                         "Insufficient rights.\n"
+                                         "Make sure vlt-os is in vlt-web group and this socket has group vlt-web.".format(MANAGEMENT_SOCKET))
         else:
             logger.error("The haproxy enable command failed with the following results: {}".format(stderr or stdout))
         raise ServiceError(error_msg, "haproxy", "{} frontend".format(frontend_name), traceback=stderr or stdout)

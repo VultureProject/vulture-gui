@@ -486,7 +486,10 @@ class Backend(models.Model):
         conf = self.configuration
         # NO Node-specific configuration, we can test-it on local node
         # Backends can not be used, so do not handle the HAProxy "not used" error by setting disabled=True
-        test_haproxy_conf(test_filename, conf, disabled=True)
+        test_haproxy_conf(test_filename,
+                          conf.replace("backend {}".format(self.name),
+                                       "backend test_{}".format(self.id or "test")),
+                          disabled=True)
 
     def get_test_filename(self):
         """ Return test filename for test conf with haproxy 
