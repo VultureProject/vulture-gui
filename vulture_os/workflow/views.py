@@ -117,7 +117,7 @@ def workflow_delete(request, object_id, api=False):
     })
 
 
-def save_workflow(request, workflow_obj):
+def save_workflow(request, workflow_obj, object_id=None):
     """
         WARNING: Apply changes to the API as well !
     """
@@ -201,7 +201,10 @@ def save_workflow(request, workflow_obj):
                 if step['data']['object_id']:
                     defender_policy = DefenderPolicy.objects.get(pk=step['data']['object_id'])
                     workflow_obj.defender_policy = defender_policy
-                    workflow_obj.save()
+                else:
+                    workflow_obj.defender_policy = None
+
+                workflow_obj.save()
 
                 before_policy = False
                 order = 1
@@ -249,13 +252,14 @@ def save_workflow(request, workflow_obj):
         return JsonResponse({'status': True})
 
     except InvalidWorkflowError as e:
-        for workflow_acl in workflow_acls:
-            workflow_acl.delete()
+        if not object_id:
+            for workflow_acl in workflow_acls:
+                workflow_acl.delete()
 
-        try:
-            workflow_obj.delete()
-        except Exception:
-            pass
+            try:
+                workflow_obj.delete()
+            except Exception:
+                pass
 
         return JsonResponse({
             'status': False,
@@ -322,7 +326,7 @@ def workflow_edit(request, object_id=None, api=False):
         })
 
     elif request.method == "POST":
-        return save_workflow(request, workflow_obj)
+        return save_workflow(request, workflow_obj, object_id)
 
 
 COMMAND_LIST = {

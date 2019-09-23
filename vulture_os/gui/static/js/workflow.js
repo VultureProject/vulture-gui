@@ -957,15 +957,21 @@ var workflow_vue = new Vue({
                                             action: function(){
                                                 var waf_id = this.$content.find('.waf_policy').val();
 
-                                                node.data.object_id = waf_id;
-
-                                                for (var i in self.waf_policy_choices){
-                                                    var waf = self.waf_policy_choices[i];
-                                                    if (waf.id === waf_id){
-                                                        node.label = waf.name;
-                                                        node.data.name = waf.name;
+                                                if (waf_id === ""){
+                                                    node.data.object_id = null;
+                                                    node.data.name = gettext('No policy');
+                                                    node.label = gettext('No policy')
+                                                } else {
+                                                    node.data.object_id = waf_id;
+                                                    for (var i in self.waf_policy_choices){
+                                                        var waf = self.waf_policy_choices[i];
+                                                        if (waf.id === waf_id){
+                                                            node.label = waf.name;
+                                                            node.data.name = waf.name;
+                                                        }
                                                     }
                                                 }
+
 
                                                 var index_waf = self.get_node(node.id, true);
                                                 self.workflow[index_waf] = node;
