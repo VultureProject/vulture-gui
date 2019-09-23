@@ -196,11 +196,6 @@ class Frontend(models.Model):
         default=False,
         help_text=_("Add reputation tags in rsyslog message")
     )
-    """ Enable body logging """
-    enable_logging_body = models.BooleanField(
-        default=False,
-        help_text=_("Log body and headers to build Defender dataset from logs.")
-    )
     """ Reputation database to use in Rsyslog """
     logging_reputation_database_v4 = models.ForeignKey(
         Feed,
@@ -626,7 +621,6 @@ class Frontend(models.Model):
             'timeout_client': self.timeout_client,
             'timeout_keep_alive': self.timeout_keep_alive,
             'enable_logging': self.enable_logging,
-            'enable_logging_body': self.enable_logging and self.enable_logging_body,
             'log_format': self.get_log_format(),
             'log_level': self.log_level,
             'log_condition': self.log_condition,
@@ -717,7 +711,11 @@ class Frontend(models.Model):
                     raise ServiceTestConfigError("on node '{}'\n{}".format(node_name, infos.get('error')), "haproxy",
                                                  traceback=infos.get('error_details'))
             else:
-                test_haproxy_conf(test_filename, conf, disabled=(not self.enabled))
+                # Replace name of frontend to prevent duplicate frontend while testing conf
+                test_haproxy_conf(test_filename,
+                                  conf.replace("frontend {}".format(self.name),
+                                               "frontend test_{}".format(self.id or "test")),
+                                  disabled=(not self.enabled))
 
     def get_base_filename(self):
         """ Return the base filename (without path) """
@@ -882,12 +880,10 @@ class Frontend(models.Model):
                           "\\\"darwin_user_agent_error\\\": \\\"%[var(txn.user_agent.error)]\\\", " \
                           "\\\"darwin_session_score\\\": \\\"%[var(sess.session.ip_score)]\\\", " \
                           "\\\"darwin_user_agent_score\\\": \\\"%[var(sess.user_agent.ip_score)]\\\", " \
-                          "\\\"defender_score\\\": \\\"%[var(sess.defender.status)]\\\""
-            if self.enable_logging_body:
-                log_format += ", \\\"http_request_cookies\\\": \\\"%[capture.req.hdr(1),json(ascii)]\\\""
-                log_format += ", \\\"http_request_body\\\": \\\"%[capture.req.hdr(2),json(ascii)]\\\""
-                log_format += ", \\\"http_request_content_type\\\": \\\"%[capture.req.hdr(3),json(ascii)]\\\""
-
+                          "\\\"defender_score\\\": \\\"%[var(sess.defender.status)]\\\"" \
+                          ", \\\"http_request_cookies\\\": \\\"%[capture.req.hdr(1),json(ascii)]\\\"" \
+                          ", \\\"http_request_body\\\": \\\"%[var(sess.body),json(ascii)]\\\"" \
+                          ", \\\"http_request_content_type\\\": \\\"%[capture.req.hdr(3),json(ascii)]\\\""
         log_format += "}"
         # TODO: Verify                          minimum one listener uses https
         # If yes : Add \\\"ssl_ciphers\\\": \\\"%sslc\\\", \\\"ssl_version\\\": \\\"%sslv\\\"

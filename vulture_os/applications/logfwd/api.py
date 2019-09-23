@@ -26,6 +26,7 @@ __doc__ = 'Frontends API'
 # Django system imports
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
@@ -42,8 +43,8 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class LogOMAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request, fw_type=None, object_id=None):
         try:
@@ -81,7 +82,6 @@ class LogOMAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request, fw_type=None, object_id=None, action=None):
         try:
@@ -114,7 +114,6 @@ class LogOMAPIv1(View):
             'error': error
         }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request, fw_type=None, object_id=None):
         if not fw_type:
@@ -136,7 +135,6 @@ class LogOMAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def delete(self, request, fw_type=None, object_id=None):
         if not fw_type:

@@ -166,7 +166,7 @@ class Node(models.Model):
         addresses = list()
         for nic in NetworkInterfaceCard.objects.filter(node=self):
             for address in NetworkAddress.objects.filter(nic=nic):
-                data = str(address.ip) + " on " + str(nic.dev) + "<br/>"
+                data = str(address.ip) + " on " + str(nic.dev)
                 if address.is_carp:
                     data = " (CARP vhid = {})".format(address.carp_vhid)
 
@@ -178,7 +178,7 @@ class Node(models.Model):
             'pf_limit_states': self.pf_limit_states,
             'pf_limit_frags': self.pf_limit_frags,
             'pf_limit_src': self.pf_limit_src,
-            'addresses': ', '.join(addresses),
+            'addresses': addresses,
             'is_master_redis': self.is_master_redis,
             'is_master_mongo': self.is_master_mongo,
             'is_standalone': self.is_standalone

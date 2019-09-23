@@ -50,7 +50,7 @@ def test_lognormalizer(filename, rulebase_content, to_parse):
     """ Launch lognormalizer with rulebase to test
     :return String result of check_call command or raise 
     """
-    """ First open the file and write the conf """
+    """ First open the file and write the rulebase """
     test_filename = "{}/{}".format(TEST_CONF_PATH, filename)
 
     try:
@@ -68,22 +68,13 @@ def test_lognormalizer(filename, rulebase_content, to_parse):
     """ Then test the conf with lognormalizer command """
     try:
         # check_call raise CallProcessError if return code is not 0
-
-        command = "/usr/bin/printf '{}' | /usr/local/bin/lognormalizer -r {} -e json".format(
-            to_parse,
-            test_filename
-        )
-
-        raw = check_output(
-            [command.encode("utf-8")],
-            shell=True
-        ).decode('utf-8', 'ignore')
-
-        logger.debug("Lognormalizer output : {}".format(raw))
+        raw = check_output(["/usr/local/bin/lognormalizer", "-r", test_filename, "-e", "json"],
+                           input=(to_parse+"\n").encode('utf8')
+                           ).decode('utf8', 'ignore')
 
         parsed = "[{}]".format(raw.replace("}\n{", "},\n{"))
 
-        logger.debug("Parsed input: {}".format(parsed))
+        logger.debug("Parsed output: {}".format(str(parsed.encode('utf8'))))
 
         # And try to decode as JSON
         return json_loads(parsed)

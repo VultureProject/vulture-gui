@@ -33,6 +33,7 @@ from django.views import View
 from gui.decorators.apicall import api_need_key
 from services.netdata.models import NetdataSettings
 from services.netdata.views import COMMAND_LIST, netdata_edit
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 # Required exceptions imports
@@ -45,8 +46,8 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class NetdataAPIv1(View):
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def get(self, request):
         try:
@@ -66,7 +67,6 @@ class NetdataAPIv1(View):
                 'error': error
             }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def post(self, request, action=None):
         try:
@@ -91,7 +91,6 @@ class NetdataAPIv1(View):
             'error': error
         }, status=500)
 
-    @csrf_exempt
     @api_need_key('cluster_api_key')
     def put(self, request):
         try:

@@ -3,4 +3,4 @@
            Target="{{target}}"
            Port="{{port}}"
            Protocol="{{protocol}}"
-           ZipLevel={{zip_level}})
+           ZipLevel="{{zip_level}})"

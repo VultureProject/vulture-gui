@@ -28,11 +28,15 @@ from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
 # Django project imports
+from toolkit.log.lognormalizer import test_lognormalizer
+from services.rsyslogd.rsyslog import RSYSLOG_PATH, RSYSLOG_OWNER, RSYSLOG_PERMS
+from system.cluster.models import Cluster
 
 # Extern modules imports
 import json
 
 # Required exceptions imports
+from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
 import logging
@@ -89,19 +93,32 @@ class Parser(models.Model):
         }
         return result
 
+    def get_base_filename(self):
+        return "parser_{}.rb".format(self.id or "tmp")
+
+    def get_filename(self):
+        return "{}/{}".format(RSYSLOG_PATH, self.get_base_filename())
+
     def test_conf(self):
-        # TODO by GCA: Added this function because otherwise the code COULD NOT WORK. TEST YOUR CODE before pushing it to DEV!
-        # I don't know what this function is exactly supposed to do, so I'll leave it as it is for now)
-        return None
+        try:
+            if test_lognormalizer(self.get_base_filename(), self.rulebase, self.to_test):
+                return True
+        except json.JSONDecodeError:
+            return False
+        return False
 
     def save_conf(self):
-        # TODO by GCA: Added this function because otherwise the code COULD NOT WORK. TEST YOUR CODE before pushing it to DEV!
-        # I don't know what this function is exactly supposed to do, so I'll leave it as it is for now)
-        return None
+        params = [self.get_filename(), self.rulebase, RSYSLOG_OWNER, RSYSLOG_PERMS]
+        try:
+            Cluster.api_request('system.config.models.write_conf', config=params)
+        except Exception as e:  # e used by VultureSystemConfigError
+            logger.error(e, exc_info=1)
+            raise VultureSystemConfigError("on cluster.\nRequest failure to write_conf()")
+
+    def delete_conf(self):
+        Cluster.api_request("system.config.models.delete_conf", self.get_filename())
 
     def to_template(self):
-        # TODO by GCA: Added this function because otherwise the code COULD NOT WORK. TEST YOUR CODE before pushing it to DEV!
-        # I don't know what this function is exactly supposed to do, so I'll leave it as it is for now)
         return {
             "id": self.id,
             "name": self.name,

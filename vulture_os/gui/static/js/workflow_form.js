@@ -78,7 +78,8 @@ function form_waf(waf_list, waf_id){
     var form = `<form action='' class='waf-define'>
         <div class="row">
             <div class="col-md-12 form-group">
-                <select class="form-control waf_policy">`
+                <select class="form-control waf_policy">
+                    <option value=''>${gettext('No policy')}</option>`;
 
     for (var i in waf_list){
         var waf = waf_list[i];

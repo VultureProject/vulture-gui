@@ -147,5 +147,4 @@ class ListParser(ListView):
 
     # Get method inherithed from ListView
     def post(self, request, **kwargs):
-        logger.info(kwargs)
         return super().post(request, tags=True, to_html_template=False, **kwargs)

@@ -40,7 +40,7 @@ from services.frontend.models import Frontend
 from applications.backend.models import Backend
 from gui.decorators.apicall import api_need_key
 from workflow.models import Workflow, WorkflowACL
-from workflow.views import COMMAND_LIST, workflow_edit, workflow_delete
+from workflow.views import COMMAND_LIST, workflow_delete
 
 # Logger configuration imports
 import validators

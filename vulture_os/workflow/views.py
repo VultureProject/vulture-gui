@@ -117,7 +117,7 @@ def workflow_delete(request, object_id, api=False):
     })
 
 
-def save_workflow(request, workflow_obj):
+def save_workflow(request, workflow_obj, object_id=None):
     """
         WARNING: Apply changes to the API as well !
     """
@@ -153,9 +153,17 @@ def save_workflow(request, workflow_obj):
                 if frontend.mode == "http":
                     workflow_obj.fqdn = step['data']['fqdn']
 
-                    if not validators.domain(workflow_obj.fqdn):
+                    if not validators.domain(workflow_obj.fqdn.split(":")[0]):
                         raise InvalidWorkflowError(_("This FQDN is not valid."))
-
+                    if len(workflow_obj.fqdn.split(":")) > 2:
+                        raise InvalidWorkflowError(_("This FQDN is not valid."))
+                    if len(workflow_obj.fqdn.split(":")) == 2:
+                        try:
+                            port = int(workflow_obj.fqdn.split(":")[1])
+                            if port < 1 or port > 65535:
+                                raise InvalidWorkflowError(_("This FQDN is not valid. Port must be 1 < 65535."))
+                        except ValueError:
+                            raise InvalidWorkflowError(_("This FQDN is not valid."))
                     workflow_obj.public_dir = step['data']['public_dir']
                     if workflow_obj.public_dir and len(workflow_obj.public_dir):
                         if workflow_obj.public_dir[0] != '/':
@@ -193,7 +201,10 @@ def save_workflow(request, workflow_obj):
                 if step['data']['object_id']:
                     defender_policy = DefenderPolicy.objects.get(pk=step['data']['object_id'])
                     workflow_obj.defender_policy = defender_policy
-                    workflow_obj.save()
+                else:
+                    workflow_obj.defender_policy = None
+
+                workflow_obj.save()
 
                 before_policy = False
                 order = 1
@@ -241,13 +252,14 @@ def save_workflow(request, workflow_obj):
         return JsonResponse({'status': True})
 
     except InvalidWorkflowError as e:
-        for workflow_acl in workflow_acls:
-            workflow_acl.delete()
+        if not object_id:
+            for workflow_acl in workflow_acls:
+                workflow_acl.delete()
 
-        try:
-            workflow_obj.delete()
-        except Exception:
-            pass
+            try:
+                workflow_obj.delete()
+            except Exception:
+                pass
 
         return JsonResponse({
             'status': False,
@@ -314,7 +326,7 @@ def workflow_edit(request, object_id=None, api=False):
         })
 
     elif request.method == "POST":
-        return save_workflow(request, workflow_obj)
+        return save_workflow(request, workflow_obj, object_id)
 
 
 COMMAND_LIST = {
