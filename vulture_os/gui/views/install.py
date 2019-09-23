@@ -133,6 +133,7 @@ def cluster_create(admin_user=None, admin_password=None):
     system_config.portal_cookie_name = get_random_string(
         8, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
     system_config.public_token = get_random_string(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    system_config.set_logs_ttl()
     system_config.save()
 
     for name in ('Administrator', 'Log Viewer'):
