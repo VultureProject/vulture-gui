@@ -1,8 +1,7 @@
 #!/bin/sh
 
 if [ -f /etc/host-hostname ] ; then
-    whereis virtualenv
-    virtualenv /home/vlt-os/env
+    /usr/local/bin/virtualenv /home/vlt-os/env
     /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vulture_os/manage.py migrate
 else
     echo "Node not bootstrapped yet."
