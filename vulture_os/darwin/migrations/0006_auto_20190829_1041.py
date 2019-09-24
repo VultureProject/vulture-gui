@@ -4,6 +4,7 @@ import bson.objectid
 from django.db import migrations, models
 import django.db.models.deletion
 import djongo.models.fields
+from toolkit.mongodb.mongo_base import MongoBase
 
 def update_conf_path(apps, schema_editor):
     FilterPolicy = apps.get_model('darwin', 'FilterPolicy')
@@ -21,6 +22,12 @@ def update_conf_path(apps, schema_editor):
 def remove_session_and_logs_filters(apps, schema_editor):
     DarwinFilter = apps.get_model('darwin', 'DarwinFilter')
     FilterPolicy = apps.get_model('darwin', 'FilterPolicy')
+
+    # Manually set config attribute, due to a migration bug
+    m = MongoBase()
+    m.connect_primary()
+    coll = m['vulture']['darwin_filterpolicy']
+    coll.update({}, {"$set", {"config": {}}}, {'multi': True})
 
     for filter_obj in DarwinFilter.objects.filter(name__in=['session', 'logs']):
         FilterPolicy.objects.filter(filter=filter_obj).delete()
