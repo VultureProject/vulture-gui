@@ -3,7 +3,8 @@
 if [ -f /etc/host-hostname ] ; then
     service vultured stop
     /usr/local/bin/virtualenv /home/vlt-os/env
-    sleep 2
+    sleep 5
+    /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/pip3.6 show Pillow
     /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python3.6 /home/vlt-os/vulture_os/manage.py migrate
 else
     echo "Node not bootstrapped yet."
