@@ -6,32 +6,6 @@ import django.db.models.deletion
 import djongo.models.fields
 from toolkit.mongodb.mongo_base import MongoBase
 
-def update_conf_path(apps, schema_editor):
-    FilterPolicy = apps.get_model('darwin', 'FilterPolicy')
-
-    filters = FilterPolicy.objects.all()
-
-    for filter in filters:
-        filter.conf_path = "/home/darwin/conf/f{name}/f{name}_{id}.conf".format(
-            name=filter.policy.name,
-            id=filter.policy.id
-        )
-        filter.save()
-
-
-def remove_session_and_logs_filters(apps, schema_editor):
-    DarwinFilter = apps.get_model('darwin', 'DarwinFilter')
-    FilterPolicy = apps.get_model('darwin', 'FilterPolicy')
-
-    # Manually set config attribute, due to a migration bug
-    m = MongoBase()
-    m.connect_primary()
-    coll = m.db['vulture']['darwin_filterpolicy']
-    coll.update_many({}, {"$set": {"config": {}}})
-
-    for filter_obj in DarwinFilter.objects.filter(name__in=['session', 'logs']):
-        FilterPolicy.objects.filter(filter=filter_obj).delete()
-
 
 def initial_access_control(apps, schema_editor):
     AccessControl = apps.get_model('darwin', 'AccessControl')
@@ -107,7 +81,6 @@ def initial_access_control(apps, schema_editor):
     ]
 
     for acl in acls:
-        print(acl)
         AccessControl.objects.create(
             name=acl['name'],
             enabled=acl['enabled'],
@@ -207,7 +180,6 @@ class Migration(migrations.Migration):
             field=models.TextField(default=''),
             preserve_default=False,
         ),
-        migrations.RunPython(update_conf_path),
         migrations.AddField(
             model_name='filterpolicy',
             name='config',
@@ -248,5 +220,4 @@ class Migration(migrations.Migration):
             name='rules',
             field=djongo.models.fields.ArrayReferenceField(help_text='rules in policy', null=True, on_delete=django.db.models.deletion.CASCADE, to='darwin.InspectionRule'),
         ),
-        migrations.RunPython(remove_session_and_logs_filters)
     ]
