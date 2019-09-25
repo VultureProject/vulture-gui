@@ -26,11 +26,12 @@ def remove_session_and_logs_filters(apps, schema_editor):
     # Manually set config attribute, due to a migration bug
     m = MongoBase()
     m.connect_primary()
-    coll = m['vulture']['darwin_filterpolicy']
+    coll = m.db['vulture']['darwin_filterpolicy']
     coll.update({}, {"$set", {"config": {}}}, {'multi': True})
 
     for filter_obj in DarwinFilter.objects.filter(name__in=['session', 'logs']):
         FilterPolicy.objects.filter(filter=filter_obj).delete()
+
 
 def initial_access_control(apps, schema_editor):
     AccessControl = apps.get_model('darwin', 'AccessControl')
