@@ -27,7 +27,7 @@ def remove_session_and_logs_filters(apps, schema_editor):
     m = MongoBase()
     m.connect_primary()
     coll = m.db['vulture']['darwin_filterpolicy']
-    coll.update({}, {"$set", {"config": {}}}, {'multi': True})
+    coll.update_many({}, {"$set", {"config": {}}})
 
     for filter_obj in DarwinFilter.objects.filter(name__in=['session', 'logs']):
         FilterPolicy.objects.filter(filter=filter_obj).delete()
