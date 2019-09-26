@@ -7,6 +7,16 @@ import djongo.models.fields
 from toolkit.mongodb.mongo_base import MongoBase
 
 
+def remove_session_and_logs_filters(apps, schema_editor):
+    # Manually delete all Darwin filters to prevent migration issue, they will be re-created in loaddata
+    m = MongoBase()
+    m.connect_primary()
+    coll = m.db['vulture']['darwin_filterpolicy']
+    coll.delete_many({})
+    coll = m.db['vulture']['darwin_darwinfilter']
+    coll.delete_many({})
+
+
 def initial_access_control(apps, schema_editor):
     AccessControl = apps.get_model('darwin', 'AccessControl')
 
@@ -180,6 +190,7 @@ class Migration(migrations.Migration):
             field=models.TextField(default=''),
             preserve_default=False,
         ),
+        migrations.RunPython(update_conf_path),
         migrations.AddField(
             model_name='filterpolicy',
             name='config',
@@ -220,4 +231,5 @@ class Migration(migrations.Migration):
             name='rules',
             field=djongo.models.fields.ArrayReferenceField(help_text='rules in policy', null=True, on_delete=django.db.models.deletion.CASCADE, to='darwin.InspectionRule'),
         ),
+        migrations.RunPython(remove_session_and_logs_filters)
     ]
