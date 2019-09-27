@@ -190,7 +190,6 @@ class Migration(migrations.Migration):
             field=models.TextField(default=''),
             preserve_default=False,
         ),
-        migrations.RunPython(update_conf_path),
         migrations.AddField(
             model_name='filterpolicy',
             name='config',
