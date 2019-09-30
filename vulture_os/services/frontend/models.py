@@ -714,7 +714,9 @@ class Frontend(models.Model):
                 # Replace name of frontend to prevent duplicate frontend while testing conf
                 test_haproxy_conf(test_filename,
                                   conf.replace("frontend {}".format(self.name),
-                                               "frontend test_{}".format(self.id or "test")),
+                                               "frontend test_{}".format(self.id or "test"))
+                                      .replace("listen {}".format(self.name),
+                                               "listen test_{}".format(self.id or "test")),
                                   disabled=(not self.enabled))
 
     def get_base_filename(self):
