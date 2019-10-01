@@ -73,7 +73,7 @@ class portalTemplate(models.Model):
     error_password_change_ok = models.TextField(null=True, default="", help_text=_('Your password has been changed'))
     error_password_change_ko = models.TextField(null=True, default="", help_text=_('Error when trying to change your password'))
     error_email_sent = models.TextField(null=True, default="", help_text=_('An email has been sent to you with instruction to reset your password'))
-    images = models.ListField(models.ImageField(null=True), default=[], help_text=_('Images you can use in your templates'))
+    # images = models.ListField(models.ImageField(null=True), default=[], help_text=_('Images you can use in your templates'))
     email_register_subject = models.TextField(null=True, default="", help_text=_('Email subject for registration'))
     email_register_from = models.TextField(null=True, default="", help_text=_('Email content for registration'))
     email_register_body = models.TextField(null=True, default="", help_text=_('Email sender for registration'))
@@ -171,7 +171,7 @@ class TemplateImage(models.Model):
     Vulture's portal template image.
     """
     name = models.TextField(help_text=_('The name of the image'))
-    content = models.ImageField(help_text=_('Image you can use in the portal templates'))
+    # content = models.ImageField(help_text=_('Image you can use in the portal templates'))
     uid = models.TextField(null=True, help_text=_('A unique identifier to get the image from portal'))
 
     def get_image_uri(self):

@@ -4,26 +4,18 @@ import bson.objectid
 from django.db import migrations, models
 import django.db.models.deletion
 import djongo.models.fields
-
-def update_conf_path(apps, schema_editor):
-    FilterPolicy = apps.get_model('darwin', 'FilterPolicy')
-
-    filters = FilterPolicy.objects.all()
-
-    for filter in filters:
-        filter.conf_path = "/home/darwin/conf/f{name}/f{name}_{id}.conf".format(
-            name=filter.policy.name,
-            id=filter.policy.id
-        )
-        filter.save()
+from toolkit.mongodb.mongo_base import MongoBase
 
 
 def remove_session_and_logs_filters(apps, schema_editor):
-    DarwinFilter = apps.get_model('darwin', 'DarwinFilter')
-    FilterPolicy = apps.get_model('darwin', 'FilterPolicy')
+    # Manually delete all Darwin filters to prevent migration issue, they will be re-created in loaddata
+    m = MongoBase()
+    m.connect_primary()
+    coll = m.db['vulture']['darwin_filterpolicy']
+    coll.delete_many({})
+    coll = m.db['vulture']['darwin_darwinfilter']
+    coll.delete_many({})
 
-    for filter_obj in DarwinFilter.objects.filter(name__in=['session', 'logs']):
-        FilterPolicy.objects.filter(filter=filter_obj).delete()
 
 def initial_access_control(apps, schema_editor):
     AccessControl = apps.get_model('darwin', 'AccessControl')
@@ -99,7 +91,6 @@ def initial_access_control(apps, schema_editor):
     ]
 
     for acl in acls:
-        print(acl)
         AccessControl.objects.create(
             name=acl['name'],
             enabled=acl['enabled'],
@@ -199,7 +190,6 @@ class Migration(migrations.Migration):
             field=models.TextField(default=''),
             preserve_default=False,
         ),
-        migrations.RunPython(update_conf_path),
         migrations.AddField(
             model_name='filterpolicy',
             name='config',
