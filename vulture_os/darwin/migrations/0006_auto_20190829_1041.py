@@ -11,10 +11,14 @@ def remove_session_and_logs_filters(apps, schema_editor):
     # Manually delete all Darwin filters to prevent migration issue, they will be re-created in loaddata
     m = MongoBase()
     m.connect_primary()
-    coll = m.db['vulture']['darwin_filterpolicy']
-    coll.delete_many({})
-    coll = m.db['vulture']['darwin_darwinfilter']
-    coll.delete_many({})
+    # If the node is not yet installed, no need to drop collections
+    if m.db and m.db['vulture']:
+        coll = m.db['vulture']['darwin_filterpolicy']
+        if coll:
+            coll.delete_many({})
+        coll = m.db['vulture']['darwin_darwinfilter']
+        if coll:
+            coll.delete_many({})
 
 
 def initial_access_control(apps, schema_editor):
