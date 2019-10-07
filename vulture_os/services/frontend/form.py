@@ -209,7 +209,7 @@ class FrontendForm(ModelForm):
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect',
-                  'log_forwarders_parse_failure', 'parser_tag', 'file_path', 'node')
+                  'log_forwarders_parse_failure', 'parser_tag', 'file_path', 'node', 'darwin_policy')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
