@@ -153,17 +153,9 @@ def save_workflow(request, workflow_obj, object_id=None):
                 if frontend.mode == "http":
                     workflow_obj.fqdn = step['data']['fqdn']
 
-                    if not validators.domain(workflow_obj.fqdn.split(":")[0]):
+                    if not validators.domain(workflow_obj.fqdn):
                         raise InvalidWorkflowError(_("This FQDN is not valid."))
-                    if len(workflow_obj.fqdn.split(":")) > 2:
-                        raise InvalidWorkflowError(_("This FQDN is not valid."))
-                    if len(workflow_obj.fqdn.split(":")) == 2:
-                        try:
-                            port = int(workflow_obj.fqdn.split(":")[1])
-                            if port < 1 or port > 65535:
-                                raise InvalidWorkflowError(_("This FQDN is not valid. Port must be 1 < 65535."))
-                        except ValueError:
-                            raise InvalidWorkflowError(_("This FQDN is not valid."))
+
                     workflow_obj.public_dir = step['data']['public_dir']
                     if workflow_obj.public_dir and len(workflow_obj.public_dir):
                         if workflow_obj.public_dir[0] != '/':
