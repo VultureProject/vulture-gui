@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Reload Darwin service config'
+__doc__ = 'Reload Apache service config'
 
 import sys
 import os
