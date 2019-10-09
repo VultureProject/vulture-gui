@@ -207,6 +207,9 @@ fabric.properties
 .idea/**/markdown-navigator.xml
 .idea/**/markdown-navigator/
 
+### VSCode ###
+.vscode/
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 
