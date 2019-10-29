@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Response API toolkit functions'
 
 # Django system imports
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.forms import CheckboxInput, ModelForm, Select, TextInput, Form, ChoiceField, CharField
 from djongo import models
@@ -30,10 +31,14 @@ from djongo import models
 # Django project imports
 
 # Extern modules imports
+from copy import deepcopy
 
 # Required exceptions imports
 
 # Logger configuration imports
+import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
+logger = logging.getLogger('gui')
 
 
 DEFAULT_FRONTEND_HEADERS = [
@@ -123,7 +128,6 @@ HTTP_HEADER_CHOICES = (
     ("Upgrade", "Upgrade"),
     ("Via", "Via"),
     ("Warning", "Warning"),
-    ("X-Requested-With", "X-Requested-With"),
     ("X-Requested-With", "X-Requested-With"),
     ("X-Forwarded-For", "X-Forwarded-For"),
     ("X-Forwarded-Host", "X-Forwarded-Host"),
@@ -302,6 +306,17 @@ class HttpHealthCheckHeaderForm(Form):
         result = "<tr>"
         for field in self:
             result += "<td>{}</td>\n".format(field)
+        result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
+                  "class='fas fa-trash-alt'></i></a></td></tr>\n"
+        return result
+
+    def as_table_td_internal(self):
+        """ Format fields as a table with <td></td> """
+        result = "<tr>"
+        for field in self.fields:
+            new_field = deepcopy(self.fields[field].widget)
+            new_field.attrs['readonly'] = True
+            result += "<td>{}</td>\n".format(new_field.render(field, self.initial.get(field)))
         result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
                   "class='fas fa-trash-alt'></i></a></td></tr>\n"
         return result
