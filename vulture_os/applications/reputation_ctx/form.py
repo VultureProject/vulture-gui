@@ -44,14 +44,16 @@ logger = logging.getLogger('gui')
 
 
 class ReputationContextForm(ModelForm):
+    custom_headers = NoValidationField()
 
     class Meta:
         model = ReputationContext
-        fields = ('name', 'db_type', 'method', 'url', 'verify_cert', 'post_data', 'auth_type', 'user', 'password',
-                  'tags')
+        fields = ('name', 'description', 'db_type', 'method', 'url', 'verify_cert', 'post_data', 'auth_type', 'user',
+                  'password', 'tags')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
+            'description': Textarea(attrs={'class': 'form-control'}),
             'db_type': Select(choices=DBTYPE_CHOICES, attrs={'class': 'form-control select2'}),
             'method': Select(choices=HTTP_METHOD_CHOICES, attrs={'class': 'form-control select2'}),
             'url': TextInput(attrs={'class': 'form-control'}),
@@ -68,6 +70,10 @@ class ReputationContextForm(ModelForm):
         super().__init__(*args, **kwargs)
         for field_name in ['auth_type', 'verify_cert', 'post_data', 'user', 'password', 'tags']:
             self.fields[field_name].required = False
+        # Set readonly if internal reputation context
+        if kwargs.get('instance') and kwargs.get('instance').internal:
+            for field in self.fields:
+                self.fields[field].widget.attrs['readonly'] = True
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
     def clean_name(self):
