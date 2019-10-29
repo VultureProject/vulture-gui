@@ -25,7 +25,6 @@ __doc__ = 'Log forwarder model classes'
 # Django system imports
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db.models import Q
 from django.template import Context, Template
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
@@ -64,6 +63,13 @@ ACTION_TYPE = (
 OMFWD_PROTOCOL = (
     ('tcp', 'TCP'),
     ('udp', 'UDP')
+)
+
+ROTATION_PERIOD_CHOICES = (
+    ('daily', "Every day"),
+    ('weekly', "Every week"),
+    ('monthly', "Every month"),
+    ('yearly', "Every year")
 )
 
 CONF_PATH = "/usr/local/etc/rsyslog.d/10-applications.conf"
@@ -119,7 +125,7 @@ class LogOM (models.Model):
     def generate_conf(cls, log_om, rsyslog_template_name, **kwargs):
         jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
         template = jinja2_env.get_template(log_om.template)
-        conf = log_om.to_template(**kwargs)
+        conf = log_om.to_template(**kwargs, ruleset=rsyslog_template_name)
         conf['out_template'] = rsyslog_template_name
         return template.render(conf)
 
@@ -160,6 +166,9 @@ class LogOMFile(LogOM):
     flush_interval = models.IntegerField(default=1, null=False)
     async_writing = models.BooleanField(default=True)
     enabled = models.BooleanField(default=True)
+    stock_as_raw = models.BooleanField(default=True)
+    retention_time = models.PositiveIntegerField(default=30, validators=[MinValueValidator(1)])
+    rotation_period = models.TextField(default=ROTATION_PERIOD_CHOICES[0][0], choices=ROTATION_PERIOD_CHOICES)
 
     def template_id(self, ruleset=""):
         return hashlib.sha256(ruleset.encode('utf-8') + self.name.encode('utf-8')).hexdigest()
@@ -177,7 +186,8 @@ class LogOMFile(LogOM):
             'file': self.file,
             'flush_interval': self.flush_interval,
             'async_writing': self.async_writing,
-            'enabled': self.enabled
+            'enabled': self.enabled,
+            'stock_as_raw': self.stock_as_raw
         }
 
     def to_html_template(self):
@@ -199,29 +209,40 @@ class LogOMFile(LogOM):
             'file': self.file,
             'flush_interval': self.flush_interval,
             'async_writing': "on" if self.async_writing else "off",
-            'template_id': self.template_id(kwargs.get('ruleset', "") if self.internal else ""),
+            'template_id': self.template_id(kwargs.get('ruleset', "")),
             'type': 'File',
-            'output': self.file
+            'output': self.file,
+            'stock_as_raw': self.stock_as_raw
         }
+
+    def get_used_parsers(self):
+        """ Return parsers of frontends which uses this log_forwarder """
+        result = set()
+        from services.frontend.models import Frontend
+        # FIXME : Add .distinct("ruleset") when implemented in djongo
+        for f in Frontend.objects.filter(log_forwarders=self.id).only('ruleset'):
+            result.add(f.ruleset)
+        # Retrieve log_forwarders_parse_failure for log listeners
+        for f in Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.id).only('ruleset'):
+            result.add(f.ruleset+"_garbage")
+        return result
+
+    def get_rsyslog_filenames(self):
+        """ Render filenames based on filename attribute, depending on frontend used """
+        tpl = Template(self.file)
+        result = set()
+        for ruleset in self.get_used_parsers():
+            result.add(tpl.render(Context({'ruleset': ruleset})))
+        return result
 
     def get_rsyslog_template(self):
         res = ""
-        if self.internal:
-            from services.frontend.models import Frontend
-            tpl = Template(self.file)
-            rulesets = set()
+        tpl = Template(self.file)
 
-            # TODO : Distinct ruleset
-            for f in Frontend.objects.filter(Q(mode="log") | Q(log_forwarders=self.id)).only('ruleset'):
-                rulesets.add(f.ruleset)
-
-            for ruleset in rulesets:
-                res += "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
-                    .format(self.template_id(ruleset=ruleset), tpl.render(Context({'ruleset': ruleset})))
-
-            return res
-        else:
-            return "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.file)
+        for ruleset in self.get_used_parsers():
+            res += "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
+                .format(self.template_id(ruleset=ruleset), tpl.render(Context({'ruleset': ruleset})))
+        return res
 
     def __str__(self):
         return "{} ({})".format(self.name, self.__class__.__name__)
