@@ -33,7 +33,6 @@ from django.utils.decorators import method_decorator
 
 # Django project imports
 from gui.decorators.apicall import api_need_key
-from gui.models.feed import Feed
 from services.frontend.models import Frontend
 from services.frontend.views import frontend_delete, frontend_edit, COMMAND_LIST
 from services.haproxy.haproxy import test_haproxy_conf
@@ -87,38 +86,6 @@ def frontend_test_conf(request):
     except Exception as e:
         return JsonResponse({'status': False, 'error': "Unknown error occurred: {}".format(str(e)),
                              'error_details': str.join('', format_exception(*exc_info()))})
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class FeedAPIv1(View):
-    @api_need_key('cluster_api_key')
-    def get(self, request, object_id=None):
-        try:
-            if object_id:
-                try:
-                    obj = Feed.objects.get(pk=object_id).to_template()
-                except Feed.DoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
-
-            else:
-                obj = [s.to_template() for s in Feed.objects.all()]
-
-            return JsonResponse({
-                'data': obj
-            })
-
-        except Exception as e:
-            logger.critical(e, exc_info=1)
-            error = _("An error has occurred")
-
-            if settings.DEV_MODE:
-                error = str(e)
-
-            return JsonResponse({
-                'error': error
-            }, status=500)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
