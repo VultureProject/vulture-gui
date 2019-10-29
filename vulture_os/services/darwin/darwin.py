@@ -34,7 +34,7 @@ from system.config.models import write_conf, delete_conf as delete_conf_file
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 from json import JSONDecodeError, dumps as json_dumps
-from services.exceptions import ServiceDarwinUpdateFilterError
+from services.exceptions import ServiceStatusError, ServiceDarwinUpdateFilterError
 from subprocess import CalledProcessError
 
 # Extern modules imports
@@ -178,7 +178,7 @@ def monitor_filters():
             json_res = json_loads(cmd_res)
         except JSONDecodeError:
             # Do NOT set traceback, it will be retrieved from JSON exception
-            raise ServiceDarwinUpdateFilterError("Darwin manager response is not a valid JSON : '{}'".format(cmd_res))
+            raise ServiceStatusError("Darwin manager response is not a valid JSON : '{}'".format(cmd_res), "darwin")
 
         logger.debug("Darwin manager response decoded.")
         return json_res
@@ -187,8 +187,8 @@ def monitor_filters():
         """ Return code != 0 """
         stdout = e.stdout.decode('utf8')
         stderr = e.stderr.decode('utf8')
-        raise ServiceDarwinUpdateFilterError("Failed to connect to darwin management socket.",
-                                             traceback=(stderr or stdout))
+        raise ServiceStatusError("Failed to connect to darwin management socket.",
+                                 "darwin", traceback=(stderr or stdout))
 
 
 def restart_service(node_logger):
