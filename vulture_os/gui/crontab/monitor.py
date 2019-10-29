@@ -49,7 +49,7 @@ from system.cluster.models import Cluster
 from system.vm.vm import vm_update_status
 
 # Required exceptions imports
-from services.exceptions import ServiceError, ServiceDarwinUpdateFilterError
+from services.exceptions import ServiceError
 from django.core.exceptions import ObjectDoesNotExist
 
 # Extern modules imports
@@ -200,18 +200,20 @@ def monitor():
         try:
             filter_statuses = monitor_darwin_filters()
 
-        except ServiceDarwinUpdateFilterError as e:
+        except ServiceError as e:
             logger.error(str(e))
             default = "ERROR"
 
         for dfilter in filters:
             dfilter.status[node.name] = default
 
-            if filter_statuses.get(dfilter.name, False) is not False:
-                dfilter.status[node.name] = "UP"
-            elif not dfilter.enabled:
+            filter_status = filter_statuses.get(dfilter.name, False)
+            if not dfilter.enabled:
                 dfilter.status[node.name] = "DISABLED"
-            
+            elif filter_status is None:
+                dfilter.status[node.name] = "ERROR"
+            elif filter_statuses.get(dfilter.name, {}).get('status') is not None:
+                dfilter.status[node.name] = filter_statuses.get(dfilter.name).get('status').upper()
             dfilter.save()
 
 
@@ -244,13 +246,14 @@ class MonitorJob(Thread):
             try:
                 monitor()
             except Exception as e:
-                logger.error("Monitor job failure: ")
+                logger.error("Monitor job failure: {}".format(e))
                 logger.info("Resuming ...")
 
-            # Do not sleep if we have to quit
-            if not self.shutdown_flag.is_set():
-                # sleep DELAY time
-                sleep(self.delay)
+            # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
+            cpt = 0
+            while not self.shutdown_flag.is_set() and cpt < self.delay:
+                sleep(2)
+                cpt += 2
 
         logger.info("Monitor job stopped.")
 
