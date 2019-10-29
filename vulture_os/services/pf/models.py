@@ -29,7 +29,7 @@ from djongo import models
 
 # Django project imports
 from darwin.defender_policy.models import DefenderPolicy
-from gui.models.feed import DATABASES_PATH
+from applications.reputation_ctx.models import DATABASES_PATH
 from system.cluster.models import Cluster, Node
 from toolkit.network.network import get_hostname, JAIL_ADDRESSES
 from toolkit.network.network import get_sanitized_proxy
@@ -42,6 +42,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 # Proxy configuration imports
+
 
 class PFSettings(models.Model):
     """ Model used to manage global configuration fields of PF 
