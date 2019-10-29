@@ -26,7 +26,7 @@ __doc__ = 'Rsyslog service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from gui.models.feed import DATABASES_PATH
+from applications.reputation_ctx.models import DATABASES_PATH
 from services.service import Service
 from services.frontend.models import Frontend
 from services.rsyslogd.models import RsyslogSettings

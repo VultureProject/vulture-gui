@@ -28,7 +28,7 @@ from djongo import models
 
 # Django project imports
 from applications.logfwd.models import LogOM
-from gui.models.feed import Feed, DATABASES_PATH
+from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from services.frontend.models import Frontend, Listener
 
 # Required exceptions imports
