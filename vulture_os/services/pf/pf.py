@@ -26,7 +26,7 @@ __doc__ = 'PF service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from gui.models.feed import DATABASES_PATH, DATABASES_OWNER, DATABASES_PERMS
+from applications.reputation_ctx.models import DATABASES_PATH, DATABASES_OWNER, DATABASES_PERMS
 from system.cluster.models import Cluster
 from services.service import Service
 from system.config.models import write_conf
