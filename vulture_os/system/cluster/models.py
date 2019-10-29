@@ -64,7 +64,7 @@ class Node(models.Model):
 
     name = models.TextField(unique=True)
 
-    pf_limit_states = models.IntegerField(default=100000)
+    pf_limit_states = models.IntegerField(default=500000)
     pf_limit_frags = models.IntegerField(default=25000)
     pf_limit_src = models.IntegerField(default=50000)
     pf_custom_config = models.TextField(blank=True, default="")
