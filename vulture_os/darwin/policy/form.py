@@ -30,8 +30,8 @@ from django.forms import (CharField, CheckboxInput, ModelChoiceField, ModelForm,
                           TextInput, FilePathField, Form, IntegerField, ChoiceField, HiddenInput)
 
 # Django project imports
+from applications.reputation_ctx.models import DATABASES_PATH, ReputationContext
 from darwin.policy.models import FilterPolicy, DarwinFilter, DarwinPolicy, DARWIN_LOGLEVEL_CHOICES, CONF_PATH
-from gui.models.feed import DATABASES_PATH, Feed
 
 # Extern modules imports
 import os.path
@@ -266,9 +266,10 @@ class FilterPolicyReputationForm(FilterPolicyForm):
 
         self.fields['mmdb_database'] = ModelChoiceField(
             label="Reputation file:",
-            queryset=Feed.objects.filter(filename__endswith=".mmdb")
-                                    .order_by('filename')
-                                    .only(*(Feed.str_attrs()+['filename'])),
+            queryset=ReputationContext.objects.filter(filename__endswith=".mmdb",
+                                                        db_type__in=["ipv4", "ipv6"])
+                                        .order_by('filename')
+                                        .only(*(ReputationContext.str_attrs() + ['filename'])),
             required=False,
             widget=Select(attrs={'class': 'form-control select2'}),
             empty_label=None
@@ -281,8 +282,8 @@ class FilterPolicyReputationForm(FilterPolicyForm):
 
         if mmdb_database is not None:
             try:
-                self.initial['mmdb_database'] = Feed.objects.get(filename__endswith=mmdb_database.split('/')[-1]).id
-            except Feed.DoesNotExist:
+                self.initial['mmdb_database'] = ReputationContext.objects.get(filename__endswith=mmdb_database.split('/')[-1]).id
+            except ReputationContext.DoesNotExist:
                 del self.initial['mmdb_database']
 
         # <= 1, because there is the "empty" choice to consider
