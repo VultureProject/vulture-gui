@@ -1,0 +1,8 @@
+[
+  {
+    "model": "services.LogRotateSettings",
+    "pk": 1,
+    "fields": {
+    }
+  }
+]
