@@ -31,7 +31,7 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
-from applications.logfwd.models import LogOM
+from applications.logfwd.models import LogOM, LogOMFile
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener
@@ -322,7 +322,7 @@ def frontend_edit(request, object_id=None, api=False):
                     node_listeners[nic.node].append(listener_obj)
 
         # Get current Rsyslog configuration filename
-        old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.has_rsyslog_conf else ""
+        old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.enable_logging else ""
 
         # If errors has been added in form
         if not form.is_valid():
@@ -376,8 +376,8 @@ def frontend_edit(request, object_id=None, api=False):
                     logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
 
                 """ If it is an Rsyslog only conf """
-                if (frontend.mode == "log" and frontend.listening_mode == "udp") \
-                        or frontend.mode == "impcap" or frontend.listening_mode == "file":
+                if (frontend.mode == "log" and frontend.listening_mode in ("udp", "file")) \
+                        or frontend.mode == "impcap":
 
                     """ And if it was not before saving """
                     if "mode" in changed_data or "listening_mode" in changed_data:
@@ -392,14 +392,12 @@ def frontend_edit(request, object_id=None, api=False):
                         Cluster.api_request('services.haproxy.haproxy.reload_service')
 
                     """ If it is an HAProxy only conf """
-                elif frontend.mode == "tcp":
+                elif frontend.mode not in ("log", "impcap") and not frontend.enable_logging:
                     """ And it was not """
-                    if "mode" in changed_data:
-                        rsyslog_filename = frontend.get_rsyslog_base_filename()
-
+                    if "mode" in changed_data or "enable_logging" in changed_data:
                         # API request deletion of rsyslog frontend filename
-                        Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', rsyslog_filename)
-                        logger.info("Rsyslogd config '{}' deletion asked.".format(rsyslog_filename))
+                        Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
+                        logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
 
                         # And reload of Rsyslog service
                         Cluster.api_request('services.rsyslogd.rsyslog.restart_service')
@@ -502,6 +500,13 @@ def frontend_edit(request, object_id=None, api=False):
                                                  traceback=api_res.get('message'))
                     frontend.status[node.name] = "WAITING"
                     frontend.save()
+
+            # Check if reload logrotate conf if needed
+            # meaning if there is a log_forwarder file enabled used by this frontend
+            if frontend.enable_logging and (frontend.log_forwarders.filter(logomfile__enabled=True).count() > 0 or
+                                            frontend.log_forwarders_parse_failure.filter(logomfile__enabled=True).count()):
+                # Reload LogRotate config
+                Cluster.api_request("services.logrotate.logrotate.reload_conf")
 
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """

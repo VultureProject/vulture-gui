@@ -33,9 +33,8 @@ from djongo import models
 
 # Django project imports
 from applications.logfwd.models import LogOM, LogOMMongoDB
-from applications.reputation_ctx.models import ReputationContext
+from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from darwin.policy.models import DarwinPolicy, FilterPolicy
-from gui.models.feed import Feed, DATABASES_PATH
 from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, NetworkInterfaceCard, Node
@@ -198,7 +197,7 @@ class Frontend(models.Model):
     )
     """ Reputation database to use in Rsyslog """
     logging_reputation_database_v4 = models.ForeignKey(
-        Feed,
+        ReputationContext,
         default=None,
         null=True,
         on_delete=models.SET_NULL,
@@ -206,7 +205,7 @@ class Frontend(models.Model):
         help_text=_("MMDB database used by rsyslog to get reputation tags for IPv4")
     )
     logging_reputation_database_v6 = models.ForeignKey(
-        Feed,
+        ReputationContext,
         default=None,
         null=True,
         on_delete=models.SET_NULL,
@@ -220,7 +219,7 @@ class Frontend(models.Model):
     )
     """ Geoip database to use in Rsyslog """
     logging_geoip_database = models.ForeignKey(
-        Feed,
+        ReputationContext,
         default=None,
         null=True,
         on_delete=models.SET_NULL,
@@ -363,16 +362,6 @@ class Frontend(models.Model):
                 logger.error("Access_Control::edit: API error while trying to "
                              "restart HAProxy service : {}".format(api_res.get('message')))
 
-    @property
-    def stock_logs_locally(self):
-        if not self.enable_logging:
-            return False
-
-        if self.log_forwarders.filter(pk=1):
-            return True
-
-        return False
-
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
@@ -448,9 +437,12 @@ class Frontend(models.Model):
             if self.enable_logging_geoip:
                 result['logging_geoip_database'] = self.logging_geoip_database.to_template()
 
+            result['log_forwarders_parse_failure'] = [LogOM().select_log_om(log_fwd.id).to_template()
+                                                      for log_fwd in self.log_forwarders_parse_failure.all().only('id')]
+
         if self.mode in ("http", "log", 'tcp'):
             result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
-                                        for log_fwd in self.log_forwarders.all().only('id')],
+                                        for log_fwd in self.log_forwarders.all().only('id')]
 
             result['log_condition'] = self.log_condition
 
@@ -471,12 +463,7 @@ class Frontend(models.Model):
         else:
             listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())]
 
-        log_forwarders = [str(l) for l in self.log_forwarders.filter(internal=False)]
-        if self.stock_logs_locally:
-            if self.mode in ("http", "impcap", "tcp"):
-                log_forwarders.append("Internal MongoDB")
-            elif self.mode == "log":
-                log_forwarders.append("Raw files")
+        log_forwarders = [str(l) for l in self.log_forwarders.all()]
 
         mode = "UNKNOWN"
         for m in MODE_CHOICES:
@@ -624,7 +611,6 @@ class Frontend(models.Model):
             'log_format': self.get_log_format(),
             'log_level': self.log_level,
             'log_condition': self.log_condition,
-            'stock_logs_locally': self.stock_logs_locally,
             'ruleset_name': self.get_ruleset(),
             'parser_tag': self.parser_tag,
             'unix_socket': self.get_unix_socket(),
@@ -776,8 +762,7 @@ class Frontend(models.Model):
                 log_om = LogOM().select_log_om_by_name(match.group(1))
                 if log_om.internal and isinstance(log_om, LogOMMongoDB):
                     log_om.collection = self.ruleset
-                log_oms[match.group(1)] = LogOM.generate_conf(log_om, self.ruleset, ruleset=self.ruleset,
-                                                              frontend=self.name)
+                log_oms[match.group(1)] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
                 logger.info("Configuration of Log Forwarder named '{}' generated.".format(log_om.name))
         internal_ruleset = ""
 
@@ -962,14 +947,9 @@ class Frontend(models.Model):
             return "Stop frontend '{}' asked on nodes {}".format(self.name, ",".join([n.name for n in nodes]))
 
     @property
-    def has_rsyslog_conf(self):
-        return (not self.mode == "tcp" and not self.mode == "http") \
-               or (self.mode == "http" and self.enable_logging)
-
-    @property
     def rsyslog_only_conf(self):
-        """  """
-        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode == "udp" or self.listening_mode == "file"))
+        """ Check if this frontend has only rsyslog configuration, not haproxy at all """
+        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file")))
 
 
 class Listener(models.Model):
@@ -1004,12 +984,12 @@ class Listener(models.Model):
     )
     max_src = models.PositiveIntegerField(
         default=100,
-        validators=[MinValueValidator(1)],
+        validators=[MinValueValidator(0)],
         help_text=_("Max number of connexions per source.")
     )
     max_rate = models.PositiveIntegerField(
         default=1000,
-        validators=[MinValueValidator(1)],
+        validators=[MinValueValidator(0)],
         help_text=_("Max number of new connexions per source per second.")
     )
     """ Incremented value between 10000 and 20000, to configure listen port of Rsyslog """
