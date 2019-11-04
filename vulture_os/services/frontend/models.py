@@ -86,7 +86,8 @@ LISTENING_MODE_CHOICES = (
     ('tcp', "TCP"),
     ('tcp,udp', "TCP & UDP"),
     ('relp', "RELP (TCP)"),
-    ('file', "FILE")
+    ('file', "FILE"),
+    ('api', 'API CLIENT')
 )
 
 IMPCAP_FILTER_CHOICES = (
@@ -355,6 +356,21 @@ class Frontend(models.Model):
         help_text=_("Vulture node")
     )
 
+    cybereason_host = models.TextField(
+        help_text=_('Cybereason console URL'),
+        default=""
+    )
+
+    cybereason_username = models.TextField(
+        help_text=_('Cybereason Username'),
+        default=""
+    )
+
+    cybereason_password = models.TextField(
+        help_text=_('Cybereason Password'),
+        default=""
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
@@ -429,6 +445,11 @@ class Frontend(models.Model):
             result['listening_mode'] = self.listening_mode
             result['enable_logging_reputation'] = self.enable_logging_reputation
             result['enable_logging_geoip'] = self.enable_logging_geoip
+
+            if self.listening_mode == "api":
+                result['cybereason_host'] = self.cybereason_host
+                result['cybereason_username'] = self.cybereason_username
+                result['cybereason_password'] = self.cybereason_password
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()

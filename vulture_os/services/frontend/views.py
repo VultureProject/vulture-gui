@@ -31,7 +31,7 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
-from applications.logfwd.models import LogOM, LogOMFile
+from applications.logfwd.models import LogOM
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener
@@ -339,7 +339,7 @@ def frontend_edit(request, object_id=None, api=False):
             node_listeners[frontend.node] = []
 
         # At least one Listener is required if Frontend enabled, except for listener of type "File" and "pcap"
-        if not listener_objs and frontend.enabled and frontend.mode != "impcap" and frontend.listening_mode != "file":
+        if not listener_objs and frontend.enabled and frontend.mode != "impcap" and frontend.listening_mode != "file" and frontend.listening_mode != "api":
             form.add_error(None, "At least one listener is required if frontend is enabled.")
             return render_form(frontend)
 
