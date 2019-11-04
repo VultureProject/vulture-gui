@@ -102,7 +102,7 @@ class Node(models.Model):
         }
 
     def to_dict(self):
-        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0")
+        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
         intfs = [n.to_dict() for n in NetworkInterfaceCard.objects.filter(node=self).exclude(dev__in=excluded_intf)]
 
         return {
@@ -560,7 +560,7 @@ class NetworkInterfaceCard(models.Model):
         :return: ['em0', 'lo0', ...]
         """
         return list(set(subprocess.check_output(['/sbin/ifconfig', '-l']).strip().decode('utf-8').split(' ')) -
-                    {'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6', 'pflog0', 'vm-public', 'tap0'})
+                    {'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6', 'pflog0', 'vm-public', 'tap0', 'tun0'})
 
     def get_running_addresses(self):
         """ Retrieve available RUNNING IP addresses on the NIC
