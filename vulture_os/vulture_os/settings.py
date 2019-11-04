@@ -79,19 +79,19 @@ AVAILABLE_APPS = [
 INSTALLED_APPS.extend(AVAILABLE_APPS)
 
 
-CRONJOBS = (
+CRONJOBS = [
     ("* * * * *", "gui.crontab.rss.rss_fetch"),  # Every minute
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
     ("1 * * * *", "gui.crontab.feed.security_update"),  # Every hour
     ("1 * * * *", "gui.crontab.documentation.doc_update"),  # Every hour
     ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
-)
+]
 
 # Extend cronjobs with custom cronjobs
 if os.path.exists(os.path.dirname(os.path.abspath(__file__)) + "/custom_cronjobs.py"):
     try:
-        from .custom_cronjobs import CUSTOM_CRONJOBS
+        from vulture_os.custom_cronjobs import CUSTOM_CRONJOBS
         CRONJOBS.extend(CUSTOM_CRONJOBS)
     except Exception:
         pass
