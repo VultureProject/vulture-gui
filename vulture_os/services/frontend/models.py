@@ -793,6 +793,7 @@ class Frontend(models.Model):
         for log_forwarder in self.log_forwarders_parse_failure.all().only('id'):
             result += LogOM.generate_conf(LogOM().select_log_om(log_forwarder.id),
                                           self.ruleset+"_garbage",
+                                          ruleset=self.ruleset+"_garbage",
                                           frontend=self.name+"_garbage") + "\n"
         return result
 

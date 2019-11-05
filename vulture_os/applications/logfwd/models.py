@@ -214,6 +214,13 @@ class LogOMFile(LogOM):
             # TODO : Distinct ruleset
             for f in Frontend.objects.filter(Q(mode="log") | Q(log_forwarders=self.id)).only('ruleset'):
                 rulesets.add(f.ruleset)
+            for f in Frontend.objects.filter(Q(mode="log") | Q(log_forwarders_parse_failure=self.id)).only('ruleset'):
+                if self.internal:
+                    res += "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
+                           .format(self.template_id(ruleset=f.ruleset + "_garbage"),
+                                   tpl.render(Context({'ruleset': f.ruleset})).replace("internal", "garbage"))
+            else:
+                rulesets.add(f.ruleset + "_garbage")
 
             for ruleset in rulesets:
                 res += "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
