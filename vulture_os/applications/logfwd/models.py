@@ -206,29 +206,26 @@ class LogOMFile(LogOM):
 
     def get_rsyslog_template(self):
         res = ""
-        if self.internal:
-            from services.frontend.models import Frontend
-            tpl = Template(self.file)
-            rulesets = set()
+        from services.frontend.models import Frontend
+        tpl = Template(self.file)
+        rulesets = set()
 
-            # TODO : Distinct ruleset
-            for f in Frontend.objects.filter(Q(mode="log") | Q(log_forwarders=self.id)).only('ruleset'):
-                rulesets.add(f.ruleset)
-            for f in Frontend.objects.filter(Q(mode="log") | Q(log_forwarders_parse_failure=self.id)).only('ruleset'):
-                if self.internal:
-                    res += "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
-                           .format(self.template_id(ruleset=f.ruleset + "_garbage"),
-                                   tpl.render(Context({'ruleset': f.ruleset})).replace("internal", "garbage"))
+        # TODO : Distinct ruleset
+        for f in Frontend.objects.filter(Q(mode="log") | Q(log_forwarders=self.id)).only('ruleset'):
+            rulesets.add(f.ruleset)
+        for f in Frontend.objects.filter(Q(mode="log") | Q(log_forwarders_parse_failure=self.id)).only('ruleset'):
+            if self.internal:
+                res += "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
+                       .format(self.template_id(ruleset=f.ruleset + "_garbage"),
+                               tpl.render(Context({'ruleset': f.ruleset})).replace("internal", "garbage"))
             else:
                 rulesets.add(f.ruleset + "_garbage")
 
-            for ruleset in rulesets:
-                res += "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
-                    .format(self.template_id(ruleset=ruleset), tpl.render(Context({'ruleset': ruleset})))
+        for ruleset in rulesets:
+            res += "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
+                .format(self.template_id(ruleset=ruleset), tpl.render(Context({'ruleset': ruleset})))
 
-            return res
-        else:
-            return "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.file)
+        return res
 
     def __str__(self):
         return "{} ({})".format(self.name, self.__class__.__name__)
