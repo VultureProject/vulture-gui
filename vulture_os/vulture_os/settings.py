@@ -23,10 +23,6 @@ from toolkit.network.network import get_hostname
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Django setup part
-sys.path.append('/home/vlt-os/vulture_os')
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
-
 # Retrieving Django SECRET_KEY
 try:
     from vulture_os.secret_key import SECRET_KEY
@@ -79,19 +75,19 @@ AVAILABLE_APPS = [
 INSTALLED_APPS.extend(AVAILABLE_APPS)
 
 
-CRONJOBS = (
+CRONJOBS = [
     ("* * * * *", "gui.crontab.rss.rss_fetch"),  # Every minute
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
     ("1 * * * *", "gui.crontab.feed.security_update"),  # Every hour
     ("1 * * * *", "gui.crontab.documentation.doc_update"),  # Every hour
     ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
-)
+]
 
 # Extend cronjobs with custom cronjobs
 if os.path.exists(os.path.dirname(os.path.abspath(__file__)) + "/custom_cronjobs.py"):
     try:
-        from .custom_cronjobs import CUSTOM_CRONJOBS
+        from vulture_os.custom_cronjobs import CUSTOM_CRONJOBS
         CRONJOBS.extend(CUSTOM_CRONJOBS)
     except Exception:
         pass

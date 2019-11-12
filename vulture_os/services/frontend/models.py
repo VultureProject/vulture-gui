@@ -793,6 +793,7 @@ class Frontend(models.Model):
         for log_forwarder in self.log_forwarders_parse_failure.all().only('id'):
             result += LogOM.generate_conf(LogOM().select_log_om(log_forwarder.id),
                                           self.ruleset+"_garbage",
+                                          ruleset=self.ruleset+"_garbage",
                                           frontend=self.name+"_garbage") + "\n"
         return result
 
@@ -809,6 +810,7 @@ class Frontend(models.Model):
             conf = self.to_template()
             conf['log_condition'] = self.render_log_condition()
             conf['log_condition_failure'] = self.render_log_condition_failure()
+            conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
             return template.render({'frontend': conf,
                                     'node': Cluster.get_current_node(),
                                     'global_config': Cluster.get_global_config()})
