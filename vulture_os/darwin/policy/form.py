@@ -573,7 +573,7 @@ class FilterPolicyDGAForm(FilterPolicyForm):
         # not shown in GUI
         self.fields['token_map_path'] = CharField(
             required=False,
-            initial="/home/darwin/conf/fdga/fdga.pb",
+            initial="/home/darwin/conf/fdga/fdga_tokens.csv",
             widget=HiddenInput()
         )
 

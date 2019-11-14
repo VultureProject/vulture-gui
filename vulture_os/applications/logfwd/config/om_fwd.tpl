@@ -3,4 +3,6 @@
            Target="{{target}}"
            Port="{{port}}"
            Protocol="{{protocol}}"
-           ZipLevel="{{zip_level}})"
+           Template="{{ out_template }}"
+           ZipLevel="{{zip_level}}"
+          )

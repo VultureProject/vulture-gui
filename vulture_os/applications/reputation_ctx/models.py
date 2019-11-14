@@ -75,7 +75,7 @@ AUTH_TYPE_CLASSES = {
     'digest': HTTPDigestAuth
 }
 
-DATABASE_PATH = "/var/db/reputation_ctx/"
+DATABASE_PATH = "/var/db/reputation_ctx"
 CONTEXT_OWNER = "vlt-os:vlt-web"
 CONTEXT_PERMS = "640"
 

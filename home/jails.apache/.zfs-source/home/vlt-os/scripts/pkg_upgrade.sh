@@ -1,7 +1,11 @@
 #!/bin/sh
 
 if [ -f /etc/host-hostname ] ; then
-    /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vulture_os/manage.py migrate
+    /usr/sbin/service vultured status && /bin/kill -9 $(/bin/cat /var/run/vulture/vultured.pid)
+    /usr/sbin/service netdata status && /usr/sbin/service netdata forcestop
+    /usr/local/bin/virtualenv /home/vlt-os/env
+    sleep 5
+    /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python3.6 /home/vlt-os/vulture_os/manage.py migrate
 else
     echo "Node not bootstrapped yet."
 fi
