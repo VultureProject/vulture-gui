@@ -45,6 +45,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 REDIS_LIST = "darwin_alerts"
 REDIS_CHANNEL = "darwin.alerts"
 
+
 def alert_handler(alert, m):
     alert = str(alert, "utf-8")
     a = json.loads(alert)
@@ -58,17 +59,6 @@ def alert_handler(alert, m):
     return True
 
 
-def pops(m, r):
-    redis_list_name = REDIS_LIST
-
-    rangeLen = r.redis.llen(redis_list_name)
-    alerts = r.redis.lrange(redis_list_name, "0", str(rangeLen - 1))
-    r.redis.ltrim(redis_list_name, str(rangeLen), "-1")
-
-    for alert in alerts:
-        alert_handler(alert,m)
-
-
 class ReconcileJob(Thread):
 
     def __init__(self, delay):
@@ -77,6 +67,15 @@ class ReconcileJob(Thread):
         # indicates whether the thread should be terminated.
         self.shutdown_flag = Event()
         self.delay = delay
+
+    def pops(self, m, r):
+        redis_list_name = REDIS_LIST
+
+        logger.info("Start pops awaiting alerts.")
+        alert = r.redis.rpop(redis_list_name)
+        while (alert is not None) and (not self.shutdown_flag.is_set()):
+            alert_handler(alert, m)
+            alert = r.redis.rpop(redis_list_name)
 
     def reconcile(self):
         m = MongoBase()
@@ -89,7 +88,9 @@ class ReconcileJob(Thread):
         r = RedisBase(node=master_node)
 
         # Pops alerts produced when vulture was down
-        pops(m, r)
+        self.pops(m, r)
+        if self.shutdown_flag.is_set():
+            return True
 
         redis_channel = REDIS_CHANNEL
         listener = r.pubsub()
