@@ -47,7 +47,6 @@ REDIS_CHANNEL = "darwin.alerts"
 
 
 def alert_handler(alert, m):
-    alert = str(alert, "utf-8")
     a = json.loads(alert)
     evt_id = a.get("evt_id")
     if evt_id is None:
@@ -74,6 +73,7 @@ class ReconcileJob(Thread):
         logger.info("Start pops awaiting alerts.")
         alert = r.redis.rpop(redis_list_name)
         while (alert is not None) and (not self.shutdown_flag.is_set()):
+            alert = str(alert, "utf-8")
             alert_handler(alert, m)
             alert = r.redis.rpop(redis_list_name)
 
