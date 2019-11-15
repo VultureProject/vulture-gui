@@ -42,6 +42,32 @@ from toolkit.redis.redis_base import RedisBase
 # Mongo import
 from toolkit.mongodb.mongo_base import MongoBase
 
+REDIS_LIST = "darwin_alerts"
+REDIS_CHANNEL = "darwin.alerts"
+
+def alert_handler(alert, m):
+    alert = str(alert, "utf-8")
+    a = json.loads(alert)
+    evt_id = a.get("evt_id")
+    if evt_id is None:
+        logger.info("Alert without evt_id ignored.")
+        return False
+    query = {"darwin_id": evt_id}
+    newvalue = {"$set": {"darwin_alert_details": a, "darwin_is_alert": True}}
+    m.update_one("logs", query, newvalue)
+    return True
+
+
+def pops(m, r):
+    redis_list_name = REDIS_LIST
+
+    rangeLen = r.redis.llen(redis_list_name)
+    alerts = r.redis.lrange(redis_list_name, "0", str(rangeLen - 1))
+    r.redis.ltrim(redis_list_name, str(rangeLen), "-1")
+
+    for alert in alerts:
+        alert_handler(alert,m)
+
 
 class ReconcileJob(Thread):
 
@@ -53,38 +79,29 @@ class ReconcileJob(Thread):
         self.delay = delay
 
     def reconcile(self):
-        # MONGO #
         m = MongoBase()
         if not m.connect():
             return False
         m.connect_primary()
 
-        # REDIS #
         r = RedisBase()
         master_node = r.get_master()
         r = RedisBase(node=master_node)
 
-        redis_channel = "darwin.alerts"
+        # Pops alerts produced when vulture was down
+        pops(m, r)
+
+        redis_channel = REDIS_CHANNEL
         listener = r.pubsub()
         listener.subscribe([redis_channel])
 
-        ignored_alerts = list()
         logger.info("Start listening {} channel.".format(redis_channel))
         while not self.shutdown_flag.is_set():
             alert = listener.get_message()
             # If we have no messages, the messages is None
             if alert:
                 alert = alert['data']
-                alert = str(alert, "utf-8")
-                a = json.loads(alert)
-                evt_id = a.get("evt_id")
-                if evt_id is None:
-                    ignored_alerts.append(a)
-                    logger.info("Alert without evt_id ignored.")
-                    continue
-                query = {"darwin_id": evt_id}
-                newvalue = {"$set": {"darwin_alert_details": a, "darwin_is_alert": True}}
-                m.update_one("logs", query, newvalue)
+                alert_handler(alert, m)
             sleep(0.001)  # be nice to the system :)
         return True
 
