@@ -76,7 +76,7 @@ AUTH_TYPE_CLASSES = {
     'digest': HTTPDigestAuth
 }
 
-DATABASES_PATH = "/var/db/darwin/"
+DATABASES_PATH = "/var/db/darwin"
 DATABASES_OWNER = "vlt-os:vlt-conf"
 DATABASES_PERMS = "644"
 
