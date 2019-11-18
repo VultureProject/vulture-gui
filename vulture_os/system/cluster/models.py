@@ -42,7 +42,7 @@ import time
 
 from services.exceptions import ServiceExit
 
-from re import findall as re_findall
+from re import findall as re_findall, compile as re_compile
 
 import logging
 import logging.config
@@ -603,6 +603,20 @@ class NetworkInterfaceCard(models.Model):
             "dev": self.dev
         }
 
+    @property
+    def has_ipv4(self):
+        """ Check if there is at least one NetworkAddress IPv4 associated to this NetworkInterface 
+        :return  True if there is, False otherwise
+        """
+        return self.networkaddress_set.mongo_find({"ip": {"$not": re_compile(":")}}).count() > 0
+
+    @property
+    def has_ipv6(self):
+        """ Check if there is at least one NetworkAddress IPv6 associated to this NetworkInterface
+        :return True if there is, False otherwise
+        """
+        return self.networkaddress_set.mongo_find({"ip": re_compile(":")}).count() > 0
+
 
 class NetworkAddress(models.Model):
     """
@@ -617,6 +631,9 @@ class NetworkAddress(models.Model):
     prefix_or_netmask = models.TextField()
     is_system = models.BooleanField(default=False)
     carp_vhid = models.SmallIntegerField(default=0)
+
+    # Needed to make alambiquate mongodb queries
+    objects = models.DjongoManager()
 
     def to_dict(self):
         return {
