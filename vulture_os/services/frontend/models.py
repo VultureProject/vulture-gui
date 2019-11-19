@@ -133,19 +133,18 @@ class Frontend(models.Model):
     )
     timeout_connect = models.PositiveIntegerField(
         default=5000,
-        validators=[MinValueValidator(1), MaxValueValidator(20000)],
+        validators=[MaxValueValidator(20000)],
         help_text=_("HTTP request Timeout"),
         verbose_name=_("Timeout")
     )
     timeout_client = models.PositiveIntegerField(
         default=60,
-        validators=[MinValueValidator(1), MaxValueValidator(3600)],
+        validators=[MaxValueValidator(3600)],
         help_text=_("HTTP request Timeout"),
         verbose_name=_("Timeout")
     )
     timeout_keep_alive = models.PositiveIntegerField(
         default=500,
-        validators=[MinValueValidator(1)],
         help_text=_("HTTP Keep-Alive timeout"),
         verbose_name=_("HTTP Keep-Alive timeout")
     )
