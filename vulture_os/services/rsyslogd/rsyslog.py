@@ -26,7 +26,6 @@ __doc__ = 'Rsyslog service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from applications.reputation_ctx.models import DATABASES_PATH
 from services.service import Service
 from services.frontend.models import Frontend
 from services.rsyslogd.models import RsyslogSettings
@@ -107,8 +106,7 @@ def configure_node(node_logger):
     """ PF configuration for Rsyslog """
     pf_template = jinja2_env.get_template("pf.conf")
     write_conf(node_logger, ["{}/pf.conf".format(RSYSLOG_PATH),
-                             pf_template.render({'mongodb_uri': MongoBase.get_replicaset_uri(),
-                                                 'DATABASES_PATH': DATABASES_PATH}),
+                             pf_template.render({'mongodb_uri': MongoBase.get_replicaset_uri()}),
                              RSYSLOG_OWNER, RSYSLOG_PERMS])
     result += "Rsyslog template 'pf.conf' written.\n"
 
