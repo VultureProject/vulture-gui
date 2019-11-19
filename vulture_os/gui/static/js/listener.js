@@ -10,6 +10,63 @@ if (!String.prototype.endsWith) {
   };
 }
 
+
+
+function refresh_api_parser_type(type_){
+    $('.api_clients_row').hide();
+    if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api"){
+      $('#api_'+type_+"_row").show();
+    }
+
+    if (type_ === "elasticsearch"){
+      $('#id_elasticsearch_auth').on('change', function(){
+        if ($(this).is(':checked'))
+          $('.elasticsearch_auth').show();
+        else
+          $('.elasticsearch_auth').hide();
+      }).trigger('change')
+
+      $('#get_elasticsearch_index').on('click', function(){
+        var btn = this;
+        var txt = $(btn).html();
+        $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+        $(btn).prop('disabled', true);
+
+        var data = {
+          type_parser: "elasticsearch",
+          els_host: $('#id_elasticsearch_host').val(),
+          els_verify_ssl: $('#id_elasticsearch_verify_ssl').is(":checked"),
+          els_auth: $('#id_elasticsearch_auth').is(":checked"),
+          els_username: $('#id_elasticsearch_username').val(),
+          els_password: $('#id_elasticsearch_password').val(),
+          els_index: $('#id_elasticsearch_index').val()
+        }
+
+        $.post(
+          test_frontend_apiparser_uri,
+          data,
+
+          function(response){
+            $(btn).prop('disabled', false);
+            $(btn).html(txt);
+            if (!check_json_error(response)){
+              $('#elasticsearch_check_status').val('0');
+              return;
+            }
+
+            var stats = response.stats;
+            $('#elasticsearch_check_status').val('1');
+            $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(stats, null, 4) + "</pre>");
+            $('#modal-test-apiparser').modal('show');
+          }
+        )
+      })
+    }
+  }
+
+
+
+
 $(function() {
 
   toggle_impcap_filter_type();
@@ -120,35 +177,16 @@ $(function() {
 
   function refresh_input_logs_type(listening_mode){
     var first = true;
+    $('#id_ruleset').prop('disabled', false)
     if (listening_mode === "api"){
-      $('#id_ruleset option').each(function(){
-        if ($(this).val().startsWith('api_')){
-          if (first){
-            $("#id_ruleset").val($(this).val()).select2()
-            first = false;
-          }
-
-          $(this).prop('disabled', false);
-        } else {
-
-          $(this).prop('disabled', true);
-        }
-      })
-    } else {
-      $('#id_ruleset option').each(function(){
-        if ($(this).val().startsWith('api_')){
-          $(this).prop('disabled', true);
-        } else {
-          if (first){
-            $("#id_ruleset").val($(this).val()).select2()
-            first = false;
-          }
-
-          $(this).prop('disabled', false);
-        }
-      })
+      $('#id_ruleset').val('generic_json').trigger('change');
+      $('#id_ruleset').prop('disabled', true)
     }
   }
+
+  $('#id_api_parser_type').on('change', function(){
+    refresh_api_parser_type($(this).val());
+  }).trigger('change');
 
 
   /* Refresh http sub-class attributes show/hide */
@@ -367,6 +405,7 @@ $(function() {
 
   /* Build request-headers and listeners fields with tables content */
   $('#frontend_edit_form').submit(function(event) {
+    $('#id_ruleset').prop('disabled', false);
     var listeners = new Array();
     $('#listener_table tbody tr').each(function(index, tr) {
       var id = tr.children[0].innerHTML;

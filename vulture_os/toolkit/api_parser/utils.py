@@ -26,6 +26,7 @@ __doc__ = 'Parser URLS'
 import logging
 
 from toolkit.api_parser.cybereason.cybereason import CybereasonParser
+from toolkit.api_parser.elasticsearch.els import ElasticsearchParser
 from django.conf import settings
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -33,7 +34,8 @@ logger = logging.getLogger('gui')
 
 
 PARSER_LIST = {
-    'api_cybereason': CybereasonParser,
+    'elasticsearch': ElasticsearchParser,
+    'cybereason': CybereasonParser,
 }
 
 
@@ -46,3 +48,7 @@ def get_api_parser(parser_name):
         return PARSER_LIST[parser_name]
     except KeyError:
         raise ParserDoesNotExist("Parser {} does not exist".format(parser_name))
+
+
+def get_available_api_parser():
+    return list(PARSER_LIST.keys())

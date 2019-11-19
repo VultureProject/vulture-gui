@@ -624,7 +624,17 @@
 
                   <div class="tab-pane" id="tab_api_client">
                     <div class="row">
-                      <div class="col-md-12 api_clients_row api_cybereason_row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{% trans "API Parser Type" %}</label>
+                          <div class="col-sm-5">
+                            {{ form.api_parser_type }}
+                            {{ form.api_parser_type.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="col-md-12 api_clients_row" id="api_cybereason_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{% trans "Cybereason Host" %}</label>
                           <div class="col-sm-5">
@@ -647,6 +657,61 @@
                           </div>
                         </div>
                       </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_elasticsearch_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.elasticsearch_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.elasticsearch_host }}
+                            {{ form.elasticsearch_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.elasticsearch_verify_ssl.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.elasticsearch_verify_ssl }}
+                            {{ form.elasticsearch_verify_ssl.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.elasticsearch_auth.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.elasticsearch_auth }}
+                            {{ form.elasticsearch_auth.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group elasticsearch_auth">
+                          <label class="col-sm-3 control-label">{{ form.elasticsearch_username.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.elasticsearch_username }}
+                            {{ form.elasticsearch_username.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group elasticsearch_auth">
+                          <label class="col-sm-3 control-label">{{ form.elasticsearch_password.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.elasticsearch_password }}
+                            {{ form.elasticsearch_password.errors|safe }}
+                          </div>
+                        </div>
+
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.elasticsearch_index.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.elasticsearch_index }}
+                            {{ form.elasticsearch_index.errors|safe }}
+                          </div>
+                        </div>
+
+                        <div class="text-center mar-btm">
+                          <button class="btn btn-warning" id="get_elasticsearch_index" type="button">
+                            {% trans "Get Elasticsearch Indexes" %}
+                          </button>
+                          <input type="hidden" id="elasticsearch_check_status" value="0"/>
+                        </div>
+
+                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -661,6 +726,25 @@
       </div>
     </form>
   </section>
+
+  <div class="modal" id="modal-test-apiparser">
+      <div class="modal-dialog">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal"><i class="pci-cross pci-circle"></i></button>
+                  <h4 class="modal-title">{% trans "API Parser results" %}</h4>
+              </div>
+
+              <div class="modal-body" id="modal-test-apiparser-body">
+
+              </div>
+
+              <div class="modal-footer">
+                  <button class="btn btn-primary" data-dismiss="modal" type="button">{% trans "Continue" %}</button>
+              </div>
+          </div>
+      </div>
+  </div>
 
 {% endblock %}
 
@@ -677,5 +761,7 @@
   var listener_form_td = `{{listener_form.as_table_td|safe}}`;
   var log_om_table_td = `{{log_om_table.as_table_td|safe}}`;
   var reputationctx_form_td = `{{reputationctx_form.as_table_td|safe}}`;
+
+  var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";
 
 {% endblock %}

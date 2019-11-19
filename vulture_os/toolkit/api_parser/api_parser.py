@@ -25,12 +25,22 @@ __doc__ = 'API Parser'
 
 import logging
 
+from system.config.models import Config
 from django.conf import settings
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 
+class NodeNotInstalled(Exception):
+    pass
+
+
 class ApiParser:
     def __init__(self):
-        pass
+        try:
+            config = Config.objects.get()
+        except Config.DoesNotExist:
+            raise NodeNotInstalled()
+
+        self.customer_name = config.customer_name

@@ -38,6 +38,7 @@ from services.frontend.models import Frontend, FrontendReputationContext, Listen
 from system.cluster.models import Cluster
 from toolkit.api.responses import build_response
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
+from toolkit.api_parser.utils import get_api_parser
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -570,6 +571,27 @@ def frontend_pause(request, object_id, api=False):
         return JsonResponse({'status': False, 'error': str(e), 'error_details': e.traceback})
 
     return JsonResponse({'status': True, 'message': res})
+
+
+def frontend_test_apiparser(request):
+    try:
+        type_parser = request.POST.get('type_parser')
+
+        parser = get_api_parser(type_parser)
+        data = {}
+
+        for k, v in request.POST.items():
+            data[k] = v
+
+        return JsonResponse(parser.test(data))
+
+    except Exception as e:
+        logger.error(e, exc_info=1)
+
+        return JsonResponse({
+            'status': False,
+            'error': str(e)
+        })
 
 
 COMMAND_LIST = {

@@ -53,6 +53,10 @@ urlpatterns = [
             views.frontend_pause,
             name="services.frontend.pause"),
 
+    re_path('^services/frontend/test_apiparser/',
+            views.frontend_test_apiparser,
+            name="services.frontend.test_apiparser"),
+
     path('api/services/frontend/test_conf/', api.frontend_test_conf, name="services.frontend.test_conf"),
 
     path('api/v1/services/frontend/', api.FrontendAPIv1.as_view(), name="services.frontend.api"),

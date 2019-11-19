@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Cybereason API Parser'
 
 
-import gzip
+import json
 import logging
 import requests
 
@@ -31,7 +31,11 @@ from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('gui')
+logger = logging.getLogger('crontab')
+
+
+class CybereasonParseError(Exception):
+    pass
 
 
 class CybereasonAPIError(Exception):
@@ -46,14 +50,13 @@ class CybereasonParser(ApiParser):
         self.username = fontend.cybereason_username
         self.password = fontend.cybereason_password
 
-        print(self.api_host)
-
         self.login_url = "{}/{}".format(self.api_host, "login.html")
         self.malop_url = "{}/{}".format(self.api_host, 'rest/crimes/unified')
 
     def execute(self):
         headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            'Accept': 'application/json'
         }
 
         data = {
@@ -84,12 +87,14 @@ class CybereasonParser(ApiParser):
             headers=headers
         )
 
-        print(response.headers)
-
         if response.status_code != 200:
             error = "Error at Cybereason API Call: {}".format(response.content)
             logger.error(error)
             raise CybereasonAPIError(error)
 
-        raw_output = gzip.decompress(response.read()).decode('utf-8')
-        print(raw_output)
+        try:
+            malops = json.loads(response.content)
+        except Exception as e:
+            raise CybereasonParseError(e)
+
+        print(malops)

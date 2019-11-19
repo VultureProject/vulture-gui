@@ -356,6 +356,11 @@ class Frontend(models.Model):
         help_text=_("Vulture node")
     )
 
+    api_parser_type = models.TextField(
+        help_text=_("API Parser Type"),
+        default=""
+    )
+
     cybereason_host = models.TextField(
         help_text=_('Cybereason console URL'),
         default=""
@@ -368,6 +373,36 @@ class Frontend(models.Model):
 
     cybereason_password = models.TextField(
         help_text=_('Cybereason Password'),
+        default=""
+    )
+
+    elasticsearch_host = models.TextField(
+        help_text=_('Elasticsearch URL'),
+        default=""
+    )
+
+    elasticsearch_verify_ssl = models.BooleanField(
+        help_text=_("Verify SSL"),
+        default=True
+    )
+
+    elasticsearch_auth = models.BooleanField(
+        help_text=_('Authentication Elasticsearch'),
+        default=False
+    )
+
+    elasticsearch_username = models.TextField(
+        help_text=_('Elasticsearch username'),
+        default=""
+    )
+
+    elasticsearch_password = models.TextField(
+        help_text=_('Elasticsearch password'),
+        default=""
+    )
+
+    elasticsearch_index = models.TextField(
+        help_text=_('Index to poll'),
         default=""
     )
 
