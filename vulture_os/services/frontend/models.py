@@ -530,13 +530,13 @@ class Frontend(models.Model):
 
         if self.enable_logging_reputation:
             if self.logging_reputation_database_v4:
-                reputation_database_v4 = DATABASES_PATH + self.logging_reputation_database_v4.filename
+                reputation_database_v4 = DATABASES_PATH + '/' + self.logging_reputation_database_v4.filename
 
             if self.logging_reputation_database_v6:
-                reputation_database_v6 = DATABASES_PATH + self.logging_reputation_database_v6.filename
+                reputation_database_v6 = DATABASES_PATH + '/' + self.logging_reputation_database_v6.filename
 
         if self.logging_geoip_database:
-            geoip_database = DATABASES_PATH + self.logging_geoip_database.filename
+            geoip_database = DATABASES_PATH + '/' + self.logging_geoip_database.filename
 
         reputation_ctxs = []
         if self.enable_logging:
