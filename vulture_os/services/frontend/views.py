@@ -220,6 +220,7 @@ def frontend_edit(request, object_id=None, api=False):
                        'reputation_contexts': reputationctx_form_list,
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
+                       'redis_forwarder': LogOM.objects.filter(name="Internal_Dashboard").only('id').first().id,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 
     if request.method in ("POST", "PUT"):
