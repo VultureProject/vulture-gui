@@ -429,8 +429,8 @@ def write_network_config(logger):
 
     """ Network IP address are configured: Handle routing """
     config = "_EOL"
-    config += "gateway_enable=\"NO\" _EOL"
-    config += "ipv6_gateway_enable=\"NO\" _EOL"
+    config += "gateway_enable=\"YES\" _EOL"
+    config += "ipv6_gateway_enable=\"YES\" _EOL"
     if node.gateway:
         config += "defaultrouter=\"{}\" _EOL".format(node.gateway)
 

@@ -149,7 +149,7 @@ def reputation_ctx_delete(request, object_id, api=False):
     })
 
 
-def reputation_ctx_edit(request, object_id=None, api=False):
+def reputation_ctx_edit(request, object_id=None, api=False, update=False):
     header_form_list = list()
     reputation_ctx = None
     if object_id:
@@ -161,7 +161,12 @@ def reputation_ctx_edit(request, object_id=None, api=False):
             return HttpResponseForbidden("Injection detected")
 
     """ Create form with object if exists, and request.POST (or JSON) if exists """
-    if hasattr(request, "JSON") and api:
+    if (hasattr(request, "JSON") and api) or (request.method in ("POST", "PUT") and reputation_ctx and reputation_ctx.internal):
+        # If internal objects, only tags is allowed to be modified
+        if reputation_ctx and reputation_ctx.internal:
+            request.JSON = {**reputation_ctx.to_dict(), 'tags': request.POST.get('tags')}
+        elif update:
+            request.JSON = {**reputation_ctx.to_dict(), **request.JSON}
         form = ReputationContextForm(request.JSON or None, instance=reputation_ctx, error_class=DivErrorList)
     else:
         form = ReputationContextForm(request.POST or None, instance=reputation_ctx, error_class=DivErrorList)
@@ -176,7 +181,7 @@ def reputation_ctx_edit(request, object_id=None, api=False):
 
         if not header_form_list and ctx:
             for k, v in ctx.custom_headers.items():
-                header_form_list.append(HttpHealthCheckHeaderForm({'check_header_name': k, 'check_header_value': v}))
+                header_form_list.append(HttpHealthCheckHeaderForm(initial={'check_header_name': k, 'check_header_value': v}))
 
         return render(request, 'apps/reputation_ctx_edit.html',
                       {'form': form,
@@ -184,7 +189,7 @@ def reputation_ctx_edit(request, object_id=None, api=False):
                        'header_form': HttpHealthCheckHeaderForm(),
                        **kwargs})
 
-    if request.method in ("POST", "PUT"):
+    if request.method in ("POST", "PUT", "PATCH"):
         headers_dict = {}
         """ Handle JSON formatted request Http-health-check-headers """
         try:
@@ -219,19 +224,20 @@ def reputation_ctx_edit(request, object_id=None, api=False):
         reputation_ctx = form.save(commit=False)
         reputation_ctx.custom_headers = headers_dict
 
-        """ Generate the non-yet saved object conf """
-        try:
-            logger.info("Trying to retrieve MMDB database context '{}'".format(reputation_ctx.name))
-            content = reputation_ctx.download_mmdb()
-            logger.info("Reputation context '{}' successfully downloaded".format(reputation_ctx.name))
-        except VultureSystemError as e:
-            logger.exception(e)
-            return render_form(reputation_ctx, save_error=[str(e), e.traceback])
+        if not reputation_ctx.internal:
+            """ Generate the non-yet saved object conf """
+            try:
+                logger.info("Trying to retrieve MMDB database context '{}'".format(reputation_ctx.name))
+                content = reputation_ctx.download_mmdb()
+                logger.info("Reputation context '{}' successfully downloaded".format(reputation_ctx.name))
+            except VultureSystemError as e:
+                logger.exception(e)
+                return render_form(reputation_ctx, save_error=[str(e), e.traceback])
 
-        except Exception as e:
-            logger.exception(e)
-            return render_form(reputation_ctx, save_error=["No referenced error",
-                                                           str.join('', format_exception(*exc_info()))])
+            except Exception as e:
+                logger.exception(e)
+                return render_form(reputation_ctx, save_error=["No referenced error",
+                                                               str.join('', format_exception(*exc_info()))])
 
         """ If the conf is OK, save the ReputationContext object """
         # Is that object already in db or not
@@ -241,10 +247,12 @@ def reputation_ctx_edit(request, object_id=None, api=False):
             reputation_ctx.save()
             logger.debug("Reputation CTX '{}' (id={}) saved in MongoDB.".format(reputation_ctx.name, reputation_ctx.id))
 
-            """ API request asynchrone to save conf on node """
-            # Save conf first, to raise if there is an error
-            reputation_ctx.save_conf()
-            logger.info("Write file of reputationCTX '{}' asked on cluster".format(reputation_ctx.name))
+            # If it is not an internal database, write the file on disk
+            if not reputation_ctx.internal:
+                """ API request asynchrone to save conf on node """
+                # Save conf, to raise if there is an error
+                reputation_ctx.save_conf()
+                logger.info("Write file of reputationCTX '{}' asked on cluster".format(reputation_ctx.name))
 
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """

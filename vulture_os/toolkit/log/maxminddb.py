@@ -31,7 +31,7 @@ __doc__ = 'Toolkit for MaxMindDB databases management'
 
 # Extern modules imports
 from io import BytesIO
-from maxminddb import open_database as open_mmdb_database, MODE_FD
+from maxminddb import open_database, MODE_FD
 
 
 def test_mmdb_database(mmdb_content):
@@ -44,7 +44,22 @@ def test_mmdb_database(mmdb_content):
     tmpfile.seek(0)
     setattr(tmpfile, "name", "test")
     try:
-        open_mmdb_database(tmpfile, mode=MODE_FD)
+        open_database(tmpfile, mode=MODE_FD)
         return True
     except Exception:
         return False
+
+
+def open_mmdb_database(mmdb_content):
+    """ Test MaxMindDB database format with only its content as binary
+    :return True if the database is correct, False otherwise
+    """
+    # Check if the response content is MMDB database
+    tmpfile = BytesIO()
+    tmpfile.write(mmdb_content)
+    tmpfile.seek(0)
+    setattr(tmpfile, "name", "test")
+    try:
+        return open_database(tmpfile, mode=MODE_FD)
+    except Exception:
+        return None

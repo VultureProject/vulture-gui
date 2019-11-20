@@ -25,6 +25,7 @@ __doc__ = 'Log Forwarders View'
 
 # Django system imports
 from django.conf import settings
+from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
@@ -107,11 +108,6 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
     try:
         if object_id:
             log_om = LOGFWD_MODELS[fw_type].objects.get(pk=object_id)
-            if request.method in ("POST", "PUT") and log_om.internal:
-                if api:
-                    return JsonResponse({'error': _("You cannot edit an internal Log Forwarder.")}, status=403)
-                else:
-                    return HttpResponseForbidden("An internal log forwarder is not editable.")
         else:
             log_om = LOGFWD_MODELS[fw_type]()
     except KeyError as e:
@@ -130,29 +126,43 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
     else:
         form = LOGFWD_FORMS[fw_type](request.POST or None, instance=log_om, error_class=DivErrorList)
 
-    if request.method in ("POST", "PUT") and form.is_valid():
-        # Save the form to get an id if there is not already one
-        log_om = form.save(commit=False)
-        log_om.save()
+    if request.method in ("POST", "PUT"):
+        # Impossible to edit the mongodb internal log forwarder
+        if log_om.internal and fw_type == "MongoDB":
+            if api:
+                return JsonResponse({'error': _("You cannot edit an internal Log Forwarder.")}, status=403)
+            else:
+                return render(request, 'apps/logfwd_{}.html'.format(LOGFWD_MODELS[fw_type].__name__),
+                              {'form': form, 'save_error': [_("You cannot edit this internal Log Forwarder."),
+                                                            _("You can duplicate this log forwarder and modify it")]})
 
-        """ After saving, reload the Rsyslog conf of all Frontends that uses this LogForwarder """
-        """ For each node """
-        for node in Node.objects.all():
-            """ If the LogForwarder is used by an enable frontend on this node """
-            frontends = []
-            # FIXME : Add .distinct("frontend"):
-            for listener in Listener.objects.filter(frontend__log_forwarders=log_om.id,
-                                                    network_address__nic__node=node.id).distinct():
-                if listener.frontend.id not in frontends:
-                    api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", listener.frontend.id)
-                    if not api_res.get('status'):
-                        raise ServiceConfigError("on node {}\n API request error.".format(node.name), "rsyslog",
-                                                 traceback=api_res.get('message'))
-                    frontends.append(listener.frontend.id)
+        elif form.is_valid():
+            # Save the form to get an id if there is not already one
+            log_om = form.save(commit=False)
+            log_om.save()
 
-        if api:
-            return build_response(log_om.id, "applications.logfwd.api", COMMAND_LIST)
-        return HttpResponseRedirect('/apps/logfwd')
+            """ After saving, reload the Rsyslog conf of all Frontends that uses this LogForwarder """
+            """ For each node """
+            for node in Node.objects.all():
+                """ If the LogForwarder is used by an enable frontend on this node """
+                frontends = []
+                # FIXME : Add .distinct("frontend") when implemented in djongo
+                for listener in Listener.objects.filter(Q(frontend__log_forwarders=log_om.id) |
+                                                        Q(frontend__log_forwarders_parse_failure=log_om.id),
+                                                        network_address__nic__node=node.id).distinct():
+                    if listener.frontend.id not in frontends:
+                        api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", listener.frontend.id)
+                        if not api_res.get('status'):
+                            raise ServiceConfigError("on node {}\n API request error.".format(node.name), "rsyslog",
+                                                     traceback=api_res.get('message'))
+                        frontends.append(listener.frontend.id)
+                # If at least one frontend uses this log_forwarder
+                # Write logrotate config
+                if len(frontends) > 0:
+                    node.api_request("services.logrotate.logrotate.reload_conf")
+            if api:
+                return build_response(log_om.id, "applications.logfwd.api", COMMAND_LIST)
+            return HttpResponseRedirect('/apps/logfwd')
 
     if api:
         return JsonResponse(form.errors.get_json_data(), status=400)

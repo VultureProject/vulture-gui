@@ -127,12 +127,22 @@
                         </div>
                       </div>
                     </div> <!-- /.row http-mode-logging -->
-                    <div class="row logging http-mode-logging">
+                    <div class="row http-mode-logging tcp-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label id="store_logs_label" class="col-sm-4 control-label">{% trans "Stock logs locally" %}</label>
+                          <label class="col-sm-4 control-label">{% trans "Store logs into cluster database" %}</label>
                           <div class="col-sm-5">
-                            <input type="checkbox" class="js-switch" id="stock_logs_localy"/>
+                            <input type="checkbox" class="js-switch" id="stock_logs_locally"/>
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row http-mode-logging -->
+                    <div class="row logging">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Archive logs on system" %}</label>
+                          <div class="col-sm-5">
+                            <input type="checkbox" class="js-switch" id="archive_logs"/>
                           </div>
                         </div>
                       </div>
@@ -306,7 +316,7 @@
                           </div>
                         </div>
                       </div> <!-- /.row -->
-                      <div class="row haproxy-conf">
+                      <div class="row tcp-mode http-mode">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{% trans "Timeout client" %}</label>
@@ -648,6 +658,10 @@
 
   $(function() {
 
+    var redis_forwarder = "{{redis_forwarder}}";
+    var redis_forwarder_added = false;
+    var old_mode = $('id_mode').val();
+
     toggle_impcap_filter_type();
 
     /* All events to refresh (re-apply) after a table is modified */
@@ -676,33 +690,35 @@
       });
     }
 
-    $('#stock_logs_localy').on('change', function(){
+    $('#stock_logs_locally').on('change', function(){
       var selected_forwarders = $('#id_log_forwarders').val();
 
       if (selected_forwarders === null)
         selected_forwarders = [];
 
-      if (!$(this).is(':checked')){
-        var new_selected_forwarders = [];
-        for (var i in selected_forwarders){
-          if (selected_forwarders[i] !== "1")
-            new_selected_forwarders.push(selected_forwarders[i]);
-        }
-
-        selected_forwarders = new_selected_forwarders;
-      } else {
-        if ($.inArray("1", selected_forwarders) === -1)
-          selected_forwarders.push("1");
+      if( ($.inArray("1", selected_forwarders) === -1) && ($(this).is(':checked')) ) {
+        selected_forwarders.push("1");
+      } else if( ($.inArray("1", selected_forwarders) !== -1) && (!$(this).is(':checked')) ) {
+        selected_forwarders.pop("1");
       }
 
       $('#id_log_forwarders').val(selected_forwarders).trigger('change');
     })
 
-    var log_fwds = $('#id_log_forwarders').val();
-    for (var i in log_fwds){
-      if (log_fwds[i] === "1")
-        $('#stock_logs_localy').prop('checked', true);
-    }
+    $('#archive_logs').on('change', function(){
+      var selected_forwarders = $('#id_log_forwarders').val();
+
+      if (selected_forwarders === null)
+        selected_forwarders = [];
+
+      if( ($.inArray("2", selected_forwarders) === -1) && ($(this).is(':checked')) ) {
+        selected_forwarders.push("2");
+      } else if( ($.inArray("2", selected_forwarders) !== -1) && (!$(this).is(':checked')) ) {
+        selected_forwarders.pop("2");
+      }
+
+      $('#id_log_forwarders').val(selected_forwarders).trigger('change');
+    })
 
     /* Function used to auto-complete tagEditor */
     function autoComplete(list, begin) {
@@ -773,54 +789,35 @@
       } else {
         $('#id_impcap_filter').prop("readonly", true);
         $('#id_impcap_filter').val($('#id_impcap_filter_type').val());
-        toggle_impcap_filter();
       }
     }
     $('#id_impcap_filter_type').on('change', toggle_impcap_filter_type);
 
 
-    /* Show darwin option depending on enable checkbox */
-    function toggle_impcap_darwin() {
-      if( $('#id_enable_impcap_darwin_dns').is(":checked") ) {
-        $('#impcap-dns').show();
-      } else {
-        $('#impcap-dns').hide();
+    function refresh_dashboard_forwarder(old_mode, new_mode) {
+      // retrieve selected forwarders
+      var selected_forwarders = $('#id_log_forwarders').val();
+      if (selected_forwarders === null)
+        selected_forwarders = [];
+
+      // if new mode is impcap and was not
+      if( old_mode != "impcap" && new_mode == "impcap" ) {
+        // If the dashboard forwarder was not selected
+        if( $.inArray(redis_forwarder, selected_forwarders) === -1 ) {
+          redis_forwarder_added = true;
+          selected_forwarders.push(redis_forwarder);
+        } else {
+          redis_forwarder_added = false;
+        }
       }
-    }
-    $('#id_enable_impcap_darwin_dns').on('change', toggle_impcap_darwin);
-
-    /* Show darwin content inspection option depending on enable checkbox */
-    function toggle_impcap_pkt_inspect() {
-      if( $('#id_enable_pkt_inspect').is(":checked") ) {
-        $('#pkt-inspect').show();
-      } else {
-        $('#pkt-inspect').hide();
+      else if( old_mode == "impcap" && new_mode != "impcap" ) {
+        // If the dashboard forwarder was automatically selected, deselect it
+        if( redis_forwarder_added && $.inArray(redis_forwarder, selected_forwarders) !== -1 ) {
+          selected_forwarders.pop(redis_forwarder);
+        }
       }
-    }
-    $('#id_enable_pkt_inspect').on('change', toggle_impcap_pkt_inspect);
 
-    var port_regex = /\bport\s+53\b/;
-    var udp_regex = /\budp\b/;
-
-    /* Show DNS options in "udp" and "port 53" is in impcap_filter */
-    function toggle_impcap_filter() {
-      var impcap_filter_val = $('#id_impcap_filter').val();
-
-      if (impcap_filter_val.match(port_regex) !== null && impcap_filter_val.match(udp_regex) !== null) {
-        $('.impcap-dns-mode').show();
-      } else {
-        $('#id_enable_impcap_darwin_dns').prop("checked", false);
-        toggle_impcap_darwin();
-        $('.impcap-dns-mode').hide();
-      }
-    }
-    $('#id_impcap_filter').on('keyup', toggle_impcap_filter);
-
-
-    function refresh_impcap_options() {
-      toggle_impcap_filter_type();
-      toggle_impcap_darwin();
-      toggle_impcap_pkt_inspect();
+      $('#id_log_forwarders').val(selected_forwarders).trigger('change');
     }
 
 
@@ -834,19 +831,12 @@
       $('.impcap-mode').hide();
       $('.'+mode+'-mode').show();
 
-      if( mode === "log" )
-        $('#store_logs_label').html("{% trans "Archive logs on system" %}");
-      else
-        $('#store_logs_label').html("{% trans "Store logs into cluster database" %}");
-
       /* If mode = LOG => Activate logging automatically */
       var log_enabled = $('#id_enable_logging').is(":checked");
       if( (mode === "log" || mode === "impcap") && !log_enabled ) {
         $('#id_enable_logging').trigger('click');
         $('#id_enable_logging').prop("disabled", true);
         last_enable_log = log_enabled;
-        if( mode === "impcap" )
-          refresh_impcap_options();
       } else if( mode !== "log" && mode !== "impcap" ) {
         if( mode === "http" ) {
           refresh_http();
@@ -857,13 +847,24 @@
       } else if ( mode === "log" ) {
         last_enable_log = log_enabled;
         $('#id_enable_logging').prop("disabled", true);
+        if( $('#stock_logs_locally').is(':checked') ) {
+          $('#stock_logs_locally').click();
+        }
+      }
+      if( mode === "impcap" ) {
+          toggle_impcap_filter_type();
+      }
+      if( mode == "impcap" || old_mode == "impcap" ) {
+        refresh_dashboard_forwarder(old_mode, mode);
       }
       $('#id_enable_logging').trigger("change");
+      refresh_ruleset($('#id_ruleset').val());
 
       show_custom_conf(mode, $('#id_listening_mode').val());
       show_listening_mode(mode, $('#id_listening_mode').val());
       show_network_conf(mode, $('#id_listening_mode').val());
       show_log_condition_failure();
+      old_mode = mode;
     });
     $('#id_mode').trigger('change');
 
@@ -885,25 +886,28 @@
     $('#id_enable_logging').trigger("change");
 
 
+    /* Show log_condition_failure depending on mode and ruleset */
+    function show_log_condition_failure() {
+      if( $('#id_mode').val() == "log" && ['raw_to_json', 'impcap'].indexOf($('#id_ruleset').val()) < 0 ) {
+        console.log("show")
+        $('.log-failure').show();
+      } else {
+        $('.log-failure').hide();
+        console.log("hide")
+      }
+    }
+
     /* Parser type bind */
-    $('#id_ruleset').on("change", function(e) {
-      if( $(this).val() === "forwarder" ) {
+    function refresh_ruleset(val) {
+      if( val === "forwarder" ) {
         $('.forwarder-tag').show();
       } else {
         $('.forwarder-tag').hide();
       }
       show_log_condition_failure();
-    });
-
-
-    /* Show log_condition_failure depending on mode and ruleset */
-    function show_log_condition_failure() {
-      if( $('#id_mode').val() == "log" && ['raw_to_json', 'impcap'].indexOf($('#id_ruleset').val()) < 0 ) {
-        $('.log-failure').show();
-      } else {
-        $('.log-failure').hide();
-      }
     }
+    $('#id_ruleset').on("change", function() {refresh_ruleset($(this).val());});
+    refresh_ruleset($('#id_ruleset').val());
 
 
     /* Listening_mode bind */
@@ -1067,6 +1071,17 @@
       return result;
     }
 
+    function refresh_log_forwarders(log_fwds) {
+      // If mongodb forwarder selected but stock_logs_locally not enabled
+      if( ( ($.inArray("1", log_fwds) !== -1) && ( !$('#stock_logs_locally').is(':checked') ) ) || ( ($.inArray("1", log_fwds) === -1) && ( $('#stock_logs_locally').is(':checked') ) ) ) {
+        // Enable it
+        $('#stock_logs_locally').click();
+      } else if( ( ($.inArray("2", log_fwds) !== -1) && ( !$('#archive_logs').is(':checked') ) ) || ( ($.inArray("2", log_fwds) === -1) && ( $('#archive_logs').is(':checked') ) ) ) {
+        $('#archive_logs').click();
+      }
+      var result = get_forwarders_table_rules();
+      $('#id_log_condition').val(result);
+    }
 
     /* Format log_forwarders_table as text and render in textArea */
     $('#log_forwarders_table').on('change', function(e) {
@@ -1075,9 +1090,10 @@
     });
     /* Format log_forwarders as text and render in textArea */
     $('#id_log_forwarders').on('change', function(e) {
-      var result = get_forwarders_table_rules();
-      $('#id_log_condition').val(result);
+      refresh_log_forwarders($(this).val());
     });
+
+    refresh_log_forwarders($('#id_log_forwarders').val());
 
     /* Initialize all custom fields */
     refresh_table_events();

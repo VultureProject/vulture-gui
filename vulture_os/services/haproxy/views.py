@@ -34,7 +34,6 @@ from services.haproxy.models import HAProxySettings
 from services.pf.models import PFSettings
 from services.darwin.models import DarwinSettings
 from system.cluster.models import Node
-from gui.models.feed import Feed
 
 # Required exceptions imports
 from bson.errors import InvalidId
@@ -53,7 +52,6 @@ def haproxy_edit(request, object_id=None):
             haproxy_model = HAProxySettings.objects.get(pk=object_id)
             pf_model = PFSettings.objects.get()
             darwin_model = DarwinSettings.objects.get()
-            feed_model = Feed.objects.get()
             if not haproxy_model:
                 raise InvalidId()
         except InvalidId:

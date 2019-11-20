@@ -80,6 +80,17 @@
                     </div> <!-- /.row -->
                     <div class="row">
                       <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Description" %}</label>
+                            <div class="col-sm-5">
+                              {{form.description}}
+                              {{form.description.errors|safe}}
+                            </div>
+                          </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.db_type.label }}</label>
                           <div class="col-sm-5">
@@ -189,12 +200,12 @@
                             </thead>
                             <tbody>
                               {% for header in headers %}
-                                {{header.as_table_td|safe}}
+                                {% if form.instance.internal %}{{header.as_table_td_internal|safe}}{% else %}{{header.as_table_td|safe}}{% endif %}
                               {% endfor %}
                             </tbody>
                           </table>
                           <button class="addlink addplus" id="add_header" type="button">{% trans "Add an Entry" %}</button>
-                          {{ form.servers.errors|safe }}
+                          {{ form.custom_headers.errors|safe }}
                           <input id="custom_headers" name="custom_headers" value="" type="hidden">
                         </div>
                       </div>
@@ -206,7 +217,7 @@
             <div class="panel-footer">
               <div class="row">
                 <div class="col-sm-12" style="text-align:center;">
-                  <button name="download_test" id="download_test" class="btn btn-success btn-flat"><span>{% trans "Get MMDB info" %}</span></button>
+                  <button name="download_test" id="download_test" class="btn btn-success btn-flat mmdb"><span>{% trans "Get MMDB info" %}</span></button>
                 </div>
               </div> <!-- /.row -->
               <a type="button" href="{% url 'applications.reputation_ctx.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
@@ -284,6 +295,16 @@
     }
 
 
+    // Autosize of textArea
+    function resize_textarea(text_area) {
+      $(text_area).height(0).height(text_area.scrollHeight);
+    }
+    $('#id_description').on('change keyup keydown paste cut', function (){
+      resize_textarea(this);
+    }).change();
+    resize_textarea(document.getElementById('id_description'));
+
+
     /* All events to refresh (re-apply) after a table is modified */
     function refresh_table_events() {
 
@@ -292,7 +313,9 @@
         $(this).parent().parent().remove();
       });
       /* Re-initialize select2 objects */
-      $('.select2').select2();
+      Array.prototype.slice.call(document.querySelectorAll('.select2')).forEach(function(html) {
+        $(html).select2({'disabled': $(html).attr('readonly')});
+      });
 
       /* Re-initialize Tag-Editor events */
       /* Try to destroy old tag-editor elements */
@@ -345,6 +368,18 @@
     }
     $('#id_auth_type').on('change', toggle_auth_type);
     toggle_auth_type();
+
+
+    /* Show/Hide fields depending on database type chosen */
+    function toggle_db_type() {
+      if( ["ipv4", "ipv6", "GeoIP"].indexOf($('#id_db_type').val()) > 0 ) {
+        $('.mmdb').show();
+      } else {
+        $('.mmdb').hide();
+      }
+    }
+    $('#id_db_type').on('change', toggle_db_type);
+    toggle_db_type();
 
 
     /* Download test */

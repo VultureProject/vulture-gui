@@ -24,21 +24,23 @@ __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
 # Django project imports
 from toolkit.network.network import get_proxy
 from system.cluster.models import Cluster, NetworkAddress, Node
+from toolkit.log.maxminddb import test_mmdb_database, open_mmdb_database
 
 # Extern modules imports
+from gzip import decompress as gzip_decompress
 from io import BytesIO
 import requests
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+from re import compile as re_compile
 
 # Required exceptions imports
-from maxminddb import open_database as open_mmdb_database, MODE_FD
 from services.exceptions import ServiceConfigError
 from system.exceptions import VultureSystemError, VultureSystemConfigError
 
@@ -50,13 +52,12 @@ logger = logging.getLogger('gui')
 
 # Database types
 DBTYPE_CHOICES = (
-    ('ipv4_mmdb', 'IPv4 MMDB'),
-    ('ipv6_mmdb', 'IPv6 MMDB'),
-    ('ipv4-6_mmdb', 'IPv4/6 Netset'),
+    ('ipv4', 'IPv4 MMDB'),
+    ('ipv6', 'IPv6 MMDB'),
     ('ipv4_netset', 'IPv4 Netset'),
     ('ipv6_netset', 'IPv6 Netset'),
-    ('ipv4-6_netset', 'IPv4/6 Netset'),
-    ('host', 'Hostnames'),
+    ('domain', 'Host/Domain names'),
+    ('GeoIP', 'GeoIP'),
 )
 
 HTTP_METHOD_CHOICES = (
@@ -75,16 +76,16 @@ AUTH_TYPE_CLASSES = {
     'digest': HTTPDigestAuth
 }
 
-DATABASE_PATH = "/var/db/reputation_ctx"
-CONTEXT_OWNER = "vlt-os:vlt-web"
-CONTEXT_PERMS = "640"
+DATABASES_PATH = "/var/db/darwin"
+DATABASES_OWNER = "vlt-os:vlt-conf"
+DATABASES_PERMS = "644"
+
+REGEX_GZ = re_compile("filename=\"?([^\";]+)\"?")
 
 
 class ReputationContext(models.Model):
     """ Model used to enrich logs in Rsyslog with mmdb database"""
-    """ Name of the ReputationContext, unique constraint """
     name = models.TextField(
-        unique=True,
         default="Reputation context",
         verbose_name=_("Friendly name"),
         help_text=_("Custom name of the current object"),
@@ -149,6 +150,18 @@ class ReputationContext(models.Model):
     content = models.BinaryField(
         default=""
     )
+    """ MMDB database attributes """
+    # There cannot be multiple files with the same filename
+    filename = models.FilePathField(path=DATABASES_PATH, default="", unique=True)
+    description = models.TextField(default="")
+    # When saving object, last_update will be automatically updated
+    last_update = models.DateTimeField(auto_now=True)
+    nb_netset = models.IntegerField(default=0)
+    nb_unique = models.IntegerField(default=0)
+    internal = models.BooleanField(default=False)
+
+    """ Use DjongoManager to use mongo_find() & Co """
+    objects = models.DjongoManager()
 
     def save(self, *args, **kwargs):
         """ Override mother fonction to prevent save of content attribute in MongoDB 
@@ -172,11 +185,17 @@ class ReputationContext(models.Model):
         result = {
             'id': self.id,
             'name': self.name,
+            'description': self.description,
             'db_type': self.db_type,
             'method': self.method,
             'url': self.url,
+            'verify_cert': self.verify_cert,
             'post_data': self.post_data,
+            'auth_type': self.auth_type,
+            'user': self.user,
+            'password': self.password,
             'custom_headers': self.custom_headers,
+            'internal': self.internal,
             'tags': self.tags
         }
         return result
@@ -185,18 +204,21 @@ class ReputationContext(models.Model):
         """ Dictionary used to render object as html
         :return     Dictionnary of configuration parameters
         """
-        result = {
-            'id': str(self.id),
-            'name': self.name,
-            'db_type': self.db_type,
-            'tags': self.tags
-        }
+        db_type = self.db_type
+        for d in DBTYPE_CHOICES:
+            if self.db_type == d[0]:
+                db_type = d[1]
         uri = "{} {}".format(self.method, self.url)
         if self.auth_type:
             uri += " {}({}:xxx)".format(self.auth_type, self.user)
-        result['uri'] = uri
         """ Retrieve list/custom objects """
-        return result
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'db_type': db_type,
+            'uri': uri,
+            'tags': self.tags
+        }
 
     def to_template(self):
         """ Dictionary used to create configuration file
@@ -230,7 +252,7 @@ class ReputationContext(models.Model):
             auth_type = AUTH_TYPE_CLASSES.get(self.auth_type)
             if auth_type:
                 auth = auth_type(self.user, self.password)
-        logger.info("Try to get URL {}".format(self.url))
+        logger.debug("Try to get URL {}".format(self.url))
         try:
             response = requests.request(self.method, self.url,
                                         data=self.post_data if self.method == "POST" else None,
@@ -239,36 +261,59 @@ class ReputationContext(models.Model):
                                         allow_redirects=True,
                                         proxies=get_proxy(),
                                         timeout=(2.0, 2.0))
-            logger.debug("URL '{}' retrieved, status code = {}".format(self.url, response.status_code))
+            # logger.info("URL '{}' retrieved, status code = {}".format(self.url, response.status_code))
             assert response.status_code == 200, "Response code is not 200 ({})".format(response.status_code)
+            """ If its a .gz file, dezip-it """
+            if self.url[-3:] == ".gz":
+                self.filename = self.url.split('/')[-1][:-3]
+                return gzip_decompress(response.content)
+            if response.headers.get("Content-Disposition"):
+                match = REGEX_GZ.search(response.headers.get("Content-Disposition"))
+                if match and match[1][-3:] == ".gz":
+                    self.filename = match[1][:-3]
+                    return gzip_decompress(response.content)
+            self.filename = self.url.split('/')[-1]
         except Exception as e:
-            logger.exception(e)
             raise VultureSystemError(str(e), "download '{}'".format(self.url))
         return response.content
 
     def download_mmdb(self):
         """ Always call this method first, to be sure the MMDB is OK """
-        self.content = self.download_file()
-        tmpfile = BytesIO()
-        tmpfile.write(self.content)
-        tmpfile.seek(0)
-        setattr(tmpfile, "name", "test")
-        try:
-            return open_mmdb_database(tmpfile, mode=MODE_FD)
-        except Exception as e:
-            logger.error("Downloaded content is not a valid MMDB database")
-            raise VultureSystemError("Downloaded content is not a valid MMDB database",
-                                     "download '{}'".format(self.url))
+        content = self.download_file()
+        if self.db_type in ("ipv4", "ipv6", "GeoIP"):
+            try:
+                return open_mmdb_database(content)
+            except Exception as e:
+                logger.error("Downloaded content is not a valid MMDB database")
+                raise VultureSystemError("Downloaded content is not a valid MMDB database",
+                                         "download '{}'".format(self.url))
+        else:
+            return None
 
-    def get_filename(self):
+    def download(self):
+        content = self.download_file()
+        if self.db_type in ("ipv4", "ipv6", "GeoIP"):
+            db_reader = open_mmdb_database(content)
+            db_metadata = db_reader.metadata()
+            db_reader.close()
+            # Do not erase nb_netset in internal db, its retrieved in index.json
+            if not self.internal:
+                self.nb_netset = db_metadata.node_count
+        else:
+            self.nb_unique = len(content.decode('utf8').split("\n"))
+        return content
+
+    @property
+    def absolute_filename(self):
         """ Return filename depending on current frontend object
         """
-        return "{}/reputation_ctx_{}.mmdb".format(DATABASE_PATH, self.id)
+        # Escape quotes to prevent injections in config or in commands
+        return "{}/{}".format(DATABASES_PATH, self.filename.replace('"', '\"'))
 
     def save_conf(self):
         """ Write configuration on disk
         """
-        params = [self.get_filename(), self.download_file(), CONTEXT_OWNER, CONTEXT_PERMS]
+        params = [self.absolute_filename, self.download_file(), DATABASES_OWNER, DATABASES_PERMS]
         try:
             Cluster.api_request('system.config.models.write_conf', config=params)
         except Exception as e:  # e used by VultureSystemConfigError
@@ -287,8 +332,9 @@ class ReputationContext(models.Model):
         from services.frontend.models import Listener
         res = []
         # Loop on Nodes
-        for node in self.get_nodes():
+        for node in Node.objects.all():
             frontends = []
+            # Get listeners enabled on this node, using the current reputation context
             for listener in Listener.objects.filter(frontend__enabled=True,
                                                     frontend__reputation_ctxs=self.id,
                                                     network_address__nic__node=node.id).distinct():
