@@ -349,16 +349,19 @@ class LogOMHIREDIS(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
+        tpl = Template(self.key)
+        key = tpl.render(Context({'ruleset': kwargs.get('ruleset')}))
         return {
             'id': str(self.id),
             'name': self.name,
             'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
             'target': self.target,
             'port': self.port,
-            'key': self.key,
+            'key': key,
             'pwd': self.pwd,
             'type': 'Redis',
-            'output': self.target + ':' + str(self.port) + ' (key = {})'.format(self.key)
+            'output': self.target + ':' + str(self.port) + ' (key = {})'.format(self.key),
+            'mode': "publish" if self.name == "Internal_Dashboard" else "queue"
         }
 
     def get_rsyslog_template(self):

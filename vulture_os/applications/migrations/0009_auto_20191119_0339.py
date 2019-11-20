@@ -4,6 +4,20 @@ import django.core.validators
 from django.db import migrations, models
 
 
+def add_redis_internal_forwarder(apps, schema_editor):
+    LogOMHIREDIS = apps.get_model('applications', 'LogOMHIREDIS')
+
+    LogOMHIREDIS.objects.create(
+            enabled=True,
+            internal=True,
+            name="Internal_Dashboard",
+            target="127.0.0.3",
+            port=6379,
+            key="vlt.rsyslog.{{ruleset}}",
+            pwd=""
+    )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -65,5 +79,6 @@ class Migration(migrations.Migration):
             model_name='reputationcontext',
             name='name',
             field=models.TextField(default='Reputation context', help_text='Custom name of the current object', verbose_name='Friendly name'),
-        )
+        ),
+        migrations.RunPython(add_redis_internal_forwarder)
     ]
