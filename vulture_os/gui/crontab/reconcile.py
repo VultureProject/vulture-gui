@@ -44,17 +44,25 @@ from toolkit.mongodb.mongo_base import MongoBase
 
 REDIS_LIST = "darwin_alerts"
 REDIS_CHANNEL = "darwin.alerts"
+REDIS_RECONCILIED_CHANNEL = "vlt.darwin.alerts"
 
 
-def alert_handler(alert, m):
+def alert_handler(alert, m, r):
     a = json.loads(alert)
     evt_id = a.get("evt_id")
-    if evt_id is None:
-        logger.info("Alert without evt_id ignored.")
-        return False
-    query = {"darwin_id": evt_id}
-    newvalue = {"$set": {"darwin_alert_details": a, "darwin_is_alert": True}}
-    m.update_one("logs", query, newvalue)
+    if evt_id is not None:
+        log = r.redis.get(evt_id)
+        if log is None:
+            logger.warning("No matching log for alert {}. Storing alert without context.".format(evt_id))
+        else:
+            log = json.loads(log.decode())
+            a["context"] = log
+
+    r.publish(REDIS_RECONCILIED_CHANNEL, a)
+    m.insert("logs", "darwin_alerts", a)
+    # query = {"darwin_id": evt_id}
+    # newvalue = {"$set": {"darwin_alert_details": a, "darwin_is_alert": True}}
+    # m.update_one("logs", query, newvalue)
     return True
 
 
@@ -102,7 +110,7 @@ class ReconcileJob(Thread):
             # If we have no messages, the messages is None
             if alert:
                 alert = alert['data']
-                alert_handler(alert, m)
+                alert_handler(alert, m, r)
             sleep(0.001)  # be nice to the system :)
         return True
 
