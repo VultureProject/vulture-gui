@@ -2,8 +2,7 @@
            name="{{output_name}}"
            server="{{target}}"
            serverport="{{port}}"
-           mode="queue"
+           mode="{{mode}}"
            key="{{key}}"
            ServerPassword="{{pwd}}"
-           Template="{{ out_template }}"
-           )
+           Template="{{ out_template }}_redis")
