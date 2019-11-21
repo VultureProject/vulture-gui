@@ -58,7 +58,7 @@ def alert_handler(alert, m, r):
             log = json.loads(log.decode())
             a["context"] = log
 
-    r.publish(REDIS_RECONCILIED_CHANNEL, a)
+    r.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(a))
     m.insert("logs", "darwin_alerts", a)
     # query = {"darwin_id": evt_id}
     # newvalue = {"$set": {"darwin_alert_details": a, "darwin_is_alert": True}}
@@ -82,7 +82,7 @@ class ReconcileJob(Thread):
         alert = r.redis.rpop(redis_list_name)
         while (alert is not None) and (not self.shutdown_flag.is_set()):
             alert = str(alert, "utf-8")
-            alert_handler(alert, m)
+            alert_handler(alert, m, r)
             alert = r.redis.rpop(redis_list_name)
 
     def reconcile(self):
@@ -101,7 +101,7 @@ class ReconcileJob(Thread):
             return True
 
         redis_channel = REDIS_CHANNEL
-        listener = r.pubsub()
+        listener = r.redis.pubsub()
         listener.subscribe([redis_channel])
 
         logger.info("Start listening {} channel.".format(redis_channel))
@@ -110,7 +110,9 @@ class ReconcileJob(Thread):
             # If we have no messages, the messages is None
             if alert:
                 alert = alert['data']
-                alert_handler(alert, m, r)
+                # Redis can return an int
+                if isinstance(alert, str):
+                    alert_handler(alert, m, r)
             sleep(0.001)  # be nice to the system :)
         return True
 
@@ -119,7 +121,7 @@ class ReconcileJob(Thread):
         try:
             self.reconcile()
         except Exception as e:
-            logger.error("Reconcile job failure: ")
+            logger.error("Reconcile job failure: {}".format(e))
             logger.info("Resuming ...")
 
         # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
