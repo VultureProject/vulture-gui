@@ -26,7 +26,7 @@ __doc__ = 'PF service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from gui.models.feed import DATABASES_PATH, DATABASES_OWNER, DATABASES_PERMS
+from applications.reputation_ctx.models import DATABASES_PATH, DATABASES_OWNER, DATABASES_PERMS
 from system.cluster.models import Cluster
 from services.service import Service
 from system.config.models import write_conf
@@ -158,15 +158,15 @@ class PFService(Service):
         config_model = Cluster.get_global_config()
 
         """ Check if firehol and vulture netsets exist """
-        filepath = DATABASES_PATH + "firehol_level1.netset"
+        filepath = DATABASES_PATH + "/firehol_level1.netset"
         if not os_path.isfile(filepath):
             write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
 
-        filepath = DATABASES_PATH + "vulture-v4.netset"
+        filepath = DATABASES_PATH + "/vulture-v4.netset"
         if not os_path.isfile(filepath):
             write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
 
-        filepath = DATABASES_PATH + "vulture-v6.netset"
+        filepath = DATABASES_PATH + "/vulture-v6.netset"
         if not os_path.isfile(filepath):
             write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
 

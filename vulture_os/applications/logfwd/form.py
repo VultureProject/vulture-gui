@@ -44,15 +44,24 @@ class LogOMFileForm(ModelForm):
 
     class Meta:
         model = LogOMFile
-        fields = ('name', 'enabled', 'file', 'flush_interval', 'async_writing')
+        fields = ('name', 'enabled', 'file', 'flush_interval', 'async_writing', 'stock_as_raw', 'retention_time',
+                  'rotation_period')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
             'name': TextInput(attrs={'class': 'form-control'}),
             'file': TextInput(attrs={'class': 'form-control'}),
             'flush_interval': NumberInput(attrs={'class': 'form-control'}),
-            'async_writing': CheckboxInput(attrs={"class": " js-switch"})
+            'async_writing': CheckboxInput(attrs={"class": " js-switch"}),
+            'stock_as_raw': CheckboxInput(attrs={"class": " js-switch"}),
+            'retention_time': NumberInput(attrs={"class": "form-control"}),
+            'rotation_period': Select(attrs={"class": "select2"})
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['retention_time'].empty_label = None
+        self.fields['rotation_period'].empty_label = None
 
     def clean_name(self):
         field = self.cleaned_data.get('name')

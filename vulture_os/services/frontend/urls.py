@@ -62,12 +62,4 @@ urlpatterns = [
     path('api/v1/services/frontend/<int:object_id>/<str:action>/',
          api.FrontendAPIv1.as_view(),
          name="services.frontend.api"),
-
-    path('api/v1/services/frontend/feed/',
-         api.FeedAPIv1.as_view(),
-         name="services.frontend.feed.api"),
-
-    path('api/v1/services/frontend/feed/<int:object_id>/',
-         api.FeedAPIv1.as_view(),
-         name="services.frontend.feed.api")
 ]

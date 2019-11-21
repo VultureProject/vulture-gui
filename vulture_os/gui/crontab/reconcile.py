@@ -95,10 +95,11 @@ class ReconcileJob(Thread):
                 logger.error("Reconcile job failure: ")
                 logger.info("Resuming ...")
 
-            # Do not sleep if we have to quit
-            if not self.shutdown_flag.is_set():
-                # sleep DELAY time
-                sleep(self.delay)
+            # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
+            cpt = 0
+            while not self.shutdown_flag.is_set() and cpt < self.delay:
+                sleep(2)
+                cpt += 2
 
         logger.info("Reconcile job stopped.")
 

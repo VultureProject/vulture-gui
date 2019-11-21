@@ -32,13 +32,14 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 import django
 from django.conf import settings
 django.setup()
+from django.utils.crypto import get_random_string
 
 from system.cluster.models import Cluster
 from django.conf import settings
 from django.utils.timezone import make_aware, now as timezone_now
 from gui.models.rss import RSS
-from gui.models.feed import Feed, DATABASES_PATH
 from toolkit.network.network import get_hostname, get_proxy
+from applications.reputation_ctx.models import ReputationContext
 
 from gzip import decompress as gzip_decompress
 from tarfile import open as tar_open
@@ -132,159 +133,124 @@ def security_update(node_logger=None):
     except Exception as e:
         logger.error("Crontab::security_update: Failed to retrieve vulnerabilities : {}".format(e))
 
-    if not Cluster.get_current_node().is_master_mongo:
-        logger.debug("Crontab::security_update: Not the master node, passing RSS fetch")
-        return True
-
-    """ If we are the master node, download newest reputation databases """
-    try:
-        logger.info("Crontab::security_update: get Vulture's ipsets...")
-        infos = requests.get(IPSET_VULTURE+"index.json", proxies=proxies, timeout=5).json()
-    except Exception as e:
-        logger.error("Crontab::security_update: Unable to download Vulture's ipsets: {}".format(e))
-        return False
-
-    """ Add Maxmind's GEOIP databases """
-    for filename in ("GeoLite2-Country", "GeoLite2-City"):
+    # If it is the master node, retrieve the databases
+    if Cluster.get_current_node().is_master_mongo:
+        # Retrieve predator_token
+        predator_token = Cluster.get_global_config().predator_apikey
+        """ If we are the master node, download newest reputation databases """
         try:
-            """ Try to download """
-            logger.info("Crontab::security_update: Get MaxmindDB geoip database...")
-            data = requests.get("https://updates.maxmind.com/geoip/databases/{}/update".format(filename),
-                                proxies=proxies,
-                                timeout=5)
-            with open("/tmp/{}.mmdb".format(filename), "wb") as f:
-                f.write(gzip_decompress(data.content))
-            logger.info("Crontab::security_update: Database {} saved.".format(filename))
+            logger.info("Crontab::security_update: get Vulture's ipsets...")
+            infos = requests.get(IPSET_VULTURE+"index.json",
+                                 headers={'Authorization': predator_token},
+                                 proxies=proxies,
+                                 timeout=5).json()
+        except Exception as e:
+            logger.error("Crontab::security_update: Unable to download Vulture's ipsets: {}".format(e))
+            return False
 
-            """ Immediatly reload the rsyslog service to prevent crash on MMDB access """
-            # Filename is a variable of us (not injectable)
-            reload_rsyslog = subprocess.run(['/usr/local/bin/sudo /bin/mv /tmp/{}.mmdb {}'
-                                             '&& /usr/local/bin/sudo /usr/sbin/jexec '
-                                             'rsyslog /usr/sbin/service rsyslogd reload'.format(filename, DATABASES_PATH)],
-                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            if reload_rsyslog.returncode == 1:
-                logger.info("Crontab::security_update: Rsyslogd not runing.")
-            elif reload_rsyslog.returncode == 0:
-                logger.info("Crontab::security_update: Rsyslogd reloaded.")
+        infos.append({
+            'filename': "GeoLite2-Country.mmdb",
+            'label': "Geolite2 Country",
+            'description': "Maxmind DB's Geoip country database",
+            'type': "GeoIP",
+            'url': "https://updates.maxmind.com/geoip/databases/GeoLite2-Country/update"
+        })
+        infos.append({
+            'filename': "GeoLite2-City.mmdb",
+            'label': "Geolite2 City",
+            'description': "Maxmind DB's Geoip city database",
+            'type': "GeoIP",
+            'url': "https://updates.maxmind.com/geoip/databases/GeoLite2-City/update"
+        })
+        infos.append({
+            'filename': "firehol_level1.netset",
+            'label': "Firehol Level 1 netset",
+            'description': "Firehol IPSET Level 1",
+            'type': "ipv4_netset",
+            'url': IPSET_VULTURE+"firehol_level1.netset"
+        })
+        infos.append({
+            'filename': "vulture-v4.netset",
+            'label': "Vulture Cloud IPv4",
+            'description': "Vulture Cloud IPv4",
+            'type': "ipv4_netset",
+            'url': IPSET_VULTURE + "firehol_level1.netset"
+        })
+        infos.append({
+            'filename': "vulture-v6.netset",
+            'label': "Vulture Cloud IPv6",
+            'description': "Vulture Cloud IPv6",
+            'type': "ipv6_netset",
+            'url':  IPSET_VULTURE + "vulture-v6.netset"
+        })
+
+        for info in infos:
+            filename = info['filename']
+            label = info['label']
+            description = info['description']
+            entry_type = info['type']
+            url = info.get('url', IPSET_VULTURE+filename)
+            nb_netset = info.get('nb_netset', 0)
+            nb_unique = info.get('nb_unique', 0)
+
+            """ Create/update object """
+            try:
+                reputation_ctx = ReputationContext.objects.get(filename=filename)
+            except Exception as e:
+                reputation_ctx = ReputationContext(filename=filename)
+            reputation_ctx.name = label
+            reputation_ctx.url = url
+            reputation_ctx.db_type = entry_type
+            reputation_ctx.label = label
+            reputation_ctx.description = description
+            reputation_ctx.nb_netset = nb_netset
+            reputation_ctx.nb_unique = nb_unique
+            reputation_ctx.internal = True
+            # Use predator_apikey only for predator requests
+            if "predator.vultureproject.org" in reputation_ctx.url:
+                reputation_ctx.custom_headers = {'Authorization': predator_token}
             else:
-                logger.error("Crontab::security_update: Rsyslogd reload error : "
-                             "stdout={}, stderr={}".format(reload_rsyslog.stdout.decode('utf8'),
-                              reload_rsyslog.stderr.decode('utf8')))
+                reputation_ctx.custom_headers = {}
+            reputation_ctx.save()
+            logger.info("Reputation context {} created.".format(label))
 
-            """ If downloaded - create/update object """
-            feed, created = Feed.objects.get_or_create(filename=filename+".mmdb")
-            feed.label = filename
-            feed.description = "Maxmind DB's Geoip country database"
-            feed.last_update = timezone_now()
-            feed.nb_netset = 0
-            feed.nb_unique = 0
-            feed.type = "GeoIP"
-            feed.save()
-        except Exception as e:
-            logger.error("Crontab::security_update: Failed to download GeoIP database : ")
-            logger.exception(e)
-
-    infos.append({
-        'filename': "firehol_level1.netset",
-        'label': "Firehol Level 1 netset",
-        'description': "Firehol IPSET Level 1",
-        'type': "netset"
-    })
-
-    infos.append({
-        'filename': "vulture-v4.netset",
-        'label': "Vulture Cloud IPv4",
-        'description': "Vulture Cloud IPv4",
-        'type': "netset"
-    })
-
-    infos.append({
-        'filename': "vulture-v6.netset",
-        'label': "Vulture Cloud IPv6",
-        'description': "Vulture Cloud IPv6",
-        'type': "netset"
-    })
-
-    for info in infos:
-        filename = info['filename']
-        label = info['label']
-        description = info['description']
-        last_update = timezone_now()
-        entry_type = info['type']
-        base_url = info.get('base_url', IPSET_VULTURE)
-        nb_netset = info.get('nb_netset', 0)
-        nb_unique = info.get('nb_unique', 0)
-
-        """ Update feed on disk """
+    # On ALL nodes, write databases on disk
+    # All internal reputation contexts are retrieved and created if needed
+    # We can now download and write all reputation contexts
+    for reputation_ctx in ReputationContext.objects.all():
         try:
-            logger.info("Crontab::security_update: Downloading "+base_url+"{}".format(filename))
-            data = requests.get(base_url+"{}".format(filename), proxies=proxies, timeout=5)
-            logger.debug("Crontab::security_update: File {} downloaded.".format(filename))
-            assert data.status_code == 200, "Response code is not 200 ({})".format(data.status_code)
+            content = reputation_ctx.download()
         except Exception as e:
-            logger.error("Crontab::security_update: Unable to download Vulture's ipset: {}".format(e))
+            logger.error("Security_update::error: Failed to download reputation database '{}' : {}"
+                         .format(reputation_ctx.name, e))
             continue
-
         try:
-            """ First verify the type of file """
-            """ Decompress, if needed """
-            # if filename.endswith(".tar.gz"):
-            #     try:
-            #         tar_dir = tar_open(fileobj=BytesIO(data.content), mode='r:gz')
-            #         for tarfile in tar_dir.get_members():
-            #             if filename[:-7] in tarfile.name:
-            #                 filename = tarfile.name
-            #                 content = tar_dir.extractfile(tarfile).read()
-            #         if not content:
-            #             logger.error("File not found in downloaded archive {}, files : {}".format(filename,
-            #                                                                                       tar_dir.getmembers()))
-            #     except:
-            #         logger.error("Crontab::security_update: Unable to decompress GZIP {}".format(filename))
-            #         continue
-            #
-            # elif filename.endswith(".gz"):
-            if filename.endswith(".gz"):
-                try:
-                    content = gzip_decompress(data.content)
-                    filename = filename[:-3]
-                except Exception as e:
-                    logger.error("Crontab::security_update: Unable to decompress {}".format(filename))
-                    logger.exception(e)
-                    continue
-            else:
-                content = data.content
-
-            with open("{}{}".format("/tmp/", filename), "wb") as f:
+            tmp_filename = "{}{}".format("/tmp/", get_random_string())
+            with open(tmp_filename, "wb") as f:
                 f.write(content)
-
             """ Immediatly reload the rsyslog service to prevent crash on MMDB access """
             # Filename is a variable of us (not injectable)
-            reload_rsyslog = subprocess.run(['/usr/local/bin/sudo /bin/mv /tmp/{} {}'
+            reload_rsyslog = subprocess.run(['/usr/local/bin/sudo /bin/mv {} {}'
                                              '&& /usr/local/bin/sudo /usr/sbin/jexec '
-                                             'rsyslog /usr/sbin/service rsyslogd reload'.format(filename, DATABASES_PATH)],
+                                             'rsyslog /usr/sbin/service rsyslogd reload'
+                                            .format(tmp_filename, reputation_ctx.absolute_filename)],
                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             if reload_rsyslog.returncode == 1:
-                logger.info("Crontab::security_update: Rsyslogd not runing.")
+                if "rsyslogd not running" in reload_rsyslog.stderr.decode('utf8'):
+                    logger.info("Crontab::security_update: Database written and rsyslogd not runing.")
+                else:
+                    logger.error("Crontab::security_update: It seems that the database cannot be written : {}".format(e))
             elif reload_rsyslog.returncode == 0:
-                logger.info("Crontab::security_update: Rsyslogd reloaded.")
+                logger.info("Crontab::security_update: Database written and rsyslogd reloaded.")
             else:
-                logger.error("Crontab::security_update: Rsyslogd reload error : "
+                logger.error("Crontab::security_update: Database write failure : "
                              "stdout={}, stderr={}".format(reload_rsyslog.stdout.decode('utf8'),
                                                            reload_rsyslog.stderr.decode('utf8')))
-
-            """ If downloaded - create/update object """
-            feed, created = Feed.objects.get_or_create(filename=filename)
-            feed.label = label
-            feed.description = description
-            feed.last_update = last_update
-            feed.nb_netset = nb_netset
-            feed.nb_unique = nb_unique
-            feed.type = entry_type
-            feed.save()
-
-        except OSError as e:
-            logger.error("Failed to open {} : ".format(DATABASES_PATH))
-            logger.exception(e)
+            logger.info("Crontab::security_update: Reputation database named '{}' (file '{}') successfully written."
+                        .format(reputation_ctx.name, reputation_ctx.absolute_filename))
+        except Exception as e:
+            logger.error("Security_update::error: Failed to write reputation database '{}' : {}"
+                         .format(reputation_ctx.name, e))
 
     logger.info("Security_update done.")
 

@@ -69,7 +69,7 @@
           $.each(statuses, function(node, status) {
             result += "<li>";
             switch( status ) {
-              case "UP":
+              case "RUNNING":
                 result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
                 break;
               case "DOWN":
@@ -81,7 +81,8 @@
               case "DISABLED":
                 result += '<i class="icon fa fa-toggle-off"></i>&nbsp;';
                 break;
-              case "WAITING":
+              case "STARTING":
+              case "CONFIGURING":
                 result += '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
                 break;
             }

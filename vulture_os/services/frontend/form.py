@@ -30,8 +30,8 @@ from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
 from applications.logfwd.models import LogOM
+from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy
-from gui.models.feed import Feed
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (COMPRESSION_ALGO_CHOICES, Frontend, FrontendReputationContext, Listener,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, IMPCAP_FILTER_CHOICES)
@@ -68,7 +68,7 @@ class FrontendReputationContextForm(ModelForm):
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'reputation_ctx': Select(attrs={'class': "form-control select2"}),
-            'arg_field': TextInput(attrs={'class': "form-control"})
+            'arg_field': TextInput(attrs={'class': "form-control", 'placeholder': "src_ip"})
         }
 
     def __init__(self, *args, **kwargs):
@@ -134,7 +134,8 @@ class FrontendForm(ModelForm):
             #                                  {"filename": 1, "label": 1})],  # .only( label, filename )
             # queryset=Feed.objects.filter(filename__iregex="^((?![iI][Pp][Vv]6).)*\.mmdb$"),
             # queryset=Feed.objects.exclude(filename__iregex="^((?![iI][Pp][Vv]6).)*$").filter(filename__endswith=".mmdb"),
-            queryset=Feed.objects.filter(type="ipv4", filename__endswith=".mmdb"),
+            queryset=ReputationContext.objects.filter(db_type="ipv4", filename__endswith=".mmdb")
+                                      .only(*(ReputationContext.str_attrs() + ['filename', 'db_type'])),
             widget=Select(attrs={'class': 'form-control select2'}),
             empty_label="No IPv4",
             required=False
@@ -143,15 +144,17 @@ class FrontendForm(ModelForm):
         # Defined here AND in model, to use queryset
         self.fields['logging_reputation_database_v6'] = ModelChoiceField(
             label=_("Rsyslog IPv6 reputation database"),
-            queryset=Feed.objects.filter(type="ipv6", filename__endswith=".mmdb")  # MMDP database & IPv6
-                                 .only(*(Feed.str_attrs() + ['filename', 'type'])),
+            queryset=ReputationContext.objects.filter(db_type="ipv6",
+                                                      filename__endswith=".mmdb")  # MMDP database & IPv6
+                                      .only(*(ReputationContext.str_attrs() + ['filename', 'db_type'])),
             widget=Select(attrs={'class': 'form-control select2'}),
             empty_label="No IPv6",
             required=False
         )
         self.fields['logging_geoip_database'] = ModelChoiceField(
             label=_("Rsyslog GeoIP database"),
-            queryset=Feed.objects.filter(type="GeoIP").only(*(Feed.str_attrs() + ['filename', 'type'])),
+            queryset=ReputationContext.objects.filter(db_type="GeoIP")
+                                      .only(*(ReputationContext.str_attrs() + ['filename', 'db_type'])),
             widget=Select(attrs={'class': 'form-control select2'}),
             empty_label="No GeoIP",
             required=False

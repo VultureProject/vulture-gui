@@ -20,18 +20,18 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Rsyslog settings model'
+__doc__ = 'Logrotate dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from djongo import models
+from django.forms import ModelForm
 
 # Django project imports
-from applications.logfwd.models import LogOM
-from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
-from services.frontend.models import Frontend, Listener
+from services.logrotate.models import LogRotateSettings
 
 # Required exceptions imports
+
+# Extern modules imports
 
 # Logger configuration imports
 import logging
@@ -39,22 +39,11 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 
-class RsyslogSettings(models.Model):
-    """ Model used to manage global configuration fields of Rsyslogd """
+class LogRotateForm(ModelForm):
 
-    def to_template(self):
-        """ Dictionary used to create configuration file
+    class Meta:
+        model = LogRotateSettings
+        fields = []
 
-        :return     Dictionnary of configuration parameters
-        """
-        """ Variables used by template rendering """
-        return {
-            'frontends': Frontend.objects.filter(enabled=True),
-            'max_tcp_listeners': Listener.objects.filter(frontend__enabled=True,
-                                                         frontend__listening_mode__icontains="tcp").count() + 1,
-            'log_forwarders': LogOM.objects.all(),
-            'DATABASES_PATH': DATABASES_PATH
+        widgets = {
         }
-
-    def __str__(self):
-        return "Rsyslogd settings"

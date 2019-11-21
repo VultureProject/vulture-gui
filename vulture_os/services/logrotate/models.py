@@ -14,54 +14,51 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-
 __author__ = "Kevin GUILLEMOT"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'PF settings model'
+__doc__ = 'Haproxy settings model'
 
 # Django system imports
 from django.conf import settings
+from django.db.models import Q
 from djongo import models
 
 # Django project imports
-from darwin.defender_policy.models import DefenderPolicy
-from applications.reputation_ctx.models import DATABASES_PATH
-from system.cluster.models import Cluster, Node
-from toolkit.network.network import get_hostname, JAIL_ADDRESSES
-from toolkit.network.network import get_sanitized_proxy
+from applications.logfwd.models import LogOMFile
+from system.cluster.models import Cluster
 
 # Required exceptions imports
+
+# Extern modules imports
 
 # Logger configuration imports
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
-# Proxy configuration imports
 
-
-class PFSettings(models.Model):
-    """ Model used to manage global configuration fields of PF 
-    Particularity is that config attributes are in Node and Config object,
-    so only need Config here, because Node is sent everytime in template rendering
-    """
+class LogRotateSettings(models.Model):
+    """ Model used to manage configuration of LogRotate """
 
     def to_template(self):
         """ Dictionary used to create configuration file
+
         :return     Dictionnary of configuration parameters
         """
+        # Get all files used by enabled frontends in log_forwarders or log_forwarders_parse_failure
+        # FIXME : It seems to have a bug in QuerySet, the merge of 2 querysets does not work
+        # So, waiting for correction, use 2 queries and a list .....
+        log_oms = list(LogOMFile.objects.filter(frontend_set__enabled=True))
+        log_oms = set(log_oms + list(LogOMFile.objects.filter(frontend_failure_set__enabled=True)))
+        """ First, use to_mongo() internal django function """
         return {
-            'nodes': Node.objects.exclude(name=get_hostname()),
-            'global_config': Cluster.get_global_config(),
-            'jail_addresses': JAIL_ADDRESSES,
-            'databases_path': DATABASES_PATH,
-            'defender_policy_list': DefenderPolicy.objects.all(),
-            'proxy': get_sanitized_proxy()
+            'log_forwarders': log_oms
         }
 
     def __str__(self):
-        return "PF settings"
+        return "LogRotate settings"
+
