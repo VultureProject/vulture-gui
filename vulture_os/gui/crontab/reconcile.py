@@ -48,14 +48,23 @@ REDIS_RECONCILIED_CHANNEL = "vlt.darwin.alerts"
 
 
 def alert_handler(alert, m, r):
-    a = json.loads(alert)
+    try:
+        a = json.loads(alert)
+    except json.JSONDecodeError as e:
+        logger.error("Alert is not JSON valid : {}".format(e))
+        return
+
     evt_id = a.get("evt_id")
     if evt_id is not None:
         log = r.redis.get(evt_id)
         if log is None:
             logger.warning("No matching log for alert {}. Storing alert without context.".format(evt_id))
         else:
-            log = json.loads(log.decode())
+            try:
+                log = json.loads(log.decode())
+            except json.JSONDecodeError as e:
+                logger.error("Context is not JSON valid : {}".format(e))
+                return
             a["context"] = log
 
     r.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(a))
@@ -81,7 +90,7 @@ class ReconcileJob(Thread):
         logger.info("Start pops awaiting alerts.")
         alert = r.redis.rpop(redis_list_name)
         while (alert is not None) and (not self.shutdown_flag.is_set()):
-            alert = str(alert, "utf-8")
+            alert = alert.decode()
             alert_handler(alert, m, r)
             alert = r.redis.rpop(redis_list_name)
 
@@ -111,6 +120,11 @@ class ReconcileJob(Thread):
             if alert:
                 alert = alert['data']
                 # Redis can return an int
+                try:
+                    alert = alert.decode()
+                except (UnicodeDecodeError, AttributeError):
+                    pass
+                # We can have an int
                 if isinstance(alert, str):
                     alert_handler(alert, m, r)
             sleep(0.001)  # be nice to the system :)
