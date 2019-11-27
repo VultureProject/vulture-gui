@@ -2,10 +2,14 @@
 
 if [ -f /etc/host-hostname ] ; then
     /usr/sbin/service vultured status && /bin/kill -9 $(/bin/cat /var/run/vulture/vultured.pid)
+    echo "[38;5;196m! WARNING ! - Please start vultured at the end of the upgrade[0m"
     /usr/sbin/service netdata status && /usr/sbin/service netdata forcestop
 
+    echo "[38;5;196m! WARNING ! - Please start netdata at the end of the upgrade[0m"
+    
     #Relocate Python environment, and disable pip
     /usr/local/bin/virtualenv --no-pip /home/vlt-os/env
+
     sleep 5
     /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python3.6 /home/vlt-os/vulture_os/manage.py migrate
 else
