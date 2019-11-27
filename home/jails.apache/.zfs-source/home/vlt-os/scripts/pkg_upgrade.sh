@@ -7,8 +7,8 @@ if [ -f /etc/host-hostname ] ; then
 
     echo "[38;5;196m! WARNING ! - Please start netdata at the end of the upgrade[0m"
     
-    #Relocate Python environment, and disable pip
-    /usr/local/bin/virtualenv --no-pip /home/vlt-os/env
+    #Relocate Python environment
+    /usr/local/bin/virtualenv --no-pip --no-wheel --no-setuptools /home/vlt-os/env
 
     sleep 5
     /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python3.6 /home/vlt-os/vulture_os/manage.py migrate
