@@ -3,7 +3,9 @@
 if [ -f /etc/host-hostname ] ; then
     /usr/sbin/service vultured status && /bin/kill -9 $(/bin/cat /var/run/vulture/vultured.pid)
     /usr/sbin/service netdata status && /usr/sbin/service netdata forcestop
-    /usr/local/bin/virtualenv /home/vlt-os/env
+
+    #Relocate Python environment, and disable pip
+    /usr/local/bin/virtualenv --no-pip /home/vlt-os/env
     sleep 5
     /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python3.6 /home/vlt-os/vulture_os/manage.py migrate
 else
