@@ -81,6 +81,11 @@ class Node(models.Model):
     scanner_ip = models.ForeignKey(to="NetworkAddress", null=True, on_delete=models.SET_NULL,
                                    help_text=_("NAT IP used for scanner"),
                                    verbose_name=_("Scanner IP"))
+    pstats_forwarders = models.ArrayReferenceField(to="applications.LogOM",
+                                                   null=True,
+                                                   blank=False,
+                                                   verbose_name=_("Send rsyslog pstats logs to"),
+                                                   help_text=_("Log forwarders used to send impstats logs"))
 
     def __str__(self):
         return self.name

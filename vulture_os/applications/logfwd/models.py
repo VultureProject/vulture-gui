@@ -235,6 +235,11 @@ class LogOMFile(LogOM):
             result.add(tpl.render(Context({'ruleset': ruleset})))
         return result
 
+    def render_file_template(self, ruleset):
+        tpl = Template(self.file)
+        return "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
+               .format(self.template_id(ruleset=ruleset), tpl.render(Context({'ruleset': ruleset})))
+
     def get_rsyslog_template(self):
         res = ""
         tpl = Template(self.file)
