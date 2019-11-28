@@ -22,7 +22,6 @@ def forwards_func(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('applications', '0010_auto_20191123_0047'),
         ('system', '0008_auto_20191119_0339'),
     ]
 
