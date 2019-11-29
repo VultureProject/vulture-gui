@@ -34,7 +34,7 @@ from threading import Thread, Event
 import logging
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('daemon')
 
 # Redis import
 from toolkit.redis.redis_base import RedisBase
