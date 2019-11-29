@@ -40,6 +40,7 @@ import ipaddress
 from iptools.ipv4 import netmask2prefix
 import time
 
+from applications.logfwd.models import LogOMHIREDIS
 from services.exceptions import ServiceExit
 
 from re import findall as re_findall, compile as re_compile
@@ -86,6 +87,16 @@ class Node(models.Model):
                                                    blank=False,
                                                    verbose_name=_("Send rsyslog pstats logs to"),
                                                    help_text=_("Log forwarders used to send impstats logs"))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.id:
+            try:
+                dashboard_fwd = LogOMHIREDIS.objects.get(name="Internal_Dashboard")
+            except:
+                pass
+            else:
+                self.pstats_forwarders.add(dashboard_fwd)
 
     def __str__(self):
         return self.name
