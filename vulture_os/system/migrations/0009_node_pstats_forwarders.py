@@ -9,6 +9,9 @@ def forwards_func(apps, schema_editor):
     logomhiredis_model = apps.get_model("applications", "LogOMHIREDIS")
     db_alias = schema_editor.connection.alias
     node = Cluster.get_current_node()
+    # If node not boostrapped
+    if not node:
+        return
     logomhiredis_objects = logomhiredis_model.objects.using(db_alias)
 
     try:
