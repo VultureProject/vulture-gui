@@ -24,6 +24,7 @@ __doc__ = 'Job for OS Monitoring'
 
 # Django system imports
 from django.conf import settings
+from system.cluster.models import Cluster, Node
 
 # Extern modules imports
 import json
@@ -90,6 +91,10 @@ class ReconcileJob(Thread):
             alert = r.redis.rpop(redis_list_name)
 
     def reconcile(self):
+        node = Cluster.get_current_node()
+        if not node.is_master_mongo: 
+            return False
+
         m = MongoBase()
         if not m.connect():
             return False
