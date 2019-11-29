@@ -214,13 +214,14 @@ def frontend_edit(request, object_id=None, api=False):
         if not reputationctx_form_list and front:
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
+        redis_fwd = LogOM.objects.filter(name="Internal_Dashboard").only('id').first()
         return render(request, 'services/frontend_edit.html',
                       {'form': form, 'listeners': listener_form_list, 'listener_form': ListenerForm(),
                        'headers': header_form_list, 'header_form': HeaderForm(),
                        'reputation_contexts': reputationctx_form_list,
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
-                       'redis_forwarder': LogOM.objects.filter(name="Internal_Dashboard").only('id').first().id,
+                       'redis_forwarder': redis_fwd.id if redis_fwd else 0,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 
     if request.method in ("POST", "PUT"):
