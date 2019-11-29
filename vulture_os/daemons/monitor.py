@@ -60,7 +60,7 @@ from time import sleep
 # Logger configuration imports
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('daemon')
 
 
 def monitor():
