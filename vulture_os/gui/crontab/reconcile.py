@@ -42,11 +42,6 @@ from toolkit.redis.redis_base import RedisBase
 # Mongo import
 from toolkit.mongodb.mongo_base import MongoBase
 
-REDIS_LIST = "darwin_alerts"
-REDIS_CHANNEL = "darwin.alerts"
-REDIS_RECONCILIED_CHANNEL = "vlt.darwin.alerts"
-
-
 def alert_handler(alert, m, r):
     try:
         a = json.loads(alert)
@@ -67,7 +62,7 @@ def alert_handler(alert, m, r):
                 return
             a["context"] = log
 
-    r.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(a))
+    r.redis.publish(settings.REDIS_RECONCILIED_CHANNEL, json.dumps(a))
     m.insert("logs", "darwin_alerts", a)
     # query = {"darwin_id": evt_id}
     # newvalue = {"$set": {"darwin_alert_details": a, "darwin_is_alert": True}}
@@ -85,7 +80,7 @@ class ReconcileJob(Thread):
         self.delay = delay
 
     def pops(self, m, r):
-        redis_list_name = REDIS_LIST
+        redis_list_name = settings.REDIS_LIST
 
         logger.info("Start pops awaiting alerts.")
         alert = r.redis.rpop(redis_list_name)
@@ -109,7 +104,7 @@ class ReconcileJob(Thread):
         if self.shutdown_flag.is_set():
             return True
 
-        redis_channel = REDIS_CHANNEL
+        redis_channel = settings.REDIS_CHANNEL 
         listener = r.redis.pubsub()
         listener.subscribe([redis_channel])
 
