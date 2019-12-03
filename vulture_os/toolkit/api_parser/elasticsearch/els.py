@@ -20,13 +20,15 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Cybereason API Parser'
+__doc__ = 'Elasticsearch API Parser'
 
 
 import logging
+import datetime
 
 from django.conf import settings
-from elasticsearch import Elasticsearch, exceptions
+from elasticsearch import Elasticsearch
+from elasticsearch import exceptions
 from toolkit.api_parser.api_parser import ApiParser
 
 from django.utils.translation import ugettext_lazy as _
@@ -45,57 +47,56 @@ class ElasticsearchAPIError(Exception):
 
 
 class ElasticsearchParser(ApiParser):
-    def __init__(self, fontend):
-        super().__init__()
+    def __init__(self, data):
+        super().__init__(data)
 
-        self.api_host = fontend['elasticsearch_host']
-        self.username = fontend['elasticsearch_username']
-        self.password = fontend['elasticsearch_password']
+        self.els_host = data['elasticsearch_host']
+        self.els_username = data['elasticsearch_username']
+        self.els_password = data['elasticsearch_password']
+        self.els_verify_ssl = data['elasticsearch_verify_ssl']
+        self.els_auth = data['elasticsearch_auth']
+        self.els_index = data['elasticsearch_index']
 
-    @staticmethod
-    def test(data):
-        els_host = data.get('els_host').split(',')
-        els_verify_ssl = data.get('els_verify_ssl') == "true"
-        els_auth = data.get('els_auth') == "true"
-        els_username = data.get('els_username')
-        els_password = data.get('els_password')
-        els_index = data.get('els_index')
+    def connect(self):
+        if self.els_auth:
+            return Elasticsearch(
+                self.els_host,
+                http_auth=(self.username, self.password),
+                verify_certs=self.els_verify_ssl,
+                proxies=self.proxies
+            )
 
-        if els_auth and not (els_username and els_password):
+        return Elasticsearch(
+            self.els_host,
+            verify_certs=self.els_verify_ssl,
+            proxies=self.proxies
+        )
+
+    def test(self):
+        if self.els_auth and not (self.els_username and self.els_password):
             return {
                 'status': False,
                 'error': _('You need to fullfill username & password if authentication is enabled')
             }
 
-        if not els_index:
+        if not self.els_index:
             return {
                 'status': False,
                 'error': _('An index is mandatory')
             }
 
         try:
-            if els_auth:
-                els_client = Elasticsearch(
-                    els_host,
-                    http_auth=(els_username, els_password),
-                    verify_certs=els_verify_ssl
-                )
-            else:
-                els_client = Elasticsearch(
-                    els_host,
-                    verify_certs=els_verify_ssl
-                )
-
-            stats = els_client.indices.stats(index=els_index)
+            els_client = self.connect()
+            stats = els_client.indices.stats(index=self.els_index)
 
             return {
                 'status': True,
-                'stats': stats
+                'data': stats
             }
 
         except exceptions.TransportError as e:
             if e.status_code == 302:
-                error = _("302 found on URL " + ",".join(els_host))
+                error = _("302 found on URL " + ",".join(self.els_host))
             else:
                 error = str(e)
 
@@ -110,5 +111,72 @@ class ElasticsearchParser(ApiParser):
                 'error': str(e)
             }
 
+    def parse_json(self, data):
+        for d in data:
+            self.last_api_call = d['_source']['@timestamp']
+
+    def construct_query(self):
+        query = {
+            "query": {
+                "match_all": {}
+            }
+        }
+
+        if not self.last_api_call:
+            self.last_api_call = datetime.datetime.now()
+
+        query = {
+            "query": {
+                "bool": {
+                    "must": {
+                        "range": {
+                            "@timestamp": {
+                                "gt": self.last_api_call,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        query["sort"] = {
+            "@timestamp": {
+                "order": "asc"
+            }
+        }
+
+        print(query)
+        return query
+
     def execute(self):
-        pass
+        if not self.can_run():
+            return
+
+        try:
+            els_client = self.connect()
+
+            data = els_client.search(
+                index=self.els_index,
+                scroll="2m",
+                size=1000,
+                body=self.construct_query()
+            )
+
+            sid = data['_scroll_id']
+            scroll_size = len(data['hits']['hits'])
+
+            self.parse_json(data['hits']['hits'])
+
+            while scroll_size > 0:
+                data = els_client.scroll(scroll_id=sid, scroll="2m")
+                self.parse_json(data['hits']['hits'])
+
+                sid = data['_scroll_id']
+                scroll_size = len(data['hits']['hits'])
+
+            self.frontend.last_api_call = self.last_api_call
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+
+        self.finish()

@@ -25,6 +25,7 @@ __doc__ = 'Parser URLS'
 
 import logging
 
+from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
 from toolkit.api_parser.cybereason.cybereason import CybereasonParser
 from toolkit.api_parser.elasticsearch.els import ElasticsearchParser
 from django.conf import settings
@@ -35,6 +36,7 @@ logger = logging.getLogger('gui')
 
 PARSER_LIST = {
     'elasticsearch': ElasticsearchParser,
+    'forcepoint': ForcepointParser,
     'cybereason': CybereasonParser,
 }
 

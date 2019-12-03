@@ -13,58 +13,81 @@ if (!String.prototype.endsWith) {
 
 
 function refresh_api_parser_type(type_){
-    $('.api_clients_row').hide();
-    if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api"){
-      $('#api_'+type_+"_row").show();
-    }
-
-    if (type_ === "elasticsearch"){
-      $('#id_elasticsearch_auth').on('change', function(){
-        if ($(this).is(':checked'))
-          $('.elasticsearch_auth').show();
-        else
-          $('.elasticsearch_auth').hide();
-      }).trigger('change')
-
-      $('#get_elasticsearch_index').on('click', function(){
-        var btn = this;
-        var txt = $(btn).html();
-        $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
-        $(btn).prop('disabled', true);
-
-        var data = {
-          type_parser: "elasticsearch",
-          els_host: $('#id_elasticsearch_host').val(),
-          els_verify_ssl: $('#id_elasticsearch_verify_ssl').is(":checked"),
-          els_auth: $('#id_elasticsearch_auth').is(":checked"),
-          els_username: $('#id_elasticsearch_username').val(),
-          els_password: $('#id_elasticsearch_password').val(),
-          els_index: $('#id_elasticsearch_index').val()
-        }
-
-        $.post(
-          test_frontend_apiparser_uri,
-          data,
-
-          function(response){
-            $(btn).prop('disabled', false);
-            $(btn).html(txt);
-            if (!check_json_error(response)){
-              $('#elasticsearch_check_status').val('0');
-              return;
-            }
-
-            var stats = response.stats;
-            $('#elasticsearch_check_status').val('1');
-            $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(stats, null, 4) + "</pre>");
-            $('#modal-test-apiparser').modal('show');
-          }
-        )
-      })
-    }
+  $('.api_clients_row').hide();
+  if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api"){
+    $('#id_node').hide();
+    $('#api_'+type_+"_row").show();
   }
 
+  /*$('#id_api_parser_type').unbind('change');
+  $('#id_api_parser_type').on('change', function(){
+    var parser_type = $(this).val();
 
+    if ($.inArray(parser_type, ['forcepoint']) === -1){
+      $('#id_ruleset').val('forcepoint').trigger('change');
+    } else {
+      $('#id_ruleset').val('generic_json').trigger('change');
+    }
+  });*/
+
+  $('#test_api_parser').unbind('click');
+  $('#test_api_parser').on('click', function(){
+    PNotify.removeAll();
+
+    var btn = this;
+    var txt = $(btn).html();
+    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+    $(btn).prop('disabled', true);
+
+    var data = {
+      api_parser_type: $('#id_api_parser_type').val(),
+      api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked')
+    };
+
+    $("#api_" + type_ + "_row input").each(function(){
+      var name = $(this).attr('name');
+      switch($(this).attr('type')){
+        case "checkbox":
+          data[name] = $(this).is(':checked');
+          break;
+        case "text":
+          data[name] = $(this).val();
+          break;
+        case "password":
+          data[name] = $(this).val();
+          break;
+      }
+    })
+
+    $.post(
+      test_frontend_apiparser_uri,
+      data,
+
+      function(response){
+        $(btn).prop('disabled', false);
+          $(btn).html(txt);
+          if (!check_json_error(response)){
+            $('#id_api_parser_has_been_tested').val('0');
+            return;
+          }
+
+          var data = response.data;
+          $('#id_api_parser_has_been_tested').val('1');
+          $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
+          $('#modal-test-apiparser').modal('show');
+      }
+    )
+  })
+
+  if (type_ === "elasticsearch"){
+    $('#id_elasticsearch_auth').on('change', function(){
+      if ($(this).is(':checked'))
+        $('.elasticsearch_auth').show();
+      else
+        $('.elasticsearch_auth').hide();
+    }).trigger('change')
+  }
+}
 
 
 $(function() {
@@ -177,10 +200,12 @@ $(function() {
 
   function refresh_input_logs_type(listening_mode){
     var first = true;
-    $('#id_ruleset').prop('disabled', false)
+    $('#id_ruleset').show();
+    $('#id_node').show();
     if (listening_mode === "api"){
+      $('#id_ruleset').hide();
+      $('#id_node').hide();
       $('#id_ruleset').val('generic_json').trigger('change');
-      $('#id_ruleset').prop('disabled', true)
     }
   }
 
@@ -317,6 +342,8 @@ $(function() {
 
   /* Parser type bind */
   function refresh_ruleset(val) {
+    if (!val) return;
+
     if( val === "forwarder" ) {
       $('.forwarder-tag').show();
     } else {
@@ -386,6 +413,15 @@ $(function() {
 
   /* Build request-headers and listeners fields with tables content */
   $('#frontend_edit_form').submit(function(event) {
+    if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api"){
+      // Need to check if the API Parser has been tested
+      if ($('#id_api_parser_has_been_tested').val() === "0"){
+        event.preventDefault();
+        notify('error', gettext('Error'), gettext('Test your API configuration before saving this frontend'))
+        return;
+      }
+    }
+
     $('#id_ruleset').prop('disabled', false);
     var listeners = new Array();
     $('#listener_table tbody tr').each(function(index, tr) {

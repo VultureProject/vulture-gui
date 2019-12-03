@@ -22,39 +22,37 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Job to fetch API Clients log'
 
-import sys
-import os
 
-# Django setup part
-sys.path.append('/home/vlt-os/vulture_os')
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
-
-import django
-django.setup()
-
-
+from toolkit.api_parser.utils import get_api_parser
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
-from toolkit.api_parser.utils import get_api_parser
+from multiprocessing import Process
+
+
+def execute_parser(frontend):
+    parser_class = get_api_parser(frontend['api_parser_type'])
+
+    parser = parser_class(frontend)
+    parser.execute()
 
 
 def api_clients_parser():
     current_node = Cluster.get_current_node()
+    if not current_node.is_master_mongo:
+        return
+
     api_clients_parser = Frontend.objects.filter(
+        name="Cybereason",
         mode="log",
         listening_mode="api",
-        node=current_node,
         enabled=True
     )
 
+    processes = []
     for frontend in api_clients_parser:
-        ruleset = frontend.ruleset
+        p = Process(target=execute_parser, args=(frontend.to_dict(),))
+        p.start()
+        processes.append(p)
 
-        parser_class = get_api_parser(ruleset)
-
-        parser = parser_class(frontend)
-        parser.execute()
-
-
-if __name__ == "__main__":
-    api_clients_parser()
+    for p in processes:
+        p.join()

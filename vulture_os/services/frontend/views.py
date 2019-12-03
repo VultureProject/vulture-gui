@@ -577,15 +577,18 @@ def frontend_pause(request, object_id, api=False):
 
 def frontend_test_apiparser(request):
     try:
-        type_parser = request.POST.get('type_parser')
+        type_parser = request.POST.get('api_parser_type')
 
-        parser = get_api_parser(type_parser)
         data = {}
-
         for k, v in request.POST.items():
+            if v in ('false', 'true'):
+                v = v == "true"
+
             data[k] = v
 
-        return JsonResponse(parser.test(data))
+        parser = get_api_parser(type_parser)(data)
+
+        return JsonResponse(parser.test())
 
     except Exception as e:
         logger.error(e, exc_info=1)

@@ -25,6 +25,7 @@ __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
 import uuid
+import datetime
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.template import Context, Template as JinjaTemplate
@@ -360,6 +361,11 @@ class Frontend(models.Model):
         default=""
     )
 
+    api_parser_use_proxy = models.BooleanField(
+        help_text=_("Use Proxy"),
+        default=False
+    )
+
     cybereason_host = models.TextField(
         help_text=_('Cybereason console URL'),
         default=""
@@ -403,6 +409,25 @@ class Frontend(models.Model):
     elasticsearch_index = models.TextField(
         help_text=_('Index to poll'),
         default=""
+    )
+
+    forcepoint_host = models.TextField(
+        help_text=_('Forcepoint URL'),
+        default=""
+    )
+
+    forcepoint_username = models.TextField(
+        help_text=_('Forcepoint Username'),
+        default=""
+    )
+
+    forcepoint_password = models.TextField(
+        help_text=_('Forcepoint Password'),
+        default=""
+    )
+
+    last_api_call = models.DateTimeField(
+        default=datetime.datetime.utcnow
     )
 
     def reload_haproxy_conf(self):
@@ -481,9 +506,27 @@ class Frontend(models.Model):
             result['enable_logging_geoip'] = self.enable_logging_geoip
 
             if self.listening_mode == "api":
-                result['cybereason_host'] = self.cybereason_host
-                result['cybereason_username'] = self.cybereason_username
-                result['cybereason_password'] = self.cybereason_password
+                result['api_parser_type'] = self.api_parser_type
+                result['api_parser_use_proxy'] = self.api_parser_use_proxy
+                result['last_api_call'] = self.last_api_call
+
+                if self.api_parser_type == "cybereason":
+                    result['cybereason_host'] = self.cybereason_host
+                    result['cybereason_username'] = self.cybereason_username
+                    result['cybereason_password'] = self.cybereason_password
+
+                elif self.api_parser_type == "forcepoint":
+                    result['forcepoint_host'] = self.forcepoint_host
+                    result['forcepoint_username'] = self.forcepoint_username
+                    result['forcepoint_password'] = self.forcepoint_password
+
+                elif self.api_parser_type == "elasticsearch":
+                    result['elasticsearch_host'] = self.elasticsearch_host
+                    result['elasticsearch_verify_ssl'] = self.elasticsearch_verify_ssl
+                    result['elasticsearch_auth'] = self.elasticsearch_auth
+                    result['elasticsearch_username'] = self.elasticsearch_username
+                    result['elasticsearch_password'] = self.elasticsearch_password
+                    result['elasticsearch_index'] = self.elasticsearch_index
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()

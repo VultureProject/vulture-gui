@@ -175,6 +175,11 @@ class FrontendForm(ModelForm):
             widget=TextInput(attrs={'class': 'form-control'})
         )
 
+        self.fields['forcepoint_host'] = URLField(
+            label=_('Forcepoint URL'),
+            widget=TextInput(attrs={'class': 'form-control'})
+        )
+
         self.fields['api_parser_type'] = ChoiceField(
             label=_('API Parser'),
             choices=AVAILABLE_API_PARSER,
@@ -192,9 +197,10 @@ class FrontendForm(ModelForm):
                            'error_template', 'enable_logging_reputation', 'impcap_filter',
                            'impcap_filter_type', 'impcap_intf', 'tags', 'timeout_client', 'timeout_connect',
                            'timeout_keep_alive', 'parser_tag', 'file_path', 'node', 'api_parser_type',
-                           'cybereason_host', 'cybereason_username', 'cybereason_password', 'elasticsearch_host',
-                           'elasticsearch_auth', 'elasticsearch_verify_ssl', 'elasticsearch_username', 'elasticsearch_password',
-                           'elasticsearch_index']:
+                           'api_parser_use_proxy', 'cybereason_host', 'cybereason_username',
+                           'cybereason_password', 'elasticsearch_host', 'elasticsearch_auth',
+                           'elasticsearch_verify_ssl', 'elasticsearch_username', 'elasticsearch_password',
+                           'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password']:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -231,9 +237,10 @@ class FrontendForm(ModelForm):
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
-                  'file_path', 'node', 'darwin_policy', 'api_parser_type', 'cybereason_host', 'cybereason_username',
-                  'cybereason_password', 'elasticsearch_host', 'elasticsearch_verify_ssl', 'elasticsearch_auth',
-                  'elasticsearch_username', 'elasticsearch_password', 'elasticsearch_index')
+                  'file_path', 'node', 'darwin_policy', 'api_parser_type', 'api_parser_use_proxy', 'cybereason_host',
+                  'cybereason_username', 'cybereason_password', 'elasticsearch_host', 'elasticsearch_verify_ssl',
+                  'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password', 'elasticsearch_index',
+                  'forcepoint_host', 'forcepoint_username', 'forcepoint_password')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -265,6 +272,7 @@ class FrontendForm(ModelForm):
             'https_redirect': CheckboxInput(attrs={'class': 'js-switch'}),
             'parser_tag': TextInput(attrs={'class': 'form-control'}),
             'file_path': TextInput(attrs={'class': 'form-control'}),
+            'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
             'cybereason_username': TextInput(attrs={'class': 'form-control'}),
             'cybereason_password': PasswordInput(attrs={'class': 'form-control'}),
             'elasticsearch_host': TextInput(attrs={
@@ -275,7 +283,9 @@ class FrontendForm(ModelForm):
             'elasticsearch_auth': CheckboxInput(attrs={'class': 'js-switch'}),
             'elasticsearch_username': TextInput(attrs={'class': 'form-control'}),
             'elasticsearch_password': PasswordInput(attrs={'class': 'form-control'}),
-            'elasticsearch_index': TextInput(attrs={'class': 'form-control'})
+            'elasticsearch_index': TextInput(attrs={'class': 'form-control'}),
+            'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
+            'forcepoint_password': PasswordInput(attrs={'class': 'form-control'})
         }
 
     def clean_name(self):
@@ -388,10 +398,6 @@ class FrontendForm(ModelForm):
                 self.add_error('node', "This field is required.")
             if not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
-
-        if mode == "log" and cleaned_data.get('listening_mode') == "api":
-            if not cleaned_data.get('node'):
-                self.add_error('node', "This field is required.")
 
         """ If cache is enabled, cache_total_max_size and cache_max_age required """
         if cleaned_data.get('enable_cache'):
