@@ -214,56 +214,32 @@ $(function() {
     } else {
       $('#id_impcap_filter').prop("readonly", true);
       $('#id_impcap_filter').val($('#id_impcap_filter_type').val());
-      toggle_impcap_filter();
     }
   }
   $('#id_impcap_filter_type').on('change', toggle_impcap_filter_type);
 
-
-  /* Show darwin option depending on enable checkbox */
-  function toggle_impcap_darwin() {
-    if( $('#id_enable_impcap_darwin_dns').is(":checked") ) {
-      $('#impcap-dns').show();
-    } else {
-      $('#impcap-dns').hide();
+  function refresh_dashboard_forwarder(old_mode, new_mode) {
+    // retrieve selected forwarders
+    var selected_forwarders = $('#id_log_forwarders').val();
+    if (selected_forwarders === null)
+      selected_forwarders = [];
+    // if new mode is impcap and was not
+    if( old_mode != "impcap" && new_mode == "impcap" ) {
+      // If the dashboard forwarder was not selected
+      if ($.inArray(redis_forwarder, selected_forwarders) === -1) {
+        redis_forwarder_added = true;
+        selected_forwarders.push(redis_forwarder);
+      } else {
+        redis_forwarder_added = false;
+      }
+    } else if( old_mode == "impcap" && new_mode != "impcap" ) {
+      // If the dashboard forwarder was automatically selected, deselect it
+      if (redis_forwarder_added && $.inArray(redis_forwarder, selected_forwarders) !== -1) {
+        selected_forwarders.pop(redis_forwarder);
+      }
     }
+    $('#id_log_forwarders').val(selected_forwarders).trigger('change');
   }
-  $('#id_enable_impcap_darwin_dns').on('change', toggle_impcap_darwin);
-
-  /* Show darwin content inspection option depending on enable checkbox */
-  function toggle_impcap_pkt_inspect() {
-    if( $('#id_enable_pkt_inspect').is(":checked") ) {
-      $('#pkt-inspect').show();
-    } else {
-      $('#pkt-inspect').hide();
-    }
-  }
-  $('#id_enable_pkt_inspect').on('change', toggle_impcap_pkt_inspect);
-
-  var port_regex = /\bport\s+53\b/;
-  var udp_regex = /\budp\b/;
-
-  /* Show DNS options in "udp" and "port 53" is in impcap_filter */
-  function toggle_impcap_filter() {
-    var impcap_filter_val = $('#id_impcap_filter').val();
-
-    if (impcap_filter_val.match(port_regex) !== null && impcap_filter_val.match(udp_regex) !== null) {
-      $('.impcap-dns-mode').show();
-    } else {
-      $('#id_enable_impcap_darwin_dns').prop("checked", false);
-      toggle_impcap_darwin();
-      $('.impcap-dns-mode').hide();
-    }
-  }
-  $('#id_impcap_filter').on('keyup', toggle_impcap_filter);
-
-
-  function refresh_impcap_options() {
-    toggle_impcap_filter_type();
-    toggle_impcap_darwin();
-    toggle_impcap_pkt_inspect();
-  }
-
 
   /* Show fields depending on chosen mode */
   var last_enable_log = ($('#id_mode').val()!=="log") ? ($('#id_enable_logging').is(":checked")) : (false);
@@ -281,8 +257,6 @@ $(function() {
       $('#id_enable_logging').trigger('click');
       $('#id_enable_logging').prop("disabled", true);
       last_enable_log = log_enabled;
-      if( mode === "impcap" )
-        refresh_impcap_options();
     } else if( mode !== "log" && mode !== "impcap" ) {
       if( mode === "http" ) {
         refresh_http();
@@ -299,6 +273,12 @@ $(function() {
 
       refresh_input_logs_type($('#id_listening_mode').val());
     }
+    if( mode === "impcap" ) {
+      toggle_impcap_filter_type();
+    }
+    if( mode == "impcap" || old_mode == "impcap" ) {
+      refresh_dashboard_forwarder(old_mode, mode);
+    }
     $('#id_enable_logging').trigger("change");
     refresh_ruleset($('#id_ruleset').val());
 
@@ -306,6 +286,7 @@ $(function() {
     show_listening_mode(mode, $('#id_listening_mode').val());
     show_network_conf(mode, $('#id_listening_mode').val());
     show_log_condition_failure();
+    old_mode = mode;
   }).trigger('change');
 
 
