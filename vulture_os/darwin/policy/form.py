@@ -244,7 +244,7 @@ class FilterPolicyReputationForm(FilterPolicyForm):
     def clean_mmdb_database(self):
         mmdb_database_obj = self.cleaned_data['mmdb_database']
 
-        return "{}{}".format(DATABASES_PATH, mmdb_database_obj.filename)
+        return "{}/{}".format(DATABASES_PATH, mmdb_database_obj.filename)
 
     def clean(self):
         cleaned_data = super().clean()

@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Reload Apache service config'
+__doc__ = ''
 
 import sys
 import os
@@ -37,14 +37,18 @@ import django
 from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster
-from services.frontend.models import Frontend
+from applications.logfwd.models import LogOMHIREDIS
+
 
 if __name__ == "__main__":
 
-    node = Cluster.get_current_node()
-    if not node:
-        print("Current node not found. Maybe the cluster has not been initiated yet.")
-    else:
-        node.api_request("services.apache.apache.reload_conf")
-        print("2_gui_update_conf done.")
+    LogOMHIREDIS.objects.create(
+        internal=True,
+        name="Internal_Dashboard",
+        enabled=True,
+        target="127.0.0.3",
+        port=6379,
+        key="vlt.rsyslog.{{ruleset}}",
+        pwd=""
+    )
+    print("2_add_internal_dashboard_forwarder done.")

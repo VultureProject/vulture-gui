@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Reload Apache service config'
+__doc__ = ''
 
 import sys
 import os
@@ -38,7 +38,6 @@ from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster
-from services.frontend.models import Frontend
 
 if __name__ == "__main__":
 
@@ -46,5 +45,5 @@ if __name__ == "__main__":
     if not node:
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
-        node.api_request("services.apache.apache.reload_conf")
-        print("2_gui_update_conf done.")
+        node.api_request("services.rsyslogd.rsyslog.configure_node")
+        print("2_rsyslog_update_conf done.")

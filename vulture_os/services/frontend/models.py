@@ -134,19 +134,18 @@ class Frontend(models.Model):
     )
     timeout_connect = models.PositiveIntegerField(
         default=5000,
-        validators=[MinValueValidator(1), MaxValueValidator(20000)],
+        validators=[MaxValueValidator(20000)],
         help_text=_("HTTP request Timeout"),
         verbose_name=_("Timeout")
     )
     timeout_client = models.PositiveIntegerField(
         default=60,
-        validators=[MinValueValidator(1), MaxValueValidator(3600)],
+        validators=[MaxValueValidator(3600)],
         help_text=_("HTTP request Timeout"),
         verbose_name=_("Timeout")
     )
     timeout_keep_alive = models.PositiveIntegerField(
         default=500,
-        validators=[MinValueValidator(1)],
         help_text=_("HTTP Keep-Alive timeout"),
         verbose_name=_("HTTP Keep-Alive timeout")
     )
@@ -587,13 +586,13 @@ class Frontend(models.Model):
 
         if self.enable_logging_reputation:
             if self.logging_reputation_database_v4:
-                reputation_database_v4 = DATABASES_PATH + self.logging_reputation_database_v4.filename
+                reputation_database_v4 = DATABASES_PATH + '/' + self.logging_reputation_database_v4.filename
 
             if self.logging_reputation_database_v6:
-                reputation_database_v6 = DATABASES_PATH + self.logging_reputation_database_v6.filename
+                reputation_database_v6 = DATABASES_PATH + '/' + self.logging_reputation_database_v6.filename
 
         if self.logging_geoip_database:
-            geoip_database = DATABASES_PATH + self.logging_geoip_database.filename
+            geoip_database = DATABASES_PATH + '/' + self.logging_geoip_database.filename
 
         reputation_ctxs = []
         if self.enable_logging:
@@ -850,6 +849,7 @@ class Frontend(models.Model):
             conf = self.to_template()
             conf['log_condition'] = self.render_log_condition()
             conf['log_condition_failure'] = self.render_log_condition_failure()
+            conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
             return template.render({'frontend': conf,
                                     'node': Cluster.get_current_node(),
                                     'global_config': Cluster.get_global_config()})

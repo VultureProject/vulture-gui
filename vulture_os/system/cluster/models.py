@@ -40,9 +40,10 @@ import ipaddress
 from iptools.ipv4 import netmask2prefix
 import time
 
+from applications.logfwd.models import LogOMHIREDIS
 from services.exceptions import ServiceExit
 
-from re import findall as re_findall
+from re import findall as re_findall, compile as re_compile
 
 import logging
 import logging.config
@@ -81,6 +82,21 @@ class Node(models.Model):
     scanner_ip = models.ForeignKey(to="NetworkAddress", null=True, on_delete=models.SET_NULL,
                                    help_text=_("NAT IP used for scanner"),
                                    verbose_name=_("Scanner IP"))
+    pstats_forwarders = models.ArrayReferenceField(to="applications.LogOM",
+                                                   null=True,
+                                                   blank=False,
+                                                   verbose_name=_("Send rsyslog pstats logs to"),
+                                                   help_text=_("Log forwarders used to send impstats logs"))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.id:
+            try:
+                dashboard_fwd = LogOMHIREDIS.objects.get(name="Internal_Dashboard")
+            except:
+                pass
+            else:
+                self.pstats_forwarders.add(dashboard_fwd)
 
     def __str__(self):
         return self.name
@@ -102,7 +118,7 @@ class Node(models.Model):
         }
 
     def to_dict(self):
-        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0")
+        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
         intfs = [n.to_dict() for n in NetworkInterfaceCard.objects.filter(node=self).exclude(dev__in=excluded_intf)]
 
         return {
@@ -560,7 +576,7 @@ class NetworkInterfaceCard(models.Model):
         :return: ['em0', 'lo0', ...]
         """
         return list(set(subprocess.check_output(['/sbin/ifconfig', '-l']).strip().decode('utf-8').split(' ')) -
-                    {'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6', 'pflog0', 'vm-public', 'tap0'})
+                    {'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6', 'pflog0', 'vm-public', 'tap0', 'tun0'})
 
     def get_running_addresses(self):
         """ Retrieve available RUNNING IP addresses on the NIC
@@ -603,6 +619,20 @@ class NetworkInterfaceCard(models.Model):
             "dev": self.dev
         }
 
+    @property
+    def has_ipv4(self):
+        """ Check if there is at least one NetworkAddress IPv4 associated to this NetworkInterface 
+        :return  True if there is, False otherwise
+        """
+        return self.networkaddress_set.mongo_find({"ip": {"$not": re_compile(":")}}).count() > 0
+
+    @property
+    def has_ipv6(self):
+        """ Check if there is at least one NetworkAddress IPv6 associated to this NetworkInterface
+        :return True if there is, False otherwise
+        """
+        return self.networkaddress_set.mongo_find({"ip": re_compile(":")}).count() > 0
+
 
 class NetworkAddress(models.Model):
     """
@@ -617,6 +647,9 @@ class NetworkAddress(models.Model):
     prefix_or_netmask = models.TextField()
     is_system = models.BooleanField(default=False)
     carp_vhid = models.SmallIntegerField(default=0)
+
+    # Needed to make alambiquate mongodb queries
+    objects = models.DjongoManager()
 
     def to_dict(self):
         return {

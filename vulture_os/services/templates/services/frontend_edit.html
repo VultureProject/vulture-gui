@@ -317,7 +317,7 @@
                           </div>
                         </div>
                       </div> <!-- /.row -->
-                      <div class="row haproxy-conf">
+                      <div class="row tcp-mode http-mode">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{% trans "Timeout client" %}</label>
@@ -761,6 +761,9 @@
   var listener_form_td = `{{listener_form.as_table_td|safe}}`;
   var log_om_table_td = `{{log_om_table.as_table_td|safe}}`;
   var reputationctx_form_td = `{{reputationctx_form.as_table_td|safe}}`;
+  var redis_forwarder = "{{redis_forwarder}}";
+  var redis_forwarder_added = false;
+  var old_mode = $('id_mode').val();
 
   var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";
 

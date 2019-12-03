@@ -26,6 +26,9 @@ __doc__ = ''
 import sys
 import os
 
+if not os.path.exists("/home/vlt-os/vulture_os/.node_ok"):
+    sys.exit(0)
+
 # Django setup part
 sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')

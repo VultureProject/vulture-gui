@@ -194,7 +194,11 @@ def security_update(node_logger=None):
             nb_unique = info.get('nb_unique', 0)
 
             """ Create/update object """
-            reputation_ctx, created = ReputationContext.objects.get_or_create(name=label)
+            try:
+                reputation_ctx = ReputationContext.objects.get(filename=filename)
+            except Exception as e:
+                reputation_ctx = ReputationContext(filename=filename)
+            reputation_ctx.name = label
             reputation_ctx.url = url
             reputation_ctx.db_type = entry_type
             reputation_ctx.label = label

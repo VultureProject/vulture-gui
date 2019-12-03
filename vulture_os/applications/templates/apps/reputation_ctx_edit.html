@@ -372,7 +372,7 @@
 
     /* Show/Hide fields depending on database type chosen */
     function toggle_db_type() {
-      if( ["ipv4", "ipv6", "GeoIP"].indexOf($('#id_db_type').val()) > 0 ) {
+      if( ["ipv4", "ipv6", "GeoIP"].indexOf($('#id_db_type').val()) >= 0 ) {
         $('.mmdb').show();
       } else {
         $('.mmdb').hide();

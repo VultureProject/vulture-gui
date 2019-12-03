@@ -235,6 +235,11 @@ class LogOMFile(LogOM):
             result.add(tpl.render(Context({'ruleset': ruleset})))
         return result
 
+    def render_file_template(self, ruleset):
+        tpl = Template(self.file)
+        return "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
+               .format(self.template_id(ruleset=ruleset), tpl.render(Context({'ruleset': ruleset})))
+
     def get_rsyslog_template(self):
         res = ""
         tpl = Template(self.file)
@@ -349,16 +354,19 @@ class LogOMHIREDIS(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
+        tpl = Template(self.key)
+        key = tpl.render(Context({'ruleset': kwargs.get('ruleset')}))
         return {
             'id': str(self.id),
             'name': self.name,
             'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
             'target': self.target,
             'port': self.port,
-            'key': self.key,
+            'key': key,
             'pwd': self.pwd,
             'type': 'Redis',
-            'output': self.target + ':' + str(self.port) + ' (key = {})'.format(self.key)
+            'output': self.target + ':' + str(self.port) + ' (key = {})'.format(self.key),
+            'mode': "publish" if self.name == "Internal_Dashboard" else "queue"
         }
 
     def get_rsyslog_template(self):

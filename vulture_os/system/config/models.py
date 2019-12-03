@@ -198,7 +198,7 @@ def delete_conf(logger, filename):
     """ """
     # Import here to prevent circular import
     from system.error_templates.models import CONF_PATH as ERROR_TPL_PATH
-    from applications.reputation_ctx.models import DATABASE_PATH as REPUTATION_CTX_DB_PATH
+    from applications.reputation_ctx.models import DATABASES_PATH as REPUTATION_CTX_DB_PATH
     from system.pki.models import CERT_PATH
     from darwin.defender_policy.models import DEFENDER_PATH
     from darwin.defender_policy.policy import HAPROXY_PATH

@@ -144,6 +144,7 @@ def cluster_edit(request, object_id, api=False, update=False):
         gateway_changed = "gateway" in form.changed_data
         gateway_ipv6_changed = "gateway_ipv6" in form.changed_data
         static_route_changed = "static_routes" in form.changed_data
+        pstats_forwarders_changed = "pstats_forwarders" in form.changed_data
 
         node = form.save(commit=False)
         node.save()
@@ -157,6 +158,9 @@ def cluster_edit(request, object_id, api=False, update=False):
             res = node.write_management_ip()
             if not res.get('status'):
                 return render_form(save_error=res.get('message'))
+
+        if pstats_forwarders_changed:
+            node.api_request("services.rsyslogd.rsyslog.configure_pstats")
 
         if api:
             return build_response(node.id, "system.node.api", COMMAND_LIST)
