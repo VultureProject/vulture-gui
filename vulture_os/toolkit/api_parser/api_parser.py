@@ -43,7 +43,10 @@ class ApiParser:
     def __init__(self, data):
         self.data = data
 
-        self.frontend = Frontend.objects.get(pk=self.data['id'])
+        try:
+            self.frontend = Frontend.objects.get(pk=self.data['id'])
+        except (Frontend.DoesNotExist, KeyError):
+            self.frontend = None
 
         try:
             # Can't execute on a non valid Vulture Node

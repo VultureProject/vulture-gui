@@ -69,12 +69,6 @@ class ForcepointParser(ApiParser):
         self.forcepoint_username = data["forcepoint_username"]
         self.forcepoint_password = data["forcepoint_password"]
 
-        self.FORCEPOINT_CONFIG = {
-            "credentials": {
-                "myadvens": {"login": "supportmysoc", "password": "1dUFF&Us"},
-            }
-        }
-
         self.user_agent = {
             'User-agent': f'FTL_Download/{self.FORCEPOINT_API_VERSION}'
         }
@@ -143,7 +137,7 @@ class ForcepointParser(ApiParser):
     def execute(self):
         status, tmp_logs = self.get_logs()
 
-        # if not status:
+        if not status:
             raise ForcepointAPIError(tmp_logs)
 
         logs = self.parse_xml(tmp_logs)

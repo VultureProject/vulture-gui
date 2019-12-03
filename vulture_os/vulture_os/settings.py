@@ -16,7 +16,6 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
 
 import os
-import sys
 from pymongo import ReadPreference
 from toolkit.network.network import get_hostname
 
@@ -41,8 +40,8 @@ except ImportError:
 
 LOG_LEVEL = "INFO"
 
-DEBUG = False
-DEV_MODE = False
+DEBUG = True
+DEV_MODE = True
 TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = ["*"]
@@ -74,15 +73,17 @@ AVAILABLE_APPS = [
 
 INSTALLED_APPS.extend(AVAILABLE_APPS)
 
-
-CRONJOBS = [
+CRONJOBS = (
     ("* * * * *", "gui.crontab.rss.rss_fetch"),  # Every minute
+    ("* * * * *", "gui.crontab.api_clients_parser.api_clients_parser"),  # Every 5 minute
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
     ("1 * * * *", "gui.crontab.feed.security_update"),  # Every hour
     ("1 * * * *", "gui.crontab.documentation.doc_update"),  # Every hour
     ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
-]
+)
+
+CRONTAB_COMMAND_PREFIX = "LANG=en_US.UTF-8"
 
 # Extend cronjobs with custom cronjobs
 if os.path.exists(os.path.dirname(os.path.abspath(__file__)) + "/custom_cronjobs.py"):
@@ -97,7 +98,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

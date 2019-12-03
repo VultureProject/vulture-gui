@@ -124,8 +124,8 @@ STATIC_URL = '/static/'
 CACERT_DIR = '/var/db/mongodb/'
 MONGODBPORT = 9091
 MONGODBARBPORT = 9092
-REDISIP='127.0.0.1'
-REDISPORT='6379'
+REDISIP = '127.0.0.1'
+REDISPORT = '6379'
 OS = "FreeBSD"
 
 LOG_SETTINGS = {
@@ -178,19 +178,19 @@ LOG_SETTINGS = {
     },
     'loggers': {
         'portal_authentication': {
-            'handlers':['file_portal_authentication', 'database'],
+            'handlers': ['file_portal_authentication', 'database'],
             'propagate': True,
-            'level':'INFO',
+            'level': 'INFO',
         },
         'redis_events': {
-            'handlers':['file_redis_events', 'database'],
+            'handlers': ['file_redis_events', 'database'],
             'propagate': True,
-            'level':'DEBUG',
+            'level': 'DEBUG',
         },
         'debug': {
-            'handlers':['debug', 'database'],
+            'handlers': ['debug', 'database'],
             'propagate': True,
-            'level':'INFO',
+            'level': 'INFO',
         },
     }
 }
@@ -237,20 +237,19 @@ LOG_SETTINGS_FALLBACK = {
     },
     'loggers': {
         'portal_authentication': {
-            'handlers':['file_portal_authentication'],
+            'handlers': ['file_portal_authentication'],
             'propagate': True,
-            'level':'INFO',
+            'level': 'INFO',
         },
         'redis_events': {
-            'handlers':['file_redis_events'],
+            'handlers': ['file_redis_events'],
             'propagate': True,
-            'level':'DEBUG',
+            'level': 'DEBUG',
         },
         'debug': {
-            'handlers':['debug'],
+            'handlers': ['debug'],
             'propagate': True,
-            'level':'INFO',
+            'level': 'INFO',
         },
     }
 }
-
