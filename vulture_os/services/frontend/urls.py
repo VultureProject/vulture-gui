@@ -57,6 +57,10 @@ urlpatterns = [
             views.frontend_test_apiparser,
             name="services.frontend.test_apiparser"),
 
+    re_path('^services/frontend/fetch_apiparser_data/',
+            views.frontend_fetch_apiparser_data,
+            name="services.frontend.fetch_apiparser_data"),
+
     path('api/services/frontend/test_conf/', api.frontend_test_conf, name="services.frontend.test_conf"),
 
     path('api/v1/services/frontend/', api.FrontendAPIv1.as_view(), name="services.frontend.api"),

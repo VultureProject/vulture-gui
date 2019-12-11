@@ -34,6 +34,7 @@ def execute_parser(frontend):
 
     parser = parser_class(frontend)
     parser.execute()
+    parser.finish()
 
 
 def api_clients_parser():
@@ -42,7 +43,7 @@ def api_clients_parser():
         return
 
     api_clients_parser = Frontend.objects.filter(
-        name="Cybereason",
+        name="Forcepoint",
         mode="log",
         listening_mode="api",
         enabled=True

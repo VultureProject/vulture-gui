@@ -587,12 +587,32 @@ def frontend_test_apiparser(request):
             data[k] = v
 
         parser = get_api_parser(type_parser)(data)
-
         return JsonResponse(parser.test())
 
     except Exception as e:
         logger.error(e, exc_info=1)
+        return JsonResponse({
+            'status': False,
+            'error': str(e)
+        })
 
+
+def frontend_fetch_apiparser_data(request):
+    try:
+        type_parser = request.POST.get('api_parser_type')
+
+        data = {}
+        for k, v in request.POST.items():
+            if v in ('false', 'true'):
+                v = v == 'true'
+
+            data[k] = v
+
+        parser = get_api_parser(type_parser)(data)
+        return JsonResponse(parser.fetch_data())
+
+    except Exception as e:
+        logger.error(e, exc_info=1)
         return JsonResponse({
             'status': False,
             'error': str(e)

@@ -10,7 +10,34 @@ if (!String.prototype.endsWith) {
   };
 }
 
+function get_api_parser_data(type_){
+  var data = {
+    api_parser_type: $('#id_api_parser_type').val(),
+    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked')
+  };
 
+  $("#api_" + type_ + "_row input").each(function(){
+    var name = $(this).attr('name');
+    switch($(this).attr('type')){
+      case "checkbox":
+        data[name] = $(this).is(':checked');
+        break;
+      case "text":
+        data[name] = $(this).val();
+        break;
+      case "password":
+        data[name] = $(this).val();
+        break;
+    }
+  })
+
+  $('#api_' + type_ + "_row select").each(function(){
+    var name = $(this).attr('name');
+    data[name] = $(this).val();
+  })
+
+  return data;
+}
 
 function refresh_api_parser_type(type_){
   $('.api_clients_row').hide();
@@ -30,6 +57,41 @@ function refresh_api_parser_type(type_){
     }
   });*/
 
+  $('.fetch_data_api_parser').unbind('click');
+  $('.fetch_data_api_parser').on('click', function(){
+    PNotify.removeAll();
+
+    var btn = this;
+    var txt = $(btn).html();
+    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+    $(btn).prop('disabled', true);
+
+    var target = $(this).data('target');
+    var type_target = $(this).data('type');
+
+    var data = get_api_parser_data(type_);
+
+    $('#'+target).empty();
+
+    $.post(
+      fetch_frontend_api_parser_data_uri,
+      data,
+
+      function(response){
+        $(btn).prop('disabled', false);
+        $(btn).html(txt);
+        if (!check_json_error(response))
+          return;
+
+        var data = response.data;
+        if (type_target == "select"){
+          for (var i in data)
+            $('#'+target).append(new Option(data[i], data[i]))
+        }
+      }
+    )
+  })
+
   $('#test_api_parser').unbind('click');
   $('#test_api_parser').on('click', function(){
     PNotify.removeAll();
@@ -39,25 +101,7 @@ function refresh_api_parser_type(type_){
     $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
     $(btn).prop('disabled', true);
 
-    var data = {
-      api_parser_type: $('#id_api_parser_type').val(),
-      api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked')
-    };
-
-    $("#api_" + type_ + "_row input").each(function(){
-      var name = $(this).attr('name');
-      switch($(this).attr('type')){
-        case "checkbox":
-          data[name] = $(this).is(':checked');
-          break;
-        case "text":
-          data[name] = $(this).val();
-          break;
-        case "password":
-          data[name] = $(this).val();
-          break;
-      }
-    })
+    var data = get_api_parser_data(type_);
 
     $.post(
       test_frontend_apiparser_uri,
@@ -65,16 +109,16 @@ function refresh_api_parser_type(type_){
 
       function(response){
         $(btn).prop('disabled', false);
-          $(btn).html(txt);
-          if (!check_json_error(response)){
-            $('#id_api_parser_has_been_tested').val('0');
-            return;
-          }
+        $(btn).html(txt);
+        if (!check_json_error(response)){
+          $('#id_api_parser_has_been_tested').val('0');
+          return;
+        }
 
-          var data = response.data;
-          $('#id_api_parser_has_been_tested').val('1');
-          $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
-          $('#modal-test-apiparser').modal('show');
+        var data = response.data;
+        $('#id_api_parser_has_been_tested').val('1');
+        $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
+        $('#modal-test-apiparser').modal('show');
       }
     )
   })

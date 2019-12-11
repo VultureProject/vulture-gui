@@ -121,7 +121,7 @@ class CybereasonParser(ApiParser):
                 'elementValues': []
             }
 
-            timestamp_detected = int(malop_simple_values['creationTime']['values'][0]) / 1000
+            timestamp_detected = int(malop_simple_values['malopLastUpdateTime']['values'][0]) / 1000
             timestamp_detected = datetime.datetime.fromtimestamp(timestamp_detected)
 
             timestamp_closed = None
@@ -131,21 +131,24 @@ class CybereasonParser(ApiParser):
 
             tmp_malop = {
                 "edr_threat_id": malop_id,
-                "timestamp_detected": timestamp_detected,
+                "@timestamp": timestamp_detected,
                 "timestamp_closed": timestamp_closed,
                 "edr_reason": malop_simple_values['decisionFeature']['values'],
-                "edr_category": malop_simple_values['malopActivityTypes']['values'],
                 "edr_theat_type": malop_simple_values['detectionType']['values'],
+                "edr_category": malop_simple_values['malopActivityTypes']['values'],
                 "edr_elements_type": malop_simple_values.get('rootCauseElementTypes', default_values)['values'],
                 "edr_elements_name": malop_simple_values.get('rootCauseElementNames', default_values)['values'],
                 "edr_elements_hash": malop_simple_values.get('rootCauseElementHashes', default_values)['values'],
-                "edr_status": malop_simple_values['managementStatus']['values'],
                 "edr_affected_users": malop_element_values.get('affectedUsers', default_values)['elementValues'],
                 "edr_affected_devices": malop_element_values['affectedMachines']['elementValues'],
                 "edr_killchain": malop_simple_values['malopActivityTypes']['values'],
-                "edr_level": malop_info['malopPriority'],
-                "edr_is_blocked": malop_simple_values['isBlocked']['values']
+                "edr_status": malop_simple_values['managementStatus']['values'],
+                "edr_is_blocked": malop_simple_values['isBlocked']['values'],
+                "edr_level": malop_info['malopPriority']
             }
+
+            if tmp_malop['edr_threat_id'] == "11.4361407494409284103":
+                print(malop_info)
 
             yield tmp_malop
 
@@ -192,9 +195,6 @@ class CybereasonParser(ApiParser):
             malops = []
             for malop in self.parse(tmp_malops):
                 malops.append(malop)
-
-            print(len(malops))
-            print(malops[0])
 
         except Exception as e:
             raise CybereasonParseError(e)

@@ -200,7 +200,9 @@ class FrontendForm(ModelForm):
                            'api_parser_use_proxy', 'cybereason_host', 'cybereason_username',
                            'cybereason_password', 'elasticsearch_host', 'elasticsearch_auth',
                            'elasticsearch_verify_ssl', 'elasticsearch_username', 'elasticsearch_password',
-                           'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password']:
+                           'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
+                           "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
+                           "aws_bucket_name"]:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -240,7 +242,8 @@ class FrontendForm(ModelForm):
                   'file_path', 'node', 'darwin_policy', 'api_parser_type', 'api_parser_use_proxy', 'cybereason_host',
                   'cybereason_username', 'cybereason_password', 'elasticsearch_host', 'elasticsearch_verify_ssl',
                   'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password', 'elasticsearch_index',
-                  'forcepoint_host', 'forcepoint_username', 'forcepoint_password')
+                  'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username",
+                  "symantec_password", "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name")
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -285,7 +288,12 @@ class FrontendForm(ModelForm):
             'elasticsearch_password': PasswordInput(attrs={'class': 'form-control'}),
             'elasticsearch_index': TextInput(attrs={'class': 'form-control'}),
             'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
-            'forcepoint_password': PasswordInput(attrs={'class': 'form-control'})
+            'forcepoint_password': PasswordInput(attrs={'class': 'form-control'}),
+            'symantec_username': TextInput(attrs={'class': 'form-control'}),
+            'symantec_password': PasswordInput(attrs={'class': 'form-control'}),
+            'aws_access_key_id': TextInput(attrs={'class': 'form-control'}),
+            'aws_secret_access_key': TextInput(attrs={'class': 'form-control'}),
+            'aws_bucket_name': Select(attrs={'class': 'form-control select2'})
         }
 
     def clean_name(self):

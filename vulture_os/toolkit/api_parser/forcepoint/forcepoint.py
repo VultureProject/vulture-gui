@@ -100,9 +100,9 @@ class ForcepointParser(ApiParser):
         response = requests.get(
             url,
             auth=(self.forcepoint_username, self.forcepoint_password),
+            allow_redirects=allow_redirects,
             headers=self.user_agent,
-            proxies=self.get_system_proxy(),
-            allow_redirects=allow_redirects
+            proxies=self.proxies
         )
 
         if response.status_code == 401:
@@ -118,21 +118,27 @@ class ForcepointParser(ApiParser):
         return True, content
 
     def parse_xml(self, logs):
-        root = ET.fromstring(logs)
-        for child in root:
-            # child.tag is 'log'
-            # child.attrib is {'time': '2018-08-21 12:45', 'version': '100', 'size': '0', 'url': 'https://hlfs-web-a.mailcontrol.com/logs/hosted_S01B_29937_85.115.56.190_100_1534855500_1.gz'}
-
+        for child in ET.fromstring(logs):
             time_log = child.attrib['time']
             url = child.attrib['url']
             status, data = self.get_logs(url=url, allow_redirects=True)
             if not status:
                 raise ForcepointAPIError(data)
 
-            for line in data.decode('utf-8').split('\r\n')[1:]:
-                print(line)
-                print('')
-            break
+            for tmp_line in data.decode('utf-8').split('\r\n')[1:]:
+                yield tmp_line.strip().split('","')
+
+    def parse_line(self, tmp_line):
+        if len(tmp_line) < len(self.CSV_KEYS):
+            print(tmp_line)
+            print(self.CSV_KEYS)
+            return None
+
+        line = {}
+        for i, key in enumerate(self.CSV_KEYS[2:]):
+            line[key] = tmp_line[i + 2].strip()
+
+        return line
 
     def execute(self):
         status, tmp_logs = self.get_logs()
@@ -140,4 +146,10 @@ class ForcepointParser(ApiParser):
         if not status:
             raise ForcepointAPIError(tmp_logs)
 
-        logs = self.parse_xml(tmp_logs)
+        for tmp_line in self.parse_xml(tmp_logs):
+            self.update_lock()
+
+            line = self.parse_line(tmp_line)
+            if line is not None:
+                print(line)
+            break

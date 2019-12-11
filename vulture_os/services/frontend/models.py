@@ -426,6 +426,31 @@ class Frontend(models.Model):
         default=""
     )
 
+    symantec_username = models.TextField(
+        help_text=_('Symantec Username'),
+        default=""
+    )
+
+    symantec_password = models.TextField(
+        help_text=_('Symantec Password'),
+        default=""
+    )
+
+    aws_access_key_id = models.TextField(
+        help_text=_('AWS Access Key ID'),
+        default=""
+    )
+
+    aws_secret_access_key = models.TextField(
+        help_text=_("AWS Secret Access Key"),
+        default=""
+    )
+
+    aws_bucket_name = models.TextField(
+        help_text=_("AWS Bucket Name"),
+        default=""
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -527,6 +552,15 @@ class Frontend(models.Model):
                     result['elasticsearch_username'] = self.elasticsearch_username
                     result['elasticsearch_password'] = self.elasticsearch_password
                     result['elasticsearch_index'] = self.elasticsearch_index
+
+                elif self.api_parser_type == "symantec":
+                    result['symantec_username'] = self.symantec_username
+                    result['symantec_password'] = self.symantec_password
+
+                elif self.api_parser_type == "aws_bucket":
+                    result['aws_access_key_id'] = self.aws_access_key_id
+                    result['aws_secret_access_key'] = self.aws_secret_access_key
+                    result['aws_bucket_name'] = self.aws_bucket_name
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()

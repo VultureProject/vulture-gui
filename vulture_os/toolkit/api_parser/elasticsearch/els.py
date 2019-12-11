@@ -111,9 +111,10 @@ class ElasticsearchParser(ApiParser):
                 'error': str(e)
             }
 
-    def parse_json(self, data):
+    def __parse_json(self, data):
         for d in data:
-            self.last_api_call = d['_source']['@timestamp']
+            log_line = d['_source']
+            self.last_api_call = log_line['@timestamp']
 
     def construct_query(self):
         query = {
@@ -165,11 +166,12 @@ class ElasticsearchParser(ApiParser):
             sid = data['_scroll_id']
             scroll_size = len(data['hits']['hits'])
 
-            self.parse_json(data['hits']['hits'])
+            self.__parse_json(data['hits']['hits'])
 
             while scroll_size > 0:
+                self.update_lock()
                 data = els_client.scroll(scroll_id=sid, scroll="2m")
-                self.parse_json(data['hits']['hits'])
+                self.__parse_json(data['hits']['hits'])
 
                 sid = data['_scroll_id']
                 scroll_size = len(data['hits']['hits'])
@@ -178,5 +180,3 @@ class ElasticsearchParser(ApiParser):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-
-        self.finish()

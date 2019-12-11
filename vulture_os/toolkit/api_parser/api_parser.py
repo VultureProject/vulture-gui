@@ -26,16 +26,16 @@ __doc__ = 'API Parser'
 import logging
 
 from django.conf import settings
+from services.frontend.models import Frontend
 from system.config.models import Config
 from toolkit.network.network import get_proxy
-from services.frontend.models import Frontend
 from toolkit.redis.redis_base import RedisBase
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 
-class NodeNotInstalled(Exception):
+class NodeNotBootstraped(Exception):
     pass
 
 
@@ -52,7 +52,7 @@ class ApiParser:
             # Can't execute on a non valid Vulture Node
             config = Config.objects.get()
         except Config.DoesNotExist:
-            raise NodeNotInstalled()
+            raise NodeNotBootstraped()
 
         self.customer_name = config.customer_name
         self.last_api_call = self.data.get("last_api_call")
@@ -62,10 +62,11 @@ class ApiParser:
 
         self.proxies = None
         if self.data['api_parser_use_proxy']:
-            self.proxies = ApiParser.get_system_proxy()
+            self.proxies = self.get_system_proxy()
 
-    @staticmethod
-    def get_system_proxy():
+        self.redis_cli = RedisBase()
+
+    def get_system_proxy(self):
         proxy = get_proxy()
         if len(proxy) > 1:
             return proxy
@@ -76,17 +77,27 @@ class ApiParser:
         """
         Check if the parser must run (avoid twice execution)
         """
-        redis_cli = RedisBase()
-        if redis_cli.redis.get(self.key_redis):
+        if self.redis_cli.redis.get(self.key_redis):
             return False
 
-        redis_cli.redis.set(self.key_redis, 1)
+        self.redis_cli.redis.setex(self.key_redis, 300, 1)
         return True
+
+    def update_lock(self):
+        self.redis_cli.redis.setex(self.key_redis, 300, 1)
 
     def finish(self):
         """
         Remove redis lock & save frontend
         """
-        redis_cli = RedisBase()
-        redis_cli.redis.delete(self.key_redis)
+        self.redis_cli.redis.delete(self.key_redis)
         self.frontend.save()
+
+    def test(self):
+        raise NotImplemented()
+
+    def fetch_data(self):
+        raise NotImplemented()
+
+    def execute(self):
+        raise NotImplemented()
