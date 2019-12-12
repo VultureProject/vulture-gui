@@ -16,7 +16,6 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
 
 import os
-import sys
 from pymongo import ReadPreference
 from toolkit.network.network import get_hostname
 
