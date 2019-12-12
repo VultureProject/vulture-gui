@@ -485,8 +485,12 @@ table.dataTable.compact tbody th, table.dataTable.compact tbody td{
 }
 
 #logs_preview_rule{
-    /*background-color: #3c8dbc;*/
-    /*color: #fff;*/
+    
+}
+
+.ace_cursor-layer{
+    height: 20px;
+    margin-top: 18px;
 }
 
 .resize_div{
@@ -648,8 +652,20 @@ ul li{
     height: 10px;
 }
 
-#row-navbar .input-group, #row-navbar .input-group button, #row-navbar .input-group #logs_preview_rule{
-    height: 60px;
+#row-navbar .input-group, #row-navbar .input-group .btn-navbar, #row-navbar .input-group #logs_preview_rule{
+    height: 53px;
+}
+
+.dropdown-menu-xlg{
+    width: 500px;
+}
+
+#load_search, #delete_search{
+    display: none;
+}
+
+.log_viewer_query_builder{
+    display: none;
 }
 
 .dataTables_length{

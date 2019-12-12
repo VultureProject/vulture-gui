@@ -17,12 +17,18 @@
     <script src="{% static 'plugins/gridstack/gridstack.min.js' %}"></script>
     <script src="{% static 'plugins/gridstack/gridstack.jQueryUI.min.js' %}"></script>
     <script src="{% static 'plugins/contextMenu/jquery.contextMenu.min.js' %}"></script>
+    <script src="{% static 'plugins/sqlparser/sql_parser.js' %}"></script>
     <script src="{% static 'plugins/queryBuilder/query-builder.standalone.min.js' %}"></script>
     <script src="{% static 'plugins/queryBuilder/query-builder.elasticsearch.js' %}"></script>
     <script src="{% static 'plugins/queryBuilder/interact.min.js' %}"></script>
     <script src="{% static 'plugins/gridstack/lodash.min.js' %}"></script>
     <script src="{% static 'plugins/echarts4.all.min.js' %}"></script>
     <script src="{% static 'plugins/visjs/visjs.min.js' %}"></script>
+    <script src="{% static 'plugins/ace/ace.js' %}"></script>
+    <script src="{% static 'plugins/ace/ext-beautify.js' %}"></script>
+    <script src="{% static 'plugins/ace/ext-keybinding_menu.js' %}"></script>
+    <script src="{% static 'plugins/ace/ext-language_tools.js' %}"></script>
+    <script src="{% static 'plugins/ace/ext-prompt.js' %}"></script>
     <!--<script src="{% static 'js/wl_bl.js' %}"></script>-->
 	<script src="{% static 'js/log_viewer.js' %}"></script>
 	<script src="{% static 'js/defender_logs.js' %}"></script>
@@ -40,28 +46,68 @@
 	                <div class="col-sm-12" id="navbarlogs">
 	                    <div class="input-group input-group-lg">
 	                      <span class="input-group-btn">
-                            <button class="btn btn-default btn-open" id="btn-configuration" data-state="close" title="{% trans 'Configuration' %}" data-placement="bottom" data-type="tooltip" data-row="row-configuration" type="button"><i class="fas fa-cog"></i></button>
-                            <button class="btn btn-default" title="{% trans 'Realtime' %}" data-placement="bottom" data-type="tooltip" id="real_time" data-active="false" type="button"><i id="spinner_ajax" class="fa fa-spinner"></i></button>
-	                        <button class="btn btn-default" title="{% trans 'Graph' %}" data-toggle="button" aria-pressed="false" data-placement="bottom" data-type="tooltip" id="btn-graph" type="button"><i class="fa fa-sitemap"></i></button>
-	                        <button class="btn btn-default btn-font-xs" title="{% trans 'Date' %}" data-placement="bottom" data-type="tooltip" id="reportrange_logs" type="button"></button>
+                            <button class="btn btn-default btn-navbar btn-open" id="btn-configuration" data-state="close" title="{% trans 'Configuration' %}" data-placement="bottom" data-type="tooltip" data-row="row-configuration" type="button"><i class="fas fa-cog"></i></button>
+                            <button class="btn btn-default btn-navbar" title="{% trans 'Realtime' %}" data-placement="bottom" data-type="tooltip" id="real_time" data-active="false" type="button"><i id="spinner_ajax" class="fa fa-spinner"></i></button>
+	                        <button class="btn btn-default btn-navbar" title="{% trans 'Graph' %}" data-toggle="button" aria-pressed="false" data-placement="bottom" data-type="tooltip" id="btn-graph" type="button"><i class="fa fa-sitemap"></i></button>
+	                        <button class="btn btn-default btn-navbar btn-font-xs" title="{% trans 'Date' %}" data-placement="bottom" data-type="tooltip" id="reportrange_logs" type="button"></button>
 	                        <div class="btn-group">
-	                            <button class="btn btn-default btn-font-xs dropdown-toggle" id="btn-type-logs" data-toggle="dropdown" type="button">{% trans "Log type" %} <span class="caret"></span></button>
+	                            <button class="btn btn-default btn-navbar btn-font-xs dropdown-toggle" id="btn-type-logs" data-toggle="dropdown" type="button">{% trans "Log type" %} <span class="caret"></span></button>
 	                            <ul class="dropdown-menu dropdown-menu-left" id="list-type-logs">
                                 </ul>
 	                        </div>
                             <div class="btn-group">
-                                <button class="btn btn-default btn-font-xs dropdown-toggle" id="btn-applications" data-toggle="dropdown" type="button">{% trans "Application" %} <span class="caret"></span></button>
+                                <button class="btn btn-default btn-navbar btn-font-xs dropdown-toggle" id="btn-applications" data-toggle="dropdown" type="button">{% trans "Application" %} <span class="caret"></span></button>
                                 <ul class="dropdown-menu dropdown-menu-left" id="list-applications">
                                 </ul>
                             </div>
 	                      </span>
-	                      <input type="text" class="form-control preview_rules" id="logs_preview_rule" readonly="readonly">
+	                      <div class="preview_rules" id="logs_preview_rule"></div>
 	                      <span class="input-group-btn">
-                            <button class="btn btn-default btn-open" data-state="close" data-type="tooltip" title="{% trans 'Search' %}" data-placement="bottom" data-row="row-search" type="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-search"></i></button>
-	                        <button type="button" id="btn-reset" class="btn btn-default" title="{% trans 'Reinit search' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-ban"></i></button>
-	                        <button type="button" id="btn-execute" class="btn btn-default" title="{% trans 'Execute search' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-bolt"></i></button>
-	                        <button type="button" id="btn-defender" class="btn btn-default" title="{% trans 'Generate learning logs' %}" data-placement="bottom" data-type="tooltip"><i class="fas fa-brain"></i></button>
-	                        <button type="button" id="btn-export" class="btn btn-default" title="{% trans 'CSV Export' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-download"></i></button>
+                            <button type="button" id="btn-execute" class="btn btn-default btn-navbar" title="{% trans 'Execute search' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-search"></i></button>
+                            <button class="btn btn-default btn-navbar dropdown-toggle" data-toggle="dropdown" data-type="tooltip" title="{% trans 'Save search' %}" data-placement="bottom" type="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-save"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-xlg dropdown-menu-right">
+                                <li class="dropdown-header">
+                                    {% trans "Save search" %}
+                                </li>
+                                <li>
+                                    <div class="row">
+                                        <div class="col-md-12"> 
+                                            <label>{% trans "Name" %}:</label>
+                                            <input type="text" id="search_name" class="form-control"/>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="text-right">
+                                        <button type="button" class="btn btn-mint" id="save_search"><i class="fa fa-save">&nbsp;</i>{% trans "Save search" %}</button>
+                                    </div>
+                                </li>
+                                <li class="dropdown-header">
+                                    {% trans "Saved search" %}
+                                </li>
+                                <li>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <select class="form-control select-improve" id="saved-search">
+                                                <option value="">---</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-primary" id="load_search"><i class="fas fa-reply">&nbsp;</i>{% trans "Load search" %}</button>        
+                                        </div>
+                                        <div class="col-md-6 text-right">
+                                            <button type="button" class="btn btn-danger" id="delete_search"><i class="fas fa-trash-alt">&nbsp;</i>{% trans "Delete search" %}</button>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+	                        <button type="button" id="btn-reset" class="btn btn-default btn-navbar" title="{% trans 'Reinit search' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-ban"></i></button>
+	                        <button type="button" id="btn-defender" class="btn btn-default btn-navbar" title="{% trans 'Generate learning logs' %}" data-placement="bottom" data-type="tooltip"><i class="fas fa-brain"></i></button>
+	                        <button type="button" id="btn-export" class="btn btn-default btn-navbar" title="{% trans 'CSV Export' %}" data-placement="bottom" data-type="tooltip"><i class="fa fa-download"></i></button>
 	                      </span>
 	                    </div>
 	                </div>
@@ -112,53 +158,6 @@
                             <div class="col-md-12">
                                 <h4>{% trans "Table configuration" %}</h4>
                                 <div class="grid-stack"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row" id="row-search">
-            <div class="col-md-6 col-md-offset-3">
-                <div class="panel">
-                    <div class="panel-heading">
-                        <div class="panel-control">
-                            <button class="btn btn-box-tool btn-close" data-row="row-search" type="button"><i class="fa fa-times">&nbsp;{% trans "Close" %}</i></button>
-                        </div>
-                        <h3 class="panel-title"><i class="fa fa-search">&nbsp;</i>{% trans "Search" %}</h3>
-                    </div>
-                    <div class="panel-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="panel panel-colorful panel-dark">
-                                    <div class="panel-body">
-                                        <div class="form-group col-md-8">
-                                            <label>{% trans "Saved searches" %}</label>
-                                            <div class="input-group">
-                                                <select class="form-control select-improve" id="saved-search">
-                                                    <option value="">---</option>
-                                                </select>
-                                                <span class="input-group-btn">
-                                                    <button type="button" class="btn btn-danger btn-flat" id="delete_search"><i class="fas fa-trash-alt"></i></button>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label>{% trans "Save research" %}:</label>
-                                            <div class="input-group">
-                                                <input type="text" id="search_name" class="form-control"/>
-                                                <span class="input-group-btn">
-                                                    <button type="button" class="btn btn-success btn-flat" id="save_search"><i class="fa fa-plus"></i></button>
-                                                    <button type="button" class="btn btn-warning btn-flat" id="edit_search" data-uid=""><i class="fa fa-edit"></i></button>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <div id="queryBuilder"></div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -277,6 +276,8 @@
                 </div>
             </div>
         </div>
+        <div id="queryBuilder" class="log_viewer_query_builder"></div>
+        <div id="queryBuilder_ace" class="log_viewer_query_builder"></div>
     </div>
 
 {% endblock %}

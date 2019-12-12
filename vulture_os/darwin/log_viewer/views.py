@@ -144,24 +144,15 @@ def log_viewer(request):
 
         elif action == "save_search":
             type_logs = request.POST['type_logs']
-            update = request.POST.get('update')
             search_name = request.POST['search_name']
             rules = json.loads(request.POST['rules'])
 
-            if update:
-                search = LogViewerSearches.objects.get(pk=update)
-                search.name = search_name
-                search.search = rules
-
-                search.save()
-
-            else:
-                search = LogViewerSearches.objects.create(
-                    name=search_name,
-                    type_logs=type_logs,
-                    search=rules,
-                    user=request.user.user
-                )
+            LogViewerSearches.objects.create(
+                name=search_name,
+                type_logs=type_logs,
+                search=rules,
+                user=request.user.user
+            )
 
             data = {
                 "status": True,
