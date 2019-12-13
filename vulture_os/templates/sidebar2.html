@@ -42,10 +42,23 @@
                     <br/>
                     <ul id="mainnav-menu" class="list-group">
                         <li class="link_gui link_dashboard_services">
-                            <a href="{% url 'gui.dashboard.services' %}">
+                            <a href="#">
                                 <i class="fas fa-tachometer-alt"></i>
-                                <span class="menu-title">{% trans "General" %}</span>
+                                <span class="menu-title">{% trans "Home" %}</span>
+                                <i class="arrow"></i>
                             </a>
+                            <ul class="collapse_gui collapse">
+                                <li class="link_dashboard_services">
+                                    <a href="{% url 'gui.dashboard.services' %}">
+                                        {% trans "General" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/dashboard/" target="_blank">
+                                        {% trans "Real Time Dashboard" %}
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
 
                         {% for menu in MENUS %}
