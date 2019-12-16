@@ -56,7 +56,8 @@ for p in sys.argv[1:]:
     if p == sys.argv[0]:
         continue
     try:
-        (k, v) = p.split("=")
+        k = p.split('=')[0]
+        v = '='.join(p.split('=')[1:])
         setattr(config, k, v)
         print("Setting '{}' to '{}'".format(k,v))
 
