@@ -1,3 +1,8 @@
+var lang_tool = ace.require("ace/ext/language_tools");
+
+var snippetManager = ace.require("ace/snippets").snippetManager;
+var config = ace.require("ace/config");
+
 var mapping_text = {
     "date_add": gettext("Start time"),
     "modified": gettext("End time"),
@@ -9,6 +14,7 @@ var mapping_text = {
 
 var reportrange;
 var gridster;
+var editor;
 
 var nodes_id;
 var network;
@@ -232,8 +238,9 @@ $(function(){
     $('#btn-reset').unbind('click');
     $('#btn-reset').on('click', function(){
         $('#queryBuilder').queryBuilder('reset');
+        editor.setValue('');
+        rules_preview();
         fetch_data()
-        $('#edit_search').hide();
     })
 
     $('#add_field').on('click', function(){
@@ -291,27 +298,26 @@ $(function(){
         save_search();
     })
 
-    $('#edit_search').on('click', function(){
-        save_search($(this).data('pk'));
-    })
-
-    $('#saved-search').on('change', function(){
-        if ($(this).val() === ""){
-            $('#edit_search').hide();
-            return false;
-        }
-
-        var value = $(this).val().split('|');
+    $('#load_search').on('click', function(){
+        var value = $("#saved-search").val().split('|');
 
         var pk = value[0];
 
         var rules = JSON.parse(value[1]);
         $('#queryBuilder').queryBuilder('setRules', rules);
-        $('#delete_search').show();
+        rules_preview();
+        fetch_data();
+    })
 
-        $('#edit_search').data('pk', pk);
-        $('#search_name').val($("#saved-search option:selected").text());
-        $('#edit_search').show();
+    $('#saved-search').on('change', function(){
+        if ($(this).val() === ""){
+            $('#load_search').hide();
+            $('#delete_search').hide();
+            return false;
+        }
+
+        $('#delete_search').show();
+        $('#load_search').show();
     })
 
     $('#save_config').on('click', function(){
@@ -385,7 +391,10 @@ $(function(){
             function(response){
                 if (check_json_error(response)){
                     notify('success', gettext('Success'), gettext('Search deleted'));
+                    $('#load_search').hide();
+                    $('#delete_search').hide();
                     $('#saved-search option:selected').remove();
+                    $('#saved-search').val('').trigger('change');
                 }
             }
 
@@ -570,7 +579,7 @@ function rules_preview(){
     // Show preview of queryBuilder rules. SQL Syntax
     var rules_sql = $('#queryBuilder').queryBuilder('getSQL', false);
     if (rules_sql)
-        $('#logs_preview_rule').val(rules_sql.sql);
+        editor.setValue(rules_sql.sql);
     else
         $('#logs_preview_rule').val('');
 }
@@ -580,11 +589,10 @@ function event_querybuilder(){
     // Event 'rulesChanged' doesn't work
     $('#queryBuilder').on('afterAddGroup.queryBuilder afterUpdateGroupCondition.queryBuilder afterDeleteGroup.queryBuilder afterAddRule.queryBuilder afterUpdateRuleFilter.queryBuilder afterUpdateRuleOperator.queryBuilder afterUpdateRuleValue.queryBuilder afterDeleteRule.queryBuilder afterReset.queryBuilder afterSetRules.queryBuilder', function(){
         scroll_id = null;
-        rules_preview();
     })
 }
 
-function save_search(update){
+function save_search(){
     PNotify.removeAll();
 
     var search_name = $('#search_name').val();
@@ -604,7 +612,6 @@ function save_search(update){
             action: 'save_search',
             type_logs: selected_type,
             search_name: search_name,
-            update: update,
             rules: JSON.stringify(rules)
         },
 
@@ -1246,13 +1253,10 @@ function init_search(data){
     nodes = data.nodes;
 
     filters = [];
+    var snippets = [];
 
     $('#saved-search').empty();
     $('#saved-search').append("<option value=''>----</option>")
-    for (var i in search_list){
-        var tmp = search_list[i];
-        $('#saved-search').append("<option value='{0}|{1}'>{2}</option>".format(tmp.pk, JSON.stringify(tmp.search), tmp.name))
-    }
 
     $.each(mapping, function(field, type){
         if (type !== "dict"){
@@ -1287,8 +1291,11 @@ function init_search(data){
 
     try{
         $('#queryBuilder').queryBuilder('destroy');
-    } catch(err){
-    }
+    } catch(err){}
+
+    try{
+        $('#queryBuilder_ace').queryBuilder('destroy');
+    } catch(err){}
 
     builder = $('#queryBuilder').queryBuilder({
         sort_filters: true,
@@ -1301,9 +1308,143 @@ function init_search(data){
         ]
     })
 
+    builder_ace = $('#queryBuilder_ace').queryBuilder({
+        sort_filters: true,
+        allow_empty: true,
+        filters: filters,
+        plugins: [
+            'invert',
+            // 'sortable',
+            'not-group'
+        ]
+    })
+
     event_querybuilder();
-    rules_preview();
+    editor = ace.edit("logs_preview_rule");
+    editor.setTheme("ace/theme/chrome");
+    editor.session.setMode("ace/mode/search");
+
+    ace.config.loadModule("ace/snippets/search", function(m) {
+        if (m) {
+            m.snippets = [];
+
+            for (var i in search_list){
+                var tmp = search_list[i];
+                $('#saved-search').append("<option value='{0}|{1}'>{2}</option>".format(tmp.pk, JSON.stringify(tmp.search), tmp.name))
+
+                $('#queryBuilder_ace').queryBuilder("setRules", tmp.search);
+                var sql = $('#queryBuilder_ace').queryBuilder("getSQL", false).sql;
+
+                m.snippets.push({
+                    content: sql,
+                    name: tmp.name,
+                    tabTrigger: tmp.name,
+                    meta: gettext("Search")
+                })
+            }
+
+            snippetManager.register(m.snippets, m.scope);
+        }
+    });
+
+    editor.on('focus', function(){
+        if (editor.getValue() === ""){
+
+        }
+    })
+
+    editor.setOptions({
+        maxLines: 1,
+        fontSize: 18,
+        showGutter: false,
+        cursorStyle: 'slim',
+        enableSnippets: true,
+        showLineNumbers: false,
+        showFoldWidgets: false,
+        showPrintMargin: false,
+        displayIndentGuides: false,
+        enableLiveAutocompletion: true,
+        enableBasicAutocompletion: true
+    });
+
+    lang_tool.addCompleter({
+        getCompletions: function(editor, session, pos, prefix, callback){
+            var autocomplete = [];
+            $.each(mapping, function(field, type_field){
+                autocomplete.push({
+                    score: 1,
+                    name: field,
+                    value: field,
+                    meta: type_field
+                })
+            })
+
+            callback(null, autocomplete);
+        }
+    })
+
+    editor.container.style.lineHeight = 3;
+    editor.renderer.updateFontSize();
+
+    $('#logs_preview_rule').unbind('keypress');
+    $('#logs_preview_rule').on('keypress', function(e){
+        if (e.keyCode === 13){
+            e.preventDefault();
+            PNotify.removeAll();
+
+            var search_sql = editor.getValue();
+            if (search_sql == ""){
+                $('#queryBuilder').queryBuilder('reset');
+            } else {
+                try{
+                    $('#queryBuilder').queryBuilder('setRulesFromSQL', search_sql);
+                } catch(err){
+                    notify('error', gettext('Error'), gettext('Invlid query'))
+                    return;
+                }
+            }
+            fetch_data();
+        }
+    })
+
+    function update() {
+        var shouldShow = !editor.session.getValue().length;
+        var node = editor.renderer.emptyMessageNode;
+        if (!shouldShow && node) {
+            editor.renderer.scroller.removeChild(editor.renderer.emptyMessageNode);
+            editor.renderer.emptyMessageNode = null;
+        } else if (shouldShow && !node) {
+            node = editor.renderer.emptyMessageNode = document.createElement("div");
+            node.textContent = gettext("Search")
+            node.className = "ace_emptyMessage"
+            node.style.padding = "0 9px"
+            node.style.position = "absolute"
+            node.style.zIndex = 9
+            node.style.opacity = 0.5
+            editor.renderer.scroller.appendChild(node);
+        }
+    }
+
+    editor.on("input", update);
+    setTimeout(update, 100);
 }
 
 prepare_type_logs_selector();
+
 $('.btn-open').click();
+
+$('#saved-search').on('click', function(e){
+    e.stopPropagation();
+})
+
+$('.dropdown-menu-lg').on('click', function(e){
+    e.stopPropagation();
+})
+
+$('.dropdown-menu-xlg').on('click', function(e){
+    e.stopPropagation();
+})
+
+$('.dropdown-menu-xlg li').on('click', function(e){
+    e.stopPropagation();
+})
