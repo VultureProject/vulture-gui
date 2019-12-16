@@ -67,6 +67,11 @@ class NodeForm(ModelForm):
             'pstats_forwarders': SelectMultiple(attrs={'class': 'form-control select2'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set non required fields
+        self.fields["pstats_forwarders"].required = False
+
     def clean_scanner_ip(self):
         value = self.cleaned_data.get('scanner_ip')
         if value and value.family != "inet":
