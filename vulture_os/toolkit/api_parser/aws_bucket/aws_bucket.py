@@ -119,7 +119,7 @@ class AWSBucketParser(ApiParser):
     def _fetch_files(self):
         try:
             for file in self.s3_client.list_objects(Bucket=self.aws_bucket_name)['Contents']:
-                yield file['Key']
+                yield file
 
         except KeyError:
             raise AWSBucketBucketEmpty(f"Bucket {self.aws_bucket_name} is empty")

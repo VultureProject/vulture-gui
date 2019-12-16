@@ -32,7 +32,6 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -67,7 +66,6 @@ class SymantecParser(ApiParser):
             startDate = startDate.timestamp() * 1000
 
             url = f"{self.start_console_uri}startDate={int(startDate)}&endDate=0&token=none"
-            print(url)
 
             r = requests.get(
                 url,

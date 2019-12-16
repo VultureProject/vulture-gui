@@ -96,7 +96,7 @@ class ElasticsearchParser(ApiParser):
 
         except exceptions.TransportError as e:
             if e.status_code == 302:
-                error = _("302 found on URL " + ",".join(self.els_host))
+                error = _("302 found on URL " + self.els_host)
             else:
                 error = str(e)
 
