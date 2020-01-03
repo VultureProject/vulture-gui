@@ -57,8 +57,6 @@ logger = logging.getLogger('crontab')
 
 # The slash at the end is mandatory
 IPSET_VULTURE = "https://predator.vultureproject.org/ipsets/"
-IPSET_GEOIP = "http://geolite.maxmind.com/download/geoip/database/"
-
 
 def security_alert(title, level, content):
     """
@@ -153,14 +151,14 @@ def security_update(node_logger=None):
             'label': "Geolite2 Country",
             'description': "Maxmind DB's Geoip country database",
             'type': "GeoIP",
-            'url': "https://updates.maxmind.com/geoip/databases/GeoLite2-Country/update"
+            'url': "https://predator.vultureproject.org/ipsets/GeoLite2-Country.mmdb"
         })
         infos.append({
             'filename': "GeoLite2-City.mmdb",
             'label': "Geolite2 City",
             'description': "Maxmind DB's Geoip city database",
             'type': "GeoIP",
-            'url': "https://updates.maxmind.com/geoip/databases/GeoLite2-City/update"
+            'url': "https://predator.vultureproject.org/ipsets/GeoLite2-City.mmdb"
         })
         infos.append({
             'filename': "firehol_level1.netset",
