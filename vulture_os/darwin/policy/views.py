@@ -27,8 +27,8 @@ __doc__ = 'Darwin Policy views'
 # Logger configuration imports
 import logging
 
-from darwin.policy.form import (DarwinPolicyForm, FilterPolicyForm, FilterPolicyReputationForm,
-                                FilterPolicyHostlookupForm, FilterPolicyDGAForm, FilterPolicyUserAgentForm,
+from darwin.policy.form import (DarwinPolicyForm, FilterPolicyForm,
+                                FilterPolicyHostlookupForm, FilterPolicyDGAForm,
                                 FilterPolicyContentInspectionForm, FilterPolicyTAnomalyForm, FilterPolicyConnectionForm)
 from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy
 from django.conf import settings
@@ -47,9 +47,7 @@ logger = logging.getLogger('gui')
 
 
 FILTER_POLICY_FORMS = {
-    "reputation": FilterPolicyReputationForm,
     "dga": FilterPolicyDGAForm,
-    "user_agent": FilterPolicyUserAgentForm,
     "content_inspection": FilterPolicyContentInspectionForm,
     "tanomaly": FilterPolicyTAnomalyForm,
     "anomaly": FilterPolicyForm,

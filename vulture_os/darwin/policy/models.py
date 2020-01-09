@@ -41,6 +41,7 @@ TEMPLATE_PERMS = "644"
 
 DARWIN_LOGLEVEL_CHOICES = (
     ('ERROR', 'Error'),
+    ('WARNING', 'Warning'),
     ('INFO', 'Informational'),
     ('DEBUG', 'Debug')
 )
@@ -130,7 +131,7 @@ class FilterPolicy(models.Model):
 
     enabled = models.BooleanField(default=False)
     nb_thread = models.PositiveIntegerField(default=5)
-    log_level = models.TextField(default=DARWIN_LOGLEVEL_CHOICES[0][0], choices=DARWIN_LOGLEVEL_CHOICES)
+    log_level = models.TextField(default=DARWIN_LOGLEVEL_CHOICES[1][0], choices=DARWIN_LOGLEVEL_CHOICES)
     threshold = models.PositiveIntegerField(default=80)
     mmdarwin_enabled = models.BooleanField(default=False)
     mmdarwin_parameters = models.ListField(default=[])
@@ -138,7 +139,7 @@ class FilterPolicy(models.Model):
     """ Status of filter for each nodes """
     status = models.DictField(default={})
     cache_size = models.PositiveIntegerField(
-        default=1000,
+        default=0,
         help_text=_("The cache size to use for caching darwin requests."),
         verbose_name=_("Cache size")
     )
