@@ -43,31 +43,36 @@ from toolkit.redis.redis_base import RedisBase
 # Mongo import
 from toolkit.mongodb.mongo_base import MongoBase
 
-def alert_handler(alert, m, r):
+def alert_handler(alert, m, r, max_tries=3, sec_between_retries=1):
     try:
         a = json.loads(alert)
     except json.JSONDecodeError as e:
-        logger.error("Alert is not JSON valid : {}".format(e))
+        logger.error("Reconcile: alert is not a valid JSON : {}".format(e))
         return
 
     evt_id = a.get("evt_id")
+    context = None
     if evt_id is not None:
-        log = r.redis.get(evt_id)
-        if log is None:
-            logger.warning("No matching log for alert {}. Storing alert without context.".format(evt_id))
-        else:
-            try:
-                log = json.loads(log.decode())
-            except json.JSONDecodeError as e:
-                logger.error("Context is not JSON valid : {}".format(e))
-                return
-            a["context"] = log
+        retries = 0
+        while retries < max_tries and context is None:
+            context = r.redis.get(evt_id)
+            retries += 1
+            if context is None:
+                logger.debug("Reconcile: context not found for id {}, "
+                "waiting {} second(s) for retry {}/{}".format(evt_id, sec_between_retries, retries, max_tries))
+                if retries < max_tries:
+                    sleep(sec_between_retries)
+            else:
+                try:
+                    a['context'] = json.loads(context.decode())
+                except json.JSONDecodeError as e:
+                    logger.error("Reconcile: context is not a valid JSON: {}".format(e))
+
+        if a.get('context', None) is None:
+            logger.warning("Reconcile: could not find valid context for id {}".format(evt_id))
 
     r.redis.publish(settings.REDIS_RECONCILIED_CHANNEL, json.dumps(a))
     m.insert("logs", "darwin_alerts", a)
-    # query = {"darwin_id": evt_id}
-    # newvalue = {"$set": {"darwin_alert_details": a, "darwin_is_alert": True}}
-    # m.update_one("logs", query, newvalue)
     return True
 
 
@@ -80,14 +85,18 @@ class ReconcileJob(Thread):
         self.shutdown_flag = Event()
         self.delay = delay
 
-    def pops(self, m, r):
+    def pops(self, m, r, max_tries=3, sec_between_retries=1):
         redis_list_name = settings.REDIS_LIST
 
-        logger.info("Start pops awaiting alerts.")
+        logger.debug("Reconcile: starting to pop alerts")
         alert = r.redis.rpop(redis_list_name)
         while (alert is not None) and (not self.shutdown_flag.is_set()):
-            alert = alert.decode()
-            alert_handler(alert, m, r)
+            try:
+                alert = alert.decode()
+            except (UnicodeDecodeError, AttributeError):
+                logger.error("Reconcile: could not decode alert")
+                pass
+            alert_handler(alert, m, r, max_tries=max_tries, sec_between_retries=sec_between_retries)
             alert = r.redis.rpop(redis_list_name)
 
     def reconcile(self):
@@ -105,7 +114,8 @@ class ReconcileJob(Thread):
         r = RedisBase(node=master_node)
 
         # Pops alerts produced when vulture was down
-        self.pops(m, r)
+        # Do not retry, as there is likely no cache for remaining alerts in current Redis
+        self.pops(m, r, max_tries=1)
         if self.shutdown_flag.is_set():
             return True
 
@@ -113,20 +123,13 @@ class ReconcileJob(Thread):
         listener = r.redis.pubsub()
         listener.subscribe([redis_channel])
 
-        logger.info("Start listening {} channel.".format(redis_channel))
+        logger.info("Reconcile: start listening {} channel.".format(redis_channel))
         while not self.shutdown_flag.is_set():
             alert = listener.get_message()
-            # If we have no messages, the messages is None
+            # If we have no messages, alert is None
             if alert:
-                alert = alert['data']
-                # Redis can return an int
-                try:
-                    alert = alert.decode()
-                except (UnicodeDecodeError, AttributeError):
-                    pass
-                # We can have an int
-                if isinstance(alert, str):
-                    alert_handler(alert, m, r)
+                # Only use the channel to trigger popping alerts
+                self.pops(m, r)
             sleep(0.001)  # be nice to the system :)
         return True
 
@@ -136,7 +139,7 @@ class ReconcileJob(Thread):
             self.reconcile()
         except Exception as e:
             logger.error("Reconcile job failure: {}".format(e))
-            logger.info("Resuming ...")
+            logger.info("Reconcile resuming ...")
 
         # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
         cpt = 0
@@ -147,5 +150,5 @@ class ReconcileJob(Thread):
         logger.info("Reconcile job stopped.")
 
     def ask_shutdown(self):
-        logger.info("Shutdown asked !")
+        logger.info("Reconcile shutdown asked !")
         self.shutdown_flag.set()
