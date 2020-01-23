@@ -50,8 +50,9 @@ class CybereasonParser(ApiParser):
         'Accept': 'application/json'
     }
 
-    LOGIN_PATH = "login.html"
-    MALOP_PATH = "rest/crimes/unified"
+    LOGIN_URI = "login.html"
+    MALOP_URI = "rest/crimes/unified"
+    SENSOR_URI = "rest/sensors/query"
 
     def __init__(self, data):
         super().__init__(data)
@@ -59,8 +60,6 @@ class CybereasonParser(ApiParser):
         self.api_host = data['cybereason_host']
         self.username = data['cybereason_username']
         self.password = data['cybereason_password']
-
-        self.malop_url = f"{self.api_host}/{self.MALOP_PATH}"
 
     def test(self):
         try:
@@ -83,7 +82,7 @@ class CybereasonParser(ApiParser):
             }
 
     def login_to_cybereason(self):
-        login_url = f"{self.api_host}/{self.LOGIN_PATH}"
+        login_url = f"{self.api_host}/{self.LOGIN_URI}"
 
         auth = {
             "username": self.username,
@@ -111,6 +110,56 @@ class CybereasonParser(ApiParser):
 
         return True, session
 
+    def __get_affected_devices(self, tmp_devices_id):
+        devices_id = []
+        for tmp in tmp_devices_id:
+            devices_id.append(tmp.get('guid'))
+
+        query = {
+            "limit": 10000,
+            "offset": 0,
+            "filters": [{
+                "fieldName": "guid",
+                "operator": "Equals",
+                "values": devices_id
+            }]
+        }
+
+        sensors_url = f"{self.api_host}/{self.SENSOR_URI}"
+
+        response = self.session.request(
+            "POST",
+            sensors_url,
+            json=query,
+            headers=self.HEADERS,
+            proxies=self.proxies
+        )
+
+        if response.status_code != 200:
+            error = f"Error at Cybereason API Call URL: {self.SENSOR_URI} Code: {response.status_code} Content: {response.content}"
+            logger.error(error)
+            raise CybereasonAPIError(error)
+
+        try:
+            tmp_devices = json.loads(response.content)
+
+            devices = []
+            for tmp in tmp_devices.get('sensors', []):
+                devices.append({
+                    "sensor_id": tmp.get('sensorId'),
+                    "net_src_host": tmp.get('fqdn'),
+                    "hostname": tmp.get('machineName'),
+                    "net_src_ip": tmp.get('internalIpAddress'),
+                    "externalIpAddress": tmp.get('externalIpAddress'),
+                    "organization": tmp.get('organization'),
+                    "net_src_os_name": tmp.get('osVersionType')
+                })
+
+            return devices
+
+        except Exception as e:
+            CybereasonParseError(e)
+
     def parse(self, malops_data):
         for malop_id, malop_info in malops_data['data']['resultIdToElementDataMap'].items():
             malop_simple_values = malop_info['simpleValues']
@@ -129,6 +178,8 @@ class CybereasonParser(ApiParser):
                 timestamp_closed = int(malop_simple_values['closeTime']['values'][0]) / 1000
                 timestamp_closed = datetime.datetime.fromtimestamp(timestamp_closed)
 
+            affected_devices = self.__get_affected_devices(malop_element_values['affectedMachines']['elementValues'])
+
             tmp_malop = {
                 "edr_threat_id": malop_id,
                 "@timestamp": timestamp_detected,
@@ -140,15 +191,12 @@ class CybereasonParser(ApiParser):
                 "edr_elements_name": malop_simple_values.get('rootCauseElementNames', default_values)['values'],
                 "edr_elements_hash": malop_simple_values.get('rootCauseElementHashes', default_values)['values'],
                 "edr_affected_users": malop_element_values.get('affectedUsers', default_values)['elementValues'],
-                "edr_affected_devices": malop_element_values['affectedMachines']['elementValues'],
+                "edr_affected_devices": affected_devices,
                 "edr_killchain": malop_simple_values['malopActivityTypes']['values'],
                 "edr_status": malop_simple_values['managementStatus']['values'],
                 "edr_is_blocked": malop_simple_values['isBlocked']['values'],
                 "edr_level": malop_info['malopPriority']
             }
-
-            if tmp_malop['edr_threat_id'] == "11.4361407494409284103":
-                print(malop_info)
 
             yield tmp_malop
 
@@ -167,18 +215,19 @@ class CybereasonParser(ApiParser):
 
         # Call login
         try:
-            status, session = self.login_to_cybereason()
+            status, self.session = self.login_to_cybereason()
         except Exception as err:
-            print(err)
-            raise
+            raise CybereasonAPIError(err)
 
         if not status:
-            raise CybereasonAPIError(session)
+            raise CybereasonAPIError(self.session)
 
         # We are logged in
-        response = session.request(
+        malop_url = f"{self.api_host}/{self.MALOP_URI}"
+
+        response = self.session.request(
             "POST",
-            self.malop_url,
+            malop_url,
             json=query,
             headers=self.HEADERS,
             proxies=self.proxies
