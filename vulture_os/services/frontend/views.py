@@ -35,7 +35,7 @@ from applications.logfwd.models import LogOM
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener
-from system.cluster.models import Cluster
+from system.cluster.models import Cluster, Node
 from toolkit.api.responses import build_response
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
 from toolkit.api_parser.utils import get_api_parser
@@ -296,7 +296,7 @@ def frontend_edit(request, object_id=None, api=False):
             reputationctx_objs.append(reputationctx_f.save(commit=False))
 
         listener_objs = []
-        if form.data.get('mode') != "impcap" and form.data.get('listening_mode') != "file":
+        if form.data.get('mode') != "impcap" and form.data.get('listening_mode') not in ("file", "api"):
             """ For each listener in list """
             for listener in listener_ids:
                 """ If id is given, retrieve object from mongo """
@@ -340,9 +340,13 @@ def frontend_edit(request, object_id=None, api=False):
             node_listeners[frontend.impcap_intf.node] = []
         elif frontend.listening_mode == "file":
             node_listeners[frontend.node] = []
+        elif frontend.listening_mode == "api":
+            # Listen on all nodes in case of a master mongo change
+            for node in Node.objects.all():
+                node_listeners[node] = []
 
-        # At least one Listener is required if Frontend enabled, except for listener of type "File" and "pcap"
-        if not listener_objs and frontend.enabled and frontend.mode != "impcap" and frontend.listening_mode != "file" and frontend.listening_mode != "api":
+        # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap" and "API"
+        if not listener_objs and frontend.enabled and frontend.mode != "impcap" and frontend.listening_mode not in ("file", "api"):
             form.add_error(None, "At least one listener is required if frontend is enabled.")
             return render_form(frontend)
 
@@ -379,7 +383,7 @@ def frontend_edit(request, object_id=None, api=False):
                     logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
 
                 """ If it is an Rsyslog only conf """
-                if (frontend.mode == "log" and frontend.listening_mode in ("udp", "file")) \
+                if (frontend.mode == "log" and frontend.listening_mode in ("udp", "file", 'api')) \
                         or frontend.mode == "impcap":
 
                     """ And if it was not before saving """

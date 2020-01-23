@@ -592,6 +592,8 @@ class Frontend(models.Model):
             listeners_list = [str(self.impcap_intf), str(self.impcap_filter)]
         elif self.listening_mode == "file":
             listeners_list = [self.file_path]
+        elif self.listening_mode == "api":
+            listeners_list = [self.api_parser_type]
         else:
             listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())]
 
@@ -854,14 +856,14 @@ class Frontend(models.Model):
         return "10-{}-{}.conf".format(self.ruleset, self.id)
 
     def get_test_filename(self):
-        """ Return test filename for test conf with haproxy 
+        """ Return test filename for test conf with haproxy
         """
         """ If object is not already saved : no id so default=test """
         return "frontend_{}.cfg".format(self.id or "test")
 
     def get_unix_socket(self):
         """ Return filename of unix socket on which HAProxy send data
-         and on which Rsyslog listen 
+         and on which Rsyslog listen
         """
         return "{}/frontend_{}.sock".format(UNIX_SOCKET_PATH, self.id)
 
@@ -1082,7 +1084,7 @@ class Frontend(models.Model):
     @property
     def rsyslog_only_conf(self):
         """ Check if this frontend has only rsyslog configuration, not haproxy at all """
-        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file")))
+        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api")))
 
 
 class Listener(models.Model):
