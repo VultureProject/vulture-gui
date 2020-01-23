@@ -43,19 +43,19 @@ from toolkit.redis.redis_base import RedisBase
 # Mongo import
 from toolkit.mongodb.mongo_base import MongoBase
 
-def alert_handler(alert, m, r, max_tries=3, sec_between_retries=1):
+def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retries=1):
     try:
-        a = json.loads(alert)
+        alertData = json.loads(alert)
     except json.JSONDecodeError as e:
         logger.error("Reconcile: alert is not a valid JSON : {}".format(e))
         return
 
-    evt_id = a.get("evt_id")
+    evt_id = alertData.get("evt_id")
     context = None
     if evt_id is not None:
         retries = 0
         while retries < max_tries and context is None:
-            context = r.redis.get(evt_id)
+            context = redis.redis.get(evt_id)
             retries += 1
             if context is None:
                 logger.debug("Reconcile: context not found for id {}, "
@@ -64,15 +64,21 @@ def alert_handler(alert, m, r, max_tries=3, sec_between_retries=1):
                     sleep(sec_between_retries)
             else:
                 try:
-                    a['context'] = json.loads(context.decode())
+                    alertData['context'] = json.loads(context.decode())
                 except json.JSONDecodeError as e:
                     logger.error("Reconcile: context is not a valid JSON: {}".format(e))
 
-        if a.get('context', None) is None:
+        if alertData.get('context', None) is None:
             logger.warning("Reconcile: could not find valid context for id {}".format(evt_id))
 
-    r.redis.publish(settings.REDIS_RECONCILIED_CHANNEL, json.dumps(a))
-    m.insert("logs", "darwin_alerts", a)
+    try:
+        with open(filepath, "a") as logFile:
+            logFile.write(json.dumps(alertData) + '\n')
+    except Exception as e:
+        logger.error("Reconcile: could not write alert {} to log file {} -> {}".format(evt_id, filepath, e))
+
+    redis.redis.publish(settings.REDIS_RECONCILIED_CHANNEL, json.dumps(alertData))
+    mongo.insert("logs", "darwin_alerts", alertData)
     return True
 
 
@@ -85,42 +91,44 @@ class ReconcileJob(Thread):
         self.shutdown_flag = Event()
         self.delay = delay
 
-    def pops(self, m, r, max_tries=3, sec_between_retries=1):
+    def pops(self, mongo, redis, filepath, max_tries=3, sec_between_retries=1):
         redis_list_name = settings.REDIS_LIST
 
         logger.debug("Reconcile: starting to pop alerts")
-        alert = r.redis.rpop(redis_list_name)
+        alert = redis.redis.rpop(redis_list_name)
         while (alert is not None) and (not self.shutdown_flag.is_set()):
             try:
                 alert = alert.decode()
             except (UnicodeDecodeError, AttributeError):
                 logger.error("Reconcile: could not decode alert")
                 pass
-            alert_handler(alert, m, r, max_tries=max_tries, sec_between_retries=sec_between_retries)
-            alert = r.redis.rpop(redis_list_name)
+            alert_handler(alert, mongo, redis, filepath, max_tries=max_tries, sec_between_retries=sec_between_retries)
+            alert = redis.redis.rpop(redis_list_name)
 
     def reconcile(self):
         node = Cluster.get_current_node()
         if not node.is_master_mongo: 
             return False
 
-        m = MongoBase()
-        if not m.connect():
+        mongo = MongoBase()
+        if not mongo.connect():
             return False
-        m.connect_primary()
+        mongo.connect_primary()
 
-        r = RedisBase()
-        master_node = r.get_master()
-        r = RedisBase(node=master_node)
+        redis = RedisBase()
+        master_node = redis.get_master()
+        redis = RedisBase(node=master_node)
+
+        filepath = settings.ALERTS_FILE
 
         # Pops alerts produced when vulture was down
         # Do not retry, as there is likely no cache for remaining alerts in current Redis
-        self.pops(m, r, max_tries=1)
+        self.pops(mongo, redis, filepath, max_tries=1)
         if self.shutdown_flag.is_set():
             return True
 
         redis_channel = settings.REDIS_CHANNEL 
-        listener = r.redis.pubsub()
+        listener = redis.redis.pubsub()
         listener.subscribe([redis_channel])
 
         logger.info("Reconcile: start listening {} channel.".format(redis_channel))
@@ -129,7 +137,7 @@ class ReconcileJob(Thread):
             # If we have no messages, alert is None
             if alert:
                 # Only use the channel to trigger popping alerts
-                self.pops(m, r)
+                self.pops(mongo, redis, filepath)
             sleep(0.001)  # be nice to the system :)
         return True
 
