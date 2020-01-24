@@ -121,16 +121,10 @@ class DeleteDarwinPolicy(DeleteView):
 
             logger.info("Deleting filter policy configuration files associated with Darwin policy...")
 
-
-            filter_confs = []
-            for filter_policy in obj_inst.filterpolicy_set.all():
-                filter_confs.append(filter_policy.conf_path)
-
             try:
                 obj_inst.delete()
 
-                for filter_policy_conf in filter_confs:
-                    Cluster.api_request("services.darwin.darwin.delete_policy_conf", filter_policy_conf)
+                Cluster.api_request("services.darwin.darwin.delete_policy_conf", object_id)
                 Cluster.api_request("services.darwin.darwin.build_conf")
             except ProtectedError as e:
                 error = "Policy is still used. Cannot remove"

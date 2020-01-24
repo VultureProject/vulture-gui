@@ -96,7 +96,7 @@ def policy_edit(request, object_id=None):
 
     if request.method == "POST" and form.is_valid():
         # Save the form to get an id if there is not already one
-        policy = form.save()
+        policy = form.save(commit=False)
 
     """ For each darwin filter """
     for darwin_filter in DarwinFilter.objects.exclude(name__in=['logs', 'session']).order_by('name'):
@@ -172,8 +172,6 @@ def policy_edit(request, object_id=None):
                 filter_policy.config = filter_config
                 filter_policy.save()
 
-                Cluster.api_request("services.darwin.darwin.write_policy_conf", filter_policy.pk)
-
                 # check if the object has been created, or if any value in the configuration changed
                 if not object_id or bool(set(filter_config.keys()) & set(filter_policy_form.changed_data)):
                     need_reload = True
@@ -184,6 +182,8 @@ def policy_edit(request, object_id=None):
                 elif filter_policy.enabled and filter_policy_form.changed_data and object_id:
                     need_reload = True
 
+
+            Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
             # If the object is new or has been modified
             if not object_id or need_reload:
                 Cluster.api_request("services.darwin.darwin.build_conf")
