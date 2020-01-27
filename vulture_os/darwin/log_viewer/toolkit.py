@@ -56,7 +56,7 @@ class LogViewerMongo:
         'access': 'haproxy',
         'access_tcp': 'haproxy_tcp',
         'impcap': 'impcap',
-        'darwin': 'darwin',
+        'darwin': 'darwin_alerts',
         'message_queue': 'system_messagequeue'
     }
 
