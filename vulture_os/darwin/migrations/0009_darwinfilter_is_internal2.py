@@ -39,6 +39,7 @@ def update_parameters(apps, schema_editor):
 
         if filter.filter.name == "tanomaly":
             filter.mmdarwin_parameters = []
+            filter.mmdarwin_enabled = False
 
         filter.log_level = "WARNING"
         filter.nb_thread = 5
