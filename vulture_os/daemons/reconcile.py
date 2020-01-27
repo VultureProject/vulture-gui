@@ -30,6 +30,7 @@ from system.cluster.models import Cluster, Node
 import json
 from time import sleep
 from threading import Thread, Event
+from datetime import datetime
 
 # Logger configuration imports
 import logging
@@ -78,6 +79,14 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
         logger.error("Reconcile: could not write alert {} to log file {} -> {}".format(evt_id, filepath, e))
 
     redis.redis.publish(settings.REDIS_RECONCILIED_CHANNEL, json.dumps(alertData))
+
+    time = alertData.get('time', None)
+    if time:
+        time = datetime.strptime(time, "%Y-%m-%d%Z%H:%M:%S%z")
+        alertData['time'] = time
+    else:
+        logger.warning("Reconcile: while treating alert, no 'time' field was found!")
+
     mongo.insert("logs", "darwin_alerts", alertData)
     return True
 
