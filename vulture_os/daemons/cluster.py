@@ -43,8 +43,8 @@ logger = logging.getLogger('daemon')
 
 from system.cluster.models import Cluster
 from services.pf.pf import PFService
-from gui.crontab.monitor import MonitorJob
-from gui.crontab.reconcile import ReconcileJob
+from daemons.monitor import MonitorJob
+from daemons.reconcile import ReconcileJob
 from services.exceptions import ServiceExit
 from signal import signal, SIGTERM, SIGINT
 

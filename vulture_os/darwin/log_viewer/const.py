@@ -25,8 +25,9 @@ __doc__ = 'Log Viewer utilities'
 
 
 from django.utils.translation import ugettext as _
-from system.cluster.models import Node
 
+LOGS_DATABASE = "logs"
+MESSAGE_QUEUE_DATABASE = "vulture"
 
 PREDATOR_COLUMNS = (
     'dst_ip', 'src_ip', 'backend_ip', 'frontend_ip', 'server_ip',
@@ -459,12 +460,50 @@ DEFAULT_MESSAGE_QUEUE_COLUMNS = {
     },
 }
 
+DARWIN_COLUMNS = {
+    "evt_id": "string",
+    "time": "string",
+    "filter": "string",
+    "certitude": "integer",
+    "details": "string",
+    "context": "dict",
+}
+
+DEFAULT_DARWIN_COLUMNS = {
+    "0": {
+        'name': 'time',
+        'width': 2,
+        "x": 0
+    },
+    "1": {
+        'name': 'filter',
+        'width': 2,
+        "x": 2
+    },
+    "2": {
+        'name': 'certitude',
+        'width': 2,
+        "x": 4
+    },
+    "3": {
+        'name': 'details',
+        'width': 2,
+        "x": 6
+    },
+    "4": {
+        'name': 'context',
+        'width': 2,
+        "x": 8
+    },
+}
+
 AVAILABLE_LOGS = {
     'access': _('Reverse Proxy'),
     'pf': _('Packet Filter'),
     'internal': _('Internal'),
     'impcap': _('Network capture'),
-    'message_queue': _('Internal tasks')
+    'message_queue': _('Internal tasks'),
+    'darwin': _('Darwin Engine')
 }
 
 MAPPING = {
@@ -473,7 +512,8 @@ MAPPING = {
     'pf': PF_COLUMNS,
     'internal': INTERNAL_COLUMNS,
     'impcap': IMPCAP_COLUMNS,
-    'message_queue': MESSAGE_QUEUE_COLUMNS
+    'message_queue': MESSAGE_QUEUE_COLUMNS,
+    'darwin': DARWIN_COLUMNS
 }
 
 DEFAULT_COLUMNS = {
@@ -482,7 +522,8 @@ DEFAULT_COLUMNS = {
     'pf': DEFAULT_PF_COLUMNS,
     'internal': DEFAULT_INTERNAL_COLUMNS,
     'impcap': DEFAULT_IMPCAP_COLUMNS,
-    'message_queue': DEFAULT_MESSAGE_QUEUE_COLUMNS
+    'message_queue': DEFAULT_MESSAGE_QUEUE_COLUMNS,
+    'darwin': DEFAULT_DARWIN_COLUMNS
 }
 
 

@@ -32,6 +32,8 @@ from django.forms import (CharField, CheckboxInput, ModelChoiceField, ModelForm,
 # Django project imports
 from applications.reputation_ctx.models import DATABASES_PATH, ReputationContext
 from darwin.policy.models import FilterPolicy, DarwinFilter, DarwinPolicy, DARWIN_LOGLEVEL_CHOICES, CONF_PATH
+from daemons.reconcile import REDIS_LIST as DARWIN_REDIS_ALERT_LIST
+from daemons.reconcile import REDIS_CHANNEL as DARWIN_REDIS_ALERT_CHANNEL
 
 # Extern modules imports
 import os.path
@@ -149,7 +151,13 @@ class FilterPolicyForm(ModelForm):
         return isinstance(self.custom_fields, list) and len(self.custom_fields) > 0
 
     def to_config(self):
-        return {}
+        self.filter_configuration = {
+            "redis_socket_path": "/var/sockets/redis/redis.sock",
+            "alert_redis_list_name": DARWIN_REDIS_ALERT_LIST,
+            "alert_redis_channel_name": DARWIN_REDIS_ALERT_CHANNEL,
+            "log_file_path": "/var/log/darwin/alerts.log"
+        }
+        return self.filter_configuration
 
     def clean(self):
         self.fields.config = self.to_config()
@@ -236,71 +244,6 @@ class FilterPolicyForm(ModelForm):
         return result
 
 
-class FilterPolicyReputationForm(FilterPolicyForm):
-    custom_fields = ['mmdb_database', 'mmdarwin_enabled', 'mmdarwin_parameters']
-    """ Form used to validate and show Reputation filter in policy form """
-    """ Conf of the DarwinFilter, only used for reputation database (for the moment) """
-
-    def clean_mmdb_database(self):
-        mmdb_database_obj = self.cleaned_data['mmdb_database']
-
-        return "{}/{}".format(DATABASES_PATH, mmdb_database_obj.filename)
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-        try:
-            mmdb_database = cleaned_data['mmdb_database']
-        except KeyError:
-            mmdb_database = self.instance.config.get('mmdb_database', None)
-
-        # Cannot add this check, because os.path.exists is false
-        # (currently, /var/db/darwin is not mounted on the Apache jail)
-        # if cleaned_data.get("enabled", False) and (not mmdb_database or not os.path.exists(mmdb_database)):
-        #     raise ValidationError("Cannot enable this filter, as there is no configuration path given")
-
-        return cleaned_data
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.fields['mmdb_database'] = ModelChoiceField(
-            label="Reputation file:",
-            queryset=ReputationContext.objects.filter(filename__endswith=".mmdb",
-                                                        db_type__in=["ipv4", "ipv6"])
-                                        .order_by('filename')
-                                        .only(*(ReputationContext.str_attrs() + ['filename'])),
-            required=False,
-            widget=Select(attrs={'class': 'form-control select2'}),
-            empty_label=None
-        )
-
-        try:
-            mmdb_database = self.initial['mmdb_database']
-        except KeyError:
-            mmdb_database = self.instance.config.get('mmdb_database', None)
-
-        if mmdb_database is not None:
-            try:
-                self.initial['mmdb_database'] = ReputationContext.objects.get(filename__endswith=mmdb_database.split('/')[-1]).id
-            except ReputationContext.DoesNotExist:
-                del self.initial['mmdb_database']
-
-        # <= 1, because there is the "empty" choice to consider
-        if not self['mmdb_database'].field.choices or len(self['mmdb_database'].field.choices) <= 1:
-            self.fields['enabled'].disabled = True
-
-    def to_config(self):
-        to_return = {}
-
-        try:
-            to_return["mmdb_database"] = self.cleaned_data["mmdb_database"]
-        except KeyError:
-            pass
-
-        return to_return
-
-
 class FilterPolicyHostlookupForm(FilterPolicyForm):
     custom_fields = ['database', 'mmdarwin_enabled', 'mmdarwin_parameters']
 
@@ -344,34 +287,21 @@ class FilterPolicyHostlookupForm(FilterPolicyForm):
             ))
 
     def to_config(self):
-        to_return = {}
+        super().to_config()
 
         try:
-            to_return["database"] = self.cleaned_data["database"]
+            self.filter_configuration["database"] = self.cleaned_data["database"]
         except KeyError:
             pass
 
-        return to_return
+        return self.filter_configuration
 
 
 class FilterPolicyConnectionForm(FilterPolicyForm):
-    custom_fields = ['redis_socket_path', 'init_data_file', 'redis_expire']
+    custom_fields = ['redis_expire', 'mmdarwin_enabled', 'mmdarwin_parameters']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # not shown in GUI
-        self.fields['redis_socket_path'] = CharField(
-            required=False,
-            initial="/var/sockets/redis/redis.sock",
-            widget=HiddenInput()
-        )
-
-        self.fields['init_data_file'] = CharField(
-            required=False,
-            initial="/home/darwin/conf/fconnection/init_data_file",
-            widget=HiddenInput()
-        )
 
         self.fields['redis_expire'] = IntegerField(
             required=False,
@@ -380,24 +310,16 @@ class FilterPolicyConnectionForm(FilterPolicyForm):
         )
 
     def to_config(self):
-        to_return = {}
+        super().to_config()
+
+        self.filter_configuration["init_data_file"] = "/home/darwin/conf/fconnection/init_data_file"
 
         try:
-            to_return["redis_socket_path"] = self.cleaned_data["redis_socket_path"]
+            self.filter_configuration["redis_expire"] = self.cleaned_data["redis_expire"]
         except KeyError:
             pass
 
-        try:
-            to_return["init_data_file"] = self.cleaned_data["init_data_file"]
-        except KeyError:
-            pass
-
-        try:
-            to_return["redis_expire"] = self.cleaned_data["redis_expire"]
-        except KeyError:
-            pass
-
-        return to_return
+        return self.filter_configuration
 
 
 class FilterPolicyContentInspectionForm(FilterPolicyForm):
@@ -458,133 +380,41 @@ class FilterPolicyContentInspectionForm(FilterPolicyForm):
     # stream_store_folder = CharField()  # not shown in GUI
 
     def to_config(self):
-        to_return = {}
+        super().to_config()
 
         try:
-            to_return["maxConnections"] = self.cleaned_data["maxConnections"]
+            self.filter_configuration["maxConnections"] = self.cleaned_data["maxConnections"]
         except KeyError:
             pass
 
         try:
-            to_return["yaraScanType"] = self.cleaned_data["yaraScanType"]
+            self.filter_configuration["yaraScanType"] = self.cleaned_data["yaraScanType"]
         except KeyError:
             pass
 
         try:
-            to_return["yaraRuleFile"] = self.cleaned_data["yaraRuleFile"]
+            self.filter_configuration["yaraRuleFile"] = self.cleaned_data["yaraRuleFile"]
         except KeyError:
             pass
 
         try:
-            to_return["yaraScanMaxSize"] = self.cleaned_data["yaraScanMaxSize"]
+            self.filter_configuration["yaraScanMaxSize"] = self.cleaned_data["yaraScanMaxSize"]
         except KeyError:
             pass
 
         try:
-            to_return["maxMemoryUsage"] = self.cleaned_data["maxMemoryUsage"]
+            self.filter_configuration["maxMemoryUsage"] = self.cleaned_data["maxMemoryUsage"]
         except KeyError:
             pass
 
-        return to_return
-
-
-class FilterPolicyUserAgentForm(FilterPolicyForm):
-    custom_fields = ['token_map_path', 'model_path', 'max_tokens', 'mmdarwin_enabled', 'mmdarwin_parameters']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # not shown in GUI
-        self.fields['token_map_path'] = CharField(
-            required=False,
-            initial="/home/darwin/conf/fuser_agent/fuser_agent.pb",
-            widget=HiddenInput()
-        )
-
-        # not shown in GUI
-        self.fields['max_tokens'] = IntegerField(
-            required=False,
-            initial=75,
-            min_value=1,
-            widget=HiddenInput()
-        )
-
-        self.fields['model_path'] = FilePathField(
-            label="Model:",
-            path="{}f{}/".format(CONF_PATH, "user_agent"),
-            required=False,
-            widget=Select(attrs={'class': 'form-control select2'}),
-            match=".*\.pb$"
-        )
-
-        try:
-            if not os.path.exists(self.initial['model_path']):
-                del self.initial['model_path']
-
-            if self.initial.get('model_path', None) is None:
-                self.initial['enabled'] = False
-
-        except KeyError:
-            pass
-
-        # <= 1, because there is the "empty" choice to consider
-        if not self['model_path'].field.choices or len(self['model_path'].field.choices) <= 1:
-            self.fields['enabled'].disabled = True
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-        try:
-            model_path = cleaned_data['model_path']
-        except KeyError:
-            model_path = self.instance.config.get('model_path', None)
-
-        is_enabled = cleaned_data['enabled']
-
-        if is_enabled and (not model_path or not os.path.exists(model_path)):
-            raise ValidationError('Model path "{}" does not exist, so this filter cannot be enabled'.format(model_path))
-
-    def to_config(self):
-        to_return = {}
-
-        try:
-            to_return["token_map_path"] = self.cleaned_data["token_map_path"]
-        except KeyError:
-            pass
-
-        try:
-            to_return["model_path"] = self.cleaned_data["model_path"]
-        except KeyError:
-            pass
-
-        try:
-            to_return["max_tokens"] = self.cleaned_data["max_tokens"]
-        except KeyError:
-            pass
-
-        return to_return
+        return self.filter_configuration
 
 
 class FilterPolicyDGAForm(FilterPolicyForm):
-    custom_fields = ['token_map_path', 'model_path', 'max_tokens', 'mmdarwin_enabled', 'mmdarwin_parameters']
+    custom_fields = ['model_path', 'mmdarwin_enabled', 'mmdarwin_parameters']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # not shown in GUI
-        self.fields['token_map_path'] = CharField(
-            required=False,
-            initial="/home/darwin/conf/fdga/fdga_tokens.csv",
-            widget=HiddenInput()
-        )
-
-        # not shown in GUI
-        self.fields['max_tokens'] = IntegerField(
-            required=False,
-            initial=75,
-            min_value=1,
-            widget=HiddenInput()
-        )
 
         self.fields['model_path'] = FilePathField(
             label="Model:",
@@ -622,69 +452,26 @@ class FilterPolicyDGAForm(FilterPolicyForm):
             raise ValidationError('Model path "{}" does not exist, so this filter cannot be enabled'.format(model_path))
 
     def to_config(self):
-        to_return = {}
+        super().to_config()
+
+        self.filter_configuration["token_map_path"] = "/home/darwin/conf/fdga/fdga_tokens.csv"
+        self.filter_configuration["max_tokens"] = 75
 
         try:
-            to_return["token_map_path"] = self.cleaned_data["token_map_path"]
+            self.filter_configuration["model_path"] = self.cleaned_data["model_path"]
         except KeyError:
             pass
 
-        try:
-            to_return["model_path"] = self.cleaned_data["model_path"]
-        except KeyError:
-            pass
-
-        try:
-            to_return["max_tokens"] = self.cleaned_data["max_tokens"]
-        except KeyError:
-            pass
-
-        return to_return
+        return self.filter_configuration
 
 
 class FilterPolicyTAnomalyForm(FilterPolicyForm):
-    custom_fields = ['redis_socket_path', 'redis_list_name', 'log_file_path', 'mmdarwin_enabled', 'mmdarwin_parameters']
+    custom_fields = ['mmdarwin_enabled', 'mmdarwin_parameters']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # not shown in GUI
-        self.fields['redis_socket_path'] = CharField(
-            required=False,
-            initial="/var/sockets/redis/redis.sock",
-            widget=HiddenInput()
-        )
-
-        # not shown in GUI
-        self.fields['redis_list_name'] = CharField(
-            required=False,
-            initial="anomalyFilterData",
-            widget=HiddenInput()
-        )
-
-        # not shown in GUI
-        self.fields['log_file_path'] = CharField(
-            required=False,
-            initial="/var/log/darwin/anomaly.log",
-            widget=HiddenInput()
-        )
-
     def to_config(self):
-        to_return = {}
+        super().to_config()
 
-        try:
-            to_return["redis_socket_path"] = self.cleaned_data["redis_socket_path"]
-        except KeyError:
-            pass
-
-        try:
-            to_return["redis_list_name"] = self.cleaned_data["redis_list_name"]
-        except KeyError:
-            pass
-
-        try:
-            to_return["log_file_path"] = self.cleaned_data["log_file_path"]
-        except KeyError:
-            pass
-
-        return to_return
+        return self.filter_configuration
