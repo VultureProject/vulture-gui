@@ -22,17 +22,15 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Job for OS Monitoring'
 
-# Variables for logging
-MONGO_COLLECTION = "darwin_alerts"
-MONGO_DATABASE = "logs"
-REDIS_LIST = "darwin_alerts"
-REDIS_CHANNEL = "darwin.alerts"
-REDIS_RECONCILIED_CHANNEL = "vlt.darwin.alerts"
-ALERTS_FILE = "/var/log/darwin/reconciled-alerts.log"
 
 # Django system imports
 from django.conf import settings
+
+# Django project imports
+from darwin.log_viewer.const import LOGS_DATABASE as MONGO_DATABASE
 from system.cluster.models import Cluster
+from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.redis.redis_base import RedisBase
 
 # Extern modules imports
 import json
@@ -42,15 +40,17 @@ from datetime import datetime
 
 # Logger configuration imports
 import logging
-
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('daemon')
 
-# Redis import
-from toolkit.redis.redis_base import RedisBase
 
-# Mongo import
-from toolkit.mongodb.mongo_base import MongoBase
+# Variables for logging
+MONGO_COLLECTION = "darwin_alerts"
+REDIS_LIST = "darwin_alerts"
+REDIS_CHANNEL = "darwin.alerts"
+REDIS_RECONCILIED_CHANNEL = "vlt.darwin.alerts"
+ALERTS_FILE = "/var/log/darwin/reconciled-alerts.log"
+
 
 def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retries=1):
     try:

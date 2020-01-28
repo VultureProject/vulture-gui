@@ -72,8 +72,6 @@ class LogViewerMongo:
         'message_queue': 'date_add'
     }
 
-    DATABASE = "logs"
-
     TYPE_SORTING = {
         'asc': 1,
         'desc': -1
@@ -115,7 +113,9 @@ class LogViewerMongo:
                 type_logs += "_" + self.frontend.mode
 
         if type_logs == "message_queue":
-            self.DATABASE = "vulture"
+            self.DATABASE = const.MESSAGE_QUEUE_DATABASE
+        else:
+            self.DATABASE = const.LOGS_DATABASE
 
         self.COLLECTION = self.COLLECTIONS_NAME[type_logs]
         self.client = MongoBase()

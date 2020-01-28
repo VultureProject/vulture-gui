@@ -25,8 +25,9 @@ __doc__ = 'Log Viewer utilities'
 
 
 from django.utils.translation import ugettext as _
-from system.cluster.models import Node
 
+LOGS_DATABASE = "logs"
+MESSAGE_QUEUE_DATABASE = "vulture"
 
 PREDATOR_COLUMNS = (
     'dst_ip', 'src_ip', 'backend_ip', 'frontend_ip', 'server_ip',
