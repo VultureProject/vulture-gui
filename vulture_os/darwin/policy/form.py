@@ -32,6 +32,8 @@ from django.forms import (CharField, CheckboxInput, ModelChoiceField, ModelForm,
 # Django project imports
 from applications.reputation_ctx.models import DATABASES_PATH, ReputationContext
 from darwin.policy.models import FilterPolicy, DarwinFilter, DarwinPolicy, DARWIN_LOGLEVEL_CHOICES, CONF_PATH
+from daemons.reconcile import REDIS_LIST as DARWIN_REDIS_ALERT_LIST
+from daemons.reconcile import REDIS_CHANNEL as DARWIN_REDIS_ALERT_CHANNEL
 
 # Extern modules imports
 import os.path
@@ -151,8 +153,8 @@ class FilterPolicyForm(ModelForm):
     def to_config(self):
         self.filter_configuration = {
             "redis_socket_path": "/var/sockets/redis/redis.sock",
-            "alert_redis_list_name": "darwin_alerts",
-            "alert_redis_channel_name": "darwin.alerts",
+            "alert_redis_list_name": DARWIN_REDIS_ALERT_LIST,
+            "alert_redis_channel_name": DARWIN_REDIS_ALERT_CHANNEL,
             "log_file_path": "/var/log/darwin/alerts.log"
         }
         return self.filter_configuration

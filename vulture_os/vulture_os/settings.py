@@ -350,9 +350,3 @@ DOCUMENTATION_PATH = "/var/db/documentation"
 
 PREDATOR_HOST = "https://predator.vultureproject.org/"
 PREDATOR_VERSION = "v1"
-
-#FOR RECONCILE DAEMON 
-REDIS_LIST = "darwin_alerts"
-REDIS_CHANNEL = "darwin.alerts"
-REDIS_RECONCILIED_CHANNEL = "vlt.darwin.alerts"
-ALERTS_FILE = "/var/log/darwin/reconciled-alerts.log"

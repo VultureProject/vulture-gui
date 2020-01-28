@@ -44,6 +44,8 @@ import pytz
 import os
 import re
 
+from daemons.reconcile import MONGO_COLLECTION as DARWIN_MONGO_COLLECTION
+
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -56,7 +58,7 @@ class LogViewerMongo:
         'access': 'haproxy',
         'access_tcp': 'haproxy_tcp',
         'impcap': 'impcap',
-        'darwin': 'darwin_alerts',
+        'darwin': DARWIN_MONGO_COLLECTION,
         'message_queue': 'system_messagequeue'
     }
 

@@ -22,9 +22,17 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Job for OS Monitoring'
 
+# Variables for logging
+MONGO_COLLECTION = "darwin_alerts"
+MONGO_DATABASE = "logs"
+REDIS_LIST = "darwin_alerts"
+REDIS_CHANNEL = "darwin.alerts"
+REDIS_RECONCILIED_CHANNEL = "vlt.darwin.alerts"
+ALERTS_FILE = "/var/log/darwin/reconciled-alerts.log"
+
 # Django system imports
 from django.conf import settings
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Cluster
 
 # Extern modules imports
 import json
@@ -78,7 +86,7 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
     except Exception as e:
         logger.error("Reconcile: could not write alert {} to log file {} -> {}".format(evt_id, filepath, e))
 
-    redis.redis.publish(settings.REDIS_RECONCILIED_CHANNEL, json.dumps(alertData))
+    redis.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(alertData))
 
     time = alertData.get('time', None)
     if time:
@@ -87,7 +95,7 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
     else:
         logger.warning("Reconcile: while treating alert, no 'time' field was found!")
 
-    mongo.insert("logs", "darwin_alerts", alertData)
+    mongo.insert(MONGO_DATABASE, MONGO_COLLECTION, alertData)
     return True
 
 
@@ -101,7 +109,7 @@ class ReconcileJob(Thread):
         self.delay = delay
 
     def pops(self, mongo, redis, filepath, max_tries=3, sec_between_retries=1):
-        redis_list_name = settings.REDIS_LIST
+        redis_list_name = REDIS_LIST
 
         logger.debug("Reconcile: starting to pop alerts")
         alert = redis.redis.rpop(redis_list_name)
@@ -128,7 +136,7 @@ class ReconcileJob(Thread):
         master_node = redis.get_master()
         redis = RedisBase(node=master_node)
 
-        filepath = settings.ALERTS_FILE
+        filepath = ALERTS_FILE
 
         # Pops alerts produced when vulture was down
         # Do not retry, as there is likely no cache for remaining alerts in current Redis
@@ -136,7 +144,7 @@ class ReconcileJob(Thread):
         if self.shutdown_flag.is_set():
             return True
 
-        redis_channel = settings.REDIS_CHANNEL 
+        redis_channel = REDIS_CHANNEL
         listener = redis.redis.pubsub()
         listener.subscribe([redis_channel])
 
