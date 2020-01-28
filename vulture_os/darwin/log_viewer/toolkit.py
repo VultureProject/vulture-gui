@@ -163,6 +163,12 @@ class LogViewerMongo:
             if 'unix_timestamp' in res.keys():
                 res['unix_timestamp'] = datetime.datetime.utcfromtimestamp(float(res['unix_timestamp']))
 
+            # FIXME Temporary darwin details aggregation
+            for darwin_filter_details in ['yara_match', 'anomaly', 'connection', 'domain', 'host']:
+                if darwin_filter_details in res.keys():
+                    res['details'] = res[darwin_filter_details]
+                    break
+
             for c in self.columns:
                 if not res.get(c):
                     res[c] = ""
