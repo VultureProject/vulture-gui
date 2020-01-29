@@ -120,7 +120,12 @@ function refresh_api_parser_type(type_){
         $('#modal-test-apiparser-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
         $('#modal-test-apiparser').modal('show');
       }
-    )
+    ).fail(function(response){
+      notify('error', response.status, response.responseText)
+
+      $(btn).prop('disabled', false);
+      $(btn).html(txt);
+    })
   })
 
   if (type_ === "elasticsearch"){
