@@ -29,6 +29,7 @@ from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
 from toolkit.api_parser.cybereason.cybereason import CybereasonParser
 from toolkit.api_parser.elasticsearch.els import ElasticsearchParser
 from toolkit.api_parser.aws_bucket.aws_bucket import AWSBucketParser
+from toolkit.api_parser.office365.office365 import Office365Parser
 from toolkit.api_parser.symantec.symantec import SymantecParser
 from toolkit.api_parser.akamai.akamai import AkamaiParser
 from django.conf import settings
@@ -41,7 +42,8 @@ PARSER_LIST = {
     "elasticsearch": ElasticsearchParser,
     "forcepoint": ForcepointParser,
     "cybereason": CybereasonParser,
-    "aws_bucket": AWSBucketParser,
+    "aws bucket": AWSBucketParser,
+    "office 365": Office365Parser,
     "symantec": SymantecParser,
     "akamai": AkamaiParser
 }

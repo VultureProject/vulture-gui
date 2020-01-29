@@ -23,6 +23,8 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'API Parser'
 
 
+import time
+import socket
 import logging
 
 from django.conf import settings
@@ -66,6 +68,10 @@ class ApiParser:
 
         self.redis_cli = RedisBase()
 
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM | socket.SOCK_NONBLOCK)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1)
+        self.sock.connect(self.frontend.get_unix_socket())
+
     def get_system_proxy(self):
         proxy = get_proxy()
         if len(proxy) > 1:
@@ -85,6 +91,23 @@ class ApiParser:
 
     def update_lock(self):
         self.redis_cli.redis.setex(self.key_redis, 300, 1)
+
+    def write_to_socket(self, lines):
+        msglen = 2048
+        for i, line in enumerate(lines):
+            try:
+                totalsent = 0
+                while totalsent < msglen:
+                    sent = self.sock.send(bytes(line[totalsent:], "UTF-8"))
+                    # if sent == 0:
+                        # raise RuntimeError("socket connection broken")
+                    totalsent = totalsent + sent
+
+                # self.sock.send(bytes(line, "UTF-8"))
+                # time.sleep(1)
+            except Exception as e:
+                print(i)
+                raise e
 
     def finish(self):
         """

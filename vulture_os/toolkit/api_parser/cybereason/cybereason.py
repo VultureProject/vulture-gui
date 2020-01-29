@@ -23,9 +23,9 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Cybereason API Parser'
 
 
-import datetime
 import json
 import logging
+import datetime
 import requests
 
 from django.conf import settings
@@ -45,6 +45,50 @@ class CybereasonAPIError(Exception):
 
 
 class CybereasonParser(ApiParser):
+
+    MAPPING = {
+        "edr_reason": {
+            'cybereason_key': "decisionFeature",
+            'value_key': 'values'
+        },
+        "edr_threat_type": {
+            'cybereason_key': "edr_theat_type",
+            'value_key': 'values'
+        },
+        "edr_category": {
+            'cybereason_key': "malopActivityTypes",
+            'value_key': 'values'
+        },
+        "edr_elements_type": {
+            'cybereason_key': "rootCauseElementTypes",
+            'value_key': 'values'
+        },
+        "edr_elements_hash": {
+            'cybereason_key': "rootCauseElementHashes",
+            'value_key': 'values'
+        },
+        "edr_affected_users": {
+            'cybereason_key': "affectedUsers",
+            'value_key': 'elementValues'
+        },
+        "edr_killchain": {
+            'cybereason_key': "malopActivityTypes",
+            'value_key': 'values'
+        },
+        "edr_status": {
+            'cybereason_key': "managementStatus",
+            'value_key': 'values'
+        },
+        "edr_is_blocked": {
+            'cybereason_key': "isBlocked",
+            'value_key': 'values'
+        },
+        "edr_level": {
+            'cybereason_key': "malopPriority",
+            'value_key': 'values'
+        }
+    }
+
     HEADERS = {
         "Content-Type": "application/json",
         'Accept': 'application/json'
@@ -143,19 +187,18 @@ class CybereasonParser(ApiParser):
         try:
             tmp_devices = json.loads(response.content)
 
-            devices = []
             for tmp in tmp_devices.get('sensors', []):
-                devices.append({
-                    "sensor_id": tmp.get('sensorId'),
-                    "net_src_host": tmp.get('fqdn'),
-                    "hostname": tmp.get('machineName'),
-                    "net_src_ip": tmp.get('internalIpAddress'),
-                    "externalIpAddress": tmp.get('externalIpAddress'),
-                    "organization": tmp.get('organization'),
-                    "net_src_os_name": tmp.get('osVersionType')
-                })
+                device = {
+                    "sensor_id": tmp.get('sensorId', "-"),
+                    "net_src_host": tmp.get('machineName', "-"),
+                    "net_src_domain": tmp.get('fqdn', "-"),
+                    "net_src_ip": tmp.get('internalIpAddress', "-"),
+                    "externalIpAddress": tmp.get('externalIpAddress', "-"),
+                    "evt_sender_name": tmp.get('organization', "-"),
+                    "net_src_os_name": tmp.get('osVersionType', "-")
+                }
 
-            return devices
+                yield device
 
         except Exception as e:
             CybereasonParseError(e)
@@ -176,29 +219,27 @@ class CybereasonParser(ApiParser):
             timestamp_closed = None
             if malop_simple_values['closeTime']['values'][0] is not None:
                 timestamp_closed = int(malop_simple_values['closeTime']['values'][0]) / 1000
-                timestamp_closed = datetime.datetime.fromtimestamp(timestamp_closed)
-
-            affected_devices = self.__get_affected_devices(malop_element_values['affectedMachines']['elementValues'])
+                timestamp_closed = datetime.datetime.fromtimestamp(timestamp_closed).isoformat()
 
             tmp_malop = {
                 "edr_threat_id": malop_id,
-                "@timestamp": timestamp_detected,
                 "timestamp_closed": timestamp_closed,
-                "edr_reason": malop_simple_values['decisionFeature']['values'],
-                "edr_theat_type": malop_simple_values['detectionType']['values'],
-                "edr_category": malop_simple_values['malopActivityTypes']['values'],
-                "edr_elements_type": malop_simple_values.get('rootCauseElementTypes', default_values)['values'],
-                "edr_elements_name": malop_simple_values.get('rootCauseElementNames', default_values)['values'],
-                "edr_elements_hash": malop_simple_values.get('rootCauseElementHashes', default_values)['values'],
-                "edr_affected_users": malop_element_values.get('affectedUsers', default_values)['elementValues'],
-                "edr_affected_devices": affected_devices,
-                "edr_killchain": malop_simple_values['malopActivityTypes']['values'],
-                "edr_status": malop_simple_values['managementStatus']['values'],
-                "edr_is_blocked": malop_simple_values['isBlocked']['values'],
-                "edr_level": malop_info['malopPriority']
+                "@timestamp": timestamp_detected.isoformat()
             }
 
-            yield tmp_malop
+            rootCauseElementNames = malop_simple_values.get('rootCauseElementNames', default_values).get('values')
+            tmp_malop['edr_elements_names'] = ",".join(rootCauseElementNames)
+
+            for internal_field, cybereason_mapping in self.MAPPING.items():
+                try:
+                    tmp = malop_simple_values.get(cybereason_mapping['cybereason_key'], default_values)
+                    tmp_malop[internal_field] = tmp.get(cybereason_mapping['value_key'])[0]
+                except (IndexError, TypeError):
+                    tmp_malop[internal_field] = "-"
+
+            for device in self.__get_affected_devices(malop_element_values['affectedMachines']['elementValues']):
+                tmp_malop.update(device)
+                yield tmp_malop
 
     def execute(self):
         query = {
@@ -243,7 +284,9 @@ class CybereasonParser(ApiParser):
 
             malops = []
             for malop in self.parse(tmp_malops):
-                malops.append(malop)
+                malops.append(json.dumps(malop))
+
+            self.write_to_socket(malops)
 
         except Exception as e:
             raise CybereasonParseError(e)
