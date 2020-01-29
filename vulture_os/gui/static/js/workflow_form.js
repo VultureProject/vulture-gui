@@ -58,9 +58,15 @@ function form_frontend(edit, frontend_choices, frontend_id, workflow_mode, fqdn,
         })
 
         form += "</select></div>"
-    }
-
-    if (workflow_mode === "http"){
+        form += `<div class="form-group col-md-12">
+                    <label>${gettext('FQDN')}</label>
+                    <input type="text" class="form-control fqdn" value="${fqdn}"/>
+                </div>
+                <div class="form-group col-md-12">
+                    <label>${gettext('Public Directory')}</label>
+                    <input type="text" class="form-control public_dir" value="${public_dir}"/>
+                </div>`
+    } else {
         form += `<div class="form-group col-md-12">
                     <label>${gettext('FQDN')}</label>
                     <input type="text" class="form-control fqdn" value="${fqdn}"/>

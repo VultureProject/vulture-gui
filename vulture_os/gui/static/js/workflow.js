@@ -888,7 +888,6 @@ var workflow_vue = new Vue({
                                                 node.data.object_id = frontend_id
                                                 self.workflow[0].label = fqdn + public_dir;
 
-
                                                 var index_frontend = self.get_node(node.id, true);
                                                 self.workflow[index_frontend] = node;
                                                 self.redraw_workflow();
