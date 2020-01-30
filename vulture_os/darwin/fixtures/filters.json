@@ -64,6 +64,14 @@
     }
   },
   {
+    "model": "darwin.DarwinFilter",
+    "pk": 10,
+    "fields": {
+      "name": "sofa",
+      "description": "Scan Outliers Finding and Analysis, allows finding outliers in scan results coming from network scanners"
+    }
+  },
+  {
     "model": "darwin.FilterPolicy",
     "pk": 1,
     "fields": {
@@ -187,6 +195,30 @@
         "alert_redis_list_name": "darwin_alerts",
         "alert_redis_channel_name": "darwin.alerts",
         "log_file_path": "/var/log/darwin/alerts.log"
+      }
+    }
+  },
+  {
+    "model": "darwin.FilterPolicy",
+    "pk": 9,
+    "fields": {
+      "filter": 10,
+      "policy": 1,
+      "enabled": false,
+      "nb_thread": 1,
+      "log_level": "WARNING",
+      "output": "LOG",
+      "next_filter": null,
+      "conf_path": "/home/darwin/conf/fsofa/fsofa_1.conf",
+      "config": {
+        "redis_socket_path": "/var/sockets/redis/redis.sock",
+        "alert_redis_list_name": "darwin_alerts",
+        "alert_redis_channel_name": "darwin.alerts",
+        "log_file_path": "/var/log/darwin/alerts.log",
+        "python_env_path": "/home/vlt-os/env/bin/python",
+        "module": "scan_analysis_anomaly_core",
+        "function": "main",
+        "custom_python_path": "/home/darwin/conf/fsofa/"
       }
     }
   }

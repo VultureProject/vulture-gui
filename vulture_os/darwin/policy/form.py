@@ -329,6 +329,8 @@ class FilterPolicyContentInspectionForm(FilterPolicyForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.initial['cache_size'] = 0
+
         self.fields['maxConnections'] = IntegerField(
             label='Max connections:',
             required=False,
@@ -471,7 +473,49 @@ class FilterPolicyTAnomalyForm(FilterPolicyForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.initial['cache_size'] = 0
+
+
     def to_config(self):
         super().to_config()
+
+        return self.filter_configuration
+
+
+class FilterPolicySofaForm(FilterPolicyForm):
+    custom_fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.initial['cache_size'] = 0
+
+        self.fields['nb_thread'].widget.attrs['readonly'] = True
+        self.initial['nb_thread'] = 1
+
+        if not os.path.exists("/home/darwin/conf/fsofa/scan_analysis_anomaly_core.py"):
+            self.fields['enabled'].disabled = True
+            self.initial['enabled'] = False
+            # del self.fields['enabled'].widget.attrs['checked']
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        is_enabled = cleaned_data['enabled']
+        cleaned_data['nb_thread'] = 1
+
+        if is_enabled and not os.path.exists('{conf_path}fsofa/scan_analysis_anomaly_core.py'.format(conf_path=CONF_PATH)):
+            cleaned_data['enabled'] = False
+            self.changed_data.append('enabled')
+
+        return cleaned_data
+
+    def to_config(self):
+        super().to_config()
+
+        self.filter_configuration['python_env_path'] = '/home/vlt-os/env/bin/python'
+        self.filter_configuration['module'] = 'scan_analysis_anomaly_core'
+        self.filter_configuration['function'] = 'main'
+        self.filter_configuration['custom_python_path'] = '{conf_path}fsofa/'.format(conf_path=CONF_PATH)
 
         return self.filter_configuration
