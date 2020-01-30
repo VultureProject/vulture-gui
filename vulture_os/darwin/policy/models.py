@@ -28,6 +28,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
+# Django project imports
+from daemons.reconcile import REDIS_LIST as DARWIN_REDIS_ALERT_LIST
+from daemons.reconcile import REDIS_CHANNEL as DARWIN_REDIS_ALERT_CHANNEL
+
 
 JINJA_PATH = "/home/vlt-os/vulture_os/darwin/log_viewer/config/"
 
@@ -157,7 +161,12 @@ class FilterPolicy(models.Model):
     )
 
     conf_path = models.TextField()
-    config = models.DictField(default={})
+    config = models.DictField(default={
+            "redis_socket_path": "/var/sockets/redis/redis.sock",
+            "alert_redis_list_name": DARWIN_REDIS_ALERT_LIST,
+            "alert_redis_channel_name": DARWIN_REDIS_ALERT_CHANNEL,
+            "log_file_path": "/var/log/darwin/alerts.log"
+    })
 
     @property
     def name(self):

@@ -37,26 +37,20 @@ import django
 from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster, Node
-from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy
+from system.cluster.models import Cluster
+from darwin.policy.models import DarwinFilter
 
 
 if __name__ == "__main__":
 
-    policies = DarwinPolicy.objects.all()
-    for policy in policies:
+    node = Cluster.get_current_node()
+    if not node:
+        print("Current node not found. Maybe the cluster has not been initiated yet.")
+    else:
+        for filter in DarwinFilter.objects.filter(name__in=["reputation", "user_agent"]):
+            try:
+                filter.delete()
+            except Exception as e:
+                print("Error while removing filter {}: {}.".format(filter.name, e))
 
-        filter_list = policy.filters.all()
-        for filter in filter_list:
-            filter_policy = FilterPolicy.objects.get(policy=policy, filter=filter)
-
-            for node in Node.objects.all().only('name'):
-                    filter_policy.status[node.name] = "WAITING"
-
-            Cluster.api_request("services.darwin.darwin.write_policy_conf", filter_policy.pk)
-            if filter_policy.enabled:
-                for frontend in policy.frontend_set.all():
-                    # regenerate rsyslog conf for each frontend associated with darwin policy
-                    Cluster.api_request('services.rsyslogd.rsyslog.build_conf', frontend.pk)
-
-    Cluster.api_request("services.darwin.darwin.build_conf")
+        print("Done.")
