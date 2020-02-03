@@ -352,7 +352,7 @@ class Service:
         except Exception as e:
             logger.error("Failed to check if {} conf has changed: {}".format(self.service_name, str(e)))
 
-        """ If conf has changed ot cannot check, write conf """
+        """ If conf has changed or cannot check, write conf """
         logger.debug("Configuration file for service {} need to be updated".format(str(self)))
         self.write_conf(new_conf, owners=self.owners, perms=self.perms)
         logger.info("Configuration of service {} written on disk.".format(self.service_name))
