@@ -49,6 +49,7 @@ class DarwinSettings(models.Model):
         """ Variables used by template rendering """
 
         return {
+            'session_filter': DarwinFilter.objects.get(name='session'),
             'policies': DarwinPolicy.objects.all()
         }
 
