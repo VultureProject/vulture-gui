@@ -275,9 +275,6 @@ class LDAPClient(BaseAuth):
         :param email: String with email address
         :return: An list with results if query match, None otherwise
         """
-
-        email=email.encode('utf-8')
-
         # Defining user search filter
         query_filter = "({}={})".format(self.user_email_attr, email)
         if self.user_filter:
