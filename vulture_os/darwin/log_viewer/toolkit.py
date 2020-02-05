@@ -44,6 +44,8 @@ import pytz
 import os
 import re
 
+from daemons.reconcile import MONGO_COLLECTION as DARWIN_MONGO_COLLECTION
+
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -56,7 +58,7 @@ class LogViewerMongo:
         'access': 'haproxy',
         'access_tcp': 'haproxy_tcp',
         'impcap': 'impcap',
-        'darwin': 'darwin',
+        'darwin': DARWIN_MONGO_COLLECTION,
         'message_queue': 'system_messagequeue'
     }
 
@@ -69,8 +71,6 @@ class LogViewerMongo:
         'darwin': 'time',
         'message_queue': 'date_add'
     }
-
-    DATABASE = "logs"
 
     TYPE_SORTING = {
         'asc': 1,
@@ -113,7 +113,9 @@ class LogViewerMongo:
                 type_logs += "_" + self.frontend.mode
 
         if type_logs == "message_queue":
-            self.DATABASE = "vulture"
+            self.DATABASE = const.MESSAGE_QUEUE_DATABASE
+        else:
+            self.DATABASE = const.LOGS_DATABASE
 
         self.COLLECTION = self.COLLECTIONS_NAME[type_logs]
         self.client = MongoBase()
@@ -160,6 +162,12 @@ class LogViewerMongo:
 
             if 'unix_timestamp' in res.keys():
                 res['unix_timestamp'] = datetime.datetime.utcfromtimestamp(float(res['unix_timestamp']))
+
+            # FIXME Temporary darwin details aggregation
+            for darwin_filter_details in ['yara_match', 'anomaly', 'connection', 'domain', 'host']:
+                if darwin_filter_details in res.keys():
+                    res['details'] = res[darwin_filter_details]
+                    break
 
             for c in self.columns:
                 if not res.get(c):

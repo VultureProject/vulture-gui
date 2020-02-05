@@ -716,6 +716,11 @@ function render_col(col, mapping){
 
             return data;
         }
+    } else if (col === "certitude") {
+        // For Darwin entries
+        render = function(data, type, row){
+            return "<label class='label label-danger'>" + data + "</label>";
+        }
     }
 
 

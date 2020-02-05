@@ -188,8 +188,8 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request("services.haproxy.haproxy.configure_node")
 
     logger.debug("API call to write default Darwin filters conf")
-    for filter in FilterPolicy.objects.all():
-        node.api_request("services.darwin.darwin.write_policy_conf", filter.pk)
+    for policy in DarwinPolicy.objects.all():
+        node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
 
     logger.debug("API call to configure Darwin default policy")
     node.api_request("services.darwin.darwin.build_conf")
@@ -364,14 +364,9 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")
 
-    logger.debug("API call to write Darwin filters conf")
-    for filter in FilterPolicy.objects.all():
-        node.api_request("services.darwin.darwin.write_policy_conf", filter.pk)
-
-    logger.debug("API calls to write frontend confs if they depend on Darwin policies")
+    logger.debug("API call to write Darwin policies conf")
     for policy in DarwinPolicy.objects.all():
-        for frontend in policy.frontend_set.all():
-            node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
+        node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
 
     logger.debug("API call to configure Darwin")
     node.api_request("services.darwin.darwin.build_conf")

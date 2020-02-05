@@ -26,7 +26,7 @@ __doc__ = 'Rsyslog service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from darwin.policy.models import FilterPolicy
+from darwin.policy.models import FilterPolicy, DarwinPolicy
 from services.service import Service
 from services.darwin.models import DarwinSettings
 from system.config.models import write_conf, delete_conf as delete_conf_file
@@ -35,6 +35,7 @@ from system.config.models import write_conf, delete_conf as delete_conf_file
 from django.core.exceptions import ObjectDoesNotExist
 from json import JSONDecodeError, dumps as json_dumps
 from services.exceptions import ServiceStatusError, ServiceDarwinUpdateFilterError
+from system.exceptions import VultureSystemConfigError, VultureSystemError
 from subprocess import CalledProcessError
 
 # Extern modules imports
@@ -74,33 +75,61 @@ class DarwinService(Service):
         return "Darwin Service"
 
 
-def delete_policy_conf(node_logger, policy_conf_path):
-    return delete_conf_file(
-        node_logger,
-        policy_conf_path
-    )
+def delete_policy_conf(node_logger, policy_id):
+    policy = DarwinPolicy.objects.get(pk=policy_id)
+    logger.info("deleting policy conf '{}'".format(policy.name))
+
+    for filter in policy.filterpolicy_set.all():
+
+        try:
+            delete_conf_file(
+                node_logger,
+                filter.conf_path
+            )
+        except (VultureSystemConfigError, VultureSystemError):
+            pass
+        except Exception as e:
+            logger.error("Darwin::delete_policy_conf:: error while removing filter config: {}".format(e))
 
 
 def write_policy_conf(node_logger, policy_id):
-    logger.info("writing policy conf for filterpolicy id {}".format(policy_id))
-    policy = FilterPolicy.objects.get(pk=policy_id)
+    policy = DarwinPolicy.objects.get(pk=policy_id)
+    logger.info("writing policy conf '{}'".format(policy.name))
 
-    logger.info("writing policy '{}' conf".format(policy.filter.name))
+    for filter in policy.filterpolicy_set.all():
 
-    conf_path = "{darwin_path}/f{filter_name}/f{filter_name}_{darwin_policy_id}.conf".format(
-        darwin_path=DARWIN_PATH, filter_name=policy.filter.name, darwin_policy_id=policy.policy.pk
-    )
+        if filter.enabled:
+            logger.info("writing filter '{}' conf".format(filter.name))
 
-    write_conf(
-        node_logger,
-        [
-            conf_path,
-            "{}\n".format(json_dumps(policy.config, sort_keys=True, indent=4)),
-            DARWIN_OWNERS, DARWIN_PERMS
-        ]
-    )
+            conf_path = "{darwin_path}/f{filter_name}/f{filter_name}_{darwin_policy_id}.conf".format(
+                darwin_path=DARWIN_PATH, filter_name=filter.filter.name, darwin_policy_id=policy_id
+            )
 
-    return "{} successfully written.".format(conf_path)
+            try:
+                write_conf(
+                    node_logger,
+                    [
+                        conf_path,
+                        "{}\n".format(json_dumps(filter.config, sort_keys=True, indent=4)),
+                        DARWIN_OWNERS, DARWIN_PERMS
+                    ]
+                )
+            except Exception as e:
+                logger.error("Darwin::write_policy_conf:: error while writing conf: {}".format(e))
+                continue
+
+        else:
+            logger.info("filter '{}' not enabled, deleting potential conf".format(filter.name))
+
+            try:
+                delete_conf_file(
+                    node_logger,
+                    filter.conf_path
+                )
+            except (VultureSystemConfigError, VultureSystemError):
+                continue
+            except Exception as e:
+                logger.error("Darwin::write_policy_conf:: error while removing disabled filter config: {}".format(e))
 
 
 def build_conf(node_logger):
