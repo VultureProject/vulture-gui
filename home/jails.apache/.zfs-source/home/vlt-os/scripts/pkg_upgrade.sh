@@ -3,7 +3,7 @@
 if [ -f /etc/host-hostname ] ; then
     /usr/sbin/service vultured status && /bin/kill -9 $(/bin/cat /var/run/vulture/vultured.pid)
     echo "[38;5;196m! WARNING ! - Please start vultured at the end of the upgrade[0m"
-    /usr/sbin/service netdata status && /usr/sbin/service netdata forcestop
+    /usr/sbin/service netdata status && /usr/sbin/service netdata faststop
 
     echo "[38;5;196m! WARNING ! - Please start netdata at the end of the upgrade[0m"
 
