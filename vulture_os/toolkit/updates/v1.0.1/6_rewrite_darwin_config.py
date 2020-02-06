@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
             filter_list = policy.filters.all()
 
-            for filter in filter_list:
-                filter_policy = FilterPolicy.objects.get(policy=policy, filter=filter)
+            for darwin_filter in filter_list:
+                filter_policy = FilterPolicy.objects.get(policy=policy, filter=darwin_filter)
                 filter_policy.status[node.name] = "WAITING"
 
             for frontend in policy.frontend_set.filter(enabled=True):
