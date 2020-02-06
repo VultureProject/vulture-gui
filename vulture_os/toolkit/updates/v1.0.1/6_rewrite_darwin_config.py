@@ -56,13 +56,11 @@ if __name__ == "__main__":
 
             for filter in filter_list:
                 filter_policy = FilterPolicy.objects.get(policy=policy, filter=filter)
-
                 filter_policy.status[node.name] = "WAITING"
 
-                if filter_policy.enabled:
-                    for frontend in policy.frontend_set.filter(enabled=True):
-                        # regenerate rsyslog conf for each frontend associated with darwin policy
-                        rebuild_frontends.add(frontend)
+            for frontend in policy.frontend_set.filter(enabled=True):
+                # regenerate rsyslog conf for each frontend associated with darwin policy
+                rebuild_frontends.add(frontend)
 
             node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
 
