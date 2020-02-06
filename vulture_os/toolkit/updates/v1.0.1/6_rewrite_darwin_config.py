@@ -37,9 +37,8 @@ import django
 from django.conf import settings
 django.setup()
 
-from darwin.policy.models import DarwinPolicy
-from services.frontend.models import Frontend
-from system.cluster.models import Cluster
+from system.cluster.models import Cluster, Node
+from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy
 
 
 if __name__ == "__main__":
@@ -55,12 +54,15 @@ if __name__ == "__main__":
 
             filter_list = policy.filters.all()
 
-            for filter_policy in policy.filterpolicy_set.filter(enabled=True):
+            for darwin_filter in filter_list:
+                filter_policy = FilterPolicy.objects.get(policy=policy, filter=darwin_filter)
                 filter_policy.status[node.name] = "WAITING"
 
-            node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
+            for frontend in policy.frontend_set.filter(enabled=True):
+                # regenerate rsyslog conf for each frontend associated with darwin policy
+                rebuild_frontends.add(frontend)
 
-        rebuild_frontends = Frontend.objects.filter(darwin_policy__isnull=False, enabled=True, mode__in=['tcp', 'http'])
+            node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
 
         for frontend in rebuild_frontends:
             if node in frontend.get_nodes():
