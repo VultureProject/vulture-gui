@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture 4.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Kevin Guillemot"
+__author__ = "Theo Bertin"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
@@ -37,8 +37,9 @@ import django
 from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster, Node
-from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy
+from darwin.policy.models import DarwinPolicy
+from services.frontend.models import Frontend
+from system.cluster.models import Cluster
 
 
 if __name__ == "__main__":
@@ -54,15 +55,12 @@ if __name__ == "__main__":
 
             filter_list = policy.filters.all()
 
-            for darwin_filter in filter_list:
-                filter_policy = FilterPolicy.objects.get(policy=policy, filter=darwin_filter)
+            for filter_policy in policy.filterpolicy_set.filter(enabled=True):
                 filter_policy.status[node.name] = "WAITING"
 
-            for frontend in policy.frontend_set.filter(enabled=True):
-                # regenerate rsyslog conf for each frontend associated with darwin policy
-                rebuild_frontends.add(frontend)
-
             node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
+
+        rebuild_frontends = Frontend.objects.filter(darwin_policy__isnull=False, enabled=True, mode__in=['tcp', 'http'])
 
         for frontend in rebuild_frontends:
             if node in frontend.get_nodes():
