@@ -64,7 +64,7 @@ if __name__ == '__main__':
     monitor_job.start()
 
     """ Launch reconciliate job """
-    reconcile_job = ReconcileJob(60)
+    reconcile_job = ReconcileJob(10)
     reconcile_job.start()
 
     signal(SIGTERM, service_shutdown)
