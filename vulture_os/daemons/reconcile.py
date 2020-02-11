@@ -73,11 +73,13 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
                     sleep(sec_between_retries)
             else:
                 try:
-                    alertData['context'] = json.loads(context.decode())
+                    context = json.loads(context.decode())
+                    context.pop("time", None)
+                    alertData.update(context)
                 except json.JSONDecodeError as e:
                     logger.error("Reconcile: context is not a valid JSON: {}".format(e))
 
-        if alertData.get('context', None) is None:
+        if context is None:
             logger.warning("Reconcile: could not find valid context for id {}".format(evt_id))
 
     try:
