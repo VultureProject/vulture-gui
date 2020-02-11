@@ -301,7 +301,6 @@ DEFAULT_ACCESS_TCP_COLUMNS = {
 IMPCAP_COLUMNS = {
     "time": "datetime",
     "frontend_name": "string",
-    "id": "integer",
     "net_bytes_total": "integer",
     "eth_src": "string",
     "eth_dst": "string",
@@ -327,9 +326,12 @@ IMPCAP_COLUMNS = {
     "ipx_src_node": "string",
     "ipx_dest_socket": "integer",
     "ipx_src_socket": "integer",
-    "ip6_next_header": "integer",
-    "arp_hwyype": "integer",
-    "arp_pyype": "integer",
+    "ip6_route_seg_left": "integer",
+    "ip6_frag_offset": "integer",
+    "ip6_frag_more": "boolean",
+    "ip6_frag_id": "integer",
+    "arp_hwtype": "integer",
+    "arp_ptype": "integer",
     "arp_op": "integer",
     "arp_hwsrc": "string",
     "arp_hwdst": "string",
@@ -338,10 +340,10 @@ IMPCAP_COLUMNS = {
     "rarp_hwtype": "integer",
     "rarp_ptype": "integer",
     "rarp_op": "integer",
-    "rarp_hwsrc": "integer",
-    "rarp_hwdst": "integer",
-    "rarp_psrc": "integer",
-    "rarp_pdst": "integer",
+    "rarp_hwsrc": "string",
+    "rarp_hwdst": "string",
+    "rarp_psrc": "string",
+    "rarp_pdst": "string",
     "net_icmp_type": "integer",
     "net_icmp_code": "integer",
     "icmp_checksum": "integer",
@@ -350,7 +352,7 @@ IMPCAP_COLUMNS = {
     "tcp_seq_number": "integer",
     "tcp_ack_number": "integer",
     "tcp_data_length": "integer",
-    "net_flags": "integer",
+    "net_flags": "string",
     "udp_length": "integer",
     "udp_checksum": "integer",
     "dns_transaction_id": "integer",
@@ -373,14 +375,23 @@ IMPCAP_COLUMNS = {
     "smb_userid": "integer",
     "ftp_request": "string",
     "ftp_response": "integer",
+    "http_version": "string",
     "http_status_code": "integer",
-    "http_content_type": "string",
-    "reputation": "string",
-    "geoip": "string",
-    "ctx_tags": "string",
-    "dns_queries": "dict",
-    "darwin_is_alert": "boolean",
-    "darwin_alert_details": "dict"
+    "http_method": "string",
+    "http_request_uri": "string",
+    "http_header_fields": "dict",
+    "ctx_src_city_name": "string",
+    "ctx_src_country_name": "string",
+    "ctx_src_iso_code": "string",
+    "ctx_src_latitude": "string",
+    "ctx_src_longitude": "string",
+    "ctx_src_reputation": "string",
+    "ctx_dst_city_name": "string",
+    "ctx_dst_country_name": "string",
+    "ctx_dst_iso_code": "string",
+    "ctx_dst_latitude": "string",
+    "ctx_dst_longitude": "string",
+    "ctx_dst_reputation": "string"
 }
 
 DEFAULT_IMPCAP_COLUMNS = {
@@ -465,35 +476,46 @@ DARWIN_COLUMNS = {
     "time": "string",
     "filter": "string",
     "certitude": "integer",
-    "details": "string",
-    "context": "dict",
+    "details": "string"
 }
+
+DARWIN_COLUMNS.update(IMPCAP_COLUMNS)
 
 DEFAULT_DARWIN_COLUMNS = {
     "0": {
         'name': 'time',
-        'width': 2,
+        'width': 1,
         "x": 0
     },
     "1": {
-        'name': 'filter',
-        'width': 2,
-        "x": 2
+        'name': 'frontend',
+        'width': 1,
+        "x": 1
     },
     "2": {
-        'name': 'certitude',
-        'width': 2,
-        "x": 4
+        'name': 'filter',
+        'width': 1,
+        "x": 2
     },
     "3": {
-        'name': 'details',
-        'width': 2,
-        "x": 6
+        'name': 'net_src_ip',
+        'width': 1,
+        "x": 3
     },
     "4": {
-        'name': 'context',
-        'width': 2,
-        "x": 8
+        'name': 'net_dst_ip',
+        'width': 1,
+        "x": 4
+    },
+    "5": {
+        'name': 'certitude',
+        'width': 1,
+        "x": 5
+    },
+    "6": {
+        'name': 'details',
+        'width': 1,
+        "x": 6
     },
 }
 

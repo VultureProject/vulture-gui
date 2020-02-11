@@ -169,6 +169,10 @@ class LogViewerMongo:
                     res['details'] = res[darwin_filter_details]
                     break
 
+            # FIXME Temporary aggregation for DGA certitude
+            if "dga_prob" in res.keys():
+                res['certitude'] = res['dga_prob']
+
             for c in self.columns:
                 if not res.get(c):
                     res[c] = ""
