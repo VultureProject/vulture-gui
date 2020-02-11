@@ -196,7 +196,7 @@ class Service:
             status = Monitor.objects.filter(**query).order_by('-date').first() \
                             .services.filter(name=service_name2).first().status
         except Exception as e:
-            status = "UNKWOWN"
+            status = "UNKNOWN"
 
         return status, ""
 
