@@ -40,6 +40,8 @@ from subprocess import CalledProcessError
 
 # Extern modules imports
 from json import loads as json_loads
+from os import walk as os_walk
+from re import compile as re_compile
 from subprocess import check_output, PIPE
 
 # Logger configuration imports
@@ -76,20 +78,26 @@ class DarwinService(Service):
 
 
 def delete_policy_conf(node_logger, policy_id):
-    policy = DarwinPolicy.objects.get(pk=policy_id)
-    logger.info("deleting policy conf '{}'".format(policy.name))
+    logger.info("deleting policy {} filter's confs".format(policy_id))
 
-    for filter in policy.filterpolicy_set.all():
-
-        try:
-            delete_conf_file(
-                node_logger,
-                filter.conf_path
-            )
-        except (VultureSystemConfigError, VultureSystemError):
-            pass
-        except Exception as e:
-            logger.error("Darwin::delete_policy_conf:: error while removing filter config: {}".format(e))
+    try:
+        CONF_REGEX = re_compile("{}/f[\w-]+/f[\w-]+_{}.conf".format(DARWIN_PATH, policy_id))
+        for root, dirs, files in os_walk(DARWIN_PATH):
+            for file in files:
+                fullpath = root + "/" + file
+                if CONF_REGEX.search(fullpath):
+                    logger.info("deleting file {}".format(fullpath))
+                    try:
+                        delete_conf_file(
+                            node_logger,
+                            fullpath
+                        )
+                    except (VultureSystemConfigError, VultureSystemError):
+                        pass
+                    except Exception as e:
+                        logger.error("Darwin::delete_policy_conf:: error while removing filter config: {}".format(e))
+    except Exception as e:
+        logger.error("Darwin::delete_policy_conf:: could not list files to remove")
 
 
 def write_policy_conf(node_logger, policy_id):
