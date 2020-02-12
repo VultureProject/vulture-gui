@@ -419,7 +419,7 @@ class FilterPolicyDGAForm(FilterPolicyForm):
         self.fields['model_path'] = FilePathField(
             label="Model:",
             path="{}f{}/".format(CONF_PATH, "dga"),
-            required=False,
+            required=True,
             widget=Select(attrs={'class': 'form-control select2'}),
             match=".*\.pb$"
         )
@@ -435,7 +435,7 @@ class FilterPolicyDGAForm(FilterPolicyForm):
             pass
 
         # <= 1, because there is the "empty" choice to consider
-        if not self['model_path'].field.choices or len(self['model_path'].field.choices) <= 1:
+        if not self['model_path'].field.choices or len(self['model_path'].field.choices) < 1:
             self.fields['enabled'].disabled = True
 
     def clean(self):
