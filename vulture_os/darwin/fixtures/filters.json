@@ -17,7 +17,7 @@
   },
   {
     "model": "darwin.DarwinFilter",
-    "pk": 3,
+    "pk": 2,
     "fields": {
       "name": "dga",
       "description": "The DGA filter detects the Domain Generation Algorithms (DGAs)"
@@ -25,7 +25,7 @@
   },
   {
     "model": "darwin.DarwinFilter",
-    "pk": 5,
+    "pk": 3,
     "fields": {
       "name": "content_inspection",
       "description": "The content inspection filter detects patterns in network packets"
@@ -33,7 +33,7 @@
   },
   {
     "model": "darwin.DarwinFilter",
-    "pk": 6,
+    "pk": 4,
     "fields": {
       "name": "anomaly",
       "description": "The anomaly filter detects abnormal variations in network traffic"
@@ -41,7 +41,7 @@
   },
     {
     "model": "darwin.DarwinFilter",
-    "pk": 7,
+    "pk": 5,
     "fields": {
       "name": "tanomaly",
       "description": "The tanomaly filter is a threaded anomaly filter, detecting variations continuously on network traffic"
@@ -49,7 +49,7 @@
   },
     {
     "model": "darwin.DarwinFilter",
-    "pk": 8,
+    "pk": 6,
     "fields": {
       "name": "connection",
       "description": "The connection filter detects opening connections between assets"
@@ -57,7 +57,7 @@
   },
     {
     "model": "darwin.DarwinFilter",
-    "pk": 9,
+    "pk": 7,
     "fields": {
       "name": "hostlookup",
       "description": "The host lookup filter searches for matches in a list for matching hostnames"
@@ -65,9 +65,9 @@
   },
   {
     "model": "darwin.FilterPolicy",
-    "pk": 2,
+    "pk": 1,
     "fields": {
-      "filter": 3,
+      "filter": 2,
       "policy": 1,
       "enabled": false,
       "nb_thread": 5,
@@ -86,9 +86,9 @@
   },
   {
     "model": "darwin.FilterPolicy",
-    "pk": 4,
+    "pk": 2,
     "fields": {
-      "filter": 5,
+      "filter": 3,
       "policy": 1,
       "enabled": true,
       "nb_thread": 8,
@@ -110,9 +110,9 @@
   },
   {
     "model": "darwin.FilterPolicy",
-    "pk": 5,
+    "pk": 3,
     "fields": {
-      "filter": 6,
+      "filter": 4,
       "policy": 1,
       "enabled": false,
       "nb_thread": 5,
@@ -131,9 +131,9 @@
   },
   {
     "model": "darwin.FilterPolicy",
-    "pk": 6,
+    "pk": 4,
     "fields": {
-      "filter": 7,
+      "filter": 5,
       "policy": 1,
       "enabled": true,
       "nb_thread": 5,
@@ -158,9 +158,9 @@
   },
   {
     "model": "darwin.FilterPolicy",
-    "pk": 7,
+    "pk": 5,
     "fields": {
-      "filter": 8,
+      "filter": 6,
       "policy": 1,
       "enabled": false,
       "nb_thread": 5,
@@ -178,9 +178,9 @@
   },
   {
     "model": "darwin.FilterPolicy",
-    "pk": 8,
+    "pk": 6,
     "fields": {
-      "filter": 9,
+      "filter": 7,
       "policy": 1,
       "enabled": false,
       "nb_thread": 5,
