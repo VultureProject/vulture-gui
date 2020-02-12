@@ -74,9 +74,9 @@ var aoColumns_process = [
 
 var is_open = false;
 
-var columns = [];
+var columns_task_table = [];
 for (var i in aoColumns_process){
-  columns.push(aoColumns_process[i].mData);
+  columns_task_table.push(aoColumns_process[i].mData);
 }
 
 process_queue_table = $('#table-process').dataTable({
@@ -102,7 +102,7 @@ process_queue_table = $('#table-process').dataTable({
 
     aoData.push({
       name: 'columns',
-      value: JSON.stringify(columns)
+      value: JSON.stringify(columns_task_table)
     })
 
     $.ajax({
