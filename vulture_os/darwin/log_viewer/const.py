@@ -474,6 +474,7 @@ DEFAULT_MESSAGE_QUEUE_COLUMNS = {
 DARWIN_COLUMNS = {
     "evt_id": "string",
     "time": "string",
+    "evt_time": "string",
     "filter": "string",
     "certitude": "integer",
     "details": "string"
