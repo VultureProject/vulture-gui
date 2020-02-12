@@ -26,7 +26,7 @@ __doc__ = 'Rsyslog service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from darwin.policy.models import FilterPolicy, DarwinPolicy
+from darwin.policy.models import FilterPolicy, DarwinPolicy, DarwinFilter
 from services.service import Service
 from services.darwin.models import DarwinSettings
 from system.config.models import write_conf, delete_conf as delete_conf_file
@@ -77,27 +77,35 @@ class DarwinService(Service):
         return "Darwin Service"
 
 
+def get_darwin_conf_path(darwin_policy_id, darwin_filter_name):
+    return "{darwin_path}/f{filter_name}/f{filter_name}_{darwin_policy_id}.conf".format(
+                darwin_path=DARWIN_PATH, filter_name=darwin_filter_name, darwin_policy_id=darwin_policy_id)
+
 def delete_policy_conf(node_logger, policy_id):
     logger.info("deleting policy {} filter's confs".format(policy_id))
+    error = False
+    result = ""
+    for darwin_filter in DarwinFilter.objects.exclude(name="session"):
+        fullpath = get_darwin_conf_path(policy_id, darwin_filter.name)
+        logger.info("deleting file {}".format(fullpath))
+        try:
+            delete_conf_file(
+                node_logger,
+                fullpath
+            )
+            result += "Conf of filter {} deleted\n".format(darwin_filter.name)
+        except VultureSystemError as e:
+            if "No such file or directory" in str(e):
+                node_logger.info("File {} already deleted".format(darwin_filter.name))
+            else:
+                result += "Failed to delete conf of filter {} : {}\n".format(darwin_filter.name, e)
+                error = True
+        except ServiceExit as e: # DO NOT REMOVE IT - Needed to stop Vultured service !
+            raise
 
-    try:
-        CONF_REGEX = re_compile("{}/f[\w-]+/f[\w-]+_{}.conf".format(DARWIN_PATH, policy_id))
-        for root, dirs, files in os_walk(DARWIN_PATH):
-            for file in files:
-                fullpath = root + "/" + file
-                if CONF_REGEX.search(fullpath):
-                    logger.info("deleting file {}".format(fullpath))
-                    try:
-                        delete_conf_file(
-                            node_logger,
-                            fullpath
-                        )
-                    except (VultureSystemConfigError, VultureSystemError):
-                        pass
-                    except Exception as e:
-                        logger.error("Darwin::delete_policy_conf:: error while removing filter config: {}".format(e))
-    except Exception as e:
-        logger.error("Darwin::delete_policy_conf:: could not list files to remove")
+    if error:
+        raise VultureSystemError(result)
+    return result
 
 
 def write_policy_conf(node_logger, policy_id):
@@ -109,9 +117,7 @@ def write_policy_conf(node_logger, policy_id):
         if filter.enabled:
             logger.info("writing filter '{}' conf".format(filter.name))
 
-            conf_path = "{darwin_path}/f{filter_name}/f{filter_name}_{darwin_policy_id}.conf".format(
-                darwin_path=DARWIN_PATH, filter_name=filter.filter.name, darwin_policy_id=policy_id
-            )
+            conf_path = get_darwin_conf_path(policy.id, filter.filter.name)
 
             try:
                 write_conf(

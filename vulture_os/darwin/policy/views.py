@@ -38,7 +38,7 @@ from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonRespons
 from django.shortcuts import render
 # Django project imports
 from gui.forms.form_utils import DivErrorList
-from services.darwin.darwin import DARWIN_PATH
+from services.darwin.darwin import DARWIN_PATH, get_darwin_conf_path
 from system.cluster.models import Cluster, Node
 
 # Extern modules imports
@@ -171,11 +171,7 @@ def policy_edit(request, object_id=None):
 
                 filter_policy.save()
 
-                filter_policy.conf_path = "{darwin_path}/f{filter_name}/f{filter_name}_{policy_id}.conf".format(
-                    darwin_path=DARWIN_PATH,
-                    filter_name=filter_policy.filter.name,
-                    policy_id=filter_policy.policy.pk
-                )
+                filter_policy.conf_path = get_darwin_conf_path(filter_policy.policy.pk, filter_policy.filter.name)
 
                 filter_config = filter_policy_form.to_config()
                 filter_policy.config = filter_config
