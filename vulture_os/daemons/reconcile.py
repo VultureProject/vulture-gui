@@ -33,10 +33,10 @@ from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 
 # Extern modules imports
-import json
-from time import sleep
-from threading import Thread, Event
 from datetime import datetime
+import json
+from threading import Thread, Event
+from time import sleep
 
 # Logger configuration imports
 import logging
@@ -152,12 +152,11 @@ class ReconcileJob(Thread):
 
         logger.info("Reconcile: start listening {} channel.".format(redis_channel))
         while not self.shutdown_flag.is_set():
-            alert = listener.get_message()
+            alert = listener.get_message(ignore_subscribe_messages=True, timeout=2)
             # If we have no messages, alert is None
             if alert:
                 # Only use the channel to trigger popping alerts
                 self.pops(mongo, redis, filepath)
-            sleep(0.001)  # be nice to the system :)
         return True
 
     def run(self):

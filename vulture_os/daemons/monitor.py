@@ -258,5 +258,5 @@ class MonitorJob(Thread):
         logger.info("Monitor job stopped.")
 
     def ask_shutdown(self):
-        logger.info("Shutdown asked !")
+        logger.info("Monitor shutdown asked !")
         self.shutdown_flag.set()
