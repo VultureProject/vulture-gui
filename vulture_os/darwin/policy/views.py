@@ -72,12 +72,21 @@ def policy_clone(request, object_id):
         logger.exception(e)
         return HttpResponseForbidden("Injection detected")
 
+    policy_id = policy.pk
     policy.pk = None
     policy.name = "Copy_of_" + str(policy.name)
 
     form = DarwinPolicyForm(None, instance=policy, error_class=DivErrorList)
 
-    return render(request, 'policy_edit.html', {'form': form})
+    filter_policy_form_list = []
+    for filter in FilterPolicy.objects.filter(policy=policy_id):
+        filter_policy_form_class = FILTER_POLICY_FORMS.get(filter.filter.name, FilterPolicyForm)
+        filter_policy_form = filter_policy_form_class(
+            instance=filter
+        )
+        filter_policy_form_list.append(filter_policy_form)
+
+    return render(request, 'policy_edit.html', {'form': form, 'filterpolicies': filter_policy_form_list})
 
 
 def policy_edit(request, object_id=None):
