@@ -162,17 +162,18 @@ class ReconcileJob(Thread):
 
     def run(self):
         logger.info("Reconcile job started.")
-        try:
-            self.reconcile()
-        except Exception as e:
-            logger.error("Reconcile job failure: {}".format(e))
-            logger.info("Reconcile resuming ...")
+        while not self.shutdown_flag.is_set():
+            try:
+                self.reconcile()
+            except Exception as e:
+                logger.error("Reconcile job failure: {}".format(e))
+                logger.info("Reconcile resuming ...")
 
-        # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
-        cpt = 0
-        while not self.shutdown_flag.is_set() and cpt < self.delay:
-            sleep(2)
-            cpt += 2
+            # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
+            cpt = 0
+            while not self.shutdown_flag.is_set() and cpt < self.delay:
+                sleep(2)
+                cpt += 2
 
         logger.info("Reconcile job stopped.")
 
