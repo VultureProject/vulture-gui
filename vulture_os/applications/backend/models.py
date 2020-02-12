@@ -25,6 +25,7 @@ __doc__ = 'Frontends & Listeners model classes'
 # Django system imports
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
@@ -437,13 +438,12 @@ class Backend(models.Model):
         }
         """ Retrieve list/custom objects """
         # If facultative arg listener_list is not given
-        if not server_list:
-            # Retrieve all the objects used by the current frontend
-            # No .only ! Used to generated conf, neither str cause we need the object
-            result['servers'] = self.server_set.all()  # No .only() ! Used to generated conf
+        # Retrieve all the objects used by the current frontend
+        # No .only ! Used to generated conf, neither str cause we need the object
+        result['servers'] = server_list or self.server_set.all()  # No .only() ! Used to generated conf
         if self.mode == "http":
             # Same for headers
-            result['headers'] = self.headers.all() if not header_list else header_list
+            result['headers'] = header_list or self.headers.all()
             if self.enable_http_health_check and self.http_health_check_expect_match:
                 result['http_health_check_expect'] = "{} {}".format(self.http_health_check_expect_match,
                                                                     self.http_health_check_expect_pattern)
@@ -618,10 +618,10 @@ class Server(models.Model):
         """ Generate Listener HAProxy configuration
         :return     A string - Bind directive
         """
-        result = "server srv{} {}:{} weight {}".format(self.id,
-                                                                 self.target,
-                                                                 self.port,
-                                                                 self.weight)
+        result = "server srv{} {}:{} weight {}".format(self.id or get_random_string(),
+                                                       self.target,
+                                                       self.port,
+                                                       self.weight)
         if self.source:
             if ":" in self.source:
                 result += " source [{}]".format(self.source)
