@@ -296,8 +296,7 @@ class Service:
             raise
         except Exception as e:
             logger.error("Unable to check if conf has changed for {}: ".format(self.service_name, str(e)))
-            logger.exception(e)
-
+            #logger.exception(e)
             if "No such file" in str(e):
                 raise ServiceNoConfigError(str(e), self.service_name)
             raise ServiceConfigError("Cannot open '{}' : {}".format(self.jinja_template['tpl_path'], str(e)),
