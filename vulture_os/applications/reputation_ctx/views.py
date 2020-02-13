@@ -77,6 +77,7 @@ def reputation_ctx_clone(request, object_id):
         header_form_list.append(HttpHealthCheckHeaderForm({'check_header_name': k, 'check_header_value': v}))
 
     reputation_ctx.pk = None
+    reputation_ctx.internal = False
     reputation_ctx.name = 'Copy of {}'.format(reputation_ctx.name)
     form = ReputationContextForm(None, instance=reputation_ctx, error_class=DivErrorList)
 
@@ -96,47 +97,50 @@ def reputation_ctx_delete(request, object_id, api=False):
             return JsonResponse({'error': _("Object does not exist.")}, status=404)
         return HttpResponseForbidden("Injection detected")
 
-    if ((request.method == "POST" and request.POST.get('confirm', "").lower() == "yes")
-            or (api and request.method == "DELETE" and request.JSON.get('confirm', "").lower() == "yes")):
+    if reputation_ctx.internal:
+        error = "You cannot delete an internal reputation context"
+    else:
+        if ((request.method == "POST" and request.POST.get('confirm', "").lower() == "yes")
+                or (api and request.method == "DELETE" and request.JSON.get('confirm', "").lower() == "yes")):
 
-        # Save reputation_ctx filename before delete-it
-        ctx_filename = reputation_ctx.get_filename()
+            # Save reputation_ctx filename before delete-it
+            ctx_filename = reputation_ctx.absolute_filename
 
-        try:
-            """ Delete file """
-            Cluster.api_request("system.config.models.delete_conf", ctx_filename)
+            try:
+                """ Delete file """
+                Cluster.api_request("system.config.models.delete_conf", ctx_filename)
 
-            """ Disable the reputation context in frontend, to reload rsyslog conf """
-            for frontendreputationcontext in reputation_ctx.frontendreputationcontext_set.all():
-                frontendreputationcontext.enabled = False
-                frontendreputationcontext.save()
-            logger.info("Reputation '{}' disabled.".format(reputation_ctx.name))
+                """ Disable the reputation context in frontend, to reload rsyslog conf """
+                for frontendreputationcontext in reputation_ctx.frontendreputationcontext_set.all():
+                    frontendreputationcontext.enabled = False
+                    frontendreputationcontext.save()
+                logger.info("Reputation '{}' disabled.".format(reputation_ctx.name))
 
-            """ And reload Frontends conf """
-            reputation_ctx.reload_frontend_conf()
+                """ And reload Frontends conf """
+                reputation_ctx.reload_frontend_conf()
 
-            """ If everything's ok, delete the object """
-            reputation_ctx.delete()
-            logger.info("Reputation '{}' deleted.".format(ctx_filename))
+                """ If everything's ok, delete the object """
+                reputation_ctx.delete()
+                logger.info("Reputation '{}' deleted.".format(ctx_filename))
 
-            if api:
-                return JsonResponse({
-                    'status': True
-                }, status=204)
-            return HttpResponseRedirect(reverse('applications.reputation_ctx.list'))
+                if api:
+                    return JsonResponse({
+                        'status': True
+                    }, status=204)
+                return HttpResponseRedirect(reverse('applications.reputation_ctx.list'))
 
-        except Exception as e:
-            # If API request failure, bring up the error
-            logger.error("Error trying to delete reputation_ctx '{}': API|Database failure. "
-                         "Details:".format(reputation_ctx.name))
-            logger.exception(e)
-            error = "API or Database request failure: {}".format(str(e))
+            except Exception as e:
+                # If API request failure, bring up the error
+                logger.error("Error trying to delete reputation_ctx '{}': API|Database failure. "
+                            "Details:".format(reputation_ctx.name))
+                logger.exception(e)
+                error = "API or Database request failure: {}".format(str(e))
 
-            if api:
-                return JsonResponse({'status': False,
-                                     'error': error}, status=500)
-    if api:
-        return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
+                if api:
+                    return JsonResponse({'status': False,
+                                        'error': error}, status=500)
+        if api:
+            return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
 
     # If GET request or POST request and API/Delete failure
     return render(request, 'generic_delete.html', {

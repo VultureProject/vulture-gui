@@ -217,6 +217,7 @@ class ReputationContext(models.Model):
             'name': self.name,
             'db_type': db_type,
             'uri': uri,
+            'internal': self.internal,
             'tags': self.tags
         }
 

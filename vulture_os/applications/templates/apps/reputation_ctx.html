@@ -86,9 +86,11 @@
       aTargets: [5],
       defaultContent: "",
       mRender: function(data, type, row) {
-        result = '<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/apps/reputation_ctx/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
-        '&nbsp;<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/apps/reputation_ctx/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
-        //result = result + '&nbsp;<button id="download_'+data+'" type="button" data-toggle="tooltip" data-placement="top" title="Force download" class="btn btn-flat btn-xs btn-primary download"><i class="fas fa-file-download"></i></button>';
+        //result = '<button id="download_'+data+'" type="button" data-toggle="tooltip" data-placement="top" title="Force download" class="btn btn-flat btn-xs  btn-primary download-btn"><i class="fas fa-file-download"></i></button>&nbsp;';
+        result = '<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/apps/reputation_ctx/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>&nbsp;';
+        if( !row.internal ) {
+          result += '<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/apps/reputation_ctx/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+        }
         return result;
       }
     }
@@ -144,7 +146,7 @@
     fnCreatedRow: function(nRow, aData, iDataIndex){
 
       /* Events binding to start a reputation_ctx */
-      $(nRow).on('click', '.action', function(e) {
+      $(nRow).on('click', '.download-btn', function(e) {
         /* Request download of the selected reputation_context */
         /* First, retrieve the action to do */
         var action = ($(this).hasClass('download') ? "download" : "");
