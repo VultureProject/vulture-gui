@@ -197,6 +197,9 @@ def cluster_create(admin_user=None, admin_password=None):
     logger.debug("API call to configure Apache GUI")
     node.api_request("services.apache.apache.reload_conf")
 
+    logger.debug("API call to configure Logrotate")
+    node.api_request("services.logrotate.logrotate.reload_conf")
+
 
 def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None, key=None):
     """
@@ -379,5 +382,8 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     logger.debug("API call to configure rsyslog")
     # API call to whole Cluster - to refresh mongodb uri in pf logs
     Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
+
+    logger.debug("API call to configure logrotate")
+    node.api_request("services.logrotate.logrotate.reload_conf")
 
     return True
