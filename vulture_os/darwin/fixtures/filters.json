@@ -147,13 +147,7 @@
         "alert_redis_channel_name": "darwin.alerts",
         "log_file_path": "/var/log/darwin/alerts.log"
       },
-      "mmdarwin_enabled": true,
-      "mmdarwin_parameters": [
-        "!net_src_ip",
-        "!net_dst_ip",
-        "!net_dst_port",
-        "!IP_proto"
-      ]
+      "mmdarwin_parameters": []
     }
   },
   {

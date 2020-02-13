@@ -147,20 +147,6 @@ def security_update(node_logger=None):
             return False
 
         infos.append({
-            'filename': "GeoLite2-Country.mmdb",
-            'label': "Geolite2 Country",
-            'description': "Maxmind DB's Geoip country database",
-            'type': "GeoIP",
-            'url': "https://predator.vultureproject.org/ipsets/GeoLite2-Country.mmdb"
-        })
-        infos.append({
-            'filename': "GeoLite2-City.mmdb",
-            'label': "Geolite2 City",
-            'description': "Maxmind DB's Geoip city database",
-            'type': "GeoIP",
-            'url': "https://predator.vultureproject.org/ipsets/GeoLite2-City.mmdb"
-        })
-        infos.append({
             'filename': "firehol_level1.netset",
             'label': "Firehol Level 1 netset",
             'description': "Firehol IPSET Level 1",
