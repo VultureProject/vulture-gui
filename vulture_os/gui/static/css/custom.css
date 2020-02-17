@@ -910,3 +910,8 @@ ul li{
     max-height: 300px;
     overflow: auto;
 }
+
+#list-rss{
+    overflow: auto;
+    max-height: 400px;
+}
