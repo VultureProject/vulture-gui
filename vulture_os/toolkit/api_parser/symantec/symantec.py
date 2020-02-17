@@ -137,6 +137,7 @@ class SymantecParser(ApiParser):
                                     print(line)
 
                     self.frontend.last_api_call = datetime.datetime.now()
+                    self.finish()
 
         except Exception as e:
             raise SymantecParseError(e)

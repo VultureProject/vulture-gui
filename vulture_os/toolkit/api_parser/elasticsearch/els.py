@@ -146,7 +146,6 @@ class ElasticsearchParser(ApiParser):
             }
         }
 
-        print(query)
         return query
 
     def execute(self):
@@ -177,6 +176,7 @@ class ElasticsearchParser(ApiParser):
                 scroll_size = len(data['hits']['hits'])
 
             self.frontend.last_api_call = self.last_api_call
+            self.finish()
 
         except Exception as e:
             logger.critical(e, exc_info=1)

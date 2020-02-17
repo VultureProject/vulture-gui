@@ -26,6 +26,7 @@ __doc__ = 'Cisco Umbrella API Parser'
 import boto3
 import logging
 
+from botocore.config import Config
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
@@ -64,7 +65,8 @@ class AWSBucketParser(ApiParser):
             self.s3_client = boto3.client(
                 's3',
                 aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key
+                aws_secret_access_key=self.aws_secret_access_key,
+                config=Config(proxies=self.proxies)
             )
 
         except Exception as e:

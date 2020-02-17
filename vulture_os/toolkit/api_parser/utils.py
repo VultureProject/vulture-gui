@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Kevin GUILLEMOT"
+__author__ = "Olivier de Régis"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
@@ -26,7 +26,6 @@ __doc__ = 'Parser URLS'
 import logging
 
 from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
-from toolkit.api_parser.cybereason.cybereason import CybereasonParser
 from toolkit.api_parser.elasticsearch.els import ElasticsearchParser
 from toolkit.api_parser.aws_bucket.aws_bucket import AWSBucketParser
 from toolkit.api_parser.office365.office365 import Office365Parser
@@ -41,9 +40,8 @@ logger = logging.getLogger('gui')
 PARSER_LIST = {
     "elasticsearch": ElasticsearchParser,
     "forcepoint": ForcepointParser,
-    "cybereason": CybereasonParser,
-    "aws bucket": AWSBucketParser,
-    "office 365": Office365Parser,
+    "aws_bucket": AWSBucketParser,
+    "office_365": Office365Parser,
     "symantec": SymantecParser,
     "akamai": AkamaiParser
 }
