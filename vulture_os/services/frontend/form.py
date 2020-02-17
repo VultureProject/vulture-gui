@@ -106,7 +106,7 @@ class FrontendForm(ModelForm):
         super().__init__(*args, **kwargs)
 
         AVAILABLE_API_PARSER = [("", "--------")]
-        AVAILABLE_API_PARSER.extend([(parser, parser.upper()) for parser in get_available_api_parser()])
+        AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' ')) for parser in get_available_api_parser()])
 
         """ Impcap/Log Darwin policy """
         self.fields['darwin_policy'] = ModelChoiceField(
@@ -170,11 +170,6 @@ class FrontendForm(ModelForm):
             widget=Select(attrs={'class': 'form-control select2'})
         )
 
-        self.fields['cybereason_host'] = URLField(
-            label=_('Cybereason Console URL'),
-            widget=TextInput(attrs={'class': 'form-control'})
-        )
-
         self.fields['forcepoint_host'] = URLField(
             label=_('Forcepoint URL'),
             widget=TextInput(attrs={'class': 'form-control'})
@@ -194,15 +189,15 @@ class FrontendForm(ModelForm):
         # Set required in POST data to False
         for field_name in ['log_condition', 'ruleset', 'log_level', 'listening_mode', 'headers', 'custom_haproxy_conf',
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
-                           'error_template', 'enable_logging_reputation', 'impcap_filter',
-                           'impcap_filter_type', 'impcap_intf', 'tags', 'timeout_client', 'timeout_connect',
-                           'timeout_keep_alive', 'parser_tag', 'file_path', 'node', 'api_parser_type',
-                           'api_parser_use_proxy', 'cybereason_host', 'cybereason_username',
-                           'cybereason_password', 'elasticsearch_host', 'elasticsearch_auth',
-                           'elasticsearch_verify_ssl', 'elasticsearch_username', 'elasticsearch_password',
-                           'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
-                           "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
-                           "aws_bucket_name"]:
+                           'error_template', 'enable_logging_reputation', 'impcap_filter', 'impcap_filter_type',
+                           'impcap_intf', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
+                           'parser_tag', 'file_path', 'node', 'api_parser_type', 'api_parser_use_proxy',
+                           'elasticsearch_host', 'elasticsearch_auth', 'elasticsearch_verify_ssl',
+                           'elasticsearch_username', 'elasticsearch_password', 'elasticsearch_index', 'forcepoint_host',
+                           'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
+                           "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
+                           "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
+                           'office365_tenant_id', 'office365_client_id', 'office365_client_secret']:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -239,11 +234,13 @@ class FrontendForm(ModelForm):
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
-                  'file_path', 'node', 'darwin_policy', 'api_parser_type', 'api_parser_use_proxy', 'cybereason_host',
-                  'cybereason_username', 'cybereason_password', 'elasticsearch_host', 'elasticsearch_verify_ssl',
-                  'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password', 'elasticsearch_index',
-                  'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username",
-                  "symantec_password", "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name")
+                  'file_path', 'node', 'darwin_policy', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
+                  'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
+                  'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
+                  "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
+                  "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
+                  "akamai_client_token", 'akamai_config_id', 'office365_tenant_id', 'office365_client_id',
+                  'office365_client_secret')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -276,8 +273,6 @@ class FrontendForm(ModelForm):
             'parser_tag': TextInput(attrs={'class': 'form-control'}),
             'file_path': TextInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
-            'cybereason_username': TextInput(attrs={'class': 'form-control'}),
-            'cybereason_password': PasswordInput(attrs={'class': 'form-control'}),
             'elasticsearch_host': TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': "http://192.168.1.1:9200,http://192.168.1.2:9200"
@@ -293,7 +288,15 @@ class FrontendForm(ModelForm):
             'symantec_password': PasswordInput(attrs={'class': 'form-control'}),
             'aws_access_key_id': TextInput(attrs={'class': 'form-control'}),
             'aws_secret_access_key': TextInput(attrs={'class': 'form-control'}),
-            'aws_bucket_name': Select(attrs={'class': 'form-control select2'})
+            'aws_bucket_name': Select(attrs={'class': 'form-control select2'}),
+            'akamai_host': TextInput(attrs={'class': 'form-control'}),
+            'akamai_client_secret': TextInput(attrs={'class': 'form-control'}),
+            'akamai_access_token': TextInput(attrs={'class': 'form-control'}),
+            'akamai_client_token': TextInput(attrs={'class': 'form-control'}),
+            'akamai_config_id': TextInput(attrs={'class': 'form-control'}),
+            'office365_tenant_id': TextInput(attrs={'class': 'form-control'}),
+            'office365_client_id': TextInput(attrs={'class': 'form-control'}),
+            'office365_client_secret': TextInput(attrs={'class': 'form-control'})
         }
 
     def clean_name(self):

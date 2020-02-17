@@ -366,21 +366,6 @@ class Frontend(models.Model):
         default=False
     )
 
-    cybereason_host = models.TextField(
-        help_text=_('Cybereason console URL'),
-        default=""
-    )
-
-    cybereason_username = models.TextField(
-        help_text=_('Cybereason Username'),
-        default=""
-    )
-
-    cybereason_password = models.TextField(
-        help_text=_('Cybereason Password'),
-        default=""
-    )
-
     elasticsearch_host = models.TextField(
         help_text=_('Elasticsearch URL'),
         default=""
@@ -448,6 +433,46 @@ class Frontend(models.Model):
 
     aws_bucket_name = models.TextField(
         help_text=_("AWS Bucket Name"),
+        default=""
+    )
+
+    akamai_host = models.TextField(
+        help_text=_('Akamai Host'),
+        default=""
+    )
+
+    akamai_client_secret = models.TextField(
+        help_text=_('Akamai Client Secret'),
+        default=""
+    )
+
+    akamai_access_token = models.TextField(
+        help_text=_('Akamai Access Token'),
+        default=""
+    )
+
+    akamai_client_token = models.TextField(
+        help_text=_('Akamai Client Token'),
+        default=""
+    )
+
+    akamai_config_id = models.TextField(
+        help_text=_('Akamai Config Id'),
+        default=""
+    )
+
+    office365_tenant_id = models.TextField(
+        help_text=_('Office 365 Tenant ID'),
+        default=""
+    )
+
+    office365_client_id = models.TextField(
+        help_text=_('Office 365 Client ID'),
+        default=""
+    )
+
+    office365_client_secret = models.TextField(
+        help_text=_('Office 365 Client Secret'),
         default=""
     )
 
@@ -535,12 +560,7 @@ class Frontend(models.Model):
                 result['api_parser_use_proxy'] = self.api_parser_use_proxy
                 result['last_api_call'] = self.last_api_call
 
-                if self.api_parser_type == "cybereason":
-                    result['cybereason_host'] = self.cybereason_host
-                    result['cybereason_username'] = self.cybereason_username
-                    result['cybereason_password'] = self.cybereason_password
-
-                elif self.api_parser_type == "forcepoint":
+                if self.api_parser_type == "forcepoint":
                     result['forcepoint_host'] = self.forcepoint_host
                     result['forcepoint_username'] = self.forcepoint_username
                     result['forcepoint_password'] = self.forcepoint_password
@@ -561,6 +581,18 @@ class Frontend(models.Model):
                     result['aws_access_key_id'] = self.aws_access_key_id
                     result['aws_secret_access_key'] = self.aws_secret_access_key
                     result['aws_bucket_name'] = self.aws_bucket_name
+
+                elif self.api_parser_type == "akamai":
+                    result['akamai_host'] = self.akamai_host
+                    result['akamai_client_secret'] = self.akamai_client_secret
+                    result['akamai_access_token'] = self.akamai_access_token
+                    result['akamai_client_token'] = self.akamai_client_token
+                    result['akamai_config_id'] = self.akamai_config_id
+
+                elif self.api_parser_type == "office_365":
+                    result['office365_tenant_id'] = self.office365_tenant_id
+                    result['office365_client_id'] = self.office365_client_id
+                    result['office365_client_secret'] = self.office365_client_secret
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
@@ -842,6 +874,10 @@ class Frontend(models.Model):
     def get_base_filename(self):
         """ Return the base filename (without path) """
         return "frontend_{}.cfg".format(self.id)
+
+    @property
+    def api_file_path(self):
+        return f"/var/log/api_file_{self.id}.log"
 
     def get_filename(self):
         """ Return filename depending on current frontend object

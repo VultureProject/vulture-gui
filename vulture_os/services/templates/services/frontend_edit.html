@@ -643,27 +643,65 @@
                           </div>
                         </div>
                       </div>
-                      
-                      <div class="col-md-12 api_clients_row" id="api_cybereason_row">
+
+                      <div class="col-md-12 api_clients_row" id="api_office_365_row">
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cybereason_host.label }}</label>
+                          <label class="col-sm-3 control-label">{{ form.office365_tenant_id.label }}</label>
                           <div class="col-sm-5">
-                            {{ form.cybereason_host }}
-                            {{ form.cybereason_host.errors|safe }}
+                            {{ form.office365_tenant_id }}
+                            {{ form.office365_tenant_id.errors|safe }}
                           </div>
                         </div>
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cybereason_username.label }}</label>
+                          <label class="col-sm-3 control-label">{{ form.office365_client_id.label }}</label>
                           <div class="col-sm-5">
-                            {{ form.cybereason_username }}
-                            {{ form.cybereason_username.errors|safe }}
+                            {{ form.office365_client_id }}
+                            {{ form.office365_client_id.errors|safe }}
                           </div>
                         </div>
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.cybereason_password.label }}</label>
+                          <label class="col-sm-3 control-label">{{ form.office365_client_secret.label }}</label>
                           <div class="col-sm-5">
-                            {{ form.cybereason_password }}
-                            {{ form.cybereason_password.errors|safe }}
+                            {{ form.office365_client_secret }}
+                            {{ form.office365_client_secret.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_akamai_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.akamai_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.akamai_host }}
+                            {{ form.akamai_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.akamai_config_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.akamai_config_id }}
+                            {{ form.akamai_config_id.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.akamai_client_secret.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.akamai_client_secret }}
+                            {{ form.akamai_client_secret.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.akamai_access_token.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.akamai_access_token }}
+                            {{ form.akamai_access_token.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.akamai_client_token.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.akamai_client_token }}
+                            {{ form.akamai_client_token.errors|safe }}
                           </div>
                         </div>
                       </div>
