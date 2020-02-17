@@ -34,7 +34,7 @@ from system.config.models import write_conf
 # Required exceptions import
 from gui.models.monitor import Monitor
 from services.exceptions import (ServiceConfigError, ServiceNoConfigError, ServiceExit, ServiceReloadError,
-                                 ServiceRestartError, ServiceStartError, ServiceStartError)
+                                 ServiceRestartError, ServiceStartError)
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
