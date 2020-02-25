@@ -649,6 +649,22 @@ function delete_grid(e){
     }
 }
 
+function highlight_search(data){
+    var searched_values = [];
+    $(".rule-value-container").each(function(){
+        var search = $($(this).find('input')[0]).val();
+
+        if (search && $.inArray(search, searched_values) === -1){
+            searched_values.push(search);
+
+            var s = new RegExp(search, "gi");
+            data = data.replace(s, "<span style='background-color: #FFFF00'>" + search + "</span>")
+        }
+    })
+
+    return data;
+}
+
 function render_col(col, mapping){
     var render = function(data, type, row){
         if (data === null)
@@ -656,18 +672,7 @@ function render_col(col, mapping){
         else if (data instanceof Object)
             data = JSON.stringify(data);
 
-        var searched_values = [];
-        $(".rule-value-container").each(function(){
-            var value = $($(this).find('input')[0]).val();
-
-            if (value && $.inArray(value, searched_values) === -1){
-                searched_values.push(value);
-
-                var s = new RegExp(value, "gi");
-                data = data.replace(s, "<span style='background-color: #FFFF00'>" + value + "</span>")
-            }
-        })
-
+        data = highlight_search(data)
         return data;
     }
 
@@ -1076,6 +1081,7 @@ function init_datatable(data){
                         if (value instanceof Object)
                             value = JSON.stringify(value);
 
+                        value = highlight_search(value.toString());
                         sOut += `<span class='detail_info large'><span class='key'>${key}:</span>&nbsp;&nbsp;<span class='value'>${value}</span></span>`;
                     }
                 })
