@@ -654,7 +654,19 @@ function render_col(col, mapping){
         if (data === null)
             return "";
         else if (data instanceof Object)
-            return JSON.stringify(data);
+            data = JSON.stringify(data);
+
+        var searched_values = [];
+        $(".rule-value-container").each(function(){
+            var value = $($(this).find('input')[0]).val();
+
+            if (value && $.inArray(value, searched_values) === -1){
+                searched_values.push(value);
+
+                var s = new RegExp(value, "gi");
+                data = data.replace(s, "<span style='background-color: #FFFF00'>" + value + "</span>")
+            }
+        })
 
         return data;
     }
