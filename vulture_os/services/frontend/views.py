@@ -31,7 +31,7 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
-from applications.logfwd.models import LogOM, LogOMFile
+from applications.logfwd.models import LogOM
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener
