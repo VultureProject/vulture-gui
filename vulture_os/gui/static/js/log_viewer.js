@@ -238,6 +238,7 @@ $(function(){
     $('#btn-reset').unbind('click');
     $('#btn-reset').on('click', function(){
         $('#queryBuilder').queryBuilder('reset');
+        $('#queryBuilder_ace').queryBuilder('reset');
         editor.setValue('');
         rules_preview();
         fetch_data()
@@ -651,7 +652,7 @@ function delete_grid(e){
 
 function highlight_search(data){
     var searched_values = [];
-    $(".rule-value-container").each(function(){
+    $("#queryBuilder").find(".rule-value-container").each(function(){
         var search = $($(this).find('input')[0]).val();
 
         if (search && $.inArray(search, searched_values) === -1){
@@ -1081,8 +1082,10 @@ function init_datatable(data){
                         if (value instanceof Object)
                             value = JSON.stringify(value);
 
-                        value = highlight_search(value.toString());
-                        sOut += `<span class='detail_info large'><span class='key'>${key}:</span>&nbsp;&nbsp;<span class='value'>${value}</span></span>`;
+                        if (value){
+                            value = highlight_search(value.toString());
+                            sOut += `<span class='detail_info large'><span class='key'>${key}:</span>&nbsp;&nbsp;<span class='value'>${value}</span></span>`;
+                        }
                     }
                 })
 
@@ -1418,6 +1421,7 @@ function init_search(data){
             var search_sql = editor.getValue();
             if (search_sql == ""){
                 $('#queryBuilder').queryBuilder('reset');
+                $('#queryBuilder_ace').queryBuilder('reset');
             } else {
                 try{
                     $('#queryBuilder').queryBuilder('setRulesFromSQL', search_sql);
