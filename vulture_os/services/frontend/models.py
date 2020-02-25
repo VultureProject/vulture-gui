@@ -877,7 +877,7 @@ class Frontend(models.Model):
 
     @property
     def api_file_path(self):
-        return f"/var/log/api_file_{self.id}.log"
+        return f"/var/log/darwin/api_file_{self.id}.log"
 
     def get_filename(self):
         """ Return filename depending on current frontend object

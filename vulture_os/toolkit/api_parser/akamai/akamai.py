@@ -27,6 +27,8 @@ import datetime
 import json
 import logging
 import requests
+import base64
+import urllib.parse
 
 from akamai.edgegrid import EdgeGridAuth
 from django.conf import settings
@@ -45,6 +47,14 @@ class AkamaiAPIError(Exception):
 
 
 class AkamaiParser(ApiParser):
+    ATTACK_KEYS = {
+        'rules': 'af_rule_id',
+        'ruleMessages': 'af_action_detail',
+        'ruleTags': 'af_rule_tags',
+        'ruleActions': 'af_action',
+        'ruleData': 'af_rule_data'
+    }
+
     def __init__(self, data):
         super().__init__(data)
 
@@ -114,34 +124,30 @@ class AkamaiParser(ApiParser):
 
         tmp = {
             "@timestamp": timestamp.isoformat(),
-            "client": {
-                "ip": log['attackData'].get('clientIP', "-")
-            },
-            "destination": {
-                "port": log['httpMessage'].get('port', '-')
-            },
-            "http": {
-                "request": {
-                    "uri": log['httpMessage'].get('path', "-"),
-                    "host": log['httpMessage'].get('host', "-"),
-                    "query": log['httpMessage'].get('query', "-"),
-                    "method": log['httpMessage'].get('method', "-"),
-                    "protocol": log['httpMessage'].get('protocol', "-"),
-                    "headers": log['httpMessage'].get('requestHeaders', "-"),
-                },
-                "response": {
-                    "bytes": log['httpMessage'].get('bytes', '-'),
-                    "status_code": log['httpMessage'].get('status', '-'),
-                    "headers": log['httpMessage'].get('responseHeaders', '-')
-                }
-            },
-            "geo": {
-                "city_name": log['geo']['city'],
-                "country_iso_code": log['geo']['country'],
-                "region_iso_code": log['geo']['regionCode'],
-                "continent_name": log['geo']['continent']
-            }
+            "net_src_ip": log['attackData'].get('clientIP', '-'),
+            'net_dst_port': log['httpMessage'].get('port', '-'),
+            'http_request_host': log['httpMessage'].get('host', '-'),
+            'http_proto': log['httpMessage'].get('protocol', '-'),
+            'http_method': log['httpMessage'].get('method', '-'),
+            'http_request_uri': log['httpMessage'].get('uri', '-'),
+            'http_request_data': log['httpMessage'].get('query', '-'),
+            'net_bytes_received': log['httpMessage'].get('bytes', 0),
+            'http_status': log['httpMessage'].get('status', '-'),
+            'http_request_headers': log['httpMessage'].get('requestHeaders', '-'),
+            'http_response_headers': log['httpMessage'].get('responseHeaders', '-'),
+            'ctx_src_geoip.city_name': log['geo'].get('city', '-'),
+            'ctx_src_geoip.country_name': log['geo'].get('country', '-')
         }
+
+        for key, internal_key in self.ATTACK_KEYS.items():
+            tmp_data = urllib.parse.unquote(log['attackData'][key]).split(';')
+
+            values = []
+            for data in tmp_data:
+                if data:
+                    values.append(base64.b64decode(data).decode('utf-8'))
+
+            tmp[internal_key] = values
 
         return tmp
 
@@ -171,9 +177,8 @@ class AkamaiParser(ApiParser):
                 if "httpMessage" in log.keys():
                     try:
                         data.append(json.dumps(self._parse_log(log)))
-                    except Exception:
-                        print(log)
-                        raise
+                    except Exception as err:
+                        raise AkamaiAPIError(err)
 
             self.write_to_file(data)
             self.frontend.last_api_call = self.last_api_call

@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Office365 API Parser'
 
 
+import json
 import datetime
 import logging
 import requests
@@ -70,10 +71,10 @@ class Office365Parser(ApiParser):
         return self._get_access_token()
 
     def __connect(self):
-        uri = f"{self.office365_login_uri}/{self.office365_tenant_id}/oauth2/token"
+        url = f"{self.office365_login_uri}/{self.office365_tenant_id}/oauth2/token"
 
         response = requests.post(
-            uri,
+            url,
             data={
                 'grant_type': self.grant_type,
                 'resource': 'https://manage.office.com',
@@ -84,7 +85,7 @@ class Office365Parser(ApiParser):
         )
 
         if response.status_code != 200:
-            raise Office365APIError(response.content)
+            raise Office365APIError(f"Error on URL: {url} Status: {response.status_code} Content: {response.content}")
 
         data = response.json()
 
@@ -108,6 +109,7 @@ class Office365Parser(ApiParser):
         )
 
         for feed in response.json():
+            print(feed['contentUri'])
             yield feed['contentUri']
 
             if test:
@@ -123,31 +125,54 @@ class Office365Parser(ApiParser):
             }
         )
 
+        if response.status_code != 200:
+            raise Office365APIError(f"Error on URL: {url} Status: {response.status_code} Content: {response.content}")
+
         for tmp_log in response.json():
             yield tmp_log
 
+    def parse_log(self, log):
+        return log
+        timestamp = datetime.datetime.strptime(log['CreationTime'], "%Y-%m-%dT%H:%M:%S")
+
+        try:
+            tmp = {
+                "@timestamp": timestamp,
+                "net_src_ip": log.get('ClientIP', '-'),
+                "username": log.get("UserId", '-'),
+                'http_user_agent': log.get('UserAgent', '-'),
+            }
+        except KeyError:
+            raise
+
+        return tmp
+
     def test(self):
         try:
-            data = []
-            for feed_url in self._get_feed(test=True):
-                for log in self._get_logs(feed_url):
-                    data.append(log)
-
-                    break
-                break
-
-            return {
-                'status': True,
-                'data': data
-            }
+            return self.execute(test=True)
         except Office365APIError as e:
             return {
                 'status': False,
                 'error': str(e)
             }
 
-    def execute(self):
+    def execute(self, test=False):
         try:
-            pass
+            for feed_url in self._get_feed(test=test):
+                data = []
+                for log in self._get_logs(feed_url):
+                    data.append(json.dumps(self.parse_log(log)))
+
+                    if test:
+                        return {
+                            'status': True,
+                            'data': data
+                        }
+
+                self.write_to_file(data)
+
+            self.frontend.last_api_call = self.last_api_call
+            self.finish()
+
         except Exception as e:
             raise Office365ParseError(e)

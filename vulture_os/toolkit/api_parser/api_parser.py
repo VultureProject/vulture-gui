@@ -87,9 +87,9 @@ class ApiParser:
         self.redis_cli.redis.setex(self.key_redis, 300, 1)
 
     def write_to_file(self, lines):
-        print(self.frontend.api_file_path)
+        logger.info(f'[API PARSER] Writing {len(lines)} lines')
         with open(self.frontend.api_file_path, 'w') as f:
-            for i, line in enumerate(lines):
+            for line in lines:
                 f.write(line + "\n")
 
     def finish(self):
