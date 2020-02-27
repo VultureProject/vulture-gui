@@ -675,7 +675,7 @@ function render_col(col, mapping){
         else if (data instanceof Object)
             data = JSON.stringify(data);
 
-        data = highlight_search(data)
+        data = highlight_search(data.toString())
         return data;
     }
 
@@ -705,27 +705,27 @@ function render_col(col, mapping){
             var html = "";
             if (col === "src_ip" && row.country)
                 html += "<img src='/static/img/flags/" + row.country.toLowerCase() + ".png' class='img-country'/>&nbsp;&nbsp"
-            html += data;
+            html += highlight_search(data);
             return `<a href='#' class='predator_info' data-column='${col}' data-info='${data}'>${html}</a>`
         }
     } else if ($.inArray(col, ['dns_queries']) > -1){
         render = function(data, type, row){
             result = "<ul>";
             $.each(data, function(no, dns_query){
-                result += "<li>QName : " + dns_query.qname + ",\t DGA Anomaly : " + dns_query.darwin_decision + "%</li>";
+                result += "<li>QName : " + highlight_search(dns_query.qname) + ",\t DGA Anomaly : " + highlight_search(dns_query.darwin_decision) + "%</li>";
             });
             return result + "</ul>";
         }
     } else if (col === "country"){
         render = function(data, type, row){
             if (data)
-                return "<img src='/static/img/flags/" + data.toLowerCase() + ".png' class='img-country'/>&nbsp;&nbsp" + data;
+                return "<img src='/static/img/flags/" + data.toLowerCase() + ".png' class='img-country'/>&nbsp;&nbsp" + highlight_search(data);
             return "<i class='fa fa-ban'></i>";
         }
     } else if (col === "tags"){
         render = function(data, type, row){
             if (data)
-                return "<label class='label label-danger'>" + data + "</label>";
+                return "<label class='label label-danger'>" + highlight_search(data) + "</label>";
             return "";
         }
     } else if (Array.isArray(mapping)){
@@ -734,12 +734,12 @@ function render_col(col, mapping){
                 return nodes_id[data]
             }
 
-            return data;
+            return highlight_search(data);
         }
     } else if (col === "certitude") {
         // For Darwin entries
         render = function(data, type, row){
-            return "<label class='label label-danger'>" + data + "</label>";
+            return "<label class='label label-danger'>" + highlight_search(data) + "</label>";
         }
     }
 
@@ -887,6 +887,9 @@ function init_timeline(tmp_data){
                         } 
                     }],
                     yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        },
                         gridLines: {
                             display: true,
                             drawBorder: true,

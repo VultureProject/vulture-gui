@@ -94,7 +94,7 @@ def log_viewer(request):
             if type_logs == "impcap":
                 for frontend in Frontend.objects.filter(mode="impcap", enable_logging=True):
                     try:
-                        frontend.log_forwarders.get(internal=True)
+                        frontend.log_forwarders.get(name="Internal_MongoDB", internal=True)
                         apps[frontend.name] = frontend.name
                     except LogOM.DoesNotExist:
                         continue
