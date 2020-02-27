@@ -22,13 +22,13 @@
     <script src="{% static 'plugins/queryBuilder/query-builder.elasticsearch.js' %}"></script>
     <script src="{% static 'plugins/queryBuilder/interact.min.js' %}"></script>
     <script src="{% static 'plugins/gridstack/lodash.min.js' %}"></script>
-    <script src="{% static 'plugins/echarts4.all.min.js' %}"></script>
     <script src="{% static 'plugins/visjs/visjs.min.js' %}"></script>
     <script src="{% static 'plugins/ace/ace.js' %}"></script>
     <script src="{% static 'plugins/ace/ext-beautify.js' %}"></script>
     <script src="{% static 'plugins/ace/ext-keybinding_menu.js' %}"></script>
     <script src="{% static 'plugins/ace/ext-language_tools.js' %}"></script>
     <script src="{% static 'plugins/ace/ext-prompt.js' %}"></script>
+    <script src="{% static 'plugins/Chart.min.js' %}"></script>
     <!--<script src="{% static 'js/wl_bl.js' %}"></script>-->
 	<script src="{% static 'js/log_viewer.js' %}"></script>
 	<script src="{% static 'js/defender_logs.js' %}"></script>
@@ -176,7 +176,8 @@
                         </div><br/>
                         <div class="row" id="graph_logs_div">
                             <div class="col-md-12">
-                                <div id="graph_logs" style="width:100%;height:150px"></div>
+                                <canvas id="overlay" width="600" height="150" style="position:absolute;pointer-events:none;"></canvas>
+                                <canvas id="graph_logs" style="width:100%;height:150px"></canvas>
                             </div>
                         </div><br/>
                         <div class="row" id="table_logs_div">

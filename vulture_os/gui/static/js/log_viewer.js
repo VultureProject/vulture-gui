@@ -1,5 +1,6 @@
 var lang_tool = ace.require("ace/ext/language_tools");
-
+var ctx;
+var options_graph;
 var snippetManager = ace.require("ace/snippets").snippetManager;
 var config = ace.require("ace/config");
 
@@ -63,6 +64,7 @@ $(function(){
         timePicker         : true,
         timePickerIncrement: 1,
         timePicker24Hour   : true,
+        timePickerSeconds  : false,
         ranges             : ranges,
         opens              : 'right',
         buttonClasses      : ['btn', 'btn-sm'],
@@ -838,80 +840,168 @@ function init_detail_info(mapping){
     });
 }
 
-function init_timeline(data){
-    if (chart)
-        chart.clear();
+function init_timeline(tmp_data){
+    if (!chart){
+        options_graph = {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: '#2f4554'
+                }]
+            },
+            options: {
+                layout: {
+                    padding: {
+                        left: 0,
+                        right: 1,
+                        top: 5,
+                        bottom: 0
+                    }
+                },
+                legend: {
+                    display: false,
+                },
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            tooltipFormat:'DD/MM HH:mm:ss',
+                            unit: "hour",
+                            unitStepSize: 2,
+                            displayFormats: {
+                                "day": "DD/MM",
+                                "hour": "DD/MM HH",
+                                "minute": "DD/MM HH:mm"
+                            }
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 50
+                        },
+                        gridLines: {
+                            display: true,
+                            drawBorder: true,
+                            drawOnChartArea: false,
+                        } 
+                    }],
+                    yAxes: [{
+                        gridLines: {
+                            display: true,
+                            drawBorder: true,
+                            drawOnChartArea: true,
+                        } 
+                    }]
+                }
+            }
+        }
 
-    var x = [];
-    var y = [];
+        var canvas = document.getElementById('graph_logs');
+        ctx = canvas.getContext('2d');
+        chart = new Chart(ctx, options_graph);
 
-    $.each(data.graph_data, function(k, v){
-        x.push(k);
-        y.push(v);
+        var overlay = document.getElementById('overlay');
+        var startIndex = 0;
+        overlay.width = canvas.width;
+        overlay.height = canvas.height;
+        var selectionContext = overlay.getContext('2d');
+
+        var selectionRect = {
+          w: 0,
+          startX: 0,
+          startY: 0
+        };
+
+        var drag = false;
+
+        function pointerDown(evt){
+            const points = chart.getElementsAtEventForMode(evt, 'index', {
+                intersect: false
+            });
+
+            startIndex = points[0]._index;
+            const rect = canvas.getBoundingClientRect();
+            selectionRect.startX = evt.clientX - rect.left;
+            selectionRect.startY = chart.chartArea.top;
+            drag = true;
+            // save points[0]._index for filtering
+        }
+
+        function pointerMove(evt){
+            const rect = canvas.getBoundingClientRect();
+          if (drag) {
+            const rect = canvas.getBoundingClientRect();
+            selectionRect.w = (evt.clientX - rect.left) - selectionRect.startX;
+            selectionContext.globalAlpha = 0.5;
+            selectionContext.clearRect(0, 0, canvas.width, canvas.height);
+            selectionContext.fillRect(selectionRect.startX,
+              selectionRect.startY,
+              selectionRect.w,
+              chart.chartArea.bottom - chart.chartArea.top);
+
+          } else {
+            selectionContext.clearRect(0, 0, canvas.width, canvas.height);
+            var x = evt.clientX - rect.left;
+            if (x > chart.chartArea.left) {
+              selectionContext.fillRect(x,
+                chart.chartArea.top,
+                1,
+                chart.chartArea.bottom - chart.chartArea.top);
+            }
+          }
+        }
+
+        function pointerUp(evt){
+            const points = chart.getElementsAtEventForMode(evt, 'index', {
+                intersect: false
+            });
+
+            drag = false;
+            var start_date = moment(options_graph.data.labels[startIndex], "YYYY-MM-DD:HH:mm");
+            var end_date = moment(options_graph.data.labels[points[0]._index], "YYYY-MM-DD:HH:mm");
+
+
+            if (start_date > end_date){
+                var tmp = start_date;
+                start_date = end_date;
+                end_date = tmp;
+            }
+
+            $("#reportrange_logs").data('daterangepicker').setStartDate(start_date);
+            $("#reportrange_logs").data('daterangepicker').setEndDate(end_date);
+
+            label = start_date.format("DD/MM/YYYY HH:mm") + " <i class='fa fa-arrow-right'></i> " + end_date.format("DD/MM/YYYY HH:mm")
+            $('#reportrange_logs').html(label);
+
+            fetch_data();
+        }
+
+        canvas.removeEventListener('pointerdown', pointerDown)
+        canvas.addEventListener('pointerdown', pointerDown);
+
+        canvas.removeEventListener('pointermove', pointerMove)
+        canvas.addEventListener('pointermove', pointerMove);
+
+        canvas.removeEventListener('pointerup', pointerUp)
+        canvas.addEventListener('pointerup', pointerUp);
+    }
+
+    var agg_by = tmp_data.agg_by;
+    chart.data.labels = [];
+    chart.data.datasets[0].data = [];
+
+    $.each(tmp_data.graph_data, function(k, v){
+        chart.data.labels.push(moment(k))
+        chart.data.datasets[0].data.push({
+            x: moment(k),
+            y: v
+        })
     })
 
-    var options = {
-        toolbox: {
-            show: true,
-            showTitle: false,
-            left: 0
-        },
-        grid: {
-            left: '0%',
-            top: '5%',
-            right: '1%',
-            bottom: '0%',
-            containLabel: true
-        },
-        tooltip : {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'cross',
-                label: {
-                    backgroundColor: '#6a7985'
-                }
-            }
-        },
-        xAxis: {
-            type: 'category',
-            data: x,
-            axisLabel: {
-                show: true,
-                interval: 'auto',
-                rotate: 0,
-                margin: 10
-            }
-        },
-        yAxis: {
-            type: 'value',
-            axisLine: {
-                show: false
-            },
-            axisTick: {
-                show: false
-            },
-            axisLabel: {
-                show: true,
-                interval: 'auto',
-                rotate: 30,
-                margin: 10,
-                textStyle: {
-                    color: '#212529'
-                }
-            },
+    chart.options.scales.xAxes[0].time.unit = agg_by;
 
-        },
-        series: [{
-            data: y,
-            type: 'bar',
-            itemStyle: {
-                color: "#3A444E"
-            }
-        }]
-    };
-
-    chart = echarts.init(document.getElementById("graph_logs"))
-    chart.setOption(options);
+    chart.update();
 }
 
 function init_datatable(data){
