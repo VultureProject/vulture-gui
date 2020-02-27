@@ -249,12 +249,11 @@ $(function() {
 
   function refresh_input_logs_type(listening_mode){
     var first = true;
-    $('#id_ruleset').show();
+    $('#ruleset-div').show();
     $('#id_node').show();
     if (listening_mode === "api"){
-      $('#id_ruleset').hide();
+      $('#ruleset-div').hide();
       $('#id_node').hide();
-      $('#id_ruleset').val('generic_json').trigger('change');
     }
   }
 
@@ -469,6 +468,8 @@ $(function() {
         notify('error', gettext('Error'), gettext('Test your API configuration before saving this frontend'))
         return;
       }
+
+      $('#id_ruleset').val($('#id_api_parser_type').val()).trigger('change');
     }
 
     $('#id_ruleset').prop('disabled', false);
