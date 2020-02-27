@@ -475,7 +475,7 @@ DARWIN_COLUMNS = {
     "evt_id": "string",
     "time": "string",
     "evt_time": "string",
-    "filter": "string",
+    "filter_name": "string",
     "certitude": "integer",
     "details": "string"
 }
@@ -489,7 +489,7 @@ DEFAULT_DARWIN_COLUMNS = {
         "x": 0
     },
     "1": {
-        'name': 'frontend',
+        'name': 'frontend_name',
         'width': 1,
         "x": 1
     },

@@ -228,14 +228,15 @@ def get_logs(request):
 
     log_viewer_mongo = LogViewerMongo(params)
     nb_res, results = log_viewer_mongo.search()
-    graph_data = log_viewer_mongo.timeline()
+    graph_data, agg_by = log_viewer_mongo.timeline()
 
     return JsonResponse({
         'status': True,
         "iTotalRecords": nb_res,
         "iTotalDisplayRecords": nb_res,
         "aaData": results,
-        'graph_data': graph_data
+        'graph_data': graph_data,
+        'agg_by': agg_by
     })
 
 
