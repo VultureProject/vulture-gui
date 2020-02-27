@@ -1,0 +1,19 @@
+secadm {
+	pax {
+		path: "/usr/local/bin/node",
+		mprotect: false,
+		prefer_acl: true
+	},
+	pax {
+		path: "/home/vlt-os/env/bin/python3.7",
+		mprotect: false,
+		pageexec: false,
+		prefer_acl: true
+	},
+	pax {
+		path: "/usr/local/sbin/httpd",
+		mprotect: false,
+		pageexec: false
+		prefer_acl: true
+    }
+}

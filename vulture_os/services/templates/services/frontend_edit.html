@@ -656,6 +656,8 @@
     };
   }
 
+  var first_load = true;
+
   $(function() {
 
     var redis_forwarder = "{{redis_forwarder}}";
@@ -785,7 +787,6 @@
       let impcap_filter_type = $('#id_impcap_filter_type').val();
       if( impcap_filter_type === "custom" ) {
         $('#id_impcap_filter').prop("readonly", false);
-        $('#id_impcap_filter').val("");
       } else {
         $('#id_impcap_filter').prop("readonly", true);
         $('#id_impcap_filter').val($('#id_impcap_filter_type').val());
@@ -1090,8 +1091,6 @@
     $('#id_log_forwarders').on('change', function(e) {
       refresh_log_forwarders($(this).val());
     });
-
-    refresh_log_forwarders($('#id_log_forwarders').val());
 
     /* Initialize all custom fields */
     refresh_table_events();

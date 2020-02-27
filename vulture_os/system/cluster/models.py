@@ -40,6 +40,7 @@ import ipaddress
 from iptools.ipv4 import netmask2prefix
 import time
 
+from applications.logfwd.models import LogOMHIREDIS
 from services.exceptions import ServiceExit
 
 from re import findall as re_findall, compile as re_compile
@@ -81,6 +82,21 @@ class Node(models.Model):
     scanner_ip = models.ForeignKey(to="NetworkAddress", null=True, on_delete=models.SET_NULL,
                                    help_text=_("NAT IP used for scanner"),
                                    verbose_name=_("Scanner IP"))
+    pstats_forwarders = models.ArrayReferenceField(to="applications.LogOM",
+                                                   null=True,
+                                                   blank=False,
+                                                   verbose_name=_("Send rsyslog pstats logs to"),
+                                                   help_text=_("Log forwarders used to send impstats logs"))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.id:
+            try:
+                dashboard_fwd = LogOMHIREDIS.objects.get(name="Internal_Dashboard")
+            except:
+                pass
+            else:
+                self.pstats_forwarders.add(dashboard_fwd)
 
     def __str__(self):
         return self.name
@@ -608,14 +624,19 @@ class NetworkInterfaceCard(models.Model):
         """ Check if there is at least one NetworkAddress IPv4 associated to this NetworkInterface 
         :return  True if there is, False otherwise
         """
-        return self.networkaddress_set.mongo_find({"ip": {"$not": re_compile(":")}}).count() > 0
+        # NOT IN is not supported by djongo
+        for addr in self.networkaddress_set.all():
+            if ":" not in addr.ip:
+                return True
+        return False
 
     @property
     def has_ipv6(self):
         """ Check if there is at least one NetworkAddress IPv6 associated to this NetworkInterface
         :return True if there is, False otherwise
         """
-        return self.networkaddress_set.mongo_find({"ip": re_compile(":")}).count() > 0
+        # self.networkaddress_set.mongo_find({"ip": re_compile(":")}).count() > 0
+        return self.networkaddress_set.filter(ip__contains=":").count() > 0
 
 
 class NetworkAddress(models.Model):

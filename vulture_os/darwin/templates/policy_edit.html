@@ -18,7 +18,50 @@
       <div class="col-md-12">
         <form id="policy_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
           {% csrf_token %}
-          <div class="panel">
+          {# Print form errors correctly #}
+          {% if form.non_field_errors %}
+            <div class="panel panel-danger">
+              <div class="panel-heading">
+              <h4 class="panel-title"><i class="icon fa fa-ban"></i> Form errors </h4>
+              </div>
+              <div class="panel-body">
+                {{ form.non_field_errors|safe }}
+              </div>
+            </div>
+          {% endif %}
+          {# If there is save/configuration errors #}
+          {% if save_error %}
+            <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+              <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                <li><a href="#tab_2" data-toggle="tab">Advanced informations</a></li>
+                <li class="active"><a href="#tab_1" data-toggle="tab">Message</a></li>
+                <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
+              </ul>
+              <div class="tab-content no-padding">
+                <div class="tab-pane active" id="tab_1">
+                  <pre>{{ save_error.0 }}</pre>
+                </div>
+                <div class="tab-pane" id="tab_2">
+                  <pre>{{ save_error.1 }}</pre>
+                </div>
+              </div>
+            </div> <!-- /.alert -->
+          {% endif %}
+          {# If there is connection test errors #}
+          {% if connection_error %}
+            <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+              <h4>Connection error</h4>
+              {{ connection_error }}
+            </div> <!-- /.alert -->
+          {% endif %}
+          {# If there is success message #}
+          {% if success %}
+            <div class="alert alert-success alert-dismissible nav-tabs-custom">
+              <h4>Success</h4>
+              <pre>{{ success }}</pre>
+            </div> <!-- /.alert -->
+          {% endif %}
+            <div class="panel">
             <div class="panel-title">
                 <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Darwin Security policies" %}</h1>
             </div>
@@ -33,47 +76,6 @@
                   </li>
 
                 </ul>
-                {# Print form errors correctly #}
-                {% if form.non_field_errors %}
-                  <div class="alert alert-danger alert-dismissible">
-                    <h4><i class="icon fa fa-ban"></i> Form errors </h4>
-                    <div class="tab-content no-padding">
-                      {{ form.non_field_errors|safe }}
-                    </div>
-                  </div>
-                {% endif %}
-                {# If there is save/configuration errors #}
-                {% if save_error %}
-                  <div class="alert alert-danger alert-dismissible nav-tabs-custom">
-                    <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                      <li><a href="#tab_2" data-toggle="tab">Advanced informations</a></li>
-                      <li class="active"><a href="#tab_1" data-toggle="tab">Message</a></li>
-                      <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
-                    </ul>
-                    <div class="tab-content no-padding">
-                      <div class="tab-pane active" id="tab_1">
-                        <pre>{{ save_error.0 }}</pre>
-                      </div>
-                      <div class="tab-pane" id="tab_2">
-                        <pre>{{ save_error.1 }}</pre>
-                      </div>
-                    </div>
-                  </div> <!-- /.alert -->
-                {% endif %}
-                {# If there is connection test errors #}
-                {% if connection_error %}
-                  <div class="alert alert-danger alert-dismissible nav-tabs-custom">
-                    <h4>Connection error</h4>
-                    {{ connection_error }}
-                  </div> <!-- /.alert -->
-                {% endif %}
-                {# If there is success message #}
-                {% if success %}
-                  <div class="alert alert-success alert-dismissible nav-tabs-custom">
-                    <h4>Success</h4>
-                    <pre>{{ success }}</pre>
-                  </div> <!-- /.alert -->
-                {% endif %}
                 <div class="tab-content">
                   <div class="tab-pane active" id="tab_general">
                     <br/>
@@ -108,7 +110,7 @@
                             {% for filterpolicy in filterpolicies %}
                               {% if filterpolicy.errors %}
                             <label>Filter {{ filterpolicy.filter_name.initial }}</label>
-                                {{ filterpolicy.errors|safe }}
+                                {{ filterpolicy.non_field_errors|safe }}
                               {% endif %}
                             {% endfor %}
                             <table class="table">

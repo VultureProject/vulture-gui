@@ -108,7 +108,9 @@ def configure_node(node_logger):
     write_conf(node_logger, ["{}/pf.conf".format(RSYSLOG_PATH),
                              pf_template.render({'mongodb_uri': MongoBase.get_replicaset_uri()}),
                              RSYSLOG_OWNER, RSYSLOG_PERMS])
-    result += "Rsyslog template 'pf.conf' written.\n"
+    result += "Rsyslog configuration 'pf.conf' written.\n"
+
+    result += configure_pstats(node_logger)
 
     """ If this method has been called, there is a reason - a Node has been modified
           so we need to restart Rsyslog because at least PF conf has been changed 
@@ -120,6 +122,17 @@ def configure_node(node_logger):
     result += "Rsyslogd service restarted."
 
     return result
+
+
+def configure_pstats(node_logger):
+    """ Pstats configuration """
+    node = Cluster.get_current_node()
+    jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
+    pstats_template = jinja2_env.get_template("pstats.conf")
+    write_conf(node_logger, ["{}/pstats.conf".format(RSYSLOG_PATH),
+                             pstats_template.render({'node': node}),
+                             RSYSLOG_OWNER, RSYSLOG_PERMS])
+    return "Rsyslog configuration 'pstats.conf' written.\n"
 
 
 def build_conf(node_logger, frontend_id=None):

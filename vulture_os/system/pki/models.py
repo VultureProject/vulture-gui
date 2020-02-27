@@ -32,7 +32,6 @@ import OpenSSL
 import urllib.request
 import datetime
 
-from system.cluster.models import Cluster
 from system.exceptions import VultureSystemConfigError
 from toolkit.system.x509 import mk_signed_cert
 
@@ -483,6 +482,7 @@ class X509Certificate(models.Model):
     def save_conf(self):
         """ Write cert as all formats currently supported
         This function raise VultureSystemConfigError if failure """
+        from system.cluster.models import Cluster
         extensions = self.get_extensions()
 
         # Retrieve and stock variable to improve loop perf
@@ -502,6 +502,7 @@ class X509Certificate(models.Model):
         :return   True if success
         raise VultureSystemConfigError if failure
         """
+        from system.cluster.models import Cluster
         # Firstly try to delete the conf, if it fails the object will not be deleted
         extensions = self.get_extensions()
 

@@ -196,7 +196,7 @@ class Service:
             status = Monitor.objects.filter(**query).order_by('-date').first() \
                             .services.filter(name=service_name2).first().status
         except Exception as e:
-            status = "UNKWOWN"
+            status = "UNKNOWN"
 
         return status, ""
 
@@ -296,8 +296,7 @@ class Service:
             raise
         except Exception as e:
             logger.error("Unable to check if conf has changed for {}: ".format(self.service_name, str(e)))
-            logger.exception(e)
-
+            #logger.exception(e)
             if "No such file" in str(e):
                 raise ServiceNoConfigError(str(e), self.service_name)
             raise ServiceConfigError("Cannot open '{}' : {}".format(self.jinja_template['tpl_path'], str(e)),
@@ -352,7 +351,7 @@ class Service:
         except Exception as e:
             logger.error("Failed to check if {} conf has changed: {}".format(self.service_name, str(e)))
 
-        """ If conf has changed ot cannot check, write conf """
+        """ If conf has changed or cannot check, write conf """
         logger.debug("Configuration file for service {} need to be updated".format(str(self)))
         self.write_conf(new_conf, owners=self.owners, perms=self.perms)
         logger.info("Configuration of service {} written on disk.".format(self.service_name))

@@ -50,8 +50,6 @@ class DarwinSettings(models.Model):
 
         return {
             'session_filter': DarwinFilter.objects.get(name='session'),
-            'logs_filter': DarwinFilter.objects.get(name='logs'),
-            'is_next': FilterPolicy.objects.filter(~Q(filter__name__in=['session', 'logs']) & Q(enabled=True)).count() > 0,
             'policies': DarwinPolicy.objects.all()
         }
 

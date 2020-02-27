@@ -28,6 +28,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
+# Django project imports
+from daemons.reconcile import REDIS_LIST as DARWIN_REDIS_ALERT_LIST
+from daemons.reconcile import REDIS_CHANNEL as DARWIN_REDIS_ALERT_CHANNEL
+
 
 JINJA_PATH = "/home/vlt-os/vulture_os/darwin/log_viewer/config/"
 
@@ -41,6 +45,7 @@ TEMPLATE_PERMS = "644"
 
 DARWIN_LOGLEVEL_CHOICES = (
     ('ERROR', 'Error'),
+    ('WARNING', 'Warning'),
     ('INFO', 'Informational'),
     ('DEBUG', 'Debug')
 )
@@ -130,7 +135,7 @@ class FilterPolicy(models.Model):
 
     enabled = models.BooleanField(default=False)
     nb_thread = models.PositiveIntegerField(default=5)
-    log_level = models.TextField(default=DARWIN_LOGLEVEL_CHOICES[0][0], choices=DARWIN_LOGLEVEL_CHOICES)
+    log_level = models.TextField(default=DARWIN_LOGLEVEL_CHOICES[1][0], choices=DARWIN_LOGLEVEL_CHOICES)
     threshold = models.PositiveIntegerField(default=80)
     mmdarwin_enabled = models.BooleanField(default=False)
     mmdarwin_parameters = models.ListField(default=[])
@@ -138,7 +143,7 @@ class FilterPolicy(models.Model):
     """ Status of filter for each nodes """
     status = models.DictField(default={})
     cache_size = models.PositiveIntegerField(
-        default=1000,
+        default=0,
         help_text=_("The cache size to use for caching darwin requests."),
         verbose_name=_("Cache size")
     )
@@ -156,7 +161,12 @@ class FilterPolicy(models.Model):
     )
 
     conf_path = models.TextField()
-    config = models.DictField(default={})
+    config = models.DictField(default={
+            "redis_socket_path": "/var/sockets/redis/redis.sock",
+            "alert_redis_list_name": DARWIN_REDIS_ALERT_LIST,
+            "alert_redis_channel_name": DARWIN_REDIS_ALERT_CHANNEL,
+            "log_file_path": "/var/log/darwin/alerts.log"
+    })
 
     @property
     def name(self):

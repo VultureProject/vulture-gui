@@ -24,7 +24,8 @@ __doc__ = 'Cluster dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, Textarea, HiddenInput, ModelChoiceField, Select, ValidationError
+from django.forms import (ModelForm, TextInput, Textarea, HiddenInput, ModelChoiceField, Select, SelectMultiple,
+                          ValidationError)
 
 # Django project imports
 from system.cluster.models import Node, NetworkAddress
@@ -50,7 +51,7 @@ class NodeForm(ModelForm):
 
         fields = ['name', 'management_ip', 'pf_custom_config', 'pf_limit_states',
                   'pf_limit_frags', 'pf_limit_src', 'static_routes',
-                  'gateway', 'gateway_ipv6', 'internet_ip', 'scanner_ip']
+                  'gateway', 'gateway_ipv6', 'internet_ip', 'scanner_ip', 'pstats_forwarders']
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
@@ -63,7 +64,13 @@ class NodeForm(ModelForm):
             'gateway': TextInput(attrs={'class': 'form-control'}),
             'gateway_ipv6': TextInput(attrs={'class': 'form-control'}),
             'internet_ip': TextInput(attrs={'class': 'form-control'}),
+            'pstats_forwarders': SelectMultiple(attrs={'class': 'form-control select2'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set non required fields
+        self.fields["pstats_forwarders"].required = False
 
     def clean_scanner_ip(self):
         value = self.cleaned_data.get('scanner_ip')

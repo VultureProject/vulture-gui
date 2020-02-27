@@ -39,7 +39,6 @@ urlpatterns = [
     path('collapse', collapse, name="gui.collapse_menu"),
 
     re_path(r'^$', dashboard.dashboard_services, name="gui.dashboard.services"),
-    path('dashboard/services/', dashboard.dashboard_services, name="gui.dashboard.services"),
 
     path('rss/', rss, name='gui.rss'),
     path('process_queue/', process_queue_state, name='gui.process_queue'),

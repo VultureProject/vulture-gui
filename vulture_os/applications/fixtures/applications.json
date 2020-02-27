@@ -37,5 +37,25 @@
             "async_writing": true,
             "enabled": true
         }
+    },
+    {
+        "model": "applications.logom",
+        "pk": 3,
+        "fields": {
+            "name": "Internal_Dashboard",
+            "internal": true
+        }
+    },
+    {
+        "model": "applications.logomhiredis",
+        "pk": 3,
+        "fields": {
+            "logom_ptr_id": 3,
+            "target": "127.0.0.3",
+            "port": 6379,
+            "key": "vlt.rsyslog.{{ruleset}}",
+            "pwd": "",
+            "enabled": true
+        }
     }
 ]
