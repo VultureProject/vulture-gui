@@ -125,16 +125,18 @@ class AkamaiParser(ApiParser):
         tmp = {
             "@timestamp": timestamp.isoformat(),
             "net_src_ip": log['attackData'].get('clientIP', '-'),
+            "evt_id": log['httpMessage'].get('requestId', "-"),
+            "http_tls_version": log['httpMessage'].get('tls', '-'),
             'net_dst_port': log['httpMessage'].get('port', '-'),
-            'http_request_host': log['httpMessage'].get('host', '-'),
+            'http_host': log['httpMessage'].get('host', '-'),
             'http_proto': log['httpMessage'].get('protocol', '-'),
             'http_method': log['httpMessage'].get('method', '-'),
-            'http_request_uri': log['httpMessage'].get('uri', '-'),
+            'http_request_path': log['httpMessage'].get('uri', '-'),
             'http_request_data': log['httpMessage'].get('query', '-'),
             'net_bytes_received': log['httpMessage'].get('bytes', 0),
             'http_status': log['httpMessage'].get('status', '-'),
             'http_request_headers': log['httpMessage'].get('requestHeaders', '-'),
-            'http_response_headers': log['httpMessage'].get('responseHeaders', '-'),
+            'http_headers': log['httpMessage'].get('responseHeaders', '-'),
             'ctx_src_geoip.city_name': log['geo'].get('city', '-'),
             'ctx_src_geoip.country_name': log['geo'].get('country', '-')
         }
