@@ -33,6 +33,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 
 # Extern modules imports
+from copy import deepcopy
 from datetime import datetime
 import json
 from threading import Thread, Event
@@ -60,6 +61,7 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
         return
 
     evt_id = alertData.get("evt_id")
+    flatAlertData = deepcopy(alertData)
     context = None
     if evt_id is not None:
         retries = 0
@@ -75,7 +77,8 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
                 try:
                     context = json.loads(context.decode())
                     context['evt_time'] = context.pop("time", "")
-                    alertData.update(context)
+                    flatAlertData.update(context)
+                    alertData['context'] = context
                 except json.JSONDecodeError as e:
                     logger.error("Reconcile: context is not a valid JSON: {}".format(e))
 
@@ -88,16 +91,16 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
     except Exception as e:
         logger.error("Reconcile: could not write alert {} to log file {} -> {}".format(evt_id, filepath, e))
 
-    redis.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(alertData))
+    redis.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(flatAlertData))
 
-    time = alertData.get('time', None)
+    time = flatAlertData.get('time', None)
     if time:
         time = datetime.strptime(time, "%Y-%m-%d%Z%H:%M:%S%z")
-        alertData['time'] = time
+        flatAlertData['time'] = time
     else:
         logger.warning("Reconcile: while treating alert, no 'time' field was found!")
 
-    mongo.insert(MONGO_DATABASE, MONGO_COLLECTION, alertData)
+    mongo.insert(MONGO_DATABASE, MONGO_COLLECTION, flatAlertData)
     return True
 
 
