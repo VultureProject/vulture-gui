@@ -24,25 +24,25 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Log Viewer view'
 
 
-from django.utils.translation import ugettext as _
-from toolkit.mongodb.mongo_base import MongoBase
-from requests.exceptions import ConnectionError
-from toolkit.network.network import get_proxy
-from system.config.models import Config
-from darwin.log_viewer import const
-from django.conf import settings
-from urllib import parse
-import tldextract
-import ipaddress
 import datetime
-import requests
-import logging
-import shodan
 import errno
+import ipaddress
 import json
-import pytz
+import logging
 import os
 import re
+import requests
+import shodan
+import tldextract
+
+from darwin.log_viewer import const
+from django.conf import settings
+from django.utils.translation import ugettext as _
+from requests.exceptions import ConnectionError
+from system.config.models import Config
+from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.network.network import get_proxy
+from urllib import parse
 
 from daemons.reconcile import MONGO_COLLECTION as DARWIN_MONGO_COLLECTION
 
@@ -300,19 +300,26 @@ class LogViewerMongo:
 def fill_data(start_date, end_date, tmp_data, agg_by):
     data = {}
 
+    if agg_by == "day":
+        strftime = "%Y-%m-%dT00:00"
+    elif agg_by == "hour":
+        strftime = "%Y-%m-%dT%H:00"
+    elif agg_by == "minute":
+        strftime = "%Y-%m-%dT%H:%M"
+
     while start_date <= end_date:
         try:
-            sum_alert = tmp_data[start_date.strftime('%Y-%m-%dT%H:%M')]
+            sum_alert = tmp_data[start_date.strftime(strftime)]
         except KeyError:
             sum_alert = 0
 
         data[start_date.isoformat()] = sum_alert
         if agg_by == "day":
-            start_date = start_date + datetime.timedelta(days=1)
+            start_date += datetime.timedelta(days=1)
         elif agg_by == "hour":
-            start_date = start_date + datetime.timedelta(hours=1)
+            start_date += datetime.timedelta(hours=1)
         elif agg_by == "minute":
-            start_date = start_date + datetime.timedelta(seconds=60)
+            start_date += datetime.timedelta(seconds=60)
 
     return data
 
