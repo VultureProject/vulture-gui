@@ -96,13 +96,13 @@ class LogViewerMongo:
             self.type_sorting = self.TYPE_SORTING[params['type_sorting']]
 
         self.startDate = datetime.datetime.strptime(
-            params['startDate'].split('+')[0],
-            "%Y-%m-%dT%H:%M:%S"
+            params['startDate'],
+            "%Y-%m-%dT%H:%M:%S%z"
         )
 
         self.endDate = datetime.datetime.strptime(
-            params['endDate'].split('+')[0],
-            "%Y-%m-%dT%H:%M:%S"
+            params['endDate'],
+            "%Y-%m-%dT%H:%M:%S%z"
         )
 
         self.time_field = self.TIME_FIELD[self.type_logs]
