@@ -141,7 +141,7 @@ def build_conf(node_logger, frontend_id=None):
     outputs of all frontends
     :param node_logger: Logger sent to all API requests
     :param frontend_id: The name of the frontend in conf file
-    :return: 
+    :return:
     """
     result = ""
     """ Firstly, try to retrieve Frontend with given id """

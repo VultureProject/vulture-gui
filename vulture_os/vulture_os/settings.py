@@ -73,15 +73,17 @@ AVAILABLE_APPS = [
 
 INSTALLED_APPS.extend(AVAILABLE_APPS)
 
-
-CRONJOBS = [
+CRONJOBS = (
     ("* * * * *", "gui.crontab.rss.rss_fetch"),  # Every minute
+    ("* * * * *", "gui.crontab.api_clients_parser.api_clients_parser"),  # Every 5 minute
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
     ("1 * * * *", "gui.crontab.feed.security_update"),  # Every hour
     ("1 * * * *", "gui.crontab.documentation.doc_update"),  # Every hour
     ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
-]
+)
+
+CRONTAB_COMMAND_PREFIX = "LANG=en_US.UTF-8"
 
 # Extend cronjobs with custom cronjobs
 if os.path.exists(os.path.dirname(os.path.abspath(__file__)) + "/custom_cronjobs.py"):

@@ -921,3 +921,13 @@ ul li{
 #documentation_content{
     font-size: 16px;
 }
+
+#modal-test-apiparser-body pre{
+    max-height: 300px;
+    overflow: auto;
+}
+
+#list-rss{
+    overflow: auto;
+    max-height: 400px;
+}

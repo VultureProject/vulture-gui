@@ -9,9 +9,9 @@
            uid="{{ uid }}"
            pwd="{{ pwd }}"
            {% endif %}
-           {% if ssl_ca %}tls.cacert="{{ssl_ca}}"
-           {% if ssl_cert %}tls.mycert="{{ssl_cert}}"
-           {% if ssl_key %}tls.myprivkey="{{ssl_key}}"
+           {% if ssl_ca %}tls.cacert="{{ssl_ca}}"{% endif %}
+           {% if ssl_cert %}tls.mycert="{{ssl_cert}}"{% endif %}
+           {% if ssl_key %}tls.myprivkey="{{ssl_key}}"{% endif %}
            bulkmode="on"
            maxbytes="100m"
            queue.type="linkedlist"
