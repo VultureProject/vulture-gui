@@ -661,7 +661,11 @@ function highlight_search(data){
             searched_values.push(search);
 
             var s = new RegExp(search, "gi");
-            data = data.replace(s, "<span style='background-color: #FFFF00'>" + search + "</span>")
+            try{
+                data = data.replace(s, "<span style='background-color: #FFFF00'>" + search + "</span>")
+            } catch(err){
+                return data;
+            }
         }
     })
 
