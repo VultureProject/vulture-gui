@@ -42,7 +42,7 @@ from applications.logfwd.models import LogOMHIREDIS
 
 if __name__ == "__main__":
 
-    LogOMHIREDIS.objects.create(
+    logom, created = LogOMHIREDIS.objects.get_or_create(
         internal=True,
         name="Internal_Dashboard",
         enabled=True,
@@ -51,4 +51,6 @@ if __name__ == "__main__":
         key="vlt.rsyslog.{{ruleset}}",
         pwd=""
     )
+    if created:
+        print("[+] New log forwarder added : {}".format(logom))
     print("2_add_internal_dashboard_forwarder done.")

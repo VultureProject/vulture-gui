@@ -94,7 +94,7 @@ def log_viewer(request):
             if type_logs == "impcap":
                 for frontend in Frontend.objects.filter(mode="impcap", enable_logging=True):
                     try:
-                        frontend.log_forwarders.get(internal=True)
+                        frontend.log_forwarders.get(name="Internal_MongoDB", internal=True)
                         apps[frontend.name] = frontend.name
                     except LogOM.DoesNotExist:
                         continue
@@ -144,24 +144,15 @@ def log_viewer(request):
 
         elif action == "save_search":
             type_logs = request.POST['type_logs']
-            update = request.POST.get('update')
             search_name = request.POST['search_name']
             rules = json.loads(request.POST['rules'])
 
-            if update:
-                search = LogViewerSearches.objects.get(pk=update)
-                search.name = search_name
-                search.search = rules
-
-                search.save()
-
-            else:
-                search = LogViewerSearches.objects.create(
-                    name=search_name,
-                    type_logs=type_logs,
-                    search=rules,
-                    user=request.user.user
-                )
+            LogViewerSearches.objects.create(
+                name=search_name,
+                type_logs=type_logs,
+                search=rules,
+                user=request.user.user
+            )
 
             data = {
                 "status": True,
@@ -237,14 +228,15 @@ def get_logs(request):
 
     log_viewer_mongo = LogViewerMongo(params)
     nb_res, results = log_viewer_mongo.search()
-    graph_data = log_viewer_mongo.timeline()
+    graph_data, agg_by = log_viewer_mongo.timeline()
 
     return JsonResponse({
         'status': True,
         "iTotalRecords": nb_res,
         "iTotalDisplayRecords": nb_res,
         "aaData": results,
-        'graph_data': graph_data
+        'graph_data': graph_data,
+        'agg_by': agg_by
     })
 
 

@@ -154,6 +154,7 @@ def cluster_edit(request, object_id, api=False, update=False):
             node.api_request('toolkit.network.network.restart_routing')
 
         if ip_changed:
+            node.api_request("services.apache.apache.reload_conf")
             Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (node.name, node.management_ip))
             res = node.write_management_ip()
             if not res.get('status'):

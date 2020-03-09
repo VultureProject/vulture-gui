@@ -624,14 +624,19 @@ class NetworkInterfaceCard(models.Model):
         """ Check if there is at least one NetworkAddress IPv4 associated to this NetworkInterface 
         :return  True if there is, False otherwise
         """
-        return self.networkaddress_set.mongo_find({"ip": {"$not": re_compile(":")}}).count() > 0
+        # NOT IN is not supported by djongo
+        for addr in self.networkaddress_set.all():
+            if ":" not in addr.ip:
+                return True
+        return False
 
     @property
     def has_ipv6(self):
         """ Check if there is at least one NetworkAddress IPv6 associated to this NetworkInterface
         :return True if there is, False otherwise
         """
-        return self.networkaddress_set.mongo_find({"ip": re_compile(":")}).count() > 0
+        # self.networkaddress_set.mongo_find({"ip": re_compile(":")}).count() > 0
+        return self.networkaddress_set.filter(ip__contains=":").count() > 0
 
 
 class NetworkAddress(models.Model):

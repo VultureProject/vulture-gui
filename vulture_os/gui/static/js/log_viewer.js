@@ -1,3 +1,9 @@
+var lang_tool = ace.require("ace/ext/language_tools");
+var ctx;
+var options_graph;
+var snippetManager = ace.require("ace/snippets").snippetManager;
+var config = ace.require("ace/config");
+
 var mapping_text = {
     "date_add": gettext("Start time"),
     "modified": gettext("End time"),
@@ -9,6 +15,7 @@ var mapping_text = {
 
 var reportrange;
 var gridster;
+var editor;
 
 var nodes_id;
 var network;
@@ -57,6 +64,7 @@ $(function(){
         timePicker         : true,
         timePickerIncrement: 1,
         timePicker24Hour   : true,
+        timePickerSeconds  : false,
         ranges             : ranges,
         opens              : 'right',
         buttonClasses      : ['btn', 'btn-sm'],
@@ -232,8 +240,10 @@ $(function(){
     $('#btn-reset').unbind('click');
     $('#btn-reset').on('click', function(){
         $('#queryBuilder').queryBuilder('reset');
+        $('#queryBuilder_ace').queryBuilder('reset');
+        editor.setValue('');
+        rules_preview();
         fetch_data()
-        $('#edit_search').hide();
     })
 
     $('#add_field').on('click', function(){
@@ -291,27 +301,26 @@ $(function(){
         save_search();
     })
 
-    $('#edit_search').on('click', function(){
-        save_search($(this).data('pk'));
-    })
-
-    $('#saved-search').on('change', function(){
-        if ($(this).val() === ""){
-            $('#edit_search').hide();
-            return false;
-        }
-
-        var value = $(this).val().split('|');
+    $('#load_search').on('click', function(){
+        var value = $("#saved-search").val().split('|');
 
         var pk = value[0];
 
         var rules = JSON.parse(value[1]);
         $('#queryBuilder').queryBuilder('setRules', rules);
-        $('#delete_search').show();
+        rules_preview();
+        fetch_data();
+    })
 
-        $('#edit_search').data('pk', pk);
-        $('#search_name').val($("#saved-search option:selected").text());
-        $('#edit_search').show();
+    $('#saved-search').on('change', function(){
+        if ($(this).val() === ""){
+            $('#load_search').hide();
+            $('#delete_search').hide();
+            return false;
+        }
+
+        $('#delete_search').show();
+        $('#load_search').show();
     })
 
     $('#save_config').on('click', function(){
@@ -385,7 +394,10 @@ $(function(){
             function(response){
                 if (check_json_error(response)){
                     notify('success', gettext('Success'), gettext('Search deleted'));
+                    $('#load_search').hide();
+                    $('#delete_search').hide();
                     $('#saved-search option:selected').remove();
+                    $('#saved-search').val('').trigger('change');
                 }
             }
 
@@ -570,7 +582,7 @@ function rules_preview(){
     // Show preview of queryBuilder rules. SQL Syntax
     var rules_sql = $('#queryBuilder').queryBuilder('getSQL', false);
     if (rules_sql)
-        $('#logs_preview_rule').val(rules_sql.sql);
+        editor.setValue(rules_sql.sql);
     else
         $('#logs_preview_rule').val('');
 }
@@ -580,11 +592,10 @@ function event_querybuilder(){
     // Event 'rulesChanged' doesn't work
     $('#queryBuilder').on('afterAddGroup.queryBuilder afterUpdateGroupCondition.queryBuilder afterDeleteGroup.queryBuilder afterAddRule.queryBuilder afterUpdateRuleFilter.queryBuilder afterUpdateRuleOperator.queryBuilder afterUpdateRuleValue.queryBuilder afterDeleteRule.queryBuilder afterReset.queryBuilder afterSetRules.queryBuilder', function(){
         scroll_id = null;
-        rules_preview();
     })
 }
 
-function save_search(update){
+function save_search(){
     PNotify.removeAll();
 
     var search_name = $('#search_name').val();
@@ -604,7 +615,6 @@ function save_search(update){
             action: 'save_search',
             type_logs: selected_type,
             search_name: search_name,
-            update: update,
             rules: JSON.stringify(rules)
         },
 
@@ -642,13 +652,34 @@ function delete_grid(e){
     }
 }
 
+function highlight_search(data){
+    var searched_values = [];
+    $("#queryBuilder").find(".rule-value-container").each(function(){
+        var search = $($(this).find('input')[0]).val();
+
+        if (search && $.inArray(search, searched_values) === -1){
+            searched_values.push(search);
+
+            var s = new RegExp(search, "gi");
+            try{
+                data = data.replace(s, "<span style='background-color: #FFFF00'>" + search + "</span>")
+            } catch(err){
+                return data;
+            }
+        }
+    })
+
+    return data;
+}
+
 function render_col(col, mapping){
     var render = function(data, type, row){
         if (data === null)
             return "";
         else if (data instanceof Object)
-            return JSON.stringify(data);
+            data = JSON.stringify(data);
 
+        data = highlight_search(data.toString())
         return data;
     }
 
@@ -678,27 +709,27 @@ function render_col(col, mapping){
             var html = "";
             if (col === "src_ip" && row.country)
                 html += "<img src='/static/img/flags/" + row.country.toLowerCase() + ".png' class='img-country'/>&nbsp;&nbsp"
-            html += data;
+            html += highlight_search(data);
             return `<a href='#' class='predator_info' data-column='${col}' data-info='${data}'>${html}</a>`
         }
     } else if ($.inArray(col, ['dns_queries']) > -1){
         render = function(data, type, row){
             result = "<ul>";
             $.each(data, function(no, dns_query){
-                result += "<li>QName : " + dns_query.qname + ",\t DGA Anomaly : " + dns_query.darwin_decision + "%</li>";
+                result += "<li>QName : " + highlight_search(dns_query.qname) + ",\t DGA Anomaly : " + highlight_search(dns_query.darwin_decision) + "%</li>";
             });
             return result + "</ul>";
         }
     } else if (col === "country"){
         render = function(data, type, row){
             if (data)
-                return "<img src='/static/img/flags/" + data.toLowerCase() + ".png' class='img-country'/>&nbsp;&nbsp" + data;
+                return "<img src='/static/img/flags/" + data.toLowerCase() + ".png' class='img-country'/>&nbsp;&nbsp" + highlight_search(data);
             return "<i class='fa fa-ban'></i>";
         }
     } else if (col === "tags"){
         render = function(data, type, row){
             if (data)
-                return "<label class='label label-danger'>" + data + "</label>";
+                return "<label class='label label-danger'>" + highlight_search(data) + "</label>";
             return "";
         }
     } else if (Array.isArray(mapping)){
@@ -707,7 +738,12 @@ function render_col(col, mapping){
                 return nodes_id[data]
             }
 
-            return data;
+            return highlight_search(data);
+        }
+    } else if (col === "certitude") {
+        // For Darwin entries
+        render = function(data, type, row){
+            return "<label class='label label-danger'>" + highlight_search(data) + "</label>";
         }
     }
 
@@ -808,80 +844,171 @@ function init_detail_info(mapping){
     });
 }
 
-function init_timeline(data){
-    if (chart)
-        chart.clear();
+function init_timeline(tmp_data){
+    if (!chart){
+        options_graph = {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: '#2f4554'
+                }]
+            },
+            options: {
+                layout: {
+                    padding: {
+                        left: 0,
+                        right: 1,
+                        top: 5,
+                        bottom: 0
+                    }
+                },
+                legend: {
+                    display: false,
+                },
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            tooltipFormat:'DD/MM HH:mm:ss',
+                            unit: "hour",
+                            unitStepSize: 2,
+                            displayFormats: {
+                                "day": "DD/MM",
+                                "hour": "DD/MM HH",
+                                "minute": "DD/MM HH:mm"
+                            }
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 50
+                        },
+                        gridLines: {
+                            display: true,
+                            drawBorder: true,
+                            drawOnChartArea: false,
+                        } 
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        },
+                        gridLines: {
+                            display: true,
+                            drawBorder: true,
+                            drawOnChartArea: true,
+                        } 
+                    }]
+                }
+            }
+        }
 
-    var x = [];
-    var y = [];
+        var canvas = document.getElementById('graph_logs');
+        ctx = canvas.getContext('2d');
+        chart = new Chart(ctx, options_graph);
 
-    $.each(data.graph_data, function(k, v){
-        x.push(k);
-        y.push(v);
+        var overlay = document.getElementById('overlay');
+        var startIndex = 0;
+        overlay.width = canvas.width;
+        overlay.height = canvas.height;
+        var selectionContext = overlay.getContext('2d');
+
+        var selectionRect = {
+          w: 0,
+          startX: 0,
+          startY: 0
+        };
+
+        var drag = false;
+
+        function pointerDown(evt){
+            const points = chart.getElementsAtEventForMode(evt, 'index', {
+                intersect: false
+            });
+
+            startIndex = points[0]._index;
+            const rect = canvas.getBoundingClientRect();
+            selectionRect.startX = evt.clientX - rect.left;
+            selectionRect.startY = chart.chartArea.top;
+            drag = true;
+            // save points[0]._index for filtering
+        }
+
+        function pointerMove(evt){
+            const rect = canvas.getBoundingClientRect();
+          if (drag) {
+            const rect = canvas.getBoundingClientRect();
+            selectionRect.w = (evt.clientX - rect.left) - selectionRect.startX;
+            selectionContext.globalAlpha = 0.5;
+            selectionContext.clearRect(0, 0, canvas.width, canvas.height);
+            selectionContext.fillRect(selectionRect.startX,
+              selectionRect.startY,
+              selectionRect.w,
+              chart.chartArea.bottom - chart.chartArea.top);
+
+          } else {
+            selectionContext.clearRect(0, 0, canvas.width, canvas.height);
+            var x = evt.clientX - rect.left;
+            if (x > chart.chartArea.left) {
+              selectionContext.fillRect(x,
+                chart.chartArea.top,
+                1,
+                chart.chartArea.bottom - chart.chartArea.top);
+            }
+          }
+        }
+
+        function pointerUp(evt){
+            const points = chart.getElementsAtEventForMode(evt, 'index', {
+                intersect: false
+            });
+
+            drag = false;
+            var start_date = moment(options_graph.data.labels[startIndex], "YYYY-MM-DD:HH:mm");
+            var end_date = moment(options_graph.data.labels[points[0]._index], "YYYY-MM-DD:HH:mm");
+
+
+            if (start_date > end_date){
+                var tmp = start_date;
+                start_date = end_date;
+                end_date = tmp;
+            }
+
+            $("#reportrange_logs").data('daterangepicker').setStartDate(start_date);
+            $("#reportrange_logs").data('daterangepicker').setEndDate(end_date);
+
+            label = start_date.format("DD/MM/YYYY HH:mm") + " <i class='fa fa-arrow-right'></i> " + end_date.format("DD/MM/YYYY HH:mm")
+            $('#reportrange_logs').html(label);
+
+            fetch_data();
+        }
+
+        canvas.removeEventListener('pointerdown', pointerDown)
+        canvas.addEventListener('pointerdown', pointerDown);
+
+        canvas.removeEventListener('pointermove', pointerMove)
+        canvas.addEventListener('pointermove', pointerMove);
+
+        canvas.removeEventListener('pointerup', pointerUp)
+        canvas.addEventListener('pointerup', pointerUp);
+    }
+
+    var agg_by = tmp_data.agg_by;
+    chart.data.labels = [];
+    chart.data.datasets[0].data = [];
+
+    $.each(tmp_data.graph_data, function(k, v){
+        chart.data.labels.push(moment(k))
+        chart.data.datasets[0].data.push({
+            x: moment(k),
+            y: v
+        })
     })
 
-    var options = {
-        toolbox: {
-            show: true,
-            showTitle: false,
-            left: 0
-        },
-        grid: {
-            left: '0%',
-            top: '5%',
-            right: '1%',
-            bottom: '0%',
-            containLabel: true
-        },
-        tooltip : {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'cross',
-                label: {
-                    backgroundColor: '#6a7985'
-                }
-            }
-        },
-        xAxis: {
-            type: 'category',
-            data: x,
-            axisLabel: {
-                show: true,
-                interval: 'auto',
-                rotate: 0,
-                margin: 10
-            }
-        },
-        yAxis: {
-            type: 'value',
-            axisLine: {
-                show: false
-            },
-            axisTick: {
-                show: false
-            },
-            axisLabel: {
-                show: true,
-                interval: 'auto',
-                rotate: 30,
-                margin: 10,
-                textStyle: {
-                    color: '#212529'
-                }
-            },
+    chart.options.scales.xAxes[0].time.unit = agg_by;
 
-        },
-        series: [{
-            data: y,
-            type: 'bar',
-            itemStyle: {
-                color: "#3A444E"
-            }
-        }]
-    };
-
-    chart = echarts.init(document.getElementById("graph_logs"))
-    chart.setOption(options);
+    chart.update();
 }
 
 function init_datatable(data){
@@ -1052,7 +1179,10 @@ function init_datatable(data){
                         if (value instanceof Object)
                             value = JSON.stringify(value);
 
-                        sOut += `<span class='detail_info large'><span class='key'>${key}:</span>&nbsp;&nbsp;<span class='value'>${value}</span></span>`;
+                        if (value){
+                            value = highlight_search(value.toString());
+                            sOut += `<span class='detail_info large'><span class='key'>${key}:</span>&nbsp;&nbsp;<span class='value'>${value}</span></span>`;
+                        }
                     }
                 })
 
@@ -1246,13 +1376,10 @@ function init_search(data){
     nodes = data.nodes;
 
     filters = [];
+    var snippets = [];
 
     $('#saved-search').empty();
     $('#saved-search').append("<option value=''>----</option>")
-    for (var i in search_list){
-        var tmp = search_list[i];
-        $('#saved-search').append("<option value='{0}|{1}'>{2}</option>".format(tmp.pk, JSON.stringify(tmp.search), tmp.name))
-    }
 
     $.each(mapping, function(field, type){
         if (type !== "dict"){
@@ -1287,8 +1414,11 @@ function init_search(data){
 
     try{
         $('#queryBuilder').queryBuilder('destroy');
-    } catch(err){
-    }
+    } catch(err){}
+
+    try{
+        $('#queryBuilder_ace').queryBuilder('destroy');
+    } catch(err){}
 
     builder = $('#queryBuilder').queryBuilder({
         sort_filters: true,
@@ -1301,9 +1431,144 @@ function init_search(data){
         ]
     })
 
+    builder_ace = $('#queryBuilder_ace').queryBuilder({
+        sort_filters: true,
+        allow_empty: true,
+        filters: filters,
+        plugins: [
+            'invert',
+            // 'sortable',
+            'not-group'
+        ]
+    })
+
     event_querybuilder();
-    rules_preview();
+    editor = ace.edit("logs_preview_rule");
+    editor.setTheme("ace/theme/chrome");
+    editor.session.setMode("ace/mode/search");
+
+    ace.config.loadModule("ace/snippets/search", function(m) {
+        if (m) {
+            m.snippets = [];
+
+            for (var i in search_list){
+                var tmp = search_list[i];
+                $('#saved-search').append("<option value='{0}|{1}'>{2}</option>".format(tmp.pk, JSON.stringify(tmp.search), tmp.name))
+
+                $('#queryBuilder_ace').queryBuilder("setRules", tmp.search);
+                var sql = $('#queryBuilder_ace').queryBuilder("getSQL", false).sql;
+
+                m.snippets.push({
+                    content: sql,
+                    name: tmp.name,
+                    tabTrigger: tmp.name,
+                    meta: gettext("Search")
+                })
+            }
+
+            snippetManager.register(m.snippets, m.scope);
+        }
+    });
+
+    editor.on('focus', function(){
+        if (editor.getValue() === ""){
+
+        }
+    })
+
+    editor.setOptions({
+        maxLines: 1,
+        fontSize: 18,
+        showGutter: false,
+        cursorStyle: 'slim',
+        enableSnippets: true,
+        showLineNumbers: false,
+        showFoldWidgets: false,
+        showPrintMargin: false,
+        displayIndentGuides: false,
+        enableLiveAutocompletion: true,
+        enableBasicAutocompletion: true
+    });
+
+    lang_tool.addCompleter({
+        getCompletions: function(editor, session, pos, prefix, callback){
+            var autocomplete = [];
+            $.each(mapping, function(field, type_field){
+                autocomplete.push({
+                    score: 1,
+                    name: field,
+                    value: field,
+                    meta: type_field
+                })
+            })
+
+            callback(null, autocomplete);
+        }
+    })
+
+    editor.container.style.lineHeight = 3;
+    editor.renderer.updateFontSize();
+
+    $('#logs_preview_rule').unbind('keypress');
+    $('#logs_preview_rule').on('keypress', function(e){
+        if (e.keyCode === 13){
+            e.preventDefault();
+            PNotify.removeAll();
+
+            var search_sql = editor.getValue();
+            if (search_sql == ""){
+                $('#queryBuilder').queryBuilder('reset');
+                $('#queryBuilder_ace').queryBuilder('reset');
+            } else {
+                try{
+                    $('#queryBuilder').queryBuilder('setRulesFromSQL', search_sql);
+                } catch(err){
+                    notify('error', gettext('Error'), gettext('Invlid query'))
+                    return;
+                }
+            }
+            fetch_data();
+        }
+    })
+
+    function update() {
+        var shouldShow = !editor.session.getValue().length;
+        var node = editor.renderer.emptyMessageNode;
+        if (!shouldShow && node) {
+            editor.renderer.scroller.removeChild(editor.renderer.emptyMessageNode);
+            editor.renderer.emptyMessageNode = null;
+        } else if (shouldShow && !node) {
+            node = editor.renderer.emptyMessageNode = document.createElement("div");
+            node.textContent = gettext("Search")
+            node.className = "ace_emptyMessage"
+            node.style.padding = "0 9px"
+            node.style.position = "absolute"
+            node.style.zIndex = 9
+            node.style.opacity = 0.5
+            editor.renderer.scroller.appendChild(node);
+        }
+    }
+
+    editor.on("input", update);
+    setTimeout(update, 100);
 }
 
 prepare_type_logs_selector();
+
 $('.btn-open').click();
+
+$('#saved-search').on('click', function(e){
+    e.stopPropagation();
+})
+
+$('.dropdown-menu-lg').on('click', function(e){
+    e.stopPropagation();
+})
+
+$('.dropdown-menu-xlg').on('click', function(e){
+    e.stopPropagation();
+})
+
+$('.dropdown-menu-xlg li').on('click', function(e){
+    e.stopPropagation();
+})

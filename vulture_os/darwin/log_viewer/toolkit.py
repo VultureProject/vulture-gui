@@ -24,25 +24,27 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Log Viewer view'
 
 
-from django.utils.translation import ugettext as _
-from toolkit.mongodb.mongo_base import MongoBase
-from requests.exceptions import ConnectionError
-from toolkit.network.network import get_proxy
-from system.config.models import Config
-from darwin.log_viewer import const
-from django.conf import settings
-from urllib import parse
-import tldextract
-import ipaddress
 import datetime
-import requests
-import logging
-import shodan
 import errno
+import ipaddress
 import json
-import pytz
+import logging
 import os
 import re
+import requests
+import shodan
+import tldextract
+
+from darwin.log_viewer import const
+from django.conf import settings
+from django.utils.translation import ugettext as _
+from requests.exceptions import ConnectionError
+from system.config.models import Config
+from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.network.network import get_proxy
+from urllib import parse
+
+from daemons.reconcile import MONGO_COLLECTION as DARWIN_MONGO_COLLECTION
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -56,7 +58,7 @@ class LogViewerMongo:
         'access': 'haproxy',
         'access_tcp': 'haproxy_tcp',
         'impcap': 'impcap',
-        'darwin': 'darwin',
+        'darwin': DARWIN_MONGO_COLLECTION,
         'message_queue': 'system_messagequeue'
     }
 
@@ -69,8 +71,6 @@ class LogViewerMongo:
         'darwin': 'time',
         'message_queue': 'date_add'
     }
-
-    DATABASE = "logs"
 
     TYPE_SORTING = {
         'asc': 1,
@@ -98,12 +98,12 @@ class LogViewerMongo:
         self.startDate = datetime.datetime.strptime(
             params['startDate'],
             "%Y-%m-%dT%H:%M:%S%z"
-        ).astimezone(pytz.utc)
+        )
 
         self.endDate = datetime.datetime.strptime(
             params['endDate'],
             "%Y-%m-%dT%H:%M:%S%z"
-        ).astimezone(pytz.utc)
+        )
 
         self.time_field = self.TIME_FIELD[self.type_logs]
 
@@ -113,7 +113,9 @@ class LogViewerMongo:
                 type_logs += "_" + self.frontend.mode
 
         if type_logs == "message_queue":
-            self.DATABASE = "vulture"
+            self.DATABASE = const.MESSAGE_QUEUE_DATABASE
+        else:
+            self.DATABASE = const.LOGS_DATABASE
 
         self.COLLECTION = self.COLLECTIONS_NAME[type_logs]
         self.client = MongoBase()
@@ -160,6 +162,16 @@ class LogViewerMongo:
 
             if 'unix_timestamp' in res.keys():
                 res['unix_timestamp'] = datetime.datetime.utcfromtimestamp(float(res['unix_timestamp']))
+
+            # FIXME Temporary darwin details aggregation
+            for darwin_filter_details in ['yara_match', 'anomaly', 'connection', 'domain', 'host']:
+                if darwin_filter_details in res.keys():
+                    res['details'] = res[darwin_filter_details]
+                    break
+
+            # FIXME Temporary aggregation for DGA certitude
+            if "dga_prob" in res.keys():
+                res['certitude'] = res['dga_prob']
 
             for c in self.columns:
                 if not res.get(c):
@@ -234,7 +246,7 @@ class LogViewerMongo:
         }
 
         if delta.days > 1:
-            agg_by = "days"
+            agg_by = "day"
         else:
             if nb_min > 1000:
                 agg_by = "hour"
@@ -254,55 +266,60 @@ class LogViewerMongo:
         for tmp in tmp_data:
             tmp = dict(tmp)
 
-            if agg_by == "days":
+            if agg_by == "day":
                 date = "{}-{}-{}".format(
                     tmp['_id']['year'],
                     tmp['_id']['month'],
                     tmp['_id']['dayOfMonth'],
                 )
+
+                date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime('%Y-%m-%dT%H:%M')
             elif agg_by == "hour":
-                date = "{}-{}-{}:{}".format(
+                date = "{}-{}-{} {}".format(
                     tmp['_id']['year'],
                     tmp['_id']['month'],
                     tmp['_id']['dayOfMonth'],
                     tmp['_id']['hour'],
                 )
+                date = datetime.datetime.strptime(date, "%Y-%m-%d %H").strftime('%Y-%m-%dT%H:%M')
             elif agg_by == "minute":
-                date = "{}-{}-{}:{}:{}".format(
+                date = "{}-{}-{} {}:{}".format(
                     tmp['_id']['year'],
                     tmp['_id']['month'],
                     tmp['_id']['dayOfMonth'],
                     tmp['_id']['hour'],
-                    tmp['_id']['minute'],
+                    tmp['_id']['minute']
                 )
+                date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M").strftime('%Y-%m-%dT%H:%M')
 
             data[date] = tmp['count']
 
-        return fill_data(self.startDate, self.endDate, data, agg_by)
+        return fill_data(self.startDate, self.endDate, data, agg_by), agg_by
 
 
 def fill_data(start_date, end_date, tmp_data, agg_by):
     data = {}
 
-    format_date = "%Y-%-m-%-d"
-    if agg_by == "hour":
-        format_date = "%Y-%-m-%-d:%-H"
+    if agg_by == "day":
+        strftime = "%Y-%m-%dT00:00"
+    elif agg_by == "hour":
+        strftime = "%Y-%m-%dT%H:00"
     elif agg_by == "minute":
-        format_date = "%Y-%-m-%-d:%-H:%-M"
+        strftime = "%Y-%m-%dT%H:%M"
 
     while start_date <= end_date:
         try:
-            sum_alert = tmp_data[start_date.strftime(format_date)]
+            sum_alert = tmp_data[start_date.strftime(strftime)]
         except KeyError:
             sum_alert = 0
 
-        data[start_date.strftime(format_date)] = sum_alert
-        if agg_by == "days":
-            start_date = start_date + datetime.timedelta(days=1)
+        data[start_date.isoformat()] = sum_alert
+        if agg_by == "day":
+            start_date += datetime.timedelta(days=1)
         elif agg_by == "hour":
-            start_date = start_date + datetime.timedelta(hours=1)
+            start_date += datetime.timedelta(hours=1)
         elif agg_by == "minute":
-            start_date = start_date + datetime.timedelta(seconds=60)
+            start_date += datetime.timedelta(seconds=60)
 
     return data
 
@@ -356,7 +373,7 @@ class Predator:
 
             return True, r.json()
 
-        except json.decoder.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError:
             logger.error('Error JSON while calling {}'.format(uri))
             return False, _('An error has occurred')
 
@@ -539,12 +556,12 @@ class Predator:
 
             data = self._enrich_ip()
             return data
-        except ValueError as e:
+        except ValueError:
             return self._enrich_host()
 
 
 class ModDefenderRulesFetcher:
-    ## ATTRIBUTES
+    # ATTRIBUTES
     # rules: List(rules)
     # Theses rules can be called by their id and contains some usefull data
     # rule: {id: {'pattern':<ReGex>, 'activated':<bool>, 'locations':<str>, 'score':{score_type: <int>}}}

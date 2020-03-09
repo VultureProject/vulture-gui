@@ -233,7 +233,7 @@ def delete_conf(logger, filename):
         return "Config'{}' successfully deleted.".format(filename)
 
     except CalledProcessError as e:
-        """ Command raise if permission denied or file does not exists """
+        """ Command raise if permission denied or file does not exist """
         stdout = e.stdout.decode('utf8')
         stderr = e.stderr.decode('utf8')
         # logger.exception("Failed to delete frontend filename '{}': {}".format(frontend_filename, stderr or stdout))
