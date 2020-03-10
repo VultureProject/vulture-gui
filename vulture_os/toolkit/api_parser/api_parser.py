@@ -88,7 +88,7 @@ class ApiParser:
 
     def write_to_file(self, lines):
         logger.info(f'[API PARSER] Writing {len(lines)} lines')
-        with open(self.frontend.api_file_path, 'w') as f:
+        with open(self.frontend.api_file_path, 'a') as f:
             for line in lines:
                 f.write(line + "\n")
 
