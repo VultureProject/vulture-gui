@@ -964,6 +964,7 @@ class Frontend(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_RSYSLOG_PATH))
             template = jinja2_env.get_template(template_name)
             conf = self.to_template()
+            conf['ruleset'] = self.ruleset
             conf['log_condition'] = self.render_log_condition()
             conf['log_condition_failure'] = self.render_log_condition_failure()
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
