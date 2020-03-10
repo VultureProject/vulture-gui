@@ -47,10 +47,11 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
         try:
-            frontends = Frontend.objects.filter(darwin_policy__isnull=False)
+            frontends = Frontend.objects.filter(mode__in=["impcap", "log"], darwin_policy__isnull=False)
         except Exception as e:
             print("Failed to get Frontends with a darwin policy: {}".format(str(e)))
         for frontend in frontends:
+            print("reloading frontend {}".format(frontend.name))
             if node in frontend.get_nodes():
                 api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 if not api_res.get("status"):
