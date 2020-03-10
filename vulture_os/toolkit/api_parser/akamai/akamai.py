@@ -47,13 +47,7 @@ class AkamaiAPIError(Exception):
 
 
 class AkamaiParser(ApiParser):
-    ATTACK_KEYS = {
-        'rules': 'af_rule_id',
-        'ruleMessages': 'af_action_detail',
-        'ruleTags': 'af_rule_tags',
-        'ruleActions': 'af_action',
-        'ruleData': 'af_rule_data'
-    }
+    ATTACK_KEYS = ["rules", "ruleMessages", "ruleTags", "ruleActions", "ruleData"]
 
     def __init__(self, data):
         super().__init__(data)
@@ -123,25 +117,16 @@ class AkamaiParser(ApiParser):
         timestamp = datetime.datetime.fromtimestamp(timestamp)
 
         tmp = {
-            "@timestamp": timestamp.isoformat(),
-            "net_src_ip": log['attackData'].get('clientIP', '-'),
-            "evt_id": log['httpMessage'].get('requestId', "-"),
-            "http_tls_version": log['httpMessage'].get('tls', '-'),
-            'net_dst_port': log['httpMessage'].get('port', '-'),
-            'http_host': log['httpMessage'].get('host', '-'),
-            'http_proto': log['httpMessage'].get('protocol', '-'),
-            'http_method': log['httpMessage'].get('method', '-'),
-            'http_request_path': log['httpMessage'].get('uri', '-'),
-            'http_request_data': log['httpMessage'].get('query', '-'),
-            'net_bytes_received': log['httpMessage'].get('bytes', 0),
-            'http_status': log['httpMessage'].get('status', '-'),
-            'http_request_headers': log['httpMessage'].get('requestHeaders', '-'),
-            'http_headers': log['httpMessage'].get('responseHeaders', '-'),
-            'ctx_src_geoip.city_name': log['geo'].get('city', '-'),
-            'ctx_src_geoip.country_name': log['geo'].get('country', '-')
+            'time': timestamp.isoformat(),
+            'httpMessage': log['httpMessage'],
+            'geo': log['geo'],
+            'attackData': {
+                'clientIP': log['attackData'].get('clientIP', '0.0.0.1')
+            }
         }
 
-        for key, internal_key in self.ATTACK_KEYS.items():
+        # Unquote attackData fields and decode them in base64
+        for key in self.ATTACK_KEYS:
             tmp_data = urllib.parse.unquote(log['attackData'][key]).split(';')
 
             values = []
@@ -149,7 +134,7 @@ class AkamaiParser(ApiParser):
                 if data:
                     values.append(base64.b64decode(data).decode('utf-8'))
 
-            tmp[internal_key] = values
+            tmp['attackData'][key] = values
 
         return tmp
 
