@@ -46,6 +46,12 @@ function refresh_api_parser_type(type_){
     $('#api_'+type_+"_row").show();
   }
 
+  if( $("#id_ruleset option[value='api_"+type_+"']").length > 0 ) {
+    $('#id_ruleset').val("api_"+type_);
+  } else {
+    $('#id_ruleset').val('generic_json');
+  }
+
   /*$('#id_api_parser_type').unbind('change');
   $('#id_api_parser_type').on('change', function(){
     var parser_type = $(this).val();
@@ -468,8 +474,6 @@ $(function() {
         notify('error', gettext('Error'), gettext('Test your API configuration before saving this frontend'))
         return;
       }
-
-      $('#id_ruleset').val($('#id_api_parser_type').val()).trigger('change');
     }
 
     $('#id_ruleset').prop('disabled', false);
