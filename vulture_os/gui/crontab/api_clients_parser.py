@@ -23,18 +23,28 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Job to fetch API Clients log'
 
 
+from django.conf import settings
 from toolkit.api_parser.utils import get_api_parser
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 from multiprocessing import Process
+
+import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
+logger = logging.getLogger('crontab')
 
 
 def execute_parser(frontend):
     parser_class = get_api_parser(frontend['api_parser_type'])
 
     parser = parser_class(frontend)
-    parser.execute()
-    parser.finish()
+    try:
+        parser.execute()
+    except Exception as e:
+        logger.exception(e)
+    finally:
+        # Delete running key in redis
+        parser.finish()
 
 
 def api_clients_parser():
@@ -43,7 +53,6 @@ def api_clients_parser():
         return
 
     api_clients_parser = Frontend.objects.filter(
-        name="Forcepoint",
         mode="log",
         listening_mode="api",
         enabled=True
