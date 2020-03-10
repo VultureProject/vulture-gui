@@ -106,6 +106,7 @@ FRONTEND_OWNER = HAPROXY_OWNER
 FRONTEND_PERMS = HAPROXY_PERMS
 
 UNIX_SOCKET_PATH = "/var/sockets/rsyslog"
+LOG_API_PATH = "/var/log/api_parser"
 
 
 class Frontend(models.Model):
@@ -877,7 +878,8 @@ class Frontend(models.Model):
 
     @property
     def api_file_path(self):
-        return f"/var/log/darwin/api_file_{self.id}.log"
+        """ """
+        return "{}/api_file_{}.log".format(LOG_API_PATH, self.id)
 
     def get_filename(self):
         """ Return filename depending on current frontend object
