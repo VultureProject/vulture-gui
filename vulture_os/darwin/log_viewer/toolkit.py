@@ -158,7 +158,10 @@ class LogViewerMongo:
             res['_id'] = str(res['_id'])
 
             if 'timestamp_app' in res.keys():
-                res['timestamp_app'] = datetime.datetime.utcfromtimestamp(float(res['timestamp_app']))
+                try:
+                    res['timestamp_app'] = datetime.datetime.utcfromtimestamp(float(res['timestamp_app']))
+                except ValueError:
+                    pass
 
             if 'unix_timestamp' in res.keys():
                 res['unix_timestamp'] = datetime.datetime.utcfromtimestamp(float(res['unix_timestamp']))

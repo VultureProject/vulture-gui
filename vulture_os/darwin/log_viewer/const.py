@@ -300,7 +300,7 @@ DEFAULT_ACCESS_TCP_COLUMNS = {
 
 IMPCAP_COLUMNS = {
     "time": "datetime",
-    "frontend_name": "string",
+    "listener": "string",
     "net_bytes_total": "integer",
     "eth_src": "string",
     "eth_dst": "string",
@@ -380,18 +380,18 @@ IMPCAP_COLUMNS = {
     "http_method": "string",
     "http_request_uri": "string",
     "http_header_fields": "dict",
-    "ctx_src_city_name": "string",
-    "ctx_src_country_name": "string",
-    "ctx_src_iso_code": "string",
-    "ctx_src_latitude": "string",
-    "ctx_src_longitude": "string",
-    "ctx_src_reputation": "string",
-    "ctx_dst_city_name": "string",
-    "ctx_dst_country_name": "string",
-    "ctx_dst_iso_code": "string",
-    "ctx_dst_latitude": "string",
-    "ctx_dst_longitude": "string",
-    "ctx_dst_reputation": "string"
+    "ctx_src_geoip_city_name": "string",
+    "ctx_src_geoip_country_name": "string",
+    "ctx_src_geoip_iso_code": "string",
+    "ctx_src_geoip_latitude": "string",
+    "ctx_src_geoip_longitude": "string",
+    "ctx_src_geoip_reputation": "string",
+    "ctx_dst_geoip_city_name": "string",
+    "ctx_dst_geoip_country_name": "string",
+    "ctx_dst_geoip_iso_code": "string",
+    "ctx_dst_geoip_latitude": "string",
+    "ctx_dst_geoip_longitude": "string",
+    "ctx_dst_geoip_reputation": "string"
 }
 
 DEFAULT_IMPCAP_COLUMNS = {
