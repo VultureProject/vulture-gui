@@ -404,11 +404,6 @@ $(function() {
       $('.forwarder-tag').hide();
     }
 
-    if (val.startsWith("api_")){
-      $('.api_clients_row').hide();
-      $('.'+val+"_row").show();
-    }
-
     show_log_condition_failure();
   }
   $('#id_ruleset').on("change", function() {
