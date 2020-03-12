@@ -100,6 +100,8 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
     else:
         logger.warning("Reconcile: while treating alert, no 'time' field was found!")
 
+    # replace '.' by '_' in field names to avoid insertion errors
+    flatAlertData = dict((key.replace('.', '_'), value) for key, value in flatAlertData.items())
     mongo.insert(MONGO_DATABASE, MONGO_COLLECTION, flatAlertData)
     return True
 

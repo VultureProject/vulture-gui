@@ -1279,6 +1279,7 @@ function fetch_mapping(type_logs, type_app){
 
 function fetch_applications(type_logs){
     $('#list-applications').html('');
+    $('#btn-applications').html('');
     // destroy_table();
 
     $.post(

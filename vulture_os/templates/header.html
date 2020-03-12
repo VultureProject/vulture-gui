@@ -35,7 +35,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3" v-if="rss_list.length">
-                                <ul class="tasklist list-unstyled">
+                                <ul class="tasklist list-unstyled" id="list-rss">
                                     <li v-for="rss in rss_list" v-bind:class="label_rss_li(rss.level)">
                                         <p class="text-bold text-main">
                                             ${ rss.title }   <span class="rss-date">${ rss.date }</span>

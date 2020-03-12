@@ -25,6 +25,7 @@ __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
 import uuid
+import datetime
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.template import Context, Template as JinjaTemplate
@@ -86,7 +87,8 @@ LISTENING_MODE_CHOICES = (
     ('tcp', "TCP"),
     ('tcp,udp', "TCP & UDP"),
     ('relp', "RELP (TCP)"),
-    ('file', "FILE")
+    ('file', "FILE"),
+    ('api', 'API CLIENT')
 )
 
 IMPCAP_FILTER_CHOICES = (
@@ -104,6 +106,7 @@ FRONTEND_OWNER = HAPROXY_OWNER
 FRONTEND_PERMS = HAPROXY_PERMS
 
 UNIX_SOCKET_PATH = "/var/sockets/rsyslog"
+LOG_API_PATH = "/var/log/api_parser"
 
 
 class Frontend(models.Model):
@@ -354,6 +357,130 @@ class Frontend(models.Model):
         help_text=_("Vulture node")
     )
 
+    api_parser_type = models.TextField(
+        help_text=_("API Parser Type"),
+        default=""
+    )
+
+    api_parser_use_proxy = models.BooleanField(
+        help_text=_("Use Proxy"),
+        default=False
+    )
+
+    elasticsearch_host = models.TextField(
+        help_text=_('Elasticsearch URL'),
+        default=""
+    )
+
+    elasticsearch_verify_ssl = models.BooleanField(
+        help_text=_("Verify SSL"),
+        default=True
+    )
+
+    elasticsearch_auth = models.BooleanField(
+        help_text=_('Authentication Elasticsearch'),
+        default=False
+    )
+
+    elasticsearch_username = models.TextField(
+        help_text=_('Elasticsearch username'),
+        default=""
+    )
+
+    elasticsearch_password = models.TextField(
+        help_text=_('Elasticsearch password'),
+        default=""
+    )
+
+    elasticsearch_index = models.TextField(
+        help_text=_('Index to poll'),
+        default=""
+    )
+
+    forcepoint_host = models.TextField(
+        help_text=_('Forcepoint URL'),
+        default=""
+    )
+
+    forcepoint_username = models.TextField(
+        help_text=_('Forcepoint Username'),
+        default=""
+    )
+
+    forcepoint_password = models.TextField(
+        help_text=_('Forcepoint Password'),
+        default=""
+    )
+
+    symantec_username = models.TextField(
+        help_text=_('Symantec Username'),
+        default=""
+    )
+
+    symantec_password = models.TextField(
+        help_text=_('Symantec Password'),
+        default=""
+    )
+
+    aws_access_key_id = models.TextField(
+        help_text=_('AWS Access Key ID'),
+        default=""
+    )
+
+    aws_secret_access_key = models.TextField(
+        help_text=_("AWS Secret Access Key"),
+        default=""
+    )
+
+    aws_bucket_name = models.TextField(
+        help_text=_("AWS Bucket Name"),
+        default=""
+    )
+
+    akamai_host = models.TextField(
+        help_text=_('Akamai Host'),
+        default=""
+    )
+
+    akamai_client_secret = models.TextField(
+        help_text=_('Akamai Client Secret'),
+        default=""
+    )
+
+    akamai_access_token = models.TextField(
+        help_text=_('Akamai Access Token'),
+        default=""
+    )
+
+    akamai_client_token = models.TextField(
+        help_text=_('Akamai Client Token'),
+        default=""
+    )
+
+    akamai_config_id = models.TextField(
+        help_text=_('Akamai Config Id'),
+        default=""
+    )
+
+    office365_tenant_id = models.TextField(
+        help_text=_('Office 365 Tenant ID'),
+        default=""
+    )
+
+    office365_client_id = models.TextField(
+        help_text=_('Office 365 Client ID'),
+        default=""
+    )
+
+    office365_client_secret = models.TextField(
+        help_text=_('Office 365 Client Secret'),
+        default=""
+    )
+
+    last_api_call = models.DateTimeField(
+        default=datetime.datetime.utcnow
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
@@ -429,6 +556,45 @@ class Frontend(models.Model):
             result['enable_logging_reputation'] = self.enable_logging_reputation
             result['enable_logging_geoip'] = self.enable_logging_geoip
 
+            if self.listening_mode == "api":
+                result['api_parser_type'] = self.api_parser_type
+                result['api_parser_use_proxy'] = self.api_parser_use_proxy
+                result['last_api_call'] = self.last_api_call
+
+                if self.api_parser_type == "forcepoint":
+                    result['forcepoint_host'] = self.forcepoint_host
+                    result['forcepoint_username'] = self.forcepoint_username
+                    result['forcepoint_password'] = self.forcepoint_password
+
+                elif self.api_parser_type == "elasticsearch":
+                    result['elasticsearch_host'] = self.elasticsearch_host
+                    result['elasticsearch_verify_ssl'] = self.elasticsearch_verify_ssl
+                    result['elasticsearch_auth'] = self.elasticsearch_auth
+                    result['elasticsearch_username'] = self.elasticsearch_username
+                    result['elasticsearch_password'] = self.elasticsearch_password
+                    result['elasticsearch_index'] = self.elasticsearch_index
+
+                elif self.api_parser_type == "symantec":
+                    result['symantec_username'] = self.symantec_username
+                    result['symantec_password'] = self.symantec_password
+
+                elif self.api_parser_type == "aws_bucket":
+                    result['aws_access_key_id'] = self.aws_access_key_id
+                    result['aws_secret_access_key'] = self.aws_secret_access_key
+                    result['aws_bucket_name'] = self.aws_bucket_name
+
+                elif self.api_parser_type == "akamai":
+                    result['akamai_host'] = self.akamai_host
+                    result['akamai_client_secret'] = self.akamai_client_secret
+                    result['akamai_access_token'] = self.akamai_access_token
+                    result['akamai_client_token'] = self.akamai_client_token
+                    result['akamai_config_id'] = self.akamai_config_id
+
+                elif self.api_parser_type == "office_365":
+                    result['office365_tenant_id'] = self.office365_tenant_id
+                    result['office365_client_id'] = self.office365_client_id
+                    result['office365_client_secret'] = self.office365_client_secret
+
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
                 result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
@@ -459,6 +625,8 @@ class Frontend(models.Model):
             listeners_list = [str(self.impcap_intf), str(self.impcap_filter)]
         elif self.listening_mode == "file":
             listeners_list = [self.file_path]
+        elif self.listening_mode == "api":
+            listeners_list = [self.api_parser_type]
         else:
             listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())]
 
@@ -708,6 +876,11 @@ class Frontend(models.Model):
         """ Return the base filename (without path) """
         return "frontend_{}.cfg".format(self.id)
 
+    @property
+    def api_file_path(self):
+        """ """
+        return "{}/api_file_{}.log".format(LOG_API_PATH, self.id)
+
     def get_filename(self):
         """ Return filename depending on current frontend object
         """
@@ -721,14 +894,14 @@ class Frontend(models.Model):
         return "10-{}-{}.conf".format(self.ruleset, self.id)
 
     def get_test_filename(self):
-        """ Return test filename for test conf with haproxy 
+        """ Return test filename for test conf with haproxy
         """
         """ If object is not already saved : no id so default=test """
         return "frontend_{}.cfg".format(self.id or "test")
 
     def get_unix_socket(self):
         """ Return filename of unix socket on which HAProxy send data
-         and on which Rsyslog listen 
+         and on which Rsyslog listen
         """
         return "{}/frontend_{}.sock".format(UNIX_SOCKET_PATH, self.id)
 
@@ -791,6 +964,7 @@ class Frontend(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_RSYSLOG_PATH))
             template = jinja2_env.get_template(template_name)
             conf = self.to_template()
+            conf['ruleset'] = self.ruleset
             conf['log_condition'] = self.render_log_condition()
             conf['log_condition_failure'] = self.render_log_condition_failure()
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
@@ -949,7 +1123,7 @@ class Frontend(models.Model):
     @property
     def rsyslog_only_conf(self):
         """ Check if this frontend has only rsyslog configuration, not haproxy at all """
-        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file")))
+        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api")))
 
 
 class Listener(models.Model):
