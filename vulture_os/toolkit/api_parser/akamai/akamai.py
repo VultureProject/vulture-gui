@@ -32,6 +32,7 @@ import urllib.parse
 
 from akamai.edgegrid import EdgeGridAuth
 from django.conf import settings
+from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -63,6 +64,8 @@ class AkamaiParser(ApiParser):
         if not self.akamai_host.startswith('https'):
             self.akamai_host = f"https://{self.akamai_host}"
 
+        self.last_log_time = self.last_api_call
+
     def _connect(self):
         try:
             self.session = requests.Session()
@@ -83,7 +86,7 @@ class AkamaiParser(ApiParser):
         url = f"{self.akamai_host}/siem/{self.version}/configs/{self.akamai_config_id}"
 
         params = {
-            'from': int(self.last_api_call.timestamp())
+            'from': int(self.last_log_time.timestamp())
         }
 
         if test:
@@ -114,7 +117,10 @@ class AkamaiParser(ApiParser):
 
     def _parse_log(self, log):
         timestamp = int(log['httpMessage']['start'])
-        timestamp = datetime.datetime.fromtimestamp(timestamp)
+        timestamp = timezone.make_aware(datetime.datetime.utcfromtimestamp(timestamp))
+
+        if timestamp > self.last_log_time:
+            self.last_log_time = timestamp
 
         tmp = {
             'time': timestamp.isoformat(),
@@ -124,6 +130,10 @@ class AkamaiParser(ApiParser):
                 'clientIP': log['attackData'].get('clientIP', '0.0.0.1')
             }
         }
+
+        # Urldecode headers
+        tmp['httpMessage']['requestHeaders'] = urllib.parse.unquote(tmp['httpMessage'].get('requestHeaders', "-"))
+        tmp['httpMessage']['responseHeaders'] = urllib.parse.unquote(tmp['httpMessage'].get('responseHeaders', "-"))
 
         # Unquote attackData fields and decode them in base64
         for key in self.ATTACK_KEYS:
@@ -141,7 +151,7 @@ class AkamaiParser(ApiParser):
     def test(self):
         try:
             data = []
-            self.last_api_call = datetime.datetime.utcnow() - datetime.timedelta(minutes=15)
+            self.last_log_time = timezone.now() - datetime.timedelta(minutes=15)
             for log in self.get_logs(test=True):
                 data.append(self._parse_log(log))
                 break
@@ -159,17 +169,18 @@ class AkamaiParser(ApiParser):
 
     def execute(self):
         try:
-            data = []
-            for log in self.get_logs():
-                if "httpMessage" in log.keys():
-                    try:
-                        data.append(json.dumps(self._parse_log(log)))
-                    except Exception as err:
-                        raise AkamaiAPIError(err)
+            while self.last_log_time < timezone.now():
+                data = []
+                for log in self.get_logs():
+                    if "httpMessage" in log.keys():
+                        try:
+                            data.append(json.dumps(self._parse_log(log)))
+                        except Exception as err:
+                            raise AkamaiAPIError(err)
 
-            self.write_to_file(data)
-            self.frontend.last_api_call = self.last_api_call
-            self.finish()
+                self.write_to_file(data)
+                self.frontend.last_api_call = self.last_log_time
+                self.update_lock()
 
         except Exception as e:
             raise AkamaiParseError(e)
