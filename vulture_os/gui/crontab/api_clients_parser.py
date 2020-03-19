@@ -38,6 +38,9 @@ def execute_parser(frontend):
     parser_class = get_api_parser(frontend['api_parser_type'])
 
     parser = parser_class(frontend)
+    if not parser.can_run():
+        logger.info("Another instance is running")
+        return
     try:
         parser.execute()
     except Exception as e:

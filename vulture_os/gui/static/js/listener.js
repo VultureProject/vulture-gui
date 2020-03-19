@@ -41,15 +41,16 @@ function get_api_parser_data(type_){
 
 function refresh_api_parser_type(type_){
   $('.api_clients_row').hide();
-  if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api"){
-    $('#id_node').hide();
-    $('#api_'+type_+"_row").show();
-  }
 
-  if( $("#id_ruleset option[value='api_"+type_+"']").length > 0 ) {
-    $('#id_ruleset').val("api_"+type_);
-  } else {
-    $('#id_ruleset').val('generic_json');
+  if ($('#id_mode').val() === "log" && $('#id_listening_mode').val() === "api") {
+    $('#id_node').hide();
+    $('#api_' + type_ + "_row").show();
+
+    if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
+      $('#id_ruleset').val("api_" + type_).trigger('change');
+    } else {
+      $('#id_ruleset').val('generic_json').trigger('change');
+    }
   }
 
   /*$('#id_api_parser_type').unbind('change');
