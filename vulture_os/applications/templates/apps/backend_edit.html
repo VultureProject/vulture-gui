@@ -537,6 +537,19 @@
     /* temp fix to remove red error color over red background */
     $('.errorlist li').css("color", "#fff")
 
+    $(function(){
+      $('#id_tags').tagEditor({
+        initialTags: [],
+        forceLowercase: false,
+        autocomplete: {
+          delay: 0,
+          minLength: 0,
+          source: []
+        },
+        onChange: function(field, editor, tags){}
+      });
+    })
+
   //}); // end of function()
 
 {% endblock %}

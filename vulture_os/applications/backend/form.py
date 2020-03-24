@@ -123,7 +123,7 @@ class BackendForm(ModelForm):
             'http_keep_alive_timeout': NumberInput(attrs={'class': 'form-control'}),
             'balancing_mode': Select(choices=BALANCING_CHOICES, attrs={'class': 'form-control select2'}),
             'balancing_param': TextInput(attrs={'class': 'form-control'}),
-            'tags': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"})
+            'tags': TextInput(attrs={'class': 'form-control'})
         }
 
     def __init__(self, *args, **kwargs):
