@@ -271,6 +271,15 @@ $(function() {
     }
   }
 
+  function show_darwin_mode(darwin_policy) {
+    if( darwin_policy ) {
+      $('.darwin-mode').show();
+    }
+    else {
+      $('.darwin-mode').hide();
+    }
+  }
+
   $('#id_api_parser_type').on('change', function(){
     refresh_api_parser_type($(this).val());
   }).trigger('change');
@@ -391,6 +400,11 @@ $(function() {
       }
     }
   }).trigger("change");
+
+  $('#id_darwin_policy').on("change", function(e) {
+    var policy = $(this).val();
+    show_darwin_mode(policy);
+  }).trigger('change');
 
 
   /* Show log_condition_failure depending on mode and ruleset */

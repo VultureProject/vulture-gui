@@ -98,6 +98,11 @@ IMPCAP_FILTER_CHOICES = (
     ('custom', "Custom"),
 )
 
+DARWIN_MODE_CHOICES = (
+    ('darwin', "generate alerts"),
+    ('both', "enrich logs and generate alerts")
+)
+
 # Jinja template for frontends rendering
 JINJA_PATH = "/home/vlt-os/vulture_os/services/frontend/config/"
 JINJA_TEMPLATE = "haproxy_frontend.conf"
@@ -178,6 +183,8 @@ class Frontend(models.Model):
         verbose_name=_("Impcap filter"),
         help_text=_("Filter used by impcap for trafic listening (tcpdump format)")
     )
+    """ *** DARWIN OPTIONS *** """
+    """ Darwin policy """
     darwin_policy = models.ForeignKey(
         to=DarwinPolicy,
         on_delete=models.PROTECT,
@@ -185,6 +192,12 @@ class Frontend(models.Model):
         blank=False,
         related_name="frontend_set",
         help_text=_("Darwin policy to use")
+    )
+    """ Darwin mode """
+    darwin_mode = models.TextField(
+        default=DARWIN_MODE_CHOICES[0][0],
+        choices=DARWIN_MODE_CHOICES,
+        help_text=_("Ways to call Darwin: 'enrich' will wait for a score and add it to the data, 'alert' will simply pass the data for Darwin to process and will rely on its configured alerting methods")
     )
     """ *** LOGGING OPTIONS *** """
     """ Enable logging to Rsyslog """
@@ -838,6 +851,7 @@ class Frontend(models.Model):
             'serialized_blwl_list': serialized_blwl_list,
             'darwin_policies': FilterPolicy.objects.filter(policy=self.darwin_policy),
             'keep_source_fields': self.keep_source_fields,
+            'darwin_mode': self.darwin_mode,
         }
 
         if self.mode == "impcap":

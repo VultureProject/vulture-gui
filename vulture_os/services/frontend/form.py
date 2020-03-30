@@ -34,7 +34,8 @@ from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (COMPRESSION_ALGO_CHOICES, Frontend, FrontendReputationContext, Listener,
-                                      LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, IMPCAP_FILTER_CHOICES)
+                                      LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, IMPCAP_FILTER_CHOICES,
+                                      DARWIN_MODE_CHOICES)
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
 from system.error_templates.models import ErrorTemplate
@@ -111,12 +112,18 @@ class FrontendForm(ModelForm):
         AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
                                      for parser in get_available_api_parser()])
 
-        """ Impcap/Log Darwin policy """
+        """ Darwin policy """
         self.fields['darwin_policy'] = ModelChoiceField(
             label=_("Darwin policy"),
             queryset=DarwinPolicy.objects.all(),
             widget=Select(attrs={'class': 'form-control select2'}),
             required=False
+        )
+        """ Darwin mode """
+        self.fields['darwin_mode'] = ChoiceField(
+            label=_("Darwin mode"),
+            choices=DARWIN_MODE_CHOICES,
+            widget=Select(attrs={'class': 'form-control select2'})
         )
         """ Log forwarders """
         self.fields['log_forwarders'] = ModelMultipleChoiceField(
@@ -202,7 +209,7 @@ class FrontendForm(ModelForm):
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
                            'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
                            'keep_source_fields', 'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
-                           'imperva_private_key']:
+                           'imperva_private_key', 'darwin_mode']:
 
             self.fields[field_name].required = False
 
@@ -250,7 +257,7 @@ class FrontendForm(ModelForm):
                   "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
                   "akamai_client_token", 'akamai_config_id', 'office365_tenant_id', 'office365_client_id',
                   'keep_source_fields', 'office365_client_secret', 'imperva_base_url', 'imperva_api_key',
-                  'imperva_api_id', 'imperva_private_key')
+                  'imperva_api_id', 'imperva_private_key', 'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -463,6 +470,11 @@ class FrontendForm(ModelForm):
                     not cleaned_data.get('logging_reputation_database_v6'):
                 self.add_error('logging_reputation_database_v4', "One of those fields is required.")
                 self.add_error('logging_reputation_database_v6', "One of those fields is required.")
+
+        """ If Darwin policy is enabled, darwon_mode is required """
+        if cleaned_data.get('darwin_policy'):
+            if not cleaned_data.get("darwin_mode"):
+                self.add_error("darwin_mode", "This field is required when a darwin policy is set")
 
         return cleaned_data
 
