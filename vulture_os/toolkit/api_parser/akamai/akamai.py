@@ -131,9 +131,18 @@ class AkamaiParser(ApiParser):
             }
         }
 
-        # Urldecode headers
-        tmp['httpMessage']['requestHeaders'] = urllib.parse.unquote(tmp['httpMessage'].get('requestHeaders', "-"))
-        tmp['httpMessage']['responseHeaders'] = urllib.parse.unquote(tmp['httpMessage'].get('responseHeaders', "-"))
+        # Urldecode and parse headers
+        request_headers = urllib.parse.unquote(tmp['httpMessage'].get('requestHeaders', "-"))
+        all_request_headers = dict(r.split(': ') for r in request_headers.split("\r\n") if r)
+
+        response_headers = urllib.parse.unquote(tmp['httpMessage'].get('responseHeaders', "-"))
+        all_response_headers = dict(r.split(': ') for r in response_headers.split("\r\n") if r)
+
+        del all_request_headers['Set-Cookie']
+        del tmp['httpMessage']["requestHeaders"]
+        del tmp['httpMessage']["responseHeaders"]
+        tmp['httpMessage']['requestHeaders'] = all_request_headers
+        tmp['httpMessage']['responseHeaders'] = all_response_headers
 
         # Unquote attackData fields and decode them in base64
         for key in self.ATTACK_KEYS:
