@@ -104,12 +104,12 @@ def format_acl_from_api(tmp_acl, order, before_policy):
         logger.critical(e, exc_info=1)
         return False, JsonResponse({
             'error': _('ACL with id {} does not exist'.format(tmp_acl['id']))
-        })
+        }, status=404)
 
     except KeyError:
         return False, JsonResponse({
             'error': _('ACL is not valid')
-        }, status=401)
+        }, status=400)
 
 
 def format_acl(acl, parent):
@@ -289,15 +289,15 @@ class WorkflowAPIv1(View):
                     except KeyError:
                         return JsonResponse({
                             'error': _('For a HTTP Frontend, you must define a FQDN & a public_dir')
-                        })
+                        }, status=400)
             except Frontend.DoesNotExist:
                 return JsonResponse({
                     'error': _('frontend with id {} does not exist'.format(request.POST['frontend']))
-                }, status=401)
+                }, status=404)
             except KeyError:
                 return JsonResponse({
                     'error': _('You must define a frontend for a workflow')
-                }, status=401)
+                }, status=400)
 
             try:
                 backend = Backend.objects.get(pk=request.POST['backend'])
@@ -305,15 +305,15 @@ class WorkflowAPIv1(View):
                 if frontend.mode != backend.mode:
                     return JsonResponse({
                         'error': _('Frontend and Backend must be in the same mode.')
-                    })
+                    }, status=400)
             except Backend.DoesNotExist:
                 return JsonResponse({
                     'error': _('Backend with id {} does not exist'.format(request.POST['backend']))
-                }, status=401)
+                }, status=400)
             except KeyError:
                 return JsonResponse({
                     'error': _('You must define a backend for a workflow')
-                }, status=401)
+                }, status=400)
 
             if request.POST.get('defender_policy'):
                 try:
@@ -321,7 +321,7 @@ class WorkflowAPIv1(View):
                 except DefenderPolicy.DoesNotExist:
                     return JsonResponse({
                         'error': _('Defender Policy with id {} does not exist'.format(request.POST['defender_policy']))
-                    }, status=401)
+                    }, status=400)
 
             try:
                 if object_id:
@@ -398,17 +398,17 @@ class WorkflowAPIv1(View):
 
                 return JsonResponse({
                     'message': _('Workflow saved')
-                })
+                }, status=201)
 
             except KeyError:
                 return JsonResponse({
                     'error': _('Partial data')
-                }, status=401)
+                }, status=400)
 
             if action and not object_id:
                 return JsonResponse({
                     'error': _('You must specify an ID')
-                }, status=401)
+                }, status=400)
 
             if action not in list(COMMAND_LIST.keys()):
                 return JsonResponse({
