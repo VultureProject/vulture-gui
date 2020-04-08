@@ -718,13 +718,13 @@ var workflow_vue = new Vue({
                                     }
 
                                     var label = ["\n"];
-                                    for (var j in f.log_forwarders[0]){
+                                    for (var j in f.log_forwarders){
                                         if (j > 1){
                                             label.push('...');
                                             break;
                                         }
 
-                                        var log = f.log_forwarders[0][j];
+                                        var log = f.log_forwarders[j];
                                         label.push(log.type + " - " + log.name)
                                     }
 
