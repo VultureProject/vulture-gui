@@ -199,7 +199,7 @@ class FrontendForm(ModelForm):
                            'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
-                           'office365_tenant_id', 'office365_client_id', 'office365_client_secret']:
+                           'office365_tenant_id', 'office365_client_id', 'office365_client_secret', 'keep_source_fields']:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -228,7 +228,7 @@ class FrontendForm(ModelForm):
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
         if not self.fields['keep_source_fields'].initial:
-            self.fields['keep_source_fields'].initial = self.initial.get('keep_source_fields') or "{}"
+            self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
 
     class Meta:
         model = Frontend
@@ -373,10 +373,13 @@ class FrontendForm(ModelForm):
 
     def clean_keep_source_fields(self):
         try:
-            field_val = json_loads(self.cleaned_data.get('keep_source_fields'))
+            if self.cleaned_data.get('keep_source_fields'):
+                field_val = json_loads(self.cleaned_data.get('keep_source_fields'))
+            else:
+                return {}
         except Exception as e:
-            ValidationError("This field seems to be corrupted")
-        finally:
+            raise ValidationError("This field seems to be corrupted")
+        else:
             invalid_fields = []
             for key, val in field_val.items():
                 if not re_match("^[a-zA-Z0-9\-\._\!]+$", key):
