@@ -405,6 +405,12 @@ $(function() {
       $('.forwarder-tag').hide();
     }
 
+    if( val.endsWith("_json") ) {
+      $('.log-parser-json').show();
+    } else {
+      $('.log-parser-json').hide();
+    }
+
     show_log_condition_failure();
   }
   $('#id_ruleset').on("change", function() {
@@ -459,6 +465,15 @@ $(function() {
     $('#header_table').append(header_form_td);
     refresh_table_events();
     id2++;
+  });
+
+  /* Add an entry for keep_source_fields table */
+  $("#add_keep_source_field").on("click", function(e) {
+    $('#keep_source_fields_table').append('<tr><td><input type="text"/></td><td><input type="text"/></td><td style="text-align:center"><input type="checkbox"/></td><td style="text-align:center"><a class="btnDelete"><i style="color:grey" class="fas fa-trash-alt"></i></a></td></tr>');
+    /* Function used to delete an object .btnDelete */
+    $('.btnDelete').on('click', function(e) {
+      $(this).parent().parent().remove();
+    });
   });
 
   /* Build request-headers and listeners fields with tables content */
@@ -521,6 +536,15 @@ $(function() {
       reputation_ctxs.push({'enabled': enabled, 'reputation_ctx': reputation_ctx, 'arg_field': arg_field});
     });
     $('#reputation_contexts').val(JSON.stringify(reputation_ctxs));
+
+    var keep_source_fields = {};
+    $('#keep_source_fields_table tbody tr').each(function(index, tr) {
+      var field_name = tr.children[0].children[0].value;
+      var field_value = tr.children[1].children[0].value;
+      var keep_source = tr.children[2].children[0].checked;
+      keep_source_fields[field_value] = {'field_name': field_name, 'keep_source': keep_source};
+    });
+    $('#keep_source_fields').val(JSON.stringify(keep_source_fields));
 
     /* Enable button before posting, it won't be in post data otherwize */
     $('#id_enable_logging').prop('disabled', false);

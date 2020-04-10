@@ -82,8 +82,8 @@ class DivErrorList(ErrorList):
 
 class NoValidationField(CharField):
     """ Field with no implicit validation of the value """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def clean(self, value):
         return value
