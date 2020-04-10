@@ -138,9 +138,7 @@ class AkamaiParser(ApiParser):
         response_headers = urllib.parse.unquote(tmp['httpMessage'].get('responseHeaders', "-"))
         all_response_headers = dict(r.split(': ') for r in response_headers.split("\r\n") if r)
 
-        del all_request_headers['Set-Cookie']
-        del tmp['httpMessage']["requestHeaders"]
-        del tmp['httpMessage']["responseHeaders"]
+        all_request_headers['Set-Cookie'] = ""
         tmp['httpMessage']['requestHeaders'] = all_request_headers
         tmp['httpMessage']['responseHeaders'] = all_response_headers
 
