@@ -481,6 +481,11 @@ class Frontend(models.Model):
         default=datetime.datetime.utcnow
     )
 
+    keep_source_fields = models.DictField(
+        default={},
+        blank=True # Needed to prevent migration error
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
@@ -801,6 +806,7 @@ class Frontend(models.Model):
             'tags': self.tags,
             'serialized_blwl_list': serialized_blwl_list,
             'darwin_policies': FilterPolicy.objects.filter(policy=self.darwin_policy),
+            'keep_source_fields': self.keep_source_fields,
         }
 
         if self.mode == "impcap":

@@ -49,10 +49,11 @@ from django.forms import ValidationError
 # Extern modules imports
 from ast import literal_eval as ast_literal_eval
 from ipaddress import ip_address
+from json import loads as json_loads
 from mimetypes import guess_extension as mime_guess_ext
 from os import scandir
 from os.path import exists as path_exists
-from re import search as re_search
+from re import search as re_search, match as re_match
 
 # Logger configuration imports
 import logging
@@ -101,6 +102,7 @@ class FrontendForm(ModelForm):
     listeners = NoValidationField()
     headers = NoValidationField()
     reputation_ctx = NoValidationField()
+    keep_source_fields = NoValidationField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -225,6 +227,9 @@ class FrontendForm(ModelForm):
             self.initial['compression_algos'] = self.initial.get('compression_algos').split(' ')
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
+        if not self.fields['keep_source_fields'].initial:
+            self.fields['keep_source_fields'].initial = self.initial.get('keep_source_fields') or "{}"
+
     class Meta:
         model = Frontend
         fields = ('enabled', 'tags', 'name', 'mode', 'enable_logging', 'log_level', 'log_condition', 'ruleset',
@@ -240,7 +245,7 @@ class FrontendForm(ModelForm):
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
                   "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
                   "akamai_client_token", 'akamai_config_id', 'office365_tenant_id', 'office365_client_id',
-                  'office365_client_secret')
+                  'office365_client_secret', 'keep_source_fields')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -365,6 +370,22 @@ class FrontendForm(ModelForm):
         """  """
         # TODO : check
         return self.cleaned_data.get('impcap_filter')
+
+    def clean_keep_source_fields(self):
+        try:
+            field_val = json_loads(self.cleaned_data.get('keep_source_fields'))
+        except Exception as e:
+            ValidationError("This field seems to be corrupted")
+        finally:
+            invalid_fields = []
+            for key, val in field_val.items():
+                if not re_match("^[a-zA-Z0-9\-\._\!]+$", key):
+                    invalid_fields.append(key)
+                if not re_match("^[a-zA-Z0-9\-\._\!]+$", val.get('field_name')):
+                    invalid_fields.append(val.get('field_name'))
+            if invalid_fields:
+                raise ValidationError("Field '{}' is not valid")
+            return field_val
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
