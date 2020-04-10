@@ -482,8 +482,7 @@ class Frontend(models.Model):
     )
 
     keep_source_fields = models.DictField(
-        default={},
-        blank=True # Needed to prevent migration error
+        default={}
     )
 
     def reload_haproxy_conf(self):
