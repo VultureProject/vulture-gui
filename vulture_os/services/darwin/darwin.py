@@ -81,6 +81,11 @@ def get_darwin_conf_path(darwin_policy_id, darwin_filter_name):
     return "{darwin_path}/f{filter_name}/f{filter_name}_{darwin_policy_id}.conf".format(
                 darwin_path=DARWIN_PATH, filter_name=darwin_filter_name, darwin_policy_id=darwin_policy_id)
 
+
+def get_darwin_sockets():
+    return [obj.socket_path for obj in FilterPolicy.objects.all()]
+
+
 def delete_policy_conf(node_logger, policy_id):
     logger.info("deleting policy {} filter's confs".format(policy_id))
     error = False

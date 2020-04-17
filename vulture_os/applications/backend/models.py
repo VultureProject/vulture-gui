@@ -52,9 +52,14 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 # Modes choices of HAProxy Frontends
-MODE_CHOICES = (
+BACKEND_MODE_CHOICES = (
     ('tcp', 'TCP'),
     ('http', 'HTTP'),
+)
+
+SERVER_MODE_CHOICES = (
+    ('net', 'network'),
+    ('unix', 'unix sockets'),
 )
 
 LOG_LEVEL_CHOICES = (
@@ -124,8 +129,8 @@ class Backend(models.Model):
     )
     """ Listening mode of Frontend : tcp or http """
     mode = models.TextField(
-        default=MODE_CHOICES[0][0],
-        choices=MODE_CHOICES,
+        default=BACKEND_MODE_CHOICES[0][0],
+        choices=BACKEND_MODE_CHOICES,
         help_text=_("Proxy mode"),
     )
     timeout_connect = models.PositiveIntegerField(
@@ -329,7 +334,7 @@ class Backend(models.Model):
         servers_list = [str(s) for s in self.server_set.all().only(*Server.str_attrs())]
 
         mode = "UNKNOWN"
-        for m in MODE_CHOICES:
+        for m in BACKEND_MODE_CHOICES:
             if self.mode == m[0]:
                 mode = m[1]
 
@@ -550,17 +555,24 @@ class Backend(models.Model):
 
 
 class Server(models.Model):
-    """ Link class between NetworkAddress and Frontend """
+    """ Link class between NetworkAddress/UnixSocket and Backend """
 
     """ NetworkAddress object to listen on """
     target = models.TextField(
-        default="1.2.3.4",
-        help_text=_("IP address/hostname of server")
+        help_text=_("IP/hostname/socket of server")
     )
-    """ Port To listen on """
+    """ Server mode """
+    mode = models.TextField(
+        blank=False,
+        null=False,
+        default=SERVER_MODE_CHOICES[0][0],
+        choices=SERVER_MODE_CHOICES,
+        help_text=_("Server mode (IP, unix socket)"),
+    )
+    """ Port to listen on """
     port = models.PositiveIntegerField(
         default=80,
-        validators=[MinValueValidator(1), MaxValueValidator(65535)]
+        validators=[MinValueValidator(0), MaxValueValidator(65535)]
     )
     """ Backend associated to this server """
     backend = models.ForeignKey(
@@ -607,7 +619,10 @@ class Server(models.Model):
         return result
 
     def __str__(self):
-        return "{}:{}".format(self.target, self.port)
+        if self.port != 0:
+            return "{}:{}".format(self.target, self.port)
+        else:
+            return self.target
 
     @staticmethod
     def str_attrs():
@@ -618,9 +633,9 @@ class Server(models.Model):
         """ Generate Listener HAProxy configuration
         :return     A string - Bind directive
         """
-        result = "server srv{} {}:{} weight {}".format(self.id or get_random_string(),
+        result = "server srv{} {}{} weight {}".format(self.id or get_random_string(),
                                                        self.target,
-                                                       self.port,
+                                                       ":" + str(self.port) if self.port != 0 else "",
                                                        self.weight)
         if self.source:
             if ":" in self.source:
