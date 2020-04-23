@@ -622,8 +622,6 @@ $(function() {
     refresh_log_forwarders($(this).val());
   });
 
-  refresh_log_forwarders($('#id_log_forwarders').val());
-
   /* Initialize all custom fields */
   refresh_table_events();
 
