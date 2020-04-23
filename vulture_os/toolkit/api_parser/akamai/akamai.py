@@ -133,12 +133,29 @@ class AkamaiParser(ApiParser):
 
         # Urldecode and parse headers
         request_headers = urllib.parse.unquote(tmp['httpMessage'].get('requestHeaders', "-"))
-        all_request_headers = dict(r.split(': ') for r in request_headers.split("\r\n") if r)
+        all_request_headers = dict()
+        for r in request_headers.split("\r\n"):
+            if r and r != "{p}":
+                try:
+                    name, value = r.split(": ", maxsplit=1)
+                except:
+                    name, value = r.split(":", maxsplit=1)[0], "-"
+                all_request_headers[name] = value or "-"
 
         response_headers = urllib.parse.unquote(tmp['httpMessage'].get('responseHeaders', "-"))
-        all_response_headers = dict(r.split(': ') for r in response_headers.split("\r\n") if r)
+        all_response_headers = {'Set-Cookie': []}
+        for r in response_headers.split("\r\n"):
+            if r and r != "{p}":
+                try:
+                    name, value = r.split(": ", maxsplit=1)
+                except:
+                    name, value = r.split(":", maxsplit=1)[0], "-"
+                if name.lower().startswith("set-cookie"):
+                    all_response_headers["Set-Cookie"].append(value)
+                else:
+                    all_response_headers[name] = value or '-'
+        all_response_headers['Set-Cookie'] = "; ".join(all_response_headers['Set-Cookie']) or "-"
 
-        all_request_headers['Set-Cookie'] = ""
         tmp['httpMessage']['requestHeaders'] = all_request_headers
         tmp['httpMessage']['responseHeaders'] = all_response_headers
 
