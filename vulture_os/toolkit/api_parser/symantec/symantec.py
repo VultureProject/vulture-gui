@@ -101,6 +101,8 @@ class SymantecParser(ApiParser):
             params = f"startDate={timestamp}&endDate=0&token={token}"
             url = f"{self.start_console_uri}{params}"
 
+            logger.debug("[SYMANTEC API PARSER] Retrieving symantec logs from api")
+
             r = requests.get(
                 url,
                 headers=self.HEADERS,
@@ -150,14 +152,11 @@ class SymantecParser(ApiParser):
 
                                     with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
                                         for line in gzip_file_content.readlines():
-                                            try:
-                                                line = line.decode("UTF-8").strip()
-                                                if not line.startswith("#"):
-                                                    data.append(line)
-                                            except UnicodeDecodeError as error:
-                                                raise SymantecAPIError(error)
+                                            line = line.strip()
+                                            if not line.startswith("#"):
+                                                data.append(line)
 
-                            self.write_to_file(data)
+                            self.write_to_file(data, bytes_mode=True)
                             self.frontend.last_api_call = datetime.datetime.now()
                             self.finish()
                         except zipfile.BadZipfile as err:
