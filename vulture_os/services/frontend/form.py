@@ -108,7 +108,8 @@ class FrontendForm(ModelForm):
         super().__init__(*args, **kwargs)
 
         AVAILABLE_API_PARSER = [("", "--------")]
-        AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' ')) for parser in get_available_api_parser()])
+        AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
+                                     for parser in get_available_api_parser()])
 
         """ Impcap/Log Darwin policy """
         self.fields['darwin_policy'] = ModelChoiceField(
@@ -152,7 +153,7 @@ class FrontendForm(ModelForm):
             label=_("Rsyslog IPv6 reputation database"),
             queryset=ReputationContext.objects.filter(db_type="ipv6",
                                                       filename__endswith=".mmdb")  # MMDP database & IPv6
-                                      .only(*(ReputationContext.str_attrs() + ['filename', 'db_type'])),
+            .only(*(ReputationContext.str_attrs() + ['filename', 'db_type'])),
             widget=Select(attrs={'class': 'form-control select2'}),
             empty_label="No IPv6",
             required=False
@@ -199,7 +200,10 @@ class FrontendForm(ModelForm):
                            'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
-                           'office365_tenant_id', 'office365_client_id', 'office365_client_secret', 'keep_source_fields']:
+                           'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
+                           'keep_source_fields', 'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
+                           'imperva_private_key']:
+
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -245,7 +249,8 @@ class FrontendForm(ModelForm):
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
                   "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
                   "akamai_client_token", 'akamai_config_id', 'office365_tenant_id', 'office365_client_id',
-                  'office365_client_secret', 'keep_source_fields')
+                  'keep_source_fields', 'office365_client_secret', 'imperva_base_url', 'imperva_api_key',
+                  'imperva_api_id', 'imperva_private_key')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -301,7 +306,11 @@ class FrontendForm(ModelForm):
             'akamai_config_id': TextInput(attrs={'class': 'form-control'}),
             'office365_tenant_id': TextInput(attrs={'class': 'form-control'}),
             'office365_client_id': TextInput(attrs={'class': 'form-control'}),
-            'office365_client_secret': TextInput(attrs={'class': 'form-control'})
+            'office365_client_secret': TextInput(attrs={'class': 'form-control'}),
+            'imperva_base_url': TextInput(attrs={'class': 'form-control'}),
+            'imperva_api_key': TextInput(attrs={'class': 'form-control'}),
+            'imperva_api_id': TextInput(attrs={'class': 'form-control'}),
+            'imperva_private_key': Textarea(attrs={'class': 'form-control'})
         }
 
     def clean_name(self):
@@ -377,7 +386,7 @@ class FrontendForm(ModelForm):
                 field_val = json_loads(self.cleaned_data.get('keep_source_fields'))
             else:
                 return {}
-        except Exception as e:
+        except Exception:
             raise ValidationError("This field seems to be corrupted")
         else:
             invalid_fields = []

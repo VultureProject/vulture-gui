@@ -44,6 +44,7 @@ def execute_parser(frontend):
     try:
         parser.execute()
     except Exception as e:
+        raise
         logger.exception(e)
     finally:
         # Delete running key in redis
@@ -56,6 +57,7 @@ def api_clients_parser():
         return
 
     api_clients_parser = Frontend.objects.filter(
+        name="Symantec",
         mode="log",
         listening_mode="api",
         enabled=True

@@ -31,6 +31,11 @@ function get_api_parser_data(type_){
     }
   })
 
+  $('#api_'+ type_ + "_row textarea").each(function(){
+    var name = $(this).attr('name');
+    data[name] = $(this).val();
+  })
+
   $('#api_' + type_ + "_row select").each(function(){
     var name = $(this).attr('name');
     data[name] = $(this).val();

@@ -658,7 +658,7 @@ class NetworkAddress(models.Model):
 
     def to_dict(self):
         return {
-            "id": str(self.id),
+            "id": self.id,
             "name": self.name,
             'ip': self.ip,
             'is_system': self.is_system,

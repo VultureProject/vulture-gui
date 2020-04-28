@@ -477,6 +477,31 @@ class Frontend(models.Model):
         default=""
     )
 
+    imperva_base_url = models.TextField(
+        help_text=_("Imperva Base URL"),
+        default=""
+    )
+
+    imperva_api_id = models.TextField(
+        help_text=_("Imperva API ID"),
+        default=""
+    )
+
+    imperva_api_key = models.TextField(
+        help_text=_("Imperva API KEY"),
+        default=""
+    )
+
+    imperva_private_key = models.TextField(
+        help_text=_("Imperva Private KEY"),
+        default=""
+    )
+
+    imperva_last_log_file = models.TextField(
+        help_text=_("Imperva Last Log File"),
+        default=""
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -598,6 +623,13 @@ class Frontend(models.Model):
                     result['office365_tenant_id'] = self.office365_tenant_id
                     result['office365_client_id'] = self.office365_client_id
                     result['office365_client_secret'] = self.office365_client_secret
+
+                elif self.api_parser_type == "imperva":
+                    result['imperva_base_url'] = self.imperva_base_url
+                    result['imperva_api_id'] = self.imperva_api_id
+                    result['imperva_api_key'] = self.imperva_api_key
+                    result['imperva_private_key'] = self.imperva_private_key
+                    result['imperva_last_log_file'] = self.imperva_last_log_file
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
@@ -1190,6 +1222,7 @@ class Listener(models.Model):
         return {
             'id': str(self.id),
             'network_address': str(self.network_address),
+            'network_address_id': self.network_address.pk,
             'port': self.port,
             'frontend': self.frontend,
             'whitelist_ips': self.whitelist_ips,
