@@ -29,7 +29,7 @@ from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInpu
 
 # Django project imports
 from gui.forms.form_utils import NoValidationField
-from applications.backend.models import (Backend, Server, LOG_LEVEL_CHOICES, BACKEND_MODE_CHOICES)
+from applications.backend.models import (Backend, Server, LOG_LEVEL_CHOICES, MODE_CHOICES)
 from system.pki.models import TLSProfile
 
 # Required exceptions imports
@@ -103,16 +103,16 @@ logger = logging.getLogger('gui')
 #         widgets = {
 #             'enabled': CheckboxInput(attrs={"class": "form-control js-switch"}),
 #             'name': TextInput(attrs={'class': 'form-control'}),
-#             'mode': Select(choices=BACKEND_MODE_CHOICES, attrs={'class': 'form-control select2'}),
+#             'mode': Select(choices=MODE_CHOICES, attrs={'class': 'form-control select2'}),
 #             'custom_haproxy_conf': Textarea(attrs={'class': 'form-control'}),
 #
 #             'accept_invalid_http_response': CheckboxInput(attrs={'class': "form-control js-switch"}),
 #             'http_forwardfor_header': TextInput(attrs={'class': 'form-control', 'placeholder': 'header name'}),
 #             'http_forwardfor_except': TextInput(attrs={'class': 'form-control', 'placeholder': 'this IP address'}),
 #             'enable_http_health_check': CheckboxInput(attrs={'class': "form-control js-switch"}),
-#             'http_health_check_method': Select(choices=BACKEND_MODE_CHOICES, attrs={'class': 'form-control select2'}),
+#             'http_health_check_method': Select(choices=MODE_CHOICES, attrs={'class': 'form-control select2'}),
 #             'http_health_check_uri': TextInput(attrs={'class': 'form-control'}),
-#             'http_health_check_version': Select(choices=BACKEND_MODE_CHOICES, attrs={'class': 'form-control select2'}),
+#             'http_health_check_version': Select(choices=MODE_CHOICES, attrs={'class': 'form-control select2'}),
 #             'enable_http_keep_alive': CheckboxInput(attrs={'class': "form-control js-switch"}),
 #             'http_keep_alive_timeout': NumberInput(attrs={'class': 'form-control'}),
 #

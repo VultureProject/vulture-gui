@@ -52,7 +52,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 # Modes choices of HAProxy Frontends
-BACKEND_MODE_CHOICES = (
+MODE_CHOICES = (
     ('tcp', 'TCP'),
     ('http', 'HTTP'),
 )
@@ -129,8 +129,8 @@ class Backend(models.Model):
     )
     """ Listening mode of Frontend : tcp or http """
     mode = models.TextField(
-        default=BACKEND_MODE_CHOICES[0][0],
-        choices=BACKEND_MODE_CHOICES,
+        default=MODE_CHOICES[0][0],
+        choices=MODE_CHOICES,
         help_text=_("Proxy mode"),
     )
     timeout_connect = models.PositiveIntegerField(
@@ -334,7 +334,7 @@ class Backend(models.Model):
         servers_list = [str(s) for s in self.server_set.all().only(*Server.str_attrs())]
 
         mode = "UNKNOWN"
-        for m in BACKEND_MODE_CHOICES:
+        for m in MODE_CHOICES:
             if self.mode == m[0]:
                 mode = m[1]
 
@@ -559,12 +559,11 @@ class Server(models.Model):
 
     """ NetworkAddress object to listen on """
     target = models.TextField(
-        help_text=_("IP/hostname/socket of server")
+        help_text=_("IP/hostname/socket of server"),
+        default="1.2.3.4"
     )
     """ Server mode """
     mode = models.TextField(
-        blank=False,
-        null=False,
         default=SERVER_MODE_CHOICES[0][0],
         choices=SERVER_MODE_CHOICES,
         help_text=_("Server mode (IP, unix socket)"),
@@ -572,7 +571,7 @@ class Server(models.Model):
     """ Port to listen on """
     port = models.PositiveIntegerField(
         default=80,
-        validators=[MinValueValidator(0), MaxValueValidator(65535)]
+        validators=[MinValueValidator(1), MaxValueValidator(65535)]
     )
     """ Backend associated to this server """
     backend = models.ForeignKey(
@@ -619,7 +618,7 @@ class Server(models.Model):
         return result
 
     def __str__(self):
-        if self.port != 0:
+        if self.mode == "net":
             return "{}:{}".format(self.target, self.port)
         else:
             return self.target
@@ -635,7 +634,7 @@ class Server(models.Model):
         """
         result = "server srv{} {}{} weight {}".format(self.id or get_random_string(),
                                                        self.target,
-                                                       ":" + str(self.port) if self.port != 0 else "",
+                                                       ":" + str(self.port) if self.mode == "net" else "",
                                                        self.weight)
         if self.source:
             if ":" in self.source:

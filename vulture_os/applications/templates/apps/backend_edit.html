@@ -495,9 +495,11 @@
     $("#add_unix_server").on("click", function(e) {
       $('#unix_server_table').append(`{{unix_server_form.as_table_td|safe}}`);
       /* tagEditor config set when a unix socket is added (one more down for initial data) */
-      $("#unix_server_table input[name='target']").tagEditor({
+      newObj = $('#unix_server_table input[value="1.2.3.4"]');
+      newObj.attr('value', '');
+      newObj.tagEditor({
         initialTags: [],
-        maxTags: 2,
+        maxTags: 1,
         forceLowercase: false,
         autocomplete: {
           delay: 0,
@@ -547,7 +549,7 @@
         var tls_profile = tr.children[2].children[0].value;
         var weight = tr.children[3].children[0].valueAsNumber;
         var source = tr.children[4].children[0].value;
-        servers.push({'id': id, 'target': target, 'port': 0, 'tls_profile': tls_profile,
+        servers.push({'id': id, 'target': target, 'port': 1, 'tls_profile': tls_profile,
                         'weight': weight, 'source': source, 'mode': 'unix'});
       });
       $('#servers').val(JSON.stringify(servers));

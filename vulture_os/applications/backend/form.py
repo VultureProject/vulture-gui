@@ -30,7 +30,7 @@ from django.utils.translation import ugettext as _
 
 # Django project imports
 from gui.forms.form_utils import NoValidationField
-from applications.backend.models import (Backend, Server, LOG_LEVEL_CHOICES, BACKEND_MODE_CHOICES, BALANCING_CHOICES,
+from applications.backend.models import (Backend, Server, LOG_LEVEL_CHOICES, MODE_CHOICES, BALANCING_CHOICES,
                                          HEALTH_CHECK_EXPECT_CHOICES, HEALTH_CHECK_METHOD_CHOICES, HEALTH_CHECK_VERSION_CHOICES)
 from system.pki.models import TLSProfile
 
@@ -105,7 +105,7 @@ class BackendForm(ModelForm):
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
             'name': TextInput(attrs={'class': 'form-control'}),
-            'mode': Select(choices=BACKEND_MODE_CHOICES, attrs={'class': 'form-control select2'}),
+            'mode': Select(choices=MODE_CHOICES, attrs={'class': 'form-control select2'}),
             'timeout_connect': NumberInput(attrs={'class': 'form-control'}),
             'timeout_server': NumberInput(attrs={'class': 'form-control'}),
             'custom_haproxy_conf': Textarea(attrs={'class': 'form-control'}),
@@ -244,26 +244,9 @@ class ServerForm(ModelForm):
         self.fields['tls_profile'].empty_label = "Plain text"
         self.fields['tls_profile'].required = False
         self.fields['source'].required = False
-        # mode = self.instance.mode
-        if mode == 'net':
-            self.fields['target'].initial = "1.2.3.4"
-            self.fields['port'].initial = 80
-            self.fields['port'].required = True
         if mode == 'unix':
             self.fields['target'].label = 'Socket'
             del self.fields['port']
-
-    
-    def clean(self):
-        cleaned_data = super().clean()
-
-        mode = cleaned_data.get('mode')
-        port = cleaned_data.get('port')
-
-        if mode == 'net' and port == 0:
-            self.add_error('port', 'port number is not valid')
-
-        return cleaned_data
 
 
     def as_table_headers(self):
