@@ -119,12 +119,6 @@ class FrontendForm(ModelForm):
             widget=Select(attrs={'class': 'form-control select2'}),
             required=False
         )
-        """ Darwin mode """
-        self.fields['darwin_mode'] = ChoiceField(
-            label=_("Darwin mode"),
-            choices=DARWIN_MODE_CHOICES,
-            widget=Select(attrs={'class': 'form-control select2'})
-        )
         """ Log forwarders """
         self.fields['log_forwarders'] = ModelMultipleChoiceField(
             label=_("Log forwarders"),
@@ -270,6 +264,7 @@ class FrontendForm(ModelForm):
             'impcap_intf': Select(choices=NetworkInterfaceCard.objects.all(), attrs={'class': "form-control select2"}),
             'enable_logging_reputation': CheckboxInput(attrs={'class': "js-switch"}),
             'log_level': Select(choices=LOG_LEVEL_CHOICES, attrs={'class': 'form-control select2'}),
+            'darwin_mode': Select(choices=DARWIN_MODE_CHOICES, attrs={'class': 'form-control select2'}),
             'log_condition': Textarea(attrs={'class': 'form-control'}),
             'ruleset': Select(attrs={'class': 'form-control select2'}),
             'listening_mode': Select(choices=LISTENING_MODE_CHOICES, attrs={'class': 'form-control select2'}),
