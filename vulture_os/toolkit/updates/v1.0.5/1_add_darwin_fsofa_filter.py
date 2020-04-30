@@ -48,7 +48,7 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
         try:
-            darwinFilter = DarwinFilter.objects.create(
+            darwinFilter, created = DarwinFilter.objects.get_or_create(
                 name="sofa",
                 description="Scan Outliers Finding and Analysis, allows finding outliers in scan results coming from network scanners",
                 is_internal=False
@@ -59,28 +59,24 @@ if __name__ == "__main__":
 
         try:
             defaultPolicy = DarwinPolicy.objects.get(pk=1)
-            if defaultPolicy is not None:
-                filterPolicy = FilterPolicy.objects.create(
-                    filter = darwinFilter,
-                    policy = defaultPolicy,
-                    enabled = False,
-                    nb_thread = 1,
-                    log_level = "WARNING",
-                    threshold = 0,
-                    mmdarwin_enabled = False,
-                    mmdarwin_parameters = [],
-                    cache_size = 0,
-                    output = "NONE",
-                    conf_path = "/home/darwin/conf/fsofa/fsofa.conf",
-                    config = {
-                        "python_env_path": "/home/vlt-os/env/bin/python",
-                        "module": "scan_analysis_anomaly_core",
-                        "function": "main",
-                        "custom_python_path": "/home/darwin/conf/fsofa/"
-                    }
-                )
+            filterPolicy, created = FilterPolicy.objects.get_or_create(
+                filter = darwinFilter,
+                policy = defaultPolicy,
+                enabled = False,
+                nb_thread = 1,
+                log_level = "WARNING",
+                threshold = 0,
+                mmdarwin_enabled = False,
+                mmdarwin_parameters = [],
+                cache_size = 0,
+                output = "NONE",
+                conf_path = "/home/darwin/conf/fsofa/fsofa.conf",
+                defaults={'config': {}}
+            )
+        except DarwinPolicy.DoesNotExist:
+            print("No default policy, fsofa wasn't added")
         except Exception as e:
-            print("Error while adding default Fsofa filter to Default Policy: {}".format(e))
-            exit
+            print("Could not add fsofa filter to default policy: {}".format(e))
+            sys.exit(1)
 
         print("Done.")
