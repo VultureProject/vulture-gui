@@ -210,16 +210,7 @@
       "output": "LOG",
       "next_filter": null,
       "conf_path": "/home/darwin/conf/fsofa/fsofa_1.conf",
-      "config": {
-        "redis_socket_path": "/var/sockets/redis/redis.sock",
-        "alert_redis_list_name": "darwin_alerts",
-        "alert_redis_channel_name": "darwin.alerts",
-        "log_file_path": "/var/log/darwin/alerts.log",
-        "python_env_path": "/home/vlt-os/env/bin/python",
-        "module": "scan_analysis_anomaly_core",
-        "function": "main",
-        "custom_python_path": "/home/darwin/conf/fsofa/"
-      }
+      "config": {}
     }
   }
 ]
