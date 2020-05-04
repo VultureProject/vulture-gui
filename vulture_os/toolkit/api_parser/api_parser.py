@@ -96,7 +96,8 @@ class ApiParser:
             separator = "\n"
         with open(self.frontend.api_file_path, mode) as f:
             for line in lines:
-                f.write(line + separator)
+                if line not in ("", b""):
+                    f.write(line + separator)
 
     def finish(self):
         """
