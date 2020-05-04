@@ -58,10 +58,7 @@ class AkamaiAPIError(Exception):
 
 
 def akamai_write(akamai):
-    while True:
-        if event_write.is_set():
-            break
-
+    while not event_write.is_set():
         log = queue_write.get()
         if not log:
             continue
@@ -70,10 +67,7 @@ def akamai_write(akamai):
 
 
 def akamai_parse(akamai):
-    while True:
-        if event_parse.is_set():
-            break
-
+    while not event_parse.is_set():
         log = queue_parse.get()
         if not log:
             continue
@@ -150,6 +144,7 @@ class AkamaiParser(ApiParser):
 
         self.first_log = False
         self.last_log = False
+        self.offset = "a"
         self.akamai_host = data.get('akamai_host')
         self.akamai_client_secret = data.get('akamai_client_secret')
         self.akamai_access_token = data.get('akamai_access_token')
@@ -166,13 +161,13 @@ class AkamaiParser(ApiParser):
 
     def _connect(self):
         try:
-            self.session = requests.Session()
-            self.session.auth = EdgeGridAuth(
-                client_token=self.akamai_client_token,
-                client_secret=self.akamai_client_secret,
-                access_token=self.akamai_access_token
-            )
-
+            if self.session is None:
+                self.session = requests.Session()
+                self.session.auth = EdgeGridAuth(
+                    client_token=self.akamai_client_token,
+                    client_secret=self.akamai_client_secret,
+                    access_token=self.akamai_access_token
+                )
             return True
 
         except Exception as err:
@@ -184,13 +179,18 @@ class AkamaiParser(ApiParser):
         url = f"{self.akamai_host}/siem/{self.version}/configs/{self.akamai_config_id}"
 
         params = {
-            'from': int(self.last_log_time.timestamp()),
-            'limite': 100000
+            'limit': 100000
         }
+        if self.offset != "a":
+            params['offset'] = self.offset
+        else:
+            params['from'] = int(self.last_log_time.timestamp())
 
         if test:
             params['limit'] = 1
 
+        self.offset = None
+        result = []
         with self.session.get(url, params=params, proxies=self.proxies, stream=True) as r:
             r.raise_for_status()
 
@@ -205,14 +205,26 @@ class AkamaiParser(ApiParser):
 
                 if "httpMessage" in line.keys():
                     queue_parse.put(line)
+                else:
+                    logger.info(line)
+                    self.offset = line['offset']
 
     def test(self):
         try:
+            t_parse = Thread(target=akamai_parse, args=(self,))
+            t_parse.start()
             data = []
             self.last_log_time = timezone.now() - datetime.timedelta(minutes=15)
-            for log in self.get_logs(test=True):
-                data.append(self._parse_log(log))
-                break
+            self.get_logs(test=True)
+            cpt = 0
+            while cpt < 5:
+                log = queue_write.get()
+                if log:
+                    data.append(log)
+                    break
+                else:
+                    time.sleep(1)
+                    cpt += 1
 
             return {
                 'status': True,
@@ -228,7 +240,6 @@ class AkamaiParser(ApiParser):
     def execute(self):
         try:
             threads = []
-
             for i in range(self.NB_THREAD):
                 t_parse = Thread(target=akamai_parse, args=(self,))
                 t_parse.start()
@@ -236,11 +247,12 @@ class AkamaiParser(ApiParser):
 
             t_write = Thread(target=akamai_write, args=(self,))
             t_write.start()
-            threads.append(t_write)
 
-            while self.last_log_time < timezone.now():
+            self.offset = "a"
+            while self.last_log_time < (timezone.now()-datetime.timedelta(minutes=1)) and self.offset:
                 self.get_logs()
                 self.update_lock()
+                self.frontend.last_api_call = self.last_log_time
 
             event_parse.set()
             event_write.set()
@@ -248,11 +260,17 @@ class AkamaiParser(ApiParser):
             queue_parse.join()
             queue_write.join()
 
+            # Unlock threads by sending empty lines into queues
+            for i in range(self.NB_THREAD):
+                queue_parse.put("")
+
+            # Wait for parsing threads to finish
             for t in threads:
                 t.join()
 
-            self.frontend.last_api_call = self.last_log_time
-            self.finish()
+            # Wait for writing thread to finish
+            queue_write.put("")
+            t_write.join()
 
         except Exception as e:
             raise AkamaiParseError(e)
