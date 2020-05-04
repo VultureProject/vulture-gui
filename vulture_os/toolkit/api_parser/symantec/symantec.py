@@ -33,6 +33,7 @@ import zipfile
 from io import BytesIO
 
 from django.conf import settings
+from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -62,8 +63,8 @@ class SymantecParser(ApiParser):
 
     def test(self):
         try:
-            startDate = datetime.datetime.now() - datetime.timedelta(minutes=5)
-            startDate = startDate.replace(minute=0, second=0, microsecond=0)
+            startDate = timezone.now() - datetime.timedelta(minutes=5)
+            startDate = startDate.replace(second=0, microsecond=0)
             startDate = startDate.timestamp() * 1000
 
             url = f"{self.start_console_uri}startDate={int(startDate)}&endDate=0&token=none"
@@ -140,7 +141,7 @@ class SymantecParser(ApiParser):
                     tmp_file.seek(0)
                     if not len(tmp_file.read()):
                         logger.info('[SYMANTEC API PARSER] No logs found')
-                        self.frontend.last_api_call = datetime.datetime.now()
+                        self.frontend.last_api_call = timezone.now()
                         self.finish()
                     else:
                         try:
@@ -157,7 +158,7 @@ class SymantecParser(ApiParser):
                                                 data.append(line)
 
                             self.write_to_file(data, bytes_mode=True)
-                            self.frontend.last_api_call = datetime.datetime.now()
+                            self.frontend.last_api_call = timezone.now()
                             self.finish()
                         except zipfile.BadZipfile as err:
                             raise SymantecParseError(err)
