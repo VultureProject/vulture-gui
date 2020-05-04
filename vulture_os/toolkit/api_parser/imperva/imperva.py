@@ -173,13 +173,9 @@ class ImpervaParser(ApiParser):
             }
 
     def execute(self):
-        if not self.can_run():
-            logger.info("[IMPERVA PARSER] Process locked by an other process")
-            return
-
         try:
+            data = []
             if self.imperva_last_log_file == "":
-                data = []
                 log_files = self._download_log_index()
                 for file in log_files:
                     self.update_lock()
@@ -189,9 +185,37 @@ class ImpervaParser(ApiParser):
 
                     self.write_to_file(data)
                     data = []
+                    self.imperva_last_log_file = file
 
-                self.frontend.last_api_call = self.last_api_call
-                self.finish()
+            else:
+                # Try to download the next file
+                last_log_index = int(self.imperva_last_log_file.split('.')[0].split('_')[1])
+                next_log_index = last_log_index + 1
+                next_log_file = f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index}.log"
+                try:
+                    content = self.get_file(next_log_file).decode('utf-8')
+                    data.extend(content.split('\n'))
+                    self.write_to_file(data)
+                    self.imperva_last_log_file = next_log_file
+                except Exception as e:
+                    logger.exception(e)
+
+                    # Download log files index
+                    log_files = self._download_log_index()
+                    first_log_id_in_index = int(log_files[0].split('.')[0].split('_')[1])
+                    if next_log_index < first_log_id_in_index:
+                        logger.error("Current downloaded file is not in the index file any more. "
+                                     "This is probably due to a long delay in downloading. Attempting to recover")
+                        self.imperva_last_log_file = ""
+                    elif f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index+1}.log" in log_files:
+                        logger.warning("Skipping file {}".format(next_log_file))
+                        self.imperva_last_log_file = next_log_file
+                    else:
+                        logger.info("Next file {} still does not exist.".format(next_log_file))
+
+            self.frontend.imperva_last_log_file = self.imperva_last_log_file
+            self.frontend.last_api_call = self.last_api_call
+            self.finish()
 
         except Exception as err:
             raise ImpervaParseError(err)
