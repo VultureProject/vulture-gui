@@ -235,7 +235,18 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row impcap-mode -->
+                      <div class="darwin-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Darwin mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.darwin_mode}}
+                              {{form.darwin_mode.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row darwin-mode -->
+                    </div> <!-- /.row -->
                   </div> <!-- /.tab-pane -->
                   <div class="tab-pane" id="tab_network">
 
