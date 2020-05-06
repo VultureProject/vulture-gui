@@ -86,11 +86,20 @@ class ApiParser:
     def update_lock(self):
         self.redis_cli.redis.setex(self.key_redis, 300, 1)
 
-    def write_to_file(self, lines):
-        logger.info(f'[API PARSER] Writing {len(lines)} lines')
-        with open(self.frontend.api_file_path, 'a') as f:
+    def write_to_file(self, lines, bytes_mode=False, no_logs=False):
+        if not no_logs:
+            logger.info(f'[API PARSER] Writing {len(lines)} lines')
+
+        if bytes_mode:
+            mode = "ab"
+            separator = b"\n"
+        else:
+            mode = "a"
+            separator = "\n"
+        with open(self.frontend.api_file_path, mode) as f:
             for line in lines:
-                f.write(line + "\n")
+                if line not in ("", b""):
+                    f.write(line + separator)
 
     def finish(self):
         """

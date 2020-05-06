@@ -235,7 +235,18 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row impcap-mode -->
+                      <div class="darwin-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Darwin mode" %}</label>
+                            <div class="col-sm-5">
+                              {{form.darwin_mode}}
+                              {{form.darwin_mode.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row darwin-mode -->
+                    </div> <!-- /.row -->
                   </div> <!-- /.tab-pane -->
                   <div class="tab-pane" id="tab_network">
 
@@ -757,6 +768,37 @@
                           <div class="col-sm-5">
                             {{ form.forcepoint_password }}
                             {{ form.forcepoint_password.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_imperva_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.imperva_base_url.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.imperva_base_url }}
+                            {{ form.imperva_base_url.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.imperva_api_key.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.imperva_api_key }}
+                            {{ form.imperva_api_key.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.imperva_api_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.imperva_api_id }}
+                            {{ form.imperva_api_id.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.imperva_private_key.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.imperva_private_key }}
+                            {{ form.imperva_private_key.errors|safe }}
                           </div>
                         </div>
                       </div>

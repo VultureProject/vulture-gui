@@ -25,13 +25,14 @@ __doc__ = 'Parser URLS'
 
 import logging
 
-from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
-from toolkit.api_parser.elasticsearch.els import ElasticsearchParser
+from django.conf import settings
+from toolkit.api_parser.akamai.akamai import AkamaiParser
 from toolkit.api_parser.aws_bucket.aws_bucket import AWSBucketParser
+from toolkit.api_parser.elasticsearch.els import ElasticsearchParser
+from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
+from toolkit.api_parser.imperva.imperva import ImpervaParser
 from toolkit.api_parser.office365.office365 import Office365Parser
 from toolkit.api_parser.symantec.symantec import SymantecParser
-from toolkit.api_parser.akamai.akamai import AkamaiParser
-from django.conf import settings
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -43,6 +44,7 @@ PARSER_LIST = {
     "aws_bucket": AWSBucketParser,
     "office_365": Office365Parser,
     "symantec": SymantecParser,
+    'imperva': ImpervaParser,
     "akamai": AkamaiParser
 }
 

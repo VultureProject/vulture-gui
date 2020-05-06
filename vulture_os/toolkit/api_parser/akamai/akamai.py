@@ -25,11 +25,14 @@ __doc__ = 'Akamai API Parser'
 
 import datetime
 import json
+import time
 import logging
 import requests
 import base64
 import urllib.parse
+import queue
 
+from threading import Thread, Event, Lock
 from akamai.edgegrid import EdgeGridAuth
 from django.conf import settings
 from django.utils import timezone
@@ -37,6 +40,13 @@ from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('crontab')
+
+
+event_parse = Event()
+event_write = Event()
+queue_parse = queue.Queue()
+queue_write = queue.Queue()
+data_lock = Lock()
 
 
 class AkamaiParseError(Exception):
@@ -47,12 +57,94 @@ class AkamaiAPIError(Exception):
     pass
 
 
+def akamai_write(akamai):
+    while not event_write.is_set():
+        log = queue_write.get()
+        if not log:
+            continue
+
+        akamai.write_to_file([json.dumps(log)], no_logs=True)
+
+
+def akamai_parse(akamai):
+    while not event_parse.is_set():
+        log = queue_parse.get()
+        if not log:
+            continue
+
+        timestamp = int(log['httpMessage']['start'])
+        timestamp = timezone.make_aware(datetime.datetime.utcfromtimestamp(timestamp))
+
+        tmp = {
+            'time': timestamp.isoformat(),
+            'httpMessage': log['httpMessage'],
+            'geo': log['geo'],
+            'attackData': {
+                'clientIP': log['attackData'].get('clientIP', '0.0.0.1')
+            }
+        }
+
+        # Urldecode and parse headers
+        tmp_request_headers = tmp["httpMessage"].get('requestHeaders', "-")
+        request_headers = urllib.parse.unquote(tmp_request_headers)
+        all_request_headers = dict()
+        for r in request_headers.split("\r\n"):
+            if r and r != "{p}":
+                try:
+                    name, value = r.split(": ", maxsplit=1)
+                except Exception:
+                    name, value = r.split(":", maxsplit=1)[0], "-"
+                all_request_headers[name] = value or "-"
+
+        tmp_response_headers = tmp['httpMessage'].get('responseHeaders', '-')
+        response_headers = urllib.parse.unquote(tmp_response_headers)
+        all_response_headers = {'Set-Cookie': []}
+        for r in response_headers.split("\r\n"):
+            if r and r != "{p}":
+                try:
+                    name, value = r.split(": ", maxsplit=1)
+                except Exception:
+                    name, value = r.split(":", maxsplit=1)[0], "-"
+                if name.lower().startswith("set-cookie"):
+                    all_response_headers["Set-Cookie"].append(value)
+                else:
+                    all_response_headers[name] = value or '-'
+
+        all_response_headers['Set-Cookie'] = "; ".join(all_response_headers['Set-Cookie']) or "-"
+
+        tmp['httpMessage']['requestHeaders'] = all_request_headers
+        tmp['httpMessage']['responseHeaders'] = all_response_headers
+
+        # Unquote attackData fields and decode them in base64
+        for key in akamai.ATTACK_KEYS:
+            tmp_data = log['attackData'][key]
+            tmp_data = urllib.parse.unquote(tmp_data).split(';')
+
+            values = []
+            for data in tmp_data:
+                if data:
+                    values.append(base64.b64decode(data).decode('utf-8'))
+
+            tmp['attackData'][key] = values
+
+        queue_write.put(tmp)
+
+        # Update the last log time
+        with data_lock:
+            if timestamp > akamai.last_log_time:
+                akamai.last_log_time = timestamp
+
+
 class AkamaiParser(ApiParser):
     ATTACK_KEYS = ["rules", "ruleMessages", "ruleTags", "ruleActions", "ruleData"]
+    NB_THREAD = 10
 
     def __init__(self, data):
         super().__init__(data)
 
+        self.first_log = False
+        self.last_log = False
+        self.offset = "a"
         self.akamai_host = data.get('akamai_host')
         self.akamai_client_secret = data.get('akamai_client_secret')
         self.akamai_access_token = data.get('akamai_access_token')
@@ -65,16 +157,17 @@ class AkamaiParser(ApiParser):
             self.akamai_host = f"https://{self.akamai_host}"
 
         self.last_log_time = self.last_api_call
+        self.session = None
 
     def _connect(self):
         try:
-            self.session = requests.Session()
-            self.session.auth = EdgeGridAuth(
-                client_token=self.akamai_client_token,
-                client_secret=self.akamai_client_secret,
-                access_token=self.akamai_access_token
-            )
-
+            if self.session is None:
+                self.session = requests.Session()
+                self.session.auth = EdgeGridAuth(
+                    client_token=self.akamai_client_token,
+                    client_secret=self.akamai_client_secret,
+                    access_token=self.akamai_access_token
+                )
             return True
 
         except Exception as err:
@@ -86,82 +179,52 @@ class AkamaiParser(ApiParser):
         url = f"{self.akamai_host}/siem/{self.version}/configs/{self.akamai_config_id}"
 
         params = {
-            'from': int(self.last_log_time.timestamp())
+            'limit': 100000
         }
+        if self.offset != "a":
+            params['offset'] = self.offset
+        else:
+            params['from'] = int(self.last_log_time.timestamp())
 
         if test:
             params['limit'] = 1
 
-        response = self.session.get(
-            url,
-            params=params,
-            proxies=self.proxies
-        )
+        self.offset = None
+        result = []
+        with self.session.get(url, params=params, proxies=self.proxies, stream=True) as r:
+            r.raise_for_status()
 
-        if response.status_code != 200:
-            raise AkamaiAPIError(f"Error on URL: {url} Status: {response.status_code} Content: {response.content}")
+            for line in r.iter_lines():
+                if not line:
+                    continue
 
-        for line in response.content.decode('UTF-8').split('\n'):
-            if line == "":
-                continue
+                try:
+                    line = json.loads(line.decode('utf-8'))
+                except json.decoder.JSONDecodeError:
+                    continue
 
-            try:
-                line = json.loads(line)
-            except json.decoder.JSONDecodeError:
-                continue
-
-            yield line
-
-            if test:
-                break
-
-    def _parse_log(self, log):
-        timestamp = int(log['httpMessage']['start'])
-        timestamp = timezone.make_aware(datetime.datetime.utcfromtimestamp(timestamp))
-
-        if timestamp > self.last_log_time:
-            self.last_log_time = timestamp
-
-        tmp = {
-            'time': timestamp.isoformat(),
-            'httpMessage': log['httpMessage'],
-            'geo': log['geo'],
-            'attackData': {
-                'clientIP': log['attackData'].get('clientIP', '0.0.0.1')
-            }
-        }
-
-        # Urldecode and parse headers
-        request_headers = urllib.parse.unquote(tmp['httpMessage'].get('requestHeaders', "-"))
-        all_request_headers = dict(r.split(': ') for r in request_headers.split("\r\n") if r)
-
-        response_headers = urllib.parse.unquote(tmp['httpMessage'].get('responseHeaders', "-"))
-        all_response_headers = dict(r.split(': ') for r in response_headers.split("\r\n") if r)
-
-        all_request_headers['Set-Cookie'] = ""
-        tmp['httpMessage']['requestHeaders'] = all_request_headers
-        tmp['httpMessage']['responseHeaders'] = all_response_headers
-
-        # Unquote attackData fields and decode them in base64
-        for key in self.ATTACK_KEYS:
-            tmp_data = urllib.parse.unquote(log['attackData'][key]).split(';')
-
-            values = []
-            for data in tmp_data:
-                if data:
-                    values.append(base64.b64decode(data).decode('utf-8'))
-
-            tmp['attackData'][key] = values
-
-        return tmp
+                if "httpMessage" in line.keys():
+                    queue_parse.put(line)
+                else:
+                    logger.info(line)
+                    self.offset = line['offset']
 
     def test(self):
         try:
+            t_parse = Thread(target=akamai_parse, args=(self,))
+            t_parse.start()
             data = []
             self.last_log_time = timezone.now() - datetime.timedelta(minutes=15)
-            for log in self.get_logs(test=True):
-                data.append(self._parse_log(log))
-                break
+            self.get_logs(test=True)
+            cpt = 0
+            while cpt < 5:
+                log = queue_write.get()
+                if log:
+                    data.append(log)
+                    break
+                else:
+                    time.sleep(1)
+                    cpt += 1
 
             return {
                 'status': True,
@@ -176,18 +239,38 @@ class AkamaiParser(ApiParser):
 
     def execute(self):
         try:
-            while self.last_log_time < timezone.now():
-                data = []
-                for log in self.get_logs():
-                    if "httpMessage" in log.keys():
-                        try:
-                            data.append(json.dumps(self._parse_log(log)))
-                        except Exception as err:
-                            raise AkamaiAPIError(err)
+            threads = []
+            for i in range(self.NB_THREAD):
+                t_parse = Thread(target=akamai_parse, args=(self,))
+                t_parse.start()
+                threads.append(t_parse)
 
-                self.write_to_file(data)
-                self.frontend.last_api_call = self.last_log_time
+            t_write = Thread(target=akamai_write, args=(self,))
+            t_write.start()
+
+            self.offset = "a"
+            while self.last_log_time < (timezone.now()-datetime.timedelta(minutes=1)) and self.offset:
+                self.get_logs()
                 self.update_lock()
+                self.frontend.last_api_call = self.last_log_time
+
+            event_parse.set()
+            event_write.set()
+
+            queue_parse.join()
+            queue_write.join()
+
+            # Unlock threads by sending empty lines into queues
+            for i in range(self.NB_THREAD):
+                queue_parse.put("")
+
+            # Wait for parsing threads to finish
+            for t in threads:
+                t.join()
+
+            # Wait for writing thread to finish
+            queue_write.put("")
+            t_write.join()
 
         except Exception as e:
             raise AkamaiParseError(e)

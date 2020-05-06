@@ -98,6 +98,11 @@ IMPCAP_FILTER_CHOICES = (
     ('custom', "Custom"),
 )
 
+DARWIN_MODE_CHOICES = (
+    ('darwin', "generate alerts"),
+    ('both', "enrich logs and generate alerts")
+)
+
 # Jinja template for frontends rendering
 JINJA_PATH = "/home/vlt-os/vulture_os/services/frontend/config/"
 JINJA_TEMPLATE = "haproxy_frontend.conf"
@@ -178,6 +183,8 @@ class Frontend(models.Model):
         verbose_name=_("Impcap filter"),
         help_text=_("Filter used by impcap for trafic listening (tcpdump format)")
     )
+    """ *** DARWIN OPTIONS *** """
+    """ Darwin policy """
     darwin_policy = models.ForeignKey(
         to=DarwinPolicy,
         on_delete=models.PROTECT,
@@ -185,6 +192,12 @@ class Frontend(models.Model):
         blank=False,
         related_name="frontend_set",
         help_text=_("Darwin policy to use")
+    )
+    """ Darwin mode """
+    darwin_mode = models.TextField(
+        default=DARWIN_MODE_CHOICES[0][0],
+        choices=DARWIN_MODE_CHOICES,
+        help_text=_("Ways to call Darwin: 'enrich' will wait for a score and add it to the data, 'alert' will simply pass the data for Darwin to process and will rely on its configured alerting methods")
     )
     """ *** LOGGING OPTIONS *** """
     """ Enable logging to Rsyslog """
@@ -477,6 +490,31 @@ class Frontend(models.Model):
         default=""
     )
 
+    imperva_base_url = models.TextField(
+        help_text=_("Imperva Base URL"),
+        default=""
+    )
+
+    imperva_api_id = models.TextField(
+        help_text=_("Imperva API ID"),
+        default=""
+    )
+
+    imperva_api_key = models.TextField(
+        help_text=_("Imperva API KEY"),
+        default=""
+    )
+
+    imperva_private_key = models.TextField(
+        help_text=_("Imperva Private KEY"),
+        default=""
+    )
+
+    imperva_last_log_file = models.TextField(
+        help_text=_("Imperva Last Log File"),
+        default=""
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -598,6 +636,13 @@ class Frontend(models.Model):
                     result['office365_tenant_id'] = self.office365_tenant_id
                     result['office365_client_id'] = self.office365_client_id
                     result['office365_client_secret'] = self.office365_client_secret
+
+                elif self.api_parser_type == "imperva":
+                    result['imperva_base_url'] = self.imperva_base_url
+                    result['imperva_api_id'] = self.imperva_api_id
+                    result['imperva_api_key'] = self.imperva_api_key
+                    result['imperva_private_key'] = self.imperva_private_key
+                    result['imperva_last_log_file'] = self.imperva_last_log_file
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
@@ -806,6 +851,7 @@ class Frontend(models.Model):
             'serialized_blwl_list': serialized_blwl_list,
             'darwin_policies': FilterPolicy.objects.filter(policy=self.darwin_policy),
             'keep_source_fields': self.keep_source_fields,
+            'darwin_mode': self.darwin_mode,
         }
 
         if self.mode == "impcap":
@@ -1190,6 +1236,7 @@ class Listener(models.Model):
         return {
             'id': str(self.id),
             'network_address': str(self.network_address),
+            'network_address_id': self.network_address.pk,
             'port': self.port,
             'frontend': self.frontend,
             'whitelist_ips': self.whitelist_ips,

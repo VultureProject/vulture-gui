@@ -23,15 +23,17 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Symantec API Parser'
 
 import datetime
+import gzip
 import logging
 import requests
-import gzip
 import time
 
+import zipfile
+
 from io import BytesIO
-from zipfile import ZipFile
 
 from django.conf import settings
+from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -61,8 +63,8 @@ class SymantecParser(ApiParser):
 
     def test(self):
         try:
-            startDate = datetime.datetime.now() - datetime.timedelta(minutes=5)
-            startDate = startDate.replace(minute=0, second=0, microsecond=0)
+            startDate = timezone.now() - datetime.timedelta(minutes=5)
+            startDate = startDate.replace(second=0, microsecond=0)
             startDate = startDate.timestamp() * 1000
 
             url = f"{self.start_console_uri}startDate={int(startDate)}&endDate=0&token=none"
@@ -100,6 +102,8 @@ class SymantecParser(ApiParser):
             params = f"startDate={timestamp}&endDate=0&token={token}"
             url = f"{self.start_console_uri}{params}"
 
+            logger.debug("[SYMANTEC API PARSER] Retrieving symantec logs from api")
+
             r = requests.get(
                 url,
                 headers=self.HEADERS,
@@ -109,15 +113,22 @@ class SymantecParser(ApiParser):
                 timeout=60
             )
 
+            try:
+                r.raise_for_status()
+            except Exception as err:
+                raise SymantecAPIError(err)
+
             if r.headers.get('Retry-After'):
                 retry = int(r.headers['Retry-After']) + 2
                 if retry > 300:
                     raise SymantecAPIError(f"Retry After {r.headers['Retry-After']}")
 
-                print(f"Waiting for {retry}s")
+                logger.debug(f"[SYMANTEC API PARSER] Waiting for {retry}s")
+
                 self.update_lock()
                 time.sleep(retry)
-                print('Resuming')
+                logger.debug('[SYMANTEC API PARSER] Resuming API calls')
+
                 self.execute()
             else:
                 if "filename" in r.headers['Content-Disposition']:
@@ -127,17 +138,33 @@ class SymantecParser(ApiParser):
                             self.update_lock()
                             tmp_file.write(chunk)
 
-                    with ZipFile(tmp_file) as zip_file:
-                        for gzip_filename in zip_file.namelist():
-                            self.update_lock()
-                            gzip_file = BytesIO(zip_file.read(gzip_filename))
+                    tmp_file.seek(0)
+                    if not len(tmp_file.read()):
+                        logger.info('[SYMANTEC API PARSER] No logs found')
+                        self.frontend.last_api_call = timezone.now()
+                        self.finish()
+                    else:
+                        try:
+                            data = []
+                            with zipfile.ZipFile(tmp_file) as zip_file:
+                                for gzip_filename in zip_file.namelist():
+                                    self.update_lock()
+                                    gzip_file = BytesIO(zip_file.read(gzip_filename))
 
-                            with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
-                                for line in gzip_file_content.readlines():
-                                    print(line)
+                                    with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
+                                        for line in gzip_file_content.readlines():
+                                            line = line.strip()
+                                            if not line.startswith("#"):
+                                                data.append(line)
 
-                    self.frontend.last_api_call = datetime.datetime.now()
-                    self.finish()
+                            self.write_to_file(data, bytes_mode=True)
+                            self.frontend.last_api_call = timezone.now()
+                            self.finish()
+                        except zipfile.BadZipfile as err:
+                            raise SymantecParseError(err)
+
+                else:
+                    logger.info(f'[SYMANTEC API PARSER] No filename found in headers {r.headers}')
 
         except Exception as e:
             raise SymantecParseError(e)

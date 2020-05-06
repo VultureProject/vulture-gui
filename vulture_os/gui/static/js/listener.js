@@ -31,6 +31,11 @@ function get_api_parser_data(type_){
     }
   })
 
+  $('#api_'+ type_ + "_row textarea").each(function(){
+    var name = $(this).attr('name');
+    data[name] = $(this).val();
+  })
+
   $('#api_' + type_ + "_row select").each(function(){
     var name = $(this).attr('name');
     data[name] = $(this).val();
@@ -254,13 +259,24 @@ $(function() {
     }
   }
 
-  function refresh_input_logs_type(listening_mode){
+  function refresh_input_logs_type(mode, listening_mode){
     var first = true;
-    $('#ruleset-div').show();
-    $('#id_node').show();
-    if (listening_mode === "api"){
+    if(mode === "log" && listening_mode !== "api") {
+      $('#ruleset-div').show();
+      $('#id_node').show();
+    }
+    else {
       $('#ruleset-div').hide();
       $('#id_node').hide();
+    }
+  }
+
+  function show_darwin_mode(darwin_policy) {
+    if( darwin_policy ) {
+      $('.darwin-mode').show();
+    }
+    else {
+      $('.darwin-mode').hide();
     }
   }
 
@@ -351,7 +367,7 @@ $(function() {
         $('#stock_logs_locally').click();
       }
 
-      refresh_input_logs_type($('#id_listening_mode').val());
+      refresh_input_logs_type(mode, $('#id_listening_mode').val());
     }
     if( mode === "impcap" ) {
       toggle_impcap_filter_type();
@@ -384,6 +400,11 @@ $(function() {
       }
     }
   }).trigger("change");
+
+  $('#id_darwin_policy').on("change", function(e) {
+    var policy = $(this).val();
+    show_darwin_mode(policy);
+  }).trigger('change');
 
 
   /* Show log_condition_failure depending on mode and ruleset */
@@ -422,7 +443,7 @@ $(function() {
     show_custom_conf($('#id_mode').val(), $(this).val());
     show_listening_mode($('#id_mode').val(), $(this).val());
     show_network_conf($('#id_mode').val(), $(this).val());
-    refresh_input_logs_type($(this).val());
+    refresh_input_logs_type($('#id_mode').val(), $(this).val());
   }).trigger('change');
 
 
@@ -621,8 +642,6 @@ $(function() {
   $('#id_log_forwarders').on('change', function(e) {
     refresh_log_forwarders($(this).val());
   });
-
-  refresh_log_forwarders($('#id_log_forwarders').val());
 
   /* Initialize all custom fields */
   refresh_table_events();
