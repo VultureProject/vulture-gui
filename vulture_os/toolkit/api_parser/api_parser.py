@@ -54,7 +54,7 @@ class ApiParser:
         except Config.DoesNotExist:
             raise NodeNotBootstraped()
 
-        self.customer_name = config.customer_name
+        self.customer_name = config.internal_tenants.name
         self.last_api_call = self.data.get("last_api_call")
         self.key_redis = "api_parser_{frontend_id}_running".format(
             frontend_id=str(self.data.get('id', ""))
