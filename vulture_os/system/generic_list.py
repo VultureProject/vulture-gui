@@ -33,6 +33,7 @@ from django.views.generic import View
 
 # Django project imports
 from system.cluster.models import NetworkAddress, Node
+from system.tenants.models import Tenants
 from system.zfs.models import ZFS
 from system.vm.models import VM
 from system.pki.models import X509Certificate, TLSProfile
@@ -96,6 +97,13 @@ class ListView(View):
             "iTotalDisplayRecords": max_objs,
             "aaData": objs
         })
+
+
+class ListTenants(ListView):
+    template_name = "tenants.html"
+    obj = Tenants
+
+    # get and post methods herited from mother class
 
 
 class ListNode(ListView):
