@@ -30,7 +30,6 @@ from djongo import models
 
 # Django project imports
 from toolkit.network.network import get_proxy
-from system.cluster.models import Cluster, NetworkAddress, Node
 from toolkit.log.maxminddb import test_mmdb_database, open_mmdb_database
 
 # Extern modules imports
@@ -169,6 +168,12 @@ class ReputationContext(models.Model):
         self.content = ""
         super().save(*args, **kwargs)
 
+    def delete(self):
+        """ Delete file on disk on all nodes """
+        from system.cluster.models import Cluster
+        Cluster.api_request("system.config.models.delete_conf", self.absolute_filename)
+        super().delete()
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
@@ -273,7 +278,8 @@ class ReputationContext(models.Model):
                 if match and match[1][-3:] == ".gz":
                     self.filename = match[1][:-3]
                     return gzip_decompress(response.content)
-            self.filename = self.url.split('/')[-1]
+            if not self.filename:
+                self.filename = self.url.split('/')[-1]
         except Exception as e:
             raise VultureSystemError(str(e), "download '{}'".format(self.url))
         return response.content
@@ -324,6 +330,7 @@ class ReputationContext(models.Model):
     def get_nodes(self):
         """ Return the list of nodes used by frontends using the current object """
         # for listener in Listener.objects.filter()
+        from system.cluster.models import NetworkAddress, Node
         return Node.objects.filter(networkinterfacecard__frontend__reputation_ctxs=self.id)
 
     def reload_frontend_conf(self):
@@ -331,6 +338,7 @@ class ReputationContext(models.Model):
         :return     The list of concerned nodes  
         """
         from services.frontend.models import Listener
+        from system.cluster.models import Cluster, NetworkAddress, Node
         res = []
         # Loop on Nodes
         for node in Node.objects.all():
