@@ -27,6 +27,7 @@ from djongo import models
 
 # Django project imports
 from authentication.ldap.models import LDAPRepository
+from system.tenants.models import Tenants
 from toolkit.mongodb.mongo_base import MongoBase
 
 # Required exceptions imports
@@ -57,11 +58,7 @@ class Config(models.Model):
     portal_cookie_name = models.TextField(blank=False, null=False, default='changeme')
     public_token = models.TextField(blank=False, null=False, default='changeme')
     ldap_repository = models.ForeignKey(to=LDAPRepository, null=True, blank=False, on_delete=models.SET_NULL)
-    customer_name = models.TextField(default="ACME Corporation")
     branch = models.TextField(default="community")
-    predator_apikey = models.TextField(default="fdsqJr_45;..", blank=True)
-    shodan_apikey = models.TextField(default="", blank=True)
-    chameleon_apikey = models.TextField(default="", blank=True)
     smtp_server = models.TextField(blank=True, default="")
     pf_whitelist = models.TextField(blank=True, null=True, default="")
     pf_blacklist = models.TextField(blank=True, null=True, default="")
@@ -71,6 +68,7 @@ class Config(models.Model):
                                            verbose_name=_("Retention period of internal database logs (seconds)"),
                                            help_text=_("Retention period in seconds, of PF logs and Internal logs "
                                                        "into cluster database"))
+    internal_tenants = models.ForeignKey(to=Tenants, null=False, default=1, on_delete=models.PROTECT)
 
     def to_dict(self):
         result = {
@@ -81,10 +79,7 @@ class Config(models.Model):
             'portal_cookie_name': self.portal_cookie_name,
             'public_token': self.public_token,
             'ldap_repository': self.ldap_repository.id if self.ldap_repository else None,
-            'customer_name': self.customer_name,
             'branch': self.branch,
-            'predator_apikey': self.predator_apikey,
-            'shodan_apikey': self.shodan_apikey,
             'smtp_server': self.smtp_server,
             'pf_whitelist': self.pf_whitelist,
             'pf_blacklist': self.pf_blacklist,
@@ -206,7 +201,7 @@ def delete_conf(logger, filename):
     from services.rsyslogd.rsyslog import RSYSLOG_PATH
 
     allowed_files_regex = ["{}/\w+_\d+\.html".format(ERROR_TPL_PATH),
-                           "{}/reputation_ctx_\d+\.mmdb".format(REPUTATION_CTX_DB_PATH),
+                           "{}/.*\.(mmdb|netset)".format(REPUTATION_CTX_DB_PATH),
                            "{}/[\w\_\-\.]+-\d\.(chain|crt|pem|key)".format(CERT_PATH),
                            "{}/defender_[0-9]+?\.conf".format(DEFENDER_PATH),
                            "{}/spoe_defender_[0-9]+?\.txt".format(HAPROXY_PATH),

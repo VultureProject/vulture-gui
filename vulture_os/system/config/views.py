@@ -77,10 +77,10 @@ def config_edit(request, api=False, update=False):
         request_data = request.POST
 
     # Verify if attribute has changed HERE, config_model will be modified after (at form.is_valid())
-    has_customer_changed = request_data.get('customer_name') != config_model.customer_name
     has_portal_cookie_name_changed = request_data.get('portal_cookie_name') != config_model.portal_cookie_name
     ssh_authorized_key_changed = request_data.get('ssh_authorized_key') != config_model.ssh_authorized_key
     logs_ttl_changed = request_data.get('logs_ttl') != config_model.logs_ttl
+    has_internal_tenants_changed = request_data.get('internal_tenants') != config_model.internal_tenants.pk
 
     form = ConfigForm(request_data or None, instance=config_model, error_class=DivErrorList)
 
@@ -108,10 +108,9 @@ def config_edit(request, api=False, update=False):
 
         """ If customer name has changed, rewrite rsyslog templates """
         error = ""
-        if has_customer_changed:
-            api_res = Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
-            if not api_res.get('status'):
-                error = api_res.get('message')
+        # If the internal Tenants config has changed, reload Rsyslog configuration of pstats
+        if has_internal_tenants_changed:
+            Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
         if has_portal_cookie_name_changed:
             api_res = Cluster.api_request("services.haproxy.haproxy.configure_node")
             if not api_res.get('status'):
