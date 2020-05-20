@@ -577,6 +577,17 @@
                     <div class="row logging http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Tenants config" %}</label>
+                          <div class="col-sm-5">
+                            {{form.tenants_config}}
+                            {{form.tenants_config.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row logging http-mode-logging">
+                      <div class="col-md-12">
+                        <div class="form-group">
                           <label class="col-sm-4 control-label">{% trans "Enable reputation logging" %}</label>
                           <div class="col-sm-5">
                             {{form.enable_logging_reputation}}
@@ -902,7 +913,7 @@
                           <button class="btn btn-warning" id="test_api_parser" type="button">
                             {% trans "Test Configuration" %}
                           </button>
-                          <input type="hidden" name="api_parser_has_been_tested" id="id_api_parser_has_been_tested" value="0"/>
+                          <input type="hidden" name="api_parser_has_been_tested" id="id_api_parser_has_been_tested" value="{% if object_id %}1{% else %}0{% endif %}"/>
                         </div>
                       </div>
                     </div>
