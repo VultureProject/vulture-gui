@@ -55,6 +55,10 @@ class System:
                 'text': 'Nodes Config',
                 'url': '/system/cluster'
             }, {
+                'link': 'tenants',
+                'text': 'Multi-Tenants config',
+                'url': '/system/tenants'
+            }, {
                 'link': 'netif',
                 'text': 'Network Interfaces',
                 'url': '/system/netif'

@@ -43,6 +43,7 @@ from applications.backend.models import Backend
 from system.pki.models import TLSProfile
 from toolkit.network.network import JAIL_ADDRESSES
 from toolkit.http.headers import Header
+from system.tenants.models import Tenants
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
@@ -204,6 +205,13 @@ class Frontend(models.Model):
     enable_logging = models.BooleanField(
         default=False,
         help_text=_("Enable requests logging"),
+    )
+    tenants_config = models.ForeignKey(
+        Tenants,
+        default=1,
+        null=True,
+        on_delete=models.PROTECT,
+        help_text=_("Tenants config used for logs enrichment")
     )
     """ Enable reputation in Rsyslog """
     enable_logging_reputation = models.BooleanField(
@@ -852,6 +860,7 @@ class Frontend(models.Model):
             'darwin_policies': FilterPolicy.objects.filter(policy=self.darwin_policy),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
+            'tenants_config': self.tenants_config
         }
 
         if self.mode == "impcap":

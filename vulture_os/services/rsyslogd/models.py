@@ -30,6 +30,7 @@ from djongo import models
 from applications.logfwd.models import LogOM
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from services.frontend.models import Frontend, Listener
+from system.config.models import Config
 
 # Required exceptions imports
 
@@ -53,7 +54,8 @@ class RsyslogSettings(models.Model):
             'max_tcp_listeners': Listener.objects.filter(frontend__enabled=True,
                                                          frontend__listening_mode__icontains="tcp").count() + 1,
             'log_forwarders': LogOM.objects.all(),
-            'DATABASES_PATH': DATABASES_PATH
+            'DATABASES_PATH': DATABASES_PATH,
+            'tenants_name': Config.objects.get().internal_tenants.name
         }
 
     def __str__(self):

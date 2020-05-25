@@ -227,6 +227,7 @@ $(function() {
     if(mode === "log" && listening_mode === "file") {
       $('.network-mode').hide();
       $('.file-mode').show();
+      $('.api-mode').hide();
     } else if (mode === "log" && listening_mode === "api"){
       $('.network-mode').hide();
       $('.file-mode').hide();
@@ -268,6 +269,15 @@ $(function() {
     else {
       $('#ruleset-div').hide();
       $('#id_node').hide();
+      if(mode === "log" && listening_mode === "api") {
+        // Bind API inputs
+        $("#tab_api_client input").each(function(){
+          $(this).unbind('click');
+          $(this).on('click', function(e){
+            $('#id_api_parser_has_been_tested').val('0');
+          });
+        });
+      }
     }
   }
 

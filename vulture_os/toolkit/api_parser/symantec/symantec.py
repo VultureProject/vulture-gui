@@ -63,8 +63,8 @@ class SymantecParser(ApiParser):
 
     def test(self):
         try:
-            startDate = timezone.now() - datetime.timedelta(minutes=5)
-            startDate = startDate.replace(second=0, microsecond=0)
+            startDate = timezone.now()
+            startDate = startDate.replace(minute=0, second=0, microsecond=0)
             startDate = startDate.timestamp() * 1000
 
             url = f"{self.start_console_uri}startDate={int(startDate)}&endDate=0&token=none"
@@ -74,7 +74,8 @@ class SymantecParser(ApiParser):
                 headers=self.HEADERS,
                 proxies=self.proxies,
                 allow_redirects=False,
-                timeout=60
+                timeout=10,
+                stream=True
             )
 
             if "Retry-After" in r.headers.keys():
@@ -85,7 +86,7 @@ class SymantecParser(ApiParser):
 
             return {
                 "status": True,
-                "data": r.content.decode('UTF-8')
+                "data": "Response OK"
             }
         except SymantecAPIError as e:
             return {
@@ -95,6 +96,10 @@ class SymantecParser(ApiParser):
 
     def execute(self, token="none"):
         self.update_lock()
+
+        # If it is time to retrieve last hour of logs
+        if self.last_api_call.replace(minute=0, second=0, microsecond=0) > timezone.now().replace(minute=0, second=0, microsecond=0)-datetime.timedelta(hours=1):
+            return
 
         try:
             last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
@@ -154,7 +159,7 @@ class SymantecParser(ApiParser):
                                     with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
                                         for line in gzip_file_content.readlines():
                                             line = line.strip()
-                                            if not line.startswith("#"):
+                                            if not line[0] == "#":
                                                 data.append(line)
 
                             self.write_to_file(data, bytes_mode=True)

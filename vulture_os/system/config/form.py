@@ -30,6 +30,7 @@ from django.forms import ModelForm, Textarea, TextInput, Select, NumberInput
 from authentication.ldap.models import LDAPRepository
 from gui.forms.form_utils import bootstrap_tooltips
 from system.config.models import Config
+from system.tenants.models import Tenants
 
 # Required exceptions import
 from django.forms import ValidationError
@@ -51,8 +52,8 @@ class ConfigForm(ModelForm):
         fields = [
             'pf_ssh_restrict', 'pf_admin_restrict', 'pf_whitelist', 'pf_blacklist',
             'cluster_api_key', 'ldap_repository', 'oauth2_header_name', 'portal_cookie_name',
-            'public_token', 'customer_name', 'branch', 'predator_apikey',
-            'shodan_apikey', 'smtp_server', 'ssh_authorized_key', 'rsa_encryption_key', 'logs_ttl'
+            'public_token', 'branch', 'smtp_server', 'ssh_authorized_key', 'rsa_encryption_key', 'logs_ttl',
+            'internal_tenants'
         ]
 
         widgets = {
@@ -65,20 +66,19 @@ class ConfigForm(ModelForm):
             'oauth2_header_name': TextInput(attrs={'class': 'form-control'}),
             'portal_cookie_name': TextInput(attrs={'class': 'form-control'}),
             'public_token': TextInput(attrs={'class': 'form-control'}),
-            'customer_name': TextInput(attrs={'class': 'form-control'}),
             'branch': TextInput(attrs={'class': 'form-control'}),
-            'predator_apikey': TextInput(attrs={'class': 'form-control'}),
-            'shodan_apikey': TextInput(attrs={'class': 'form-control'}),
             'smtp_server': TextInput(attrs={'class': 'form-control'}),
             'ssh_authorized_key': Textarea(attrs={'class': 'form-control'}),
             'rsa_encryption_key': Textarea(attrs={'class': 'form-control'}),
             'logs_ttl': NumberInput(attrs={'class': 'form-control'}),
+            'internal_tenants': Select(choices=Tenants.objects.all(),attrs={'class': 'form-control select2'}),
         }
 
     def __init__(self, *args, **kwargs):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
         self = bootstrap_tooltips(self)
+        self.fields['internal_tenants'].empty_label = None
         self.fields['ldap_repository'].empty_label = "Internal"
         self.fields['ldap_repository'].required = False
 

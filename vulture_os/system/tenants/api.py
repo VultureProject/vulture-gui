@@ -14,23 +14,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Jérémie JOURDIN"
+__author__ = "Kevin GUILLEMOT"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Global config API'
+__doc__ = 'Multi-Tenants config API'
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
-from system.config.models import Config
-from gui.decorators.apicall import api_need_key
 from django.http import JsonResponse
-from system.config.views import config_edit, pf_whitelist_blacklist
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+
+from gui.decorators.apicall import api_need_key
+from system.tenants.models import Tenants
+from system.tenants.views import tenants_edit
 
 # Logger configuration imports
 import logging
@@ -39,11 +40,11 @@ logger = logging.getLogger('api')
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class ConfigAPIv1(View):
+class TenantsAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request):
         try:
-            obj = [s.to_dict() for s in Config.objects.all()]
+            obj = [s.to_dict() for s in Tenants.objects.all()]
             return JsonResponse({
                 'data': obj
             })
@@ -60,9 +61,9 @@ class ConfigAPIv1(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def post(self, request, list_type=None):
+    def post(self, request):
         try:
-            return pf_whitelist_blacklist(request, list_type)
+            return tenants_edit(request, None, api=True)
 
         except Exception as e:
             logger.critical(e, exc_info=1)
@@ -76,9 +77,9 @@ class ConfigAPIv1(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def put(self, request):
+    def put(self, request, object_id=None):
         try:
-            return config_edit(request, api=True)
+            return tenants_edit(request, object_id, api=True)
         except Exception as e:
             logger.critical(e, exc_info=1)
             if settings.DEV_MODE:
@@ -91,16 +92,14 @@ class ConfigAPIv1(View):
         }, status=500)
 
     @api_need_key('cluster_api_key')
-    def patch(self, request):
-        allowed_fields = ('pf_ssh_restrict', 'pf_admin_restrict', 'pf_whitelist', 'pf_blacklist',
-                          'cluster_api_key', 'ldap_repository', 'oauth2_header_name', 'portal_cookie_name',
-                          'public_token', 'branch', 'smtp_server', 'ssh_authorized_key', 'rsa_encryption_key')
+    def patch(self, request, object_id):
+        allowed_fields = ('predator_apikey', 'shodan_apikey', 'chameleon_apikey')
         try:
             for key in request.JSON.keys():
                 if key not in allowed_fields:
                     return JsonResponse({'error': _("Attribute not allowed : '{}'."
                                                     "Allowed attributes are {}".format(key, allowed_fields))})
-            return config_edit(request, api=True, update=True)
+            return tenants_edit(request, object_id, api=True, update=True)
 
         except Exception as e:
             logger.critical(e, exc_info=1)

@@ -1,0 +1,143 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.tenants.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "Multi-Tenants" %}</h1>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="tenant_list">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+        </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+   var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name",
+      aTargets: [1],
+      defaultContent: "",
+      mData: "name",
+      mRender: function(data, type, row){
+        if( row.internal )
+          return data+"*";
+        return data;
+      }
+    },
+    {
+      sTitle: '{% trans "Associated reputation contexts" %}',
+      name: "reputation_contexts",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "reputation_contexts"
+    },
+    {
+      sTitle: '{% trans "Associated listeners" %}',
+      name: "frontends",
+      aTargets: [3],
+      defaultContent: "",
+      mData: "frontends",
+      mRender: function(data, type, row){
+        var result = "<ul>";
+        for( var i in data ) {
+          result += "<li>" + i + "</li>";
+        }
+        return result + "</ul>";
+      }
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [4],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        var res = '<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/system/tenants/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>';
+        if( row.frontends.length == 0 && !row.internal ) {
+          res += ' ' + '<a class="btn btn-flat btn-xs btn-danger" href="/system/tenants/delete/' + data + '" title="{% trans "Delete" %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+        }
+        return res;
+      }
+    }
+  ];
+
+  var tenant_table = $("#tenant_list").dataTable({
+      bServerSide   : true,
+      order         : [[1, 'desc']],
+      iDisplayLength: 10,
+      bProcessing   : true,
+      bSort         : true,
+      sAjaxSource   : '',
+      sServerMethod : 'POST',
+      aoColumnDefs: aoColumns,
+      language: language_datatable,
+      fnServerData  : function(sSource, aoData, fnCallback){
+
+        var columns = [];
+        for (var i in aoColumns){
+          columns.push(aoColumns[i].mData);
+        }
+
+        aoData.push({
+          name: 'columns',
+          value: JSON.stringify(columns)
+        })
+
+        $.ajax({
+          type   : "POST",
+          url    : sSource,
+          data   : aoData,
+          success: function(data, callback){
+            if (check_json_error(data))
+              fnCallback(data);
+          }
+        })
+      },
+      fnCreatedRow: function(nRow, aData, iDataIndex){
+          $(nRow).on('click', function(e){
+              var id = aData['id'];
+              if (aData.is_external) {
+                window.location.href = "/system/tenants/edit/" + id;
+              }
+          });
+      }
+  });
+
+{% endblock %}
