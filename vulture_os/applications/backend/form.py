@@ -264,9 +264,7 @@ class ServerForm(ModelForm):
         result = "<tr><td style=\"visibility:hidden;\">{}</td>\n".format(self.instance.id or "")
         mode = self.instance.mode
         for field in self:
-            if field.name == 'mode':
-                continue
-            if mode == 'unix' and field.name == 'port':
+            if field.name == 'mode' or (mode == 'unix' and field.name == 'port'):
                 continue
             result += "<td>{}</td>\n".format(field)
         result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
