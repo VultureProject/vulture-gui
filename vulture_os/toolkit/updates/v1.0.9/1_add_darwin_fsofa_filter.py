@@ -54,8 +54,8 @@ if __name__ == "__main__":
                 is_internal=False
             )
         except Exception as e:
-            print("Error while adding Fsofa filter: {}".format(e))
-            exit
+            print("Error:: Could not add fsofa filter: {}".format(e))
+            sys.exit(0)
 
         try:
             defaultPolicy = DarwinPolicy.objects.get(pk=1)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         except DarwinPolicy.DoesNotExist:
             print("No default policy, fsofa wasn't added")
         except Exception as e:
-            print("Could not add fsofa filter to default policy: {}".format(e))
-            sys.exit(1)
+            print("Error:: Could not add fsofa filter to default policy: {}".format(e))
+            sys.exit(0)
 
         print("Done.")
