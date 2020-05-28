@@ -266,9 +266,8 @@ class ServerForm(ModelForm):
         for field in self:
             if field.name == 'mode':
                 continue
-            if mode == 'unix':
-                if field.name == 'port':
-                    continue
+            if mode == 'unix' and field.name == 'port':
+                continue
             result += "<td>{}</td>\n".format(field)
         result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
                   "class='fas fa-trash-alt'></i></a></td></tr>\n"
