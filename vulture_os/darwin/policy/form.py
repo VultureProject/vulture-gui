@@ -110,6 +110,12 @@ class FilterPolicyForm(ModelForm):
         self.initial['filter_name'] = filter.name
         self.filter_description = filter.description
 
+        if not os.path.exists("{filters_path}/f{filter_name}".format(filters_path=CONF_PATH, filter_name=filter.name)):
+            # Cannot enable filter
+            self.fields['enabled'].disabled = True
+            # Filter is deactivated
+            self.initial['enabled'] = False
+
         try:
             initial_mmdarwin_parameters = self.initial['mmdarwin_parameters']
         except KeyError:
@@ -329,6 +335,8 @@ class FilterPolicyContentInspectionForm(FilterPolicyForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.initial['cache_size'] = 0
+
         self.fields['maxConnections'] = IntegerField(
             label='Max connections:',
             required=False,
@@ -470,6 +478,23 @@ class FilterPolicyTAnomalyForm(FilterPolicyForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.initial['cache_size'] = 0
+
+
+    def to_config(self):
+        super().to_config()
+
+        return self.filter_configuration
+
+
+class FilterPolicySofaForm(FilterPolicyForm):
+    custom_fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.initial['cache_size'] = 0
 
     def to_config(self):
         super().to_config()
