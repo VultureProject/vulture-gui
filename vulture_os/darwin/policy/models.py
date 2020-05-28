@@ -123,30 +123,46 @@ class DarwinPolicy(models.Model):
 
 
 class FilterPolicy(models.Model):
+    """ Associated filter template """
     filter = models.ForeignKey(
         DarwinFilter,
         on_delete=models.CASCADE
     )
 
+    """ Associated policy """
     policy = models.ForeignKey(
         DarwinPolicy,
         on_delete=models.CASCADE
     )
 
+    """ Is the Filter activated? """
     enabled = models.BooleanField(default=False)
+
+    """ Number of threads """
     nb_thread = models.PositiveIntegerField(default=5)
+
+    """ Level of logging (not alerts) """
     log_level = models.TextField(default=DARWIN_LOGLEVEL_CHOICES[1][0], choices=DARWIN_LOGLEVEL_CHOICES)
+
+    """ Alert detection thresold """
     threshold = models.PositiveIntegerField(default=80)
+
+    """ Does the filter has a custom Rsyslog configuration? """
     mmdarwin_enabled = models.BooleanField(default=False)
+
+    """ The custom rsyslog message's fields to get """
     mmdarwin_parameters = models.ListField(default=[])
 
     """ Status of filter for each nodes """
     status = models.DictField(default={})
+
+    """ The number of cache entries (not memory size) """
     cache_size = models.PositiveIntegerField(
         default=0,
         help_text=_("The cache size to use for caching darwin requests."),
         verbose_name=_("Cache size")
     )
+
     """Output format to send to next filter """
     output = models.TextField(
         default=DARWIN_OUTPUT_CHOICES[0][0],
@@ -160,7 +176,10 @@ class FilterPolicy(models.Model):
         on_delete=models.SET_NULL
     )
 
+    """ The fullpath to its configuration file """
     conf_path = models.TextField()
+
+    """ A dict representing the filter configuration """
     config = models.DictField(default={
             "redis_socket_path": "/var/sockets/redis/redis.sock",
             "alert_redis_list_name": DARWIN_REDIS_ALERT_LIST,
