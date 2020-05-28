@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture 4.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Kevin Guillemot"
+__author__ = "Theo Bertin"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
