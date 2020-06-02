@@ -26,6 +26,7 @@ from system.cluster.models import Cluster
 from django.conf import settings
 from gui.models.rss import RSS
 from toolkit.network.network import get_proxy
+from django.utils import timezone
 
 import requests
 import datetime
@@ -51,7 +52,7 @@ def rss_fetch():
             except RSS.DoesNotExist:
                 RSS.objects.create(
                     title=info['title'],
-                    date=datetime.datetime.strptime(info['timestamp'], "%d/%m/%Y %H:%M:%S"),
+                    date=timezone.make_aware(datetime.datetime.strptime(info['timestamp'], "%d/%m/%Y %H:%M:%S")),
                     level=info['level'],
                     content=info["content"]
                 )
