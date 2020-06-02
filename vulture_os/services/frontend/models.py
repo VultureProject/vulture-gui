@@ -939,7 +939,7 @@ class Frontend(models.Model):
     @property
     def api_file_path(self):
         """ """
-        return "{}/api_file_{}.log".format(LOG_API_PATH, self.id)
+        return "{}/api_file_{}.sock".format(LOG_API_PATH, self.id)
 
     def get_filename(self):
         """ Return filename depending on current frontend object

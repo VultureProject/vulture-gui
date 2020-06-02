@@ -24,6 +24,7 @@ __doc__ = 'API Parser'
 
 
 import logging
+import socket
 
 from django.conf import settings
 from services.frontend.models import Frontend
@@ -86,20 +87,15 @@ class ApiParser:
     def update_lock(self):
         self.redis_cli.redis.setex(self.key_redis, 300, 1)
 
-    def write_to_file(self, lines, bytes_mode=False, no_logs=False):
-        if not no_logs:
-            logger.info(f'[API PARSER] Writing {len(lines)} lines')
+    def write_to_file(self, lines):
+        logger.info(f'[API PARSER] Writing {len(lines)} lines')
 
-        if bytes_mode:
-            mode = "ab"
-            separator = b"\n"
-        else:
-            mode = "a"
-            separator = "\n"
-        with open(self.frontend.api_file_path, mode) as f:
-            for line in lines:
-                if line not in ("", b""):
-                    f.write(line + separator)
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        s.connect(self.frontend.api_file_path)
+
+        for line in lines:
+            if len(line) != 0:
+                s.send(line + b"\n")
 
     def finish(self):
         """

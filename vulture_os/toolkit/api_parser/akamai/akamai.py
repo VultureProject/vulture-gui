@@ -62,8 +62,8 @@ def akamai_write(akamai):
         log = queue_write.get()
         if not log:
             continue
-
-        akamai.write_to_file([json.dumps(log)], no_logs=True)
+        # Data to write must be bytes
+        akamai.write_to_file([json.dumps(log).encode('utf8')])
 
 
 def akamai_parse(akamai):
