@@ -67,12 +67,13 @@ class FrontendReputationContextForm(ModelForm):
     """ Form class for intermediary model between Frontend & ReputationContext """
     class Meta:
         model = FrontendReputationContext
-        fields = ("enabled", "reputation_ctx", "arg_field")
+        fields = ("enabled", "reputation_ctx", "arg_field", "dst_field")
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'reputation_ctx': Select(attrs={'class': "form-control select2"}),
-            'arg_field': TextInput(attrs={'class': "form-control", 'placeholder': "src_ip"})
+            'arg_field': TextInput(attrs={'class': "form-control", 'placeholder': "src_ip"}),
+            'dst_field': TextInput(attrs={'class': "form-control", 'placeholder': "src_reputation"})
         }
 
     def __init__(self, *args, **kwargs):

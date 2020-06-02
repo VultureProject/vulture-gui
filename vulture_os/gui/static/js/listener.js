@@ -564,7 +564,8 @@ $(function() {
       var enabled = tr.children[0].children[0].value;
       var reputation_ctx = tr.children[1].children[0].value;
       var arg_field = tr.children[2].children[0].value;
-      reputation_ctxs.push({'enabled': enabled, 'reputation_ctx': reputation_ctx, 'arg_field': arg_field});
+      var dst_field = tr.children[3].children[0].value;
+      reputation_ctxs.push({'enabled': enabled, 'reputation_ctx': reputation_ctx, 'arg_field': arg_field, 'dst_field': dst_field});
     });
     $('#reputation_contexts').val(JSON.stringify(reputation_ctxs));
 

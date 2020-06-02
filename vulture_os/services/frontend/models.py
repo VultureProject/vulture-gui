@@ -1318,7 +1318,12 @@ class FrontendReputationContext(models.Model):
     arg_field = models.TextField(
         default="",
         verbose_name=_("Input field name"),
-        help_text=_("Field name to predict with MMDB Database")
+        help_text=_("Field name to predict with Rsyslog Database")
+    )
+    dst_field = models.TextField(
+        default="",
+        verbose_name=_("Destination field name"),
+        help_text=_("Field name which will contains the searched value")
     )
 
 
