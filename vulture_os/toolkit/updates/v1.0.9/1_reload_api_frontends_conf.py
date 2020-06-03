@@ -53,11 +53,10 @@ if __name__ == "__main__":
             sys.exit(0)
 
         for frontend in frontends:
-            if node in frontend.get_nodes():
-                print("Asking reload of frontend {}".format(frontend.name))
-                api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
-                if not api_res.get("status"):
-                    print("Error while updating rsyslog configuration of frontend '{}': "
-                          "{}.".format(frontend.name, api_res.get("message")))
+            print("Asking reload of frontend {}".format(frontend.name))
+            api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
+            if not api_res.get("status"):
+                print("Error while updating rsyslog configuration of frontend '{}': "
+                      "{}.".format(frontend.name, api_res.get("message")))
 
         print("Done.")
