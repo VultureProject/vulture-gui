@@ -91,11 +91,12 @@ class ApiParser:
         logger.info(f'[API PARSER] Writing {len(lines)} lines')
 
         s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        s.connect(self.frontend.api_file_path)
+        s.connect(self.frontend.get_unix_socket())
 
         for line in lines:
             if len(line) != 0:
                 s.send(line + b"\n")
+        s.close()
 
     def finish(self):
         """
