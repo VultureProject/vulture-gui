@@ -481,7 +481,8 @@ def frontend_edit(request, object_id=None, api=False):
                 FrontendReputationContext.objects.create(frontend=frontend,
                                                          reputation_ctx=reputationctx.reputation_ctx,
                                                          enabled=reputationctx.enabled,
-                                                         arg_field=reputationctx.arg_field)
+                                                         arg_field=reputationctx.arg_field,
+                                                         dst_field=reputationctx.dst_field)
 
             # Re-generate config AFTER save, to get ID
             for node, listeners in node_listeners.items():

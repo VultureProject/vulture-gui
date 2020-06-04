@@ -939,7 +939,7 @@ class Frontend(models.Model):
     @property
     def api_file_path(self):
         """ """
-        return "{}/api_file_{}.log".format(LOG_API_PATH, self.id)
+        return "{}/api_file_{}.sock".format(LOG_API_PATH, self.id)
 
     def get_filename(self):
         """ Return filename depending on current frontend object
@@ -1318,7 +1318,12 @@ class FrontendReputationContext(models.Model):
     arg_field = models.TextField(
         default="",
         verbose_name=_("Input field name"),
-        help_text=_("Field name to predict with MMDB Database")
+        help_text=_("Field name to predict with Rsyslog Database")
+    )
+    dst_field = models.TextField(
+        default="",
+        verbose_name=_("Destination field name"),
+        help_text=_("Field name which will contains the searched value")
     )
 
 

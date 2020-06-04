@@ -84,9 +84,13 @@ class SymantecParser(ApiParser):
                     "error": r.content.decode('UTF-8')
                 }
 
+            status = True
+            if r.status_code == 200:
+                status = False
+
             return {
-                "status": True,
-                "data": "Response OK"
+                "status": status,
+                "data": "Response : {}".format("OK" if status else r.status_code)
             }
         except SymantecAPIError as e:
             return {
@@ -98,7 +102,8 @@ class SymantecParser(ApiParser):
         self.update_lock()
 
         # If it is time to retrieve last hour of logs
-        if self.last_api_call.replace(minute=0, second=0, microsecond=0) > timezone.now().replace(minute=0, second=0, microsecond=0)-datetime.timedelta(hours=1):
+        if self.last_api_call.replace(minute=0, second=0, microsecond=0) > timezone.now().replace(minute=0, second=0, microsecond=0)-datetime.timedelta(hours=1)\
+                or timezone.now().minute < 30:
             return
 
         try:
@@ -162,8 +167,8 @@ class SymantecParser(ApiParser):
                                             if not line[0] == "#":
                                                 data.append(line)
 
-                            self.write_to_file(data, bytes_mode=True)
-                            self.frontend.last_api_call = timezone.now()
+                            self.write_to_file(data)
+                            self.frontend.last_api_call += datetime.timedelta(hours=1)
                             self.finish()
                         except zipfile.BadZipfile as err:
                             raise SymantecParseError(err)

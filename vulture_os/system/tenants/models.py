@@ -67,12 +67,11 @@ class Tenants(models.Model):
         return result
 
     def to_template(self):
-        encoded_key = b64encode(self.predator_apikey.encode('utf8'))
         return {
             "id": self.id,
             "name": self.name,
-            "reputation_contexts": ",".join([r.name for r in ReputationContext.objects.filter(filename__contains=encoded_key)]),
-            'frontends': [],
+            "reputation_contexts": ",".join([r.name for r in ReputationContext.objects.filter(filename__contains=self.encoded_predator_apikey)]),
+            'frontends': self.frontend_set.all(),
             'internal': self.config_set.all().count() > 0
         }
 

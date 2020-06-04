@@ -180,8 +180,8 @@ class ImpervaParser(ApiParser):
                 for file in log_files:
                     self.update_lock()
                     logger.info(f"[IMPERVA PARSER] Downloading {file}")
-                    content = self.get_file(file).decode('utf-8')
-                    data.extend(content.split('\n'))
+                    content = self.get_file(file)
+                    data.extend(content.split(b'\n'))
 
                     self.write_to_file(data)
                     data = []
@@ -193,8 +193,8 @@ class ImpervaParser(ApiParser):
                 next_log_index = last_log_index + 1
                 next_log_file = f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index}.log"
                 try:
-                    content = self.get_file(next_log_file).decode('utf-8')
-                    data.extend(content.split('\n'))
+                    content = self.get_file(next_log_file)
+                    data.extend(content.split(b'\n'))
                     self.write_to_file(data)
                     self.imperva_last_log_file = next_log_file
                 except Exception as e:

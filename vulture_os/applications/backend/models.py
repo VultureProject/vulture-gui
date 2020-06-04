@@ -57,6 +57,11 @@ MODE_CHOICES = (
     ('http', 'HTTP'),
 )
 
+SERVER_MODE_CHOICES = (
+    ('net', 'network'),
+    ('unix', 'unix sockets'),
+)
+
 LOG_LEVEL_CHOICES = (
     ('info', "Info"),
     ('debug', "Debug")
@@ -360,13 +365,7 @@ class Backend(models.Model):
         workflow_list = []
         access_controls_list = []
         for workflow in self.workflow_set.filter(enabled=True):
-            tmp = {
-                'id': str(workflow.pk),
-                'fqdn': workflow.fqdn,
-                'public_dir': workflow.public_dir,
-                'backend': workflow.backend,
-                'defender_policy': workflow.defender_policy
-            }
+            tmp = workflow.to_template()
 
             access_controls_deny = []
             access_controls_301 = []
@@ -550,14 +549,20 @@ class Backend(models.Model):
 
 
 class Server(models.Model):
-    """ Link class between NetworkAddress and Frontend """
+    """ Link class between NetworkAddress/UnixSocket and Backend """
 
     """ NetworkAddress object to listen on """
     target = models.TextField(
-        default="1.2.3.4",
-        help_text=_("IP address/hostname of server")
+        help_text=_("IP/hostname/socket of server"),
+        default="1.2.3.4"
     )
-    """ Port To listen on """
+    """ Server mode """
+    mode = models.TextField(
+        default=SERVER_MODE_CHOICES[0][0],
+        choices=SERVER_MODE_CHOICES,
+        help_text=_("Server mode (IP, unix socket)"),
+    )
+    """ Port to listen on """
     port = models.PositiveIntegerField(
         default=80,
         validators=[MinValueValidator(1), MaxValueValidator(65535)]
@@ -607,7 +612,10 @@ class Server(models.Model):
         return result
 
     def __str__(self):
-        return "{}:{}".format(self.target, self.port)
+        if self.mode == "net":
+            return "{}:{}".format(self.target, self.port)
+        else:
+            return self.target
 
     @staticmethod
     def str_attrs():
@@ -618,9 +626,9 @@ class Server(models.Model):
         """ Generate Listener HAProxy configuration
         :return     A string - Bind directive
         """
-        result = "server srv{} {}:{} weight {}".format(self.id or get_random_string(),
+        result = "server srv{} {}{} weight {}".format(self.id or get_random_string(),
                                                        self.target,
-                                                       self.port,
+                                                       ":" + str(self.port) if self.mode == "net" else "",
                                                        self.weight)
         if self.source:
             if ":" in self.source:
