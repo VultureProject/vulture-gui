@@ -102,7 +102,8 @@ class SymantecParser(ApiParser):
         self.update_lock()
 
         # If it is time to retrieve last hour of logs
-        if self.last_api_call.replace(minute=0, second=0, microsecond=0) > timezone.now().replace(minute=0, second=0, microsecond=0)-datetime.timedelta(hours=1):
+        if self.last_api_call.replace(minute=0, second=0, microsecond=0) > timezone.now().replace(minute=0, second=0, microsecond=0)-datetime.timedelta(hours=1)\
+                or timezone.now().minute < 30:
             return
 
         try:
