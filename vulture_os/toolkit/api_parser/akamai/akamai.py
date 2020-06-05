@@ -58,13 +58,22 @@ class AkamaiAPIError(Exception):
 
 
 def akamai_write(akamai):
-    while not event_write.is_set():
-        log = queue_write.get()
-        if not log:
-            continue
-        # Data to write must be bytes
-        akamai.write_to_file([json.dumps(log).encode('utf8')])
+    try:
+        def get_bulk(size):
+            res = []
+            while len(res) < size and not event_write.is_set():
+                log = queue_write.get()
+                if log:
+                    # Data to write must be bytes
+                    res.append(json.dumps(log).encode('utf8'))
+                queue_write.task_done()
+            return res
 
+        while not event_write.is_set():
+            akamai.write_to_file(get_bulk(1000))
+    except Exception as e:
+        logger.exception(e)
+        raise
 
 def akamai_parse(akamai):
     while not event_parse.is_set():
@@ -191,6 +200,7 @@ class AkamaiParser(ApiParser):
 
         self.offset = None
         result = []
+
         with self.session.get(url, params=params, proxies=self.proxies, stream=True) as r:
             r.raise_for_status()
 
@@ -249,16 +259,18 @@ class AkamaiParser(ApiParser):
             t_write.start()
 
             self.offset = "a"
-            while self.last_log_time < (timezone.now()-datetime.timedelta(minutes=1)) and self.offset:
-                self.get_logs()
-                self.update_lock()
-                self.frontend.last_api_call = self.last_log_time
+            try:
+                while self.last_log_time < (timezone.now()-datetime.timedelta(minutes=1)) and self.offset:
+                    self.get_logs()
+                    self.update_lock()
+                    self.frontend.last_api_call = self.last_log_time
+                    # Cleanly handle crash of write thread
+                    assert t_write.is_alive(), "Failed to connect to Rsyslog, please see above logs"
+            except Exception as e:
+                logger.error("Fail to download/update akamai logs : {}".format(e))
 
             event_parse.set()
             event_write.set()
-
-            queue_parse.join()
-            queue_write.join()
 
             # Unlock threads by sending empty lines into queues
             for i in range(self.NB_THREAD):
@@ -269,8 +281,16 @@ class AkamaiParser(ApiParser):
                 t.join()
 
             # Wait for writing thread to finish
-            queue_write.put("")
+            if t_write.is_alive():
+                queue_write.put("")
+
             t_write.join()
+
+            # Do not join because there can still be something in queues
+            #queue_parse.join()
+            #queue_write.join()
+
+            logger.info("Akamai parsing done.")
 
         except Exception as e:
             raise AkamaiParseError(e)

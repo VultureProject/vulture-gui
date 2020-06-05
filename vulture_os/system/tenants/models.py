@@ -71,7 +71,7 @@ class Tenants(models.Model):
             "id": self.id,
             "name": self.name,
             "reputation_contexts": ",".join([r.name for r in ReputationContext.objects.filter(filename__contains=self.encoded_predator_apikey)]),
-            'frontends': self.frontend_set.all(),
+            'frontends': [f.name for f in self.frontend_set.all().only("name")],
             'internal': self.config_set.all().count() > 0
         }
 

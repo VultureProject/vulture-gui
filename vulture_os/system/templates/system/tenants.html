@@ -77,7 +77,7 @@
       mData: "frontends",
       mRender: function(data, type, row){
         var result = "<ul>";
-        for( var i in data ) {
+        for( var i of data ) {
           result += "<li>" + i + "</li>";
         }
         return result + "</ul>";

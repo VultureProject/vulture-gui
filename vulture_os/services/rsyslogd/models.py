@@ -25,6 +25,7 @@ __doc__ = 'Rsyslog settings model'
 # Django system imports
 from django.conf import settings
 from djongo import models
+from django.db.models import Q
 
 # Django project imports
 from applications.logfwd.models import LogOM
@@ -51,8 +52,7 @@ class RsyslogSettings(models.Model):
         """ Variables used by template rendering """
         return {
             'frontends': Frontend.objects.filter(enabled=True),
-            'max_tcp_listeners': Listener.objects.filter(frontend__enabled=True,
-                                                         frontend__listening_mode__icontains="tcp").count() + 1,
+            'max_tcp_listeners': Listener.objects.filter(frontend__listening_mode__icontains="tcp",frontend__enabled=True).count() + Frontend.objects.filter(enabled=True, listening_mode="api").count() + 1,
             'log_forwarders': LogOM.objects.all(),
             'DATABASES_PATH': DATABASES_PATH,
             'tenants_name': Config.objects.get().internal_tenants.name

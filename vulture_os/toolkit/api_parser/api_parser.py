@@ -31,6 +31,7 @@ from services.frontend.models import Frontend
 from system.config.models import Config
 from toolkit.network.network import get_proxy
 from toolkit.redis.redis_base import RedisBase
+from toolkit.network.network import JAIL_ADDRESSES
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -67,6 +68,14 @@ class ApiParser:
 
         self.redis_cli = RedisBase()
 
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.settimeout(30)
+            self.socket.connect((JAIL_ADDRESSES['rsyslog']['inet'], self.frontend.api_rsyslog_port))
+        except Exception as e:
+            logger.exception(e)
+            raise e
+
     def get_system_proxy(self):
         proxy = get_proxy()
         if len(proxy) > 1:
@@ -90,13 +99,9 @@ class ApiParser:
     def write_to_file(self, lines):
         logger.info(f'[API PARSER] Writing {len(lines)} lines')
 
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        s.connect(self.frontend.get_unix_socket())
-
         for line in lines:
             if len(line) != 0:
-                s.send(line + b"\n")
-        s.close()
+                self.socket.send(line + b"\n")
 
     def finish(self):
         """
