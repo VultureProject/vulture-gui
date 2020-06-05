@@ -1013,6 +1013,18 @@ class Frontend(models.Model):
                                           frontend=self.name+"_garbage") + "\n"
         return result
 
+    @property
+    def api_rsyslog_port(self):
+        return 20000+self.id
+
+    def generate_api_rsyslog_conf(self):
+        """ Render Rsyslog specific configuration
+         containing listening port and address
+         :return    String - Rsyslog configuration parameters
+        """
+        return "Address=\"{}\" Port=\"{}\"".format(JAIL_ADDRESSES['rsyslog']['inet'],
+                                                   self.api_rsyslog_port)
+
     def generate_rsyslog_conf(self):
         """ Generate rsyslog configuration of this frontend
         """
@@ -1307,7 +1319,7 @@ class FrontendReputationContext(models.Model):
     )
     reputation_ctx = models.ForeignKey(
         ReputationContext,
-        verbose_name=_("Custom tags"),
+        verbose_name=_("IOC Database"),
         on_delete=models.CASCADE
     )
     enabled = models.BooleanField(
