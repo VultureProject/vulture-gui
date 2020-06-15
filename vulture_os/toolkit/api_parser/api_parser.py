@@ -25,6 +25,7 @@ __doc__ = 'API Parser'
 
 import logging
 import socket
+import time
 
 from django.conf import settings
 from services.frontend.models import Frontend
@@ -50,6 +51,8 @@ class ApiParser:
         except (Frontend.DoesNotExist, KeyError):
             self.frontend = None
 
+        self.socket = None
+
         try:
             # Can't execute on a non valid Vulture Node
             config = Config.objects.get()
@@ -68,13 +71,18 @@ class ApiParser:
 
         self.redis_cli = RedisBase()
 
+        assert self.connect(), "Failed to connect to Rsyslog"
+
+    def connect(self):
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(30)
-            self.socket.connect((JAIL_ADDRESSES['rsyslog']['inet'], self.frontend.api_rsyslog_port))
+            if self.frontend:
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.socket.settimeout(30)
+                self.socket.connect((JAIL_ADDRESSES['rsyslog']['inet'], self.frontend.api_rsyslog_port))
+            return True
         except Exception as e:
-            logger.exception(e)
-            raise e
+            logger.error("Failed to connect to Rsyslog : {}".format(e))
+            return False
 
     def get_system_proxy(self):
         proxy = get_proxy()
@@ -100,8 +108,12 @@ class ApiParser:
         logger.info(f'[API PARSER] Writing {len(lines)} lines')
 
         for line in lines:
-            if len(line) != 0:
+            try:
                 self.socket.send(line + b"\n")
+            except Exception as e:
+                logger.error("Failed to send to Rsyslog : {}".format(e))
+                while not self.connect():
+                    time.sleep(0.05)
 
     def finish(self):
         """
