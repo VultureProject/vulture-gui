@@ -765,7 +765,7 @@ class Frontend(models.Model):
 
         reputation_ctxs = []
         if self.enable_logging:
-            for reputation_ctx in self.frontendreputationcontext_set.all():
+            for reputation_ctx in self.frontendreputationcontext_set.filter(enabled=True):
                 reputation_ctxs.append(reputation_ctx)
 
         workflow_list = []
