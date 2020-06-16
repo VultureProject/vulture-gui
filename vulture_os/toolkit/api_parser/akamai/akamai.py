@@ -44,8 +44,8 @@ logger = logging.getLogger('crontab')
 
 event_parse = Event()
 event_write = Event()
-queue_parse = queue.Queue()
-queue_write = queue.Queue()
+queue_parse = queue.Queue(maxsize=1000000)
+queue_write = queue.Queue(maxsize=1000000)
 data_lock = Lock()
 
 
@@ -58,27 +58,34 @@ class AkamaiAPIError(Exception):
 
 
 def akamai_write(akamai):
-    try:
-        def get_bulk(size):
-            res = []
-            while len(res) < size and not event_write.is_set():
-                log = queue_write.get()
-                if log:
-                    # Data to write must be bytes
-                    res.append(json.dumps(log).encode('utf8'))
-                queue_write.task_done()
-            return res
+    def get_bulk(size):
+        res = []
+        while len(res) < size and not queue_write.empty():
+            try:
+                # Wait max 2 seconds for a log
+                log = queue_write.get(block=True, timeout=2)
+            except:
+                continue
+            try:
+                # Data to write must be bytes
+                res.append(json.dumps(log).encode('utf8'))
+            except:
+                logger.error("Line {} is not json formated".format(log))
+                pass
+            queue_write.task_done()
+        return res
 
-        while not event_write.is_set():
-            akamai.write_to_file(get_bulk(1000))
-    except Exception as e:
-        logger.exception(e)
-        raise
+    while not event_write.is_set() or not queue_write.empty():
+        akamai.write_to_file(get_bulk(1000))
+    logger.info("Writting thread finished")
+
 
 def akamai_parse(akamai):
-    while not event_parse.is_set():
-        log = queue_parse.get()
-        if not log:
+    while not event_parse.is_set() or not queue_parse.empty():
+        try:
+            # Wait max 2 seconds for a log
+            log = queue_parse.get(block=True, timeout=2)
+        except:
             continue
 
         timestamp = int(log['httpMessage']['start'])
@@ -264,26 +271,17 @@ class AkamaiParser(ApiParser):
                     self.get_logs()
                     self.update_lock()
                     self.frontend.last_api_call = self.last_log_time
-                    # Cleanly handle crash of write thread
-                    assert t_write.is_alive(), "Failed to connect to Rsyslog, please see above logs"
             except Exception as e:
                 logger.error("Fail to download/update akamai logs : {}".format(e))
 
             event_parse.set()
             event_write.set()
 
-            # Unlock threads by sending empty lines into queues
-            for i in range(self.NB_THREAD):
-                queue_parse.put("")
-
             # Wait for parsing threads to finish
             for t in threads:
                 t.join()
 
-            # Wait for writing thread to finish
-            if t_write.is_alive():
-                queue_write.put("")
-
+            # Wait for it to finish
             t_write.join()
 
             # Do not join because there can still be something in queues

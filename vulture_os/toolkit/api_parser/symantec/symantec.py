@@ -155,9 +155,9 @@ class SymantecParser(ApiParser):
                         self.finish()
                     else:
                         try:
-                            data = []
                             with zipfile.ZipFile(tmp_file) as zip_file:
                                 for gzip_filename in zip_file.namelist():
+                                    data = []
                                     self.update_lock()
                                     gzip_file = BytesIO(zip_file.read(gzip_filename))
 
@@ -165,11 +165,17 @@ class SymantecParser(ApiParser):
                                         for line in gzip_file_content.readlines():
                                             line = line.strip()
                                             if not line[0] == "#":
-                                                data.append(line)
+                                                data.append(b"<15>"+line)
+                                    self.write_to_file(data)
+                                    try:
+                                        self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(hours=1)
+                                    except:
+                                        self.last_api_call += datetime.timedelta(hours=1)
 
-                            self.write_to_file(data)
-                            self.frontend.last_api_call += datetime.timedelta(hours=1)
+                                    self.frontend.last_api_call = self.last_api_call
+                                    self.frontend.save()
                             self.finish()
+
                         except zipfile.BadZipfile as err:
                             raise SymantecParseError(err)
 

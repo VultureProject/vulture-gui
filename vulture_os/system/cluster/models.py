@@ -383,7 +383,7 @@ class Node(models.Model):
         """ Loop on each NetworkAddress to retrieve LogForwarder used by the frontend using listeners """
         for network_address, listener_ids in listener_addr.items():
             for backend in Backend.objects.filter(enabled=True, frontend__listener__in=listener_ids):
-                for server in backend.server_set.all():
+                for server in backend.server_set.filter(mode="net"):
                     result.append((network_address.family, "tcp", server.target, server.port))  # TCP
 
         return result

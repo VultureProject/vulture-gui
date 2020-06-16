@@ -545,7 +545,7 @@ $(function() {
       var headers = new Array();
       $('#header_table tbody tr').each(function(index, tr) {
         var id = tr.children[0].innerHTML;
-        var enabled = tr.children[1].children[0].checked;
+        var enabled = $(tr.children[1].children[0]).is(":checked");
         var type = tr.children[2].children[0].value;
         var action = tr.children[3].children[0].value;
         var header_name = tr.children[4].children[0].value;
@@ -561,7 +561,7 @@ $(function() {
     }
     var reputation_ctxs = new Array();
     $('#reputationctx_table tbody tr').each(function(index, tr) {
-      var enabled = tr.children[0].children[0].value;
+      var enabled = $(tr.children[0].children[0]).is(":checked");
       var reputation_ctx = tr.children[1].children[0].value;
       var arg_field = tr.children[2].children[0].value;
       var dst_field = tr.children[3].children[0].value;
