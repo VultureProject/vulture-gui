@@ -44,8 +44,8 @@ logger = logging.getLogger('crontab')
 
 event_parse = Event()
 event_write = Event()
-queue_parse = queue.Queue(maxsize=100000)
-queue_write = queue.Queue(maxsize=100000)
+queue_parse = queue.Queue(maxsize=1000000)
+queue_write = queue.Queue(maxsize=1000000)
 data_lock = Lock()
 
 
@@ -62,7 +62,8 @@ def akamai_write(akamai):
         res = []
         while len(res) < size and not queue_write.empty():
             try:
-                log = queue_write.get(block=False, timeout=2)
+                # Wait max 2 seconds for a log
+                log = queue_write.get(block=True, timeout=2)
             except:
                 continue
             try:
@@ -82,7 +83,8 @@ def akamai_write(akamai):
 def akamai_parse(akamai):
     while not event_parse.is_set() or not queue_parse.empty():
         try:
-            log = queue_parse.get(block=False, timeout=2)
+            # Wait max 2 seconds for a log
+            log = queue_parse.get(block=True, timeout=2)
         except:
             continue
 
