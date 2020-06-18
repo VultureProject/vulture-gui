@@ -130,7 +130,7 @@ def configure_pstats(node_logger):
     jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
     pstats_template = jinja2_env.get_template("pstats.conf")
     write_conf(node_logger, ["{}/pstats.conf".format(RSYSLOG_PATH),
-                             pstats_template.render({'node': node}),
+                             pstats_template.render({'node': node, 'tenants_name': Cluster.get_global_config().internal_tenants.name}),
                              RSYSLOG_OWNER, RSYSLOG_PERMS])
     return "Rsyslog configuration 'pstats.conf' written.\n"
 
