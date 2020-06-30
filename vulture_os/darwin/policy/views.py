@@ -32,16 +32,27 @@ from darwin.policy.form import (DarwinPolicyForm, FilterPolicyForm,
                                 FilterPolicyContentInspectionForm, FilterPolicyTAnomalyForm, FilterPolicyConnectionForm)
 from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy
 from django.conf import settings
-# Required exceptions imports
+
 # Django system imports
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
+
 # Django project imports
 from gui.forms.form_utils import DivErrorList
 from services.darwin.darwin import DARWIN_PATH, get_darwin_conf_path
 from system.cluster.models import Cluster, Node
 
+# Required exceptions imports
+from django.core.exceptions import ObjectDoesNotExist
+from services.exceptions import ServiceConfigError, ServiceError, ServiceReloadError
+from system.exceptions import VultureSystemError
+
 # Extern modules imports
+from json import loads as json_loads
+from sys import exc_info
+from traceback import format_exception
+
+# Logger configuration imports
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -89,7 +100,134 @@ def policy_clone(request, object_id):
     return render(request, 'policy_edit.html', {'form': form, 'filterpolicies': filter_policy_form_list})
 
 
-def policy_edit(request, object_id=None):
+def policy_edit(request, object_id=None, api=False):
+    policy = None
+    filter_list = []
+    filter_form_list = []
+    if object_id:
+        try:
+            policy = DarwinPolicy.objects.get(pk=object_id)
+        except DarwinPolicy.DoesNotExist:
+            if api:
+                return JsonResponse({'error': ("Object does not exist.")}, status=404)
+            return HttpResponseForbidden("Injection detected")
+
+    if hasattr(request, "JSON") and api:
+        form = DarwinPolicyForm(request.JSON or None, instance=policy, error_class=DivErrorList)
+    else:
+        form = DarwinPolicyForm(request.POST or None, instance=policy, error_class=DivErrorList)
+
+    def render_form(policy, **kwargs):
+        save_error = kwargs.get('save_error')
+        if api:
+            if form.errors:
+                return JsonResponse(form.errors.get_json_data(), status=400)
+            if save_error:
+                return JsonResponse({'error': save_error[0]}, status=500)
+
+        if not filter_form_list and policy:
+            for f_tmp in FilterPolicy.objects.filter(policy=policy).exclude(is_internal=True):
+                filter_form_class = FILTER_POLICY_FORMS.get(f_tmp.filter.name, None)
+                if filter_form_class:
+                    filter_form_list.append(filter_form_class(instance=f_tmp))
+                else:
+                    logger.error("Unknown filter type in database: {}".format(f_tmp.name))
+        return render(request, 'policy_edit.html',
+                      {'form': form, 'filterpolicyform': FilterPolicyForm(),
+                      'filterpolicies': filter_form_list,
+                      "filter_types": FILTER_POLICY_FORMS.keys(), **kwargs})
+
+    if request.method in ("POST", "PUT"):
+        filter_objs = []
+        if form.data.get('mode') == "http":
+            """ Handle JSON formatted request filters """
+            try:
+                if api:
+                    filter_ids = request.JSON.get('filters', [])
+                    assert isinstance(filter_ids, list), "filters field must be a list."
+                else:
+                    filter_ids = json_loads(request.POST.get('filters', "[]"))
+            except Exception as e:
+                return render_form(policy, save_error=["Error in Request-filters field : {}".format(e),
+                                                        str.join('', format_exception(*exc_info()))])
+
+            """ For each filter in list """
+            for filt in filter_ids:
+                """ If id is given, retrieve object from mongo """
+                try:
+                    instance_f = FilterPolicy.objects.get(pk=filt['id']) if filt['id'] else None
+                except ObjectDoesNotExist:
+                    form.add_error(None, "Request-filter with id {} not found. Injection detected ?")
+                    continue
+                """ Search for the right Form class """
+                filter_form_class = FILTER_POLICY_FORMS.get(filt['name'], None)
+                if not filter_form_class:
+                    form.add_error(None, "Request-filter with name {} not found. Injection detected ?".format(filt['name']))
+                    continue
+                """ And instantiate form with the object, or None """
+                filter_f = filter_form_class(filt, instance=instance_f)
+
+                if not filter_f.is_valid():
+                    if api:
+                        form.add_error(None, filter_f.errors.get_json_data())
+                    else:
+                        form.add_error('filters', filter_f.errors.as_ul())
+                    continue
+                # Save forms in case we re-print the page
+                filter_form_list.append(filter_f)
+                # And save objects list, to save them later, when Frontend will be saved
+                filter_objs.append(filter_f.save(commit=False))
+
+        # If errors has been added in form
+        if not form.is_valid():
+            logger.error("Form errors: {}".format(form.errors.as_json()))
+            return render_form(policy)
+
+        # Save the form to get an id if there is not already one
+        policy = form.save(commit=False)
+
+        """ If the conf is OK, save the Backend object """
+        # Is that object already in db or not
+        first_save = not policy.id
+        try:
+            logger.debug("Saving policy")
+            policy.save()
+            logger.debug("Policy '{}' (id={}) saved in MongoDB.".format(policy.name, policy.id))
+
+            for filt in policy.filters.all():
+                if filt not in filter_objs:
+                    policy.filters.remove(filt)
+
+        except (VultureSystemError, ServiceError) as e:
+            """ Error saving configuration file """
+            """ The object has been saved, delete-it if needed """
+            if first_save:
+                policy.delete()
+
+            logger.exception(e)
+            return render_form(policy, save_error=[str(e), e.traceback])
+
+        except Exception as e:
+            """ If we arrive here, the object has not been saved """
+            logger.exception(e)
+            return render_form(policy, save_error=["Failed to save object in database :\n{}".format(e),
+                                                    str.join('', format_exception(*exc_info()))])
+
+        if api:
+            return build_response()
+        return HttpResponseRedirect('/darwin/policy/')
+
+    return render_form(policy)
+
+
+
+
+
+
+
+
+
+
     policy = None
     filter_policy_form_list = []
 

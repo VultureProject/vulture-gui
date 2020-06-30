@@ -72,7 +72,7 @@ class FilterPolicyForm(ModelForm):
     """ Name of the filter, not editable """
 
     filter_description = "No description available"
-    common_fields = ['filter_name', 'enabled', 'threshold', 'log_level',  'nb_thread', 'cache_size']
+    common_fields = ['filter_name', 'enabled', 'threshold', 'log_level',  'nb_thread', 'cache_size', 'weight', 'tag']
     custom_fields = []
 
     filter_name = CharField(
@@ -83,7 +83,7 @@ class FilterPolicyForm(ModelForm):
         model = FilterPolicy
         # The order of the fields in html table is defined here
         fields = ('filter_name', 'enabled', 'nb_thread', 'log_level', 'cache_size', 'threshold',
-                  'mmdarwin_enabled', 'mmdarwin_parameters')
+                  'weight', 'tag', 'mmdarwin_enabled', 'mmdarwin_parameters')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": "js-switch"}),
@@ -92,7 +92,9 @@ class FilterPolicyForm(ModelForm):
             'log_level': Select(choices=DARWIN_LOGLEVEL_CHOICES, attrs={'class': 'form-control select2'}),
             'cache_size': NumberInput(attrs={'class': 'form-control'}),
             'mmdarwin_enabled': CheckboxInput(attrs={"class": "js-switch mmdarwin-enabled-btn"}),
-            'mmdarwin_parameters': TextInput(attrs={"class": "form-control tags-input mmdarwin-parameters"})
+            'mmdarwin_parameters': TextInput(attrs={"class": "form-control tags-input mmdarwin-parameters"}),
+            'weight': NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'tag': TextInput(attrs={"class": "form-control"})
         }
 
         labels = {
@@ -105,30 +107,22 @@ class FilterPolicyForm(ModelForm):
         super().__init__(*args, **kwargs)
         instance = kwargs.get('instance')
 
-        """ Set the filter name with the instance passed in kwargs """
-        filter = instance.filter
-        self.initial['filter_name'] = filter.name
-        self.filter_description = filter.description
+        if instance:
+            """ Set the filter name with the instance passed in kwargs """
+            filter = instance.filter
+            self.initial['filter_name'] = filter.name
+            self.filter_description = filter.description
 
-        if not os.path.exists("{filters_path}/f{filter_name}".format(filters_path=CONF_PATH, filter_name=filter.name)):
-            # Cannot enable filter
-            self.fields['enabled'].disabled = True
-            # Filter is deactivated
-            self.initial['enabled'] = False
+            try:
+                initial_mmdarwin_parameters = self.initial['mmdarwin_parameters']
+            except KeyError:
+                initial_mmdarwin_parameters = instance.mmdarwin_parameters
 
-        try:
-            initial_mmdarwin_parameters = self.initial['mmdarwin_parameters']
-        except KeyError:
-            initial_mmdarwin_parameters = instance.mmdarwin_parameters
+            if isinstance(initial_mmdarwin_parameters, list):
+                self.initial['mmdarwin_parameters'] = ",".join(initial_mmdarwin_parameters)
 
-        if isinstance(initial_mmdarwin_parameters, list):
-            self.initial['mmdarwin_parameters'] = ",".join(initial_mmdarwin_parameters)
+            self.fields['mmdarwin_parameters'].required = False
 
-        self.fields['mmdarwin_parameters'].required = False
-
-        self['mmdarwin_enabled'].field.widget.attrs['id'] = '{filter_name}_mmdarwin_enabled'.format(
-            filter_name=filter.name
-        )
 
     def clean_enabled(self):
         if self.instance.filter.is_internal:
@@ -178,27 +172,26 @@ class FilterPolicyForm(ModelForm):
 
     def as_table_headers(self):
         """ Format field names as table head """
-        result = "<tr>\n"
-
+        result = "<tr><th style=\"visibility:hidden;\"></th>\n"
         for field_str in self.common_fields:
             field = self[field_str]
 
             if field.field.widget.input_type in ("number", "checkbox"):
-                result += "<th style=\"width:2%\">{}</th>\n".format(field.label)
+                result += "<th>{}</th>\n".format(field.label)
             else:
-                result += "<th style=\"width:3%\">{}</th>\n".format(field.label)
+                result += "<th>{}</th>\n".format(field.label)
 
             if field.name == "filter_name":
-                result += "<th style=\"width:1%\">Hint</th>\n"
+                result += "<th>Hint</th>\n"
 
-        result += "<th style=\"width:10%\">Configure</th>\n"
-        result += "</tr>\n"
+        result += "<th>Configure</th>\n"
+        result += "<th>Delete</th></tr>\n"
 
         return result
 
     def as_table_td(self):
         """ Format fields as a table with <td></td> """
-        result = "<tr>\n"
+        result = "<tr><td style=\"visibility:hidden;\">{}</td>".format(self.instance.id or "")
         for field_str in self.common_fields:
             field = self[field_str]
 
@@ -224,7 +217,8 @@ class FilterPolicyForm(ModelForm):
                         )
         else:
             result += "<td></td>"
-
+        result += "<td><a class='btnDelete'><i style='color:grey' " \
+                  "class='fas fa-trash-alt'></i></a></td>"
         return result + "</tr>\n"
 
     def as_custom_fields(self):

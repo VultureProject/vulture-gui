@@ -25,6 +25,7 @@ __doc__ = 'Darwin model'
 
 # Django system imports
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
@@ -71,6 +72,10 @@ class DarwinFilter(models.Model):
     @property
     def exec_path(self):
         return "{}/darwin_{}".format(FILTERS_PATH, self.name)
+
+    @staticmethod
+    def is_launchable():
+        return False
 
     @staticmethod
     def str_attrs():
@@ -152,6 +157,9 @@ class FilterPolicy(models.Model):
 
     """ The custom rsyslog message's fields to get """
     mmdarwin_parameters = models.ListField(default=[])
+    weight = models.FloatField(default=1.0, validators=[MinValueValidator(0.0)])
+    is_internal = models.BooleanField(default=False)
+    tag = models.TextField(default="", max_length=16)
 
     """ Status of filter for each nodes """
     status = models.DictField(default={})
@@ -190,7 +198,7 @@ class FilterPolicy(models.Model):
     @property
     def name(self):
         """ Method used in Darwin conf to define a filter """
-        return "{}_{}".format(self.filter.name, self.policy.id)
+        return "{}_{}".format(self.filter.name, self.id)
 
     def __str__(self):
         return "[{}] {}".format(self.policy.name, self.filter.name)
@@ -201,7 +209,7 @@ class FilterPolicy(models.Model):
 
     @property
     def socket_path(self):
-        return "{}/{}_{}.sock".format(SOCKETS_PATH, self.filter.name, self.policy.id)
+        return "{}/{}_{}.sock".format(SOCKETS_PATH, self.filter.name, self.id)
 
     def mmdarwin_parameters_rsyslog_str(self):
         return str(self.mmdarwin_parameters).replace("\'", "\"")
