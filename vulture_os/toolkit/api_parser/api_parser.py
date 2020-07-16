@@ -106,14 +106,22 @@ class ApiParser:
 
     def write_to_file(self, lines):
         logger.info(f'[API PARSER] Writing {len(lines)} lines')
-
+        cpt=0
         for line in lines:
+            if cpt%500 == 0:
+                self.update_lock()
             try:
+                if isinstance(line, str):
+                    line = line.encode('utf8')
                 self.socket.send(line + b"\n")
+                cpt += 1
             except Exception as e:
                 logger.error("Failed to send to Rsyslog : {}".format(e))
+                # Connect will block until timeout has expired (30s)
                 while not self.connect():
                     time.sleep(0.05)
+                    # So refresh lock
+                    self.update_lock()
 
     def finish(self):
         """

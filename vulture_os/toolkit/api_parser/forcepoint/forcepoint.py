@@ -29,12 +29,17 @@ import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
-
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+
+from json import dumps as json_dumps
+from io import BytesIO
+import gzip
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('crontab')
 
+MAX_DELETE_ATTEMPTS = 3
 
 class ForcepointParseError(Exception):
     pass
@@ -95,7 +100,7 @@ class ForcepointParser(ApiParser):
 
     def get_logs(self, url=None, allow_redirects=False):
         if url is None:
-            url = f"{self.forcepoint_host}/hosted/logs"
+            url = f"{self.forcepoint_host}/siem/logs"
 
         response = requests.get(
             url,
@@ -119,26 +124,43 @@ class ForcepointParser(ApiParser):
 
     def parse_xml(self, logs):
         for child in ET.fromstring(logs):
-            time_log = child.attrib['time']
             url = child.attrib['url']
-            status, data = self.get_logs(url=url, allow_redirects=True)
-            if not status:
-                raise ForcepointAPIError(data)
+            stream = child.attrib['stream']
+            yield url, stream
 
-            for tmp_line in data.decode('utf-8').split('\r\n')[1:]:
-                yield tmp_line.strip().split('","')
+    def parse_line(self, mapping, orig_line, stream):
+        if orig_line[0] == 34: # Check if first char is quote
+            orig_line = orig_line[1:-1]
+        # Let the values as bytes, in case of hexadecimal characters
+        res = {mapping[cpt]:value.replace('\"', '"') for cpt,value in enumerate(orig_line.decode('utf-8').split('","'))}
+        res['stream'] = stream
+        return json_dumps(res)
 
-    def parse_line(self, tmp_line):
-        if len(tmp_line) < len(self.CSV_KEYS):
-            print(tmp_line)
-            print(self.CSV_KEYS)
-            return None
+    def parse_file(self, file_content, gzipped=False):
+        if gzipped:
+            gzip_file = BytesIO(file_content)
 
-        line = {}
-        for i, key in enumerate(self.CSV_KEYS[2:]):
-            line[key] = tmp_line[i + 2].strip()
+            with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
+                return gzip_file_content.readlines()
+        else:
+            return file_content.split(b"\r\n")
 
-        return line
+    def delete_file(self, file_url):
+        attempt = 0
+        while attempt < MAX_DELETE_ATTEMPTS:
+            try:
+                response = requests.delete(
+                    file_url,
+                    auth=(self.forcepoint_username, self.forcepoint_password),
+                    headers=self.user_agent,
+                    proxies=self.proxies
+                )
+
+                response.raise_for_status()
+                break
+            except Exception as e:
+                logger.error("Failed to delete file {} : {}".format(file_url, str(e)))
+                attempt += 1
 
     def execute(self):
         status, tmp_logs = self.get_logs()
@@ -146,10 +168,29 @@ class ForcepointParser(ApiParser):
         if not status:
             raise ForcepointAPIError(tmp_logs)
 
-        for tmp_line in self.parse_xml(tmp_logs):
-            self.update_lock()
+        for file_url, file_type in self.parse_xml(tmp_logs):
+            try:
+                # Parse file depending on extension
+                status, file_content = self.get_logs(file_url)
+                assert status, "Status is not 200"
+                lines = self.parse_file(file_content, file_url[-3:] == ".gz")
+                # Extract mapping in first line
+                ## Keys of json must be string, not bytes
+                ## Remove quotes and spaces in keys + split by comma
+                ## Remove '&' in keys, not valid for Rsyslog
+                mapping = [line.replace('"','').replace(' ','').replace('&','').replace('.','').replace('/','') for line in lines.pop(0).decode('utf8').strip().split(',')]
+                # Use mapping to convert lines to json format
+                json_lines = [self.parse_line(mapping, line.strip(), file_type) for line in lines]
+                # Send those lines to Rsyslog
+                self.write_to_file(json_lines)
+                # And update lock after sending lines to Rsyslog
+                self.update_lock()
+                # When logs are sent to Rsyslog, delete file on external host
+                self.delete_file(file_url)
+                # And update last_api_call time
+                self.frontend.last_api_call = timezone.now()
+            except Exception as e:
+                logger.error("Failed to retrieve file {} : {}".format(file_url, e))
+                logger.exception(e)
 
-            line = self.parse_line(tmp_line)
-            if line is not None:
-                print(line)
-            break
+        logger.info("Forcepoint parser ending.")
