@@ -24,15 +24,14 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Darwin model'
 
 # Django system imports
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.validators import MinValueValidator
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.validators import MinValueValidator, RegexValidator
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
 # Django project imports
 from daemons.reconcile import REDIS_LIST as DARWIN_REDIS_ALERT_LIST
 from daemons.reconcile import REDIS_CHANNEL as DARWIN_REDIS_ALERT_CHANNEL
-
 
 JINJA_PATH = "/home/vlt-os/vulture_os/darwin/log_viewer/config/"
 
@@ -59,6 +58,85 @@ DARWIN_OUTPUT_CHOICES = (
 )
 
 
+def validate_content_inspection_config(config):
+    yara_scan_type = config.get('yaraScanType', None)
+    stream_store_folder = config.get('streamStoreFolder', None)
+    yara_rule_file = config.get('yaraRuleFile', None)
+    yara_scan_max_size = config.get('yaraScanMaxSize', None)
+    max_connections = config.get('maxConnections', None)
+    max_memory_usage = config.get('maxMemoryUsage', None)
+
+    if not yara_scan_type and not stream_store_folder:
+        raise ValidationError(_("configuration should at least define 'yaraScanType' or 'streamStoreFolder'"))
+    if yara_scan_type and not yara_rule_file:
+        raise ValidationError(_("configuration should define 'yaraRuleFile' when 'yaraScanType' is set"))
+
+    if yara_scan_type and not isinstance(yara_scan_type, str):
+        raise ValidationError(_("'yaraScanType' should be a string"))
+    if yara_scan_type and yara_scan_type not in ['stream', 'packet']:
+        raise ValidationError(_("'yaraScanType' should be either 'stream' or 'packet'"))
+    if stream_store_folder and not isinstance(stream_store_folder, str):
+        raise ValidationError(_("'streamStoreFolder' should be a string"))
+    if yara_rule_file and not isinstance(yara_rule_file, str):
+        raise ValidationError(_("'yaraRuleFile' should be a string"))
+    if yara_scan_max_size and (not isinstance(yara_scan_max_size, int) or yara_scan_max_size < 0):
+        raise ValidationError(_("'yaraScanMaxSize' should be a positive integer"))
+    if max_connections and (not isinstance(max_connections, int) or max_connections < 0):
+        raise ValidationError(_("'maxConnections' should be a positive integer"))
+    if max_memory_usage and (not isinstance(max_memory_usage, int) or max_memory_usage < 0):
+        raise ValidationError(_("'maxMemoryUsage' should be a positive integer"))
+
+
+def validate_connection_config(config):
+    redis_path = config.get('redis_path')
+    if not redis_path:
+        raise ValidationError(_("configuration misses a 'redis_path' field"))
+
+    if not isinstance(redis_path, str):
+        raise ValidationError(_("'redis_path' should be a string"))
+
+
+def validate_dga_config(config):
+    token_map_path = config.get("token_map_path", None)
+    model_path = config.get("model_path", None)
+
+    if not token_map_path or not model_path:
+        raise ValidationError(_("configuration should contain at least 'token_map_path' and 'model_path' parameters"))
+
+    if token_map_path and not isinstance(token_map_path, str):
+        raise ValidationError(_("'token_map_path' should be a string"))
+    if model_path and not isinstance(model_path, str):
+        raise ValidationError(_("'model_path' should be a string"))
+
+def validate_hostlookup_config(config):
+    database = config.get('database', None)
+    db_type = config.get('db_type', None)
+
+    if not database:
+        raise ValidationError(_("configuration should contain at least the 'database' parameter"))
+
+    if db_type and not db_type in ['text', 'json', 'rsyslog']
+        raise ValidationError(_("'db_type' should be either 'text', 'json' or 'rsyslog'"))
+
+def validate_yara_config(config):
+    rule_file_list = config.get('rule_file_list', None)
+
+    if rule_file_list is None:
+        raise ValidationError(_("configuration should contain at least the 'rule_file_list' parameter"))
+
+    # If rule_file_list is not a list or is empty
+    if not isinstance(rule_file_list, list) or not rule_file_list:
+        raise ValidationError(_("'rule_file_list' should be a non-empty list"))
+
+
+DARWIN_FILTER_CONFIG_VALIDATORS = {
+    'connection': validate_connection_config,
+    'content_inspection': validate_content_inspection_config,
+    'dga': validate_dga_config,
+    'hostlookup': validate_hostlookup_config,
+    'yara': validate_yara_config,
+}
+
 class DarwinFilter(models.Model):
     name = models.TextField(unique=True)
     description = models.TextField()
@@ -84,12 +162,20 @@ class DarwinFilter(models.Model):
 
 class DarwinPolicy(models.Model):
     name = models.TextField(unique=True, default="Custom Policy")
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
-    filters = models.ManyToManyField(
-        DarwinFilter,
-        through='FilterPolicy'
-    )
+    def to_dict(self):
+        return_data = {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "filters": []
+        }
+
+        for filt in self.filterpolicy_set.all():
+            return_data['filters'].append(filt.to_dict())
+
+        return return_data
 
     def to_template(self):
         """  returns the attributes of the class """
@@ -154,12 +240,13 @@ class FilterPolicy(models.Model):
 
     """ Does the filter has a custom Rsyslog configuration? """
     mmdarwin_enabled = models.BooleanField(default=False)
-
-    """ The custom rsyslog message's fields to get """
-    mmdarwin_parameters = models.ListField(default=[])
+    mmdarwin_parameters = models.ListField(default=[], blank=True)
     weight = models.FloatField(default=1.0, validators=[MinValueValidator(0.0)])
     is_internal = models.BooleanField(default=False)
-    tag = models.TextField(default="", max_length=16)
+    tag = models.TextField(
+        default="",
+        blank=True,
+        max_length=32)
 
     """ Status of filter for each nodes """
     status = models.DictField(default={})
@@ -180,20 +267,28 @@ class FilterPolicy(models.Model):
     next_filter = models.ForeignKey(
         'self',
         null=True,
+        blank=True,
         default=None,
         on_delete=models.SET_NULL
     )
 
-    """ The fullpath to its configuration file """
-    conf_path = models.TextField()
-
-    """ A dict representing the filter configuration """
-    config = models.DictField(default={
+    conf_path = models.TextField(blank=True)
+    config = models.DictField(
+        default={
             "redis_socket_path": "/var/sockets/redis/redis.sock",
             "alert_redis_list_name": DARWIN_REDIS_ALERT_LIST,
             "alert_redis_channel_name": DARWIN_REDIS_ALERT_CHANNEL,
             "log_file_path": "/var/log/darwin/alerts.log"
-    })
+        },
+        blank=True
+    )
+
+    def save(self, *args, **kwargs):
+        # Save object to get an id, then set conf_path and save again
+        if not self.pk:
+            super().save(*args, **kwargs)
+            self.conf_path = "{darwin_path}f{filter_name}/f{filter_name}_{filter_id}.conf".format(darwin_path=CONF_PATH, filter_name=self.filter.name, filter_id=self.pk)
+        super().save(*args, **kwargs)
 
     @property
     def name(self):
@@ -202,6 +297,27 @@ class FilterPolicy(models.Model):
 
     def __str__(self):
         return "[{}] {}".format(self.policy.name, self.filter.name)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.filter.name,
+            "policy": self.policy.id,
+            "enabled": self.enabled,
+            "nb_thread": self.nb_thread,
+            "log_level": self.log_level,
+            "threshold": self.threshold,
+            "mmdarwin_enabled": self.mmdarwin_enabled,
+            "mmdarwin_parameters": self.mmdarwin_parameters,
+            "weight": self.weight,
+            "is_internal": self.is_internal,
+            "tag": self.tag,
+            "status": self.status,
+            "cache_size": self.cache_size,
+            "output": self.output,
+            "next_filter": self.next_filter,
+            "config": self.config
+        }
 
     @staticmethod
     def str_attrs():
