@@ -177,11 +177,11 @@ def write_policy_conf(node_logger, policy_id):
                 )
             except Exception as e:
                 logger.error("Darwin::write_policy_conf:: error while writing conf: {}".format(e))
-                result += "error while writing file '{}': {}\n".format(conf_path, e)
+                result += "error while writing file '{}': {}\n".format(filter_instance.conf_path, e)
                 error = True
                 continue
 
-            result += "Successfully wrote file '{}'\n".format(conf_path)
+            result += "Successfully wrote file '{}'\n".format(filter_instance.conf_path)
 
         else:
             logger.info("filter '{}' not enabled, deleting conf".format(filter_instance.name))

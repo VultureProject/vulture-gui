@@ -92,7 +92,6 @@ class DarwinPolicyAPIv1(View):
                 darwin_filter = DarwinFilter.objects.get(name=filter_name)
             except DarwinFilter.DoesNotExist:
                 logger.error("Error while creating filters for darwin policy : filter '{}' does not exist".format(filter_name))
-                clean_objects()
                 return "{} is not a valid filter".format(filter_name)
 
             #Get custom configuration validator for filter name
@@ -114,7 +113,6 @@ class DarwinPolicyAPIv1(View):
                     conf_validator(filter_instance.config)
 
             except (ValidationError, ValueError) as e:
-                clean_objects()
                 logger.error(e)
                 return '"{}": {}'.format(filter_name, str(e))
 

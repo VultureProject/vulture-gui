@@ -39,7 +39,6 @@ from django.shortcuts import render
 
 # Django project imports
 from gui.forms.form_utils import DivErrorList
-from services.darwin.darwin import DARWIN_PATH, get_darwin_conf_path
 from system.cluster.models import Cluster, Node
 
 # Required exceptions imports
@@ -65,6 +64,8 @@ FILTER_POLICY_FORMS = {
     "connection": FilterPolicyConnectionForm,
     "hostlookup": FilterPolicyHostlookupForm,
 }
+
+COMMAND_LIST = {}
 
 
 def policy_clone(request, object_id):
@@ -308,8 +309,6 @@ def policy_edit(request, object_id=None, api=False):
                     filter_policy.status[node.name] = "WAITING"
 
                 filter_policy.save()
-
-                filter_policy.conf_path = get_darwin_conf_path(filter_policy.policy.pk, filter_policy.filter.name)
 
                 filter_config = filter_policy_form.to_config()
                 filter_policy.config = filter_config

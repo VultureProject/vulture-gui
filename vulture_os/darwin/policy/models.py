@@ -88,12 +88,12 @@ def validate_content_inspection_config(config):
 
 
 def validate_connection_config(config):
-    redis_path = config.get('redis_path')
-    if not redis_path:
-        raise ValidationError(_("configuration misses a 'redis_path' field"))
+    redis_socket_path = config.get('redis_socket_path')
+    if not redis_socket_path:
+        raise ValidationError(_("configuration misses a 'redis_socket_path' field"))
 
-    if not isinstance(redis_path, str):
-        raise ValidationError(_("'redis_path' should be a string"))
+    if not isinstance(redis_socket_path, str):
+        raise ValidationError(_("'redis_socket_path' should be a string"))
 
 
 def validate_dga_config(config):
@@ -115,7 +115,7 @@ def validate_hostlookup_config(config):
     if not database:
         raise ValidationError(_("configuration should contain at least the 'database' parameter"))
 
-    if db_type and not db_type in ['text', 'json', 'rsyslog']
+    if db_type and not db_type in ['text', 'json', 'rsyslog']:
         raise ValidationError(_("'db_type' should be either 'text', 'json' or 'rsyslog'"))
 
 def validate_yara_config(config):
