@@ -27,9 +27,11 @@ from django.conf import settings
 
 # Django project imports
 from darwin.policy.models import FilterPolicy, DarwinPolicy, DarwinFilter
+from django.utils.translation import ugettext_lazy as _
 from services.service import Service
 from services.darwin.models import DarwinSettings
 from system.config.models import write_conf, delete_conf as delete_conf_file
+
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -39,6 +41,7 @@ from system.exceptions import VultureSystemConfigError, VultureSystemError
 from subprocess import CalledProcessError
 
 # Extern modules imports
+from glob import glob as file_glob
 from json import loads as json_loads
 from os import walk as os_walk
 from re import compile as re_compile
@@ -77,114 +80,13 @@ class DarwinService(Service):
         return "Darwin Service"
 
 
-def get_darwin_conf_path(darwin_policy_id, darwin_filter_name):
-    return "{darwin_path}/f{filter_name}/f{filter_name}_{darwin_policy_id}.conf".format(
-                darwin_path=DARWIN_PATH, filter_name=darwin_filter_name, darwin_policy_id=darwin_policy_id)
-
-
-def get_darwin_sockets():
-    return [obj.socket_path for obj in FilterPolicy.objects.all()]
-
-
-def delete_policy_conf(node_logger, policy_id):
-    logger.info("deleting policy {} filter's confs".format(policy_id))
-    error = False
-    result = ""
-    for darwin_filter in DarwinFilter.objects.exclude(name="session"):
-        fullpath = get_darwin_conf_path(policy_id, darwin_filter.name)
-        logger.info("deleting file {}".format(fullpath))
-        try:
-            delete_conf_file(
-                node_logger,
-                fullpath
-            )
-            result += "Conf of filter {} deleted\n".format(darwin_filter.name)
-        except VultureSystemError as e:
-            if "No such file or directory" in str(e):
-                node_logger.info("File {} already deleted".format(darwin_filter.name))
-            else:
-                result += "Failed to delete conf of filter {} : {}\n".format(darwin_filter.name, e)
-                error = True
-        except ServiceExit as e: # DO NOT REMOVE IT - Needed to stop Vultured service !
-            raise
-
-    if error:
-        raise VultureSystemError(result)
-    return result
-
-
-def write_policy_conf(node_logger, policy_id):
-    policy = DarwinPolicy.objects.get(pk=policy_id)
-    logger.info("writing policy conf '{}'".format(policy.name))
-
-    for filter in policy.filterpolicy_set.all():
-
-        if filter.enabled:
-            logger.info("writing filter '{}' conf".format(filter.name))
-
-            conf_path = get_darwin_conf_path(policy.id, filter.filter.name)
-
-            try:
-                write_conf(
-                    node_logger,
-                    [
-                        conf_path,
-                        "{}\n".format(json_dumps(filter.config, sort_keys=True, indent=4)),
-                        DARWIN_OWNERS, DARWIN_PERMS
-                    ]
-                )
-            except Exception as e:
-                logger.error("Darwin::write_policy_conf:: error while writing conf: {}".format(e))
-                continue
-
-        else:
-            logger.info("filter '{}' not enabled, deleting potential conf".format(filter.name))
-
-            try:
-                delete_conf_file(
-                    node_logger,
-                    filter.conf_path
-                )
-            except (VultureSystemConfigError, VultureSystemError):
-                continue
-            except Exception as e:
-                logger.error("Darwin::write_policy_conf:: error while removing disabled filter config: {}".format(e))
-
-
-def build_conf(node_logger):
-    """ Method used by vultured API to build conf 
-            & write if has changed
-            and restart the service if needed
-        Only used when a filter is added or deleted
-    """
-    service = DarwinService()
-    node_logger.debug("Reloading conf of service Darwin.")
-    conf_changed = service.reload_conf()
-
-    result = "Darwin configuration has not changed."
-    # Restart service only if conf has changed
-    if conf_changed:
-        node_logger.debug("Conf has changed. Restarting Darwin service.")
-        result = "Conf has changed. Restarting Darwin service."
-        result += service.restart()
-    return result
-
-
-def update_filter(node_logger, filter_id):
-    """ Hot update of Darwin filter with management unix socket 
-         Only used when an attribute of a filter has been modified
-          (for example the log level)
-    """
+def send_command(node_logger, command):
+    logger.info("sending command to darwin manager: '{}'".format(command))
     try:
-        darwin_filter = FilterPolicy.objects.get(pk=filter_id)
-    except ObjectDoesNotExist:
-        raise ServiceDarwinUpdateFilterError("FilterPolicy with id {} not found, ".format(filter_id), traceback=" ")
-    try:
-        """ Connect to Darwin manager and try to update filter """
+        """ Try to connect and send command to Darwin manager """
         cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
                                stderr=PIPE,
-                               input="{{\"type\": \"update_filters\", " \
-                                     "\"filters\": [\"{}\"]}}\n".format(darwin_filter.name).encode('utf8')
+                               input=command.encode('utf8')
                                ).decode('utf8')
         node_logger.info("Connection to darwin management socket succeed.")
         """ Darwin manager always answer in JSON """
@@ -194,22 +96,134 @@ def update_filter(node_logger, filter_id):
             # Do NOT set traceback, it will be retrieved from JSON exception
             raise ServiceDarwinUpdateFilterError("Darwin manager response is not a valid JSON : '{}'".format(cmd_res))
 
-        node_logger.info("Darwin manager response decoded : {}".format(json_res))
-        """ Retrieve status (and error) """
-        if json_res.get('status') == "KO":
-            raise ServiceDarwinUpdateFilterError("Darwin manager returned error: {}.".format(json_res.get('errors')))
-        elif json_res.get('status') != "OK":
-            raise ServiceDarwinUpdateFilterError("Darwin manager returned unknown response: {}.".format(json_res),
-                                                 traceback=json_res.get('errors'))
-        node_logger.info("Darwin filter '{}' hotly updated.".format(darwin_filter.name))
-        return "Darwin filter '{}' hotly updated.".format(darwin_filter.name)
+        return json_res
 
     except CalledProcessError as e:
         """ Return code != 0 """
         stdout = e.stdout.decode('utf8')
         stderr = e.stderr.decode('utf8')
         raise ServiceDarwinUpdateFilterError("Failed to connect to darwin management socket.",
-                                             traceback=(stderr or stdout))
+            traceback=(stderr or stdout))
+
+
+
+def get_darwin_sockets():
+    return [obj.socket_path for obj in FilterPolicy.objects.all()]
+
+
+def build_conf(node_logger):
+    result = "Configuration has not changed"
+    service = DarwinService()
+    node_logger.debug("Reloading conf of service Darwin.")
+    conf_changed = service.reload_conf()
+    if conf_changed:
+        result = "Configuration has changed, restarting Darwin."
+        result += service.restart()
+    return result
+
+
+def delete_filter_conf(node_logger, filter_conf_path):
+    """ Deletes all policy filters' configuration file
+    """
+    logger.info("deleting policy filter configuration '{}'".format(filter_conf_path))
+    error = False
+    result = ""
+
+    try:
+        delete_conf_file(
+            node_logger,
+            filter_conf_path
+        )
+        result += "Configuration file '{}' deleted\n".format(filter_conf_path)
+    except VultureSystemError as e:
+        if "No such file or directory" in str(e):
+            node_logger.info("File '{}' already deleted".format(filter_conf_path))
+        else:
+            result += "Failed to delete configuration file '{}' : {}\n".format(filter_conf_path, e)
+            error = True
+    except ServiceExit as e: # DO NOT REMOVE IT - Needed to stop Vultured service !
+        raise
+
+    if error:
+        raise VultureSystemError(_(result))
+    return _(result)
+
+
+def write_policy_conf(node_logger, policy_id):
+    """ Writes all enabled filters' configuration in a policy
+        Also deletes configuration files of all previously enabled filters in the policy
+    """
+    error = False
+    result = ""
+    try:
+        policy = DarwinPolicy.objects.get(pk=policy_id)
+    except DarwinPolicy.DoesNotExist:
+        raise VultureSystemError(_("Could not get policy with id {}".format(policy_id)))
+    logger.info("writing policy conf '{}'".format(policy.name))
+
+    for filter_instance in policy.filterpolicy_set.all():
+
+        if filter_instance.enabled:
+            logger.info("writing filter '{}' conf".format(filter_instance.name))
+
+            try:
+                write_conf(
+                    node_logger,
+                    [
+                        filter_instance.conf_path,
+                        "{}\n".format(json_dumps(filter_instance.config, sort_keys=True, indent=4)),
+                        DARWIN_OWNERS, DARWIN_PERMS
+                    ]
+                )
+            except Exception as e:
+                logger.error("Darwin::write_policy_conf:: error while writing conf: {}".format(e))
+                result += "error while writing file '{}': {}\n".format(conf_path, e)
+                error = True
+                continue
+
+            result += "Successfully wrote file '{}'\n".format(conf_path)
+
+        else:
+            logger.info("filter '{}' not enabled, deleting conf".format(filter_instance.name))
+
+            try:
+                delete_conf_file(
+                    node_logger,
+                    filter_instance.conf_path
+                )
+            except (VultureSystemConfigError, VultureSystemError) as e:
+                if "No such file or directory" in str(e):
+                    node_logger.info("File {} already deleted".format(filter_instance.conf_path))
+                    continue
+                else:
+                    raise
+            except Exception as e:
+                logger.error("Darwin::write_policy_conf:: error while removing disabled filter config: {}".format(e))
+
+    if error:
+        raise VultureSystemError(_(result))
+    return _(result)
+
+
+def update_filter(node_logger, filter_id):
+    """ Hot update of Darwin filter with management unix socket
+         Only used when an attribute of a filter has been modified
+          (for example the log level)
+    """
+    try:
+        darwin_filter = FilterPolicy.objects.get(pk=filter_id)
+    except ObjectDoesNotExist:
+        raise ServiceDarwinUpdateFilterError("FilterPolicy with id {} not found, ".format(filter_id), traceback=" ")
+
+    reply = send_command(node_logger, "{{\"type\": \"update_filters\", " \
+        "\"filters\": [\"{}\"]}}\n".format(darwin_filter.name))
+    if reply.get('status') == "KO":
+            raise ServiceDarwinUpdateFilterError("Darwin manager returned error: {}.".format(reply.get('errors')))
+    elif reply.get('status') != "OK":
+        raise ServiceDarwinUpdateFilterError("Darwin manager returned unknown response: {}.".format(reply),
+                                                traceback=reply.get('errors'))
+    node_logger.info("Darwin filter '{}' hotly updated.".format(darwin_filter.name))
+    return "Darwin filter '{}' hotly updated.".format(darwin_filter.name)
 
 
 def monitor_filters():
