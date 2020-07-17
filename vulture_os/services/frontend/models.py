@@ -186,7 +186,7 @@ class Frontend(models.Model):
     )
     """ *** DARWIN OPTIONS *** """
     """ Darwin policy """
-    darwin_policy = models.ForeignKey(
+    darwin_policies = models.ArrayReferenceField(
         to=DarwinPolicy,
         on_delete=models.PROTECT,
         null=True,
@@ -982,7 +982,7 @@ class Frontend(models.Model):
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
             'serialized_blwl_list': serialized_blwl_list,
-            'darwin_policies': FilterPolicy.objects.filter(policy=self.darwin_policy),
+            'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
             'tenants_config': self.tenants_config
