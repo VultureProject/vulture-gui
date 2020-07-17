@@ -274,14 +274,22 @@ class FilterPolicy(models.Model):
 
     conf_path = models.TextField(blank=True)
     config = models.DictField(
-        default={
-            "redis_socket_path": "/var/sockets/redis/redis.sock",
-            "alert_redis_list_name": DARWIN_REDIS_ALERT_LIST,
-            "alert_redis_channel_name": DARWIN_REDIS_ALERT_CHANNEL,
-            "log_file_path": "/var/log/darwin/alerts.log"
-        },
+        default={},
         blank=True
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Set default values to config, for desired alerting parameters
+        if not self.config.get('redis_socket_path'):
+            self.config['redis_socket_path'] = "/var/sockets/redis/redis.sock"
+        if not self.config.get('alert_redis_list_name'):
+            self.config['alert_redis_list_name'] = DARWIN_REDIS_ALERT_LIST
+        if not self.config.get('alert_redis_channel_name'):
+            self.config['alert_redis_channel_name'] = DARWIN_REDIS_ALERT_CHANNEL
+        if not self.config.get('log_file_path'):
+            self.config['log_file_path'] = "/var/log/darwin/alerts.log"
 
     def save(self, *args, **kwargs):
         # Save object to get an id, then set conf_path and save again
