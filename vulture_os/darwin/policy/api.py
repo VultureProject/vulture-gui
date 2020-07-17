@@ -187,6 +187,9 @@ class DarwinPolicyAPIv1(View):
                 'error': error
             }, status=500)
 
+        for frontend in policy.frontend_set.all():
+            for node in frontend.get_nodes():
+                node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.build_conf")
 
@@ -240,6 +243,9 @@ class DarwinPolicyAPIv1(View):
                 'error': error
             }, status=500)
 
+        for frontend in policy.frontend_set.all():
+            for node in frontend.get_nodes():
+                node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.build_conf")
 
@@ -271,7 +277,9 @@ class DarwinPolicyAPIv1(View):
 
                 for filter_conf_path in filter_conf_paths:
                     Cluster.api_request("services.darwin.darwin.delete_filter_conf", filter_conf_path)
-
+                for frontend in policy.frontend_set.all():
+                    for node in frontend.get_nodes():
+                        node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
                 Cluster.api_request("services.darwin.darwin.build_conf")
 
             else:
