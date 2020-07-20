@@ -82,7 +82,7 @@ class DarwinPolicyAPIv1(View):
                 'error': error
             }, status=500)
 
-
+    @staticmethod
     def create_filters(policy, filters_list):
         new_filters = []
 
