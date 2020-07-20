@@ -32,6 +32,7 @@ from djongo import models
 # Django project imports
 from daemons.reconcile import REDIS_LIST as DARWIN_REDIS_ALERT_LIST
 from daemons.reconcile import REDIS_CHANNEL as DARWIN_REDIS_ALERT_CHANNEL
+from darwin.inspection.models import InspectionPolicy
 
 JINJA_PATH = "/home/vlt-os/vulture_os/darwin/log_viewer/config/"
 
@@ -44,8 +45,10 @@ TEMPLATE_PERMS = "644"
 
 
 DARWIN_LOGLEVEL_CHOICES = (
+    ('CRITICAL', 'Critical'),
     ('ERROR', 'Error'),
     ('WARNING', 'Warning'),
+    ('NOTICE', 'Notice'),
     ('INFO', 'Informational'),
     ('DEBUG', 'Debug')
 )
@@ -58,6 +61,15 @@ DARWIN_OUTPUT_CHOICES = (
 )
 
 
+def validate_yara_policy(policy_id):
+    try:
+        inspection_policy = InspectionPolicy.objects.get(pk=policy_id)
+    except InspectionPolicy.DoesNotExist:
+        raise ValidationError(_("yara policy %(value)s not found"), params={'value': policy_id})
+
+    return inspection_policy.get_full_filename()
+
+
 def validate_content_inspection_config(config):
     yara_scan_type = config.get('yaraScanType', None)
     stream_store_folder = config.get('streamStoreFolder', None)
@@ -67,33 +79,36 @@ def validate_content_inspection_config(config):
     max_memory_usage = config.get('maxMemoryUsage', None)
 
     if not yara_scan_type and not stream_store_folder:
-        raise ValidationError(_("configuration should at least define 'yaraScanType' or 'streamStoreFolder'"))
+        raise ValidationError({'config': _("configuration should at least define 'yaraScanType' or 'streamStoreFolder'")})
     if yara_scan_type and not yara_rule_file:
-        raise ValidationError(_("configuration should define 'yaraRuleFile' when 'yaraScanType' is set"))
+        raise ValidationError({'config': _("configuration should define 'yaraRuleFile' when 'yaraScanType' is set")})
 
     if yara_scan_type and not isinstance(yara_scan_type, str):
-        raise ValidationError(_("'yaraScanType' should be a string"))
+        raise ValidationError({'yaraScanType': _("'yaraScanType' should be a string")})
     if yara_scan_type and yara_scan_type not in ['stream', 'packet']:
-        raise ValidationError(_("'yaraScanType' should be either 'stream' or 'packet'"))
+        raise ValidationError({'yaraScanType': _("'yaraScanType' should be either 'stream' or 'packet'")})
     if stream_store_folder and not isinstance(stream_store_folder, str):
-        raise ValidationError(_("'streamStoreFolder' should be a string"))
-    if yara_rule_file and not isinstance(yara_rule_file, str):
-        raise ValidationError(_("'yaraRuleFile' should be a string"))
+        raise ValidationError({'streamStoreFolder': _("'streamStoreFolder' should be a string")})
+    if yara_rule_file:
+        if not isinstance(yara_rule_file, int):
+            raise ValidationError({'yaraRuleFile': _("'yaraRuleFile' should be an ID to an Inspection Policy")})
+        else:
+            config['yaraRuleFile'] = validate_yara_policy(yara_rule_file)
     if yara_scan_max_size and (not isinstance(yara_scan_max_size, int) or yara_scan_max_size < 0):
-        raise ValidationError(_("'yaraScanMaxSize' should be a positive integer"))
+        raise ValidationError({'yaraScanMaxSize': _("'yaraScanMaxSize' should be a positive integer")})
     if max_connections and (not isinstance(max_connections, int) or max_connections < 0):
-        raise ValidationError(_("'maxConnections' should be a positive integer"))
+        raise ValidationError({'maxConnections': _("'maxConnections' should be a positive integer")})
     if max_memory_usage and (not isinstance(max_memory_usage, int) or max_memory_usage < 0):
-        raise ValidationError(_("'maxMemoryUsage' should be a positive integer"))
+        raise ValidationError({'maxMemoryusage': _("'maxMemoryUsage' should be a positive integer")})
 
 
 def validate_connection_config(config):
     redis_socket_path = config.get('redis_socket_path')
     if not redis_socket_path:
-        raise ValidationError(_("configuration misses a 'redis_socket_path' field"))
+        raise ValidationError({'config': _("configuration misses a 'redis_socket_path' field")})
 
     if not isinstance(redis_socket_path, str):
-        raise ValidationError(_("'redis_socket_path' should be a string"))
+        raise ValidationError({'redis_socket_path': _("'redis_socket_path' should be a string")})
 
 
 def validate_dga_config(config):
@@ -101,32 +116,44 @@ def validate_dga_config(config):
     model_path = config.get("model_path", None)
 
     if not token_map_path or not model_path:
-        raise ValidationError(_("configuration should contain at least 'token_map_path' and 'model_path' parameters"))
+        raise ValidationError({'config': _("configuration should contain at least 'token_map_path' and 'model_path' parameters")})
 
     if token_map_path and not isinstance(token_map_path, str):
-        raise ValidationError(_("'token_map_path' should be a string"))
+        raise ValidationError({'token_map_path': _("'token_map_path' should be a string")})
     if model_path and not isinstance(model_path, str):
-        raise ValidationError(_("'model_path' should be a string"))
+        raise ValidationError({'model_path': _("'model_path' should be a string")})
+
 
 def validate_hostlookup_config(config):
     database = config.get('database', None)
     db_type = config.get('db_type', None)
 
     if not database:
-        raise ValidationError(_("configuration should contain at least the 'database' parameter"))
+        raise ValidationError({'config': _("configuration should contain at least the 'database' parameter")})
+
+    if not isinstance(database, str):
+        raise ValidationError({'database': _("'database' should be a string")})
 
     if db_type and not db_type in ['text', 'json', 'rsyslog']:
-        raise ValidationError(_("'db_type' should be either 'text', 'json' or 'rsyslog'"))
+        raise ValidationError({'db_type': _("'db_type' should be either 'text', 'json' or 'rsyslog'")})
+
 
 def validate_yara_config(config):
     rule_file_list = config.get('rule_file_list', None)
 
     if rule_file_list is None:
-        raise ValidationError(_("configuration should contain at least the 'rule_file_list' parameter"))
+        raise ValidationError({'config': _("configuration should contain at least the 'rule_file_list' parameter")})
 
     # If rule_file_list is not a list or is empty
     if not isinstance(rule_file_list, list) or not rule_file_list:
-        raise ValidationError(_("'rule_file_list' should be a non-empty list"))
+        raise ValidationError({'rule_file_list': _("'rule_file_list' should be a non-empty list")})
+
+    file_paths = []
+    for object_id in rule_file_list:
+        if not isinstance(object_id, int):
+            raise ValidationError({'rule_file_list': _("'{}' is not a yara policy ID".format(object_id))})
+        file_paths.append(validate_yara_policy(object_id))
+    config['rule_file_list'] = file_paths
 
 
 DARWIN_FILTER_CONFIG_VALIDATORS = {
@@ -233,7 +260,7 @@ class FilterPolicy(models.Model):
     nb_thread = models.PositiveIntegerField(default=5)
 
     """ Level of logging (not alerts) """
-    log_level = models.TextField(default=DARWIN_LOGLEVEL_CHOICES[1][0], choices=DARWIN_LOGLEVEL_CHOICES)
+    log_level = models.TextField(default=DARWIN_LOGLEVEL_CHOICES[2][0], choices=DARWIN_LOGLEVEL_CHOICES)
 
     """ Alert detection thresold """
     threshold = models.PositiveIntegerField(default=80)
@@ -278,18 +305,17 @@ class FilterPolicy(models.Model):
         blank=True
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def clean(self):
+        self.config['redis_socket_path'] = "/var/sockets/redis/redis.sock"
+        self.config['alert_redis_list_name'] = "darwin_alerts"
+        self.config['alert_redis_channel_name'] = "darwin.alerts"
+        self.config['log_file_path'] = "/var/log/darwin/alerts.log"
 
-        # Set default values to config, for desired alerting parameters
-        if not self.config.get('redis_socket_path'):
-            self.config['redis_socket_path'] = "/var/sockets/redis/redis.sock"
-        if not self.config.get('alert_redis_list_name'):
-            self.config['alert_redis_list_name'] = DARWIN_REDIS_ALERT_LIST
-        if not self.config.get('alert_redis_channel_name'):
-            self.config['alert_redis_channel_name'] = DARWIN_REDIS_ALERT_CHANNEL
-        if not self.config.get('log_file_path'):
-            self.config['log_file_path'] = "/var/log/darwin/alerts.log"
+        conf_validator = DARWIN_FILTER_CONFIG_VALIDATORS.get(self.filter.name, None)
+
+        if conf_validator:
+            conf_validator(self.config)
+
 
     def save(self, *args, **kwargs):
         # Save object to get an id, then set conf_path and save again

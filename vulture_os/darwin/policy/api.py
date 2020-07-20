@@ -35,7 +35,7 @@ from django.utils.decorators import method_decorator
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
-from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, DARWIN_FILTER_CONFIG_VALIDATORS, validate_connection_config, validate_content_inspection_config, validate_dga_config
+from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, validate_connection_config, validate_content_inspection_config, validate_dga_config
 from darwin.policy.views import policy_edit, COMMAND_LIST
 from system.cluster.models import Cluster, Node
 from services.frontend.models import Frontend
@@ -94,9 +94,6 @@ class DarwinPolicyAPIv1(View):
                 logger.error("Error while creating filters for darwin policy : filter '{}' does not exist".format(filter_name))
                 return "{} is not a valid filter".format(filter_name)
 
-            #Get custom configuration validator for filter name
-            conf_validator = DARWIN_FILTER_CONFIG_VALIDATORS.get(filter_name, None)
-
             try:
                 filter_instance = FilterPolicy(
                     **filt,
@@ -107,10 +104,6 @@ class DarwinPolicyAPIv1(View):
 
                 filter_instance.full_clean()
                 new_filters.append(filter_instance)
-
-                #If there is an existing custom validator for the configuration of this filter, use it
-                if conf_validator:
-                    conf_validator(filter_instance.config)
 
             except (ValidationError, ValueError) as e:
                 logger.error(e)
