@@ -18,10 +18,10 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 __author__ = "Théo BERTIN"
 __credits__ = []
 __license__ = "GPLv3"
-__version__ = "4.0.0"
+__version__ = "3.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'MMcapture model'
+__doc__ = 'Yara model'
 
 # Django system imports
 from django.conf import settings

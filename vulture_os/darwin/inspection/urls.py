@@ -40,4 +40,7 @@ urlpatterns = [
     re_path('^darwin/inspection/policy/delete/(?P<object_id>[A-Fa-f0-9]+)?$', DeleteInspectionPolicy.as_view(), name="darwin.inspection_policies.delete"),
     re_path('^darwin/inspection/rule/edit/(?P<object_id>[A-Fa-f0-9]+)?$', views.edit_inspection_rule, name="darwin.inspection_rules.edit"),
     re_path('^darwin/inspection/rule/delete/(?P<object_id>[A-Fa-f0-9]+)?$', DeleteInspectionRule.as_view(), name="darwin.inspection_rules.delete"),
+
+    #API paths
+    path('api/v1/darwin/inspection', api.InspectionPolicyAPIv1.as_view(), name="darwin.inspection.api"),
 ]
