@@ -193,7 +193,8 @@ class FrontendForm(ModelForm):
             self.fields[field_name].empty_label = None
         self.fields['error_template'].empty_label = "No template"
         # Set required in POST data to False
-        for field_name in ['log_condition', 'ruleset', 'log_level', 'listening_mode', 'headers', 'custom_haproxy_conf',
+        for field_name in ['log_condition', 'ruleset', 'log_level', 'listening_mode', 'headers',            
+        'custom_haproxy_conf',
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'impcap_filter', 'impcap_filter_type',
                            'impcap_intf', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
