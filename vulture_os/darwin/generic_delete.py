@@ -104,11 +104,11 @@ class DeleteDarwinPolicy(DeleteView):
 
     # This method is mandatory for all child classes
     # Returns [] if nothing to do
-    def used_by(self, object):
+    def used_by(self, policy):
         """ Retrieve all objects that use the current object
         Return a list of strings, printed in template as "Used by this object:"
         """
-        return [frontend.name for frontend in Frontend.objects.filter(darwin_policy=object)]
+        return [frontend.name for frontend in Frontend.objects.filter(darwin_policies=policy)]
 
     # get methods inherited from mother class
     def post(self, request, object_id, **kwargs):
@@ -122,7 +122,7 @@ class DeleteDarwinPolicy(DeleteView):
             logger.info("Deleting filter policy configuration files associated with Darwin policy...")
 
             try:
-                filter_conf_paths = [obj.conf_path for obj in policy.filterpolicy_set.all()]
+                filter_conf_paths = [obj.conf_path for obj in obj_inst.filterpolicy_set.all()]
 
                 obj_inst.delete()
 

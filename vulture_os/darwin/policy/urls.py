@@ -41,9 +41,9 @@ urlpatterns = [
             views.policy_edit,
             name="darwin.policy.edit"),
     # Clone view
-    re_path('^darwin/policy/clone/(?P<object_id>[A-Fa-f0-9]+)$',
-            views.policy_clone,
-            name="darwin.policy.clone"),
+#     re_path('^darwin/policy/clone/(?P<object_id>[A-Fa-f0-9]+)$',
+#             views.policy_clone,
+#             name="darwin.policy.clone"),
     # Delete view
     re_path('^darwin/policy/delete/(?P<object_id>[A-Fa-f0-9]+)$',
             DeleteDarwinPolicy.as_view(),
@@ -52,5 +52,6 @@ urlpatterns = [
     path('api/v1/darwin/policy', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
     path('api/v1/darwin/policy/<int:object_id>', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
     path('api/v1/darwin/policy/<int:object_id>/<str:action>', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
-    path('api/v1/darwin/filter/<str:filter_name>', api.DarwinFilterAPIv1.as_view(), name="darwin.filter.api"),
+    path('api/v1/darwin/filter/', api.DarwinFilterAPIv1.as_view(), name="darwin.filter.api"),
+    path('api/v1/darwin/filter/<str:filter_name>/', api.DarwinFilterAPIv1.as_view(), name="darwin.filter.api"),
 ]

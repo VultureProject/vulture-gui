@@ -23,6 +23,8 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Darwin Policy APIs'
 
+import json
+
 # Django system imports
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -65,8 +67,10 @@ class DarwinFilterAPIv1(View):
         result = {}
         result['models'] = []
         result['tokens'] = []
+
         for file in file_glob(DGA_MODELS_PATH + "*.pb"):
             result['models'].append(file.split('/')[-1])
+
         for file in file_glob(DGA_MODELS_PATH + "*.csv"):
             result['tokens'].append(file.split('/')[-1])
 
@@ -79,7 +83,7 @@ class DarwinFilterAPIv1(View):
             if not filter_name:
                 return JsonResponse({
                     'error': _('you must specify a filter name')
-                }, status=401)
+                }, status=400)
             else:
                 try:
                     darwin_filter = DarwinFilter.objects.filter(name=filter_name).get()
@@ -200,10 +204,11 @@ class DarwinPolicyAPIv1(View):
                 return COMMAND_LIST[action](request, object_id, api=True)
             else:
                 #Create a new policy with filters
-                filters_list = request.JSON.pop('filters', [])
+                filters_list = json.loads(request.POST.get('filters', []))
                 policy = DarwinPolicy(
-                    name=request.JSON.get("name", ""),
-                    description=request.JSON.get("description", ""))
+                    name=request.POST.get("name", ""),
+                    description=request.POST.get("description", "")
+                )
 
                 try:
                     policy.full_clean()
@@ -229,6 +234,7 @@ class DarwinPolicyAPIv1(View):
                 policy.delete()
             except:
                 pass
+
             logger.critical(e, exc_info=1)
             if settings.DEV_MODE:
                 error = str(e)
@@ -241,6 +247,7 @@ class DarwinPolicyAPIv1(View):
         for frontend in policy.frontend_set.all():
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
+
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.build_conf")
 
@@ -251,7 +258,7 @@ class DarwinPolicyAPIv1(View):
     def put(self, request, object_id=None):
         try:
             if object_id:
-                filters = request.JSON.pop('filters', [])
+                filters = json.loads(request.JSON.get('filters', []))
                 policy, created = DarwinPolicy.objects.get_or_create(pk=object_id)
 
                 policy.name = request.JSON.get('name', "")
@@ -297,6 +304,7 @@ class DarwinPolicyAPIv1(View):
         for frontend in policy.frontend_set.all():
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
+
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.build_conf")
 
@@ -328,9 +336,11 @@ class DarwinPolicyAPIv1(View):
 
                 for filter_conf_path in filter_conf_paths:
                     Cluster.api_request("services.darwin.darwin.delete_filter_conf", filter_conf_path)
+
                 for frontend in policy.frontend_set.all():
                     for node in frontend.get_nodes():
                         node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
+
                 Cluster.api_request("services.darwin.darwin.build_conf")
 
             else:
