@@ -35,7 +35,7 @@ from django.utils.decorators import method_decorator
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
-from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, validate_connection_config, validate_content_inspection_config, validate_dga_config
+from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, DGA_MODELS_PATH, validate_connection_config, validate_content_inspection_config, validate_dga_config
 from darwin.policy.views import policy_edit, COMMAND_LIST
 from system.cluster.models import Cluster, Node
 from services.frontend.models import Frontend
@@ -45,11 +45,69 @@ from toolkit.api.responses import build_response
 # Extern modules imports
 from sys import exc_info
 from pymongo.errors import DuplicateKeyError
+from glob import glob as file_glob
 
 # Logger configuration imports
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class DarwinFilterAPIv1(View):
+
+    @staticmethod
+    def get_available_dga_models():
+        """
+            Gets the list of available models and token maps for the DGA filter.
+            The files are returned without path, and should be given as-is during POST/PUT operations in policies
+        """
+        result = {}
+        result['models'] = []
+        result['tokens'] = []
+        for file in file_glob(DGA_MODELS_PATH + "*.pb"):
+            result['models'].append(file.split('/')[-1])
+        for file in file_glob(DGA_MODELS_PATH + "*.csv"):
+            result['tokens'].append(file.split('/')[-1])
+
+        return result
+
+    @api_need_key('cluster_api_key')
+    def get(self, request, filter_name=None):
+        data = {}
+        try:
+            if not filter_name:
+                return JsonResponse({
+                    'error': _('you must specify a filter name')
+                }, status=401)
+            else:
+                try:
+                    darwin_filter = DarwinFilter.objects.filter(name=filter_name).get()
+                    data = darwin_filter.to_dict()
+                except DarwinFilter.DoesNotExist:
+                    return JsonResponse({
+                        'error': _("filter name '{}' does not exist".format(filter_name))
+                    }, status=404)
+
+                # There could be calls to get lists of available files for other filters
+                if filter_name == "dga":
+                    data.update(DarwinFilterAPIv1.get_available_dga_models())
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+            return JsonResponse({
+                'error': error
+            }, status=500)
+
+        return JsonResponse({
+            'data': data
+        }, status=200)
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 class DarwinPolicyAPIv1(View):

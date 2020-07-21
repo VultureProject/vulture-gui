@@ -52,4 +52,5 @@ urlpatterns = [
     path('api/v1/darwin/policy', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
     path('api/v1/darwin/policy/<int:object_id>', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
     path('api/v1/darwin/policy/<int:object_id>/<str:action>', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
+    path('api/v1/darwin/filter/<str:filter_name>', api.DarwinFilterAPIv1.as_view(), name="darwin.filter.api"),
 ]
