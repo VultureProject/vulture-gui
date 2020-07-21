@@ -108,7 +108,7 @@
               <div v-if="filter.name">
                 <div class="col-md-8 col-md-offset-2">
                   <div class="alert alert-primary text-center">
-                      <strong><i class="fa fa-question-circle"></i></strong> <span v-html="hint(filter.name)"></span>
+                    <strong><i class="fa fa-question-circle"></i></strong> <span v-html="hint(filter.name)"></span>
                   </div>
                 </div>
 
@@ -178,7 +178,7 @@
                   <div class="col-md-12 form-group" v-if="filter.mmdarwin_enabled">
                     <label class="col-sm-4 control-label">{% trans "Rsyslog parameter" %}:</label>
                     <div class="col-sm-5">
-                      <vue-tags-input :tags="filter.mmdarwin_parameters" value=""/>
+                      <vue-tags-input :tags="filter.mmdarwin_parameters" v-model="tagRsyslog" @tags-changed="newTags => filter.mmdarwin_parameters = newTags"/>
                     </div>
                     <div class="col-md-5 col-md-offset-4">
                       <small class="help-block">

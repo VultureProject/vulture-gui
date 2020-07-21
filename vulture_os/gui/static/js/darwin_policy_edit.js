@@ -61,6 +61,7 @@ function init_vue(){
         filters: [],
       },
 
+      tagRsyslog: "",
       filter: {
         name: "",
         enabled: true,
@@ -143,7 +144,6 @@ function init_vue(){
     
     methods: {
       renderName(val) {
-        console.log(val)
         return available_filters[val].label
       },
 
@@ -230,14 +230,6 @@ function init_vue(){
         `
       },
 
-      renderValueRsyslogParam(params){
-        let tmp = []
-        for (let t of params)
-          tmp.push(t.text)
-
-        return tmp.join(',')
-      },
-
       fetch_content_inspection_choices() {
         let self = this
 
@@ -311,7 +303,6 @@ function init_vue(){
       },
 
       hint(val){
-        console.log(val)
         return available_filters[val].hint
       },
 
