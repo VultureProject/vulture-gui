@@ -204,7 +204,8 @@ function init_vue(){
 
           case "dga":
             customConfig = `
-              <p><b>${gettext('Model')}:</b> ${filter.config.model}</p>
+              <p><b>${gettext('Model')}:</b> ${filter.config.model_path}</p>
+              <p><b>${gettext('Token')}:</b> ${filter.config.token_map_path}</p>
             `
             break
           
@@ -285,6 +286,9 @@ function init_vue(){
           null,
 
           function(response){
+            self.dga_model_choices = []
+            self.token_map_path = []
+
             for (let tmp of response.data.models){
               self.dga_model_choices.push({
                 label: tmp,
@@ -320,7 +324,7 @@ function init_vue(){
 
       addFilter() {
         if (this.filter.name === "dga"){
-          if (!this.filter.config.model || !this.filter.config.token){
+          if (!this.filter.config.model_path || !this.filter.config.token_map_path){
             notify('error', gettext("Error"), gettext("Please fill all required field"))
             return
           }
