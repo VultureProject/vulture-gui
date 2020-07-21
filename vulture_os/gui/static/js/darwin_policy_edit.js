@@ -123,7 +123,15 @@ function init_vue(){
             let data = response.data
             self.policy.name = data.name
             self.policy.description = data.description
-            self.policy.filters = data.filters
+
+            for (let filter of data.filters){
+              let tmp_mmdarwin_parameters = []
+              for (let tmp of filter.mmdarwin_parameters)
+                tmp_mmdarwin_parameters.push({text: tmp})
+              
+              filter.mmdarwin_parameters = tmp_mmdarwin_parameters
+              self.policy.filters.push(filter)
+            }
           }
         )
       }
@@ -393,6 +401,10 @@ function init_vue(){
                 break
           }
 
+          let mmdarwin_parameters = []
+          for (let tmp of tmp_filter.mmdarwin_parameters)
+            mmdarwin_parameters.push(tmp.text)
+
           let tmp = {
             name: tmp_filter.name,
             enabled: tmp_filter.enabled,
@@ -402,7 +414,7 @@ function init_vue(){
             weight: tmp_filter.weight,
             cache_size: tmp_filter.cache_size,
             mmdarwin_enabled: tmp_filter.mmdarwin_enabled,
-            mmdarwin_parameters: tmp_filter.mmdarwin_parameters,
+            mmdarwin_parameters: mmdarwin_parameters,
             config: config
           }
 
