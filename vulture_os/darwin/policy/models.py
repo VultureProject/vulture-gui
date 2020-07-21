@@ -83,15 +83,16 @@ def validate_yara_file(policy_id):
 
 
 def validate_content_inspection_config(config):
+    # Don't let 'streamStoreFolder' be in configuration, it's a valid argument but it's not desired
+    config.pop('streamStoreFolder', None)
     yara_scan_type = config.get('yaraScanType', None)
-    stream_store_folder = config.get('streamStoreFolder', None)
     yara_rule_file = config.get('yaraRuleFile', None)
     yara_scan_max_size = config.get('yaraScanMaxSize', None)
     max_connections = config.get('maxConnections', None)
     max_memory_usage = config.get('maxMemoryUsage', None)
 
-    if not yara_scan_type and not stream_store_folder:
-        raise ValidationError({'config': _("configuration should at least define 'yaraScanType' or 'streamStoreFolder'")})
+    if not yara_scan_type:
+        raise ValidationError({'config': _("configuration should define 'yaraScanType'")})
     if yara_scan_type and not yara_rule_file:
         raise ValidationError({'config': _("configuration should define 'yaraRuleFile' when 'yaraScanType' is set")})
 
@@ -99,8 +100,6 @@ def validate_content_inspection_config(config):
         raise ValidationError({'yaraScanType': _("'yaraScanType' should be a string")})
     if yara_scan_type and yara_scan_type not in ['stream', 'packet']:
         raise ValidationError({'yaraScanType': _("'yaraScanType' should be either 'stream' or 'packet'")})
-    if stream_store_folder and not isinstance(stream_store_folder, str):
-        raise ValidationError({'streamStoreFolder': _("'streamStoreFolder' should be a string")})
     if yara_rule_file:
         if not isinstance(yara_rule_file, int):
             raise ValidationError({'yaraRuleFile': _("'yaraRuleFile' should be an ID to an Inspection Policy")})
@@ -352,13 +351,6 @@ class FilterPolicy(models.Model):
         help_text=_("Whether this filter is a system one"),
         )
 
-    tag = models.TextField(
-        default="",
-        blank=True,
-        max_length=32,
-        help_text=_("A simple tag to differentiate easily a particular filter from others"),
-        )
-
     """ Status of filter for each nodes """
     status = models.DictField(
         default={},
@@ -439,7 +431,6 @@ class FilterPolicy(models.Model):
             "mmdarwin_parameters": self.mmdarwin_parameters,
             "weight": self.weight,
             "is_internal": self.is_internal,
-            "tag": self.tag,
             "status": self.status,
             "cache_size": self.cache_size,
             "output": self.output,
