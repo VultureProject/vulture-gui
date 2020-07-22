@@ -126,13 +126,13 @@ function init_vue(){
 
             for (let filter of data.filters){
               if (filter.name === "content_inspection")
-                this.fetch_content_inspection_choices()
+                self.fetch_content_inspection_choices()
               else if (filter.name === "hostlookup")
-                this.fetch_reputation_ctx()
+                self.fetch_reputation_ctx()
               else if (filter.name === "dga")
-                this.fetch_dga_models()
+                self.fetch_dga_models()
               else if (filter.name === "yara")
-                this.fetch_yara_rule_file()
+                self.fetch_yara_rule_file()
 
               let tmp_mmdarwin_parameters = []
               for (let tmp of filter.mmdarwin_parameters)
