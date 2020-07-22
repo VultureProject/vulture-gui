@@ -272,7 +272,7 @@
                         <v-select :options="hostlookup_database_choices" v-model="filter.config.database" :reduce="elem => elem.id"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
-                        <small class="help-block">{% trans "The database to use for lookup yara" %}</small>
+                        <small class="help-block">{% trans "The list of yara policies to use for detection" %}</small>
                       </div>
                     </div>
                   </div>
@@ -297,7 +297,7 @@
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Rule file list" %}:</label>
                       <div class="col-sm-5">
-                        <v-select :options="yara_rule_file_list" v-model="filter.config.yara_rule_file_list" :reduce="elem => elem.id"/>
+                        <v-select :options="yara_rule_file_list" multiple v-model="filter.config.yara_rule_file_list" :reduce="elem => elem.id"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
                         <small class="help-block">{% trans "List of yara policies to use during detection" %}</small>

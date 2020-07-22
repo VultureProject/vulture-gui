@@ -104,6 +104,7 @@ function init_vue(){
 
       dga_model_choices: [],
       dga_token_choices: [],
+      yara_rule_file_list: [],
       hostlookup_database_choices: []
     },
 
@@ -114,7 +115,6 @@ function init_vue(){
         this.filters_choices.push({label: config.label, id: filter_name})
 
       if (object_id){
-        // FIXME: Fetch policy configuration
         $.get(
           darwin_policy_api_uri + `/${object_id}`,
           null,
@@ -125,6 +125,15 @@ function init_vue(){
             self.policy.description = data.description
 
             for (let filter of data.filters){
+              if (filter.name === "content_inspection")
+                this.fetch_content_inspection_choices()
+              else if (filter.name === "hostlookup")
+                this.fetch_reputation_ctx()
+              else if (filter.name === "dga")
+                this.fetch_dga_models()
+              else if (filter.name === "yara")
+                this.fetch_yara_rule_file()
+
               let tmp_mmdarwin_parameters = []
               for (let tmp of filter.mmdarwin_parameters)
                 tmp_mmdarwin_parameters.push({text: tmp})
@@ -145,6 +154,8 @@ function init_vue(){
           this.fetch_reputation_ctx()
         else if (val === "dga")
           this.fetch_dga_models()
+        else if (val === "yara")
+          this.fetch_yara_rule_file()
 
         this.filter.is_configured = true
       }
@@ -224,10 +235,18 @@ function init_vue(){
             break
           
           case "yara":
+            let rule_file_list = []
+            for (let id of filter.config.yara_rule_file_list){
+              for (let tmp of this.yara_rule_file_list){
+                if (id === tmp.id)
+                  rule_file_list.push(`<label class='label label-primary'>${tmp.label}</label>`)
+              }
+            }
+
             customConfig = `
               <p><b>${gettext("Fast Mode")}:</b> ${filter.config.fast_mode}</p>
               <p><b>${gettext("Timeout")}:</b> ${filter.config.timeout}</p>
-              <p><b>${gettext("Rule file list")}:</b> ${filter.config.yara_rule_file_list}</p>
+              <p><b>${gettext("Rule file list")}:</b> ${rule_file_list.join('&nbsp;')}</p>
             `
             break
         }
@@ -267,7 +286,7 @@ function init_vue(){
           function(response) {
             self.hostlookup_database_choices = []
             for (let tmp of response.data){
-              if ($.inArray(tmp, [ "ipv4_netset", "ipv6_netset", "domain", "lookup"]) > -1){
+              if ($.inArray(tmp.db_type, ["ipv4_netset", "ipv6_netset", "domain", "lookup"]) > -1){
                 self.hostlookup_database_choices.push({
                   label: tmp.name,
                   id: tmp.id
@@ -300,6 +319,25 @@ function init_vue(){
               self.dga_token_choices.push({
                 label: tmp,
                 id: tmp
+              })
+            }
+          }
+        )
+      },
+
+      fetch_yara_rule_file() {
+        let self = this
+
+        $.get(
+          darwin_inspection_policies_uri,
+          null,
+
+          function(response) {
+            self.yara_rule_file_list = []
+            for (let tmp of response.data){
+              self.yara_rule_file_list.push({
+                label: tmp.name,
+                id: tmp.id
               })
             }
           }
@@ -421,6 +459,11 @@ function init_vue(){
           filters.push(tmp)
         }
 
+        if (filters.length === 0){
+          notify('error', gettext('Error'), gettext("Please add at least one filter"))
+          return
+        }
+
         let data = {
           name: this.policy.name,
           description: this.policy.description,
@@ -439,7 +482,10 @@ function init_vue(){
                 window.location.href = darwin_policy_list_uri
               }, 1000)
             }
-          )
+          ).fail(function(response) {
+            let error = response.responseJSON.error
+            notify('error', gettext('Error'), error)
+          })
         } else {
           $.ajax({
             url: darwin_policy_api_uri + `/${object_id}`,
@@ -455,7 +501,7 @@ function init_vue(){
             },
 
             error: function (xhr, ajaxOptions, thrownError) {
-              notify('error', gettext('Error'), thrownError)
+              notify('error', gettext('Error'), xhr.responseJSON.error)
             }
           })
         }
