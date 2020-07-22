@@ -189,7 +189,7 @@ class InspectionPolicy(models.Model):
 
     def to_dict(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'techno': self.techno,
             'name': self.name,
             'last_update': self.last_update,
@@ -199,7 +199,7 @@ class InspectionPolicy(models.Model):
 
     def to_html_template(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'techno': self.techno,
             'name': self.name,
             'last_update': self.last_update.strftime("%d/%m/%Y %H:%M:%S"),
