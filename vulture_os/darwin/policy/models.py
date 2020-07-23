@@ -24,6 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Darwin model'
 
 # Django system imports
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import MinValueValidator, RegexValidator
 from django.utils.translation import ugettext_lazy as _
@@ -37,6 +38,12 @@ from darwin.inspection.models import InspectionPolicy
 
 # External modules imports
 from glob import glob as file_glob
+from json import dumps as json_dumps
+
+# Logger configuration imports
+import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
+logger = logging.getLogger('gui')
 
 JINJA_PATH = "/home/vlt-os/vulture_os/darwin/log_viewer/config/"
 
@@ -46,6 +53,11 @@ FILTERS_PATH = "/home/darwin/filters"
 CONF_PATH = "/home/darwin/conf/"
 TEMPLATE_OWNER = "darwin:vlt-web"
 TEMPLATE_PERMS = "644"
+
+REDIS_SOCKET_PATH = "/var/sockets/redis/redis.sock"
+ALERTS_REDIS_LIST_NAME = "redis_alerts"
+ALERTS_REDIS_CHANNEL_NAME = "redis.alerts"
+ALERTS_LOG_FILEPATH = "/var/log/darwin/alerts.log"
 
 DGA_MODELS_PATH = CONF_PATH + 'fdga/'
 
@@ -69,134 +81,234 @@ HOSTLOOKUP_VALID_DB_TYPES = [
     "ipv4_netset",
     "ipv6_netset",
     "domain",
-    "lookup"
+    "lookup",
+    "google",
 ]
 
 
-def validate_yara_file(policy_id):
-    try:
-        inspection_policy = InspectionPolicy.objects.get(pk=policy_id)
-    except InspectionPolicy.DoesNotExist:
-        raise ValidationError(_("yara policy %(value)s not found"), params={'value': policy_id})
+def get_available_dga_models():
+    """
+        Gets the list of available models and token maps for the DGA filter.
+        The files are returned without path, and should be given as-is during POST/PUT operations in policies
+    """
+    result = {}
+    result['models'] = []
+    result['token_maps'] = []
 
-    return inspection_policy.get_full_filename()
+    for file in file_glob(DGA_MODELS_PATH + "*.pb"):
+        result['models'].append(file.split('/')[-1])
+
+    for file in file_glob(DGA_MODELS_PATH + "*.csv"):
+        result['token_maps'].append(file.split('/')[-1])
+
+    return result
 
 
-def validate_content_inspection_config(config):
-    # Don't let 'streamStoreFolder' be in configuration, it's a valid argument but it's not desired
-    config.pop('streamStoreFolder', None)
-    yara_scan_type = config.get('yaraScanType', None)
-    yara_rule_file = config.get('yaraRuleFile', None)
-    yara_scan_max_size = config.get('yaraScanMaxSize', None)
-    max_connections = config.get('maxConnections', None)
-    max_memory_usage = config.get('maxMemoryUsage', None)
+def validate_mmdarwin_parameters(mmdarwin_parameters):
+    if not isinstance(mmdarwin_parameters, list):
+        raise ValidationError(_("should be a list of strings"))
 
-    if not yara_scan_type:
-        raise ValidationError({'config': _("configuration should define 'yaraScanType'")})
-    if yara_scan_type and not yara_rule_file:
-        raise ValidationError({'config': _("configuration should define 'yaraRuleFile' when 'yaraScanType' is set")})
+    for field in mmdarwin_parameters:
+        if not isinstance(field, str):
+            raise ValidationError(_("fields should be strings"))
 
-    if yara_scan_type and not isinstance(yara_scan_type, str):
-        raise ValidationError({'yaraScanType': _("'yaraScanType' should be a string")})
-    if yara_scan_type and yara_scan_type not in ['stream', 'packet']:
-        raise ValidationError({'yaraScanType': _("'yaraScanType' should be either 'stream' or 'packet'")})
-    if yara_rule_file:
-        if not isinstance(yara_rule_file, int):
-            raise ValidationError({'yaraRuleFile': _("'yaraRuleFile' should be an ID to an Inspection Policy")})
-        else:
-            config['yaraRuleFile'] = validate_yara_file(yara_rule_file)
-    if yara_scan_max_size and (not isinstance(yara_scan_max_size, int) or yara_scan_max_size < 0):
-        raise ValidationError({'yaraScanMaxSize': _("'yaraScanMaxSize' should be a positive integer")})
-    if max_connections and (not isinstance(max_connections, int) or max_connections < 0):
-        raise ValidationError({'maxConnections': _("'maxConnections' should be a positive integer")})
-    if max_memory_usage and (not isinstance(max_memory_usage, int) or max_memory_usage < 0):
-        raise ValidationError({'maxMemoryusage': _("'maxMemoryUsage' should be a positive integer")})
+
+def validate_anomaly_config(config):
+    cleaned_config = {}
+    return cleaned_config
 
 
 def validate_connection_config(config):
-    redis_socket_path = config.get('redis_socket_path')
-    if not redis_socket_path:
-        raise ValidationError({'config': _("configuration misses a 'redis_socket_path' field")})
+    cleaned_config = {}
+    redis_expire = config.get('redis_expire', None)
 
-    if not isinstance(redis_socket_path, str):
-        raise ValidationError({'redis_socket_path': _("'redis_socket_path' should be a string")})
+    # redis_expire validation
+    if redis_expire:
+        if not isinstance(redis_expire, int) or not redis_expire > 0:
+            raise ValidationError({'redis_expire': _("'redis_expire' should be a positive integer")})
+        else:
+            cleaned_config['redis_expire'] = redis_expire
+
+    return cleaned_config
+
+
+def validate_content_inspection_config(config):
+    cleaned_config = {}
+
+    yara_scan_type = config.get('yara_scan_type', None)
+    yara_policy_id = config.get('yara_policy_id', None)
+    yara_scan_max_size = config.get('yara_scan_max_size', None)
+    max_connections = config.get('max_connections', None)
+    max_memory_usage = config.get('max_memory_usage', None)
+
+    # Mandatory parameters
+    if not yara_scan_type:
+        raise ValidationError({'config': _("configuration should define 'yara_scan_type'")})
+    if not yara_policy_id:
+        raise ValidationError({'config': _("configuration should define 'yara_policy_id'")})
+
+    # yaraScanType validation
+    if not isinstance(yara_scan_type, str):
+        raise ValidationError({'yara_scan_type': _("should be a string")})
+    if yara_scan_type not in ['stream', 'packet']:
+        raise ValidationError({'yara_scan_type': _("should be either 'stream' or 'packet'")})
+    else:
+        cleaned_config['yaraScanType'] = yara_scan_type
+
+    # yaraRuleFile validation
+    if yara_policy_id:
+        if not isinstance(yara_policy_id, int):
+            raise ValidationError({'yara_policy_id': _("should be an integer")})
+        if not InspectionPolicy.objects.filter(pk=yara_policy_id).exists():
+            raise ValidationError({'yara_policy_id': _("yara policy {} not found".format(yara_policy_id))})
+        else:
+            cleaned_config['yara_policy_id'] = yara_policy_id
+
+    # yaraScanMaxSize validation
+    if yara_scan_max_size:
+        if not isinstance(yara_scan_max_size, int) or not yara_scan_max_size > 0:
+            raise ValidationError({'yara_scan_max_size': _("should be a positive integer")})
+        else:
+            cleaned_config['yaraScanMaxSize'] = yara_scan_max_size
+
+    # maxConnections validation
+    if max_connections:
+        if not isinstance(max_connections, int) or not max_connections > 0:
+            raise ValidationError({'max_connections': _("should be a positive integer")})
+        else:
+            cleaned_config['maxConnections'] = max_connections
+
+    # maxMemoryUsage validation
+    if max_memory_usage:
+        if not isinstance(max_memory_usage, int) or not max_memory_usage > 0:
+            raise ValidationError({'max_memory_usage': _("should be a positive integer")})
+        else:
+            cleaned_config['maxMemoryUsage'] = max_memory_usage
+
+    return cleaned_config
 
 
 def validate_dga_config(config):
-    token_map_path = config.get("token_map_path", None)
-    model_path = config.get("model_path", None)
+    cleaned_config = {}
 
-    if not token_map_path or not model_path:
-        raise ValidationError({'config': _("configuration should contain at least 'token_map_path' and 'model_path' parameters")})
+    token_map = config.get("token_map", None)
+    model = config.get("model", None)
+    max_tokens = config.get("max_tokens", None)
 
-    if token_map_path and not isinstance(token_map_path, str):
-        raise ValidationError({'token_map_path': _("'token_map_path' should be a string")})
-    if model_path and not isinstance(model_path, str):
-        raise ValidationError({'model_path': _("'model_path' should be a string")})
+    if not token_map or not model:
+        raise ValidationError({'config': _("configuration should contain at least 'token_map' and 'model' parameters")})
 
-    full_model_path = file_glob(DGA_MODELS_PATH + model_path)
-    full_token_map_path = file_glob(DGA_MODELS_PATH + token_map_path)
-
-    if not full_model_path:
-        raise ValidationError({'model_path': _("The model file '{}' is not valid".format(model_path))})
+    # tokep_map validation
+    if not isinstance(token_map, str):
+        raise ValidationError({'token_map': _("should be a string")})
     else:
-        config['model_path'] = full_model_path[0]
+        if not token_map in get_available_dga_models().get('token_maps', []):
+            raise ValidationError({'token_map': _("{} is not a valid choice".format(token_map))})
+        else:
+            cleaned_config['token_map'] = token_map
 
-    if not full_token_map_path:
-        raise ValidationError({'token_map_path': _("The token map file '{}' is not valid".format(token_map_path))})
+    # model validation
+    if not isinstance(model, str):
+        raise ValidationError({'model': _("should be a string")})
     else:
-        config['token_map_path'] = full_token_map_path[0]
+        if not model in get_available_dga_models().get('models', []):
+            raise ValidationError({'model': _("{} is not a valid choice".format(model))})
+        else:
+            cleaned_config['model'] = model
+
+    # max_tokens validation
+    if max_tokens:
+        if not isinstance(max_tokens, int) or not max_tokens > 0:
+            raise ValidationError({'max_tokens': _("should be a positive integer")})
+        else:
+            cleaned_config['max_tokens'] = max_tokens
+
+    return cleaned_config
 
 
 def validate_hostlookup_config(config):
-    reputation_id = config.get('database', None)
-    db_type = config.get('db_type', None)
+    cleaned_config = {}
 
-    if not reputation_id:
-        raise ValidationError({'config': _("configuration should contain at least the 'database' parameter")})
+    reputation_ctx_id = config.get('reputation_ctx_id', None)
 
-    if not isinstance(reputation_id, int):
-        raise ValidationError({'database': _("'database' should be a Reputation Context ID")})
+    if not reputation_ctx_id:
+        raise ValidationError({'config': _("configuration should contain at least the 'reputation_ctx_id' parameter")})
 
+    # reputation_ctx_id validation
+    if not isinstance(reputation_ctx_id, int):
+        raise ValidationError({'reputation_ctx_id': _("should be an integer")})
     try:
-        reputation_context = ReputationContext.objects.get(pk=reputation_id)
+        reputation_context = ReputationContext.objects.get(pk=reputation_ctx_id)
         if reputation_context.db_type not in HOSTLOOKUP_VALID_DB_TYPES:
-            raise ValidationError({'database': _("database ID {} does not have a valid db_type, correct types are {}".format(reputation_id, HOSTLOOKUP_VALID_DB_TYPES))})
-        config['database'] = reputation_context.absolute_filename
+            raise ValidationError({'reputation_ctx_id': _("reputation context {} does not have a valid db_type, correct types are {}".format(reputation_ctx_id, HOSTLOOKUP_VALID_DB_TYPES))})
         if reputation_context.db_type == "lookup":
-            config['db_type'] = 'rsyslog'
+            db_type = 'rsyslog'
         else:
-            config['db_type'] = 'text'
+            db_type = 'text'
+        cleaned_config['reputation_ctx_id'] = reputation_ctx_id
+        cleaned_config['db_type'] = db_type
     except ReputationContext.DoesNotExist:
-        raise ValidationError({'database': _("'database' with ID {} not found".format(reputation_id))})
+        raise ValidationError({'reputation_ctx_id': _("ID {} is not a valid reputation context".format(reputation_ctx_id))})
 
-    if db_type and not db_type in ['text', 'json', 'rsyslog']:
-        raise ValidationError({'db_type': _("'db_type' should be either 'text', 'json' or 'rsyslog'")})
+    return cleaned_config
+
+
+def validate_sofa_config(config):
+    cleaned_config = {}
+    return cleaned_config
+
+
+def validate_tanomaly_config(config):
+    cleaned_config = {}
+    return cleaned_config
 
 
 def validate_yara_config(config):
-    rule_file_list = config.get('rule_file_list', None)
+    cleaned_config = {}
 
-    if rule_file_list is None:
-        raise ValidationError({'config': _("configuration should contain at least the 'rule_file_list' parameter")})
+    yara_policies_id = config.get('yara_policies_id', None)
+    fastmode = config.get('fastmode', None)
+    timeout = config.get('timeout', None)
 
-    # If rule_file_list is not a list or is empty
-    if not isinstance(rule_file_list, list) or not rule_file_list:
-        raise ValidationError({'rule_file_list': _("'rule_file_list' should be a non-empty list")})
+    if yara_policies_id is None:
+        raise ValidationError({'config': _("configuration should contain at least the 'yara_policies_id' parameter")})
 
-    file_paths = []
-    for object_id in rule_file_list:
-        if not isinstance(object_id, int):
-            raise ValidationError({'rule_file_list': _("'{}' is not a yara policy ID".format(object_id))})
-        file_paths.append(validate_yara_file(object_id))
-    config['rule_file_list'] = file_paths
+    # yara_policies_id validation
+    if not isinstance(yara_policies_id, list) or yara_policies_id == []:
+        raise ValidationError({'yara_policies_id': _("should be a non-empty list")})
+    for yara_policy_id in yara_policies_id:
+        if not isinstance(yara_policy_id, int):
+            raise ValidationError({'yara_policies_id': _("values should be integers")})
+        if not InspectionPolicy.objects.filter(pk=yara_policy_id).exists():
+            raise ValidationError({'yara_policies_id': _("{} is not a valid inspection policy ID".format(yara_policy_id))})
+    cleaned_config["yara_policies_id"] = yara_policies_id
+
+    # fastmode validation
+    if fastmode:
+        if not isinstance(fastmode, bool):
+            raise ValidationError({'fastmode': _("should be a boolean")})
+        else:
+            cleaned_config['fastmode'] = fastmode
+
+    # timeout validation
+    if timeout:
+        if not isinstance(timeout, int) or timeout < 0:
+            raise ValidationError({'timeout': _("should be a positive integer or zero")})
+        else:
+            cleaned_config['timeout'] = timeout
+
+    return cleaned_config
+
 
 
 DARWIN_FILTER_CONFIG_VALIDATORS = {
+    'anomaly': validate_anomaly_config,
     'connection': validate_connection_config,
     'content_inspection': validate_content_inspection_config,
     'dga': validate_dga_config,
     'hostlookup': validate_hostlookup_config,
+    'sofa': validate_sofa_config,
+    'tanomaly': validate_tanomaly_config,
     'yara': validate_yara_config,
 }
 
@@ -338,7 +450,7 @@ class FilterPolicy(models.Model):
         default=[],
         blank=True,
         help_text=_("!!! ADVANCED FEATURE !!! the list of rsyslog fields to take when executing the custom call to Darwin (syntax is Rsyslog "),
-        )
+        validators=[validate_mmdarwin_parameters])
 
     weight = models.FloatField(
         default=1.0,
@@ -392,15 +504,14 @@ class FilterPolicy(models.Model):
     )
 
     def clean(self):
-        self.config['redis_socket_path'] = "/var/sockets/redis/redis.sock"
-        self.config['alert_redis_list_name'] = "darwin_alerts"
-        self.config['alert_redis_channel_name'] = "darwin.alerts"
-        self.config['log_file_path'] = "/var/log/darwin/alerts.log"
+        # get the validator associated to the filter (there should be one defined in the list, even when it has no configuration parameters)
+        conf_validator = DARWIN_FILTER_CONFIG_VALIDATORS.get(self.filter.name)
+        self.config = conf_validator(self.config)
 
-        conf_validator = DARWIN_FILTER_CONFIG_VALIDATORS.get(self.filter.name, None)
-
-        if conf_validator:
-            conf_validator(self.config)
+        self.config['redis_socket_path'] = REDIS_SOCKET_PATH
+        self.config['alert_redis_list_name'] = ALERTS_REDIS_LIST_NAME
+        self.config['alert_redis_channel_name'] = ALERTS_REDIS_CHANNEL_NAME
+        self.config['log_file_path'] = ALERTS_LOG_FILEPATH
 
 
     def save(self, *args, **kwargs):
@@ -437,6 +548,82 @@ class FilterPolicy(models.Model):
             "next_filter": self.next_filter,
             "config": self.config
         }
+
+    def conf_to_json(self):
+        """
+        Function to clean and validate filter configuration before translating it to string and writing it in the configuration file
+        """
+        json_conf = {}
+
+        # Those fields were already validated and don't need any modification, let them be in the resulting configuration as-is
+        PASS_THROUGH_FIELDS = ['redis_expire', 'max_tokens', 'fastmode', 'timeout', 'redis_socket_path', 'alert_redis_list_name', 'alert_redis_channel_name', 'log_file_path']
+
+        # Resolve yara_policy_id into yaraRuleFile for fcontent_inspection
+        yara_policy_id = self.config.get('yara_policy_id', None)
+        if yara_policy_id:
+            try:
+                yara_policy = InspectionPolicy.objects.get(pk=yara_policy_id)
+                json_conf['yaraRuleFile'] = yara_policy.get_full_filename()
+            except InspectionPolicy.DoesNotExist:
+                logger.error("FilterPolicy::conf_to_json:: Could not find InspectionPolicy with id {}".format(yara_policy_id))
+
+        # Resolve yara_policy_ids into rule_file_list for fyara
+        yara_policy_ids = self.config.get('yara_policy_ids', None)
+        if yara_policy_ids:
+            json_conf['rule_file_list'] = []
+            for yara_policy_id in yara_policy_ids:
+                try:
+                    yara_policy = InspectionPolicy.objects.get(pk=yara_policy_id)
+                    json_conf['rule_file_list'].append(yara_policy.get_full_filename())
+                except InspectionPolicy.DoesNotExist:
+                    logger.error("FilterPolicy::conf_to_json:: Could not find InspectionPolicy with id {}".format(yara_policy_id))
+
+        # Resolve reputation_ctx_id into database for fhostlookup
+        reputation_ctx_id = self.config.get('reputation_ctx_id', None)
+        if reputation_ctx_id:
+            try:
+                database = ReputationContext.objects.get(pk=reputation_ctx_id)
+                json_conf['database'] = database.absolute_filename
+            except ReputationContet.DoesNotExist:
+                logger.error("FilterPolicy::conf_to_json:: Could not find ReputationContext with id {}".format(reputation_ctx_id))
+
+        # generate dga model full path for fdga
+        model = self.config.get('model', None)
+        if model:
+            json_conf['model_path'] = DGA_MODELS_PATH + model
+
+        # generate dga token_map full path for fdga
+        token_map = self.config.get('token_map', None)
+        if token_map:
+            json_conf['token_map_path'] = DGA_MODELS_PATH + token_map
+
+        # rename content_inspection fields
+        yara_scan_type = self.config.get('yara_scan_type', None)
+        if yara_scan_type:
+            json_conf['yaraScanType'] = yara_scan_type
+        yara_scan_max_size = self.config.get('yara_scan_max_size', None)
+        if yara_scan_max_size:
+            json_conf['yaraScanMaxSize'] = yara_scan_max_size
+        max_connections = self.config.get('max_connections', None)
+        if max_connections:
+            json_conf['maxConnections'] = max_connections
+        max_memory_usage = self.config.get('max_memory_usage', None)
+        if max_memory_usage:
+            json_conf['maxMemoryUsage'] = max_memory_usage
+
+        # Add all listed fields without need for modification
+        for key, value in self.config.items():
+            if key in PASS_THROUGH_FIELDS:
+                json_conf[key] = value
+
+        # Finally, translate the dictionary into json string
+        try:
+            json_conf = json_dumps(json_conf, sort_keys=True, indent=4)
+        except Exception as e:
+            logger.error("FilterPolicy::conf_to_json:: could not dump config to json: {}".format(e))
+
+        return json_conf
+
 
     @staticmethod
     def str_attrs():

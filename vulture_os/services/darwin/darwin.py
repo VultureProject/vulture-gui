@@ -115,7 +115,9 @@ def build_conf(node_logger):
     result = "Configuration has not changed"
     service = DarwinService()
     node_logger.debug("Reloading conf of service Darwin.")
+
     conf_changed = service.reload_conf()
+
     if conf_changed:
         result = "Configuration has changed, restarting Darwin."
         result += service.restart()
@@ -145,8 +147,8 @@ def delete_filter_conf(node_logger, filter_conf_path):
         raise
 
     if error:
-        raise VultureSystemError(_(result))
-    return _(result)
+        raise VultureSystemError(result, "delete Darwin filter configuration {}".format(filter_conf_path))
+    return result
 
 
 def write_policy_conf(node_logger, policy_id):
@@ -158,7 +160,7 @@ def write_policy_conf(node_logger, policy_id):
     try:
         policy = DarwinPolicy.objects.get(pk=policy_id)
     except DarwinPolicy.DoesNotExist:
-        raise VultureSystemError(_("Could not get policy with id {}".format(policy_id)))
+        raise VultureSystemError("Could not get policy with id {}".format(policy_id), "write Darwin configuration files for a policy")
     logger.info("writing policy conf '{}'".format(policy.name))
 
     for filter_instance in policy.filterpolicy_set.all():
@@ -171,7 +173,7 @@ def write_policy_conf(node_logger, policy_id):
                     node_logger,
                     [
                         filter_instance.conf_path,
-                        "{}\n".format(json_dumps(filter_instance.config, sort_keys=True, indent=4)),
+                        "{}\n".format(filter_instance.conf_to_json()),
                         DARWIN_OWNERS, DARWIN_PERMS
                     ]
                 )
@@ -181,7 +183,7 @@ def write_policy_conf(node_logger, policy_id):
                 error = True
                 continue
 
-            result += "Successfully wrote file '{}'\n".format(filter_instance.conf_path)
+            result += "\nSuccessfully wrote file '{}'".format(filter_instance.conf_path)
 
         else:
             logger.info("filter '{}' not enabled, deleting conf".format(filter_instance.name))
@@ -201,8 +203,8 @@ def write_policy_conf(node_logger, policy_id):
                 logger.error("Darwin::write_policy_conf:: error while removing disabled filter config: {}".format(e))
 
     if error:
-        raise VultureSystemError(_(result))
-    return _(result)
+        raise VultureSystemError(result, "write Darwin configuration files for policy {}".format(policy_id))
+    return result
 
 
 def update_filter(node_logger, filter_id):

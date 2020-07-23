@@ -37,7 +37,7 @@ from django.utils.decorators import method_decorator
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
-from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, DGA_MODELS_PATH, validate_connection_config, validate_content_inspection_config, validate_dga_config
+from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, DGA_MODELS_PATH, validate_connection_config, validate_content_inspection_config, validate_dga_config, get_available_dga_models
 from darwin.policy.views import policy_edit, COMMAND_LIST
 from system.cluster.models import Cluster, Node
 from services.frontend.models import Frontend
@@ -57,25 +57,6 @@ logger = logging.getLogger('api')
 
 @method_decorator(csrf_exempt, name="dispatch")
 class DarwinFilterAPIv1(View):
-
-    @staticmethod
-    def get_available_dga_models():
-        """
-            Gets the list of available models and token maps for the DGA filter.
-            The files are returned without path, and should be given as-is during POST/PUT operations in policies
-        """
-        result = {}
-        result['models'] = []
-        result['tokens'] = []
-
-        for file in file_glob(DGA_MODELS_PATH + "*.pb"):
-            result['models'].append(file.split('/')[-1])
-
-        for file in file_glob(DGA_MODELS_PATH + "*.csv"):
-            result['tokens'].append(file.split('/')[-1])
-
-        return result
-
     @api_need_key('cluster_api_key')
     def get(self, request, filter_name=None):
         data = {}
@@ -95,7 +76,7 @@ class DarwinFilterAPIv1(View):
 
                 # There could be calls to get lists of available files for other filters
                 if filter_name == "dga":
-                    data.update(DarwinFilterAPIv1.get_available_dga_models())
+                    data.update(get_available_dga_models())
 
         except Exception as e:
             logger.critical(e, exc_info=1)
@@ -167,7 +148,7 @@ class DarwinPolicyAPIv1(View):
                 filter_instance.full_clean()
                 new_filters.append(filter_instance)
 
-            except (ValidationError, ValueError) as e:
+            except (ValidationError, ValueError, TypeError) as e:
                 logger.error(e)
                 return '"{}": {}'.format(filter_name, str(e))
 
@@ -204,10 +185,18 @@ class DarwinPolicyAPIv1(View):
                 return COMMAND_LIST[action](request, object_id, api=True)
             else:
                 #Create a new policy with filters
-                filters_list = json.loads(request.POST.get('filters', []))
+                if hasattr(request, "JSON"):
+                    filters_list = request.JSON.get('filters', [])
+                    name = request.JSON.get('name', '')
+                    description = request.JSON.get('description', '')
+                else:
+                    filters_list = json.loads(request.POST.get('filters', []))
+                    name = request.POST.get('name', '')
+                    description = request.POST.get('description', '')
+
                 policy = DarwinPolicy(
-                    name=request.POST.get("name", ""),
-                    description=request.POST.get("description", "")
+                    name=name,
+                    description=description
                 )
 
                 try:
@@ -258,11 +247,20 @@ class DarwinPolicyAPIv1(View):
     def put(self, request, object_id=None):
         try:
             if object_id:
-                filters = json.loads(request.JSON.get('filters', []))
+                if hasattr(request, "JSON"):
+                    filters = request.JSON.get('filters', [])
+                    name = request.JSON.get('name', '')
+                    description = request.JSON.get('description', '')
+                else:
+                    filters = json.loads(request.POST.get('filters', []))
+                    name = request.POST.get('name', '')
+                    description = request.POST.get('description', '')
+
+                filters = request.JSON.get('filters', [])
                 policy, created = DarwinPolicy.objects.get_or_create(pk=object_id)
 
-                policy.name = request.JSON.get('name', "")
-                policy.description = request.JSON.get('description', "")
+                policy.name = name
+                policy.description = name
 
                 try:
                     policy.full_clean()
