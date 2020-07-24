@@ -108,11 +108,14 @@ class SymantecParser(ApiParser):
 
         try:
             last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
-            timestamp = int(last_api_call.timestamp() * 1000)
-            params = f"startDate={timestamp}&endDate=0&token={token}"
+            # Begin date is in milisecond
+            begin_timestamp = int(last_api_call.timestamp() * 1000)
+            # End date = start date + 1h (in milisecond)
+            end_timestamp = int(last_api_call.timestamp() * 1000) + 3600000
+            params = f"startDate={begin_timestamp}&endDate={end_timestamp}&token={token}"
             url = f"{self.start_console_uri}{params}"
 
-            logger.debug("[SYMANTEC API PARSER] Retrieving symantec logs from api")
+            logger.debug("[SYMANTEC API PARSER] Retrieving symantec logs from {}".format(url))
 
             r = requests.get(
                 url,
@@ -157,6 +160,7 @@ class SymantecParser(ApiParser):
                         try:
                             with zipfile.ZipFile(tmp_file) as zip_file:
                                 for gzip_filename in zip_file.namelist():
+                                    logger.debug("[SYMANTEC API PARSER] Parsing archive {}".format(gzip_filename))
                                     data = []
                                     self.update_lock()
                                     gzip_file = BytesIO(zip_file.read(gzip_filename))
