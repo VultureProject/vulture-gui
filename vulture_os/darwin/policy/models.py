@@ -810,5 +810,3 @@ class FilterPolicy(models.Model):
     def __str__(self):
         return "[{}] {}".format(self.policy, self.name)
 
-    def mmdarwin_parameters_rsyslog_str(self):
-        return str(self.mmdarwin_parameters).replace("\'", "\"")
