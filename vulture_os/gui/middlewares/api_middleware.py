@@ -32,7 +32,7 @@ class PutParsingMiddleware(MiddlewareMixin):
     def process_request(self, request):
         if request.method in ("PUT", "DELETE") and not hasattr(request, "JSON"):
             return JsonResponse({
-                'error': _("Method is PUT and content-type is not JSON."),
+                'error': _("Method is {} and content-type is not JSON.".format(request.method)),
             }, status=400)
 
         if request.method == "PUT" and request.content_type != "application/json":
@@ -57,7 +57,10 @@ class JSONParsingMiddleware(MiddlewareMixin):
     def process_request(self, request):
         if request.method in ("PATCH", "PUT", "POST", "DELETE") and request.content_type == "application/json":
             try:
-                request.JSON = json.loads(request.body)
+                if not request.body:
+                    request.JSON = {}
+                else:
+                    request.JSON = json.loads(request.body)
 
             except ValueError as error:
                 return HttpResponseBadRequest(
