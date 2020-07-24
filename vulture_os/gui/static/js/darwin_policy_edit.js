@@ -104,7 +104,8 @@ function init_vue(){
 
       dga_model_choices: [],
       dga_token_choices: [],
-      yara_rule_file_list: [],
+      yara_policies_id: [],
+      yara_policies_list: [],
       hostlookup_reputation_choices: []
     },
 
@@ -234,8 +235,8 @@ function init_vue(){
           
           case "yara":
             let rule_file_list = []
-            for (let id of filter.config.yara_rule_file_list){
-              for (let tmp of this.yara_rule_file_list){
+            for (let id of filter.config.yara_policies_id){
+              for (let tmp of this.yara_policies_id){
                 if (id === tmp.id)
                   rule_file_list.push(`<label class='label label-primary'>${tmp.label}</label>`)
               }
@@ -340,9 +341,9 @@ function init_vue(){
           null,
 
           function(response) {
-            self.yara_rule_file_list = []
+            self.yara_policies_list = []
             for (let tmp of response.data){
-              self.yara_rule_file_list.push({
+              self.yara_policies_list.push({
                 label: tmp.name,
                 id: tmp.id
               })
@@ -442,7 +443,7 @@ function init_vue(){
               case "yara":
                 config.fast_mode = tmp_filter.config.fast_mode
                 config.timeout = tmp_filter.config.timeout
-                config.yara_rule_file_list = tmp_filter.config.yara_rule_file_list
+                config.yara_policies_id = tmp_filter.config.yara_policies_id
                 break
           }
 
