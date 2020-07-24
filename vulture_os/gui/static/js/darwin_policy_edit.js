@@ -65,24 +65,24 @@ function init_vue(){
       filter: {
         name: "",
         enabled: true,
-        log_level: "DEBUG",
+        log_level: "WARNING",
         threshold: 80,
         nb_thread: 5,
         weight: 1.0,
         cache_size: 0,
-        is_configured: false,
         mmdarwin_enabled: false,
         mmdarwin_parameters: [],
         config: {
           redis_expire: 300,
           max_connections: 64000,
-          yaraScanType: "packet",
+          yara_scan_type: "packet",
           yara_scan_max_size: 16384,
           max_memory_usage: 200,
-          yara_rule_file: null,
-          database: null,
+          yara_policy_id: null,
+          reputation_ctx_id: null,
+          max_tokens: 75,
           timeout: 0,
-          token_map_path: null,
+          token_map: null,
           model_path: null
         }
       },
@@ -105,7 +105,7 @@ function init_vue(){
       dga_model_choices: [],
       dga_token_choices: [],
       yara_rule_file_list: [],
-      hostlookup_database_choices: []
+      hostlookup_reputation_choices: []
     },
 
     mounted() {
@@ -156,8 +156,6 @@ function init_vue(){
           this.fetch_dga_models()
         else if (val === "yara")
           this.fetch_yara_rule_file()
-
-        this.filter.is_configured = true
       }
     },
     
@@ -177,7 +175,7 @@ function init_vue(){
           "DEBUG": "label-primary",
           "INFO": "label-info",
           "WARNING": "label-warning",
-          "DANGER": "label-danger"
+          "ERROR": "label-danger"
         }
 
         return `<label class='label ${mapping[val]}'>${val}</label>`
@@ -208,13 +206,13 @@ function init_vue(){
           case "content_inspection":
             let label_yara_rule_file = ""
             for (let file of this.yara_rule_file_choices){
-              if (file.id === filter.config.yara_rule_file)
+              if (file.id === filter.config.yara_policy_id)
                 label_yara_rule_file = file.label
             }
 
             customConfig = `
               <p><b>${gettext("Max connexions")}:</b> ${filter.config.max_connections}</p>
-              <p><b>${gettext("Yara Scan Type")}:</b> ${filter.config.yaraScanType}</p>
+              <p><b>${gettext("Yara Scan Type")}:</b> ${filter.config.yara_scan_type}</p>
               <p><b>${gettext("Yara Scan Max Size")}:</b> ${filter.config.yara_scan_max_size}</p>
               <p><b>${gettext("Max Memory usage")}:</b> ${filter.config.max_memory_usage}</p>
               <p><b>${gettext("Yara Rule File")}:</b> ${label_yara_rule_file}</p>
@@ -224,13 +222,13 @@ function init_vue(){
           case "dga":
             customConfig = `
               <p><b>${gettext('Model')}:</b> ${filter.config.model_path}</p>
-              <p><b>${gettext('Token')}:</b> ${filter.config.token_map_path}</p>
+              <p><b>${gettext('Token')}:</b> ${filter.config.token_map}</p>
             `
             break
           
           case "hostlookup":
             customConfig = `
-              <p><b>${gettext("Database")}:</b> ${filter.config.database}</p>
+              <p><b>${gettext("Database")}:</b> ${filter.config.reputation_ctx_id}</p>
             `
             break
           
@@ -273,7 +271,10 @@ function init_vue(){
               })
             }
           }
-        )
+        ).fail(function(response) {
+          let error = response.responseJSON.error
+          notify('error', gettext('Error'), error)
+        })
       },
 
       fetch_reputation_ctx() {
@@ -284,17 +285,20 @@ function init_vue(){
           null,
 
           function(response) {
-            self.hostlookup_database_choices = []
+            self.hostlookup_reputation_choices = []
             for (let tmp of response.data){
               if ($.inArray(tmp.db_type, ["ipv4_netset", "ipv6_netset", "domain", "lookup"]) > -1){
-                self.hostlookup_database_choices.push({
+                self.hostlookup_reputation_choices.push({
                   label: tmp.name,
                   id: tmp.id
                 })
               }
             }
           }
-        )
+        ).fail(function(response) {
+          let error = response.responseJSON.error
+          notify('error', gettext('Error'), error)
+        })
       },
 
       fetch_dga_models() {
@@ -306,7 +310,7 @@ function init_vue(){
 
           function(response){
             self.dga_model_choices = []
-            self.token_map_path = []
+            self.token_map = []
 
             for (let tmp of response.data.models){
               self.dga_model_choices.push({
@@ -322,7 +326,10 @@ function init_vue(){
               })
             }
           }
-        )
+        ).fail(function(response) {
+          let error = response.responseJSON.error
+          notify('error', gettext('Error'), error)
+        })
       },
 
       fetch_yara_rule_file() {
@@ -354,14 +361,15 @@ function init_vue(){
 
       editFilter(index){
         this.filter = this.policy.filters[index]
-        this.selected_filter = this.filter.name
         this.policy.filters.splice(index, 1)
-        this.filter.is_configured = true
       },
 
       addFilter() {
+        if (!this.filter.name)
+          return
+
         if (this.filter.name === "dga"){
-          if (!this.filter.config.model_path || !this.filter.config.token_map_path){
+          if (!this.filter.config.model_path || !this.filter.config.token_map){
             notify('error', gettext("Error"), gettext("Please fill all required field"))
             return
           }
@@ -375,28 +383,27 @@ function init_vue(){
         this.filter = {
           name: "",
           enabled: true,
-          log_level: "DEBUG",
+          log_level: "WARNING",
           threshold: 80,
           nb_thread: 5,
           weight: 1.0,
           cache_size: 0,
-          is_configured: false,
           mmdarwin_enabled: false,
           mmdarwin_parameters: [],
           config: {
             redis_expire: 300,
             max_connections: 64000,
-            yaraScanType: "packet",
+            yara_scan_type: "packet",
             yara_scan_max_size: 16384,
             max_memory_usage: 200,
-            yara_rule_file: null,
-            database: null,
+            yara_policy_id: null,
+            reputation_ctx_id: null,
             timeout: 0,
-            token_map_path: null,
+            max_tokens: 75,
+            token_map: null,
             model_path: null
           }
         }
-        this.selected_filter = null
       },
 
       removeFilter(index) {
@@ -417,19 +424,19 @@ function init_vue(){
             
             case "content_inspection":
               config.max_connections = tmp_filter.config.max_connections
-              config.yaraScanType = tmp_filter.config.yaraScanType
+              config.yara_scan_type = tmp_filter.config.yara_scan_type
               config.yara_scan_max_size = tmp_filter.config.yara_scan_max_size
               config.max_memory_usage = tmp_filter.config.max_memory_usage
-              config.yara_rule_file = tmp_filter.config.yara_rule_file
+              config.yara_policy_id = tmp_filter.config.yara_policy_id
               break
             
               case "dga":
                 config.model_path = tmp_filter.config.model_path
-                config.token_map_path = tmp_filter.config.token_map_path
+                config.token_map = tmp_filter.config.token_map
                 break
               
               case "hostlookup":
-                config.database = tmp_filter.config.database
+                config.reputation_ctx_id = tmp_filter.config.reputation_ctx_id
                 break
               
               case "yara":

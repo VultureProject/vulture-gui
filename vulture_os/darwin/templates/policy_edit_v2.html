@@ -90,10 +90,10 @@
           <div class="panel">
             <div class="panel-heading">
               <div class="panel-control">
-
               </div>
               <h3 class="panel-title"><i class="fa fa-bolt">&nbsp;</i>{% trans "Filter" %}</h3>
             </div>
+
             <div class="panel-body">
               <div class="form-group col-md-12">
                 <label class="col-sm-4 control-label">{% trans "Filter" %}:</label>
@@ -210,7 +210,7 @@
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Yara Scan Type" %}:</label>
                       <div class="col-sm-5">
-                        <v-select :options="yara_scan_type_choices" v-model="filter.config.yaraScanType" :reduce="elem => elem.id"/>
+                        <v-select :options="yara_scan_type_choices" v-model="filter.config.yara_scan_type" :reduce="elem => elem.id"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
                         <small class="help-block">{% trans "Either 'packet' (scan data in packet without stream recomposition), or 'stream' (recompose TCP stream, then scan the recomposition)" %}</small>
@@ -236,7 +236,7 @@
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Yara Policy" %}:</label>
                       <div class="col-sm-5">
-                        <v-select :options="yara_rule_file_choices" v-model="filter.config.yara_rule_file" :reduce="elem => elem.id"/>
+                        <v-select :options="yara_rule_file_choices" v-model="filter.config.yara_policy_id" :reduce="elem => elem.id"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
                         <small class="help-block">{% trans "Yara policy with rules to use when scanning data" %}</small>
@@ -263,13 +263,20 @@
                         <small class="help-block">{% trans "The token map to use with the model" %}</small>
                       </div>
                     </div>
+                    <div class="col-md-12 form-group">
+                      <label class="col-sm-4 control-label">{% trans "Max token" %}:</label>
+                      <div class="col-sm-5">
+                        <input type="number" v-model="filter.config.max_tokens" class="form-control" min="0">
+                        <small class="help-block">{% trans "The maximum number of tokens from domain to take into account during calculation" %}</small>
+                      </div>
+                    </div>
                   </div>
-
+                  
                   <div v-if="filter.name === 'hostlookup'">
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Database" %}:</label>
                       <div class="col-sm-5">
-                        <v-select :options="hostlookup_database_choices" v-model="filter.config.database" :reduce="elem => elem.id"/>
+                        <v-select :options="hostlookup_reputation_choices" v-model="filter.config.reputation_ctx_id" :reduce="elem => elem.id"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
                         <small class="help-block">{% trans "The list of yara policies to use for detection" %}</small>
@@ -309,7 +316,7 @@
             </div>
 
             <div class="panel-footer text-right">
-              <button type="button" @click="addFilter" v-if="filter.is_configured" class="btn btn-default btn-primary"><i class="fa fa-plus"></i>&nbsp;Add filter</button>
+              <button type="button" @click="addFilter" v-if="filter.name" class="btn btn-primary"><i class="fa fa-plus"></i>&nbsp;Add filter</button>
             </div>
           </div>
         </div>
