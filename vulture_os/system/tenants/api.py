@@ -31,7 +31,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from gui.decorators.apicall import api_need_key
 from system.tenants.models import Tenants
-from system.tenants.views import tenants_edit
+from system.tenants.views import tenants_edit, tenants_delete
 
 # Logger configuration imports
 import logging
@@ -42,9 +42,18 @@ logger = logging.getLogger('api')
 @method_decorator(csrf_exempt, name="dispatch")
 class TenantsAPIv1(View):
     @api_need_key('cluster_api_key')
-    def get(self, request):
+    def get(self, request, object_id=None):
         try:
-            obj = [s.to_dict() for s in Tenants.objects.all()]
+            if object_id:
+                try:
+                    obj = Tenants.objects.get(pk=object_id).to_dict()
+                except Tenants.DoesNotExist:
+                    return JsonResponse({
+                        'error': _('Object does not exist')
+                    }, status=404)
+            else:
+                obj = [s.to_dict() for s in Tenants.objects.all()]
+
             return JsonResponse({
                 'data': obj
             })
@@ -111,3 +120,19 @@ class TenantsAPIv1(View):
         return JsonResponse({
             'error': error
         }, status=500)
+
+    @api_need_key('cluster_api_key')
+    def delete(self, request, object_id):
+        try:
+            return tenants_delete(request, object_id, api=True)
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+            return JsonResponse({
+                'error': error
+            }, status=500)
