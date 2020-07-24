@@ -23,7 +23,6 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Darwin Policy APIs'
 
-import json
 
 # Django system imports
 from django.conf import settings
@@ -45,9 +44,10 @@ from toolkit.api.responses import build_response
 
 
 # Extern modules imports
-from sys import exc_info
-from pymongo.errors import DuplicateKeyError
 from glob import glob as file_glob
+import json
+from pymongo.errors import DuplicateKeyError
+from sys import exc_info
 
 # Logger configuration imports
 import logging
@@ -185,6 +185,7 @@ class DarwinPolicyAPIv1(View):
                 return COMMAND_LIST[action](request, object_id, api=True)
             else:
                 #Create a new policy with filters
+                # Content could be in POST when coming from GUI
                 if hasattr(request, "JSON"):
                     filters_list = request.JSON.get('filters', [])
                     name = request.JSON.get('name', '')
@@ -247,16 +248,22 @@ class DarwinPolicyAPIv1(View):
     def put(self, request, object_id=None):
         try:
             if object_id:
-                if hasattr(request, "JSON"):
-                    filters = request.JSON.get('filters', [])
-                    name = request.JSON.get('name', '')
-                    description = request.JSON.get('description', '')
-                else:
-                    filters = json.loads(request.POST.get('filters', []))
-                    name = request.POST.get('name', '')
-                    description = request.POST.get('description', '')
-
+                # Content should always be JSON here
                 filters = request.JSON.get('filters', [])
+                name = request.JSON.get('name', '')
+                description = request.JSON.get('description', '')
+                # filters object might be a string when coming from GUI
+                if isinstance(filters, str):
+                    try:
+                        filters = json.loads(filters)
+                    except json.JsonDecodeError as e:
+                        logger.error(e)
+                        return JsonResponse({
+                            'error': str(e)
+                        }, status=400)
+
+                logger.info("filters type: {}".format(type(filters)))
+
                 policy, created = DarwinPolicy.objects.get_or_create(pk=object_id)
 
                 policy.name = name
