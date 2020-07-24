@@ -123,7 +123,7 @@ def validate_connection_config(config):
     redis_expire = config.get('redis_expire', None)
 
     # redis_expire validation
-    if redis_expire:
+    if redis_expire is not None:
         if not isinstance(redis_expire, int) or not redis_expire > 0:
             raise ValidationError({'redis_expire': _("'redis_expire' should be a positive integer")})
         else:
@@ -156,30 +156,29 @@ def validate_content_inspection_config(config):
         cleaned_config['yaraScanType'] = yara_scan_type
 
     # yaraRuleFile validation
-    if yara_policy_id:
-        if not isinstance(yara_policy_id, int):
-            raise ValidationError({'yara_policy_id': _("should be an integer")})
-        if not InspectionPolicy.objects.filter(pk=yara_policy_id).exists():
-            raise ValidationError({'yara_policy_id': _("yara policy {} not found".format(yara_policy_id))})
-        else:
-            cleaned_config['yara_policy_id'] = yara_policy_id
+    if not isinstance(yara_policy_id, int):
+        raise ValidationError({'yara_policy_id': _("should be an integer")})
+    if not InspectionPolicy.objects.filter(pk=yara_policy_id).exists():
+        raise ValidationError({'yara_policy_id': _("yara policy {} not found".format(yara_policy_id))})
+    else:
+        cleaned_config['yara_policy_id'] = yara_policy_id
 
     # yaraScanMaxSize validation
-    if yara_scan_max_size:
+    if yara_scan_max_size is not None:
         if not isinstance(yara_scan_max_size, int) or not yara_scan_max_size > 0:
             raise ValidationError({'yara_scan_max_size': _("should be a positive integer")})
         else:
             cleaned_config['yaraScanMaxSize'] = yara_scan_max_size
 
     # maxConnections validation
-    if max_connections:
+    if max_connections is not None:
         if not isinstance(max_connections, int) or not max_connections > 0:
             raise ValidationError({'max_connections': _("should be a positive integer")})
         else:
             cleaned_config['maxConnections'] = max_connections
 
     # maxMemoryUsage validation
-    if max_memory_usage:
+    if max_memory_usage is not None:
         if not isinstance(max_memory_usage, int) or not max_memory_usage > 0:
             raise ValidationError({'max_memory_usage': _("should be a positive integer")})
         else:
@@ -217,7 +216,7 @@ def validate_dga_config(config):
             cleaned_config['model'] = model
 
     # max_tokens validation
-    if max_tokens:
+    if max_tokens is not None:
         if not isinstance(max_tokens, int) or not max_tokens > 0:
             raise ValidationError({'max_tokens': _("should be a positive integer")})
         else:
@@ -284,14 +283,14 @@ def validate_yara_config(config):
     cleaned_config["yara_policies_id"] = yara_policies_id
 
     # fastmode validation
-    if fastmode:
+    if fastmode is not None:
         if not isinstance(fastmode, bool):
             raise ValidationError({'fastmode': _("should be a boolean")})
         else:
             cleaned_config['fastmode'] = fastmode
 
     # timeout validation
-    if timeout:
+    if timeout is not None:
         if not isinstance(timeout, int) or timeout < 0:
             raise ValidationError({'timeout': _("should be a positive integer or zero")})
         else:
