@@ -59,6 +59,7 @@ class Tenants(models.Model):
 
     def to_dict(self):
         result = {
+            'id': self.id,
             'name': self.name,
             'predator_apikey': self.predator_apikey,
             'shodan_apikey': self.shodan_apikey

@@ -39,14 +39,16 @@ def execute_parser(frontend):
 
     parser = parser_class(frontend)
     if not parser.can_run():
-        logger.info("Another instance is running")
+        logger.info("API Parser {} (tenant={}): already running".format(frontend['name'], frontend['tenant_name']))
         return
     try:
+        logger.info("API Parser {} (tenant={}): starting".format(frontend['name'], frontend['tenant_name']))
         parser.execute()
     except Exception as e:
         logger.exception(e)
     finally:
         # Delete running key in redis
+        logger.info("API Parser {} (tenant={}): ending".format(frontend['name'], frontend['tenant_name']))
         parser.finish()
 
 
