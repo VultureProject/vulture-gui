@@ -248,7 +248,7 @@
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Model" %}:</label>
                       <div class="col-sm-5">
-                        <v-select :options="dga_model_choices" v-model="filter.config.model_path" :reduce="elem => elem.id"/>
+                        <v-select :options="dga_model_choices" v-model="filter.config.model" :reduce="elem => elem.id"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
                         <small class="help-block">{% trans "The tensorflow model to use during detection" %}</small>
@@ -257,7 +257,7 @@
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Token" %}:</label>
                       <div class="col-sm-5">
-                        <v-select :options="dga_token_choices" v-model="filter.config.token_map_path" :reduce="elem => elem.id"/>
+                        <v-select :options="dga_token_choices" v-model="filter.config.token_map" :reduce="elem => elem.id"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
                         <small class="help-block">{% trans "The token map to use with the model" %}</small>
