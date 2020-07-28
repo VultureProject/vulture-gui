@@ -320,7 +320,7 @@ function init_vue(){
               })
             }
 
-            for (let tmp of response.data.tokens_maps){
+            for (let tmp of response.data.token_maps){
               self.dga_token_choices.push({
                 label: tmp,
                 id: tmp
