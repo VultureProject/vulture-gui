@@ -82,7 +82,7 @@ function init_vue(){
           reputation_ctx_id: null,
           max_tokens: 75,
           timeout: 0,
-          token_map: null,
+          token_map_path: null,
           model_path: null
         }
       },
@@ -223,7 +223,7 @@ function init_vue(){
           case "dga":
             customConfig = `
               <p><b>${gettext('Model')}:</b> ${filter.config.model_path}</p>
-              <p><b>${gettext('Token')}:</b> ${filter.config.token_map}</p>
+              <p><b>${gettext('Token')}:</b> ${filter.config.token_map_path}</p>
             `
             break
           
@@ -311,7 +311,7 @@ function init_vue(){
 
           function(response){
             self.dga_model_choices = []
-            self.token_map = []
+            self.dga_token_choices = []
 
             for (let tmp of response.data.models){
               self.dga_model_choices.push({
@@ -370,7 +370,7 @@ function init_vue(){
           return
 
         if (this.filter.name === "dga"){
-          if (!this.filter.config.model_path || !this.filter.config.token_map){
+          if (!this.filter.config.model_path || !this.filter.config.token_map_path){
             notify('error', gettext("Error"), gettext("Please fill all required field"))
             return
           }
@@ -401,7 +401,7 @@ function init_vue(){
             reputation_ctx_id: null,
             timeout: 0,
             max_tokens: 75,
-            token_map: null,
+            token_map_path: null,
             model_path: null
           }
         }
@@ -433,7 +433,7 @@ function init_vue(){
             
               case "dga":
                 config.model_path = tmp_filter.config.model_path
-                config.token_map = tmp_filter.config.token_map
+                config.token_map_path = tmp_filter.config.token_map_path
                 break
               
               case "hostlookup":
