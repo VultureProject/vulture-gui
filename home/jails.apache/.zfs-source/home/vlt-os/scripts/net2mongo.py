@@ -64,10 +64,13 @@ if __name__ == "__main__":
     """ Read system configuration """
     with open("/etc/rc.conf.d/network", "r") as f:
         pattern_ifconfig = re.compile("^ifconfig_(.*)=(.*)")
-        pattern_inet6 = re.compile("inet6 (.*)(( prefixlen )|(/))(.*)")
-        pattern_inet = re.compile("inet (.*)(( netmask )|(/))(.*)")
+        pattern_inet6 = re.compile("inet6 (.*)(( prefixlen )|(/))([0-9\.]+)")
+        pattern_inet = re.compile("inet (.*)(( netmask )|(/))([0-9\.]+)")
         pattern_gateway = re.compile("^defaultrouter=(.*)")
         pattern_gateway6 = re.compile("^ipv6_defaultrouter=(.*)")
+        pattern_vlan = re.compile("vlan ([0-9]+)")
+        pattern_vlandev = re.compile("vlandev ([a-z0-9\.]+)")
+        pattern_fib = re.compile("fib ([0-9])")
 
         defaultgateway = None
         defaultgateway_ipv6 = None
@@ -78,6 +81,9 @@ if __name__ == "__main__":
             m = re.search(pattern_ifconfig, line)
             nic = None
             ip = None
+            vlan = None
+            vlandev = None
+            fib = None
             prefix_or_netmask = None
             gw = None
             ipv6 = False
@@ -92,7 +98,10 @@ if __name__ == "__main__":
                     ipv6 = True
                 else:
                     nic = tmp
-                    ipv6 = False
+                    if "inet6" in config:
+                        ipv6 = True
+                    else:
+                        ipv6 = False
 
                 if not nic:
                     logger.error("Node::network_sync(): Unable to retrieve config: Unknown NIC !")
@@ -152,12 +161,24 @@ if __name__ == "__main__":
                     prefix_or_netmask = m.group(5)
 
                 if not ip:
-                    logger.error("Node::network_sync(): Unable to retrieve IP address !")
+                    logger.info("Node::network_sync(): Warning: No IP address associated to {}".format(nic))
                     continue
 
                 if not prefix_or_netmask:
                     logger.error("Node::network_sync(): Unable to retrieve prefix_or_netmask !")
                     continue
+
+                m = re.search(pattern_vlan, config)
+                if m:
+                    vlan = m.group(1)
+                    
+                m = re.search(pattern_vlan, config)
+                if m:
+                    vlandev = m.group(1)
+
+                m = re.search(pattern_fib, config)
+                if m:
+                    fib = m.group(1)
 
             else:
                 m = re.search(pattern_gateway, line)
@@ -198,22 +219,38 @@ if __name__ == "__main__":
                 """ No existing IP address on this NIC
                     This is a first call => Just create the IP Address
                 """
+                
                 if not have_one:
                     logger.info("Node::network_sync(): Creating new IP address on NIC {} : {}/{}".format(d.dev, ip, prefix_or_netmask))
+                    if vlandev:
+                        try:
+                            vd = NetworkInterfaceCard.objects.get(dev="vlan"+str(vlandev), node=this_node)
+                        except NetworkInterfaceCard.DoesNotExist as e:
+                            logger.error("Node::network_sync(): Unable to find nic related to '{}'".format(vlandev))
+                            continue
+
+                        vlandev = vd
+
                     existing_address = NetworkAddress(
                         name="System",
                         ip=ip,
                         prefix_or_netmask=prefix_or_netmask,
                         is_system=True,
-                        carp_vhid=0
+                        carp_vhid=0,
+                        vlan=vlan,
+                        vlandev=vlandev,
+                        fib=fib
                     )
                     existing_address.save()
                     NetworkAddressNIC.objects.create(nic=d, network_address=existing_address)
 
                 elif existing_address.ip != ip or existing_address.prefix_or_netmask != prefix_or_netmask:
-                    logger.info("Node::network_sync(): Updating IP address on NIC {} : {}/{}".format(d.dev, ip, prefix_or_netmask))
+                    logger.info("Node::network_sync(): Updating IP address on NIC {} : {}/{} {} {} {}".format(d.dev, ip, prefix_or_netmask, vlan, vlandev, fib))
                     existing_address.ip = ip
                     existing_address.prefix_or_netmask = prefix_or_netmask
+                    existing_address.vlan = vlan
+                    existing_address.vlandev = vlandev
+                    existing_address.fib = fib
                     existing_address.save()
 
         """ Update node with default gateways, if any """

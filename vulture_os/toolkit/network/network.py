@@ -362,7 +362,7 @@ def address_cleanup(logger):
 def write_network_config(logger):
     """ Synchronize network configuration on disk
 
-     :param logger: A logger handler
+    :param logger: A logger handler
     :param netif_id: The _id of the related Network Address we are working on
     :return: True / False
     """

@@ -118,7 +118,7 @@ class Node(models.Model):
         }
 
     def to_dict(self):
-        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0", "lagg0")
+        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
         intfs = [n.to_dict() for n in NetworkInterfaceCard.objects.filter(node=self).exclude(dev__in=excluded_intf)]
 
         return {
@@ -576,7 +576,7 @@ class NetworkInterfaceCard(models.Model):
         :return: ['em0', 'lo0', ...]
         """
         return list(set(subprocess.check_output(['/sbin/ifconfig', '-l']).strip().decode('utf-8').split(' ')) -
-                    {'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6', 'pflog0', 'vm-public', 'tap0', 'tun0', 'lagg0'})
+                    {'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6', 'pflog0', 'vm-public', 'tap0', 'tun0'})
 
     def get_running_addresses(self):
         """ Retrieve available RUNNING IP addresses on the NIC
@@ -652,6 +652,13 @@ class NetworkAddress(models.Model):
     prefix_or_netmask = models.TextField()
     is_system = models.BooleanField(default=False)
     carp_vhid = models.SmallIntegerField(default=0)
+    vlan = models.SmallIntegerField(default=0)
+    vlandev = models.ForeignKey(to="NetworkInterfaceCard", null=True, blank=True,
+                                related_name='%(class)s_vlandev',
+                                on_delete=models.SET_NULL,
+                                help_text=_("Underlying NIC for VLAN"),
+                                verbose_name=_("Vlan device"))
+    fib = models.SmallIntegerField(default=0)
 
     # Needed to make alambiquate mongodb queries
     objects = models.DjongoManager()
@@ -663,7 +670,9 @@ class NetworkAddress(models.Model):
             'ip': self.ip,
             'is_system': self.is_system,
             'prefix_or_netmask': self.prefix_or_netmask,
-            'carp_vhid': self.carp_vhid
+            'carp_vhid': self.carp_vhid,
+            'vlan': self.vlan,
+            'fib': self.fib
         }
 
     def to_template(self):
@@ -678,6 +687,11 @@ class NetworkAddress(models.Model):
             nic = address_nic.nic
             nic_list.append(str(nic))
 
+        if self.vlandev:
+            vlandev = self.vlandev.dev
+        else:
+            vlandev = None
+
         conf = {
             'id': str(self.id),
             'name': self.name,
@@ -685,7 +699,10 @@ class NetworkAddress(models.Model):
             'ip': self.ip,
             'is_system': self.is_system,
             'prefix_or_netmask': self.prefix_or_netmask,
-            'carp_vhid': self.carp_vhid
+            'carp_vhid': self.carp_vhid,
+            'vlan': self.vlan,
+            'vlandev': vlandev,
+            'fib': self.fib
         }
 
         return conf
@@ -693,6 +710,12 @@ class NetworkAddress(models.Model):
     @property
     def is_carp(self):
         if self.carp_vhid > 0:
+            return True
+        return False
+
+    @property
+    def is_vlan(self):
+        if self.is_vlan > 0:
             return True
         return False
 
@@ -777,7 +800,12 @@ class NetworkAddress(models.Model):
             else:
                 device = "{}_alias".format(dev)
                 device += '{}'
+
             inet = "{} {}".format(self.family, self.ip_cidr)
+            if self.fib and self.fib !=0:
+                inet = inet + " fib " + str(self.fib)
+            if self.vlan and self.vlan !=0 and self.vlandev:
+                inet = inet + " vlan " + str(self.vlan) + " vlandev " + self.vlandev.dev
 
         if self.family == 'inet6':
             device += "_ipv6"
