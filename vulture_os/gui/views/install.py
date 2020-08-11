@@ -171,13 +171,6 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Download reputation databases before crontab """
     node.api_request("gui.crontab.feed.security_update")
 
-    """ And configure + restart netdata """
-    logger.debug("API call to netdata configure_node")
-    node.api_request('services.netdata.netdata.configure_node')
-
-    logger.debug("API call to restart netdata service")
-    node.api_request('services.netdata.netdata.restart_service')
-
     """ No need to restart rsyslog because the conf is not complete """
     logger.debug("API call to configure rsyslog")
     node.api_request("services.rsyslogd.rsyslog.build_conf")
@@ -355,14 +348,6 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     """ Download reputation databases before crontab """
     node.api_request("gui.crontab.feed.security_update")
-
-    """ And configure + restart netdata """
-    logger.debug("API call to netdata configure_node")
-    # API call to Cluster - to refresh nodes on each node conf
-    Cluster.api_request('services.netdata.netdata.configure_node')
-
-    logger.debug("API call to restart netdata service")
-    node.api_request('services.netdata.netdata.restart_service')
 
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")

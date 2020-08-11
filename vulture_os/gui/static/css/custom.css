@@ -525,10 +525,6 @@ li {
     z-index: 1;
 }
 
-.tabs-netdata{
-    /*background: #272B30 !important;*/
-}
-
 .logo_service{
     width: 40px;
 }
@@ -555,10 +551,6 @@ li {
 
 .small-box-sm{
     padding: 1px 10px;
-}
-
-.netdata-row{
-    text-align: center;
 }
 
 .box-title-lg{
@@ -593,16 +585,12 @@ ul li{
     list-style-type: none;
 }
 
-.netdata-panel{
-    background-color: #272B30;
-}
-
-.netdata-panel .panel-title{
-    color: #ccc !important;
+.panel-title{
+    color: #333 !important;
 }
 
 .table-monitoring thead tr th{
-    color: #ccc !important;
+    color: #333 !important;
 }
 
 .text-green{

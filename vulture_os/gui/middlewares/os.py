@@ -59,11 +59,6 @@ class OsMiddleware:
         if request.path_info.startswith('/api/'):
             return self.get_response(request)
             
-        # Allow netdata request from other Vulture members
-        if request.path_info.startswith('/netdata/'):
-            for n in Node.objects.all():
-                if n.management_ip == request.META['REMOTE_ADDR']:
-                    return self.get_response(request)
 
         # Check if is authenticated
         if "login" in request.path_info:

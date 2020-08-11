@@ -88,11 +88,6 @@ class Service:
             'text': _('Services'),
             'url': "#",
             'submenu': [{
-                'link': 'netdata',
-                'text': 'Netdata',
-                'url': '/services/netdata/',
-                'state': self.last_status(service_name='netdata')[0]
-            }, {
                 'link': 'frontend',
                 'text': 'Listeners',
                 'url': '/services/frontend/',
@@ -303,7 +298,7 @@ class Service:
                                      self.service_name)
 
     def get_dict_conf(self):
-        """ Retrieve netdata configuration
+        """ Retrieve configuration
         :return  Configuration for jinja template as dict
         """
         model_object = self.model.objects.get()

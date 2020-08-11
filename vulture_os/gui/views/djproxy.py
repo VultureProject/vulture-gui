@@ -28,24 +28,6 @@ from django.views.decorators.csrf import csrf_exempt
 from djproxy.views import HttpProxy
 from toolkit.network.network import get_management_ip
 
-
-class proxy_netdata(HttpProxy):
-    ip = get_management_ip()
-    if ":" in ip:
-        ip = "[{}]".format(ip)
-
-    base_url = 'http://{}:19999/'.format(ip)
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class proxy_console(HttpProxy):
-    ip = get_management_ip()
-    if ":" in ip:
-        ip = "[{}]".format(ip)
-
-    base_url = 'http://{}:4200/'.format(ip)
-
-
 class proxy_haproxy(HttpProxy):
     base_url = 'http://{}:1978/stats/'.format(get_management_ip())
     ip = get_management_ip()
