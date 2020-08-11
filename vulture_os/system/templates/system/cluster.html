@@ -137,7 +137,7 @@
       aTargets: [5],
       defaultContent: "",
       mRender: function(data, type, row) {
-        result = '<a class="btn btn-flat btn-default btn-haproxy btn-console" target="_blank" href="/haproxy-stats/' + row.name + '/" title="{% trans 'HAProxy' %}"><img class="haproxy-icon" src="{% static 'img/haproxy.ico' %}"/></a>';
+        result = '';
         if ( !row.is_master_redis && !row.is_master_mongo) {
             result += '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" href="/system/cluster/delete/' + row.id + '" title="{% trans "delete" %}"><i class="fas fa-trash-alt"></i></a>';
         }

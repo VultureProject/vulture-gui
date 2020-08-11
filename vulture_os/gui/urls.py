@@ -25,7 +25,6 @@ __doc__ = 'GUI URLs'
 
 from django.urls import path, re_path
 
-from gui.views.djproxy import proxy_haproxy
 from gui.views.main import process_queue_state, rss, collapse
 from gui.views.api_wrapper import ApiWrapperGet
 from gui.views.auth import authent, log_out
@@ -42,9 +41,6 @@ urlpatterns = [
 
     path('rss/', rss, name='gui.rss'),
     path('process_queue/', process_queue_state, name='gui.process_queue'),
-
-    #These are reverse-proxified URI to haproxy-stats
-    re_path('^haproxy-stats/(?P<url>.*)$', proxy_haproxy.as_view(), name='proxy_haproxy'),
 
 
     # This is the entry point for Continous Integration
