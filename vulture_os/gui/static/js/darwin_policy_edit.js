@@ -79,9 +79,11 @@ function init_vue(){
           yara_scan_max_size: 16384,
           max_memory_usage: 200,
           yara_policy_id: null,
+          yara_policies_id: [],
           reputation_ctx_id: null,
           max_tokens: 75,
           timeout: 0,
+          fastmode: true,
           token_map: null,
           model: null
         }
@@ -104,7 +106,6 @@ function init_vue(){
 
       dga_model_choices: [],
       dga_token_choices: [],
-      yara_policies_id: [],
       yara_policies_list: [],
       hostlookup_reputation_choices: []
     },
@@ -224,26 +225,32 @@ function init_vue(){
             customConfig = `
               <p><b>${gettext('Model')}:</b> ${filter.config.model}</p>
               <p><b>${gettext('Token')}:</b> ${filter.config.token_map}</p>
+              <p><b>${gettext('Max Tokens')}:</b> ${filter.config.max_tokens}</p>
             `
             break
           
           case "hostlookup":
+            label_hostlookup_rule_file = ""
+            for (let tmp of this.hostlookup_reputation_choices) {
+              if (filter.config.reputation_ctx_id === tmp.id)
+                label_hostlookup_rule_file = tmp.label
+            }
             customConfig = `
-              <p><b>${gettext("Database")}:</b> ${filter.config.reputation_ctx_id}</p>
+              <p><b>${gettext("Database")}:</b> ${label_hostlookup_rule_file}</p>
             `
             break
           
           case "yara":
             let rule_file_list = []
             for (let id of filter.config.yara_policies_id){
-              for (let tmp of this.yara_policies_id){
+              for (let tmp of this.yara_policies_list){
                 if (id === tmp.id)
                   rule_file_list.push(`<label class='label label-primary'>${tmp.label}</label>`)
               }
             }
 
             customConfig = `
-              <p><b>${gettext("Fast Mode")}:</b> ${filter.config.fast_mode}</p>
+              <p><b>${gettext("Fast Mode")}:</b> ${filter.config.fastmode}</p>
               <p><b>${gettext("Timeout")}:</b> ${filter.config.timeout}</p>
               <p><b>${gettext("Rule file list")}:</b> ${rule_file_list.join('&nbsp;')}</p>
             `
@@ -369,13 +376,6 @@ function init_vue(){
         if (!this.filter.name)
           return
 
-        if (this.filter.name === "dga"){
-          if (!this.filter.config.model || !this.filter.config.token_map){
-            notify('error', gettext("Error"), gettext("Please fill all required field"))
-            return
-          }
-        }
-
         let data = {}
         Object.assign(data, this.filter)
 
@@ -398,7 +398,9 @@ function init_vue(){
             yara_scan_max_size: 16384,
             max_memory_usage: 200,
             yara_policy_id: null,
+            yara_policies_id: null,
             reputation_ctx_id: null,
+            fastmode: true,
             timeout: 0,
             max_tokens: 75,
             token_map: null,
@@ -420,29 +422,30 @@ function init_vue(){
 
           switch(tmp_filter.name){
             case "connection":
-              config.redis_expire = tmp_filter.config.redis_expire
+              config.redis_expire = parseInt(tmp_filter.config.redis_expire, 10)
               break
             
             case "content_inspection":
-              config.max_connections = tmp_filter.config.max_connections
+              config.max_connections = parseInt(tmp_filter.config.max_connections, 10)
               config.yara_scan_type = tmp_filter.config.yara_scan_type
-              config.yara_scan_max_size = tmp_filter.config.yara_scan_max_size
-              config.max_memory_usage = tmp_filter.config.max_memory_usage
-              config.yara_policy_id = tmp_filter.config.yara_policy_id
+              config.yara_scan_max_size = parseInt(tmp_filter.config.yara_scan_max_size, 10)
+              config.max_memory_usage = parseInt(tmp_filter.config.max_memory_usage, 10)
+              config.yara_policy_id = parseInt(tmp_filter.config.yara_policy_id, 10)
               break
             
               case "dga":
                 config.model = tmp_filter.config.model
                 config.token_map = tmp_filter.config.token_map
+                config.max_tokens = parseInt(tmp_filter.config.max_tokens, 10)
                 break
               
               case "hostlookup":
-                config.reputation_ctx_id = tmp_filter.config.reputation_ctx_id
+                config.reputation_ctx_id = parseInt(tmp_filter.config.reputation_ctx_id, 10)
                 break
               
               case "yara":
-                config.fast_mode = tmp_filter.config.fast_mode
-                config.timeout = tmp_filter.config.timeout
+                config.fastmode = tmp_filter.config.fastmode
+                config.timeout = parseInt(tmp_filter.config.timeout, 10)
                 config.yara_policies_id = tmp_filter.config.yara_policies_id
                 break
           }
@@ -454,11 +457,11 @@ function init_vue(){
           let tmp = {
             name: tmp_filter.name,
             enabled: tmp_filter.enabled,
-            threshold: tmp_filter.threshold,
+            threshold: parseInt(tmp_filter.threshold, 10),
             log_level: tmp_filter.log_level,
-            nb_thread: tmp_filter.nb_thread,
-            weight: tmp_filter.weight,
-            cache_size: tmp_filter.cache_size,
+            nb_thread: parseInt(tmp_filter.nb_thread, 10),
+            weight: parseFloat(tmp_filter.weight),
+            cache_size: parseInt(tmp_filter.cache_size, 10),
             mmdarwin_enabled: tmp_filter.mmdarwin_enabled,
             mmdarwin_parameters: mmdarwin_parameters,
             config: config
