@@ -153,7 +153,7 @@ def validate_content_inspection_config(config):
     if yara_scan_type not in ['stream', 'packet']:
         raise ValidationError({'yara_scan_type': _("should be either 'stream' or 'packet'")})
     else:
-        cleaned_config['yaraScanType'] = yara_scan_type
+        cleaned_config['yara_scan_type'] = yara_scan_type
 
     # yaraRuleFile validation
     if not isinstance(yara_policy_id, int):
@@ -168,21 +168,21 @@ def validate_content_inspection_config(config):
         if not isinstance(yara_scan_max_size, int) or not yara_scan_max_size > 0:
             raise ValidationError({'yara_scan_max_size': _("should be a positive integer")})
         else:
-            cleaned_config['yaraScanMaxSize'] = yara_scan_max_size
+            cleaned_config['yara_scan_max_size'] = yara_scan_max_size
 
     # maxConnections validation
     if max_connections is not None:
         if not isinstance(max_connections, int) or not max_connections > 0:
             raise ValidationError({'max_connections': _("should be a positive integer")})
         else:
-            cleaned_config['maxConnections'] = max_connections
+            cleaned_config['max_connections'] = max_connections
 
     # maxMemoryUsage validation
     if max_memory_usage is not None:
         if not isinstance(max_memory_usage, int) or not max_memory_usage > 0:
             raise ValidationError({'max_memory_usage': _("should be a positive integer")})
         else:
-            cleaned_config['maxMemoryUsage'] = max_memory_usage
+            cleaned_config['max_memory_usage'] = max_memory_usage
 
     return cleaned_config
 
@@ -566,11 +566,11 @@ class FilterPolicy(models.Model):
             except InspectionPolicy.DoesNotExist:
                 logger.error("FilterPolicy::conf_to_json:: Could not find InspectionPolicy with id {}".format(yara_policy_id))
 
-        # Resolve yara_policy_ids into rule_file_list for fyara
-        yara_policy_ids = self.config.get('yara_policy_ids', None)
-        if yara_policy_ids:
+        # Resolve yara_policies_id into rule_file_list for fyara
+        yara_policies_id = self.config.get('yara_policies_id', None)
+        if yara_policies_id:
             json_conf['rule_file_list'] = []
-            for yara_policy_id in yara_policy_ids:
+            for yara_policy_id in yara_policies_id:
                 try:
                     yara_policy = InspectionPolicy.objects.get(pk=yara_policy_id)
                     json_conf['rule_file_list'].append(yara_policy.get_full_filename())
