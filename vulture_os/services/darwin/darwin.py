@@ -119,8 +119,14 @@ def build_conf(node_logger):
     conf_changed = service.reload_conf()
 
     if conf_changed:
-        result = "Configuration has changed, restarting Darwin."
-        result += service.restart()
+        result = "Configuration has changed, reloading Darwin."
+        reply = send_command(node_logger, "{\"type\": \"update_filters\"}\n")
+        if reply.get('status') == "KO":
+                raise ServiceDarwinUpdateFilterError("Darwin manager returned error: {}.".format(reply.get('errors')))
+        elif reply.get('status') != "OK":
+            raise ServiceDarwinUpdateFilterError("Darwin manager returned unknown response: {}.".format(reply),
+                                                    traceback=reply.get('errors'))
+        result += "\nDarwin reloaded successfully"
     return result
 
 
@@ -224,8 +230,8 @@ def update_filter(node_logger, filter_id):
     elif reply.get('status') != "OK":
         raise ServiceDarwinUpdateFilterError("Darwin manager returned unknown response: {}.".format(reply),
                                                 traceback=reply.get('errors'))
-    node_logger.info("Darwin filter '{}' hotly updated.".format(darwin_filter.name))
-    return "Darwin filter '{}' hotly updated.".format(darwin_filter.name)
+    node_logger.info("Darwin filter '{}' hot update successful.".format(darwin_filter.name))
+    return "Darwin filter '{}' hot update successful.".format(darwin_filter.name)
 
 
 def monitor_filters():
