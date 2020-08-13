@@ -381,7 +381,7 @@ class DarwinPolicy(models.Model):
         }
         try:
             return_data['filters'] = [str(f) for f in self.filterpolicy_set.filter(enabled=True).only(*FilterPolicy.str_attrs())]
-            return_data['status'] = {f.filter.name: f.status for f in self.filterpolicy_set.all().only('status', 'filter')}
+            return_data['status'] = [{f.filter.name: f.status} for f in self.filterpolicy_set.all().only('status', 'filter')]
         except ObjectDoesNotExist:
             pass
 
