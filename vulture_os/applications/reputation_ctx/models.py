@@ -322,6 +322,7 @@ class ReputationContext(models.Model):
         """
         params = [self.absolute_filename, self.download_file(), DATABASES_OWNER, DATABASES_PERMS]
         try:
+            from system.cluster.models import Cluster
             Cluster.api_request('system.config.models.write_conf', config=params)
         except Exception as e:  # e used by VultureSystemConfigError
             raise VultureSystemConfigError("on cluster.\n"
