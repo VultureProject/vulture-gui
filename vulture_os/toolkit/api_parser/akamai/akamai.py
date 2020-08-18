@@ -65,6 +65,7 @@ def akamai_write(akamai):
                 # Wait max 2 seconds for a log
                 log = queue_write.get(block=True, timeout=2)
             except:
+                logger.info("akamai_write::get_bulk: Exception in queue_write.get()")
                 continue
             try:
                 # Data to write must be bytes
@@ -76,7 +77,11 @@ def akamai_write(akamai):
         return res
 
     while not event_write.is_set() or not queue_write.empty():
-        akamai.write_to_file(get_bulk(1000))
+        akamai.write_to_file(get_bulk(10000))
+        akamai.update_lock()
+        logger.info("Parse queue size: {}".format(queue_parse.qsize()))
+        logger.info("Write queue size: {}".format(queue_write.qsize()))
+
     logger.info("Writting thread finished")
 
 
@@ -262,8 +267,14 @@ class AkamaiParser(ApiParser):
                 t_parse.start()
                 threads.append(t_parse)
 
-            t_write = Thread(target=akamai_write, args=(self,))
-            t_write.start()
+
+            t_write_1 = Thread(target=akamai_write, args=(self,))
+            t_write_1.start()
+            threads.append(t_write_1)
+
+            t_write_2 = Thread(target=akamai_write, args=(self,))
+            t_write_2.start()
+            threads.append(t_write_2)
 
             self.offset = "a"
             try:
@@ -277,12 +288,9 @@ class AkamaiParser(ApiParser):
             event_parse.set()
             event_write.set()
 
-            # Wait for parsing threads to finish
+            # Wait for threads to finish
             for t in threads:
                 t.join()
-
-            # Wait for it to finish
-            t_write.join()
 
             # Do not join because there can still be something in queues
             #queue_parse.join()

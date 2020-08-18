@@ -35,7 +35,7 @@ from toolkit.redis.redis_base import RedisBase
 from toolkit.network.network import JAIL_ADDRESSES
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('gui')
+logger = logging.getLogger('crontab')
 
 
 class NodeNotBootstraped(Exception):
