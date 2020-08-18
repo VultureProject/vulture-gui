@@ -58,16 +58,11 @@ def fetch_yara_rules(logger):
         logger.error("Yara::fetch_yara_rules:: {}".format(e), exc_info=1)
         raise
 
-    new_rules = []
-    all_rules = []
-
-    fileset = set()
-
     rule_regex = re.compile(r'^\s*rule .*$')
 
     for (baseRoot, baseDirs, baseFiles) in os.walk("/var/tmp/yara_rules/rules-master/"):
-        for dir in baseDirs:
-            for (root, dirs, files) in os.walk(os.path.join(baseRoot, dir)):
+        for baseDir in baseDirs:
+            for (root, dirs, files) in os.walk(os.path.join(baseRoot, baseDir)):
                 for filename in files:
                     contains_rules = False
                     fullpath = os.path.join(root, filename)
@@ -86,14 +81,11 @@ def fetch_yara_rules(logger):
                                     name=name,
                                     techno="yara",
                                     defaults={
-                                        "category": dir,
+                                        "category": baseDir.lower(),
                                         "content": ''.join(filtered_lines),
                                         "source": "github"
                                     }
                                 )
-                                if created:
-                                    new_rules.append(rule)
-                                all_rules.append(rule)
                                 rule.save()
                         except subprocess.CalledProcessError:
                             pass
@@ -102,25 +94,45 @@ def fetch_yara_rules(logger):
 
     logger.info("Yara::fetch_yara_rules:: finished importing new rules")
 
-    if not new_rules and InspectionPolicy.objects.filter(name__exact='github_policy').count() != 0:
-        return
+    for category in DEFAULT_YARA_CATEGORIES:
+        create_or_update_policy_with_category(logger, category)
 
-    newInspectionPolicy, created = InspectionPolicy.objects.get_or_create(
-        name="github_policy",
+
+def create_or_update_policy_with_category(logger, category):
+    logger.info("Yara::create_or_update_policy:: trying to create/update policy with category '{}'".format(category))
+
+    if category == "":
+        description_category = " (all rules)"
+    else:
+        description_category = " (only {})".format(category)
+
+    policy, created = InspectionPolicy.objects.get_or_create(
+        name="github_policy" + "_" + category if category else "github_policy",
         defaults={
             "techno": "yara",
-            "description": "automatic ruleset created from Yara rules on https://github.com/Yara-Rules/rules"
-        }
-    )
+            "description": "automatic policy created from github rules" + description_category
+        })
+
     if not created:
-        for rule in new_rules:
-            newInspectionPolicy.rules.add(rule)
+        logger.info("Yara::create_or_update_policy:: using existing policy")
     else:
-        for rule in all_rules:
-            if rule.category in DEFAULT_YARA_CATEGORIES:
-                newInspectionPolicy.rules.add(rule)
-    newInspectionPolicy.save()
-    newInspectionPolicy.try_compile()
+        logger.info("Yara::create_or_update_policy:: created new policy")
+
+    if category:
+        rules = InspectionRule.objects.filter(category=category, source="github")
+    else:
+        rules = InspectionRule.objects.filter(source="github")
+
+    logger.info("Yara::create_or_update_policy:: found {} rules".format(rules.count()))
+    logger.debug("Yara::create_or_update_policy:: found rules {}".format(rules))
+
+    policy.rules.clear()
+
+    for rule in rules:
+        policy.rules.add(rule)
+
+    policy.save()
+    policy.try_compile()
 
 
 def try_compile_yara_rules(logger, policy_id):

@@ -219,6 +219,7 @@ class DeleteInspectionRule(DeleteView):
         Return a list of strings, printed in template as "Used by this object:"
         """
         # TODO: Frontend use
+        return [str(i) for i in object.inspectionpolicy_set.all()]
         # return [str(i) for i in object.]
 
     # get methods inherited from mother class

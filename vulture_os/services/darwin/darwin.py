@@ -111,6 +111,17 @@ def get_darwin_sockets():
     return [obj.socket_path for obj in FilterPolicy.objects.all()]
 
 
+def reload_filters(node_logger):
+    reply = send_command(node_logger, "{\"type\": \"update_filters\"}\n")
+    if reply.get('status') == "KO":
+            raise ServiceDarwinUpdateFilterError("Darwin manager returned error: {}.".format(reply.get('errors')))
+    elif reply.get('status') != "OK":
+        raise ServiceDarwinUpdateFilterError("Darwin manager returned unknown response: {}.".format(reply),
+                                                traceback=reply.get('errors'))
+    return "Darwin reloaded successfully"
+
+
+
 def build_conf(node_logger):
     result = "Configuration has not changed"
     service = DarwinService()
@@ -119,14 +130,8 @@ def build_conf(node_logger):
     conf_changed = service.reload_conf()
 
     if conf_changed:
-        result = "Configuration has changed, reloading Darwin."
-        reply = send_command(node_logger, "{\"type\": \"update_filters\"}\n")
-        if reply.get('status') == "KO":
-                raise ServiceDarwinUpdateFilterError("Darwin manager returned error: {}.".format(reply.get('errors')))
-        elif reply.get('status') != "OK":
-            raise ServiceDarwinUpdateFilterError("Darwin manager returned unknown response: {}.".format(reply),
-                                                    traceback=reply.get('errors'))
-        result += "\nDarwin reloaded successfully"
+        result = "Configuration has changed, reloading Darwin.\n"
+        result += reload_filters(node_logger)
     return result
 
 

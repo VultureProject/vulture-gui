@@ -51,9 +51,9 @@ DEFAULT_YARA_MODULES_IMPORT = "import \"pe\"\n" \
 
 DEFAULT_YARA_CATEGORIES = (
     "malware",
-    "Webshells",
-    "CVE_Rules",
-    "Exploit-Kits"
+    "webshells",
+    "cve_rules",
+    "exploit_kits"
 )
 
 
@@ -171,7 +171,7 @@ class InspectionPolicy(models.Model):
         InspectionRule,
         null=True,
         blank=False,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         help_text=_("rules in policy")
     )
 
