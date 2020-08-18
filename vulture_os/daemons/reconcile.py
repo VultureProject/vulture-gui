@@ -84,6 +84,7 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
 
         if context is None:
             logger.warning("Reconcile: could not find valid context for id {}".format(evt_id))
+            alertData['context'] = {}
 
     try:
         with open(filepath, "a") as logFile:

@@ -55,8 +55,8 @@ TEMPLATE_OWNER = "darwin:vlt-web"
 TEMPLATE_PERMS = "644"
 
 REDIS_SOCKET_PATH = "/var/sockets/redis/redis.sock"
-ALERTS_REDIS_LIST_NAME = "redis_alerts"
-ALERTS_REDIS_CHANNEL_NAME = "redis.alerts"
+ALERTS_REDIS_LIST_NAME = "darwin_alerts"
+ALERTS_REDIS_CHANNEL_NAME = "darwin.alerts"
 ALERTS_LOG_FILEPATH = "/var/log/darwin/alerts.log"
 
 DGA_MODELS_PATH = CONF_PATH + 'fdga/'
