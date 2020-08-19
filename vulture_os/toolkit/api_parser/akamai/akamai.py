@@ -79,8 +79,8 @@ def akamai_write(akamai):
     while not event_write.is_set() or not queue_write.empty():
         akamai.write_to_file(get_bulk(10000))
         akamai.update_lock()
-        logger.info("Parse queue size: {}".format(queue_parse.qsize()))
-        logger.info("Write queue size: {}".format(queue_write.qsize()))
+        # logger.info("Parse queue size: {}".format(queue_parse.qsize()))
+        # logger.info("Write queue size: {}".format(queue_write.qsize()))
 
     logger.info("Writting thread finished")
 
@@ -215,7 +215,7 @@ class AkamaiParser(ApiParser):
 
         with self.session.get(url, params=params, proxies=self.proxies, stream=True) as r:
             r.raise_for_status()
-
+            i = 0
             for line in r.iter_lines():
                 if not line:
                     continue
@@ -227,9 +227,12 @@ class AkamaiParser(ApiParser):
 
                 if "httpMessage" in line.keys():
                     queue_parse.put(line)
+                    i = i + 1
                 else:
                     logger.info(line)
                     self.offset = line['offset']
+            
+            logger.info("akamai::get_logs: Fetched {} lines".format(i))
 
     def test(self):
         try:

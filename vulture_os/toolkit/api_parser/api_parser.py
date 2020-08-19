@@ -105,7 +105,8 @@ class ApiParser:
         self.redis_cli.redis.setex(self.key_redis, 300, 1)
 
     def write_to_file(self, lines):
-        logger.info(f'[API PARSER] Writing {len(lines)} lines')
+        if len(lines) != 0:
+            logger.info(f'[API PARSER] Writing {len(lines)} lines')
         cpt=0
         for line in lines:
             if cpt%500 == 0:
