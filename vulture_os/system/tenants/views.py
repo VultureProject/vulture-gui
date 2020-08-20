@@ -108,8 +108,11 @@ def tenants_edit(request, object_id=None, api=False, update=False):
             # If there is another tenant using the old api key, don't delete databases
             other_tenants =  Tenants.objects.filter(predator_apikey=old_predator_apikey).exclude(pk=tenant_model.pk).count()
             if other_tenants == 0:
-                for feed in tenant_model.reputation_context_set.all():
-                    feed.delete()
+                try:
+                    for feed in tenant_model.reputation_context_set.all():
+                        feed.delete()
+                except:
+                    logger.info("WARNING: No reputation_context_set for Tenant config '{}'.".format(tenant_model))
 
         # Update the api key
         tenant = form.save(commit=False)
@@ -157,8 +160,11 @@ def tenants_delete(request, object_id, api=False):
             # If there is another Tenant config sharing the predator apikey
             # Don't delete reputation contexts
             if Tenants.objects.filter(predator_apikey=tenant.predator_apikey).exclude(pk=tenant.pk).count() == 0:
-                for feed in tenant.reputation_context_set.all():
-                    feed.delete()
+                try:
+                    for feed in tenant.reputation_context_set.all():
+                        feed.delete()
+                except:
+                    logger.info("WARNING: No reputation_context_set for Tenant config '{}'.".format(tenant))
 
             """ If everything's ok, delete the object """
             tenant.delete()
