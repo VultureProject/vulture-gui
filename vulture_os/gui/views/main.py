@@ -44,9 +44,9 @@ def process_queue_state(request):
     }
 
     try:
-        columns = json.loads(request.get('columns'))
-        col_sort = columns[int(request.get("iSortCol_0"))]
-        col_order = "{}{}".format(order[request.get('sSortDir_0')], col_sort)
+        columns = json.loads(request.POST.get('columns'))
+        col_sort = columns[int(request.POST.get("iSortCol_0"))]
+        col_order = "{}{}".format(order[request.POST.get('sSortDir_0')], col_sort)
     except:
         col_order = "-date_add"
 
