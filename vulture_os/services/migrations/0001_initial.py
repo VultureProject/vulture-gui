@@ -101,6 +101,13 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='NetdataSettings',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('history', models.IntegerField(choices=[(3600, 3600), (7200, 7200), (14400, 14400), (28800, 28800), (43200, 43200), (86400, 86400)], default=3600)),
+            ],
+        ),
+        migrations.CreateModel(
             name='PFSettings',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

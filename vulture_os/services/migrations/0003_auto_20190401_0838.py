@@ -12,6 +12,66 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_buffer_on_failure',
+            field=models.IntegerField(default=10, help_text='The number of iterations to buffer data, when the backend is not available.', verbose_name='Buffer on failure'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_data_source',
+            field=models.TextField(choices=[('average', 'Average'), ('sum', 'Sum'), ('as collected', 'As collected')], default='average', help_text='Select the kind of data that will be sent to the backend.', verbose_name='Kind of data'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_destination',
+            field=models.TextField(default='tcp:[ffff:...:0001]:4242 tcp:10.11.12.1:4242', help_text='Space separated list of [PROTOCOL:]HOST[:PORT] - the first working will be used.', verbose_name='Destinations list'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_enabled',
+            field=models.BooleanField(default=False, help_text='Enable the output of metrics in an external DB', verbose_name='Enable backend'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_host_tags',
+            field=djongo.models.fields.ListField(default=[], help_text=' Defines tags that should be appended on all metrics for the given host.', verbose_name='List of tags'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_prefix',
+            field=models.TextField(default='netdata', help_text='The prefix to add to all metrics.', verbose_name='Prefix'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_send_charts_matching',
+            field=models.TextField(default='*', help_text='Allow to filter which charts will be sent to the server.', verbose_name='Send charts matching'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_send_hosts_matching',
+            field=models.TextField(default='localhost *', help_text='Allow to filter which hosts will be sent to the server.', verbose_name='Send hosts matching'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_send_names_or_ids',
+            field=models.BooleanField(default=True, help_text='Controls the metric names netdata should send to backend..', verbose_name='Send names instead of ids'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_timeout',
+            field=models.IntegerField(default=20000, help_text='The timeout in milliseconds to wait for the backend server to process the data.', verbose_name='Timeout (ms)'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_type',
+            field=models.TextField(choices=[('graphite', 'Graphite'), ('opentsdb', 'OpenTSDB'), ('json', 'JSON')], default='opentsdb', help_text='Type of backend, see https://docs.netdata.cloud/backends/#features.', verbose_name='Type of backend'),
+        ),
+        migrations.AddField(
+            model_name='netdatasettings',
+            name='backend_update_every',
+            field=models.IntegerField(default=10, help_text='The number of seconds between sending data to the backend.', verbose_name='Update every (s)'),
+        ),
         migrations.AlterField(
             model_name='frontend',
             name='timeout_client',
