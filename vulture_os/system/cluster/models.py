@@ -432,7 +432,6 @@ class Node(models.Model):
                 message.result = str(e)
 
             message.save()
-            # FIXME: Delete old message with Cluster's daemon
 
 
 class Cluster (models.Model):

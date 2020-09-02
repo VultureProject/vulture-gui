@@ -78,7 +78,7 @@ def security_alert(title, level, content):
     return True
 
 
-def security_update(node_logger=None):
+def security_update(node_logger=None, tenant_id=None):
     """
     :return: Update Vulture's security databases
     """
@@ -128,10 +128,23 @@ def security_update(node_logger=None):
     except Exception as e:
         logger.error("Crontab::security_update: Failed to retrieve vulnerabilities : {}".format(e))
 
+    # If tenant id given, try to retrieve the tenant
+    if tenant_id:
+        try:
+            tenant = Tenants.objects.get(pk=tenant_id)
+        except:
+            logger.error("Security_update: Failed to retrieve reputation database with asked id {}".format(tenant_id))
+            raise Exception("Tenant not found")
+
     # If it is the master node, retrieve the databases
     if Cluster.get_current_node().is_master_mongo:
+        # If tenant id given, retrieve the predator api key
+        if tenant_id:
+            predator_tokens = [tenant.predator_apikey]
+        else:
+            predator_tokens = Tenants.objects.mongo_distinct("predator_apikey")
         # Loop over predator api keys configured over Multi-Tenants configs
-        for predator_token in Tenants.objects.mongo_distinct("predator_apikey"):
+        for predator_token in predator_tokens:
             """ Download newest reputation databases list """
             try:
                 logger.info("Crontab::security_update: get Vulture's ipsets...")
@@ -201,7 +214,13 @@ def security_update(node_logger=None):
     # On ALL nodes, write databases on disk
     # All internal reputation contexts are retrieved and created if needed
     # We can now download and write all reputation contexts
-    for reputation_ctx in ReputationContext.objects.all():
+    # If tenant id given, only write on disk related reputation databases
+    if tenant_id:
+        encoded_token = b64encode(tenant.predator_apikey.encode('utf8')).decode('utf8')
+        reputation_ctxs = ReputationContext.mongo_find({"filename": {"$regex": ".*_{}.[a-z]+$".format(encoded_token)}})
+    else:
+        reputation_ctxs = ReputationContext.objects.all()
+    for reputation_ctx in reputation_ctxs:
         try:
             content = reputation_ctx.download()
         except VultureSystemError as e:
