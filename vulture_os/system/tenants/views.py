@@ -125,8 +125,9 @@ def tenants_edit(request, object_id=None, api=False, update=False):
         tenant.save()
 
         # If the predator api key changed (mmdb databases paths contain this key)
-        # And old databases has been deleted
-        if predator_apikey_changed and tenant_model and other_tenants == 0:
+        # And no other tenant sharing the same key, download reputation databases
+        # (in case of creation, predator_apikey_changed is true if not default value)
+        if predator_apikey_changed and Tenants.objects.filter(predator_apikey=tenant.predator_apikey).exclude(pk=tenant.pk).count() == 0:
             # Download and save new reputation contexts
             Cluster.api_request("gui.crontab.feed.security_update", tenant.pk)
 
