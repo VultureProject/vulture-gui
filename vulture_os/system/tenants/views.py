@@ -98,7 +98,8 @@ def tenants_edit(request, object_id=None, api=False, update=False):
         return render(request, 'system/tenants_edit.html', {'form': form, **kwargs})
 
     # Save old attributes BEFORE IS_VALID
-    old_predator_apikey = str(tenant_model.predator_apikey)
+    if tenant_model:
+        old_predator_apikey = str(tenant_model.predator_apikey)
 
     if request.method in ("POST", "PUT", "PATCH") and form.is_valid():
         predator_apikey_changed = "predator_apikey" in form.changed_data
