@@ -6,9 +6,13 @@ if [ -f /etc/host-hostname ] ; then
 
     #Relocate Python
     /usr/local/bin/virtualenv-3.7 /home/vlt-os/env/
-    
+
     sleep 5
     /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python3.7 /home/vlt-os/vulture_os/manage.py migrate
+
+    # Add crontabs (removed in pre_install routine)
+    /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vulture_os/manage.py crontab add
+
 else
     echo "Node not bootstrapped yet."
 fi
