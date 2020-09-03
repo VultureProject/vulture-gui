@@ -30,14 +30,6 @@
     }
   },
   {
-    "model": "services.NetdataSettings",
-    "pk": 1,
-    "fields": {
-      "history": 3600,
-      "backend_enabled": false
-    }
-  },
-  {
     "model": "services.LogRotateSettings",
     "pk": 1,
     "fields": {

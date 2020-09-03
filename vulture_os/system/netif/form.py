@@ -24,7 +24,7 @@ __doc__ = 'Haproxy dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, SelectMultiple, NumberInput, ModelMultipleChoiceField, ValidationError
+from django.forms import ModelForm, TextInput, SelectMultiple, Select, NumberInput, ModelMultipleChoiceField, ValidationError, ModelChoiceField
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
 
 # External libraries
@@ -45,12 +45,14 @@ class NetIfSystemForm(ModelForm):
 
     class Meta:
         model = NetworkAddress
-        fields = ('name', 'nic', 'ip', 'prefix_or_netmask')
+        fields = ('name', 'nic', 'ip', 'prefix_or_netmask', 'fib', 'vlan', 'vlandev')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'ip': TextInput(attrs={'class': 'form-control'}),
-            'prefix_or_netmask': TextInput(attrs={'class': 'form-control'})
+            'prefix_or_netmask': TextInput(attrs={'class': 'form-control'}),
+            'fib': TextInput(attrs={'class': 'form-control'}),
+            'vlan': TextInput(attrs={'class': 'form-control'})
         }
 
     def clean_prefix_or_netmask(self):
@@ -62,6 +64,34 @@ class NetIfSystemForm(ModelForm):
                 except:
                     raise ValidationError("Netmask/Prefix invalid. (ex: 255.255.255.0 or 24 or 64 (ipv6))")
         return value
+    
+    def clean_vlan(self):
+        value = self.cleaned_data.get('vlan')
+        if value:
+            try:
+                value = int (value)
+            except:
+                raise ValidationError("vlan must be 0 or an integer corresponding to VLAN ID")
+        else:
+            value = 0
+        
+        return value
+
+    def clean_fib(self):
+        value = self.cleaned_data.get('fib')
+        if value:
+            try:
+                value = int (value)
+            except:
+                value = 0
+        else:
+            value = 0
+
+        # 2 fibs (0 and 1) are available in VultureOS (sysctl net.fibs=2)
+        if value > 1:
+            value = 1
+
+        return value
 
 
 class NetIfForm(ModelForm):
@@ -71,15 +101,23 @@ class NetIfForm(ModelForm):
         widget=SelectMultiple(attrs={'class': 'form-control select2'}),
     )
 
+    vlandev = ModelChoiceField(
+        queryset=NetworkInterfaceCard.objects.exclude(dev__in=['lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6',
+                                                               'pflog0', 'vm-public', 'tap0', 'tun0']),
+        widget=Select(attrs={'class': 'form-control select2'}),
+    )
+
     class Meta:
         model = NetworkAddress
-        fields = ('name', 'nic', 'ip', 'prefix_or_netmask', 'carp_vhid')
+        fields = ('name', 'nic', 'ip', 'prefix_or_netmask', 'carp_vhid', 'fib', 'vlan', 'vlandev')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'ip': TextInput(attrs={'class': 'form-control'}),
             'carp_vhid': NumberInput(attrs={'class': 'form-control'}),
             'prefix_or_netmask': TextInput(attrs={'class': 'form-control'}),
+            'fib': TextInput(attrs={'class': 'form-control'}),
+            'vlan': TextInput(attrs={'class': 'form-control'})
         }
 
     def clean_prefix_or_netmask(self):
@@ -94,3 +132,32 @@ class NetIfForm(ModelForm):
 
         # FIXME: carp_vhid > 0 if multiple NIC detected
         # FIXME: Cannot select 2 NIC for CARP on the same node
+
+
+    def clean_vlan(self):
+        value = self.cleaned_data.get('vlan')
+        if value:
+            try:
+                value = int (value)
+            except:
+                raise ValidationError("vlan must be 0 or an integer corresponding to VLAN ID")
+        else:
+            value = 0
+        
+        return value
+
+    def clean_fib(self):
+        value = self.cleaned_data.get('fib')
+        if value:
+            try:
+                value = int (value)
+            except:
+                value = 0
+        else:
+            value = 0
+
+        # 2 fibs (0 and 1) are available in VultureOS (sysctl net.fibs=2)
+        if value > 1:
+            value = 1
+
+        return value

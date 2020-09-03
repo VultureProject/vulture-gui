@@ -3,15 +3,16 @@
 if [ -f /etc/host-hostname ] ; then
     /usr/sbin/service vultured status && /bin/kill -9 $(/bin/cat /var/run/vulture/vultured.pid)
     echo "[38;5;196m! WARNING ! - Please start vultured at the end of the upgrade[0m"
-    /usr/sbin/service netdata status && /usr/sbin/service netdata faststop
-
-    echo "[38;5;196m! WARNING ! - Please start netdata at the end of the upgrade[0m"
 
     #Relocate Python
     /usr/local/bin/virtualenv-3.7 /home/vlt-os/env/
-    
+
     sleep 5
     /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python3.7 /home/vlt-os/vulture_os/manage.py migrate
+
+    # Add crontabs (removed in pre_install routine)
+    /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vulture_os/manage.py crontab add
+
 else
     echo "Node not bootstrapped yet."
 fi

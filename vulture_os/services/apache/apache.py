@@ -41,7 +41,6 @@ logger = logging.getLogger('services')
 
 
 CONF_PATH = "/zroot/apache/usr/local/etc/apache24/"
-JINJA_TEMPLATE = "apache_netdata.conf"
 
 APACHE_OWNER = "root:vlt-os"
 APACHE_PERMS = "640"
@@ -65,11 +64,6 @@ class ApacheService(Service):
 
         self.owners = APACHE_OWNER
         self.perms = APACHE_PERMS
-        self.config_file = JINJA_TEMPLATE
-        self.jinja_template = {
-            'tpl_name': self.config_file,
-            'tpl_path': "{}/netdata.conf".format(CONF_PATH),
-        }
 
     def __str__(self):
         return "Apache"

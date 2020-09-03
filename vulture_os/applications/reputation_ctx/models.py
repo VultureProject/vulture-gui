@@ -168,10 +168,17 @@ class ReputationContext(models.Model):
         self.content = ""
         super().save(*args, **kwargs)
 
-    def delete(self):
+    @classmethod
+    def mongo_find(cls, *args, **kwargs):
+        """ Override ODM function to return Object instead of OrderedDict
+        """
+        return [ReputationContext(**{k:v for k,v in dico.items() if k != "_id"}) for dico in cls.objects.mongo_find(*args, **kwargs)]
+
+    def delete(self, delete=True):
         """ Delete file on disk on all nodes """
         from system.cluster.models import Cluster
-        Cluster.api_request("system.config.models.delete_conf", self.absolute_filename)
+        if delete:
+            Cluster.api_request("system.config.models.delete_conf", self.absolute_filename)
         super().delete()
 
     @staticmethod
@@ -322,6 +329,7 @@ class ReputationContext(models.Model):
         """
         params = [self.absolute_filename, self.download_file(), DATABASES_OWNER, DATABASES_PERMS]
         try:
+            from system.cluster.models import Cluster
             Cluster.api_request('system.config.models.write_conf', config=params)
         except Exception as e:  # e used by VultureSystemConfigError
             raise VultureSystemConfigError("on cluster.\n"

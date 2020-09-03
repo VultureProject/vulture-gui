@@ -479,12 +479,12 @@ class FrontendForm(ModelForm):
 
 
 class ListenerForm(ModelForm):
+
     class Meta:
         model = Listener
         fields = ('network_address', 'port', 'tls_profiles', 'whitelist_ips', 'max_src', 'max_rate',)
 
         widgets = {
-            'network_address': Select(choices=NetworkAddress.objects.all(), attrs={'class': 'form-control select2'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
             'tls_profiles': SelectMultiple(choices=TLSProfile.objects.all(), attrs={'class': 'form-control select2'}),
             'whitelist_ips': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
@@ -494,6 +494,12 @@ class ListenerForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         """ Initialisation of fields method """
+        self.fields['network_address'] = ModelChoiceField(
+            label=_("Network address"),
+            queryset=NetworkAddress.objects.all(),
+            widget=Select(attrs={'class': 'form-control select2'}),
+            required=True
+        )
         # Do not set id of html fields, that causes issues in JS/JQuery
         kwargs['auto_id'] = False
         super().__init__(*args, **kwargs)

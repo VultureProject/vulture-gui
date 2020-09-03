@@ -25,7 +25,6 @@ __doc__ = 'GUI URLs'
 
 from django.urls import path, re_path
 
-from gui.views.djproxy import proxy_netdata, proxy_console, proxy_haproxy
 from gui.views.main import process_queue_state, rss, collapse
 from gui.views.api_wrapper import ApiWrapperGet
 from gui.views.auth import authent, log_out
@@ -43,11 +42,6 @@ urlpatterns = [
     path('rss/', rss, name='gui.rss'),
     path('process_queue/', process_queue_state, name='gui.process_queue'),
 
-    #These are reverse-proxified URI to console / netdata and haproxy-stats
-    re_path('^netdata/(?P<url>.*)$', proxy_netdata.as_view(), name='proxy_netdata'),
-    re_path('^console/(?P<url>.*)$', proxy_console.as_view(), name='proxy_console'),
-    re_path('^haproxy-stats/(?P<url>.*)$', proxy_haproxy.as_view(), name='proxy_haproxy'),
-
 
     # This is the entry point for Continous Integration
     #    This API is a wrapper arround all views in the project: yet very powerful, but very dangerous also
@@ -57,6 +51,5 @@ urlpatterns = [
             ApiWrapperGet.as_view(), name='gui.views.api_wrapper_get'),
 
     re_path('^api/v1/services/monitor$', api_view.services_monitor, name="api.services_monitor"),
-    re_path('^api/v1/netdata/monitor$', api_view.netdata_monitor, name="api.netdata_monitor"),
 
 ]

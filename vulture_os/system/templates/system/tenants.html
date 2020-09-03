@@ -133,9 +133,7 @@
       fnCreatedRow: function(nRow, aData, iDataIndex){
           $(nRow).on('click', function(e){
               var id = aData['id'];
-              if (aData.is_external) {
-                window.location.href = "/system/tenants/edit/" + id;
-              }
+              window.location.href = "/system/tenants/edit/" + id;
           });
       }
   });

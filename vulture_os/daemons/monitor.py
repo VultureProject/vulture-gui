@@ -43,7 +43,6 @@ from services.pf.pf import PFService
 from services.rsyslogd.rsyslog import RsyslogService
 from services.darwin.darwin import DarwinService
 from services.frontend.models import Frontend
-from services.netdata.netdata import NetdataService
 from system.cluster.models import Cluster
 
 from system.vm.vm import vm_update_status
@@ -87,7 +86,7 @@ def monitor():
     )
     mon.services_id = set()
 
-    for service in [HaproxyService, DarwinService, PFService, NetdataService,
+    for service in [HaproxyService, DarwinService, PFService, 
                     StrongswanService, OpenvpnService, RsyslogService]:
 
         # Get some statuses outside for reusing variable later

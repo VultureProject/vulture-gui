@@ -432,7 +432,6 @@ class Node(models.Model):
                 message.result = str(e)
 
             message.save()
-            # FIXME: Delete old message with Cluster's daemon
 
 
 class Cluster (models.Model):
@@ -652,6 +651,13 @@ class NetworkAddress(models.Model):
     prefix_or_netmask = models.TextField()
     is_system = models.BooleanField(default=False)
     carp_vhid = models.SmallIntegerField(default=0)
+    vlan = models.SmallIntegerField(default=0)
+    vlandev = models.ForeignKey(to="NetworkInterfaceCard", null=True, blank=True,
+                                related_name='%(class)s_vlandev',
+                                on_delete=models.SET_NULL,
+                                help_text=_("Underlying NIC for VLAN"),
+                                verbose_name=_("Vlan device"))
+    fib = models.SmallIntegerField(default=0)
 
     # Needed to make alambiquate mongodb queries
     objects = models.DjongoManager()
@@ -663,7 +669,9 @@ class NetworkAddress(models.Model):
             'ip': self.ip,
             'is_system': self.is_system,
             'prefix_or_netmask': self.prefix_or_netmask,
-            'carp_vhid': self.carp_vhid
+            'carp_vhid': self.carp_vhid,
+            'vlan': self.vlan,
+            'fib': self.fib
         }
 
     def to_template(self):
@@ -678,6 +686,11 @@ class NetworkAddress(models.Model):
             nic = address_nic.nic
             nic_list.append(str(nic))
 
+        if self.vlandev:
+            vlandev = self.vlandev.dev
+        else:
+            vlandev = None
+
         conf = {
             'id': str(self.id),
             'name': self.name,
@@ -685,7 +698,10 @@ class NetworkAddress(models.Model):
             'ip': self.ip,
             'is_system': self.is_system,
             'prefix_or_netmask': self.prefix_or_netmask,
-            'carp_vhid': self.carp_vhid
+            'carp_vhid': self.carp_vhid,
+            'vlan': self.vlan,
+            'vlandev': vlandev,
+            'fib': self.fib
         }
 
         return conf
@@ -693,6 +709,12 @@ class NetworkAddress(models.Model):
     @property
     def is_carp(self):
         if self.carp_vhid > 0:
+            return True
+        return False
+
+    @property
+    def is_vlan(self):
+        if self.is_vlan > 0:
             return True
         return False
 
@@ -777,7 +799,12 @@ class NetworkAddress(models.Model):
             else:
                 device = "{}_alias".format(dev)
                 device += '{}'
+
             inet = "{} {}".format(self.family, self.ip_cidr)
+            if self.fib and self.fib !=0:
+                inet = inet + " fib " + str(self.fib)
+            if self.vlan and self.vlan !=0 and self.vlandev:
+                inet = inet + " vlan " + str(self.vlan) + " vlandev " + self.vlandev.dev
 
         if self.family == 'inet6':
             device += "_ipv6"

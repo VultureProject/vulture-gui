@@ -189,7 +189,7 @@ def write_conf(logger, args):
                                        "Please see traceback for more informations.")
 
 
-def delete_conf(logger, filename):
+def delete_conf(logger, filenames):
     """ """
     # Import here to prevent circular import
     from system.error_templates.models import CONF_PATH as ERROR_TPL_PATH
@@ -201,7 +201,7 @@ def delete_conf(logger, filename):
     from services.rsyslogd.rsyslog import RSYSLOG_PATH
 
     allowed_files_regex = ["{}/\w+_\d+\.html".format(ERROR_TPL_PATH),
-                           "{}/.*\.(mmdb|netset)".format(REPUTATION_CTX_DB_PATH),
+                           "{}/.*\.(mmdb|netset|lookup)".format(REPUTATION_CTX_DB_PATH),
                            "{}/[\w\_\-\.]+-\d\.(chain|crt|pem|key)".format(CERT_PATH),
                            "{}/defender_[0-9]+?\.conf".format(DEFENDER_PATH),
                            "{}/spoe_defender_[0-9]+?\.txt".format(HAPROXY_PATH),
@@ -209,28 +209,43 @@ def delete_conf(logger, filename):
                            "{}/parser_[0-9]+\.rb".format(RSYSLOG_PATH),
                            "{}/f[\w-]+/f[\w-]+_[0-9]+.conf".format(DARWIN_PATH)]
 
-    allowed = False
-    for regex in allowed_files_regex:
-        if re_match(regex, filename):
-            allowed = True
-            break
+    # Filenames can be a list casted to string
+    if filenames[0] == '[':
+        filenames = literal_eval(filenames)
+    else:
+        filenames = [filenames]
 
-    if not allowed:
-        raise VultureSystemConfigError("File '{}' not allowed to be deleted.".format(filename))
+    deleted = False
+    result = ""
+    for f in filenames:
+        logger.info(f)
+        allowed = False
+        for regex in allowed_files_regex:
+            if re_match(regex, f):
+                allowed = True
+                break
 
-    try:
-        cmd_res = check_output(["/bin/rm", filename], stderr=PIPE).decode('utf8')
+        if not allowed:
+            result += "File '{}' not allowed to be deleted.".format(f)
+            continue
 
-        if cmd_res:
-            raise VultureSystemConfigError("'{}' : {}".format(filename, cmd_res.strip()),
-                                           "delete config file", traceback=" ")
+        try:
+            cmd_res = check_output(["/bin/rm", f], stderr=PIPE).decode('utf8')
 
-        return "Config'{}' successfully deleted.".format(filename)
+            if cmd_res:
+                result += "File '{}' : {}".format(f, cmd_res.strip())
+            else:
+                deleted = True
+                result += "File '{}' successfully deleted.".format(f)
 
-    except CalledProcessError as e:
-        """ Command raise if permission denied or file does not exist """
-        stdout = e.stdout.decode('utf8')
-        stderr = e.stderr.decode('utf8')
-        # logger.exception("Failed to delete frontend filename '{}': {}".format(frontend_filename, stderr or stdout))
-        raise VultureSystemError("'{}' : {}".format(filename, (stderr or stdout)), "delete config file",
-                                 traceback=" ")
+        except CalledProcessError as e:
+            """ Command raise if permission denied or file does not exist """
+            stdout = e.stdout.decode('utf8')
+            stderr = e.stderr.decode('utf8')
+            # logger.exception("Failed to delete frontend filename '{}': {}".format(frontend_filename, stderr or stdout))
+            result += "'{}' : {}".format(f, (stderr or stdout))
+
+    if not deleted:
+        raise Exception(result)
+    else:
+        return result

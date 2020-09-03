@@ -66,38 +66,3 @@ def services_monitor(request):
             'status': False
         })
 
-
-@csrf_exempt
-@api_need_key('cluster_api_key')
-def netdata_monitor(request):
-    paths = {
-        'cpu': 'data?chart=system.cpu&points=50&gtime=0&after=-660&dimensions=user',
-        'ram': 'data?chart=system.ram&points=50&gtime=0&after=-660',
-        'uptime': 'data?chart=system.uptime&points=2',
-        'disk_space': 'data?chart=disk_space./&points=2',
-    }
-
-    data = {}
-    for node in Node.objects.all():
-        data[node.name] = {}
-        for type_graph, uri in paths.items():
-            base_uri = "https://{hostname}:8000/netdata/{hostname}/api/v1/{uri}".format(hostname=node.name, uri=uri)
-
-            r = requests.get(
-                base_uri,
-                verify=False
-            )
-
-            if r.status_code != 200:
-                data[node.name][type_graph] = {
-                    'status': False,
-                    'http_code': r.status_code,
-                    'error': str(r.text)
-                }
-
-            data[node.name][type_graph] = r.json()
-
-    return JsonResponse({
-        'status': True,
-        'data': data
-    })
