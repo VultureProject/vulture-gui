@@ -197,7 +197,8 @@ def frontend_edit(request, object_id=None, api=False):
     def render_form(front, **kwargs):
         save_error = kwargs.get('save_error')
         if api:
-            if len(api_errors) > 0:
+            if len(api_errors) > 0 or form.errors:
+                api_errors.append(form.errors.as_json())
                 logger.error("Frontend api form error : {}".format(api_errors))
                 return JsonResponse({"errors": api_errors}, status=400)
             if save_error:
@@ -351,9 +352,6 @@ def frontend_edit(request, object_id=None, api=False):
 
         # If errors has been added in form
         if not form.is_valid():
-            if api:
-                api_errors.append(form.errors.as_json())
-
             logger.error("Frontend form errors: {}".format(form.errors.as_json()))
             return render_form(frontend)
 

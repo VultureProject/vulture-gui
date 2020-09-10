@@ -562,7 +562,7 @@ class Frontend(models.Model):
         :return     A JSON object
         """
         result = {
-            'id': self.id,
+            'id': str(self.id),
             'enable': self.enabled,
             'name': self.name,
             'tags': self.tags,
