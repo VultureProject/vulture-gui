@@ -178,6 +178,8 @@ def frontend_edit(request, object_id=None, api=False):
     header_form_list = []
     reputationctx_form_list = []
     node_listeners = dict()
+    api_errors = []
+
     if object_id:
         try:
             frontend = Frontend.objects.get(pk=object_id)
@@ -195,9 +197,9 @@ def frontend_edit(request, object_id=None, api=False):
     def render_form(front, **kwargs):
         save_error = kwargs.get('save_error')
         if api:
-            if form.errors:
-                logger.error("Frontend api form error : {}".format(form.errors.get_json_data()))
-                return JsonResponse(form.errors.get_json_data(), status=400)
+            if len(api_errors) > 0:
+                logger.error("Frontend api form error : {}".format(api_errors))
+                return JsonResponse({"errors": api_errors}, status=400)
             if save_error:
                 logger.error("Frontend api save error : {}".format(save_error))
                 return JsonResponse({'error': save_error[0]}, status=500)
@@ -205,16 +207,20 @@ def frontend_edit(request, object_id=None, api=False):
         if not listener_form_list and front:
             for l_tmp in front.listener_set.all():
                 listener_form_list.append(ListenerForm(instance=l_tmp))
+
         if not header_form_list and front:
             for h_tmp in front.headers.all():
                 header_form_list.append(HeaderForm(instance=h_tmp))
+
         # If it is a new object, add default-example headers
         if not front and request.method == "GET":
             for header in DEFAULT_FRONTEND_HEADERS:
                 header_form_list.append(HeaderForm(header))
+
         if not reputationctx_form_list and front:
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
+
         redis_fwd = LogOM.objects.filter(name="Internal_Dashboard").only('id').first()
         return render(request, 'services/frontend_edit.html',
                       {'form': form, 'listeners': listener_form_list, 'listener_form': ListenerForm(),
@@ -262,10 +268,13 @@ def frontend_edit(request, object_id=None, api=False):
                 header_f = HeaderForm(header, instance=instance_h)
                 if not header_f.is_valid():
                     if api:
-                        form.add_error(None, header_f.errors.get_json_data())
+                        api_errors.append({"headers": header_f.errors.get_json_data()})
+                        # form.add_error(None, header_f.errors.get_json_data())
                     else:
                         form.add_error('headers', header_f.errors.as_ul())
+
                     continue
+
                 # Save forms in case we re-print the page
                 header_form_list.append(header_f)
                 # And save objects list, to save them later, when Frontend will be saved
@@ -287,9 +296,13 @@ def frontend_edit(request, object_id=None, api=False):
             """ Instantiate form """
             reputationctx_f = FrontendReputationContextForm(reputationctx)
             if not reputationctx_f.is_valid():
-                form.add_error(None if api else "reputation_ctx",
-                               reputationctx_f.errors.get_json_data() if api else reputationctx_f.errors.as_ul())
+                if api:
+                    api_errors.append({"reputation_ctx": reputationctx_f.errors.get_json_data()})
+                else:
+                    form.add_error("reputation_ctx", reputationctx_f.errors.as_ul())
+
                 continue
+
             # Save forms in case we re-print the page
             reputationctx_form_list.append(reputationctx_f)
             # And save objects list, to save them later, when Frontend will be saved
@@ -303,17 +316,25 @@ def frontend_edit(request, object_id=None, api=False):
                 try:
                     instance_l = Listener.objects.get(pk=listener['id']) if listener['id'] else None
                 except ObjectDoesNotExist:
-                    form.add_error(None, "Listener with id {} not found.".format(listener['id']))
+                    err = "Listener with id {} not found.".format(listener['id'])
+                    if api:
+                        api_errors.append(err)
+                    else:
+                        form.add_error(None, err)
+
                     continue
 
                 """ And instantiate form with the object, or None """
                 listener_f = ListenerForm(listener, instance=instance_l)
                 if not listener_f.is_valid():
                     if api:
-                        form.add_error("listeners", listener_f.errors.as_json())
+                        api_errors.append(listener_f.errors.as_json())
+                        # form.add_error("listeners", listener_f.errors.as_json())
                     else:
                         form.add_error("listeners", listener_f.errors.as_ul())
+
                     continue
+
                 listener_form_list.append(listener_f)
                 listener_obj = listener_f.save(commit=False)
                 listener_objs.append(listener_obj)
@@ -322,6 +343,7 @@ def frontend_edit(request, object_id=None, api=False):
                 for nic in listener_obj.network_address.nic.all().only('node'):
                     if not node_listeners.get(nic.node):
                         node_listeners[nic.node] = list()
+
                     node_listeners[nic.node].append(listener_obj)
 
         # Get current Rsyslog configuration filename
@@ -329,6 +351,9 @@ def frontend_edit(request, object_id=None, api=False):
 
         # If errors has been added in form
         if not form.is_valid():
+            if api:
+                api_errors.append(form.errors.as_json())
+
             logger.error("Frontend form errors: {}".format(form.errors.as_json()))
             return render_form(frontend)
 
@@ -347,7 +372,11 @@ def frontend_edit(request, object_id=None, api=False):
 
         # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap" and "API"
         if not listener_objs and frontend.enabled and frontend.mode != "impcap" and frontend.listening_mode not in ("file", "api"):
-            form.add_error(None, "At least one listener is required if frontend is enabled.")
+            if api_errors:
+                api_errors.append("At least one listener is required if frontend is enabled.")
+            else:
+                form.add_error(None, "At least one listener is required if frontend is enabled.")
+
             return render_form(frontend)
 
         try:
@@ -414,7 +443,7 @@ def frontend_edit(request, object_id=None, api=False):
                 return render_form(frontend, save_error=["Cluster API request failure: {}".format(e),
                                                          str.join('', format_exception(*exc_info()))])
 
-        if form.errors:
+        if form.errors or len(api_errors) > 0:
             logger.error("Frontend form errors: {}".format(form.errors))
             return render_form(frontend)
 
