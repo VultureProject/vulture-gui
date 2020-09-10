@@ -201,6 +201,7 @@ def frontend_edit(request, object_id=None, api=False):
                 api_errors.append(form.errors.as_json())
                 logger.error("Frontend api form error : {}".format(api_errors))
                 return JsonResponse({"errors": api_errors}, status=400)
+
             if save_error:
                 logger.error("Frontend api save error : {}".format(save_error))
                 return JsonResponse({'error': save_error[0]}, status=500)
@@ -270,7 +271,6 @@ def frontend_edit(request, object_id=None, api=False):
                 if not header_f.is_valid():
                     if api:
                         api_errors.append({"headers": header_f.errors.get_json_data()})
-                        # form.add_error(None, header_f.errors.get_json_data())
                     else:
                         form.add_error('headers', header_f.errors.as_ul())
 
