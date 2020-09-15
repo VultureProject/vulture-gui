@@ -268,18 +268,23 @@ class WorkflowAPIv1(View):
             fqdn = ""
             public_dir = "/"
 
+            if hasattr(request, "JSON"):
+                form_data = request.JSON
+            else:
+                form_data = request.POST
+
             try:
-                frontend = Frontend.objects.get(pk=request.POST['frontend'])
+                frontend = Frontend.objects.get(pk=form_data['frontend'])
 
                 if frontend.mode == "http":
                     try:
-                        fqdn = request.POST['fqdn']
+                        fqdn = form_data['fqdn']
                         if not validators.domain(fqdn):
                             return JsonResponse({
                                 'error': _('This FQDN is not valid')
                             })
 
-                        public_dir = request.POST['public_dir']
+                        public_dir = form_data['public_dir']
                         if public_dir and len(public_dir):
                             if public_dir[0] != '/':
                                 public_dir = '/' + public_dir
@@ -292,7 +297,7 @@ class WorkflowAPIv1(View):
                         }, status=400)
             except Frontend.DoesNotExist:
                 return JsonResponse({
-                    'error': _('frontend with id {} does not exist'.format(request.POST['frontend']))
+                    'error': _('frontend with id {} does not exist'.format(form_data['frontend']))
                 }, status=404)
             except KeyError:
                 return JsonResponse({
@@ -300,7 +305,7 @@ class WorkflowAPIv1(View):
                 }, status=400)
 
             try:
-                backend = Backend.objects.get(pk=request.POST['backend'])
+                backend = Backend.objects.get(pk=form_data['backend'])
 
                 if frontend.mode != backend.mode:
                     return JsonResponse({
@@ -308,19 +313,19 @@ class WorkflowAPIv1(View):
                     }, status=400)
             except Backend.DoesNotExist:
                 return JsonResponse({
-                    'error': _('Backend with id {} does not exist'.format(request.POST['backend']))
+                    'error': _('Backend with id {} does not exist'.format(form_data['backend']))
                 }, status=400)
             except KeyError:
                 return JsonResponse({
                     'error': _('You must define a backend for a workflow')
                 }, status=400)
 
-            if request.POST.get('defender_policy'):
+            if form_data.get('defender_policy'):
                 try:
-                    defender_policy = DefenderPolicy.objects.get(pk=request.POST['defender_policy'])
+                    defender_policy = DefenderPolicy.objects.get(pk=form_data['defender_policy'])
                 except DefenderPolicy.DoesNotExist:
                     return JsonResponse({
-                        'error': _('Defender Policy with id {} does not exist'.format(request.POST['defender_policy']))
+                        'error': _('Defender Policy with id {} does not exist'.format(form_data['defender_policy']))
                     }, status=400)
 
             try:
@@ -330,7 +335,13 @@ class WorkflowAPIv1(View):
                     workflow = Workflow()
 
                 workflow.enabled = enabled
-                workflow.name = request.POST['name']
+                try:
+                    workflow.name = form_data['name']
+                except KeyError:
+                    return JsonResponse({
+                        'error': _("Please provide a name for this workflow")
+                    }, status=400)
+
                 workflow.fqdn = fqdn
                 workflow.public_dir = public_dir
                 workflow.frontend = frontend
@@ -343,7 +354,7 @@ class WorkflowAPIv1(View):
                     workflow.defender_policy = defender_policy
 
                 workflow.workflowacl_set.all().delete()
-                for i, tmp_acl in enumerate(json.loads(request.POST.get('acl_frontend', "[]"))):
+                for i, tmp_acl in enumerate(json.loads(form_data.get('acl_frontend', "[]"))):
                     status, acl = format_acl_from_api(tmp_acl, i, before_policy=True)
                     if not status:
                         return acl
@@ -352,7 +363,7 @@ class WorkflowAPIv1(View):
                     workflow_acls.append(acl)
                     acl.save()
 
-                for i, tmp_acl in enumerate(json.loads(request.POST.get('acl_backend', "[]"))):
+                for i, tmp_acl in enumerate(json.loads(form_data.get('acl_backend', "[]"))):
                     status, acl = format_acl_from_api(tmp_acl, i, before_policy=False)
                     if not status:
                         return acl
@@ -400,7 +411,7 @@ class WorkflowAPIv1(View):
                     'message': _('Workflow saved')
                 }, status=201)
 
-            except KeyError:
+            except KeyError as err:
                 return JsonResponse({
                     'error': _('Partial data')
                 }, status=400)
