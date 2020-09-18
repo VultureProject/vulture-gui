@@ -160,6 +160,8 @@ def backend_edit(request, object_id=None, api=False):
     server_form_list = []
     header_form_list = []
     httpchk_header_form_list = []
+    api_errors = []
+
     if object_id:
         try:
             backend = Backend.objects.get(pk=object_id)
@@ -177,8 +179,10 @@ def backend_edit(request, object_id=None, api=False):
     def render_form(back, **kwargs):
         save_error = kwargs.get('save_error')
         if api:
-            if form.errors:
-                return JsonResponse(form.errors.get_json_data(), status=400)
+            if len(api_errors) > 0 or form.errors:
+                api_errors.append(form.errors.as_json())
+                return JsonResponse({"errors": api_errors}, status=400)
+
             if save_error:
                 return JsonResponse({'error': save_error[0]}, status=500)
 
@@ -187,12 +191,15 @@ def backend_edit(request, object_id=None, api=False):
         if not server_form_list and back:
             for l_tmp in back.server_set.all():
                 server_form_list.append(ServerForm(instance=l_tmp))
+
         if not header_form_list and back:
             for h_tmp in back.headers.all():
                 header_form_list.append(HeaderForm(instance=h_tmp))
+
         if not httpchk_header_form_list and back:
             for k, v in back.http_health_check_headers.items():
                 httpchk_header_form_list.append(HttpHealthCheckHeaderForm({'check_header_name': k, 'check_header_value': v}))
+
         return render(request, 'apps/backend_edit.html',
                       {'form': form, 'servers': server_form_list,
                        'net_server_form': ServerForm(mode='net'),
@@ -244,10 +251,11 @@ def backend_edit(request, object_id=None, api=False):
                 httpchkform = HttpHealthCheckHeaderForm(header, error_class=DivErrorList)
                 if not httpchkform.is_valid():
                     if api:
-                        form.add_error(None, httpchkform.errors.get_json_data())
+                        api_errors.append({"health_check": httpchkform.errors.get_json_data()})
                     else:
                         form.add_error('enable_http_health_check', httpchkform.errors.as_ul())
                     continue
+
                 # Save forms in case we re-print the page
                 httpchk_header_form_list.append(httpchkform)
                 httpchk_headers_dict[header.get('check_header_name')] = header.get('check_header_value')
@@ -256,18 +264,20 @@ def backend_edit(request, object_id=None, api=False):
             for header in header_ids:
                 """ If id is given, retrieve object from mongo """
                 try:
-                    instance_h = Header.objects.get(pk=header['id']) if header['id'] else None
+                    instance_h = Header.objects.get(pk=header['id']) if header.get('id') else None
                 except ObjectDoesNotExist:
                     form.add_error(None, "Request-header with id {} not found. Injection detected ?")
                     continue
+
                 """ And instantiate form with the object, or None """
                 header_f = HeaderForm(header, instance=instance_h)
                 if not header_f.is_valid():
                     if api:
-                        form.add_error(None, header_f.errors.get_json_data())
+                        api_errors.append({"headers": header_f.errors.get_json_data()})
                     else:
                         form.add_error('headers', header_f.errors.as_ul())
                     continue
+
                 # Save forms in case we re-print the page
                 header_form_list.append(header_f)
                 # And save objects list, to save them later, when Frontend will be saved
@@ -287,10 +297,12 @@ def backend_edit(request, object_id=None, api=False):
             server_f = ServerForm(server, instance=instance_s)
             if not server_f.is_valid():
                 if api:
-                    form.add_error(None, server_f.errors.get_json_data())
+                    api_errors.append({'server': server_f.errors.get_json_data()})
                 else:
                     form.add_error(None, server_f.errors.as_ul())
+
                 continue
+
             server_form_list.append(server_f)
             server_obj = server_f.save(commit=False)
             server_objs.append(server_obj)
