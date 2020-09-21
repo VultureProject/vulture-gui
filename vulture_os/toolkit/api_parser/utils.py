@@ -33,6 +33,7 @@ from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
 from toolkit.api_parser.imperva.imperva import ImpervaParser
 from toolkit.api_parser.office365.office365 import Office365Parser
 from toolkit.api_parser.symantec.symantec import SymantecParser
+from toolkit.api_parser.reachfive.reachfive import ReachFiveParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -45,7 +46,8 @@ PARSER_LIST = {
     "office_365": Office365Parser,
     "symantec": SymantecParser,
     'imperva': ImpervaParser,
-    "akamai": AkamaiParser
+    "akamai": AkamaiParser,
+    "reachfive": ReachFiveParser
 }
 
 
