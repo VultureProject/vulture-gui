@@ -591,7 +591,7 @@ class TLSProfile(models.Model):
 
     def to_html_template(self):
         return {
-            'id': self.id,
+            'id': str(self.id),
             'name': self.name,
             'x509_certificate': str(self.x509_certificate),
             'protocols': self.protocols,
@@ -601,7 +601,7 @@ class TLSProfile(models.Model):
 
     def to_template(self):
         return {
-            'id': self.id,
+            'id': str(self.id),
             'name': self.name,
             'x509_certificate': self.x509_certificate,
             'protocols': self.protocols,

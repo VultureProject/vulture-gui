@@ -58,7 +58,7 @@ class InvalidWorkflowError(Exception):
     pass
 
 
-def workflow_delete(request, object_id, api=False):
+def workflow_delete(request, object_id, api=False): 
     """ Delete Backend and related Listeners """
     error = ""
     try:

@@ -523,6 +523,23 @@ class Frontend(models.Model):
         default=""
     )
 
+    # ReachFive API events attributes
+    reachfive_host = models.TextField(
+        help_text=_("ReachFive host"),
+        default="reachfive.domain.com",
+        verbose_name=_("ReachFive api endpoint domain")
+    )
+    reachfive_client_id = models.TextField(
+        help_text=_("ReachFive client ID"),
+        default="",
+        verbose_name=_("ReachFive client ID for authentication")
+    )
+    reachfive_client_secret = models.TextField(
+        help_text=_("ReachFive client secret"),
+        default="",
+        verbose_name=_("ReachFive client secret for authentication")
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -562,7 +579,7 @@ class Frontend(models.Model):
         :return     A JSON object
         """
         result = {
-            'id': self.id,
+            'id': str(self.id),
             'enable': self.enabled,
             'name': self.name,
             'tags': self.tags,
@@ -570,7 +587,8 @@ class Frontend(models.Model):
             'enable_logging': self.enable_logging,
             'status': dict(self.status),  # It is an OrderedDict
             'https_redirect': self.https_redirect,
-            'listeners': []
+            'listeners': [],
+            'tenant_name': self.tenants_config.name
         }
 
         """ Add listeners, except if listening_mode is file """
@@ -651,6 +669,11 @@ class Frontend(models.Model):
                     result['imperva_api_key'] = self.imperva_api_key
                     result['imperva_private_key'] = self.imperva_private_key
                     result['imperva_last_log_file'] = self.imperva_last_log_file
+
+                elif self.api_parser_type == "reachfive":
+                    result['reachfive_host'] = self.reachfive_host
+                    result['reachfive_client_id'] = self.reachfive_client_id
+                    result['reachfive_client_secret'] = self.reachfive_client_secret
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()

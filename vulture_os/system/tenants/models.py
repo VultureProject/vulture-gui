@@ -59,7 +59,7 @@ class Tenants(models.Model):
 
     def to_dict(self):
         result = {
-            'id': self.id,
+            'id': str(self.id),
             'name': self.name,
             'predator_apikey': self.predator_apikey,
             'shodan_apikey': self.shodan_apikey
@@ -69,7 +69,7 @@ class Tenants(models.Model):
 
     def to_template(self):
         return {
-            "id": self.id,
+            "id": str(self.id),
             "name": self.name,
             "reputation_contexts": ",".join([r.name for r in ReputationContext.objects.filter(filename__contains=self.encoded_predator_apikey)]),
             'frontends': [f.name for f in self.frontend_set.all().only("name")],

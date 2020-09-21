@@ -14,28 +14,28 @@
   <div class="row">
     <div class="col-md-12" id="dashboard_general">
       {% for node in nodes %}
-          <div class="col-md-4 panel panel-colorful">
+        <div class="col-md-4 panel mar-rgt">
           <div class="panel-heading">
               <h1 class="panel-title">
                 <a target="_blank" >{{ node.name|upper }}</a>
                 <small>({% trans "Last check: " %} ${ monitor_date('{{ node.name }}')} )</small>
               </h1>
-          </div>
-          <div class="panel-body col-md-12">
-            <div class="row col-md-12">
-              <div class="col-md-12">
-                <table class="table table-condensed table-monitoring">
-                  <thead>
-                    <tr>
-                      <th>{% trans "Service" %}</th>
-                      <th>{% trans "State" %}</th>
-                    </tr>
-                  </thead>
-                  <tbody v-html="services('{{ node.name }}')"></tbody>
-                </table>
+            </div>
+            <div class="panel-body col-md-12">
+              <div class="row col-md-12">
+                <div class="col-md-12">
+                  <table class="table table-condensed table-monitoring">
+                    <thead>
+                      <tr>
+                        <th>{% trans "Service" %}</th>
+                        <th>{% trans "State" %}</th>
+                      </tr>
+                    </thead>
+                    <tbody v-html="services('{{ node.name }}')"></tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
         </div>
       {% endfor %}
     </div>
