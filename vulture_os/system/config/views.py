@@ -204,4 +204,4 @@ def pf_whitelist_blacklist(request, list_type=None):
         return JsonResponse({'status': False, 'error': str(e)})
 
     config_model.save()
-    return JsonResponse({'status': True})
+    return JsonResponse({'status': True, "data": ""})
