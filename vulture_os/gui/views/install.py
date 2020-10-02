@@ -72,6 +72,8 @@ def cluster_create(admin_user=None, admin_password=None):
     if new_node:
         logger.info("Registering new node '{}'".format(node.name))
         node.internet_ip = node.management_ip
+        node.backends_outgoing_ip = node.management_ip
+        node.logom_outgoing_ip = node.management_ip
         node.save()
 
     """ Read network config and store it into mongo """

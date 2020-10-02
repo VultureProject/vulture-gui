@@ -79,6 +79,8 @@ class Node(models.Model):
     )
     management_ip = models.TextField(unique=True)
     internet_ip = models.GenericIPAddressField(help_text=_("IP used by jails to contact internet"))
+    backends_outgoing_ip = models.GenericIPAddressField(default="", help_text=_("IP used for masquerading backends packets"))
+    logom_outgoing_ip = models.GenericIPAddressField(default="", help_text=_("IP used for masquerading log forwarders packets"))
     scanner_ip = models.ForeignKey(to="NetworkAddress", null=True, on_delete=models.SET_NULL,
                                    help_text=_("NAT IP used for scanner"),
                                    verbose_name=_("Scanner IP"))
@@ -127,6 +129,8 @@ class Node(models.Model):
             'intfs': intfs,
             "management_ip": self.management_ip,
             "internet_ip": self.internet_ip,
+            "backends_outgoing_ip": self.backends_outgoing_ip,
+            "logom_outgoing_ip": self.logom_outgoing_ip,
             "pf_limit_states": self.pf_limit_states,
             "pf_limit_frags": self.pf_limit_frags,
             "pf_limit_src": self.pf_limit_src,

@@ -82,6 +82,28 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Backends outgoing IP Address masquerading" %}</label>
+                          <div class="col-sm-5">
+                          {{form.backends_outgoing_ip}}
+                          {{form.backends_outgoing_ip.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Log forwarders IP Address masquerading" %}</label>
+                          <div class="col-sm-5">
+                          {{form.logom_outgoing_ip}}
+                          {{form.logom_outgoing_ip.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
                           <label class="col-sm-4 control-label">{% trans "Default router" %}</label>
                           <div class="col-sm-5">
                           {{form.gateway}}

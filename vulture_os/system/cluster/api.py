@@ -73,6 +73,8 @@ def cluster_add(request):
     node.name = slave_name
     node.management_ip = slave_ip
     node.internet_ip = slave_ip
+    node.backends_outgoing_ip = slave_ip
+    node.logom_outgoing_ip = slave_ip
     node.save()
 
     # We need to wait for the VultureD daemon to reload PF Conf
