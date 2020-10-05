@@ -34,6 +34,8 @@ from toolkit.api_parser.imperva.imperva import ImpervaParser
 from toolkit.api_parser.office365.office365 import Office365Parser
 from toolkit.api_parser.symantec.symantec import SymantecParser
 from toolkit.api_parser.reachfive.reachfive import ReachFiveParser
+from toolkit.api_parser.mongodb.mongodb import MongoDBParser
+from toolkit.api_parser.defender_atp.defender_atp import DefenderATPParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -47,7 +49,9 @@ PARSER_LIST = {
     "symantec": SymantecParser,
     'imperva': ImpervaParser,
     "akamai": AkamaiParser,
-    "reachfive": ReachFiveParser
+    "reachfive": ReachFiveParser,
+    "mongodb": MongoDBParser,
+    "defender_atp": DefenderATPParser
 }
 
 

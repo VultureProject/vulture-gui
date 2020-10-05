@@ -206,6 +206,8 @@ class FrontendForm(ModelForm):
                            'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
                            'keep_source_fields', 'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
                            'imperva_private_key', 'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
+                           'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
+                           "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                            'darwin_mode']:
             self.fields[field_name].required = False
 
@@ -252,9 +254,12 @@ class FrontendForm(ModelForm):
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
                   "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
                   "akamai_client_token", 'akamai_config_id', 'office365_tenant_id', 'office365_client_id',
-                  'keep_source_fields', 'office365_client_secret', 'imperva_base_url', 'imperva_api_key',
-                  'imperva_api_id', 'imperva_private_key', 'reachfive_host', 'reachfive_client_id',
-                  'reachfive_client_secret', 'darwin_mode')
+                  'keep_source_fields', 'office365_client_secret',
+                  'imperva_base_url', 'imperva_api_key', 'imperva_api_id', 'imperva_private_key',
+                  'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
+                  'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
+                  "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
+                  'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -319,7 +324,13 @@ class FrontendForm(ModelForm):
             'imperva_private_key': Textarea(attrs={'class': 'form-control'}),
             'reachfive_host': TextInput(attrs={'class': 'form-control'}),
             'reachfive_client_id': TextInput(attrs={'class': 'form-control'}),
-            'reachfive_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'})
+            'reachfive_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'mongodb_api_user': TextInput(attrs={'class': 'form-control'}),
+            'mongodb_api_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'mongodb_api_group_id': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_tenant': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_appid': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
         }
 
     def clean_name(self):
