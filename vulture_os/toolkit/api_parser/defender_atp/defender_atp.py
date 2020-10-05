@@ -110,8 +110,8 @@ class DefenderATPParser(ApiParser):
         params = {
             '$expand': "evidence"
         }
-        #if since:
-        #    params['$filter'] = 'lastUpdateTime gt {}'.format(since)
+        if since:
+            params['$filter'] = 'lastUpdateTime gt {}'.format(since.isoformat().replace('+00:00', "Z"))
         logger.debug("DefenderATP api::Get user events request params = {}".format(params))
 
         response = self.session.get(
@@ -182,13 +182,8 @@ class DefenderATPParser(ApiParser):
                     })
                 alert['evidence'] = tmp_evidence
 
-            # Alerts are sorted in reverse order, so the first event is the newer
-            # Replace "Z" by "+00:00" for datetime parsing
-            # No need to make_aware, date already contains timezone
-            date, tz = logs[0]['alertCreationTime'].replace("Z", "+00:00").split('+')
-            # Remove last 0.000000x second (invalid with iso format)
-            date = date[:-1]
-            self.frontend.last_api_call = datetime.fromisoformat(date+"+"+tz)
+            # All alerts are retrieved, reset timezone to now
+            self.frontend.last_api_call = timezone.now()
 
         self.write_to_file([json.dumps(l) for l in logs])
         # Writting may take some while, so refresh token in Redis
