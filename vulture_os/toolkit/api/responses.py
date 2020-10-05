@@ -39,6 +39,7 @@ logger = logging.getLogger('authentication')
 
 def build_response(id, module_url, command_list):
     result = {
+        "status": True,
         'id': str(id),
         'links': {
             'get': {

@@ -308,7 +308,7 @@ def frontend_edit(request, object_id=None, api=False):
             for listener in listener_ids:
                 """ If id is given, retrieve object from mongo """
                 try:
-                    instance_l = Listener.objects.get(pk=listener['id']) if listener['id'] else None
+                    instance_l = Listener.objects.get(pk=listener['id']) if listener.get('id') else None
                 except ObjectDoesNotExist:
                     form.add_error("listeners", "Listener with id {} not found.".format(listener['id']))
                     continue

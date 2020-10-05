@@ -97,10 +97,13 @@ def netif_refresh(request):
         Cluster.api_request('toolkit.network.network.refresh_nic')
     except Exception as e:
         return JsonResponse({
+            'status': False,
             'error': str(e)
         }, status=500)
+
     return JsonResponse({
-        'status': True
+        'status': True,
+        'data': "Refresh started"
     })
 
 

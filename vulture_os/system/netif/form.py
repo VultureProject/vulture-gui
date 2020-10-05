@@ -38,8 +38,10 @@ logger = logging.getLogger('services')
 
 class NetIfSystemForm(ModelForm):
     nic = ModelMultipleChoiceField(
-        queryset=NetworkInterfaceCard.objects.exclude(dev__in=['lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6',
-                                                               'pflog0', 'vm-public', 'tap0', 'tun0']),
+        queryset=NetworkInterfaceCard.objects.exclude(dev__in=[
+            'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6',
+            'pflog0', 'vm-public', 'tap0', 'tun0'
+        ]),
         widget=SelectMultiple(attrs={'class': 'form-control select2'}),
     )
 
@@ -96,16 +98,24 @@ class NetIfSystemForm(ModelForm):
 
 class NetIfForm(ModelForm):
     nic = ModelMultipleChoiceField(
-        queryset=NetworkInterfaceCard.objects.exclude(dev__in=['lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6',
-                                                               'pflog0', 'vm-public', 'tap0', 'tun0']),
+        queryset=NetworkInterfaceCard.objects.exclude(dev__in=[
+            'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6',
+            'pflog0', 'vm-public', 'tap0', 'tun0'
+        ]),
         widget=SelectMultiple(attrs={'class': 'form-control select2'}),
     )
 
     vlandev = ModelChoiceField(
-        queryset=NetworkInterfaceCard.objects.exclude(dev__in=['lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6',
-                                                               'pflog0', 'vm-public', 'tap0', 'tun0']),
+        queryset=NetworkInterfaceCard.objects.exclude(dev__in=[
+            'lo0', 'lo1', 'lo2', 'lo3', 'lo4', 'lo5', 'lo6',
+            'pflog0', 'vm-public', 'tap0', 'tun0'
+        ]),
         widget=Select(attrs={'class': 'form-control select2'}),
+        required=False
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     class Meta:
         model = NetworkAddress

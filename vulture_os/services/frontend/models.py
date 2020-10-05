@@ -588,7 +588,9 @@ class Frontend(models.Model):
             'status': dict(self.status),  # It is an OrderedDict
             'https_redirect': self.https_redirect,
             'listeners': [],
-            'tenant_name': self.tenants_config.name
+            'tenant_name': self.tenants_config.name,
+            'timeout_connect': self.timeout_connect,
+            'timeout_client': self.timeout_client
         }
 
         """ Add listeners, except if listening_mode is file """
@@ -1280,7 +1282,7 @@ class Listener(models.Model):
         return {
             'id': str(self.id),
             'network_address': str(self.network_address),
-            'network_address_id': self.network_address.pk,
+            'network_address_id': str(self.network_address.pk),
             'port': self.port,
             'frontend': self.frontend,
             'whitelist_ips': self.whitelist_ips,

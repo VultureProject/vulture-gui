@@ -56,6 +56,7 @@ class ConfigAPIv1(View):
                 error = str(e)
 
             return JsonResponse({
+                'status': False,
                 'error': error
             }, status=500)
 
@@ -72,6 +73,7 @@ class ConfigAPIv1(View):
                 error = str(e)
 
             return JsonResponse({
+                'status': False,
                 'error': error
             }, status=500)
 
@@ -87,6 +89,7 @@ class ConfigAPIv1(View):
                 error = _("An error has occurred")
 
         return JsonResponse({
+            'status': False,
             'error': error
         }, status=500)
 
@@ -110,5 +113,6 @@ class ConfigAPIv1(View):
                 error = _("An error has occurred")
 
         return JsonResponse({
+            'status': False,
             'error': error
         }, status=500)
