@@ -539,6 +539,38 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("ReachFive client secret for authentication")
     )
+    # MongoDB API logs attributes
+    mongodb_api_user = models.TextField(
+        help_text=_("MongoDB API user"),
+        default="",
+        verbose_name=_("MongoDB user for authentication")
+    )
+    mongodb_api_password = models.TextField(
+        help_text=_("MongoDB API password"),
+        default="",
+        verbose_name=_("MongoDB API password for authentication")
+    )
+    mongodb_api_group_id = models.TextField(
+        help_text=_("MongoDB Group ID"),
+        default="",
+        verbose_name=_("MongoDB API group ID to retrieve log events from")
+    )
+    # Defender ATP API logs attributes
+    mdatp_api_tenant = models.TextField(
+        help_text=_("Microsoft Defender ATP Tenant ID"),
+        default="",
+        verbose_name=_("Microsoft Defender Tenant ID")
+    )
+    mdatp_api_appid = models.TextField(
+        help_text=_("Microsoft Defender ATP App ID"),
+        default="",
+        verbose_name=_("Microsoft Defender ATP App ID")
+    )
+    mdatp_api_secret = models.TextField(
+        help_text=_("Microsoft Defender ATP App secret"),
+        default="",
+        verbose_name=_("Microsoft Defender ATP App secret")
+    )
 
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -676,6 +708,16 @@ class Frontend(models.Model):
                     result['reachfive_host'] = self.reachfive_host
                     result['reachfive_client_id'] = self.reachfive_client_id
                     result['reachfive_client_secret'] = self.reachfive_client_secret
+
+                elif self.api_parser_type == "mongodb":
+                    result['mongodb_api_user'] = self.mongodb_api_user
+                    result['mongodb_api_password'] = self.mongodb_api_password
+                    result['mongodb_api_group_id'] = self.mongodb_api_group_id
+
+                elif self.api_parser_type == "defender_atp":
+                    result['mdatp_api_tenant'] = self.mdatp_api_tenant
+                    result['mdatp_api_appid'] = self.mdatp_api_appid
+                    result['mdatp_api_secret'] = self.mdatp_api_secret
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()

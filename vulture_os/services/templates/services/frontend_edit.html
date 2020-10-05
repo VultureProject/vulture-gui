@@ -901,6 +901,54 @@
                         </div>
                       </div>
 
+                      <div class="col-md-12 api_clients_row" id="api_mongodb_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mongodb_api_user.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mongodb_api_user }}
+                            {{ form.mongodb_api_user.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mongodb_api_password.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mongodb_api_password }}
+                            {{ form.mongodb_api_password.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mongodb_api_group_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mongodb_api_group_id }}
+                            {{ form.mongodb_api_group_id.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_defender_atp_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mdatp_api_tenant.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mdatp_api_tenant }}
+                            {{ form.mdatp_api_tenant.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mdatp_api_appid.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mdatp_api_appid }}
+                            {{ form.mdatp_api_appid.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mdatp_api_secret.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mdatp_api_secret }}
+                            {{ form.mdatp_api_secret.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
                       <div class="col-md-12 api_clients_row" id="api_aws_bucket_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.aws_access_key_id.label }}</label>
