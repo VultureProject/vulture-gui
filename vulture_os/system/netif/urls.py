@@ -44,7 +44,7 @@ urlpatterns = [
 
     path('api/v1/system/netaddr/', api.NetworkAddressAPIv1.as_view(), name="api.system.netaddr"),
 
-    path('api/v1/system/netaddr/<int:object_id>', api.NetworkAddressAPIv1.as_view(), name="api.system.netaddr"),
+    path('api/v1/system/netaddr/<int:object_id>/', api.NetworkAddressAPIv1.as_view(), name="api.system.netaddr"),
 
     path('api/v1/system/netif/', api.NetworkInterfaceCardAPIv1.as_view(), name="api.system.netif"),
 

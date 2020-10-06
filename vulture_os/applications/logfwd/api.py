@@ -48,6 +48,7 @@ class LogOMAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, fw_type=None, object_id=None):
         try:
+            name = request.GET.get('name')
             if object_id:
                 try:
                     obj = LogOM().select_log_om(object_id).to_dict()
@@ -56,6 +57,13 @@ class LogOMAPIv1(View):
                         'error': _('Object does not exist')
                     }, status=404)
 
+            elif name:
+                try:
+                    obj = LogOM().select_log_om_by_name(name).to_dict()
+                except ObjectDoesNotExist:
+                    return JsonResponse({
+                        'error': _('Object does not exist')
+                    }, status=404)
             elif fw_type:
                 try:
                     obj = [logOM.to_dict() for logOM in LOGFWD_MODELS[fw_type].objects.all()]

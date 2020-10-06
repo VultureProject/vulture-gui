@@ -288,7 +288,7 @@ def backend_edit(request, object_id=None, api=False):
         for server in server_ids:
             """ If id is given, retrieve object from mongo """
             try:
-                instance_s = Server.objects.get(pk=server['id']) if server['id'] else None
+                instance_s = Server.objects.get(pk=server['id']) if server.get('id') else None
             except ObjectDoesNotExist:
                 form.add_error(None, "Server with id {} not found.".format(server['id']))
                 continue

@@ -27,7 +27,7 @@ __doc__ = 'Log Forwarders View'
 from django.conf import settings
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
-from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.utils.translation import ugettext_lazy as _
 
@@ -114,12 +114,12 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
         logger.exception(e)
         if api:
             return JsonResponse({'error': _("Type does not exist.")}, status=404)
-        return HttpResponseForbidden("Injection detected.")
+        return HttpResponseNotFound(_("Object does not exist."))
     except ObjectDoesNotExist as e:
         logger.exception(e)
         if api:
             return JsonResponse({'error': _("Object does not exist.")}, status=404)
-        return HttpResponseForbidden("Injection detected.")
+        return HttpResponseNotFound(_("Object does not exist."))
 
     if hasattr(request, "JSON") and api:
         form = LOGFWD_FORMS[fw_type](request.JSON or None, instance=log_om, error_class=DivErrorList)
