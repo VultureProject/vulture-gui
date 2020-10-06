@@ -179,14 +179,11 @@ class Workflow(models.Model):
             'backend_status': dict(self.backend.status),
             'public_dir': self.public_dir,
             'backend': str(self.backend),
+            'fqdn': self.fqdn,
+            'public_dir': self.public_dir,
             'defender_policy': str(self.defender_policy),
             'acls': [acl.to_dict() for acl in self.workflowacl_set.all()]
         }
-
-        if self.fqdn:
-            result['fqdn'] = self.fqdn
-        if self.public_dir:
-            result['public_dir'] = self.public_dir
 
         return result
 
