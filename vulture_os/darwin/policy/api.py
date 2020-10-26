@@ -36,7 +36,7 @@ from django.utils.decorators import method_decorator
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
-from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, DGA_MODELS_PATH, validate_connection_config, validate_content_inspection_config, validate_dga_config, get_available_dga_models
+from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, DGA_MODELS_PATH, validate_connection_config, validate_content_inspection_config, validate_dga_config
 from darwin.policy.views import policy_edit, COMMAND_LIST
 from system.cluster.models import Cluster, Node
 from services.frontend.models import Frontend
@@ -92,6 +92,7 @@ class DarwinFilterAPIv1(View):
         return JsonResponse({
             'data': data
         }, status=200)
+
 
 
 @method_decorator(csrf_exempt, name="dispatch")

@@ -83,9 +83,7 @@ function init_vue(){
           reputation_ctx_id: null,
           max_tokens: 75,
           timeout: 0,
-          fastmode: true,
-          token_map: null,
-          model: null
+          fastmode: true
         }
       },
 
@@ -104,8 +102,6 @@ function init_vue(){
 
       yara_rule_file_choices: [],
 
-      dga_model_choices: [],
-      dga_token_choices: [],
       yara_policies_list: [],
       hostlookup_reputation_choices: []
     },
@@ -131,8 +127,6 @@ function init_vue(){
                 self.fetch_content_inspection_choices()
               else if (filter.name === "hostlookup")
                 self.fetch_reputation_ctx()
-              else if (filter.name === "dga")
-                self.fetch_dga_models()
               else if (filter.name === "yara")
                 self.fetch_yara_rule_file()
 
@@ -154,8 +148,6 @@ function init_vue(){
           this.fetch_content_inspection_choices()
         else if (val === "hostlookup")
           this.fetch_reputation_ctx()
-        else if (val === "dga")
-          this.fetch_dga_models()
         else if (val === "yara")
           this.fetch_yara_rule_file()
       }
@@ -223,8 +215,6 @@ function init_vue(){
 
           case "dga":
             customConfig = `
-              <p><b>${gettext('Model')}:</b> ${filter.config.model}</p>
-              <p><b>${gettext('Token')}:</b> ${filter.config.token_map}</p>
               <p><b>${gettext('Max Tokens')}:</b> ${filter.config.max_tokens}</p>
             `
             break
@@ -309,37 +299,6 @@ function init_vue(){
         })
       },
 
-      fetch_dga_models() {
-        let self = this
-
-        $.get(
-          darwin_filter_api_uri + "dga/",
-          null,
-
-          function(response){
-            self.dga_model_choices = []
-            self.dga_token_choices = []
-
-            for (let tmp of response.data.models){
-              self.dga_model_choices.push({
-                label: tmp,
-                id: tmp
-              })
-            }
-
-            for (let tmp of response.data.token_maps){
-              self.dga_token_choices.push({
-                label: tmp,
-                id: tmp
-              })
-            }
-          }
-        ).fail(function(response) {
-          let error = response.responseJSON.error
-          notify('error', gettext('Error'), error)
-        })
-      },
-
       fetch_yara_rule_file() {
         let self = this
 
@@ -402,9 +361,7 @@ function init_vue(){
             reputation_ctx_id: null,
             fastmode: true,
             timeout: 0,
-            max_tokens: 75,
-            token_map: null,
-            model: null
+            max_tokens: 75
           }
         }
       },
@@ -434,8 +391,6 @@ function init_vue(){
               break
             
               case "dga":
-                config.model = tmp_filter.config.model
-                config.token_map = tmp_filter.config.token_map
                 config.max_tokens = parseInt(tmp_filter.config.max_tokens, 10)
                 break
               

@@ -86,24 +86,6 @@ HOSTLOOKUP_VALID_DB_TYPES = [
 ]
 
 
-def get_available_dga_models():
-    """
-        Gets the list of available models and token maps for the DGA filter.
-        The files are returned without path, and should be given as-is during POST/PUT operations in policies
-    """
-    result = {}
-    result['models'] = []
-    result['token_maps'] = []
-
-    for file in file_glob(DGA_MODELS_PATH + "*.pb"):
-        result['models'].append(file.split('/')[-1])
-
-    for file in file_glob(DGA_MODELS_PATH + "*.csv"):
-        result['token_maps'].append(file.split('/')[-1])
-
-    return result
-
-
 def validate_mmdarwin_parameters(mmdarwin_parameters):
     if not isinstance(mmdarwin_parameters, list):
         raise ValidationError(_("should be a list of strings"))
@@ -190,30 +172,13 @@ def validate_content_inspection_config(config):
 def validate_dga_config(config):
     cleaned_config = {}
 
-    token_map = config.get("token_map", None)
-    model = config.get("model", None)
     max_tokens = config.get("max_tokens", None)
 
-    if not token_map or not model:
-        raise ValidationError({'config': _("configuration should contain at least 'token_map' and 'model' parameters")})
-
-    # tokep_map validation
-    if not isinstance(token_map, str):
-        raise ValidationError({'token_map': _("should be a string")})
-    else:
-        if not token_map in get_available_dga_models().get('token_maps', []):
-            raise ValidationError({'token_map': _("{} is not a valid choice".format(token_map))})
-        else:
-            cleaned_config['token_map'] = token_map
+    # token_map validation
+    cleaned_config['token_map'] = "fdga_tokens.csv"
 
     # model validation
-    if not isinstance(model, str):
-        raise ValidationError({'model': _("should be a string")})
-    else:
-        if not model in get_available_dga_models().get('models', []):
-            raise ValidationError({'model': _("{} is not a valid choice".format(model))})
-        else:
-            cleaned_config['model'] = model
+    cleaned_config['model'] = "fdga.pb"
 
     # max_tokens validation
     if max_tokens is not None:
