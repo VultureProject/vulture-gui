@@ -612,7 +612,7 @@ class Frontend(models.Model):
         """
         result = {
             'id': str(self.id),
-            'enable': self.enabled,
+            'enabled': self.enabled,
             'name': self.name,
             'tags': self.tags,
             'mode': self.mode,

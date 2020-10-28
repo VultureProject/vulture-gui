@@ -108,7 +108,17 @@ class BackendAPIv1(View):
                     }, status=404)
 
             else:
-                obj = [s.to_dict() for s in Backend.objects.all()]
+                name = request.GET.get('name')
+                if name:
+                    try:
+                        obj = Backend.objects.get(name=name).to_dict()
+                    except Backend.DoesNotExist:
+                        return JsonResponse({
+                            'error': _('Object does not exist')
+                        }, status=404)
+    
+                else:
+                    obj = [s.to_dict() for s in Backend.objects.all()]
 
             return JsonResponse({
                 'data': obj

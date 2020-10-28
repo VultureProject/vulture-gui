@@ -150,6 +150,13 @@ def frontend_delete(request, object_id, api=False):
             logger.exception(e)
             error = "Object is currently used by a Workflow, cannot be deleted"
 
+            if api:
+                return JsonResponse({
+                    'status': False,
+                    'error': error,
+                    'protected': True
+                }, status=500)
+
         except Exception as e:
             # If API request failure, bring up the error
             logger.error("Error trying to delete frontend '{}': API|Database failure. Details:".format(frontend.name))

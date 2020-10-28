@@ -102,7 +102,17 @@ class FrontendAPIv1(View):
                     }, status=404)
 
             else:
-                obj = [s.to_dict() for s in Frontend.objects.all()]
+                name = request.GET.get('name')
+                if name:
+                    try:
+                        obj = Frontend.objects.get(name=name).to_dict()
+                    except Frontend.DoesNotExist:
+                        return JsonResponse({
+                            "error": _("Object does not exist")
+                        }, status=404)
+
+                else:
+                    obj = [s.to_dict() for s in Frontend.objects.all()]
 
             return JsonResponse({
                 'data': obj
