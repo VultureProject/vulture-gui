@@ -27,6 +27,7 @@ __doc__ = ''
 import sys
 import re
 import ipaddress
+import subprocess
 
 nb_args = len(sys.argv)
 if nb_args >= 3:
@@ -77,6 +78,9 @@ if nb_args >= 3:
         f.write(content)
 
     print("Host successfully {}".format(what))
+
+    subprocess.run(["/usr/sbin/service", "dnsmasq", "restart"])
+
     sys.exit(0)
 else:
     print("ARGS ERROR", file=sys.stderr)
