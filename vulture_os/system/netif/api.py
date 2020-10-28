@@ -46,30 +46,26 @@ class NetworkInterfaceCardAPIv1(View):
         dev = request.GET.get('dev')
         try:
             if object_id:
-                try:
-                    obj = NetworkInterfaceCard.objects.get(pk=object_id).to_template()
-                except NetworkInterfaceCard.DoesNotExist:
-                    return JsonResponse({
-                        'status': False,
-                        'error': _('Object does not exist')
-                    }, status=404)
+                res = NetworkInterfaceCard.objects.get(pk=object_id).to_template()
+
             elif dev:
-                try:
-                    obj = NetworkInterfaceCard.objects.get(dev=dev).to_template()
-                except NetworkInterfaceCard.DoesNotExist:
-                    return JsonResponse({
-                        'status': False,
-                        'error': _('Object does not exist')
-                    }, status=404)
+                res = NetworkInterfaceCard.objects.get(dev=dev).to_template()
+
             else:
-                obj = []
+                res = []
                 for s in NetworkInterfaceCard.objects.all().exclude(dev__in=excluded_intf):
-                    obj.append(s.to_template())
+                    res.append(s.to_template())
 
             return JsonResponse({
                 'status': True,
-                'data': obj
+                'data': res
             })
+
+        except NetworkInterfaceCard.DoesNotExist:
+            return JsonResponse({
+                'status': False,
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             if settings.DEV_MODE:

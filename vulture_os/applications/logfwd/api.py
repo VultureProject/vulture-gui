@@ -50,34 +50,30 @@ class LogOMAPIv1(View):
         try:
             name = request.GET.get('name')
             if object_id:
-                try:
-                    obj = LogOM().select_log_om(object_id).to_dict()
-                except ObjectDoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
+                res = LogOM().select_log_om(object_id).to_dict()
 
             elif name:
-                try:
-                    obj = LogOM().select_log_om_by_name(name).to_dict()
-                except ObjectDoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
+                res = LogOM().select_log_om_by_name(name).to_dict()
+
             elif fw_type:
                 try:
-                    obj = [logOM.to_dict() for logOM in LOGFWD_MODELS[fw_type].objects.all()]
+                    res = [logOM.to_dict() for logOM in LOGFWD_MODELS[fw_type].objects.all()]
                 except KeyError:
                     return JsonResponse({
                         'error': _('Type does not exist')
                     }, status=404)
 
             else:
-                obj = [LogOM().select_log_om(logom.pk).to_dict() for logom in LogOM.objects.all().only('pk')]
+                res = [LogOM().select_log_om(logom.pk).to_dict() for logom in LogOM.objects.all().only('pk')]
 
             return JsonResponse({
-                'data': obj
+                'data': res
             })
+
+        except ObjectDoesNotExist:
+            return JsonResponse({
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)
