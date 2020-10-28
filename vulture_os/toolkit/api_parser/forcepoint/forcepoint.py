@@ -33,8 +33,9 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
 from json import dumps as json_dumps
-from io import BytesIO
+from io import BytesIO, StringIO
 import gzip
+import csv
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('crontab')
@@ -66,6 +67,7 @@ class ForcepointParser(ApiParser):
         "net_src_country", "af_domain", "af_subdomain", "af_topdomain", "http_host", "http_path",
         "http_request_uri", "http_query", "http_proto"
     ]
+    TO_SPLIT_FIELDS = ["EmbDomain", "EmbFullURL", "EmbHost"]
 
     def __init__(self, data):
         super().__init__(data)
@@ -129,10 +131,14 @@ class ForcepointParser(ApiParser):
             yield url, stream
 
     def parse_line(self, mapping, orig_line, stream):
-        if orig_line[0] == 34: # Check if first char is quote
-            orig_line = orig_line[1:-1]
-        # Let the values as bytes, in case of hexadecimal characters
-        res = {mapping[cpt]:value.replace('\"', '"') for cpt,value in enumerate(orig_line.decode('utf-8').split('","'))}
+        res = {}
+        # Convert line to BytesIO to use csv
+        stream_line = StringIO(orig_line.decode('utf-8'))
+        r = csv.reader(stream_line, delimiter=",", doublequote=True, lineterminator="\n", quoting=csv.QUOTE_ALL)
+        # Loop other the fields of the only line
+        for cpt, value in enumerate(list(r)[0]):
+            field = mapping[cpt]
+            res[field] = value.split(',') if field in self.TO_SPLIT_FIELDS else value
         res['stream'] = stream
         return json_dumps(res)
 
@@ -164,7 +170,6 @@ class ForcepointParser(ApiParser):
 
     def execute(self):
         status, tmp_logs = self.get_logs()
-
         if not status:
             raise ForcepointAPIError(tmp_logs)
 
