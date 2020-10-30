@@ -159,25 +159,26 @@ class SymantecParser(ApiParser):
                     else:
                         try:
                             with zipfile.ZipFile(tmp_file) as zip_file:
-                                for gzip_filename in zip_file.namelist():
-                                    logger.debug("[SYMANTEC API PARSER] Parsing archive {}".format(gzip_filename))
-                                    data = []
-                                    self.update_lock()
-                                    gzip_file = BytesIO(zip_file.read(gzip_filename))
+                                # Pnly retrieve the DIRST
+                                gzip_filename = zip_file.namelist()[0]
+                                logger.debug("[SYMANTEC API PARSER] Parsing archive {}".format(gzip_filename))
+                                data = []
+                                self.update_lock()
+                                gzip_file = BytesIO(zip_file.read(gzip_filename))
 
-                                    with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
-                                        for line in gzip_file_content.readlines():
-                                            line = line.strip()
-                                            if not line[0] == "#":
-                                                data.append(b"<15>"+line)
-                                    self.write_to_file(data)
-                                    try:
-                                        self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(hours=1)
-                                    except:
-                                        self.last_api_call += datetime.timedelta(hours=1)
+                                with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
+                                    for line in gzip_file_content.readlines():
+                                        line = line.strip()
+                                        if not line[0] == "#":
+                                            data.append(b"<15>"+line)
+                                self.write_to_file(data)
+                                try:
+                                    self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(hours=1)
+                                except:
+                                    self.last_api_call += datetime.timedelta(hours=1)
 
-                                    self.frontend.last_api_call = self.last_api_call
-                                    self.frontend.save()
+                                self.frontend.last_api_call = self.last_api_call
+                                self.frontend.save()
                             self.finish()
 
                         except zipfile.BadZipfile as err:

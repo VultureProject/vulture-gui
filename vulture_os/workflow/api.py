@@ -230,20 +230,25 @@ class WorkflowAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
+            name = request.GET.get('name')
+
             if object_id:
-                try:
-                    obj = Workflow.objects.get(pk=object_id).to_dict()
-                except Workflow.DoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
+                res = Workflow.objects.get(pk=object_id).to_dict()
+
+            elif name:
+                res = Workflow.objects.get(name=name).to_dict()
 
             else:
-                obj = [s.to_dict() for s in Workflow.objects.all()]
+                res = [s.to_dict() for s in Workflow.objects.all()]
 
             return JsonResponse({
-                'data': obj
+                'data': res
             })
+
+        except Workflow.DoesNotExist:
+            return JsonResponse({
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)

@@ -43,25 +43,29 @@ class NetworkInterfaceCardAPIv1(View):
     def get(self, request, object_id=None):
         excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
 
+        dev = request.GET.get('dev')
         try:
             if object_id:
-                try:
-                    obj = NetworkInterfaceCard.objects.get(pk=object_id).to_template()
-                except NetworkInterfaceCard.DoesNotExist:
-                    return JsonResponse({
-                        'status': False,
-                        'error': _('Object does not exist')
-                    }, status=404)
+                res = NetworkInterfaceCard.objects.get(pk=object_id).to_template()
+
+            elif dev:
+                res = NetworkInterfaceCard.objects.get(dev=dev).to_template()
 
             else:
-                obj = []
+                res = []
                 for s in NetworkInterfaceCard.objects.all().exclude(dev__in=excluded_intf):
-                    obj.append(s.to_template())
+                    res.append(s.to_template())
 
             return JsonResponse({
                 'status': True,
-                'data': obj
+                'data': res
             })
+
+        except NetworkInterfaceCard.DoesNotExist:
+            return JsonResponse({
+                'status': False,
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             if settings.DEV_MODE:
@@ -112,9 +116,19 @@ class NetworkAddressAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
+            name = request.GET.get('name')
             if object_id:
                 try:
                     obj = NetworkAddress.objects.get(pk=object_id).to_dict()
+                except NetworkAddress.DoesNotExist:
+                    return JsonResponse({
+                        'status': False,
+                        'error': _('Object does not exist')
+                    }, status=404)
+
+            elif name:
+                try:
+                    obj = NetworkAddress.objects.get(name=name).to_dict()
                 except NetworkAddress.DoesNotExist:
                     return JsonResponse({
                         'status': False,

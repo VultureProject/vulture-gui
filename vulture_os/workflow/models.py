@@ -155,6 +155,8 @@ class Workflow(models.Model):
             'fqdn': self.fqdn,
             'enabled': self.enabled,
             'frontend': str(self.frontend),
+            'frontend_id': str(self.frontend.pk),
+            'backend_id': str(self.backend.pk),
             'public_dir': self.public_dir,
             'backend': str(self.backend),
             'defender_policy': str(self.defender_policy),
@@ -170,19 +172,18 @@ class Workflow(models.Model):
             'enabled': self.enabled,
             'frontend': self.frontend.to_dict(),
             'backend': self.backend.to_dict(),
+            'frontend_id': str(self.frontend.pk),
+            'backend_id': str(self.backend.pk),
             'workflow_json': json.dumps(self.workflow_json),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             'public_dir': self.public_dir,
             'backend': str(self.backend),
+            'fqdn': self.fqdn,
+            'public_dir': self.public_dir,
             'defender_policy': str(self.defender_policy),
             'acls': [acl.to_dict() for acl in self.workflowacl_set.all()]
         }
-
-        if self.fqdn:
-            result['fqdn'] = self.fqdn
-        if self.public_dir:
-            result['public_dir'] = self.public_dir
 
         return result
 

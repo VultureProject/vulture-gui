@@ -133,6 +133,13 @@ def backend_delete(request, object_id, api=False):
             logger.exception(e)
             error = "Object is currently used by a Workflow, cannot be deleted"
 
+            if api:
+                return JsonResponse({
+                    'status': False,
+                    'error': error,
+                    'protected': True
+                }, status=500)
+
         except Exception as e:
             # If API request failure, bring up the error
             logger.error("Error trying to delete backend '{}': API|Database failure. Details:".format(backend.name))
@@ -288,7 +295,7 @@ def backend_edit(request, object_id=None, api=False):
         for server in server_ids:
             """ If id is given, retrieve object from mongo """
             try:
-                instance_s = Server.objects.get(pk=server['id']) if server['id'] else None
+                instance_s = Server.objects.get(pk=server['id']) if server.get('id') else None
             except ObjectDoesNotExist:
                 form.add_error(None, "Server with id {} not found.".format(server['id']))
                 continue

@@ -211,16 +211,16 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     """ We are coming from the CLI interface """
     try:
-        infos = requests.get(
+        cluster_infos = requests.get(
             "https://{}:8000/api/v1/system/cluster/info".format(master_ip),
             headers={'Cluster-api-key': secret_key},
             verify=False
         ).json()
 
-        if not infos['status']:
-            raise Exception('Error at API Request Cluster Info: {}'.format(infos['data']))
+        if not cluster_infos['status']:
+            raise Exception('Error at API Request Cluster Info: {}'.format(cluster_infos['data']))
 
-        time_master = infos['data'][master_hostname]['unix_timestamp']
+        time_master = cluster_infos['data'][master_hostname]['unix_timestamp']
 
         time_now = time.time()
         if abs(time_now - time_master) > 60 or abs(time_now + time_master) < 60:
@@ -332,6 +332,11 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         logger.error("cluster_join:: Unable to find slave node !")
         logger.error("cluster_join:: Unable to find slave node !")
         return False
+
+    """ Write other slaves into /etc/hosts """
+    for node_name, node_infos in cluster_infos['data'].items():
+        if node_name not in (get_hostname(), master_hostname):
+            node.api_request("toolkit.network.network.make_hostname_resolvable", (node_name, node_infos['management_ip']))
 
     """ Update uri of internal Log Forwarder """
     logfwd = LogOMMongoDB.objects.get()

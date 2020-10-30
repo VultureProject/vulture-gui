@@ -27,6 +27,7 @@ __doc__ = ''
 import sys
 import re
 import ipaddress
+import subprocess
 
 nb_args = len(sys.argv)
 if nb_args >= 3:
@@ -76,15 +77,10 @@ if nb_args >= 3:
     with open('/etc/hosts', 'w') as f:
         f.write(content)
 
-    try:
-        # And into jails - It can fail if we are inside a jail => Nevermind
-        for jail in ("apache", "mongodb", "redis", "rsyslog", "haproxy"):
-            with open("/zroot/{}/etc/hosts".format(jail), "w") as f:
-                f.write(content)
-    except Exception:
-        pass
-
     print("Host successfully {}".format(what))
+
+    subprocess.run(["/usr/sbin/service", "dnsmasq", "restart"])
+
     sys.exit(0)
 else:
     print("ARGS ERROR", file=sys.stderr)

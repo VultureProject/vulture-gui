@@ -63,9 +63,8 @@ def cluster_add(request):
             'message': 'Invalid call'
         })
 
-    """ Make the slave_name resolvable """
-    node = Cluster.get_current_node()
-    node.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
+    """ Make the slave_name resolvable on all Cluster nodes"""
+    Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
 
     """ Now the slave should be in the cluster:
         Add it's management IP """

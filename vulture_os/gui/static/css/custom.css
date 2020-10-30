@@ -605,8 +605,14 @@ ul li{
   color: #dd4b39 !important;
 }
 
+.mega-dropdown-menu{
+    padding: 10px 0 1px 0 !important;
+    border-radius: 0px !important;
+}
+
 .mega-dropdown-menu h3{
     margin-top: 0px !important;
+    margin-left: 10px;
 }
 
 .navbar-top-links>.mega-dropdown>.dropdown-menu.mega-dropdown-menu{
@@ -919,3 +925,5 @@ ul li{
     overflow: auto;
     max-height: 400px;
 }
+
+
