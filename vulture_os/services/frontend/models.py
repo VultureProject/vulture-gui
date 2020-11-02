@@ -571,7 +571,28 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("Microsoft Defender ATP App secret")
     )
-
+    # Cortex XDR API events attributes
+    cortex_xdr_host = models.TextField(
+        verbose_name=_("Cortex XDR FQDN"),
+        default="xdr.domain.com",
+        help_text=_("Cortex XDR api endpoint domain (without api-)")
+    )
+    cortex_xdr_apikey_id = models.TextField(
+        verbose_name=_("Cortex XDR API Key ID"),
+        default="",
+        help_text=_("ID of the API Key from Cortex XDR settings")
+    )
+    cortex_xdr_apikey = models.TextField(
+        verbose_name=_("Cortex XDR API Key"),
+        default="",
+        help_text=_("API Key from Cortex XDR settings")
+    )
+    cortex_xdr_alerts_timestamp = models.DateTimeField(
+        default=None
+    )
+    cortex_xdr_incidents_timestamp = models.DateTimeField(
+        default=None
+    )
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -718,6 +739,13 @@ class Frontend(models.Model):
                     result['mdatp_api_tenant'] = self.mdatp_api_tenant
                     result['mdatp_api_appid'] = self.mdatp_api_appid
                     result['mdatp_api_secret'] = self.mdatp_api_secret
+
+                elif self.api_parser_type == "cortex_xdr":
+                    result['cortex_xdr_host'] = self.cortex_xdr_host
+                    result['cortex_xdr_apikey_id'] = self.cortex_xdr_apikey_id
+                    result['cortex_xdr_apikey'] = self.cortex_xdr_apikey
+                    result['cortex_xdr_alerts_timestamp'] = self.cortex_xdr_alerts_timestamp
+                    result['cortex_xdr_incidents_timestamp'] = self.cortex_xdr_incidents_timestamp
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
