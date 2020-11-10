@@ -33,7 +33,7 @@ from system.config.models import write_conf
 from services.pf.models import PFSettings
 
 # Required exceptions imports
-from services.exceptions import ServiceReloadError
+from services.exceptions import ServiceReloadError, ServiceStatusError
 from subprocess import CalledProcessError
 
 # Extern modules imports
@@ -147,6 +147,23 @@ class PFService(Service):
         """
         status = self.update_counters()
         return status, self.uptime, self.nb_rules, self.counters
+
+    def get_rules(self):
+        """ Apply PF configuration """
+        command = ['/usr/local/bin/sudo', '/sbin/pfctl', '-sr']
+        proc = Popen(command, stdout=PIPE, stderr=PIPE)
+        success, error = proc.communicate()
+        stdout, stderr, code = success.decode('utf8'), error.decode('utf8'), proc.returncode
+
+        """ If service never been started """
+        if code != 0 and "pfctl: /dev/pf: No such file or directory" in stderr:
+            logger.info("Cannot reload service pf because it is not running. Starting-it...")
+            return self.start()
+
+        if code != 0:
+            raise ServiceStatusError(stderr, 'pf', traceback=" ")
+
+        return stdout
 
     def reload_conf(self):
         """
