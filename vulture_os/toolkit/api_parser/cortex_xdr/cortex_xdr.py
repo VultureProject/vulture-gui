@@ -117,7 +117,7 @@ class CortexXDRParser(ApiParser):
                        "operator": "gte",
                        "value": int(since.timestamp()*1000)
                    }]
-        logger.info("CortexXDR api::Get user events request params = {}".format(params))
+        logger.debug("CortexXDR api::Get user events request params = {}".format(params))
 
         response = self.session.post(
             url,
@@ -168,7 +168,5 @@ class CortexXDRParser(ApiParser):
                     # Replace "Z" by "+00:00" for datetime parsing
                     # No need to make_aware, date already contains timezone
                     setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp(logs[-1][KIND_TIME_FIELDS[kind]]/1000, tz=timezone.utc))
-                    logger.info(self.frontend.cortex_xdr_alerts_timestamp)
-                    logger.info(self.frontend.cortex_xdr_incidents_timestamp)
 
         logger.info("CortexXDR parser ending.")
