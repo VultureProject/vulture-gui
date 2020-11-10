@@ -111,6 +111,21 @@ if __name__ == '__main__':
                 break
             except Exception as e:
                 print("Cluster::daemon: General failure: {}".format(str(e)))
+
+            try:
+                pf = PFService()
+                stats = pf.get_rules()
+                # If PF enabled and 0 rules loaded
+                if len(stats) == 0:
+                    logger.info("Cluster::daemon: Loading pf rules")
+                    # Reload PF with conf file - in case of boot issue (e.g: domain in config file)
+                    pf.reload()
+            except ServiceExit:
+                print("Cluster::daemon: Exit asked.")
+                break
+            except Exception as e:
+                logger.error("Cluster::daemon: Failed to load PF rules : {}".format(str(e)))
+
             time.sleep(5)
             logger.info("Cluster::daemon: Trying to resume...")
             error = True

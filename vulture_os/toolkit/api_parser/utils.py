@@ -36,6 +36,8 @@ from toolkit.api_parser.symantec.symantec import SymantecParser
 from toolkit.api_parser.reachfive.reachfive import ReachFiveParser
 from toolkit.api_parser.mongodb.mongodb import MongoDBParser
 from toolkit.api_parser.defender_atp.defender_atp import DefenderATPParser
+from toolkit.api_parser.cortex_xdr.cortex_xdr import CortexXDRParser
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -51,7 +53,8 @@ PARSER_LIST = {
     "akamai": AkamaiParser,
     "reachfive": ReachFiveParser,
     "mongodb": MongoDBParser,
-    "defender_atp": DefenderATPParser
+    "defender_atp": DefenderATPParser,
+    "cortex_xdr": CortexXDRParser
 }
 
 

@@ -949,6 +949,30 @@
                         </div>
                       </div>
 
+                      <div class="col-md-12 api_clients_row" id="api_cortex_xdr_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cortex_xdr_host }}
+                            {{ form.cortex_xdr_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_apikey_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cortex_xdr_apikey_id }}
+                            {{ form.cortex_xdr_apikey_id.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_apikey.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cortex_xdr_apikey }}
+                            {{ form.cortex_xdr_apikey.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
                       <div class="col-md-12 api_clients_row" id="api_aws_bucket_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.aws_access_key_id.label }}</label>

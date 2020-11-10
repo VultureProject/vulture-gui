@@ -208,6 +208,7 @@ class FrontendForm(ModelForm):
                            'imperva_private_key', 'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
                            'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
                            "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
+                           "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                            'darwin_mode']:
             self.fields[field_name].required = False
 
@@ -259,6 +260,7 @@ class FrontendForm(ModelForm):
                   'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
                   'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
                   "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
+                  "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                   'darwin_mode')
 
         widgets = {
@@ -331,6 +333,9 @@ class FrontendForm(ModelForm):
             'mdatp_api_tenant': TextInput(attrs={'class': 'form-control'}),
             'mdatp_api_appid': TextInput(attrs={'class': 'form-control'}),
             'mdatp_api_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'cortex_xdr_host': TextInput(attrs={'class': 'form-control'}),
+            'cortex_xdr_apikey_id': TextInput(attrs={'class': 'form-control'}),
+            'cortex_xdr_apikey': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
