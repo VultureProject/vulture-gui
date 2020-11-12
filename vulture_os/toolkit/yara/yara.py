@@ -102,15 +102,15 @@ def create_or_update_policy_with_category(logger, category):
     logger.info("Yara::create_or_update_policy:: trying to create/update policy with category '{}'".format(category))
 
     if category == "":
-        description_category = " (all rules)"
+        description_category = "(all rules)"
     else:
-        description_category = " (only {})".format(category)
+        description_category = "(only {})".format(category)
 
     policy, created = InspectionPolicy.objects.get_or_create(
         name="github_policy" + "_" + category if category else "github_policy",
         defaults={
             "techno": "yara",
-            "description": "automatic policy created from github rules" + description_category
+            "description": "automatic policy created from github rules " + description_category
         })
 
     if not created:

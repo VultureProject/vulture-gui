@@ -73,15 +73,15 @@
                     status_render = '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
                     break;
                   case "DOWN":
+                  case "DISABLED":
                     status_render = '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
                     break;
                   case "ERROR":
                     status_render = '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
                     break;
-                  case "DISABLED":
-                    break;
                   case "STARTING":
                   case "CONFIGURING":
+                  case "STOPPING":
                     status_render = '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
                     break;
                 }

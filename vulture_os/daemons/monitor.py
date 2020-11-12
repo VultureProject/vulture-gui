@@ -195,13 +195,13 @@ def monitor():
     filters = FilterPolicy.objects.all()
     if filters.count() > 0:
         filter_statuses = {}
-        default = "DOWN"
+        default = "ERROR"
         try:
             filter_statuses = monitor_darwin_filters()
 
         except ServiceError as e:
             logger.error(str(e))
-            default = "ERROR"
+            default = "DOWN"
 
         for dfilter in filters:
             dfilter.status[node.name] = default
@@ -209,8 +209,8 @@ def monitor():
             filter_status = filter_statuses.get(dfilter.name, False)
             if not dfilter.enabled:
                 dfilter.status[node.name] = "DISABLED"
-            elif filter_status is None:
-                dfilter.status[node.name] = "ERROR"
+            elif filter_status is None or not dfilter.filter.is_launchable:
+                dfilter.status[node.name] = "DOWN"
             elif filter_statuses.get(dfilter.name, {}).get('status') is not None:
                 dfilter.status[node.name] = filter_statuses.get(dfilter.name).get('status').upper()
             dfilter.save()
