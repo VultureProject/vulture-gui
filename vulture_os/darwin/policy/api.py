@@ -36,7 +36,7 @@ from django.utils.decorators import method_decorator
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
-from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, DGA_MODELS_PATH, validate_connection_config, validate_content_inspection_config, validate_dga_config
+from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy, DGA_MODELS_PATH
 from darwin.policy.views import policy_edit, COMMAND_LIST
 from system.cluster.models import Cluster, Node
 from services.frontend.models import Frontend
@@ -56,27 +56,47 @@ logger = logging.getLogger('api')
 
 
 @method_decorator(csrf_exempt, name="dispatch")
+class DarwinFilterTypesAPIv1(View):
+    @api_need_key('cluster_api_key')
+    def get(self, request):
+        data = []
+        try:
+            for filter_type in DarwinFilter.objects.all():
+                data.append(filter_type.to_dict())
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+        return JsonResponse({
+                'error': error
+            }, status=500)
+
+        return JsonResponse({
+            'data': data
+        }, status=200)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
 class DarwinFilterAPIv1(View):
     @api_need_key('cluster_api_key')
-    def get(self, request, filter_name=None):
+    def get(self, request, filter_id=None):
         data = {}
         try:
-            if not filter_name:
-                return JsonResponse({
-                    'error': _('you must specify a filter name')
-                }, status=400)
+            if not filter_id:
+                data = []
+                for policy_filter in FilterPolicy.objects.all():
+                    data.append(policy_filter.to_dict())
             else:
                 try:
-                    darwin_filter = DarwinFilter.objects.filter(name=filter_name).get()
-                    data = darwin_filter.to_dict()
-                except DarwinFilter.DoesNotExist:
+                    policy_filter = FilterPolicy.objects.get(id=filter_id)
+                    data = policy_filter.to_dict()
+                except FilterPolicy.DoesNotExist:
                     return JsonResponse({
-                        'error': _("filter name '{}' does not exist".format(filter_name))
+                        'error': _("filter with id {} does not exist".format(filter_id))
                     }, status=404)
-
-                # There could be calls to get lists of available files for other filters
-                if filter_name == "dga":
-                    data.update(get_available_dga_models())
 
         except Exception as e:
             logger.critical(e, exc_info=1)
@@ -127,7 +147,7 @@ class DarwinPolicyAPIv1(View):
             }, status=500)
 
     @staticmethod
-    def create_filters(policy, filters_list):
+    def _create_filters(policy, filters_list):
         new_filters = []
 
         for filt in filters_list:
@@ -143,14 +163,14 @@ class DarwinPolicyAPIv1(View):
                     **filt,
                     policy=policy,
                     filter=darwin_filter,
-                    status={node.name: "WAITING" for node in Node.objects.all().only('name')}
+                    status={node.name: "STARTING" for node in Node.objects.all().only('name')}
                 )
 
                 filter_instance.full_clean()
                 new_filters.append(filter_instance)
 
             except (ValidationError, ValueError, TypeError) as e:
-                logger.error(e)
+                logger.error(e, exc_info=1)
                 return '"{}": {}'.format(filter_name, str(e))
 
         # At this point everything has been validated
@@ -210,7 +230,7 @@ class DarwinPolicyAPIv1(View):
                         'error': str(e),
                     }, status=400)
 
-                error = DarwinPolicyAPIv1.create_filters(policy, filters_list)
+                error = DarwinPolicyAPIv1._create_filters(policy, filters_list)
                 if error:
                     try:
                         policy.delete()
@@ -278,7 +298,7 @@ class DarwinPolicyAPIv1(View):
                         'error': str(e),
                     }, status=400)
 
-                error = DarwinPolicyAPIv1.create_filters(policy, filters)
+                error = DarwinPolicyAPIv1._create_filters(policy, filters)
                 if error:
                     if created:
                         try:
