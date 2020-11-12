@@ -26,7 +26,7 @@ __doc__ = 'Rsyslog service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from darwin.policy.models import FilterPolicy, DarwinPolicy, DarwinFilter
+from darwin.policy.models import DarwinPolicy, FilterPolicy
 from django.utils.translation import ugettext_lazy as _
 from services.service import Service
 from services.darwin.models import DarwinSettings
@@ -36,7 +36,7 @@ from system.config.models import write_conf, delete_conf as delete_conf_file
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 from json import JSONDecodeError, dumps as json_dumps
-from services.exceptions import ServiceStatusError, ServiceDarwinUpdateFilterError
+from services.exceptions import ServiceStatusError, ServiceReloadError, ServiceExit
 from system.exceptions import VultureSystemConfigError, VultureSystemError
 from subprocess import CalledProcessError
 
@@ -80,21 +80,21 @@ class DarwinService(Service):
         return "Darwin Service"
 
 
-def send_command(node_logger, command):
+def _send_command(node_logger, command):
     logger.info("sending command to darwin manager: '{}'".format(command))
     try:
         """ Try to connect and send command to Darwin manager """
         cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
                                stderr=PIPE,
-                               input=command.encode('utf8')
-                               ).decode('utf8')
+                               input=command.encode('utf8'),
+                               timeout=10).decode('utf8')
         node_logger.info("Connection to darwin management socket succeed.")
         """ Darwin manager always answer in JSON """
         try:
             json_res = json_loads(cmd_res)
         except JSONDecodeError:
-            # Do NOT set traceback, it will be retrieved from JSON exception
-            raise ServiceDarwinUpdateFilterError("Darwin manager response is not a valid JSON : '{}'".format(cmd_res))
+            raise ServiceReloadError("Darwin manager response is not a valid JSON", "Darwin",
+                                        traceback=cmd_res)
 
         return json_res
 
@@ -102,7 +102,7 @@ def send_command(node_logger, command):
         """ Return code != 0 """
         stdout = e.stdout.decode('utf8')
         stderr = e.stderr.decode('utf8')
-        raise ServiceDarwinUpdateFilterError("Failed to connect to darwin management socket.",
+        raise ServiceReloadError("Failed to connect to darwin management socket.", "Darwin",
             traceback=(stderr or stdout))
 
 
@@ -111,18 +111,17 @@ def get_darwin_sockets():
     return [obj.socket_path for obj in FilterPolicy.objects.all()]
 
 
-def reload_filters(node_logger):
-    reply = send_command(node_logger, "{\"type\": \"update_filters\"}\n")
+def _reload_filters(node_logger):
+    reply = _send_command(node_logger, "{\"type\": \"update_filters\"}\n")
     if reply.get('status') == "KO":
-            raise ServiceDarwinUpdateFilterError("Darwin manager returned error: {}.".format(reply.get('errors')))
+            raise ServiceReloadError("Darwin manager failed to update some filter(s): {}".format(reply.get('errors', '')), "Darwin")
     elif reply.get('status') != "OK":
-        raise ServiceDarwinUpdateFilterError("Darwin manager returned unknown response: {}.".format(reply),
-                                                traceback=reply.get('errors'))
+        raise ServiceReloadError("Darwin manager returned an unexpected result: {}".format(reply.get('errors', '')), "Darwin")
     return "Darwin reloaded successfully"
 
 
 
-def build_conf(node_logger):
+def reload_conf(node_logger):
     result = "Configuration has not changed"
     service = DarwinService()
     node_logger.debug("Reloading conf of service Darwin.")
@@ -131,7 +130,7 @@ def build_conf(node_logger):
 
     if conf_changed:
         result = "Configuration has changed, reloading Darwin.\n"
-        result += reload_filters(node_logger)
+        result += _reload_filters(node_logger)
     return result
 
 
@@ -148,14 +147,14 @@ def delete_filter_conf(node_logger, filter_conf_path):
             filter_conf_path
         )
         result += "Configuration file '{}' deleted\n".format(filter_conf_path)
-    except VultureSystemError as e:
+    except ServiceExit as e: # DO NOT REMOVE IT - Needed to stop Vultured service !
+        raise
+    except Exception as e:
         if "No such file or directory" in str(e):
             node_logger.info("File '{}' already deleted".format(filter_conf_path))
         else:
             result += "Failed to delete configuration file '{}' : {}\n".format(filter_conf_path, e)
             error = True
-    except ServiceExit as e: # DO NOT REMOVE IT - Needed to stop Vultured service !
-        raise
 
     if error:
         raise VultureSystemError(result, "delete Darwin filter configuration {}".format(filter_conf_path))
@@ -188,8 +187,11 @@ def write_policy_conf(node_logger, policy_id):
                         DARWIN_OWNERS, DARWIN_PERMS
                     ]
                 )
+            except ServiceExit:
+                raise
             except Exception as e:
                 logger.error("Darwin::write_policy_conf:: error while writing conf: {}".format(e))
+                logger.critical(e, exc_info=1)
                 result += "error while writing file '{}': {}\n".format(filter_instance.conf_path, e)
                 error = True
                 continue
@@ -204,14 +206,14 @@ def write_policy_conf(node_logger, policy_id):
                     node_logger,
                     filter_instance.conf_path
                 )
-            except (VultureSystemConfigError, VultureSystemError) as e:
-                if "No such file or directory" in str(e):
-                    node_logger.info("File {} already deleted".format(filter_instance.conf_path))
-                    continue
-                else:
-                    raise
+            except ServiceExit:
+                raise
             except Exception as e:
-                logger.error("Darwin::write_policy_conf:: error while removing disabled filter config: {}".format(e))
+                if "No such file or directory" in str(e):
+                    node_logger.info("File '{}' already deleted".format(filter_instance.conf_path))
+                else:
+                    result += "Failed to delete configuration file '{}' : {}\n".format(filter_instance.conf_path, e)
+                    error = True
 
     if error:
         raise VultureSystemError(result, "write Darwin configuration files for policy {}".format(policy_id))
@@ -226,15 +228,14 @@ def update_filter(node_logger, filter_id):
     try:
         darwin_filter = FilterPolicy.objects.get(pk=filter_id)
     except ObjectDoesNotExist:
-        raise ServiceDarwinUpdateFilterError("FilterPolicy with id {} not found, ".format(filter_id), traceback=" ")
+        raise ServiceReloadError("DarwinFilter with id {} not found".format(filter_id), "Darwin")
 
-    reply = send_command(node_logger, "{{\"type\": \"update_filters\", " \
+    reply = _send_command(node_logger, "{{\"type\": \"update_filters\", " \
         "\"filters\": [\"{}\"]}}\n".format(darwin_filter.name))
     if reply.get('status') == "KO":
-            raise ServiceDarwinUpdateFilterError("Darwin manager returned error: {}.".format(reply.get('errors')))
+            raise ServiceReloadError("Darwin manager failed to update filter '{}': {}".format(darwin_filter.name, reply.get('errors', '')), "Darwin")
     elif reply.get('status') != "OK":
-        raise ServiceDarwinUpdateFilterError("Darwin manager returned unknown response: {}.".format(reply),
-                                                traceback=reply.get('errors'))
+        raise ServiceReloadError("Darwin manager returned an unexpected result: {}".format(reply.get('errors', ''), "Darwin"))
     node_logger.info("Darwin filter '{}' hot update successful.".format(darwin_filter.name))
     return "Darwin filter '{}' hot update successful.".format(darwin_filter.name)
 
@@ -246,7 +247,9 @@ def monitor_filters():
     try:
         """ Connect to Darwin manager and try to monitor filters """
         cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
-                               stderr=PIPE, input="{\"type\": \"monitor\"}\n".encode('utf8')).decode('utf8')
+                               stderr=PIPE,
+                               input="{\"type\": \"monitor\"}\n".encode('utf8'),
+                               timeout=10).decode('utf8')
         logger.debug("Connection to darwin management socket succeed.")
         """ Darwin manager always answer in JSON """
         try:

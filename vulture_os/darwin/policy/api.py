@@ -260,7 +260,7 @@ class DarwinPolicyAPIv1(View):
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
 
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
-        Cluster.api_request("services.darwin.darwin.build_conf")
+        Cluster.api_request("services.darwin.darwin.reload_conf")
 
         return build_response(policy.pk, "darwin.policy.api", COMMAND_LIST)
 
@@ -332,7 +332,7 @@ class DarwinPolicyAPIv1(View):
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
 
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
-        Cluster.api_request("services.darwin.darwin.build_conf")
+        Cluster.api_request("services.darwin.darwin.reload_conf")
 
         return build_response(policy.pk, "darwin.policy.api", COMMAND_LIST)
 
@@ -367,7 +367,7 @@ class DarwinPolicyAPIv1(View):
                     for node in frontend.get_nodes():
                         node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
 
-                Cluster.api_request("services.darwin.darwin.build_conf")
+                Cluster.api_request("services.darwin.darwin.reload_conf")
 
             else:
                 return JsonResponse({

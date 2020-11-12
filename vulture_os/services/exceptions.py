@@ -109,10 +109,3 @@ class ServiceRestartError(ServiceError):
 
     def __init__(self, message, service_name, **kwargs):
         super().__init__(message, service_name, "restart", **kwargs)
-
-
-class ServiceDarwinUpdateFilterError(ServiceError):
-    """ Raised if error while trying to contact Darwin manager """
-
-    def __init__(self, message, **kwargs):
-        super().__init__(message, "Darwin", "hot update filter", **kwargs)

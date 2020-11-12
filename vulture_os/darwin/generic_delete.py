@@ -36,7 +36,7 @@ from django.views.generic import View
 # Django project imports
 from darwin.access_control.models import AccessControl
 from darwin.defender_policy.models import DefenderPolicy
-from darwin.policy.models import DarwinFilter, DarwinPolicy
+from darwin.policy.models import DarwinPolicy
 from darwin.log_viewer.models import DefenderRuleset
 from darwin.inspection.models import InspectionPolicy, InspectionRule
 from services.frontend.models import BlacklistWhitelist, Frontend
@@ -128,7 +128,7 @@ class DeleteDarwinPolicy(DeleteView):
 
                 for filter_conf_path in filter_conf_paths:
                     Cluster.api_request("services.darwin.darwin.delete_filter_conf", filter_conf_path)
-                Cluster.api_request("services.darwin.darwin.build_conf")
+                Cluster.api_request("services.darwin.darwin.reload_conf")
             except ProtectedError as e:
                 error = "Policy is still used. Cannot remove"
 
