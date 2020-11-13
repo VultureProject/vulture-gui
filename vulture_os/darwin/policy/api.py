@@ -36,7 +36,7 @@ from django.utils.decorators import method_decorator
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
-from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy, DGA_MODELS_PATH
+from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy, DarwinBuffering, DGA_MODELS_PATH
 from darwin.policy.views import policy_edit, COMMAND_LIST
 from system.cluster.models import Cluster, Node
 from services.frontend.models import Frontend
@@ -70,7 +70,7 @@ class DarwinFilterTypesAPIv1(View):
             if settings.DEV_MODE:
                 error = str(e)
 
-        return JsonResponse({
+            return JsonResponse({
                 'error': error
             }, status=500)
 
@@ -149,6 +149,7 @@ class DarwinPolicyAPIv1(View):
     @staticmethod
     def _create_filters(policy, filters_list):
         new_filters = []
+        bufferings =[]
 
         for filt in filters_list:
             try:
@@ -159,6 +160,7 @@ class DarwinPolicyAPIv1(View):
                 logger.error("Error while creating filters for darwin policy : DarwinFilter id '{}' does not exist".format(filter_type_id))
                 return "unknown filter type {}".format(filter_type_id)
 
+            buffering_opts = filt.pop('buffering', None)
             try:
                 filter_instance = FilterPolicy(
                     **filt,
@@ -169,6 +171,9 @@ class DarwinPolicyAPIv1(View):
 
                 filter_instance.full_clean()
                 new_filters.append(filter_instance)
+
+                if buffering_opts:
+                    bufferings.append((filter_instance, buffering_opts))
 
             except (ValidationError, ValueError, TypeError) as e:
                 logger.error(e, exc_info=1)
@@ -183,6 +188,17 @@ class DarwinPolicyAPIv1(View):
         # And the new ones can be inserted in their place
         for filter_instance in new_filters:
             filter_instance.save()
+
+        try:
+            for filter_instance, buffering_opts in bufferings:
+                buffering = DarwinBuffering.objects.create(
+                    interval=buffering_opts.get('interval'),
+                    required_log_lines=buffering_opts.get('required_log_lines'),
+                    destination_filter=filter_instance
+                )
+        except Exception as e:
+            logger.error(e, exc_info=1)
+            return 'error while creating darwin buffering: {}'.format(e)
 
         return ""
 
@@ -263,6 +279,9 @@ class DarwinPolicyAPIv1(View):
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
 
+        if DarwinBuffering.objects.filter(destination_filter__policy=policy).exists():
+            DarwinPolicy.update_buffering()
+
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.reload_conf")
 
@@ -334,6 +353,9 @@ class DarwinPolicyAPIv1(View):
         for frontend in policy.frontend_set.all():
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
+
+        if DarwinBuffering.objects.filter(destination_filter__policy=policy).exists():
+            DarwinPolicy.update_buffering()
 
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.reload_conf")

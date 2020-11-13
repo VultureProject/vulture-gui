@@ -20,6 +20,7 @@ function init_vue(){
       hint: tmp.description,
       is_launchable: tmp.is_launchable,
       is_internal: tmp.is_internal,
+      can_be_buffered: tmp.can_be_buffered,
       custom_rsyslog_calls_possible: true
     }
   }
@@ -57,9 +58,15 @@ function init_vue(){
           max_tokens: 75,
           timeout: 0,
           fastmode: true
+        },
+        continuous_analysis_enabled: false,
+        buffering: {
+          interval: 300,
+          required_log_lines: 10
         }
       },
 
+      buffer_outputs: [],
       filters_choices: [],
       log_level_choices: [
         {label: "Debug", id: "DEBUG"},
@@ -96,23 +103,26 @@ function init_vue(){
             let data = response.data
             self.policy.name = data.name
             self.policy.description = data.description
+            self.policy.buffer_outputs = []
 
             for (let filter of data.filters){
               filter_type = available_filter_types[filter.filter_type]
               if (filter_type) {
                 if (filter_type.name === "content_inspection")
-                self.fetch_content_inspection_choices()
+                  self.fetch_content_inspection_choices()
                 else if (filter_type.name === "lkup")
-                self.fetch_reputation_ctx()
+                  self.fetch_reputation_ctx()
                 else if (filter_type.name === "yara")
-                self.fetch_yara_rule_file()
+                  self.fetch_yara_rule_file()
               }
 
               let tmp_mmdarwin_parameters = []
               for (let tmp of filter.mmdarwin_parameters)
                 tmp_mmdarwin_parameters.push({text: tmp})
-              
+
               filter.mmdarwin_parameters = tmp_mmdarwin_parameters
+
+              filter.continuous_analysis_enabled = (filter.buffering != null)
               self.policy.filters.push(filter)
             }
           }
@@ -125,19 +135,19 @@ function init_vue(){
         let filter_type = available_filter_types[filter_type_id]
         if (filter_type) {
           if (filter_type.name === "content_inspection")
-          this.fetch_content_inspection_choices()
+            this.fetch_content_inspection_choices()
           else if (filter_type.name === "lkup")
-          this.fetch_reputation_ctx()
+            this.fetch_reputation_ctx()
           else if (filter_type.name === "yara")
-          this.fetch_yara_rule_file()
+            this.fetch_yara_rule_file()
 
           if (!filter_type.is_launchable) {
             this.filter.enabled = false
-      }
+          }
         }
       }
     },
-    
+
     methods: {
       renderLabel(filter_type_id) {
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].label : ""
@@ -178,15 +188,21 @@ function init_vue(){
 
       renderCustomConfig(filter){
         let rsyslog_params = ""
+        let continuous_analysis_enabled = ""
         let filter_type_name = (available_filter_types[filter.filter_type]) ? available_filter_types[filter.filter_type].name : ""
 
         if (filter.mmdarwin_enabled){
           let tmp = []
 
           for (let tag of filter.mmdarwin_parameters)
-            tmp.push(`<label class='label label-primary'>${tag.text}</label>`)
+          tmp.push(`<label class='label label-primary'>${tag.text}</label>`)
 
           rsyslog_params += `<p><b>${gettext("Custom Rsyslog inputs")}:</b> ${tmp.join(' ')}</p>`
+        }
+        
+        if (filter.continuous_analysis_enabled){
+          continuous_analysis_enabled = `<b>${gettext('Continuous Analysis')}:</b><ul><li><b>${gettext("Analysis interval")}:</b> ${filter.buffering.interval}</li>`
+          continuous_analysis_enabled += `<li><b>${gettext("Analysis min entries")}:</b> ${filter.buffering.required_log_lines}</li></ul>`
         }
 
         let customConfig = ""
@@ -196,7 +212,7 @@ function init_vue(){
               <p><b>${gettext("Redis Expire")}:</b> ${filter.config.redis_expire}</p>
             `
             break
-          
+
           case "content_inspection":
             let label_yara_rule_file = ""
             for (let file of this.yara_rule_file_choices){
@@ -218,7 +234,7 @@ function init_vue(){
               <p><b>${gettext('Max Tokens')}:</b> ${filter.config.max_tokens}</p>
             `
             break
-          
+
           case "lkup":
             label_hostlookup_rule_file = ""
             for (let tmp of this.hostlookup_reputation_choices) {
@@ -229,7 +245,7 @@ function init_vue(){
               <p><b>${gettext("Database")}:</b> ${label_hostlookup_rule_file}</p>
             `
             break
-          
+
           case "yara":
             let rule_file_list = []
             for (let id of filter.config.yara_policies_id){
@@ -249,6 +265,7 @@ function init_vue(){
 
         return `
           ${rsyslog_params}
+          ${continuous_analysis_enabled}
           ${customConfig}
         `
       },
@@ -321,7 +338,11 @@ function init_vue(){
       custom_rsyslog_calls(filter_type_id) {
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].custom_rsyslog_calls_possible : false
       },
-
+      
+      can_be_buffered(filter_type_id) {
+        return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].can_be_buffered : false
+      },
+      
       is_internal(filter_type_id) {
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].is_internal : false
       },
@@ -370,6 +391,11 @@ function init_vue(){
             max_tokens: 75,
             timeout: 0,
             fastmode: true
+          },
+          continuous_analysis_enabled: false,
+          buffering: {
+            interval: 300,
+            required_log_lines: 10
           }
         }
       },
@@ -384,6 +410,7 @@ function init_vue(){
 
         for (let tmp_filter of this.policy.filters){
           let config = {}
+          let buffering = null
           let mmdarwin_parameters = []
           filter_type_name = (available_filter_types[tmp_filter.filter_type]) ? available_filter_types[tmp_filter.filter_type].name : ""
 
@@ -391,7 +418,7 @@ function init_vue(){
             case "conn":
               config.redis_expire = parseInt(tmp_filter.config.redis_expire, 10)
               break
-            
+
             case "content_inspection":
               config.max_connections = parseInt(tmp_filter.config.max_connections, 10)
               config.yara_scan_type = tmp_filter.config.yara_scan_type
@@ -399,15 +426,15 @@ function init_vue(){
               config.max_memory_usage = parseInt(tmp_filter.config.max_memory_usage, 10)
               config.yara_policy_id = parseInt(tmp_filter.config.yara_policy_id, 10)
               break
-            
+
               case "dgad":
                 config.max_tokens = parseInt(tmp_filter.config.max_tokens, 10)
                 break
-              
+
               case "lkup":
                 config.reputation_ctx_id = parseInt(tmp_filter.config.reputation_ctx_id, 10)
                 break
-              
+
               case "yara":
                 config.fastmode = tmp_filter.config.fastmode
                 config.timeout = parseInt(tmp_filter.config.timeout, 10)
@@ -417,6 +444,12 @@ function init_vue(){
 
           for (let tmp of tmp_filter.mmdarwin_parameters)
             mmdarwin_parameters.push(tmp.text)
+
+          if (tmp_filter.continuous_analysis_enabled) {
+            buffering = {}
+            buffering.interval = tmp_filter.buffering.interval
+            buffering.required_log_lines = tmp_filter.buffering.required_log_lines
+          }
 
           let tmp = {
             filter_type: tmp_filter.filter_type,
@@ -428,7 +461,8 @@ function init_vue(){
             cache_size: parseInt(tmp_filter.cache_size, 10),
             mmdarwin_enabled: tmp_filter.mmdarwin_enabled,
             mmdarwin_parameters: mmdarwin_parameters,
-            config: config
+            config: config,
+            buffering: buffering
           }
 
           filters.push(tmp)
@@ -449,7 +483,7 @@ function init_vue(){
           $.post(
             darwin_policy_api_uri,
             data,
-  
+
             function(response) {
               notify('success', gettext("Success"), gettext("Policy successfully created"))
 

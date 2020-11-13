@@ -290,6 +290,9 @@ class DarwinFilter(models.Model):
     """Whether this filter type should be visible on GUI"""
     is_internal = models.BooleanField(default=False)
 
+    """Whether this filter can be buffered with the BUFR filter"""
+    can_be_buffered = models.BooleanField(default=False)
+
     def __str__(self):
         return self.name
 
@@ -301,6 +304,7 @@ class DarwinFilter(models.Model):
             "description": self.description,
             "is_internal": self.is_internal,
             "is_launchable": self.is_launchable,
+            "can_be_buffered": self.can_be_buffered
         }
 
     @property
@@ -372,6 +376,76 @@ class DarwinPolicy(models.Model):
 
         return return_data
 
+
+    @staticmethod
+    def update_buffering():
+        """
+        This function updates all models to create/assign buffer filter(s) to corresponding buffering actions
+        it also enables or disables buffer filter depending on conditions
+        """
+        logger.debug("darwin::update_buffering:: starting to update buffering filters")
+        # Get new (incomplete) bufferings
+        new_bufferings = DarwinBuffering.objects.filter(buffer_filter=None)
+        buffer_type = DarwinFilter.objects.get(name="bufr")
+
+        for buffering in new_bufferings:
+            buffer_filter= None
+            # Get equivalent buffering, for same destination filter type
+            existing_buffering = DarwinBuffering.objects.exclude(buffer_filter=None).filter(destination_filter__filter_type=buffering.destination_filter.filter_type).first()
+            # If there is none existing, that means the buffering filter doesn't exist either
+            if not existing_buffering:
+                logger.info("darwin::update_buffering:: no buffer filter for '{}' filter type, creating".format(buffering.destination_filter.filter_type))
+                # Create the internal policy if necessary
+                internal_policy, created = DarwinPolicy.objects.get_or_create(
+                    is_internal=True,
+                    name="Internal Policy",
+                    defaults={
+                        "description": "Policy used to contain all internal filters"
+                    })
+                if created:
+                    logger.info("darwin::update_buffering:: internal policy created")
+                # Create the buffer filter for this destination filter type
+                buffer_filter = FilterPolicy.objects.create(
+                    filter_type=buffer_type,
+                    policy=internal_policy,
+                    enabled=True)
+            # Equivalent buffering already exists, just get the assigned buffer filter
+            else:
+                buffer_filter = existing_buffering.buffer_filter
+
+            # Update the buffering action with the assigned or newly-created buffer filter
+            buffering.buffer_filter = buffer_filter
+            buffering.save()
+
+        # Enable/Disable buffer filters depending on conditions
+        for buffer_filter in FilterPolicy.objects.filter(filter_type=buffer_type):
+            enable = False
+
+            # Update buffer filter only if it still has buffers, delete it otherwise
+            if buffer_filter.buffers.exists():
+                # Iterate over buffers associated with buffer filter
+                # if a destination_filter is associated with a frontend through a policy, the buffer filter can be enabled
+                # (In other words, the buffer filter is enabled only if it has at least one valid source of data)
+                for buffer in buffer_filter.buffers.all():
+                    if buffer.destination_filter.enabled and buffer.destination_filter.policy.frontend_set.exists():
+                        logger.info("darwin::update_buffering:: enabling buffering filter {}".format(buffer_filter))
+                        enable = True
+
+                buffer_filter.enabled = enable
+                buffer_filter.save()
+            else:
+                logger.info("darwin::update_buffering:: filter doesn't have buffers, deleting {}".format(buffer_filter))
+                Cluster.api_request("services.darwin.darwin.delete_filter_conf", buffer_filter.conf_path)
+                buffer_filter.delete()
+
+        try:
+            internal_policy = DarwinPolicy.objects.get(name="Internal Policy", is_internal=True)
+            Cluster.api_request("services.darwin.darwin.write_policy_conf", internal_policy.pk)
+            Cluster.api_request("services.darwin.darwin.reload_policy_filters", internal_policy.pk)
+        except DarwinPolicy.DoesNotExist:
+            logger.error("darwin_policy::update_buffering:: could not find internal policy")
+
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
@@ -380,9 +454,38 @@ class DarwinPolicy(models.Model):
     def __str__(self):
         return self.name
 
-    @property
-    def decision_filter(self):
-        return "decision_{}".format(self.id)
+
+class DarwinBuffering(models.Model):
+
+    interval = models.PositiveIntegerField(
+        default=300,
+        help_text=_("Number of seconds to cache data before analysing the batch"),
+        null=False
+    )
+
+    required_log_lines = models.PositiveIntegerField(
+        default=10,
+        help_text=_("Minimal number of entries to require before launching analysis"),
+        null=False
+    )
+
+    buffer_filter = models.ForeignKey(
+        "darwin.FilterPolicy",
+        related_name="buffers",
+        on_delete=models.CASCADE,
+        null=True
+    )
+
+    destination_filter = models.ForeignKey(
+        "darwin.FilterPolicy",
+        on_delete=models.CASCADE
+    )
+
+    def to_dict(self):
+        return {
+            "interval": self.interval,
+            "required_log_lines": self.required_log_lines
+        }
 
 
 class FilterPolicy(models.Model):
@@ -523,6 +626,10 @@ class FilterPolicy(models.Model):
             "config": self.config
         }
 
+        buffering = DarwinBuffering.objects.filter(destination_filter=self).first()
+        if buffering:
+            ret['buffering'] = buffering.to_dict()
+
         return ret
 
 
@@ -602,6 +709,61 @@ class FilterPolicy(models.Model):
         return json_conf
 
 
+    def _generate_bufr_conf(self):
+        json_conf = {
+            "input_format": [],
+            "outputs": []
+        }
+        filter_type = ""
+
+        if self.buffers.exists():
+            some_buffer = self.buffers.first()
+            input_type = some_buffer.destination_filter.filter_type.name
+
+            if input_type == "unad":
+                # TODO remove when BUFR is updated with new name format
+                filter_type = "anomaly"
+                json_conf['input_format'] = [
+                    {"name": "net_src_ip", "type": "string"},
+                    {"name": "net_dst_ip", "type": "string"},
+                    {"name": "net_dst_port", "type": "string"},
+                    {"name": "ip_proto", "type": "string"}
+                ]
+            if input_type == "sofa":
+                # TODO remove when BUFR is updated with new name format
+                filter_type = "sofa"
+                json_conf['input_format'] = [
+                    {"name": "ip", "type": "string"},
+                    {"name": "hostname", "type": "string"},
+                    {"name": "os", "type": "string"},
+                    {"name": "proto", "type": "string"},
+                    {"name": "port", "type": "string"}
+                ]
+
+            for buffer in self.buffers.all():
+                redis_lists = []
+                for listener in buffer.destination_filter.policy.frontend_set.all().only("name"):
+                    # different source name for each listener/frontend
+                    # different source name for each filter type
+                    # different source name for each policy
+                    redis_lists.append({
+                        "source": "{}_{}_{}".format(input_type, listener.name, buffer.destination_filter.policy.id),
+                        "name": "darwin_bufr_{}_{}_{}".format(input_type, listener.name, buffer.destination_filter.policy.id)
+                    })
+
+                # Only create the output if there are sources
+                if redis_lists:
+                    json_conf['outputs'].append({
+                        "filter_type": "f{}".format(filter_type),
+                        "filter_socket_path": buffer.destination_filter.socket_path,
+                        "interval": buffer.interval,
+                        "required_log_lines": buffer.required_log_lines,
+                        "redis_lists": redis_lists
+                    })
+
+        return json_conf
+
+
     def conf_to_json(self):
         """
         Function to clean and validate filter configuration before translating it to string and writing it in the configuration file
@@ -622,6 +784,8 @@ class FilterPolicy(models.Model):
             json_conf.update(self._generate_lkup_conf())
         if self.filter_type.name == "dgad":
             json_conf.update(self._generate_dgad_conf())
+        if self.filter_type.name == "bufr":
+            json_conf.update(self._generate_bufr_conf())
         if self.filter_type.name == "content_inspection":
             json_conf.update(self._generate_content_inspection_conf())
 

@@ -66,15 +66,15 @@
                         <template v-if="!is_internal(filter.filter_type)">
                           <td><v-toggle-button :sync="true" :color="renderButtonColor(filter.filter_type)" v-model="filter.enabled"/></td>
                           <td v-html="renderLabel(filter.filter_type)"></td>
-                        <td>${filter.threshold}</td>
-                        <td v-html="renderLogLevel(filter.log_level)"></td>
-                        <td>${filter.nb_thread}</td>
-                        <td>${filter.cache_size}</td>
-                        <td v-html="renderCustomConfig(filter)"></td>
-                        <td>
-                          <button type="button" class="btn btn-xs btn-primary" @click="editFilter(index)"><i class="fa fa-edit"></i></button>
-                          <button type="button" class="btn btn-xs btn-danger" @click="removeFilter(index)"><i class="fa fa-trash"></i></button>
-                        </td>
+                          <td>${filter.threshold}</td>
+                          <td v-html="renderLogLevel(filter.log_level)"></td>
+                          <td>${filter.nb_thread}</td>
+                          <td>${filter.cache_size}</td>
+                          <td v-html="renderCustomConfig(filter)"></td>
+                          <td>
+                            <button type="button" class="btn btn-xs btn-primary" @click="editFilter(index)"><i class="fa fa-edit"></i></button>
+                            <button type="button" class="btn btn-xs btn-danger" @click="removeFilter(index)"><i class="fa fa-trash"></i></button>
+                          </td>
                         </template>
                       </tr>
                     </tbody>
@@ -167,6 +167,34 @@
                   </div>
                 </div>
 
+                <template v-if="can_be_buffered(filter.filter_type)">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Enable continuous analysis" %}:</label>
+                    <div class="col-sm-5">
+                      <v-toggle-button v-model="filter.continuous_analysis_enabled"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "Filter will buffer data continuously, and analyse batches at configured intervals" %}</small>
+                    </div>
+                  </div>
+                  <template v-if="filter.continuous_analysis_enabled">
+                    <div class="col-md-12 form-group">
+                      <label class="col-sm-4 control-label">{% trans "Analysis frequency" %}:</label>
+                      <div class="col-sm-5">
+                        <input type="number" v-model="filter.buffering.interval" class="form-control" min="1">
+                        <small class="help-block">{% trans "Number of seconds to cache data before analysing batch" %}</small>
+                      </div>
+                    </div>
+                    <div class="col-md-12 form-group">
+                      <label class="col-sm-4 control-label">{% trans "Minimum batch size" %}:</label>
+                      <div class="col-sm-5">
+                        <input type="number" v-model="filter.buffering.required_log_lines" class="form-control" min="0">
+                        <small class="help-block">{% trans "Minimal number of entries to require before launching analysis" %}</small>
+                      </div>
+                    </div>
+                  </template>
+                </template>
+
                 <template v-if="custom_rsyslog_calls(filter.filter_type)">
                   <div class="col-md-12 form-group">
                     <label class="col-sm-4 control-label">{% trans "Enable custom rsyslog calls" %}:</label>
@@ -197,109 +225,109 @@
                 </template>
 
                 <template v-if="renderName(filter.filter_type) === 'conn'">
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Redis expire" %}:</label>
-                      <div class="col-sm-5">
-                        <input type="number" v-model="filter.config.redis_expire" class="form-control" min="0">
-                        <small class="help-block">{% trans "Number of seconds to cache connection, after this delay the connection will be deemed new again" %}</small>
-                      </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Redis expire" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.redis_expire" class="form-control" min="0">
+                      <small class="help-block">{% trans "Number of seconds to cache connection, after this delay the connection will be deemed new again" %}</small>
                     </div>
+                  </div>
                 </template>
 
                 <template v-if="renderName(filter.filter_type) === 'content_inspection'">
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Max connections" %}:</label>
-                      <div class="col-sm-5">
-                        <input type="number" v-model="filter.config.max_connections" class="form-control" min="0">
-                        <small class="help-block">{% trans "The maximum number of connections to folow (is only relevant when yaraScantype is set to 'stream')" %}</small>
-                      </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Max connections" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.max_connections" class="form-control" min="0">
+                      <small class="help-block">{% trans "The maximum number of connections to folow (is only relevant when yaraScantype is set to 'stream')" %}</small>
                     </div>
+                  </div>
 
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Yara Scan Type" %}:</label>
-                      <div class="col-sm-5">
-                        <v-select :options="yara_scan_type_choices" v-model="filter.config.yara_scan_type" :reduce="elem => elem.id"/>
-                      </div>
-                      <div class="col-md-5 col-md-offset-4">
-                        <small class="help-block">{% trans "Either 'packet' (scan data in packet without stream recomposition), or 'stream' (recompose TCP stream, then scan the recomposition)" %}</small>
-                      </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Yara Scan Type" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="yara_scan_type_choices" v-model="filter.config.yara_scan_type" :reduce="elem => elem.id"/>
                     </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "Either 'packet' (scan data in packet without stream recomposition), or 'stream' (recompose TCP stream, then scan the recomposition)" %}</small>
+                    </div>
+                  </div>
 
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Yara Scan Max Size" %}:</label>
-                      <div class="col-sm-5">
-                        <input type="number" v-model="filter.config.yara_scan_max_size" class="form-control" min="0">
-                        <small class="help-block">{% trans "The maximum number of bytes to scan, is especially usefull when yaraScanType is set to stream (will define the maximum size of the recomposed stream to scan)" %}</small>
-                      </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Yara Scan Max Size" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.yara_scan_max_size" class="form-control" min="0">
+                      <small class="help-block">{% trans "The maximum number of bytes to scan, is especially usefull when yaraScanType is set to stream (will define the maximum size of the recomposed stream to scan)" %}</small>
                     </div>
+                  </div>
 
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Max memory usage" %}:</label>
-                      <div class="col-sm-5">
-                        <input type="number" v-model="filter.config.max_memory_usage" class="form-control" min="0">
-                        <small class="help-block">{% trans "Rough upper limit for the memory usage (in MB) of the filter, could be usefull when dealing with high traffic to prevent RAM overflow. Be warry that this only takes into account the data kept from connections, and the filter might take a bit more RAM" %}</small>
-                      </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Max memory usage" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.max_memory_usage" class="form-control" min="0">
+                      <small class="help-block">{% trans "Rough upper limit for the memory usage (in MB) of the filter, could be usefull when dealing with high traffic to prevent RAM overflow. Be warry that this only takes into account the data kept from connections, and the filter might take a bit more RAM" %}</small>
                     </div>
+                  </div>
 
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Yara Policy" %}:</label>
-                      <div class="col-sm-5">
-                        <v-select :options="yara_rule_file_choices" v-model="filter.config.yara_policy_id" :reduce="elem => elem.id"/>
-                      </div>
-                      <div class="col-md-5 col-md-offset-4">
-                        <small class="help-block">{% trans "Yara policy with rules to use when scanning data" %}</small>
-                      </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Yara Policy" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="yara_rule_file_choices" v-model="filter.config.yara_policy_id" :reduce="elem => elem.id"/>
                     </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "Yara policy with rules to use when scanning data" %}</small>
+                    </div>
+                  </div>
                 </template>
 
                 <template v-if="renderName(filter.filter_type) === 'dgad'">
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Max token" %}:</label>
-                      <div class="col-sm-5">
-                        <input type="number" v-model="filter.config.max_tokens" class="form-control" min="0">
-                        <small class="help-block">{% trans "The maximum number of tokens from domain to take into account during calculation" %}</small>
-                      </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Max token" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.max_tokens" class="form-control" min="0">
+                      <small class="help-block">{% trans "The maximum number of tokens from domain to take into account during calculation" %}</small>
                     </div>
+                  </div>
                 </template>
-                  
+                
                 <template v-if="renderName(filter.filter_type) === 'lkup'">
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Database" %}:</label>
-                      <div class="col-sm-5">
-                        <v-select :options="hostlookup_reputation_choices" v-model="filter.config.reputation_ctx_id" :reduce="elem => elem.id"/>
-                      </div>
-                      <div class="col-md-5 col-md-offset-4">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Database" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="hostlookup_reputation_choices" v-model="filter.config.reputation_ctx_id" :reduce="elem => elem.id"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
                       <small class="help-block">{% trans "The lookup file to use for detection" %}</small>
                     </div>
                   </div>
                 </template>
-                  
+                
                 <template v-if="renderName(filter.filter_type) === 'yara'">
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Fast mode" %}:</label>
-                      <div class="col-sm-5">
-                        <v-toggle-button v-model="filter.config.fastmode"/>
-                      </div>
-                      <div class="col-md-5 col-md-offset-4">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Fast mode" %}:</label>
+                    <div class="col-sm-5">
+                      <v-toggle-button v-model="filter.config.fastmode"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
                       <small class="help-block">{% trans "Don't search for a rule once it has matched" %}</small>
-                      </div>
                     </div>
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Timeout" %}:</label>
-                      <div class="col-sm-5">
-                        <input type="number" v-model="filter.config.timeout" class="form-control" min="0">
-                        <small class="help-block">{% trans "Maximum number of seconds to wait for the scan to finish (zero means wait until scan is finished)" %}</small>
-                      </div>
+                  </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Timeout" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.timeout" class="form-control" min="0">
+                      <small class="help-block">{% trans "Maximum number of seconds to wait for the scan to finish (zero means wait until scan is finished)" %}</small>
                     </div>
-                    <div class="col-md-12 form-group">
-                      <label class="col-sm-4 control-label">{% trans "Rule file list" %}:</label>
-                      <div class="col-sm-5">
-                        <v-select :options="yara_policies_list" multiple v-model="filter.config.yara_policies_id" :reduce="elem => elem.id"/>
-                      </div>
-                      <div class="col-md-5 col-md-offset-4">
-                        <small class="help-block">{% trans "List of yara policies to use during detection" %}</small>
-                      </div>
+                  </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Rule file list" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="yara_policies_list" multiple v-model="filter.config.yara_policies_id" :reduce="elem => elem.id"/>
                     </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "List of yara policies to use during detection" %}</small>
+                    </div>
+                  </div>
                 </template>
               </div>
             </div>
