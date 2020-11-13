@@ -125,7 +125,7 @@
 
 
 #     def clean_enabled(self):
-#         if self.instance.filter.is_internal:
+#         if self.instance.filter_type.is_internal:
 #             return True
 
 #         return self.cleaned_data['enabled']

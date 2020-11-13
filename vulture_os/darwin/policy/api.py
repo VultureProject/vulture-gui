@@ -152,17 +152,18 @@ class DarwinPolicyAPIv1(View):
 
         for filt in filters_list:
             try:
-                filter_name = filt.pop('name', '')
-                darwin_filter = DarwinFilter.objects.get(name=filter_name)
+                filt.pop('policy', '')
+                filter_type_id = filt.pop('filter_type', 0)
+                darwin_filter = DarwinFilter.objects.get(id=filter_type_id)
             except DarwinFilter.DoesNotExist:
-                logger.error("Error while creating filters for darwin policy : filter '{}' does not exist".format(filter_name))
-                return "{} is not a valid filter".format(filter_name)
+                logger.error("Error while creating filters for darwin policy : DarwinFilter id '{}' does not exist".format(filter_type_id))
+                return "unknown filter type {}".format(filter_type_id)
 
             try:
                 filter_instance = FilterPolicy(
                     **filt,
                     policy=policy,
-                    filter=darwin_filter,
+                    filter_type=darwin_filter,
                     status={node.name: "STARTING" for node in Node.objects.all().only('name')}
                 )
 
@@ -171,7 +172,7 @@ class DarwinPolicyAPIv1(View):
 
             except (ValidationError, ValueError, TypeError) as e:
                 logger.error(e, exc_info=1)
-                return '"{}": {}'.format(filter_name, str(e))
+                return str(e)
 
         # At this point everything has been validated
         # So the old filters can be deleted safely
@@ -211,14 +212,17 @@ class DarwinPolicyAPIv1(View):
                     filters_list = request.JSON.get('filters', [])
                     name = request.JSON.get('name', '')
                     description = request.JSON.get('description', '')
+                    is_internal = request.JSON.get('is_internal', False)
                 else:
-                    filters_list = json.loads(request.POST.get('filters', []))
+                    filters_list = json.loads(request.POST.get('filters', '[]'))
                     name = request.POST.get('name', '')
                     description = request.POST.get('description', '')
+                    is_internal = request.POST.get('is_internal', False)
 
                 policy = DarwinPolicy(
                     name=name,
-                    description=description
+                    description=description,
+                    is_internal=is_internal
                 )
 
                 try:
@@ -288,7 +292,7 @@ class DarwinPolicyAPIv1(View):
                 policy, created = DarwinPolicy.objects.get_or_create(pk=object_id)
 
                 policy.name = name
-                policy.description = name
+                policy.description = description
 
                 try:
                     policy.full_clean()

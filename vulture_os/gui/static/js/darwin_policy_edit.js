@@ -4,53 +4,26 @@ Vue.component('v-toggle-button', ToggleButton.ToggleButton)
 
 let darwin_policy_edit_vue;
 
-let available_filters = {
-  anomaly: {
-    label: gettext("Anomaly"),
-    hint: gettext("The anomaly filter detects abnormal variations in network traffic")
-  },
-  connection: {
-    label: gettext("Connection"),
-    hint: gettext("The connection filter detects opening connections between assets"),
-    custom_rsyslog_calls_possible: true
-  },
-  content_inspection: {
-    label: gettext("Content Inspection"),
-    hint: gettext("The content inspection filter detects patterns in network packets"),
-    custom_rsyslog_calls_possible: true
-  },
-  dga: {
-    label: gettext("DGA"), 
-    hint: gettext("The DGA filter detects the Domain Generation Algorithms (DGAs)"),
-    custom_rsyslog_calls_possible: true
-  },
-  hostlookup: {
-    label: gettext("Host Lookup"),
-    hint: gettext("The host lookup filter searches for matches in a list for matching hostnames"),
-    custom_rsyslog_calls_possible: true
-  },
-  tanomaly: {
-    label: gettext("TAnomaly"),
-    hint: gettext("The tanomaly filter is a threaded anomaly filter, detecting variations continuously on network traffic"),
-    custom_rsyslog_calls_possible: true
-  },
-  yara: {
-    label: gettext("Yara"),
-    hint: gettext("The Yara filter runs the yara engine on arbitrary data loaded in memory"),
-    custom_rsyslog_calls_possible: true
-  },
-  sofa: {
-    label: gettext("Sofa"),
-    hint: gettext(""),
-    custom_rsyslog_calls_possible: true
-  }
-}
+let available_filter_types = {}
 
 $(function(){
-  init_vue()
+  init_vue();
 })
 
 function init_vue(){
+
+  // iterate over array given with HTML through jinja (see view)
+  for (let tmp of darwin_filters){
+    available_filter_types[tmp.id] = {
+      label: tmp.name.toUpperCase() + " - " + tmp.longname,
+      name: tmp.name,
+      hint: tmp.description,
+      is_launchable: tmp.is_launchable,
+      is_internal: tmp.is_internal,
+      custom_rsyslog_calls_possible: true
+    }
+  }
+
   darwin_policy_edit_vue = new Vue({
     el: "#darwin_policy_edit",
     delimiters: ['${', '}'],
@@ -63,15 +36,15 @@ function init_vue(){
 
       tagRsyslog: "",
       filter: {
-        name: "",
+        filter_type: null,
         enabled: true,
+        nb_thread: 5,
         log_level: "WARNING",
         threshold: 80,
-        nb_thread: 5,
-        weight: 1.0,
-        cache_size: 0,
         mmdarwin_enabled: false,
         mmdarwin_parameters: [],
+        weight: 1.0,
+        cache_size: 0,
         config: {
           redis_expire: 300,
           max_connections: 64000,
@@ -109,8 +82,10 @@ function init_vue(){
     mounted() {
       let self = this
 
-      for (let [filter_name, config] of Object.entries(available_filters))
-        this.filters_choices.push({label: config.label, id: filter_name})
+      for (let [filter_id, config] of Object.entries(available_filter_types)) {
+        if (!config.is_internal)
+          this.filters_choices.push({label: config.label, id: filter_id})
+      }
 
       if (object_id){
         $.get(
@@ -123,12 +98,15 @@ function init_vue(){
             self.policy.description = data.description
 
             for (let filter of data.filters){
-              if (filter.name === "content_inspection")
+              filter_type = available_filter_types[filter.filter_type]
+              if (filter_type) {
+                if (filter_type.name === "content_inspection")
                 self.fetch_content_inspection_choices()
-              else if (filter.name === "hostlookup")
+                else if (filter_type.name === "lkup")
                 self.fetch_reputation_ctx()
-              else if (filter.name === "yara")
+                else if (filter_type.name === "yara")
                 self.fetch_yara_rule_file()
+              }
 
               let tmp_mmdarwin_parameters = []
               for (let tmp of filter.mmdarwin_parameters)
@@ -143,19 +121,42 @@ function init_vue(){
     },
 
     watch: {
-      "filter.name"(val) {
-        if (val === "content_inspection")
+      "filter.filter_type"(filter_type_id) {
+        let filter_type = available_filter_types[filter_type_id]
+        if (filter_type) {
+          if (filter_type.name === "content_inspection")
           this.fetch_content_inspection_choices()
-        else if (val === "hostlookup")
+          else if (filter_type.name === "lkup")
           this.fetch_reputation_ctx()
-        else if (val === "yara")
+          else if (filter_type.name === "yara")
           this.fetch_yara_rule_file()
+
+          if (!filter_type.is_launchable) {
+            this.filter.enabled = false
+      }
+        }
       }
     },
     
     methods: {
-      renderName(val) {
-        return available_filters[val].label
+      renderLabel(filter_type_id) {
+        return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].label : ""
+      },
+
+      renderName(filter_type_id) {
+        return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].name : ""
+      },
+
+      renderButtonColor(filter_type_id) {
+        let filter_type = available_filter_types[filter_type_id]
+        if(filter_type && filter_type.is_launchable){
+          console.log("is launchable")
+          return {checked: '#75C791', unchecked: '#BFCBD9'}
+        }
+        else {
+          console.log("is not launchable")
+          return {checked: '#E45050', unchecked: '#BFCBD9'}
+        }
       },
 
       renderBoolean(val) {
@@ -176,22 +177,21 @@ function init_vue(){
       },
 
       renderCustomConfig(filter){
-        if (filter.name === "anomaly")
-          return ""
-
-        let rsyslog_params = `<p><b>${gettext('Custom Rsyslog')}:</b> ${this.renderBoolean(filter.mmdarwin_enabled)}</p>`
+        let rsyslog_params = ""
+        let filter_type_name = (available_filter_types[filter.filter_type]) ? available_filter_types[filter.filter_type].name : ""
 
         if (filter.mmdarwin_enabled){
           let tmp = []
+
           for (let tag of filter.mmdarwin_parameters)
             tmp.push(`<label class='label label-primary'>${tag.text}</label>`)
 
-          rsyslog_params += `<p><b>${gettext("Rsyslog Params")}:</b> ${tmp.join(' ')}</p>`
+          rsyslog_params += `<p><b>${gettext("Custom Rsyslog inputs")}:</b> ${tmp.join(' ')}</p>`
         }
 
         let customConfig = ""
-        switch(filter.name){
-          case "connection":
+        switch(filter_type_name){
+          case "conn":
             customConfig = `
               <p><b>${gettext("Redis Expire")}:</b> ${filter.config.redis_expire}</p>
             `
@@ -213,13 +213,13 @@ function init_vue(){
             `
             break
 
-          case "dga":
+          case "dgad":
             customConfig = `
               <p><b>${gettext('Max Tokens')}:</b> ${filter.config.max_tokens}</p>
             `
             break
           
-          case "hostlookup":
+          case "lkup":
             label_hostlookup_rule_file = ""
             for (let tmp of this.hostlookup_reputation_choices) {
               if (filter.config.reputation_ctx_id === tmp.id)
@@ -318,12 +318,20 @@ function init_vue(){
         )
       },
 
-      custom_rsyslog_calls(val) {
-        return available_filters[val].custom_rsyslog_calls_possible
+      custom_rsyslog_calls(filter_type_id) {
+        return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].custom_rsyslog_calls_possible : false
       },
 
-      hint(val){
-        return available_filters[val].hint
+      is_internal(filter_type_id) {
+        return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].is_internal : false
+      },
+
+      is_launchable(filter_type_id) {
+        return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].is_launchable : false
+      },
+      
+      hint(filter_type_id){
+        return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].hint : ""
       },
 
       editFilter(index){
@@ -332,7 +340,7 @@ function init_vue(){
       },
 
       addFilter() {
-        if (!this.filter.name)
+        if (!this.filter.filter_type)
           return
 
         let data = {}
@@ -341,15 +349,15 @@ function init_vue(){
         this.policy.filters.push(data)
 
         this.filter = {
-          name: "",
+          filter_type: null,
           enabled: true,
+          nb_thread: 5,
           log_level: "WARNING",
           threshold: 80,
-          nb_thread: 5,
-          weight: 1.0,
-          cache_size: 0,
           mmdarwin_enabled: false,
           mmdarwin_parameters: [],
+          weight: 1.0,
+          cache_size: 0,
           config: {
             redis_expire: 300,
             max_connections: 64000,
@@ -357,11 +365,11 @@ function init_vue(){
             yara_scan_max_size: 16384,
             max_memory_usage: 200,
             yara_policy_id: null,
-            yara_policies_id: null,
+            yara_policies_id: [],
             reputation_ctx_id: null,
-            fastmode: true,
+            max_tokens: 75,
             timeout: 0,
-            max_tokens: 75
+            fastmode: true
           }
         }
       },
@@ -376,9 +384,11 @@ function init_vue(){
 
         for (let tmp_filter of this.policy.filters){
           let config = {}
+          let mmdarwin_parameters = []
+          filter_type_name = (available_filter_types[tmp_filter.filter_type]) ? available_filter_types[tmp_filter.filter_type].name : ""
 
-          switch(tmp_filter.name){
-            case "connection":
+          switch(filter_type_name){
+            case "conn":
               config.redis_expire = parseInt(tmp_filter.config.redis_expire, 10)
               break
             
@@ -390,11 +400,11 @@ function init_vue(){
               config.yara_policy_id = parseInt(tmp_filter.config.yara_policy_id, 10)
               break
             
-              case "dga":
+              case "dgad":
                 config.max_tokens = parseInt(tmp_filter.config.max_tokens, 10)
                 break
               
-              case "hostlookup":
+              case "lkup":
                 config.reputation_ctx_id = parseInt(tmp_filter.config.reputation_ctx_id, 10)
                 break
               
@@ -405,12 +415,11 @@ function init_vue(){
                 break
           }
 
-          let mmdarwin_parameters = []
           for (let tmp of tmp_filter.mmdarwin_parameters)
             mmdarwin_parameters.push(tmp.text)
 
           let tmp = {
-            name: tmp_filter.name,
+            filter_type: tmp_filter.filter_type,
             enabled: tmp_filter.enabled,
             threshold: parseInt(tmp_filter.threshold, 10),
             log_level: tmp_filter.log_level,

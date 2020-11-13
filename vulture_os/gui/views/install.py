@@ -24,7 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Install View of Vulture OS'
 
 from applications.logfwd.models import LogOMMongoDB
-from darwin.policy.models import DarwinPolicy, FilterPolicy
+from darwin.policy.models import DarwinPolicy
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
@@ -182,12 +182,8 @@ def cluster_create(admin_user=None, admin_password=None):
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")
 
-    logger.debug("API call to write default Darwin filters conf")
-    for policy in DarwinPolicy.objects.all():
-        node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
-
-    logger.debug("API call to configure Darwin default policy")
-    node.api_request("services.darwin.darwin.build_conf")
+    logger.debug("API call to reload whole darwin configuration")
+    node.api_request("services.darwin.darwin.reload_all")
 
     logger.debug("API call to configure Apache GUI")
     node.api_request("services.apache.apache.reload_conf")
@@ -359,12 +355,8 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")
 
-    logger.debug("API call to write Darwin policies conf")
-    for policy in DarwinPolicy.objects.all():
-        node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
-
-    logger.debug("API call to configure Darwin")
-    node.api_request("services.darwin.darwin.build_conf")
+    logger.debug("API call to reload whole darwin configuration")
+    node.api_request("services.darwin.darwin.reload_all")
 
     # API call to while Cluster - to refresh Nodes list in conf
     logger.debug("API call to update configuration of Apache GUI")

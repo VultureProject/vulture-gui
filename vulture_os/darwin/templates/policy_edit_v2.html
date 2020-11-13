@@ -63,8 +63,9 @@
                     </thead>
                     <tbody>
                       <tr v-for="(filter, index) of policy.filters">
-                        <td><v-toggle-button v-model="filter.enabled"/></td>
-                        <td v-html="renderName(filter.name)"></td>
+                        <template v-if="!is_internal(filter.filter_type)">
+                          <td><v-toggle-button :sync="true" :color="renderButtonColor(filter.filter_type)" v-model="filter.enabled"/></td>
+                          <td v-html="renderLabel(filter.filter_type)"></td>
                         <td>${filter.threshold}</td>
                         <td v-html="renderLogLevel(filter.log_level)"></td>
                         <td>${filter.nb_thread}</td>
@@ -74,6 +75,7 @@
                           <button type="button" class="btn btn-xs btn-primary" @click="editFilter(index)"><i class="fa fa-edit"></i></button>
                           <button type="button" class="btn btn-xs btn-danger" @click="removeFilter(index)"><i class="fa fa-trash"></i></button>
                         </td>
+                        </template>
                       </tr>
                     </tbody>
                   </table>
@@ -98,27 +100,28 @@
               <div class="form-group col-md-12">
                 <label class="col-sm-4 control-label">{% trans "Filter" %}:</label>
                 <div class="col-sm-5">
-                  <v-select :options="filters_choices" v-model="filter.name" :reduce="elem => elem.id"/>
+                  <v-select :options="filters_choices" v-model="filter.filter_type" :reduce="elem => elem.id"/>
                 </div>
                 <div class="col-sm-5 col-sm-offset-4">
                   <small class="help-block">{% trans "The type of darwin filter this instance is" %}</small>
                 </div>
               </div>
 
-              <div v-if="filter.name">
+              <div v-if="filter.filter_type">
                 <div class="col-md-8 col-md-offset-2">
                   <div class="alert alert-primary text-center">
-                    <strong><i class="fa fa-question-circle"></i></strong> <span v-html="hint(filter.name)"></span>
+                    <strong><i class="fa fa-question-circle"></i></strong> <span v-html="hint(filter.filter_type)"></span>
                   </div>
                 </div>
 
                 <div class="col-md-12 form-group">
                   <label class="col-sm-4 control-label">{% trans "Enabled" %}:</label>
                   <div class="col-sm-5">
-                    <v-toggle-button v-model="filter.enabled"/>
+                    <v-toggle-button :sync="true" :color="renderButtonColor(filter.filter_type)" v-model="filter.enabled"/>
                   </div>
                   <div class="col-sm-5 col-sm-offset-4">
-                    <small class="help-block">{% trans "Wheter this filter should be started" %}</small>
+                    <small class="text-danger" v-if="filter.enabled & !is_launchable(filter.filter_type)">This filter is not installed, it can be enabled but won't be started as long as it's not available</small>
+                    <small class="help-block">{% trans "Whether this filter should be started" %}</small>
                   </div>
                 </div>
 
@@ -164,7 +167,7 @@
                   </div>
                 </div>
 
-                <div v-if="custom_rsyslog_calls(filter.name)">
+                <template v-if="custom_rsyslog_calls(filter.filter_type)">
                   <div class="col-md-12 form-group">
                     <label class="col-sm-4 control-label">{% trans "Enable custom rsyslog calls" %}:</label>
                     <div class="col-sm-5">
@@ -176,9 +179,13 @@
                   </div>
 
                   <div class="col-md-12 form-group" v-if="filter.mmdarwin_enabled">
-                    <label class="col-sm-4 control-label">{% trans "Rsyslog parameter" %}:</label>
+                    <label class="col-sm-4 control-label">{% trans "Rsyslog inputs" %}:</label>
                     <div class="col-sm-5">
-                      <vue-tags-input :tags="filter.mmdarwin_parameters" v-model="tagRsyslog" @tags-changed="newTags => filter.mmdarwin_parameters = newTags"/>
+                      <vue-tags-input
+                        :add-on-key="[13, ' ']"
+                        :tags="filter.mmdarwin_parameters"
+                        v-model="tagRsyslog"
+                        @tags-changed="newTags => filter.mmdarwin_parameters = newTags"/>
                     </div>
                     <div class="col-md-5 col-md-offset-4">
                       <small class="help-block">
@@ -187,8 +194,9 @@
                       </small>
                     </div>
                   </div>
+                </template>
 
-                  <div v-if="filter.name === 'connection'">
+                <template v-if="renderName(filter.filter_type) === 'conn'">
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Redis expire" %}:</label>
                       <div class="col-sm-5">
@@ -196,9 +204,9 @@
                         <small class="help-block">{% trans "Number of seconds to cache connection, after this delay the connection will be deemed new again" %}</small>
                       </div>
                     </div>
-                  </div>
+                </template>
 
-                  <div v-if="filter.name === 'content_inspection'">
+                <template v-if="renderName(filter.filter_type) === 'content_inspection'">
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Max connections" %}:</label>
                       <div class="col-sm-5">
@@ -242,9 +250,9 @@
                         <small class="help-block">{% trans "Yara policy with rules to use when scanning data" %}</small>
                       </div>
                     </div>
-                  </div>
+                </template>
 
-                  <div v-if="filter.name === 'dga'">
+                <template v-if="renderName(filter.filter_type) === 'dgad'">
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Max token" %}:</label>
                       <div class="col-sm-5">
@@ -252,28 +260,28 @@
                         <small class="help-block">{% trans "The maximum number of tokens from domain to take into account during calculation" %}</small>
                       </div>
                     </div>
-                  </div>
+                </template>
                   
-                  <div v-if="filter.name === 'hostlookup'">
+                <template v-if="renderName(filter.filter_type) === 'lkup'">
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Database" %}:</label>
                       <div class="col-sm-5">
                         <v-select :options="hostlookup_reputation_choices" v-model="filter.config.reputation_ctx_id" :reduce="elem => elem.id"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
-                        <small class="help-block">{% trans "The list of yara policies to use for detection" %}</small>
-                      </div>
+                      <small class="help-block">{% trans "The lookup file to use for detection" %}</small>
                     </div>
                   </div>
+                </template>
                   
-                  <div v-if="filter.name === 'yara'">
+                <template v-if="renderName(filter.filter_type) === 'yara'">
                     <div class="col-md-12 form-group">
                       <label class="col-sm-4 control-label">{% trans "Fast mode" %}:</label>
                       <div class="col-sm-5">
                         <v-toggle-button v-model="filter.config.fastmode"/>
                       </div>
                       <div class="col-md-5 col-md-offset-4">
-                        <small class="help-block">{% trans "Keep searching for a rule once it has already matched" %}</small>
+                      <small class="help-block">{% trans "Don't search for a rule once it has matched" %}</small>
                       </div>
                     </div>
                     <div class="col-md-12 form-group">
@@ -292,13 +300,12 @@
                         <small class="help-block">{% trans "List of yara policies to use during detection" %}</small>
                       </div>
                     </div>
-                  </div>
-                </div>
+                </template>
               </div>
             </div>
 
             <div class="panel-footer text-right">
-              <button type="button" @click="addFilter" v-if="filter.name" class="btn btn-primary"><i class="fa fa-plus"></i>&nbsp;Add filter</button>
+              <button type="button" @click="addFilter" v-if="filter.filter_type" class="btn btn-primary"><i class="fa fa-plus"></i>&nbsp;Add filter</button>
             </div>
           </div>
         </div>
@@ -310,6 +317,7 @@
 
 {% block jquery_code %}
 let object_id = '{{ object_id }}'
+let darwin_filters = {{ darwin_filters|safe }}
 
 let darwin_policy_list_uri = "{% url 'darwin.policy.list' %}"
 let darwin_policy_api_uri = "{% url 'darwin.policy.api' %}"

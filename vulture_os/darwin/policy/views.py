@@ -32,18 +32,13 @@ from django.conf import settings
 from django.shortcuts import render
 
 # Django project imports
-from gui.forms.form_utils import DivErrorList
-from system.cluster.models import Cluster, Node
 
 # Required exceptions imports
+from darwin.policy.models import DarwinFilter
 from django.core.exceptions import ObjectDoesNotExist
-from services.exceptions import ServiceConfigError, ServiceError, ServiceReloadError
-from system.exceptions import VultureSystemError
 
 # Extern modules imports
-from json import loads as json_loads
-from sys import exc_info
-from traceback import format_exception
+from json import dumps as json_dumps
 
 # Logger configuration imports
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -52,6 +47,10 @@ logger = logging.getLogger('gui')
 COMMAND_LIST = {}
 
 def policy_edit(request, object_id=None):
+    darwin_filters = []
+    for filter_type in DarwinFilter.objects.all():
+        darwin_filters.append(filter_type.to_dict())
     return render(request, 'policy_edit_v2.html', {
-        "object_id": object_id if object_id else ""
+        "object_id": object_id if object_id else "",
+        "darwin_filters": json_dumps(darwin_filters)
     })

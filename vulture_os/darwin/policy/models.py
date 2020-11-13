@@ -35,10 +35,11 @@ from applications.reputation_ctx.models import ReputationContext
 from daemons.reconcile import REDIS_LIST as DARWIN_REDIS_ALERT_LIST
 from daemons.reconcile import REDIS_CHANNEL as DARWIN_REDIS_ALERT_CHANNEL
 from darwin.inspection.models import InspectionPolicy
+from system.cluster.models import Cluster
 
 # External modules imports
-from glob import glob as file_glob
 from json import dumps as json_dumps
+from os import path as os_path
 
 # Logger configuration imports
 import logging
@@ -50,7 +51,7 @@ JINJA_PATH = "/home/vlt-os/vulture_os/darwin/log_viewer/config/"
 
 SOCKETS_PATH = "/var/sockets/darwin"
 FILTERS_PATH = "/home/darwin/filters"
-CONF_PATH = "/home/darwin/conf/"
+CONF_PATH = "/home/darwin/conf"
 TEMPLATE_OWNER = "darwin:vlt-web"
 TEMPLATE_PERMS = "644"
 
@@ -59,7 +60,7 @@ ALERTS_REDIS_LIST_NAME = "darwin_alerts"
 ALERTS_REDIS_CHANNEL_NAME = "darwin.alerts"
 ALERTS_LOG_FILEPATH = "/var/log/darwin/alerts.log"
 
-DGA_MODELS_PATH = CONF_PATH + 'fdga/'
+DGA_MODELS_PATH = CONF_PATH + '/fdgad/'
 
 DARWIN_LOGLEVEL_CHOICES = (
     ('CRITICAL', 'Critical'),
@@ -266,40 +267,49 @@ def validate_yara_config(config):
 
 
 DARWIN_FILTER_CONFIG_VALIDATORS = {
-    'anomaly': validate_anomaly_config,
-    'connection': validate_connection_config,
+    'unad': validate_anomaly_config,
+    'conn': validate_connection_config,
     'content_inspection': validate_content_inspection_config,
-    'dga': validate_dga_config,
-    'hostlookup': validate_hostlookup_config,
+    'dgad': validate_dga_config,
+    'lkup': validate_hostlookup_config,
     'sofa': validate_sofa_config,
     'tanomaly': validate_tanomaly_config,
     'yara': validate_yara_config,
 }
 
 class DarwinFilter(models.Model):
+    """The quadrigram of the filter"""
     name = models.TextField(unique=True)
+
+    """A Long name to develop the quadrigram or give a more explicit name"""
+    longname = models.TextField()
+
+    """The description on what the filter does"""
     description = models.TextField()
+
+    """Whether this filter type should be visible on GUI"""
     is_internal = models.BooleanField(default=False)
-    """ conf_path directive in Darwin filter conf
-     for example the MMDB database """
 
     def __str__(self):
         return self.name
 
     def to_dict(self):
         return {
+            "id": self.id,
             "name": self.name,
+            "longname": self.longname,
             "description": self.description,
             "is_internal": self.is_internal,
+            "is_launchable": self.is_launchable,
         }
 
     @property
     def exec_path(self):
         return "{}/darwin_{}".format(FILTERS_PATH, self.name)
 
-    @staticmethod
-    def is_launchable():
-        return False
+    @property
+    def is_launchable(self):
+        return os_path.isfile("{conf_path}/f{filter_name}/f{filter_name}.conf".format(conf_path=CONF_PATH, filter_name=self.name))
 
     @staticmethod
     def str_attrs():
@@ -310,17 +320,25 @@ class DarwinPolicy(models.Model):
     name = models.TextField(
         unique=True,
         default="Custom Policy",
-        help_text="The friendly name of your policy (should be unique)")
+        help_text="The friendly name of your policy (should be unique)"
+    )
 
     description = models.TextField(
         blank=True,
-        help_text="A description for your policy")
+        help_text="A description for your policy"
+    )
+
+    is_internal = models.BooleanField(
+        default=False,
+        help_text=_("Whether this policy is a system one"),
+    )
 
     def to_dict(self):
         return_data = {
             "id": self.id,
             "name": self.name,
             "description": self.description,
+            "is_internal": self.is_internal,
             "filters": []
         }
 
@@ -334,6 +352,7 @@ class DarwinPolicy(models.Model):
         return {
             'id': str(self.id),
             'name': self.name,
+            'description': self.description,
         }
 
     def to_html_template(self):
@@ -341,12 +360,13 @@ class DarwinPolicy(models.Model):
         return_data = {
             'id': str(self.id),
             'name': self.name,
-            'filters': [],
-            'status': {}
+            'description': self.description,
+            'inputs': [],
+            'status': []
         }
         try:
-            return_data['filters'] = [str(f) for f in self.filterpolicy_set.filter(enabled=True).only(*FilterPolicy.str_attrs())]
-            return_data['status'] = [{f.filter.name: f.status} for f in self.filterpolicy_set.all().only('status', 'filter')]
+            return_data['inputs'] = [f.name for f in self.frontend_set.all()]
+            return_data['status'] = [{f.filter_type.name: f.status} for f in self.filterpolicy_set.all() if not f.filter_type.is_internal]
         except ObjectDoesNotExist:
             pass
 
@@ -367,7 +387,7 @@ class DarwinPolicy(models.Model):
 
 class FilterPolicy(models.Model):
     """ Associated filter template """
-    filter = models.ForeignKey(
+    filter_type = models.ForeignKey(
         DarwinFilter,
         on_delete=models.CASCADE,
         help_text=_("The type of darwin filter this instance is"),
@@ -422,11 +442,6 @@ class FilterPolicy(models.Model):
         help_text=_("The weight of this filter when calculating mean certitude during multiple calls to different filters with the same data"),
         )
 
-    is_internal = models.BooleanField(
-        default=False,
-        help_text=_("Whether this filter is a system one"),
-        )
-
     """ Status of filter for each nodes """
     status = models.DictField(
         default={},
@@ -446,6 +461,7 @@ class FilterPolicy(models.Model):
         choices=DARWIN_OUTPUT_CHOICES,
         help_text=_("The type of output this filter should send to the next one (when defined, see 'next_filter'). This should be 'NONE', unless you know what you're doing"),
     )
+
     """ Next filter in workflow """
     next_filter = models.ForeignKey(
         'self',
@@ -456,11 +472,7 @@ class FilterPolicy(models.Model):
         help_text=_("A potential filter to send results and/or data to continue analysis"),
     )
 
-    conf_path = models.TextField(
-        blank=True,
-        help_text=_("The fullpath to the configuration file of this filter"),
-        )
-
+    """ The configuration written in the filter's configuration file """
     config = models.DictField(
         default={},
         blank=True,
@@ -469,34 +481,34 @@ class FilterPolicy(models.Model):
 
     def clean(self):
         # get the validator associated to the filter (there should be one defined in the list, even when it has no configuration parameters)
-        conf_validator = DARWIN_FILTER_CONFIG_VALIDATORS.get(self.filter.name)
-        self.config = conf_validator(self.config)
+        conf_validator = DARWIN_FILTER_CONFIG_VALIDATORS.get(self.filter_type.name)
+        if conf_validator:
+            self.config = conf_validator(self.config)
+        else:
+            logger.critical("darwin:: could not validate filterpolicy configuration, no validator for '{}' type".format(self.filter_type.name))
 
-        self.config['redis_socket_path'] = REDIS_SOCKET_PATH
-        self.config['alert_redis_list_name'] = ALERTS_REDIS_LIST_NAME
-        self.config['alert_redis_channel_name'] = ALERTS_REDIS_CHANNEL_NAME
-        self.config['log_file_path'] = ALERTS_LOG_FILEPATH
-
-
-    def save(self, *args, **kwargs):
-        # Save object to get an id, then set conf_path and save again
-        if not self.pk:
-            super().save(*args, **kwargs)
-            self.conf_path = "{darwin_path}f{filter_name}/f{filter_name}_{filter_id}.conf".format(darwin_path=CONF_PATH, filter_name=self.filter.name, filter_id=self.pk)
-        super().save(*args, **kwargs)
 
     @property
     def name(self):
         """ Method used in Darwin conf to define a filter """
-        return "{}_{}".format(self.filter.name, self.id)
+        return "{}_{}".format(self.filter_type.name, self.id)
+
+    @property
+    def conf_path(self):
+        return "{darwin_path}/f{filter_name}/f{filter_name}_{filter_id}.conf".format(darwin_path=CONF_PATH, filter_name=self.filter_type.name, filter_id=self.pk)
+
+    @property
+    def socket_path(self):
+        return "{darwin_socket_path}/f{filter_name}_{filter_id}.sock".format(darwin_socket_path=SOCKETS_PATH, filter_name=self.filter_type.name, filter_id=self.pk)
 
     def __str__(self):
-        return "[{}] {}".format(self.policy.name, self.filter.name)
+        return "[{}] {}".format(self.policy.name, self.filter_type.name)
 
     def to_dict(self):
-        return {
+        ret = {
             "id": self.id,
-            "name": self.filter.name,
+            "status": self.status,
+            "filter_type": self.filter_type.id,
             "policy": self.policy.id,
             "enabled": self.enabled,
             "nb_thread": self.nb_thread,
@@ -505,31 +517,17 @@ class FilterPolicy(models.Model):
             "mmdarwin_enabled": self.mmdarwin_enabled,
             "mmdarwin_parameters": self.mmdarwin_parameters,
             "weight": self.weight,
-            "is_internal": self.is_internal,
-            "status": self.status,
             "cache_size": self.cache_size,
             "output": self.output,
             "next_filter": self.next_filter,
             "config": self.config
         }
 
-    def conf_to_json(self):
-        """
-        Function to clean and validate filter configuration before translating it to string and writing it in the configuration file
-        """
+        return ret
+
+
+    def _generate_yara_conf(self):
         json_conf = {}
-
-        # Those fields were already validated and don't need any modification, let them be in the resulting configuration as-is
-        PASS_THROUGH_FIELDS = ['redis_expire', 'max_tokens', 'fastmode', 'timeout', 'redis_socket_path', 'alert_redis_list_name', 'alert_redis_channel_name', 'log_file_path']
-
-        # Resolve yara_policy_id into yaraRuleFile for fcontent_inspection
-        yara_policy_id = self.config.get('yara_policy_id', None)
-        if yara_policy_id:
-            try:
-                yara_policy = InspectionPolicy.objects.get(pk=yara_policy_id)
-                json_conf['yaraRuleFile'] = yara_policy.get_full_filename()
-            except InspectionPolicy.DoesNotExist:
-                logger.error("FilterPolicy::conf_to_json:: Could not find InspectionPolicy with id {}".format(yara_policy_id))
 
         # Resolve yara_policies_id into rule_file_list for fyara
         yara_policies_id = self.config.get('yara_policies_id', None)
@@ -542,26 +540,21 @@ class FilterPolicy(models.Model):
                 except InspectionPolicy.DoesNotExist:
                     logger.error("FilterPolicy::conf_to_json:: Could not find InspectionPolicy with id {}".format(yara_policy_id))
 
-        # Resolve reputation_ctx_id into database for fhostlookup
-        reputation_ctx_id = self.config.get('reputation_ctx_id', None)
-        if reputation_ctx_id:
-            try:
-                database = ReputationContext.objects.get(pk=reputation_ctx_id)
-                json_conf['database'] = database.absolute_filename
-            except ReputationContet.DoesNotExist:
-                logger.error("FilterPolicy::conf_to_json:: Could not find ReputationContext with id {}".format(reputation_ctx_id))
+        return json_conf
 
-        # generate dga model full path for fdga
-        model = self.config.get('model', None)
-        if model:
-            json_conf['model_path'] = DGA_MODELS_PATH + model
 
-        # generate dga token_map full path for fdga
-        token_map = self.config.get('token_map', None)
-        if token_map:
-            json_conf['token_map_path'] = DGA_MODELS_PATH + token_map
+    def _generate_content_inspection_conf(self):
+        json_conf = {}
 
         # rename content_inspection fields
+        yara_policy_id = self.config.get('yara_policy_id', None)
+        if yara_policy_id:
+            try:
+                yara_policy = InspectionPolicy.objects.get(pk=yara_policy_id)
+                json_conf['yaraRuleFile'] = yara_policy.get_full_filename()
+            except InspectionPolicy.DoesNotExist:
+                logger.error("FilterPolicy::conf_to_json:: Could not find InspectionPolicy with id {}".format(yara_policy_id))
+
         yara_scan_type = self.config.get('yara_scan_type', None)
         if yara_scan_type:
             json_conf['yaraScanType'] = yara_scan_type
@@ -574,6 +567,63 @@ class FilterPolicy(models.Model):
         max_memory_usage = self.config.get('max_memory_usage', None)
         if max_memory_usage:
             json_conf['maxMemoryUsage'] = max_memory_usage
+
+        return json_conf
+
+
+    def _generate_lkup_conf(self):
+        json_conf = {}
+
+        # Resolve reputation_ctx_id into database for fhostlookup
+        reputation_ctx_id = self.config.get('reputation_ctx_id', None)
+        if reputation_ctx_id:
+            try:
+                database = ReputationContext.objects.get(pk=reputation_ctx_id)
+                json_conf['database'] = database.absolute_filename
+            except ReputationContet.DoesNotExist:
+                logger.error("FilterPolicy::conf_to_json:: Could not find ReputationContext with id {}".format(reputation_ctx_id))
+
+        return json_conf
+
+
+    def _generate_dgad_conf(self):
+        json_conf = {}
+
+        # generate dga model full path for fdga
+        model = self.config.get('model', None)
+        if model:
+            json_conf['model_path'] = DGA_MODELS_PATH + model
+
+        # generate dga token_map full path for fdga
+        token_map = self.config.get('token_map', None)
+        if token_map:
+            json_conf['token_map_path'] = DGA_MODELS_PATH + token_map
+
+        return json_conf
+
+
+    def conf_to_json(self):
+        """
+        Function to clean and validate filter configuration before translating it to string and writing it in the configuration file
+        """
+        json_conf = {
+            'redis_socket_path': REDIS_SOCKET_PATH,
+            'alert_redis_list_name': ALERTS_REDIS_LIST_NAME,
+            'alert_redis_channel_name': ALERTS_REDIS_CHANNEL_NAME,
+            'log_file_path': ALERTS_LOG_FILEPATH
+        }
+
+        # Those fields were already validated and don't need any modification, let them be in the resulting configuration as-is
+        PASS_THROUGH_FIELDS = ['redis_expire', 'max_tokens', 'fastmode', 'timeout', 'redis_socket_path', 'alert_redis_list_name', 'alert_redis_channel_name', 'log_file_path']
+
+        if self.filter_type.name == "yara":
+            json_conf.update(self._generate_yara_conf())
+        if self.filter_type.name == "lkup":
+            json_conf.update(self._generate_lkup_conf())
+        if self.filter_type.name == "dgad":
+            json_conf.update(self._generate_dgad_conf())
+        if self.filter_type.name == "content_inspection":
+            json_conf.update(self._generate_content_inspection_conf())
 
         # Add all listed fields without need for modification
         for key, value in self.config.items():
@@ -591,11 +641,10 @@ class FilterPolicy(models.Model):
 
     @staticmethod
     def str_attrs():
-        return ['filter', 'conf_path', 'nb_thread', 'log_level', 'config']
+        return ['conf_path', 'nb_thread', 'log_level', 'config']
 
-    @property
-    def socket_path(self):
-        return "{}/{}_{}.sock".format(SOCKETS_PATH, self.filter.name, self.id)
+    def __str__(self):
+        return "[{}] {}".format(self.policy, self.name)
 
     def mmdarwin_parameters_rsyslog_str(self):
         return str(self.mmdarwin_parameters).replace("\'", "\"")

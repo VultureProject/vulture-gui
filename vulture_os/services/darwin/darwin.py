@@ -103,7 +103,7 @@ def _send_command(node_logger, command):
         stdout = e.stdout.decode('utf8')
         stderr = e.stderr.decode('utf8')
         raise ServiceReloadError("Failed to connect to darwin management socket.", "Darwin",
-            traceback=(stderr or stdout))
+                                    traceback=(stderr or stdout))
 
 
 
@@ -132,6 +132,55 @@ def reload_conf(node_logger):
         result = "Configuration has changed, reloading Darwin.\n"
         result += _reload_filters(node_logger)
     return result
+
+
+def reload_policy_filters(node_logger, policy_id):
+    """ Triggers a reload of all filters related to a policy
+    """
+    try:
+        policy = DarwinPolicy.objects.get(pk=policy_id)
+    except DarwinPolicy.DoesNotExist:
+        raise VultureSystemError("Could not get policy with id {}".format(policy_id), "write Darwin configuration files for a policy")
+    logger.info("writing policy conf '{}'".format(policy.name))
+
+    filters = [f.name for f in policy.filterpolicy_set.all()]
+    reply = _send_command(node_logger, "{{\"type\": \"update_filters\", \"filters\": {}}}".format(str(list(filters)).replace("'", '"')))
+    # Do not raise an exception if the status is KO -> that could be disabled or not-yet-existing filters in darwin.conf
+    return reply
+
+
+def reload_all(node_logger):
+    """ Triggers a rewrite of all filters' configuration file, main configuration file and reload all filters
+    """
+    logger.info("Darwin::reload_all:: Reloading all Darwin configuration")
+
+    # Reload every filter's config file
+    for policy in DarwinPolicy.objects.all().only("id"):
+        try:
+            logger.debug("Darwin::reload_all:: updating configuration files for policy {}".format(policy.id))
+            write_policy_conf(node_logger, policy.id)
+        except VultureSystemError as e:
+            logger.error("Darwin::reload_all:: error while reloading policy {} : {}".format(policy.id, e))
+            continue
+
+    # Reload the main Darwin configuration (don't update filters yet)
+    logger.info("Darwin::reload_all:: rewriting main configuration file")
+    DarwinService().reload_conf()
+
+    # Get all currently running and active filters
+    update_filters = set()
+    res_running_filters = _send_command(node_logger, "{\"type\": \"monitor\"}")
+    update_filters.update(res_running_filters.keys())
+
+    update_filters.update([f.name for f in FilterPolicy.objects.filter(enabled=True) if f.filter_type.is_launchable])
+
+    # Don't use _reload_filters(), we want to force update on ALL filters (not just new and deleted ones)
+    reply = _send_command(node_logger, "{{\"type\": \"update_filters\", \"filters\": {}}}".format(str(list(update_filters)).replace("'", '"')))
+    if reply.get('status') == "KO":
+            raise ServiceReloadError("Darwin manager failed to update some filter(s): {}".format(reply.get('errors', '')), "Darwin")
+    elif reply.get('status') != "OK":
+        raise ServiceReloadError("Darwin manager returned an unexpected result: {}".format(reply.get('errors', '')), "Darwin")
+
 
 
 def delete_filter_conf(node_logger, filter_conf_path):
@@ -175,7 +224,7 @@ def write_policy_conf(node_logger, policy_id):
 
     for filter_instance in policy.filterpolicy_set.all():
 
-        if filter_instance.enabled:
+        if filter_instance.enabled and filter_instance.filter_type.is_launchable:
             logger.info("writing filter '{}' conf".format(filter_instance.name))
 
             try:

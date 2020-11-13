@@ -117,7 +117,7 @@ class FrontendForm(ModelForm):
         """ Darwin policy """
         self.fields['darwin_policies'] = ModelMultipleChoiceField(
             label=_("Darwin policies"),
-            queryset=DarwinPolicy.objects.all(),
+            queryset=DarwinPolicy.objects.filter(is_internal=False),
             widget=SelectMultiple(attrs={'class': 'form-control select2'}),
             required=False
         )

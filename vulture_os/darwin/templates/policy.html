@@ -53,11 +53,31 @@
       mData: "name"
     },
     {
+      sTitle: '{% trans "Description" %}',
+      name: "description",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "description"
+    },
+    {
+      sTitle: '{% trans "Inputs" %}',
+      name: "inputs",
+      aTargets: [3],
+      defaultContent: "",
+      mData: "inputs",
+      mRender: function(data, type, row) {
+        var result = "<ul>";
+        for( l of data )
+          result += "<li>" + l + "</li>";
+        return result + "</ul>";
+      }
+    },
+    {
       sTitle: '{% trans "Status" %}',
       defaultContent: "",
       name: "status",
       mData: "status",
-      aTargets: [2],
+      aTargets: [4],
       bSearchable: false,
       mRender: function(data, type, row) {
         var cpt = 0;
@@ -104,22 +124,9 @@
       }
     },
     {
-      sTitle: '{% trans "Filters" %}',
-      name: "filters",
-      aTargets: [3],
-      defaultContent: "",
-      mData: "filters",
-      mRender: function(data, type, row) {
-        var result = "<ul>";
-        for( l of data )
-          result += "<li>" + l + "</li>";
-        return result + "</ul>";
-      }
-    },
-    {
       sTitle: '{% trans "Action" %}',
       mData:"id",
-      aTargets: [4],
+      aTargets: [5],
       defaultContent: "",
       sWidth: "5%",
       mRender: function(data, type, row) {
