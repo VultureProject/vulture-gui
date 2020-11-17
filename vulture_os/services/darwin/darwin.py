@@ -87,7 +87,7 @@ def _send_command(node_logger, command):
         cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
                                stderr=PIPE,
                                input=command.encode('utf8'),
-                               timeout=10).decode('utf8')
+                               timeout=60).decode('utf8')
         node_logger.info("Connection to darwin management socket succeed.")
         """ Darwin manager always answer in JSON """
         try:
@@ -298,7 +298,7 @@ def monitor_filters():
         cmd_res = check_output(["/usr/bin/nc", "-U", MANAGEMENT_SOCKET],
                                stderr=PIPE,
                                input="{\"type\": \"monitor\"}\n".encode('utf8'),
-                               timeout=10).decode('utf8')
+                               timeout=20).decode('utf8')
         logger.debug("Connection to darwin management socket succeed.")
         """ Darwin manager always answer in JSON """
         try:
