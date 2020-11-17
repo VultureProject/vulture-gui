@@ -60,7 +60,6 @@ class BaseRepository(models.Model):
         raise NotImplementedError("Not implemented backend")
 
     def to_template(self):
-        print("POUET !")
         # Retrieve daughter class if exists
         return self.get_daughter().to_template()
 
@@ -87,3 +86,6 @@ class InternalRepository(BaseRepository):
     def save(self, *args, **kwargs):
         self.subtype = "internal"
         super().save(*args, **kwargs)
+
+    def to_template(self):
+        return {}
