@@ -210,9 +210,6 @@ class portalTemplate(models.Model):
         write_conf(logger, [self.tpl_filename(tpl_name), self.render_template(tpl_name, **kwargs), HAPROXY_OWNER, HAPROXY_PERMS])
         return "Template {} successfully written".format(filename)
 
-    def __str__(self):
-        return "{}" .format(self.name.encode('utf8', 'ignore'))
-
 
 class TemplateImage(models.Model):
     """
