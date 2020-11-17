@@ -36,6 +36,7 @@ function init_vue(){
       },
 
       tagRsyslog: "",
+      enrichmentTagsRsyslog: "",
       filter: {
         filter_type: null,
         enabled: true,
@@ -44,6 +45,7 @@ function init_vue(){
         threshold: 80,
         mmdarwin_enabled: false,
         mmdarwin_parameters: [],
+        enrichment_tags: [],
         weight: 1.0,
         cache_size: 0,
         config: {
@@ -119,8 +121,12 @@ function init_vue(){
               let tmp_mmdarwin_parameters = []
               for (let tmp of filter.mmdarwin_parameters)
                 tmp_mmdarwin_parameters.push({text: tmp})
-
               filter.mmdarwin_parameters = tmp_mmdarwin_parameters
+              
+              let tmp_enrichment_tags = []
+              for (let tmp of filter.enrichment_tags)
+                tmp_enrichment_tags.push({text: tmp})
+              filter.enrichment_tags = tmp_enrichment_tags
 
               filter.continuous_analysis_enabled = (filter.buffering != null)
               self.policy.filters.push(filter)
@@ -195,9 +201,18 @@ function init_vue(){
           let tmp = []
 
           for (let tag of filter.mmdarwin_parameters)
-          tmp.push(`<label class='label label-primary'>${tag.text}</label>`)
+            tmp.push(`<label class='label label-primary'>${tag.text}</label>`)
 
-          rsyslog_params += `<p><b>${gettext("Custom Rsyslog inputs")}:</b> ${tmp.join(' ')}</p>`
+          rsyslog_params += `<p><b>${gettext("Overriden Rsyslog inputs")}:</b> ${tmp.join(' ')}</p>`
+        }
+        
+        if (filter.enrichment_tags.length > 0){
+          let tmp = []
+
+          for (let tag of filter.enrichment_tags)
+            tmp.push(`<label class='label label-primary'>${tag.text}</label>`)
+
+          rsyslog_params += `<p><b>${gettext("Additional Rsyslog enrichment tags")}:</b> ${tmp.join(' ')}</p>`
         }
         
         if (filter.continuous_analysis_enabled){
@@ -377,6 +392,7 @@ function init_vue(){
           threshold: 80,
           mmdarwin_enabled: false,
           mmdarwin_parameters: [],
+          enrichment_tags: [],
           weight: 1.0,
           cache_size: 0,
           config: {
@@ -412,6 +428,7 @@ function init_vue(){
           let config = {}
           let buffering = null
           let mmdarwin_parameters = []
+          let enrichment_tags = []
           filter_type_name = (available_filter_types[tmp_filter.filter_type]) ? available_filter_types[tmp_filter.filter_type].name : ""
 
           switch(filter_type_name){
@@ -444,6 +461,9 @@ function init_vue(){
 
           for (let tmp of tmp_filter.mmdarwin_parameters)
             mmdarwin_parameters.push(tmp.text)
+          
+          for (let tmp of tmp_filter.enrichment_tags)
+            enrichment_tags.push(tmp.text)
 
           if (tmp_filter.continuous_analysis_enabled) {
             buffering = {}
@@ -461,6 +481,7 @@ function init_vue(){
             cache_size: parseInt(tmp_filter.cache_size, 10),
             mmdarwin_enabled: tmp_filter.mmdarwin_enabled,
             mmdarwin_parameters: mmdarwin_parameters,
+            enrichment_tags: enrichment_tags,
             config: config,
             buffering: buffering
           }

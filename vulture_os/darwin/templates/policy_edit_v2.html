@@ -197,7 +197,7 @@
 
                 <template v-if="custom_rsyslog_calls(filter.filter_type)">
                   <div class="col-md-12 form-group">
-                    <label class="col-sm-4 control-label">{% trans "Enable custom rsyslog calls" %}:</label>
+                    <label class="col-sm-4 control-label">{% trans "Override Rsyslog inputs" %}:</label>
                     <div class="col-sm-5">
                       <v-toggle-button v-model="filter.mmdarwin_enabled"/>
                     </div>
@@ -223,6 +223,21 @@
                     </div>
                   </div>
                 </template>
+
+                <div class="col-md-12 form-group" v-if="!filter.continuous_analysis_enabled">
+                    <label class="col-sm-4 control-label">{% trans "Additional Rsyslog enrichment tags" %}:</label>
+                    <div class="col-sm-5">
+                      <vue-tags-input
+                        :tags="filter.enrichment_tags"
+                        v-model="enrichmentTagsRsyslog"
+                        @tags-changed="newTags => filter.enrichment_tags = newTags"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">
+                        {% trans "A list of tags to add in case enrichment is activated on source, and filter returns a certitude above threshold (a match)" %}
+                      </small>
+                    </div>
+                  </div>
 
                 <template v-if="renderName(filter.filter_type) === 'conn'">
                   <div class="col-md-12 form-group">
