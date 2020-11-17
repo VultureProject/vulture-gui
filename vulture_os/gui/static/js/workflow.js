@@ -733,7 +733,8 @@ var workflow_vue = new Vue({
                     case "frontend":
                         for (var i in self.frontend_choices){
                             var f = self.frontend_choices[i];
-                            if (f.id === parseInt(step.data.object_id)){
+                            
+                            if (f.id === step.data.object_id){
                                 var label = ["\n"];
                                 for (var j in f.listeners){
                                     var listener = f.listeners[j];
@@ -814,7 +815,7 @@ var workflow_vue = new Vue({
                     case "backend":
                         for (var i in self.backend_choices){
                             var b = self.backend_choices[i];
-                            if (parseInt(b.id) === step.data.object_id){
+                            if (b.id === step.data.object_id){
                                 var label = ["\n"];
                                 for (var j in b.servers){
                                     if (j > 1){
