@@ -68,7 +68,7 @@ class LogViewerMongo:
         'access_tcp': 'time',
         'internal': 'timestamp',
         'impcap': 'time',
-        'darwin': 'time',
+        'darwin': 'alert_time',
         'message_queue': 'date_add'
     }
 

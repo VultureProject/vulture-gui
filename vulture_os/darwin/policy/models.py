@@ -32,8 +32,6 @@ from djongo import models
 
 # Django project imports
 from applications.reputation_ctx.models import ReputationContext
-from daemons.reconcile import REDIS_LIST as DARWIN_REDIS_ALERT_LIST
-from daemons.reconcile import REDIS_CHANNEL as DARWIN_REDIS_ALERT_CHANNEL
 from darwin.inspection.models import InspectionPolicy
 from system.cluster.models import Cluster
 
