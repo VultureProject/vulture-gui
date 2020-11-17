@@ -600,7 +600,7 @@ class FilterPolicy(models.Model):
 
     @property
     def socket_path(self):
-        return "{darwin_socket_path}/f{filter_name}_{filter_id}.sock".format(darwin_socket_path=SOCKETS_PATH, filter_name=self.filter_type.name, filter_id=self.pk)
+        return "{darwin_socket_path}/{filter_name}_{filter_id}.sock".format(darwin_socket_path=SOCKETS_PATH, filter_name=self.filter_type.name, filter_id=self.pk)
 
     def __str__(self):
         return "[{}] {}".format(self.policy.name, self.filter_type.name)
