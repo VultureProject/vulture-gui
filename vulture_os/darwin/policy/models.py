@@ -742,11 +742,12 @@ class FilterPolicy(models.Model):
                 redis_lists = []
                 for listener in buffer.destination_filter.policy.frontend_set.all().only("name"):
                     # different source name for each listener/frontend
-                    # different source name for each filter type
+                    # different source name for each filter
                     # different source name for each policy
+                    source = "{}_{}_{}".format(buffer.destination_filter.name, listener.name, buffer.destination_filter.policy.id)
                     redis_lists.append({
-                        "source": "{}_{}_{}".format(input_type, listener.name, buffer.destination_filter.policy.id),
-                        "name": "darwin_bufr_{}_{}_{}".format(input_type, listener.name, buffer.destination_filter.policy.id)
+                        "source": source,
+                        "name": "darwin_bufr_{}".format(source)
                     })
 
                 # Only create the output if there are sources
