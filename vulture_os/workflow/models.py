@@ -167,7 +167,9 @@ class Workflow(models.Model):
             'defender_policy': str(self.defender_policy),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
-            'acls': self.workflowacl_set.count()
+            'acls': self.workflowacl_set.count(),
+            'authentication_id': str(self.authentication.pk),
+            'authentication': str(self.authentication)
         }
 
     def to_dict(self):
@@ -179,6 +181,7 @@ class Workflow(models.Model):
             'backend': self.backend.to_dict(),
             'frontend_id': str(self.frontend.pk),
             'backend_id': str(self.backend.pk),
+            'authentication_id': str(self.authentication.pk),
             'workflow_json': json.dumps(self.workflow_json),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
@@ -187,6 +190,7 @@ class Workflow(models.Model):
             'fqdn': self.fqdn,
             'public_dir': self.public_dir,
             'defender_policy': str(self.defender_policy),
+            'authentication': str(self.authentication),
             'acls': [acl.to_dict() for acl in self.workflowacl_set.all()]
         }
 

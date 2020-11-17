@@ -35,7 +35,7 @@ from darwin.defender_policy.models import DefenderPolicy
 from darwin.access_control.models import AccessControl
 from system.cluster.models import Cluster
 from workflow.models import Workflow, WorkflowACL
-from authentication.base_repository import BaseRepository
+from authentication.user_portal.models import UserAuthentication
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -188,7 +188,7 @@ def save_workflow(request, workflow_obj, object_id=None):
 
                 workflow_acls.append(workflow_acl)
                 workflow_acl.save()
-
+            
             elif step['data']['type'] == "waf":
                 if step['data']['object_id']:
                     defender_policy = DefenderPolicy.objects.get(pk=step['data']['object_id'])
@@ -200,6 +200,15 @@ def save_workflow(request, workflow_obj, object_id=None):
 
                 before_policy = False
                 order = 1
+
+            elif step['data']['type'] == "authentication":
+                if step['data']['object_id']:
+                    authentication = UserAuthentication.objects.get(pk=step['data']['object_id'])
+                    workflow_obj.authentication = authentication
+                else:
+                    workflow_obj.authentication = None
+                
+                workflow_obj.save()
 
         if not workflow_obj.backend:
             raise InvalidWorkflowError(_("You need to select a backend"))
@@ -294,7 +303,7 @@ def workflow_edit(request, object_id=None, api=False):
                     'acls': [a.to_template() for a in AccessControl.objects.filter(enabled=True)],
                     'backends': [b.to_dict() for b in Backend.objects.filter(enabled=True, mode=mode)],
                     'waf_policies': [w.to_template() for w in DefenderPolicy.objects.all()],
-                    'authentications': [a.to_template() for a in BaseRepository.objects.all()],
+                    'authentications': [a.to_template() for a in UserAuthentication.objects.all()],
                 }
 
             return JsonResponse({
