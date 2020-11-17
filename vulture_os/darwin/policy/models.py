@@ -476,6 +476,7 @@ class DarwinBuffering(models.Model):
 
     destination_filter = models.ForeignKey(
         "darwin.FilterPolicy",
+        related_name="buffering",
         on_delete=models.CASCADE
     )
 
