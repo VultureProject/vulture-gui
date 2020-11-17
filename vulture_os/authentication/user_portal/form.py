@@ -134,7 +134,12 @@ class UserAuthenticationForm(ModelForm):
         self.fields['otp_repository'].empty_label = "No double authentication"
         # Set fields as non required in POST data
         for field in ['portal_template', 'otp_repository', 'otp_max_retry', 'group_registration',
-                      'update_group_registration']:
+                      'update_group_registration', "sso_forward_direct_post", "sso_forward_get_method",
+                      "sso_forward_follow_redirect_before", "sso_forward_follow_redirect", "sso_forward_return_post",
+                      "sso_forward_enable_capture", "sso_forward_enable_replace", "sso_forward_enable_additionnal",
+                      "sso_forward_type", "sso_forward_content_type", "sso_forward_tls_proto", "sso_forward_url",
+                      "sso_forward_user_agent", "sso_forward_content", "sso_forward_capture_content",
+                      "sso_forward_replace_pattern", "sso_forward_replace_content", "sso_forward_additional_url"]:
             self.fields[field].required = False
         # Format oauth_redirect_uris
         self.initial['oauth_redirect_uris'] = '\n'.join(self.initial.get('oauth_redirect_uris', []) or self.fields['oauth_redirect_uris'].initial)
