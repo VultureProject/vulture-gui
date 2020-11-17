@@ -35,6 +35,7 @@ from django.views.generic import View
 from authentication.kerberos.models import KerberosRepository
 from authentication.ldap.models import LDAPRepository
 from authentication.learning_profiles.models import LearningProfile
+from authentication.openid.models import OpenIDRepository
 from authentication.otp.models import OTPRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
@@ -180,3 +181,10 @@ class ListLearningProfile(ListView):
 
     # Get and POST inherited from ListView
 
+
+class ListOpenIDRepository(ListLDAPRepository):
+    """ Custom class - use as_table() to render an objects """
+    template_name = "authentication/openid.html"
+    obj = OpenIDRepository
+
+    # Get and POST inherited from ListLDAPRepository

@@ -35,6 +35,7 @@ from django.views.generic import View
 from authentication.kerberos.models import KerberosRepository
 from authentication.ldap.models import LDAPRepository
 from authentication.learning_profiles.models import LearningProfile
+from authentication.openid.models import OpenIDRepository
 from authentication.otp.models import OTPRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
@@ -152,5 +153,14 @@ class DeleteLearningProfile(DeleteView):
     obj = LearningProfile
     redirect_url = "/authentication/learning_profiles/"
     delete_url = "/authentication/learning_profiles/delete/"
+
+    # get, post and used_by methods herited from mother class
+
+
+class DeleteOpenIDRepository(DeleteView):
+    menu_name = _("Authentication -> Repository OpenID -> Delete")
+    obj = OpenIDRepository
+    redirect_url = "/authentication/openid/"
+    delete_url = "/authentication/openid/delete/"
 
     # get, post and used_by methods herited from mother class

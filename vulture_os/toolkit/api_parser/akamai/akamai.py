@@ -44,8 +44,8 @@ logger = logging.getLogger('crontab')
 
 event_parse = Event()
 event_write = Event()
-queue_parse = queue.Queue(maxsize=1000000)
-queue_write = queue.Queue(maxsize=1000000)
+queue_parse = queue.Queue(maxsize=100000)
+queue_write = queue.Queue(maxsize=100000)
 data_lock = Lock()
 
 
@@ -73,7 +73,7 @@ def akamai_write(akamai):
             except:
                 logger.error("Line {} is not json formated".format(log))
                 pass
-            queue_write.task_done()
+#            queue_write.task_done()
         return res
 
     while not event_write.is_set() or not queue_write.empty():
@@ -151,14 +151,14 @@ def akamai_parse(akamai):
         queue_write.put(tmp)
 
         # Update the last log time
-        with data_lock:
-            if timestamp > akamai.last_log_time:
+        if timestamp > akamai.last_log_time:
+            with data_lock:
                 akamai.last_log_time = timestamp
 
 
 class AkamaiParser(ApiParser):
     ATTACK_KEYS = ["rules", "ruleMessages", "ruleTags", "ruleActions", "ruleData"]
-    NB_THREAD = 10
+    NB_THREAD = 4
 
     def __init__(self, data):
         super().__init__(data)
@@ -285,6 +285,7 @@ class AkamaiParser(ApiParser):
                     self.get_logs()
                     self.update_lock()
                     self.frontend.last_api_call = self.last_log_time
+                    logger.info(self.last_log_time)
             except Exception as e:
                 logger.error("Fail to download/update akamai logs : {}".format(e))
 

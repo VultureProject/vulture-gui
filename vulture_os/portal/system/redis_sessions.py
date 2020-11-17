@@ -58,6 +58,12 @@ class REDISSession(object):
         self.key     = key
         self.keys    = self.handler.hgetall(self.key)
 
+    def __setitem__(self, key, value):
+        self.keys[key] = value
+        # You must call write_in_redis after this
+
+    def __getitem__(self, key):
+        return self.keys.get(key)
 
     def write_in_redis(self, timeout):
         if self.handler.hmset(self.key, self.keys):
@@ -130,7 +136,7 @@ class REDISAppSession(REDISSession):
     def deauthenticate(self):
         self.keys['authenticated'] = 0
         self.handler.hset(self.key, 'authenticated', 0)
-        self.keys.pop('otp_retries')
+        self.keys.pop('otp_retries', None)
         self.handler.hdel(self.key, 'otp_retries')
 
 
@@ -217,9 +223,8 @@ class REDISPortalSession(REDISSession):
     def __init__(self, redis_handler, portal_cookie, *args, **kwargs):
         super(REDISPortalSession, self).__init__(redis_handler, portal_cookie or get_random_string(64))
 
-
-    """ Remove the current portal session from Redis """
     def destroy(self):
+        """ Remove the current portal session from Redis """
         try:
             return self.handler.delete(self.key)
         except:
@@ -306,26 +311,29 @@ class REDISPortalSession(REDISSession):
 
 
     def deauthenticate(self, workflow_id, backend_id, timeout):
-        self.keys.pop('otp_retries')
+        # TODO : otp_retries_{otp_backend_id}
+        self.keys.pop('otp_retries', None)
         self.keys[workflow_id] = 0
         self.keys[backend_id] = 0
-        self.keys.pop('backend_' + workflow_id)
-        self.keys.pop('login_' + backend_id)
-        self.keys.pop('oauth2_' + backend_id)
-        self.keys.pop('app_id_' + backend_id)
+        self.keys.pop('backend_' + str(workflow_id), None)
+        self.keys.pop('login_' + str(backend_id), None)
+        self.keys.pop('oauth2_' + str(backend_id), None)
+        self.keys.pop('app_id_' + str(backend_id), None)
 
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")
 
-    def register_authentication(self, app_id, app_name, backend_id, url, dbauthentication_required, username, password,
+    def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
                                 oauth2_token, authentication_datas, timeout):
+        logger.info(dbauthentication_required)
         if dbauthentication_required:
-            self.keys[backend_id] = 0
+            self.keys[app_id] = 0
         else:
-            self.keys[backend_id] = 1
-        self.keys[app_id]         = 1
-        self.keys['url_'+app_id]  = url
+            self.keys[app_id] = 1
+        # The user is authenticated on repository
+        self.keys[backend_id] = 1
+        #self.keys['url_'+app_id]  = url
         self.keys['backend_'+app_id] = backend_id
         self.keys['login_'+backend_id] = username
         if oauth2_token:
@@ -339,9 +347,10 @@ class REDISPortalSession(REDISSession):
         # self.keys['user_mail']  = None
 
         """ Try to retrieve user phone from authentication_results """
-        self.keys['user_phone'] = authentication_datas.get('user_phone', 'N/A')
-
-        self.keys['user_email'] = authentication_datas.get('user_email', 'N/A')
+        #self.keys['user_phone'] = authentication_datas.get('user_phone', 'N/A')
+        #self.keys['user_email'] = authentication_datas.get('user_email', 'N/A')
+        # Save all user infos
+        self.keys['user_infos_'+backend_id] = str(authentication_datas)
 
         if password:
             # Encrypt the password with the application id and user login and store it in portal session
@@ -430,7 +439,7 @@ class REDISBase(object):
 
         try:
             #self.r = Redis(host=self.ip, port=self.port, db=0)
-            self.r = Redis(unix_socket_path='/var/sockets/redis/redis.sock', db=0)
+            self.r = Redis(unix_socket_path='/var/sockets/redis/redis.sock', db=0, decode_responses=True)
             self.r.info()
         except Exception as e:
             self.logger.info("REDISBase: REDIS connexion issue")

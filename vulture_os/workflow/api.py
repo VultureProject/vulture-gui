@@ -55,6 +55,13 @@ class InvalidWorkflowError(Exception):
     pass
 
 
+def write_portal_template(node_logger, workflow_id):
+    """ Method can raise - catched by Vultured (caller) """
+    workflow = Workflow.objects.get(pk=workflow_id)
+    workflow.write_portal_template()
+
+
+
 def format_acl_from_api(tmp_acl, order, before_policy):
     try:
         acl = AccessControl.objects.get(pk=tmp_acl['id'])

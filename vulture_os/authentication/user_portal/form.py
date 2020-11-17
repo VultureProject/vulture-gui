@@ -24,8 +24,9 @@ __doc__ = 'UserAuthentication and UserSSO dedicated form class'
 
 # Django system imports
 from django.conf import settings
+from django.core.validators import URLValidator
 from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
-                          SelectMultiple, TextInput)
+                          SelectMultiple, TextInput, Textarea)
 from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
@@ -33,8 +34,11 @@ from applications.portal_template.models import portalTemplate
 from authentication.base_repository import BaseRepository
 from authentication.ldap.models import LDAPRepository
 from authentication.otp.models import OTPRepository
+from authentication.openid.models import OpenIDRepository
 from authentication.user_portal.models import (AUTH_TYPE_CHOICES, SSO_TYPE_CHOICES, SSO_BASIC_MODE_CHOICES,
                                                SSO_CONTENT_TYPE_CHOICES, UserAuthentication)
+from gui.forms.form_utils import NoValidationField
+from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
 
 # Extern modules imports
 
@@ -48,27 +52,40 @@ logger = logging.getLogger('gui')
 
 
 class UserAuthenticationForm(ModelForm):
-    repository = ModelChoiceField(
-        label=_("Authentication repository"),
-        queryset=BaseRepository.objects.exclude(subtype="OTP").only(*BaseRepository.str_attrs()),
-        widget=Select(attrs={'class': 'form-control select2'}),
-    )
-    repositories_fallback = ModelMultipleChoiceField(
-        label=_("Authentication fallback repositories"),
+    repositories = ModelMultipleChoiceField(
+        label=_("Authentication repositories"),
         queryset=BaseRepository.objects.exclude(subtype="OTP").only(*BaseRepository.str_attrs()),
         widget=SelectMultiple(attrs={'class': 'form-control select2'}),
+    )
+    sso_forward_tls_cert = ModelChoiceField(
+        label=_("Client certificate (optional)"),
+        queryset=X509Certificate.objects.exclude(is_ca=True).only(*X509Certificate.str_attrs()),
+        widget=Select(attrs={'class': 'form-control select2'}),
         required=False
+    )
+    external_listener_json = NoValidationField(
+        label=_("Listener")
     )
 
     class Meta:
         model = UserAuthentication
-        fields = ('name', 'enable_tracking', 'auth_type', 'portal_template', 'repository', 'repositories_fallback',
+        fields = ('name', 'enable_tracking', 'auth_type', 'portal_template', 'repositories',
                   'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'otp_repository', 'otp_max_retry',
                   'disconnect_url', 'enable_disconnect_message', 'enable_disconnect_portal', 'enable_registration',
-                  'group_registration', 'update_group_registration')
+                  'group_registration', 'update_group_registration', 'enable_external', 'external_fqdn',
+                  'external_listener_json', 'enable_oauth', 'oauth_client_id', 'oauth_client_secret',
+                  'oauth_redirect_uris',
+                  'enable_sso_forward','sso_forward_type','sso_forward_direct_post','sso_forward_get_method',
+                  'sso_forward_follow_redirect_before','sso_forward_follow_redirect','sso_forward_return_post',
+                  'sso_forward_content_type','sso_forward_url','sso_forward_user_agent','sso_forward_content',
+                  'sso_forward_enable_capture','sso_forward_capture_content','sso_forward_enable_replace',
+                  'sso_forward_replace_pattern','sso_forward_replace_content','sso_forward_enable_additionnal',
+                  'sso_forward_additional_url', 'sso_forward_tls_proto', 'sso_forward_tls_cert')
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'enable_tracking': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'enable_external': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'external_fqdn': TextInput(attrs={'class': 'form-control'}),
             'auth_type': Select(choices=AUTH_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
             'portal_template': Select(choices=portalTemplate.objects.all().only(*portalTemplate.str_attrs()),
                                       attrs={'class': 'form-control select2'}),
@@ -84,38 +101,69 @@ class UserAuthenticationForm(ModelForm):
             'enable_registration': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'group_registration': TextInput(attrs={'class': 'form-control'}),
             'update_group_registration': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'enable_oauth': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'oauth_client_id': TextInput(attrs={'readonly': ''}),
+            'oauth_client_secret': TextInput(attrs={'readonly': ''}),
+            'oauth_redirect_uris': Textarea(attrs={'class': 'form-control'}),
+            'enable_sso_forward': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_direct_post': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_get_method': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_follow_redirect_before': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_follow_redirect': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_return_post': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_enable_capture': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_enable_replace': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_enable_additionnal': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'sso_forward_type': Select(choices=SSO_TYPE_CHOICES, attrs={'class': "form-control select2"}),
+            'sso_forward_content_type': Select(choices=SSO_CONTENT_TYPE_CHOICES, attrs={'class': "form-control select2"}),
+            'sso_forward_tls_proto': Select(choices=TLS_PROTOCOL_CHOICES, attrs={'class': "form-control select2"}),
+            'sso_forward_url': TextInput(attrs={'class': "form-control"}),
+            'sso_forward_user_agent': TextInput(attrs={'class': "form-control"}),
+            'sso_forward_content': Textarea(attrs={'class': "form-control", 'readonly':''}),
+            'sso_forward_capture_content': Textarea(attrs={'class': "form-control"}),
+            'sso_forward_replace_pattern': Textarea(attrs={'class': "form-control"}),
+            'sso_forward_replace_content': Textarea(attrs={'class': "form-control"}),
+            'sso_forward_additional_url': TextInput(attrs={'class': "form-control"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Remove the blank input generated by django
-        for field_name in ['portal_template', 'repository', 'auth_type', 'repositories_fallback']:
+        for field_name in ['portal_template', 'repositories', 'auth_type', 'sso_forward_type']:
             self.fields[field_name].empty_label = None
         self.fields['otp_repository'].empty_label = "No double authentication"
         # Set fields as non required in POST data
         for field in ['portal_template', 'otp_repository', 'otp_max_retry', 'group_registration',
                       'update_group_registration']:
             self.fields[field].required = False
+        # Format oauth_redirect_uris
+        self.initial['oauth_redirect_uris'] = '\n'.join(self.initial.get('oauth_redirect_uris', []) or self.fields['oauth_redirect_uris'].initial)
 
     def clean_name(self):
         """ Replace all spaces by underscores to prevent bugs later """
         return self.cleaned_data['name'].replace(' ', '_')
 
+    def clean_oauth_redirect_uris(self):
+        """ Split values with \n """
+        res = []
+        for url in self.cleaned_data.get('oauth_redirect_uris', "").split("\n"):
+            validate = URLValidator(schemes=("http", "https"))
+            validate(url)
+            res.append(url)
+        return res
+
     def clean(self):
         """ Verify required field depending on other fields """
-        # Mandatory to prevent bug in Django
-        if not self.cleaned_data.get('repositories_fallback'):
-            self.cleaned_data['repositories_fallback'] = []
 
         cleaned_data = super().clean()
+
+        """ If external enabled, external options required """
+        if cleaned_data.get('enable_external') and not cleaned_data.get('external_fqdn'):
+            self.add_error('external_fqdn', "This field is required if external enabled.")
+
         """ Portal template is required if auth_type = HTTP """
         if cleaned_data.get('auth_type') == "http" and not cleaned_data.get('portal_template'):
             self.add_error('portal_template', "This field is required with HTTP auth type.")
-
-        """ Verify if main repository == repository fallback """
-        for repo in self.cleaned_data.get('repositories_fallback'):
-            if repo == self.cleaned_data.get('repository'):
-                self.add_error('repositories_fallback', "This is useless to use the main repository as fallback.")
 
         """ otp_max_retry required if otp_repository """
         if cleaned_data.get('otp_repository') and not cleaned_data.get('otp_max_retry'):
@@ -136,5 +184,7 @@ class UserAuthenticationForm(ModelForm):
                 and not repo:
             self.add_error('group_registration', "To use this field, the mail repository must be LDAP.")
             self.add_error('update_group_registration', "To use this field, the mail repository must be LDAP.")
+
+        OpenIDRepository.objects.all()
 
         return cleaned_data

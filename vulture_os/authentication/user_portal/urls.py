@@ -50,10 +50,9 @@ urlpatterns = [
             DeleteUserAuthentication.as_view(),
             name="portal.user_authentication.delete"),
 
-    # TODO : SSO test views
-    # path('authentication/ldap/user_search_test/',
-    #      views.user_search_test,
-    #      name="authentication.ldap.user_search_test"),
+    path('portal/user_authentication/sso_wizard/',
+          views.sso_wizard,
+          name="portal.user_authentication.sso_wizard"),
     # path('authentication/ldap/group_search_test/',
     #      views.group_search_test,
     #      name="authentication.ldap.group_search_test"),

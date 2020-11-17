@@ -59,15 +59,12 @@ logger = logging.getLogger('portal_authentication')
 
 
 class Authentication(object):
-    def __init__(self, portal_cookie, token_name, workflow):
-        self.token_name = token_name
+    def __init__(self, portal_cookie, workflow):
         self.redis_base = REDISBase()
         self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie)
         self.workflow = workflow
 
         self.backend_id = self.authenticated_on_backend()
-        self.redis_oauth2_session = REDISOauth2Session(self.redis_base,
-                                                       self.redis_portal_session.get_oauth2_token(self.backend_id))
 
         if not self.workflow.authentication:
             raise RedirectionNeededError("Workflow '{}' does not need authentication".format(self.workflow.name),
@@ -82,14 +79,15 @@ class Authentication(object):
         return False
 
     def double_authentication_required(self):
-        return self.workflow.authentication.otp_repository and \
+        logger.info(self.workflow.authentication.otp_repository is not None)
+        logger.info(self.redis_portal_session.is_double_authenticated(self.workflow.authentication.otp_repository.id))
+        return self.workflow.authentication.otp_repository is not None and \
             not self.redis_portal_session.is_double_authenticated(self.workflow.authentication.otp_repository.id)
 
     def authenticated_on_backend(self):
-        backend_list = list(self.workflow.authentication.repositories_fallback.all())
-        backend_list.append(self.workflow.authentication.repository)
+        backend_list = self.workflow.authentication.repositories.all()
         for backend in backend_list:
-            if self.redis_portal_session.authenticated_backend(backend.id) == '1':
+            if self.redis_portal_session.authenticated_backend(backend.id):
                 return str(backend.id)
         return ""
 
@@ -98,7 +96,7 @@ class Authentication(object):
         backend_list.append(self.workflow.authentication.repository)
         e, login = None, ""
         for backend in backend_list:
-            if self.redis_portal_session.authenticated_backend(backend.id) == '1':
+            if self.redis_portal_session.authenticated_backend(backend.id):
                 # The user is authenticated on backend, but he's not necessarily authorized on the app
                 # The ACL is only supported by LDAP
                 if backend.subtype == "LDAP":
@@ -293,8 +291,8 @@ class Authentication(object):
 
 
 class POSTAuthentication(Authentication):
-    def __init__(self, token_name, portal_cookie, workflow):
-        super(POSTAuthentication, self).__init__(token_name, portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow):
+        super(POSTAuthentication, self).__init__(portal_cookie, workflow)
 
     def retrieve_credentials(self, request):
         username = request.POST['vltprtlsrnm']
@@ -318,7 +316,7 @@ class POSTAuthentication(Authentication):
                                                 # FIXME : auth_portal ?
                                                 # self.workflow.auth_portal or
                                                 self.workflow.get_redirect_uri(),
-                                                self.workflow.public_dir, self.token_name, captcha,
+                                                self.workflow.public_dir,
                                                 error=kwargs.get('error', ""))
 
         portal_cookie_name = kwargs.get('portal_cookie_name', None)
@@ -331,8 +329,8 @@ class POSTAuthentication(Authentication):
 
 
 class BASICAuthentication(Authentication):
-    def __init__(self, token_name, portal_cookie, workflow):
-        super(BASICAuthentication, self).__init__(token_name, portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow):
+        super(BASICAuthentication, self).__init__(portal_cookie, workflow)
 
     def retrieve_credentials(self, request):
         authorization_header = request.META.get("HTTP_AUTHORIZATION").replace("Basic ", "")
@@ -412,21 +410,13 @@ class KERBEROSAuthentication(Authentication):
 
 
 class DOUBLEAuthentication(Authentication):
-    def __init__(self, app_cookie, portal_cookie, workflow):
-        super(DOUBLEAuthentication, self).__init__(app_cookie, portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow):
+        super(DOUBLEAuthentication, self).__init__(portal_cookie, workflow)
         assert (self.redis_portal_session.exists())
         assert self.backend_id
         self.credentials[0] = self.redis_portal_session.get_login(self.backend_id)
         self.resend = False
         self.print_captcha = False
-
-    def authenticated_on_backend(self):
-        backend_list = list(self.workflow.authentication.repositories_fallback.all())
-        backend_list.append(self.workflow.authentication.repository)
-        for backend in backend_list:
-            if self.redis_portal_session.keys.get("login_{}".format(backend.id)):
-                return str(backend.id)
-        return ""
 
     def retrieve_credentials(self, request):
         try:
@@ -531,7 +521,6 @@ class DOUBLEAuthentication(Authentication):
                                                # FIXME : auth_portal ?
                                                # self.workflow.authentication.auth_portal or
                                                self.workflow.get_redirect_uri(),
-                                               self.token_name, "None",
                                                self.workflow.authentication.otp_repository.otp_type,
                                                captcha_url, kwargs.get('error', None))
 

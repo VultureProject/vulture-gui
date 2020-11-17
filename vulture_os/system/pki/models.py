@@ -36,10 +36,18 @@ from system.exceptions import VultureSystemConfigError
 from toolkit.system.x509 import mk_signed_cert
 
 import subprocess
+from ssl import PROTOCOL_SSLv3, PROTOCOL_TLSv1, PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
+
+PROTOCOLS_TO_INT = {
+    'sslv3': int(PROTOCOL_SSLv3),
+    'tlsv10': int(PROTOCOL_TLSv1),
+    'tlsv11': int(PROTOCOL_TLSv1_1),
+    'tlsv12': int(PROTOCOL_TLSv1_2),
+}
 
 PROTOCOL_CHOICES = (
     ('tlsv13', 'TLSv1.3'),

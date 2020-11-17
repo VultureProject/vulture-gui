@@ -867,13 +867,7 @@ class Frontend(models.Model):
         access_controls_list = []
         if self.id:
             for workflow in self.workflow_set.filter(enabled=True):
-                tmp = {
-                    'id': str(workflow.pk),
-                    'fqdn': workflow.fqdn,
-                    'public_dir': workflow.public_dir,
-                    'backend': workflow.backend,
-                    'defender_policy': workflow.defender_policy
-                }
+                tmp = workflow.to_template()
 
                 access_controls_deny = []
                 access_controls_301 = []

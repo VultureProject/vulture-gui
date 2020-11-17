@@ -31,6 +31,15 @@ from djongo import models
 from applications.portal_template.models import portalTemplate
 from authentication.base_repository import BaseRepository
 from authentication.otp.models import OTPRepository
+# Do NOT remove those unused imports !!! There are here to trigger internal django fonctionnality
+from authentication.ldap.models import LDAPRepository
+from authentication.kerberos.models import KerberosRepository
+from authentication.openid.models import OpenIDRepository
+from authentication.radius.models import RadiusRepository
+from services.frontend.models import Listener
+from toolkit.http.utils import build_url
+from toolkit.system.hashes import random_sha256
+from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
 
 # Extern modules imports
 
@@ -58,7 +67,7 @@ SSO_BASIC_MODE_CHOICES = (
     ('learning', 'using SSO Learning'),
 )
 SSO_CONTENT_TYPE_CHOICES = (
-    ('default', 'application/x-www-form-urlencoded'),
+    ('urlencoded', 'application/x-www-form-urlencoded'),
     ('multipart', 'multipart/form-data'),
     ('json', 'application/json')
 )
@@ -86,25 +95,35 @@ class UserAuthentication(models.Model):
         verbose_name=_("Name"),
         help_text=_("Custom object name")
     )
+    enable_external = models.BooleanField(
+        default=False,
+        verbose_name=_("External portal"),
+        help_text=_("Listen portal on dedicated host - required for ")
+    )
+    external_listener = models.ForeignKey(
+        to=Listener,
+        null=True,
+        verbose_name=_('Listen on'),
+        help_text=_("Listener used for external portal"),
+        on_delete=models.SET_NULL
+    )
+    external_fqdn = models.CharField(
+        max_length=40,
+        default="auth.testing.tr",
+        verbose_name=_("FQDN"),
+        help_text=_("Listening FQDN for external portal")
+    )
     enable_tracking = models.BooleanField(
         default=True,
         verbose_name=_("Track anonymous connections"),
         help_text=_("If disable, Vulture won\'t give a cookie to anonymous users")
     )
-    repository = models.ForeignKey(
-        BaseRepository,
-        verbose_name=_('Authentication repository'),
-        help_text=_("Repository to use to authenticate users"),
-        on_delete=models.PROTECT,
-        related_name="user_authentication_set",
-    )
-    repositories_fallback = models.ArrayReferenceField(
+    repositories = models.ArrayReferenceField(
         BaseRepository,
         default=[],
-        on_delete=models.SET_DEFAULT,
-        verbose_name=_("Authentication fallback repositories"),
-        help_text=_("Repositories to use to authenticate users if main repository failed."),
-        related_name="user_authentication_fallback_set",
+        verbose_name=_('Authentication repositories'),
+        help_text=_("Repositories to use to authenticate users (tested in order)"),
+        on_delete=models.PROTECT,
     )
     auth_type = models.TextField(
         default=AUTH_TYPE_CHOICES[0][0],
@@ -139,7 +158,8 @@ class UserAuthentication(models.Model):
         null=True,
         on_delete=models.SET_NULL,
         verbose_name=_("OTP Repository"),
-        help_text=_("Double authentication repository to use")
+        help_text=_("Double authentication repository to use"),
+        related_name="user_authentication_otp_set"
     )
     otp_max_retry = models.PositiveIntegerField(
         default=3,
@@ -176,14 +196,126 @@ class UserAuthentication(models.Model):
         verbose_name=_("Update group members (ldap)"),
         help_text=_("Update group members")
     )
+    enable_oauth = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable OAuth2 provider"),
+        help_text=_("Set portal as OAuth2 provider")
+    )
+    oauth_client_id = models.CharField(
+        max_length=64,
+        default=random_sha256,
+        verbose_name=_("Application ID (client_id)"),
+        help_text=_("Client_id used to contact OAuth2 provider urls")
+    )
+    oauth_client_secret = models.CharField(
+        max_length=64,
+        default=random_sha256,
+        verbose_name=_("Secret (client_id)"),
+        help_text=_("Client_secret used to contact OAuth2 provider urls")
+    )
+    oauth_redirect_uris = models.ListField(
+        models.CharField(
+            null=False
+        ),
+        default=["https://myapp.com/oauth2/callback"],
+        help_text=_("Use one line per allowed URI")
+    )
+    enable_sso_forward = models.BooleanField(
+        default=False,
+        help_text=_('Forward credentials to backend')
+    )
+    sso_forward_type = models.TextField(
+        choices=SSO_TYPE_CHOICES,
+        default="form",
+        help_text=_('Select the way to propagate authentication')
+    )
+    sso_forward_tls_proto = models.TextField(
+        choices=TLS_PROTOCOL_CHOICES,
+        default=TLS_PROTOCOL_CHOICES[-1],
+        help_text=_('Minimal TLS protocol used to connect to SSO url')
+    )
+    sso_forward_tls_cert = models.ForeignKey(
+        to=X509Certificate,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=False,
+        help_text=_("Client certificate used to connect to SSO url.")
+    )
+    sso_forward_direct_post = models.BooleanField(
+        default=False,
+        help_text=_('Enable direct POST')
+    )
+    sso_forward_get_method = models.BooleanField(
+        default=False,
+        help_text=_('Make a GET instead of a POST')
+    )
+    sso_forward_follow_redirect_before = models.BooleanField(
+        default=False,
+        help_text=_('Before posting the login form, follow metaredirect')
+    )
+    sso_forward_follow_redirect = models.BooleanField(
+        default=False,
+        help_text=_('After posting the login form, follow the redirection')
+    )
+    sso_forward_return_post = models.BooleanField(
+        default=False,
+        help_text=_('Return the application\'s response immediately after the SSO Forward Request')
+    )
+    sso_forward_content_type = models.TextField(
+        choices=SSO_CONTENT_TYPE_CHOICES,
+        default='urlencoded',
+        help_text=_('Content-Type of the SSO Forward request')
+    )
+    sso_forward_url = models.TextField(
+        default='http://your_internal_app/action.do?what=login',
+        help_text=_('URL of the login form')
+    )
+    sso_forward_user_agent = models.TextField(
+        default="Vulture/4 (BSD; Vulture OS)",
+        verbose_name=_("Override User-Agent (set empty if not)"),
+        help_text=_('Override \'User-Agent\' header for SSO forward requests')
+    )
+    sso_forward_content = models.TextField(
+        default="",
+        help_text=_('')
+    )
+    sso_forward_enable_capture = models.BooleanField(
+        default=False,
+        help_text=_('Capture content in SSO response')
+    )
+    sso_forward_capture_content = models.TextField(
+        default="^REGEX to capture (content.*) in SSO Forward Response$",
+        help_text=_('')
+    )
+    sso_forward_enable_replace = models.BooleanField(
+        default=False,
+        help_text=_('Enable content rewrite of SSO response')
+    )
+    sso_forward_replace_pattern = models.TextField(
+        default="^To Be Replaced$",
+        help_text=_('Replace pattern in SSO response')
+    )
+    sso_forward_replace_content = models.TextField(
+        default="By previously captured '$1'/",
+        help_text=_('Replace content in SSO response')
+    )
+    sso_forward_enable_additionnal = models.BooleanField(
+        default=False,
+        help_text=_('Make an additionnal request after SSO')
+    )
+    sso_forward_additional_url = models.TextField(
+        default="http://My_Responsive_App.com/Default.aspx",
+        help_text=_('URL of additionnal request')
+    )
+
 
     def __str__(self):
-        return "{} ({})".format(self.name, str(self.repository))
+        return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])
 
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
-        return ['name', 'repository']
+        return ['name', 'repositories']
 
     def str_auth_type(self):
         auth_type = "UNKNOWN"
@@ -197,7 +329,12 @@ class UserAuthentication(models.Model):
         return {
             'id': str(self.id),
             'name': self.name,
+            'openid_repos': self.openid_repos
         }
+
+    @property
+    def openid_repos(self):
+        return [repo.get_daughter() for repo in self.repositories.filter(subtype="openid")]
 
     def to_html_template(self):
         """ Returns needed attributes for html rendering """
@@ -205,12 +342,22 @@ class UserAuthentication(models.Model):
             'id': str(self.id),
             'name': self.name,
             'enable_tracking': self.enable_tracking,
-            'repositories': [str(self.repository)],
+            'repositories': [str(repo) for repo in self.repositories.all()],
             'enable_captcha': self.enable_captcha,
             'otp_repository': str(self.otp_repository) if self.otp_repository else "",
             'enable_registration': self.enable_registration,
             'auth_type': self.str_auth_type()
         }
-        for repo in self.repositories_fallback.all():
-            result['repositories'].append(str(repo))
         return result
+
+    def get_openid_callback_url(self, req_scheme, req_port, workflow_host, workflow_path, repo_id):
+        if self.enable_external:
+            base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
+        else:
+            base_url = build_url(req_scheme, workflow_host, req_port, workflow_path)
+        base_url += '/' if base_url[-1] != '/' else ''
+        return base_url+"oauth2/callback/{}".format(repo_id)
+
+    def write_login_template(self):
+        """ Write templates as static, to serve them without rendering """
+        return self.portal_template.write_template("html_login", openid_repos=self.openid_repos)

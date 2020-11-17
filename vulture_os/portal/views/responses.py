@@ -114,23 +114,20 @@ def render_button(b_class, text, type="submit", name="", value=""):
 	return '<button class="{}" type="{}" name="{}" value="{}">{}</button>'.format(b_class, type, name, value, text)
 
 
-def post_authentication_response(request, template, action_url, public_dir, token_name, b64_generated_captcha, error=""):
-	form_begin     = render_form("")  # str(action_url)
+#def post_authentication_response(request, template, action_url, public_dir, token_name, b64_generated_captcha, error=""):
+def post_authentication_response(request, template, action_url, public_dir, error=""):
+	form_begin     = render_form(action_url)  # str(action_url)
 	form_end       = '</form>'
 	input_login    = render_input('text',     'vltprtlsrnm',    i_class='form-control', placeholder='Login',    required=True)
 	input_password = render_input('password', 'vltprtlpsswrd',  i_class='form-control', placeholder='Password', required=True)
 	input_captcha  = render_input('text',     'vltprtlcaptcha', i_class='form-control', placeholder='Captcha',  required=True)
 	input_submit   = render_button('btn btn-lg btn-warning btn-block btn-signin', 'Sign in')
-	lostPassword   = str(public_dir) + str(token_name) + '/self/lost'
+	#lostPassword   = str(public_dir) + str(token_name) + '/self/lost'
 
-	captcha = False
-	if b64_generated_captcha:
-		captcha = "<img id='captcha' src='data:image/png;base64,{}' alt='captcha'/>".format(b64_generated_captcha)
-	return HttpResponse(template.render_html_login({'form_begin': form_begin, 'captcha': captcha,
+	return HttpResponse(template.render_html_login({'form_begin': form_begin,
 	                           						'input_login': input_login, 'input_password': input_password,
 													'input_captcha': input_captcha, 'form_end': form_end,
-													'input_submit': input_submit, 'error_message': error,
-	                           						'lostPassword': lostPassword}))
+													'input_submit': input_submit, 'error_message': error}))
 
 
 def otp_authentication_response(request, template_id, app_id, action_url, token_name, token, otp_type, qrcode, error=""):

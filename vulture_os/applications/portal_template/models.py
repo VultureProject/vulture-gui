@@ -29,6 +29,8 @@ from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
 # Django project imports
+from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
+from system.config.models import write_conf
 
 # Extern modules imports
 import base64
@@ -39,6 +41,10 @@ import base64
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
+
+
+INPUT_LOGIN = "vltprtlsrnm"
+INPUT_PASSWORD = "vltprtlpsswrd"
 
 
 class portalTemplate(models.Model):
@@ -138,7 +144,7 @@ class portalTemplate(models.Model):
                 continue
 
             try:
-                with open("/home/vlt-gui/vulture/portal/templates/portal_%s_%s.conf" % (str(self.id), tpl),
+                with open("/usr/local/etc/haproxy.d/templates/portal_%s_%s.conf" % (str(self.id), tpl),
                           'w') as f:
                     html = getattr(self, tpl)
                     if tpl not in ["email_subject", "email_body", "email_register_subject", "email_register_body"]:
@@ -161,6 +167,48 @@ class portalTemplate(models.Model):
             with open("/home/vlt-gui/vulture/portal/templates/portal_{}_{}.html".format(str(self.id), message),
                       'w') as f:
                 f.write(tpl.encode('UTF-8'))
+
+    def attrs_dict(self):
+        """ Return all fields attributes """
+        return {
+            'login_login_field': self.login_login_field,
+            'login_password_field': self.login_password_field,
+            'login_captcha_field': self.login_captcha_field,
+            'login_submit_field': self.login_submit_field,
+            'learning_submit_field': self.learning_submit_field,
+            'password_old_field': self.password_old_field,
+            'password_new1_field': self.password_new1_field,
+            'password_new2_field': self.password_new2_field,
+            'password_email_field': self.password_email_field,
+            'password_submit_field': self.password_submit_field,
+            'otp_key_field': self.otp_key_field,
+            'otp_submit_field': self.otp_submit_field,
+            'otp_resend_field': self.otp_resend_field,
+            'otp_onetouch_field': self.otp_onetouch_field,
+            'register_captcha_field': self.register_captcha_field,
+            'register_username_field': self.register_username_field,
+            'register_phone_field': self.register_phone_field,
+            'register_password1_field': self.register_password1_field,
+            'register_password2_field': self.register_password2_field,
+            'register_email_field': self.register_email_field,
+            'register_submit_field': self.register_submit_field,
+            'input_login': INPUT_LOGIN,
+            'input_password': INPUT_PASSWORD
+        }
+
+    def render_template(self, tpl_name, **kwargs):
+        tpl = Template(getattr(self, tpl_name))
+        logger.info({**self.attrs_dict(), **kwargs})
+        return tpl.render(Context({**self.attrs_dict(), **kwargs}))
+
+    def tpl_filename(self, tpl_name):
+        return f"{HAPROXY_PATH}/templates/{tpl_name}_{self.id}.html"
+
+    def write_template(self, tpl_name, **kwargs):
+        """ This method has to be called by api_request (Vultured) """
+        filename = self.tpl_filename(tpl_name)
+        write_conf(logger, [self.tpl_filename(tpl_name), self.render_template(tpl_name, **kwargs), HAPROXY_OWNER, HAPROXY_PERMS])
+        return "Template {} successfully written".format(filename)
 
     def __str__(self):
         return "{}" .format(self.name.encode('utf8', 'ignore'))

@@ -304,7 +304,7 @@ def httpGET(uri, req, app):
 
 
 """ Return a robobrowser.forms.Form list with all fields identified """
-def fetch_forms(logger, uris, req, sso_vulture_agent, headers=dict(), ssl_context=None, headers_in=None, proxy_client_side_certificate=None):
+def fetch_forms(logger, uris, req, user_agent, headers=dict(), ssl_context=None, proxy_client_side_certificate=None):
     """ Fetch forms inside an html page
     :param logger: logger instance
     :param uri: The 'action' uri where to post the form
@@ -313,15 +313,6 @@ def fetch_forms(logger, uris, req, sso_vulture_agent, headers=dict(), ssl_contex
     :param headers: Optional dict that contains headers to send in the request
     :returns: Mechanize instance, final URI string, response's Set-Cookie string, dict with response elements
     """
-
-    if sso_vulture_agent:
-        ua = vulture_custom_agent
-    else:
-        try:
-            ua = req.META['HTTP_USER_AGENT']
-        except:
-            ua = vulture_custom_agent
-            pass
 
     #request = urllib2.Request(uri)
     verify_certificate = False
@@ -336,90 +327,54 @@ def fetch_forms(logger, uris, req, sso_vulture_agent, headers=dict(), ssl_contex
         proxy_client_side_certificate = None
 
     #request.add_header('User-Agent', ua)
-    session.headers.update({'User-Agent': ua})
+    session.headers.update({'User-Agent': user_agent})
 
-    """ Add Request Header, if any defined in Application config """
-    try:
-        for header in headers_in:
-            if header.action in ('set', 'add'):
-                #request.add_header (header.name, header.value)
-                session.headers.update({header.name: header.value})
-    except:
-        pass
-
-    for k, v in headers.iteritems():
+    for k, v in headers.items():
         #request.add_header(k,v)
         session.headers.update({k: v})
 
-    try:
-        # if ssl_context:
-        #     response = urllib2.urlopen(request, context=ssl_context)
-        # else:
-        #     opener = urllib2.build_opener()
-        #     response = opener.open(request)
+    # if ssl_context:
+    #     response = urllib2.urlopen(request, context=ssl_context)
+    # else:
+    #     opener = urllib2.build_opener()
+    #     response = opener.open(request)
 
-        # response_body=response.read()
-        response = None
-        for uri in uris:
-            try:
-                response = session.get(uri, verify=verify_certificate, cert=proxy_client_side_certificate)
-                response_body = response.content
-                break
-            except Exception as e:
-                logger.error("FETCH_FORMS::Exception while getting uri '{}' : {}".format(uri, e))
-
-        if not response:
-            logger.error("FETCH_FORMS::No url could be fetched among the following list : {}".format(uris))
-            return None, None, None, None
-
+    # response_body=response.read()
+    response = None
+    for uri in uris:
         try:
-            if response.encoding.lower() != "utf-8":
-                response_body = response.content.encode('utf-8')
+            response = session.get(uri, verify=verify_certificate, cert=proxy_client_side_certificate)
+            response_body = response.content
+            break
         except Exception as e:
-            logger.error("FETCH_FORMS::Exception while trying to encode response content : {}".format(e))
+            logger.error("FETCH_FORMS::Exception while getting uri '{}' : {}".format(uri, e))
 
-    # except urllib2.HTTPError, e:
-    #     if e.code == 401 and e.reason == "Authorization Required":
-    #         return None, None, None, None
-        if response.status_code == 401 and response.reason == "Unauthorized":
-            return None, None, None, None
-    except Exception as e:
-        logger.error("FETCH_FORMS::Exception requesting {} : {}".format(str(uri), str(e)))
-        return None, None, None, None
+    if not response:
+        raise Exception("FETCH_FORMS::No url could be fetched among the following list : {}".format(uris))
 
     try:
+        if response.encoding.lower() != "utf-8":
+            response_body = response.content.encode('utf-8')
+    except Exception as e:
+        raise Exception("FETCH_FORMS::Exception while trying to encode response content : {}".format(e))
 
+    if response.status_code == 401 and response.reason == "Unauthorized":
+        return [], None, None, None
+
+    try:
         """ Check if we have to follow a meta redirect (301/302 are already handled by urllib2) """
         redirect_re = re.compile('<meta[^>]*?url=\s*(.*?)["\']', re.IGNORECASE)
         match = redirect_re.search(response_body)
+        logger.info(match)
         if match:
             uri = match.groups()[0].strip()
-            #request = urllib2.Request(uri)
-            session = requests.Session()
-            #request.add_header('User-Agent', ua)
-            session.headers.update({'User-Agent': ua})
-
-            """ Add Request Header, if any defined in Application config """
-            try:
-                for header in headers_in:
-                    if header.action in ('set', 'add'):
-                        #request.add_header (header.name, header.value)
-                        session.headers.update({header.name: headers.value})
-            except:
-                pass
-
-            for k, v in headers.iteritems():
-                #request.add_header(k,v)
-                session.headers.update({k: v})
-            #response = opener.open(request)
-            response = session.get(uri)
+            response = session.get(uri, verify=verify_certificate, cert=proxy_client_side_certificate)
             #response_body=response.read()
             response_body = response.content
             if response.encoding.lower() != "utf-8":
                 response_body = response.content.encode('utf-8')
     except Exception as e:
-        logger.debug("fetch_forms Exception: " + str(e))
-        return None, None, None, None
+        logger.error("FETCH_FORMS::Cannot retrieve meta redirection, continuing. Details : " + str(e))
 
     # Parse response with BeautifulSoup and robobrowser => PYTHON 3
     parsed = BeautifulSoup(response_body, 'html.parser')
@@ -437,7 +392,7 @@ def fetch_forms(logger, uris, req, sso_vulture_agent, headers=dict(), ssl_contex
     # Python 2 with OLD mechanize
     # resp = mechanize.ParseString(response_body, response.url) #, backwards_compat=False)
 
-    return (resp, uri, response, response_body)
+    return resp, uri, response, response_body
 
 
 """ Return the URL of a string, without the fqdn and without query string
@@ -493,3 +448,10 @@ def check_uri(uri):
     if match:
         return True
     return False
+
+def build_url(scheme, fqdn, port, path):
+    res = "{}://{}".format(scheme, fqdn)
+    if (scheme == "http" and port != 80) or \
+            (scheme == "https" and port != 443):
+        res += ":{}".format(port)
+    return res + path

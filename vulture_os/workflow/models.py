@@ -108,13 +108,18 @@ class Workflow(models.Model):
         on_delete=models.PROTECT,
         help_text=_("Frontend"),
     )
-
+    """ Security """
     defender_policy = models.ForeignKey(
         DefenderPolicy,
         on_delete=models.CASCADE,
         null=True
     )
-
+    """ Authentication """
+    authentication = models.ForeignKey(
+        UserAuthentication,
+        on_delete=models.SET_NULL,
+        null=True
+    )
     """ FQDN """
     fqdn = models.TextField(
         help_text=_("Public name")
@@ -199,8 +204,11 @@ class Workflow(models.Model):
             'id': str(self.id),
             'name': self.name,
             'enabled': self.enabled,
+            'fqdn': self.fqdn,
+            'public_dir': self.public_dir,
             'frontend': self.frontend,
-            'backend': self.backend
+            'backend': self.backend,
+            'authentication': self.authentication
         }
 
     def generate_conf(self):
@@ -244,6 +252,13 @@ class Workflow(models.Model):
         """
         if not self.authentication:
             return "No authentication activated, no need to write portal conf."
+
+        # try:
+        #     api_res = Cluster.api_request("workflow.api.write_portal_template", config=self.id)
+        #     if not api_res.get('status'):
+        #         raise VultureSystemConfigError(". API request failure ", traceback=api_res.get('message'))
+        # except Exception:
+        #     raise VultureSystemConfigError("API request failure.")
 
         params = [self.get_filename(), self.generate_conf(), WORKFLOW_OWNER, WORKFLOW_PERMS]
         try:

@@ -435,7 +435,8 @@ class Backend(models.Model):
             'http_backend_dir': self.http_backend_dir,
             'balancing': self.balancing,
             'workflows': workflow_list,
-            'tags': self.tags
+            'tags': self.tags,
+            'CONF_PATH': HAPROXY_PATH
         }
         """ Retrieve list/custom objects """
         # If facultative arg listener_list is not given

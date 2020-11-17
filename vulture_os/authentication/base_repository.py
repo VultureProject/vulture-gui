@@ -40,6 +40,7 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
+REPO_LIST = ["internalrepository", "kerberosrepository", "ldaprepository", "openidrepository", "otprepository", "radiusrepository"]
 
 class BaseRepository(models.Model):
 
@@ -52,12 +53,16 @@ class BaseRepository(models.Model):
     def __str__(self):
         return "{} ({})".format(self.name, self.subtype)
 
+    def get_daughter(self):
+        for repo in REPO_LIST:
+            if hasattr(self, repo):
+                return getattr(self, repo)
+        raise NotImplementedError("Not implemented backend")
+
     def to_template(self):
-        return {
-            'id': str(self.pk),
-            'name': self.name,
-            'subtype': self.subtype
-        }
+        print("POUET !")
+        # Retrieve daughter class if exists
+        return self.get_daughter().to_template()
 
     @staticmethod
     def str_attrs():
@@ -65,15 +70,11 @@ class BaseRepository(models.Model):
         return ['name', 'subtype']
 
     def authenticate(self, *args, **kwargs):
-        if hasattr(self, "internalrepository"):
+        subclass = self.get_daughter()
+        if isinstance(subclass, InternalRepository):
             return self.internalrepository.authenticate(*args, **kwargs)
-        elif hasattr(self, "ldaprepository"):
-            return self.ldaprepository.get_client().authenticate(*args, **kwargs)
-        elif hasattr(self, "otprepository"):
-            return self.otprepository.get_client().authenticate(*args, **kwargs)
-        elif hasattr(self, "radiusrepository"):
-            return self.radiusrepository.get_client().authenticate(*args, **kwargs)
-        raise NotImplementedError("Client not implemented for this type of repository")
+        else:
+            return subclass.get_client().authenticate(*args, **kwargs)
 
 
 class InternalRepository(BaseRepository):
