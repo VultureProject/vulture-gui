@@ -428,7 +428,7 @@ $(function() {
     }
   }).trigger("change");
 
-  $('#id_darwin_policy').on("change", function(e) {
+  $('#id_darwin_policies').on("change", function(e) {
     var policy = $(this).val();
     show_darwin_mode(policy);
   }).trigger('change');
