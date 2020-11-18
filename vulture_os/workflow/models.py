@@ -173,6 +173,14 @@ class Workflow(models.Model):
         }
 
     def to_dict(self):
+        defender_policy = None
+        authentication = None
+        if self.defender_policy:
+            defender_policy = self.defender_policy.to_dict()
+        
+        if self.authentication:
+            authentication = self.authentication.to_template()
+
         result = {
             'id': str(self.id),
             'name': self.name,
@@ -186,11 +194,9 @@ class Workflow(models.Model):
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             'public_dir': self.public_dir,
-            'backend': str(self.backend),
             'fqdn': self.fqdn,
-            'public_dir': self.public_dir,
-            'defender_policy': str(self.defender_policy),
-            'authentication': str(self.authentication),
+            'defender_policy': defender_policy,
+            'authentication': authentication,
             'acls': [acl.to_dict() for acl in self.workflowacl_set.all()]
         }
 

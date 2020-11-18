@@ -320,6 +320,7 @@ def workflow_edit(request, object_id=None, api=False):
                     enabled=True,
                     mode=workflow_obj.frontend.mode
                 )],
+                'authentications': [a.to_template() for a in UserAuthentication.objects.all()]
             })
 
         return render(request, "main/workflow_edit.html", {

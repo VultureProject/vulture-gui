@@ -98,10 +98,12 @@ var workflow_vue = new Vue({
                     self.workflow = JSON.parse(response.data.workflow_json);
                     self.frontend_choices = response.frontends;
                     self.backend_choices = response.backends;
+                    self.authentication_choices = response.authentications;
 
                     self.frontend_set = true;
                     self.backend_set = true;
                     self.policy_set = true;
+                    self.authentication_set = true;
                     self.get_dependencies();
                     self.redraw_workflow();
                 }
@@ -809,8 +811,13 @@ var workflow_vue = new Vue({
                     case "waf":
                         tmp.shape = "image";
                         tmp.image = vulture_logo
+
+                        if (!tmp.label)
+                            tmp.label = step.data.name
                         break;
                     case "authentication":
+                        if (!tmp.label)
+                            tmp.label = step.data.name
                         break;
                     case "backend":
                         for (var i in self.backend_choices){
