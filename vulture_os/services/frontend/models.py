@@ -96,6 +96,7 @@ IMPCAP_FILTER_CHOICES = (
     ('udp and port 53', "DNS"),
     ('tcp[13] & 2 != 0', "SYN FLAGS"),
     ('tcp and (port 80 or port 443)', "WEB"),
+    ('icmp or udp or (tcp and tcp[tcpflags] & tcp-syn == tcp-syn)', "CONNECTIONS"),
     ('custom', "Custom"),
 )
 
@@ -192,7 +193,7 @@ class Frontend(models.Model):
         null=True,
         blank=False,
         related_name="frontend_set",
-        help_text=_("Darwin policy to use")
+        help_text=_("Darwin policies to use")
     )
     """ Darwin mode """
     darwin_mode = models.TextField(
