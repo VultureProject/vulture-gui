@@ -360,6 +360,7 @@
 
 {% block jquery_code %}
 let object_id = '{{ object_id }}'
+let clone = {{ clone }}
 let darwin_filters = {{ darwin_filters|safe }}
 
 let darwin_policy_list_uri = "{% url 'darwin.policy.list' %}"

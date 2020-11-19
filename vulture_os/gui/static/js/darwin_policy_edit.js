@@ -103,7 +103,15 @@ function init_vue(){
 
           function(response) {
             let data = response.data
-            self.policy.name = data.name
+            if (clone)
+            {
+              self.policy.name = "clone of " + data.name;
+              object_id = 0;
+            }
+            else {
+              self.policy.name = data.name
+            }
+
             self.policy.description = data.description
             self.policy.buffer_outputs = []
 
