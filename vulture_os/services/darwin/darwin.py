@@ -26,12 +26,13 @@ __doc__ = 'Rsyslog service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from darwin.policy.models import DarwinPolicy, FilterPolicy
+from applications.reputation_ctx.models import ReputationContext
+from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter
 from django.utils.translation import ugettext_lazy as _
 from services.service import Service
 from services.darwin.models import DarwinSettings
 from system.config.models import write_conf, delete_conf as delete_conf_file
-
+from darwin.inspection.models import InspectionPolicy
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -340,3 +341,78 @@ def start_service(node_logger):
     node_logger.info("Darwin service started : {}".format(result))
 
     return result
+
+
+def init_default_yara_policy(node_logger):
+    try:
+        yara_filter_type = DarwinFilter.objects.get(name="yara")
+    except DarwinFilter.DoesNotExist:
+        raise VultureSystemError("filter type 'yara' does not exist", "create default malwares detection Darwin policy")
+
+    try:
+        policy, created = DarwinPolicy.objects.get_or_create(
+            name="Default Detect Malwares",
+            defaults={
+                "description": "This policy is an example of malware detection using Yara engine",
+                "is_internal": False
+            }
+        )
+    except Exception as e:
+        node_logger.error("darwin::init_default_yara_policy:: error while get_or_creat'ing yara policy: {}".format(e))
+        raise VultureSystemError("could not get or create policy", "create default malwares detection Darwin policy")
+
+    if created:
+        node_logger.info("darwin::init_default_yara_policy:: policy was created, adding filters")
+        for insp_policy in InspectionPolicy.objects.filter(compilable="OK"):
+            try:
+                dfilter = FilterPolicy.objects.create(
+                    enabled=True,
+                    filter_type=yara_filter_type,
+                    policy=policy,
+                    config = {
+                        "yara_policies_id": [insp_policy.id],
+                        "fastmode": True,
+                        "timeout": 5
+                    }
+                )
+                dfilter.save()
+            except Exception as e:
+                node_logger.error("darwin::init_default_yara_policy:: error while creating filters for default malware detection Darwin policy: {}".format(e))
+                raise VultureSystemError("could not create a filter", "create default malwares detection Darwin policy")
+
+
+def init_default_ioc_policy(node_logger):
+    try:
+        lkup_filter_type = DarwinFilter.objects.get(name="lkup")
+    except DarwinFilter.DoesNotExist:
+        raise VultureSystemError("filter type 'lkup' does not exist", "create default Darwin IOC detection policy")
+
+    try:
+        policy, created = DarwinPolicy.objects.get_or_create(
+            name="Default Detect IOCs",
+            defaults={
+                "description": "This policy is an example of possible lookups for IOC detection in data from logs, network...",
+                "is_internal": False
+            }
+        )
+    except Exception as e:
+        node_logger.error("darwin::init_default_ioc_policy:: error while get_or_creat'ing ioc detection policy: {}".format(e))
+        raise VultureSystemError("could not get or create policy", "create default Darwin IOC detection policy")
+
+    if created:
+        node_logger.info("darwin::init_default_ioc_policy:: policy was created, adding filters")
+        for rep_context in ReputationContext.objects.filter(db_type="lookup"):
+            try:
+                dfilter = FilterPolicy.objects.create(
+                    enabled=True,
+                    filter_type=lkup_filter_type,
+                    policy=policy,
+                    config = {
+                        "reputation_ctx_id": rep_context.id,
+                        "db_type": "rsyslog"
+                    }
+                )
+                dfilter.save()
+            except Exception as e:
+                node_logger.error("darwin::init_default_ioc_policy:: error while creating filter for default IOC detection Darwin policy: {}".format(e))
+                raise VultureSystemError("could not create a filter", "create default Darwin IOC detection policy")
