@@ -122,7 +122,7 @@ function init_vue(){
               for (let tmp of filter.mmdarwin_parameters)
                 tmp_mmdarwin_parameters.push({text: tmp})
               filter.mmdarwin_parameters = tmp_mmdarwin_parameters
-              
+
               let tmp_enrichment_tags = []
               for (let tmp of filter.enrichment_tags)
                 tmp_enrichment_tags.push({text: tmp})
@@ -205,8 +205,8 @@ function init_vue(){
 
           rsyslog_params += `<p><b>${gettext("Overriden Rsyslog inputs")}:</b> ${tmp.join(' ')}</p>`
         }
-        
-        if (filter.enrichment_tags.length > 0){
+
+        if (filter.enrichment_tags.length > 0 && !filter.continuous_analysis_enabled){
           let tmp = []
 
           for (let tag of filter.enrichment_tags)
@@ -214,7 +214,7 @@ function init_vue(){
 
           rsyslog_params += `<p><b>${gettext("Additional Rsyslog enrichment tags")}:</b> ${tmp.join(' ')}</p>`
         }
-        
+
         if (filter.continuous_analysis_enabled){
           continuous_analysis_enabled = `<b>${gettext('Continuous Analysis')}:</b><ul><li><b>${gettext("Analysis interval")}:</b> ${filter.buffering.interval}</li>`
           continuous_analysis_enabled += `<li><b>${gettext("Analysis min entries")}:</b> ${filter.buffering.required_log_lines}</li></ul>`
@@ -353,11 +353,11 @@ function init_vue(){
       custom_rsyslog_calls(filter_type_id) {
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].custom_rsyslog_calls_possible : false
       },
-      
+
       can_be_buffered(filter_type_id) {
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].can_be_buffered : false
       },
-      
+
       is_internal(filter_type_id) {
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].is_internal : false
       },
@@ -365,7 +365,7 @@ function init_vue(){
       is_launchable(filter_type_id) {
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].is_launchable : false
       },
-      
+
       hint(filter_type_id){
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].hint : ""
       },
@@ -461,14 +461,15 @@ function init_vue(){
 
           for (let tmp of tmp_filter.mmdarwin_parameters)
             mmdarwin_parameters.push(tmp.text)
-          
-          for (let tmp of tmp_filter.enrichment_tags)
-            enrichment_tags.push(tmp.text)
 
           if (tmp_filter.continuous_analysis_enabled) {
             buffering = {}
             buffering.interval = tmp_filter.buffering.interval
             buffering.required_log_lines = tmp_filter.buffering.required_log_lines
+          }
+          else {
+              for (let tmp of tmp_filter.enrichment_tags)
+                enrichment_tags.push(tmp.text)
           }
 
           let tmp = {
