@@ -10,10 +10,8 @@ from toolkit.mongodb.mongo_base import MongoBase
 
 def set_enrichment_tags(apps, schema_editor):
     mongo = MongoBase()
-    if not mongo.connect():
+    if not mongo.connect(node="mongodb"):
         raise ConnectionError("Cannot connect to mongodb")
-    if not mongo.connect_primary():
-        raise ConnectionError("Cannot connect to primary mongodb")
 
     mongo.update_many('vulture', 'darwin_filterpolicy', {}, {"$set": {"enrichment_tags": []}})
 
