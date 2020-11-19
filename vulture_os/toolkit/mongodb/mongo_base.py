@@ -147,6 +147,23 @@ class MongoBase:
             logger.critical(e, exc_info=1)
             return False
 
+    def update_many(self, database, collection, query, newvalue):
+        try:
+            if not self.db:
+                self.connect()
+
+            db = self.db[database]
+            coll = db[collection]
+
+            coll.update(query, newvalue, multi=True)
+            return True
+        except Exception as e:
+            if settings.DEV_MODE:
+                raise
+
+            logger.critical(e, exc_info=1)
+            return False
+
     def update_one(self, database, query, newvalue):
         try:
             if not self.db:
