@@ -383,6 +383,9 @@ def init_default_yara_policy(node_logger):
     if not policy.filterpolicy_set.exists():
         logger.warning("darwin::init_default_yara_policy:: no filter in policy, removing policy")
         policy.delete()
+        return "no inspection policies, not creating Darwin policy"
+
+    return "Darwin policy created successfuly"
 
 
 def init_default_ioc_policy(node_logger):
@@ -424,3 +427,6 @@ def init_default_ioc_policy(node_logger):
     if not policy.filterpolicy_set.exists():
         logger.warning("darwin::init_default_ioc_policy:: no filter in policy, removing policy")
         policy.delete()
+        return "no context tags, not creating Darwin policy"
+
+    return "Darwin policy created successfuly"
