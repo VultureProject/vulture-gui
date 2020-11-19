@@ -61,12 +61,11 @@ PACKET_INSPECTION_TECHNO = (
     ("yara", "yara"),
 )
 
-YARA_CONF_PATH = "/home/darwin/conf/fcontent_inspection"
-YARA_RULES_PATH = YARA_CONF_PATH + "/yara-rules"
+YARA_CONF_PATH = "/var/db/darwin"
 YARA_TEST_CONF_PATH = "/var/tmp"
 
 DARWIN_PERMS = "640"
-DARWIN_OWNERS = "darwin:vlt-conf"
+DARWIN_OWNERS = "vlt-os:vlt-conf"
 
 
 class InspectionRule(models.Model):
