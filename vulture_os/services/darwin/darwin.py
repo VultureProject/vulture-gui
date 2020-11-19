@@ -380,6 +380,10 @@ def init_default_yara_policy(node_logger):
                 node_logger.error("darwin::init_default_yara_policy:: error while creating filters for default malware detection Darwin policy: {}".format(e))
                 raise VultureSystemError("could not create a filter", "create default malwares detection Darwin policy")
 
+    if not policy.filterpolicy_set.exists():
+        logger.warning("darwin::init_default_yara_policy:: no filter in policy, removing policy")
+        policy.delete()
+
 
 def init_default_ioc_policy(node_logger):
     try:
@@ -416,3 +420,7 @@ def init_default_ioc_policy(node_logger):
             except Exception as e:
                 node_logger.error("darwin::init_default_ioc_policy:: error while creating filter for default IOC detection Darwin policy: {}".format(e))
                 raise VultureSystemError("could not create a filter", "create default Darwin IOC detection policy")
+
+    if not policy.filterpolicy_set.exists():
+        logger.warning("darwin::init_default_ioc_policy:: no filter in policy, removing policy")
+        policy.delete()
