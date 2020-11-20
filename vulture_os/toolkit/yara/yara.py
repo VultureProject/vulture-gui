@@ -41,11 +41,10 @@ logger = logging.getLogger('system')
 def fetch_yara_rules(logger):
     logger.info("getting updated yara rules...")
 
-    # proxy = get_proxy()
+    proxy = get_proxy()
     try:
         doc_uri = "https://github.com/Yara-Rules/rules/archive/master.zip"
-        # doc = requests.get(doc_uri, proxies=proxy, timeout=10)
-        doc = requests.get(doc_uri, timeout=10)
+        doc = requests.get(doc_uri, proxies=proxy, timeout=10)
     except requests.Timeout:
         logger.error("Yara::fetch_yara_rules:: timed out while trying to connect")
         raise
