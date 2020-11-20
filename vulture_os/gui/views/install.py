@@ -377,4 +377,8 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     logger.debug("API call to configure logrotate")
     node.api_request("services.logrotate.logrotate.reload_conf")
 
+    # Compile all Inspection policy rules on local node
+    logger.debug("API call to compile all Inspection Policies locally")
+    node.api_request("toolkit.yara.yara.compile_all_rules")
+
     return True
