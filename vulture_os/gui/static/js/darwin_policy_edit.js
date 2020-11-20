@@ -75,6 +75,7 @@ function init_vue(){
         {label: "Informational", id: "INFO"},
         {label: "Warning", id: "WARNING"},
         {label: "Error", id: "ERROR"},
+        {label: "Critical", id: "CRITICAL"},
       ],
 
       yara_scan_type_choices: [
@@ -194,7 +195,8 @@ function init_vue(){
           "DEBUG": "label-primary",
           "INFO": "label-info",
           "WARNING": "label-warning",
-          "ERROR": "label-danger"
+          "ERROR": "label-danger",
+          "CRITICAL": "label-danger"
         }
 
         return `<label class='label ${mapping[val]}'>${val}</label>`

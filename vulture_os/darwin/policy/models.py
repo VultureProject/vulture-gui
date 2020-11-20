@@ -64,7 +64,6 @@ DARWIN_LOGLEVEL_CHOICES = (
     ('CRITICAL', 'Critical'),
     ('ERROR', 'Error'),
     ('WARNING', 'Warning'),
-    ('NOTICE', 'Notice'),
     ('INFO', 'Informational'),
     ('DEBUG', 'Debug')
 )
