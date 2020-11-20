@@ -43,13 +43,23 @@ class Portal:
 
     @property
     def menu(self):
-        MENU =  {
-            'link': 'portal',
-            'icon': 'fas fa-users',
-            'text': _('Authentication Portal'),
-            #'url': "/portal/user_authentication/"
-            'url': "#Coming_Soon",
-            'coming_soon': True
+        MENU = {
+            "link": "portal",
+            "icon": "fas fa-users",
+            "text": _("Authentication Portal"),
+            "url": "#",
+            "submenu": [
+                {
+                    "link": "user_authentication",
+                    "text": _("Portal"),
+                    "url": "/portal/user_authentication/",
+                },
+                {
+                    "link": "authentication_access_control",
+                    "text": _("Access Control"),
+                    "url": "/portal/authentication/acl/"
+                }
+            ]
         }
 
         return MENU

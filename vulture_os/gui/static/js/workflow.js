@@ -1098,7 +1098,12 @@ var workflow_vue = new Vue({
                                 break;
                             case "waf":
                                 self.policy_set= false;
+                                self.authentication_set = false;
                                 self.backend_set = false;
+                                break;
+                            case "authentication":
+                                self.backend_set = false;
+                                self.authentication_set = false;
                                 break;
                             case "action":
                                 self.error(gettext("An action can not be deleted. Delete the Access Control instead."))

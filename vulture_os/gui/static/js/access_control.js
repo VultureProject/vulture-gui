@@ -418,8 +418,6 @@ access_control_vue = new Vue({
 
                 function(response){
                     if (check_json_error(response)){
-                        var user_agent_id = self.generate_id();
-
                         var rules = [{
                             pk: self.generate_id(),
                             lines: [{
