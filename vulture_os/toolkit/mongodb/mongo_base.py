@@ -193,10 +193,13 @@ class MongoBase:
                     'ssl': True,
                     'ssl_certfile': "/var/db/pki/node.pem",
                     'ssl_ca_certs': "/var/db/pki/ca.pem",
-                    'read_preference': ReadPreference.PRIMARY_PREFERRED}
+                    'read_preference': ReadPreference.PRIMARY_PREFERRED,
+                    "serverSelectionTimeoutMS": 5000}
             if primary:
                 args['replicaset'] = "Vulture"
             self.db = MongoClient(**args)
+            # Execute a request to test connection (pymongo doesn't try connecting until a command is executed on client)
+            self.db.server_info()
         except Exception as e:
             logger.error("connect: Error during mongoDB connexion: {}".format(str(e)), exc_info=1)
             return False
