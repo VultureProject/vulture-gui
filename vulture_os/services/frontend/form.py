@@ -209,6 +209,7 @@ class FrontendForm(ModelForm):
                            'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
                            "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                            "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
+                           "cybereason_host", "cybereason_username", "cybereason_password",
                            'darwin_mode']:
             self.fields[field_name].required = False
 
@@ -261,6 +262,7 @@ class FrontendForm(ModelForm):
                   'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
                   "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                   "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
+                  "cybereason_host", "cybereason_username", "cybereason_password",
                   'darwin_mode')
 
         widgets = {
@@ -336,6 +338,9 @@ class FrontendForm(ModelForm):
             'cortex_xdr_host': TextInput(attrs={'class': 'form-control'}),
             'cortex_xdr_apikey_id': TextInput(attrs={'class': 'form-control'}),
             'cortex_xdr_apikey': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_host': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_username': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_password': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
