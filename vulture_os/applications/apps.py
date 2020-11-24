@@ -68,7 +68,7 @@ class Apps:
                     'text': 'Parsers',
                     'url': '/apps/parser/',
                     'state': "DOWN"
-                },
+                }
             ]
         }
 

@@ -29,7 +29,7 @@ from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInpu
 
 # Django project imports
 from gui.forms.form_utils import NoValidationField
-from applications.portal_template.models import PortalTemplate, TemplateImage
+from authentication.portal_template.models import PortalTemplate, TemplateImage
 from system.pki.models import TLSProfile
 
 # Required exceptions imports

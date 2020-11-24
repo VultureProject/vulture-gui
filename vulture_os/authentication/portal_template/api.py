@@ -20,11 +20,12 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Authentication ACL API'
+__doc__ = 'Frontends API'
 
-from authentication.auth_access_control.form import AuthAccessControlRuleForm
-from authentication.auth_access_control.form import AuthAccessControlForm
-from authentication.auth_access_control.models import AuthAccessControl
+
+# Django system imports
+from authentication.portal_template.form import PortalTemplateForm
+from authentication.portal_template.models import PortalTemplate
 from django.views.decorators.http import require_http_methods
 from django.utils.translation import ugettext_lazy as _
 from django.utils.decorators import method_decorator
@@ -41,35 +42,22 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
-def save_access_control(data, instance):
-    form = AuthAccessControlForm(data, instance=instance)
-    rules = data.get('or_lines', [])
-    
-    if form.is_valid():
-        ac = form.save(commit=False)
+def save_portal_template(data, instance):
+    form = PortalTemplateForm(data, instance=instance)
 
-        for rule in rules:
-            for line in rule['lines']:
-                rule_form = AuthAccessControlRuleForm(line)
-                if not rule_form.is_valid():
-                    return JsonResponse({
-                        "error": rule_form.errors
-                    }, status=401)
-        
-        ac.rules = rules
-        ac.save()
-
+    if not form.is_valid():
         return JsonResponse({
-            "message": _("Authentication ACL saved")
-        })
+            "error": form.errors
+        }, status=400)
 
+    obj = form.save()
     return JsonResponse({
-        "error": form.errors
-    }, status=401)
-
+        "message": _("Portal Template saved"),
+        "object": obj.to_dict()
+    })
 
 @method_decorator(csrf_exempt, name="dispatch")
-class AuthenticationAccessControlAPIv1(View):
+class PortalTemplateAPIv1(View):
     @api_need_key("cluster_api_key")
     def get(self, request):
         try:
@@ -77,49 +65,48 @@ class AuthenticationAccessControlAPIv1(View):
             name = request.GET.get('name')
 
             if object_id:
-                res = AuthAccessControl.objects.get(pk=object_id).to_dict()
+                ret = PortalTemplate.objects.get(pk=object_id).to_dict()
             elif name:
-                res = AuthAccessControl.objects.get(name=name).to_dict()
+                ret = PortalTemplate.objects.get(name=name).to_dict()
             else:
-                res = [a.to_dict() for a in AuthAccessControl.objects.all()]
+                ret = [p.to_dict() for p in PortalTemplate.objects.all()]
             
             return JsonResponse({
-                "res": res
+                "res": ret
             })
-        
-        except AuthAccessControl.DoesNotExist:
+
+        except PortalTemplate.DoesNotExist:
             return JsonResponse({
                 "error": _("Object does not exist")
             }, status=404)
         
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occurred")
-
+            error = _("An error has occured")
             if settings.DEV_MODE:
                 error = str(e)
             
             return JsonResponse({
                 "error": error
             }, status=500)
-
-    @api_need_key("cluster_api_key")
+    
+    @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
-            auth_access_control = AuthAccessControl.objects.get(pk=object_id)
+            portal_template = PortalTemplate.objects.get(pk=object_id)
 
             if hasattr(request, "JSON"):
                 data = request.JSON
             else:
                 data = request.POST
 
-            return save_access_control(data, instance=auth_access_control)
-
-        except AuthAccessControl.DoesNotExist:
+            return save_portal_template(data, instance=portal_template)
+        
+        except PortalTemplate.DoesNotExist:
             return JsonResponse({
-                "error": _("Object not found")
+                "error": _("Object does not exist")
             }, status=404)
-
+        
         except Exception as err:
             logger.critical(err, exc_info=1)
             error = _("An error has occured")
@@ -130,7 +117,7 @@ class AuthenticationAccessControlAPIv1(View):
                 "error": error
             }, status=500)
 
-    @api_need_key("cluster_api_key")
+    @api_need_key('cluster_api_key')
     def post(self, request):
         try:
             if hasattr(request, "JSON"):
@@ -138,48 +125,49 @@ class AuthenticationAccessControlAPIv1(View):
             else:
                 data = request.POST
 
-            return save_access_control(data, instance=AuthAccessControl())
+            print(data)
+            return save_portal_template(data, instance=PortalTemplate())
 
-        except Exception as e:
-            logger.critical(e, exc_info=1)
+        except Exception as err:
+            logger.critical(err, exc_info=1)
             error = _("An error has occured")
-            if settings.DEV_MODE:
-                error = str(e)
 
+            if settings.DEV_MODE:
+                error = str(err)
+            
             return JsonResponse({
                 "error": error
             }, status=500)
 
-
 @csrf_exempt
 @api_need_key("cluster_api_key")
 @require_http_methods(["POST"])
-def auth_access_control_clone(request):
+def portal_template_clone(request):
     try:
         if hasattr(request, "JSON"):
             pk = request.JSON.get('pk')
         else:
             pk = request.POST.get('pk')
 
-        access_control = AuthAccessControl.objects.get(pk=pk)
-        access_control.pk = None
-        access_control.name = "Clone of {} {}".format(access_control.name, get_random_string(length=4))
-        access_control.save()
+        portal_template = PortalTemplate.objects.get(pk=pk)
+        portal_template.pk = None
+        portal_template.name = f"Clone of {portal_template.name} {get_random_string(length=4)}"
+        portal_template.save()
 
         return JsonResponse({
-            "res": access_control.to_dict()
+            "res": portal_template.to_dict()
         })
-
-    except AuthAccessControl.DoesNotExist:
+    
+    except PortalTemplate.DoesNotExist:
         return JsonResponse({
-            'error': _('ACL does not exist')
+            "error": _("Portal Template does not exist")
         }, status=404)
-
-    except Exception as e:
-        logger.critical(e, exc_info=1)
+    
+    except Exception as err:
+        logger.critical(err, exc_info=1)
         if settings.DEV_MODE:
             raise
 
         return JsonResponse({
-            'error': _('An error occurred')
-        }, status=400)
+            "error": _("An error has occured")
+        }, status=500)

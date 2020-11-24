@@ -40,6 +40,7 @@ from authentication.otp.models import OTPRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
 from authentication.auth_access_control.models import AuthAccessControl
+from authentication.portal_template.models import PortalTemplate
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -172,3 +173,10 @@ class DeleteAuthAccessControl(DeleteView):
     obj = AuthAccessControl
     redirect_url = "/portal/authentication/acl/"
     delete_url = "/portal/authentication/acl/delete/"
+
+
+class DeletePortalTemplate(DeleteView):
+    menu_name = _("Authentication -> Portal Template -> Delete")
+    obj = PortalTemplate
+    redirect_url = "/portal/template/"
+    delete_url = "/portal/template/delete/"

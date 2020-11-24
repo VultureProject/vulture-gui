@@ -58,7 +58,13 @@ class Portal:
                     "link": "authentication_access_control",
                     "text": _("Access Control"),
                     "url": "/portal/authentication/acl/"
-                }
+                },
+                {
+                    'link': 'template',
+                    'text': 'Templates',
+                    'url': '/portal/template/',
+                    'state': "DOWN"
+                },
             ]
         }
 

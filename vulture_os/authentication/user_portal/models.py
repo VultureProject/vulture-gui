@@ -28,7 +28,7 @@ from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
 # Django project imports
-from applications.portal_template.models import PortalTemplate
+from authentication.portal_template.models import PortalTemplate
 from authentication.base_repository import BaseRepository
 from authentication.otp.models import OTPRepository
 # Do NOT remove those unused imports !!! There are here to trigger internal django fonctionnality

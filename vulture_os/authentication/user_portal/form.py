@@ -30,7 +30,7 @@ from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMulti
 from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
-from applications.portal_template.models import PortalTemplate
+from authentication.portal_template.models import PortalTemplate
 from authentication.base_repository import BaseRepository
 from authentication.ldap.models import LDAPRepository
 from authentication.otp.models import OTPRepository

@@ -3,19 +3,22 @@
 {% load staticfiles %}
 
 {% block css_include %}
-
-
+  <link href="{% static 'plugins/ace/monokai.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block js_include %}
-
+  <script src="{% static 'plugins/ace/ace.js' %}"></script>
+  <script src="{% static 'plugins/ace/mode-django.js' %}"></script>
+  <script src="{% static 'plugins/ace/mode-css.js' %}"></script>
+  <script src="{% static 'plugins/ace/ext-language_tools.js' %}"></script>
+  <script src="{% static 'js/portal/template_edit.js' %}"></script>
 {% endblock %}
 
 
 {% block content %}
 
-  <section class="content">
-    <form id="parser_edit_form" class="form-horizontal bootstrap-validator-form" action='{% if cloned %}{% url  "applications.parser.edit" %}{% endif %}' method="post" novalidate="novalidate">
+  <section class="content" id="template_edit_vue">
+    <form id="portal_template_form" class="form-horizontal bootstrap-validator-form" @submit.prevent="save_form" method="post" novalidate="novalidate">
       {% csrf_token %}
       <div class="row">
         <div class="col-md-12">
@@ -165,10 +168,7 @@
                       <div class="form-group">
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
-                          <button id="preview" class="btn-preview-login btn-save">{% trans "PREVIEW" %}</button>
-                          <a href="#" data-toggle="modal" data-target="#show_images">
-                          <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                          </a>
+                          <button type="button" @click="preview('html_login')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                         </div>
                       </div>
                     </div>
@@ -184,30 +184,23 @@
                         </div>
                     </div>
                     <div class="row">
-                      <div class="col-md-offset-6">
-                          <label class="col-md-9">{% trans "Logout Template" %}</label>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="template_helper col-md-6">
+                      <div class="template_helper col-md-3">
                         {% trans "<b><u>The following tags are available: </u></b>"%}<br>
                         <ul>
                             <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
                             <li><b style="color:#39454C;">&#123;&#123;app_url&#125;&#125;</color></b>: {% trans "The application url (needed to redirect the user)"%}</li>
                         </ul>
                       </div>
-                      <div class="col-md-6">
-                        {{form.html_logout}}
-                        {{form.html_logout.errors}}
+                      <div class="col-md-9">
+                          <label class="">{% trans "Logout Template" %}</label>
+                          {{form.html_logout}}
+                          {{form.html_logout.errors}}
                       </div>
                     </div>
                     <div class="row">
                       <label class="col-sm-4 control-label">&nbsp;</label>
                       <div class="col-sm-5">
-                        <button id="preview" class="btn-preview-logout btn-save">{% trans "PREVIEW" %}</button>
-                        <a href="#" data-toggle="modal" data-target="#show_images">
-                          <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                        </a>
+                        <button type="button" @click="preview('html_logout')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                       </div>
                     </div>
                   </div> <!-- /.tab-pane -->
@@ -252,10 +245,7 @@
                       <div class="form-group">
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
-                          <button id="preview" class="btn-preview-learning btn-save">{% trans "PREVIEW" %}</button>
-                            <a href="#" data-toggle="modal" data-target="#show_images">
-                          <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                          </a>
+                          <button type="button" @click="preview('html_learning')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                         </div>
                       </div>
                     </div>
@@ -303,10 +293,7 @@
                       <div class="form-group">
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
-                          <button id="preview" class="btn-preview-self btn-save">{% trans "PREVIEW" %}</button>
-                          <a href="#" data-toggle="modal" data-target="#show_images">
-                            <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                          </a>
+                          <button type="button" @click="preview('html_self')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                         </div>
                       </div>
                     </div>
@@ -378,10 +365,7 @@
                     <div class="row">
                       <label class="col-sm-4 control-label">&nbsp;</label>
                       <div class="col-sm-5">
-                        <button id="preview" class="btn-preview-password btn-save">{% trans "PREVIEW" %}</button>
-                        <a href="#" data-toggle="modal" data-target="#show_images">
-                          <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                        </a>
+                        <button type="button" @click="preview('html_password')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                       </div>
                     </div>
                   </div> <!-- /.tab-pane -->
@@ -506,10 +490,7 @@
                       <div class="form-group">
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
-                          <button id="preview" class="btn-preview-otp btn-save">{% trans "PREVIEW" %}</button>
-                          <a href="#" data-toggle="modal" data-target="#show_images">
-                          <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                          </a>
+                          <button type="button" @click="preview('html_otp')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                         </div>
                       </div>
                     </div>
@@ -547,10 +528,7 @@
                       <div class="form-group">
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
-                          <button id="preview" class="btn-preview-message btn-save">{% trans "PREVIEW" %}</button>
-                          <a href="#" data-toggle="modal" data-target="#show_images">
-                          <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                          </a>
+                          <button type="button" @click="preview('html_message')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                         </div>
                       </div>
                     </div>
@@ -627,10 +605,7 @@
                     </div>
                     <div class="row">
                         <div style="text-align:center;">
-                            <button id="preview" class="btn-preview-error btn-save">{% trans "PREVIEW" %}</button>
-                            <a href="#" data-toggle="modal" data-target="#show_images">
-                            <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                            </a>
+                            <button type="button" @click="preview('html_error')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                         </div>
                     </div>
                   </div> <!-- /.tab-pane -->
@@ -715,10 +690,7 @@
                       <div class="form-group">
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
-                          <button id="preview" class="btn-preview-registration btn-save">{% trans "PREVIEW" %}</button>
-                          <a href="#" data-toggle="modal" data-target="#show_images">
-                            <button id="images" class="btn-images-error btn-save">{% trans "Show Images" %}</button>
-                          </a>
+                          <button type="button" @click="preview('html_registration')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
                         </div>
                       </div>
                     </div>
@@ -763,8 +735,8 @@
               </div>
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'applications.portal_template.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'portal.template.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+              <button type="submit" id="save_form_btn" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
             </div>
           </div>
         </div>
@@ -775,6 +747,11 @@
 {% endblock %}
 
 {% block jquery_code %}
+
+  let portal_template_uri = "{% url 'portal.template.list' %}"
+  let portal_template_api_uri = "{% url 'api.portal.template' %}";
+
+  let object_id = "{{ object_id }}";
 
   if (!String.prototype.endsWith) {
     String.prototype.endsWith = function(searchString, position) {
