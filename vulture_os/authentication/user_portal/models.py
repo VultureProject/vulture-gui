@@ -329,7 +329,7 @@ class UserAuthentication(models.Model):
         return {
             'id': str(self.id),
             'name': self.name,
-            'openid_repos': self.openid_repos
+            'openid_repos': [repo.to_template() for repo in self.openid_repos]
         }
 
     @property

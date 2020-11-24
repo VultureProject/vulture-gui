@@ -62,7 +62,7 @@ class ACLAPIv1(View):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occurred")
+            error = _("An error has occured")
 
             if settings.DEV_MODE:
                 error = str(e)
@@ -85,12 +85,13 @@ class ACLAPIv1(View):
             if settings.DEV_MODE:
                 error = str(e)
             else:
-                error = _("An error has occurred")
+                error = _("An error has occured")
 
         return JsonResponse({
             'error': error
         }, status=500)
 
+    @api_need_key('cluster_api_key')
     def post(self, request):
         try:
             return access_control_edit(request, api=True)
@@ -100,7 +101,7 @@ class ACLAPIv1(View):
             if settings.DEV_MODE:
                 error = str(e)
             else:
-                error = _("An error has occurred")
+                error = _("An error has occured")
 
         return JsonResponse({
             'error': error

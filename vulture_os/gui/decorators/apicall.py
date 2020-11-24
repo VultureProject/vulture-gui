@@ -12,7 +12,6 @@ logger = logging.getLogger('api')
 def api_need_key(key_name):
     """ Decorator used to check if the given API Key is correct
     passed in
-
     :param group_names: List of groups
     :return:
     """
@@ -31,8 +30,12 @@ def api_need_key(key_name):
                 request = cls_or_request
 
             global_config = Cluster().get_global_config()
-            api_key = request.META.get("HTTP_" + key_name.upper())
 
+            if request.user.is_authenticated:
+                # Call from GUI. No need for Authorization header
+                return func(request, *args, **kwargs)
+
+            api_key = request.META.get("HTTP_" + key_name.upper())
             if getattr(global_config, key_name.replace('-', '_')) and \
                     getattr(global_config, key_name.replace('-', '_')) == api_key:
                 return func(request, *args, **kwargs)
@@ -42,7 +45,6 @@ def api_need_key(key_name):
                 extra={'status_code': 405, 'request': request}
             )
             return HttpResponseForbidden()
+
         return inner
     return decorator
-
-

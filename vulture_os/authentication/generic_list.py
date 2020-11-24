@@ -39,6 +39,7 @@ from authentication.openid.models import OpenIDRepository
 from authentication.otp.models import OTPRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
+from authentication.auth_access_control.models import AuthAccessControl
 
 # Extern modules imports
 from json import loads as json_loads
@@ -188,3 +189,9 @@ class ListOpenIDRepository(ListLDAPRepository):
     obj = OpenIDRepository
 
     # Get and POST inherited from ListLDAPRepository
+
+
+class ListAuthenticationAccessControl(ListView):
+    """ Custom class - use as_table() to render an objects """
+    template_name = "authentication/access_control/list.html"
+    obj = AuthAccessControl

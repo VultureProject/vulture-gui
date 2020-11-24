@@ -11,6 +11,10 @@ var icon_by_type = {
         code: "\uf233",
         color: "#3A444E"
     },
+    authentication: {
+        code: "\uf007",
+        color: "#3A444E"
+    },
     acl: {
         code: "\uf023",
         color: "#3A444E"
@@ -72,6 +76,7 @@ var workflow_vue = new Vue({
         frontend_set: false,
         backend_set: false,
         policy_set: false,
+        authentication_set: false,
 
         last_node_append: null
     },
@@ -93,10 +98,12 @@ var workflow_vue = new Vue({
                     self.workflow = JSON.parse(response.data.workflow_json);
                     self.frontend_choices = response.frontends;
                     self.backend_choices = response.backends;
+                    self.authentication_choices = response.authentications;
 
                     self.frontend_set = true;
                     self.backend_set = true;
                     self.policy_set = true;
+                    self.authentication_set = true;
                     self.get_dependencies();
                     self.redraw_workflow();
                 }
@@ -218,6 +225,9 @@ var workflow_vue = new Vue({
                     case "waf":
                         break;
 
+                    case "authentication":
+                        break;
+
                 }
 
                 folder.push(tmp)
@@ -295,7 +305,7 @@ var workflow_vue = new Vue({
                         })
 
                         waf_policies.unshift({
-                            id: gettext('no_policy'),
+                            id: 'no_policy',
                             text: gettext("No policy"),
                             data: {
                                 type: 'waf',
@@ -311,18 +321,43 @@ var workflow_vue = new Vue({
                             icon: "fas fa-eye"
                         })
                     } else {
-                        var backends = self.init_folder_structure(self.backend_choices, "backend", " ");
+                        if (!self.authentication_set){
+                            authentications.push({
+                                id: "add_authentication",
+                                text: `<i class='fa fa-plus'></i>&nbsp;${gettext('Add')}`
+                            })
+    
+                            authentications.unshift({
+                                id: 'no_authentication',
+                                text: gettext('No authentication'),
+                                data: {
+                                    type: "authentication",
+                                    object_id: null,
+                                    name: gettext('No authentication')
+                                }
+                            })
 
-                        backends.push({
-                            id: "add_backend",
-                            text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
-                        })
-                        tree_data.push({
-                            text: "<i class='fa fa-server'>&nbsp;&nbsp;</i>"+gettext('Backends'),
-                            state: {opened: true},
-                            children: backends,
-                            icon: 'fa fa-server'
-                        })
+                            tree_data.push({
+                                text: `<i class="fa fa-user">&nbsp;&nbsp;</i>${gettext("Authentication")}`,
+                                state: {opened: true},
+                                children: authentications,
+                                icon: "fa fa-user"
+                            })
+                        } else {
+
+                            var backends = self.init_folder_structure(self.backend_choices, "backend", " ");
+    
+                            backends.push({
+                                id: "add_backend",
+                                text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
+                            })
+                            tree_data.push({
+                                text: "<i class='fa fa-server'>&nbsp;&nbsp;</i>"+gettext('Backends'),
+                                state: {opened: true},
+                                children: backends,
+                                icon: 'fa fa-server'
+                            })
+                        }
                     }
                 }
             }
@@ -362,6 +397,8 @@ var workflow_vue = new Vue({
                     window.open(frontend_add_uri, '_blank');
                 } else if (item === "add_backend") {
                     window.open(backend_add_uri, '_blank');
+                } else if (item === "add_authentication") {
+                    // TODO: OPEN NEW AUTHENTICATION PANEL
                 } else {
                     var tree = $(this).jstree();
                     var node = tree.get_node(event.target);
@@ -631,6 +668,15 @@ var workflow_vue = new Vue({
                     self.get_dependencies();
                     self.redraw_workflow();
                     break;
+                
+                case "authentication":
+                    tmp.label = node.data.name;
+                    self.workflow.push(tmp);
+                    self.last_node_append = tmp.id;
+                    self.authentication_set = true;
+                    self.get_dependencies();
+                    self.redraw_workflow();
+                    break;
 
                 case "backend":
                     self.workflow.push(tmp);
@@ -689,7 +735,8 @@ var workflow_vue = new Vue({
                     case "frontend":
                         for (var i in self.frontend_choices){
                             var f = self.frontend_choices[i];
-                            if (f.id === parseInt(step.data.object_id)){
+                            
+                            if (f.id === step.data.object_id){
                                 var label = ["\n"];
                                 for (var j in f.listeners){
                                     var listener = f.listeners[j];
@@ -764,11 +811,18 @@ var workflow_vue = new Vue({
                     case "waf":
                         tmp.shape = "image";
                         tmp.image = vulture_logo
+
+                        if (!tmp.label)
+                            tmp.label = step.data.name
+                        break;
+                    case "authentication":
+                        if (!tmp.label)
+                            tmp.label = step.data.name
                         break;
                     case "backend":
                         for (var i in self.backend_choices){
                             var b = self.backend_choices[i];
-                            if (parseInt(b.id) === step.data.object_id){
+                            if (b.id === step.data.object_id){
                                 var label = ["\n"];
                                 for (var j in b.servers){
                                     if (j > 1){
@@ -1044,7 +1098,12 @@ var workflow_vue = new Vue({
                                 break;
                             case "waf":
                                 self.policy_set= false;
+                                self.authentication_set = false;
                                 self.backend_set = false;
+                                break;
+                            case "authentication":
+                                self.backend_set = false;
+                                self.authentication_set = false;
                                 break;
                             case "action":
                                 self.error(gettext("An action can not be deleted. Delete the Access Control instead."))

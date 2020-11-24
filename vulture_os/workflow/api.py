@@ -35,6 +35,7 @@ from django.views import View
 # Django project imports
 from django.views.decorators.csrf import csrf_exempt
 from darwin.defender_policy.models import DefenderPolicy
+from authentication.user_portal.models import UserAuthentication
 from system.cluster.models import Cluster
 from services.frontend.models import Frontend
 from applications.backend.models import Backend
@@ -211,6 +212,20 @@ def generate_workflow(workflow):
     })
 
     parent = workflow_policy_id
+
+    user_authentication_id = str(uuid.uuid4())
+    data.append({
+        'id': user_authentication_id,
+        'parent': parent,
+        'data': {
+            'type': 'authentication',
+            'object_id': workflow.authentication.pk if workflow.authentication else None,
+            'name': workflow.authentication.name if workflow.authentication else "No authentication"
+        }
+    })
+
+    parent = user_authentication_id
+
     for acl in workflow.workflowacl_set.filter(before_policy=False):
         parent, tmp, actions = format_acl(acl, parent)
         data.append(tmp)
@@ -277,6 +292,7 @@ class WorkflowAPIv1(View):
 
             enabled = request.POST.get('enabled') is not False
             defender_policy = False
+            authentication = False
             fqdn = ""
             public_dir = "/"
 
@@ -340,6 +356,14 @@ class WorkflowAPIv1(View):
                         'error': _('Defender Policy with id {} does not exist'.format(form_data['defender_policy']))
                     }, status=400)
 
+            if form_data.get('authentication'):
+                try:
+                    authentication = UserAuthentication.objects.get(pk=form_data['authentication'])
+                except UserAuthentication.DoesNotExist:
+                    return JsonResponse({
+                        "error": _("User Authentication does not exist")
+                    }, status=400)
+
             try:
                 if object_id:
                     workflow = Workflow.objects.get(pk=object_id)
@@ -364,6 +388,9 @@ class WorkflowAPIv1(View):
 
                 if defender_policy:
                     workflow.defender_policy = defender_policy
+
+                if authentication:
+                    workflow.authentication = authentication
 
                 workflow.workflowacl_set.all().delete()
                 for i, tmp_acl in enumerate(json.loads(form_data.get('acl_frontend', "[]"))):

@@ -1,3 +1,4 @@
+
 {% extends 'layout2.html' %}
 {% load i18n %}
 {% load staticfiles %}
@@ -17,12 +18,12 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                      <a class="btn btn-flat btn-primary" href="{% url 'darwin.access_control.edit' %}"><i class="fas fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
-                    </div>
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Access control" %}</h1>
+                        <a class="btn btn-flat btn-primary" href="{% url 'portal.authentication_access_control.edit' %}"><i class="fas fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                      </div>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Access Control" %}</h1>
                 </div>
                 <div class="panel-body">
-                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="access_control_table">
+                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="authentication_access_control_list">
                   </table>
                 </div>
             </div>
@@ -35,6 +36,7 @@
 {% endblock %}
 
 {% block jquery_code %}
+  let authentication_access_control_clone_uri = "{% url 'portal.authentication_access_control.clone' %}"
 
   $(document).ready(function(){
     $('[data-toggle="tooltip"]').tooltip();
@@ -54,7 +56,6 @@
       name: "enabled",
       aTargets: [1],
       defaultContent: "",
-      sWidth: "5%",
       mData: "enabled",
       mRender: function(data, type, row){
         if (data)
@@ -75,31 +76,31 @@
       aTargets: [3],
       defaultContent: "",
       mData: "rules",
-      mRender: function(data, type, row){
-        return JSON.parse(data).length;
+      mRender: function(data, type, row) {
+        if (data)
+          return JSON.parse(data).length
+        return ""
       }
     },
     {
       sTitle: '{% trans "Action" %}',
       mData:"id",
       aTargets: [4],
-      sWidth: "5%",
       defaultContent: "",
       mRender: function(data, type, row) {
         return '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% trans 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>' +
-        '&nbsp;<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/darwin/acl/delete/' + data + '"" title="{% trans 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/portal/authentication/acl/delete/' + data + '"" title="{% trans 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
       }
     }
   ];
 
-  var access_control_table = $("#access_control_table").dataTable({
+  var authentication_access_control_table = $("#authentication_access_control_list").dataTable({
     bServerSide   : true,
     order         : [[1, 'desc']],
     iDisplayLength: 10,
     bProcessing   : true,
     bSort         : true,
     sAjaxSource   : '',
-    sServerMethod : 'POST',
     aoColumnDefs: aoColumns,
     language: language_datatable,
     fnServerData  : function(sSource, aoData, fnCallback){
@@ -120,47 +121,50 @@
         url    : sSource,
         data   : aoData,
         success: function(data, callback){
-          if (check_json_error(data)){
+          if (!data.status){
+            notify('error', "{% trans 'Error' %}", data.error);
+          } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        check_json_error(data)
+        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          check_json_error(data);
+          notify('error', "{% trans 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }
       }); // /$.done
     }, // /fnServerData
 
-    fnCreatedRow: function(nRow, aData, iDataIndex){
-
-      /* Events binding to edit a template */
+    fnCreatedRow: function(nRow, aData, iDataIndex) {
       $(nRow).on('click', function(e){
-          var id = aData['id'];
-          window.location.href = "/darwin/acl/edit/" + id;
-      });
-
-      $(nRow).find('.btn-clone').on('click', function(e){
         e.stopPropagation();
-
-        $.post(
-          '{% url "darwin.access_control.clone" %}',
-          {'pk': aData.id},
-
-          function(response){
-            if (check_json_error(response)){
-              notify('success', '{% trans "Success" %}', '{% trans "ACL cloned" %}');
-              access_control_table.DataTable().fnDraw();
-            }
-          }
-        )
+        let id = aData['id'];
+        window.location.href = `/portal/authentication/acl/edit/${id}`
       })
-    } 
-  });
+      
+      $(nRow).find('.btn-clone').on('click', function(e) {
+        e.stopPropagation();
+        let txt = $(this).html()
+        $(this).html("<i class='fa fa-spinner fa-spin'></i>")
+        $(this).prop('disabled', true)
+        let id = aData['id'];
+
+        axios.post(authentication_access_control_clone_uri, {pk: id})
+          .then((response) => {
+            notify('success', gettext('Success'), gettext("Authentication ACL cloned"))
+            authentication_access_control_table.DataTable().fnDraw();
+          })
+          .then(() => {
+            $(this).html(txt)
+            $(this).prop('disabled', false)  
+          })
+      })
+    }
+  }); 
 
 {% endblock %}

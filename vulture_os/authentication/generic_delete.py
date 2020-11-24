@@ -39,6 +39,7 @@ from authentication.openid.models import OpenIDRepository
 from authentication.otp.models import OTPRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
+from authentication.auth_access_control.models import AuthAccessControl
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -164,3 +165,10 @@ class DeleteOpenIDRepository(DeleteView):
     delete_url = "/authentication/openid/delete/"
 
     # get, post and used_by methods herited from mother class
+
+
+class DeleteAuthAccessControl(DeleteView):
+    menu_name = _("Authentication -> Access Control -> Delete")
+    obj = AuthAccessControl
+    redirect_url = "/portal/authentication/acl/"
+    delete_url = "/portal/authentication/acl/delete/"
