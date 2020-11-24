@@ -593,6 +593,29 @@ class Frontend(models.Model):
     cortex_xdr_incidents_timestamp = models.DateTimeField(
         default=None
     )
+    # CyberReason API events attributes
+    cybereason_host = models.TextField(
+        help_text=_("Cybereason host"),
+        default="domain.cybereason.net",
+        verbose_name=_("Cybereason api endpoint")
+    )
+    cybereason_username = models.TextField(
+        help_text=_("Cybereason username"),
+        default="",
+        verbose_name=_("Cybereason username for authentication")
+    )
+    cybereason_password = models.TextField(
+        help_text=_("Cybereason password"),
+        default="",
+        verbose_name=_("Cybereason password for authentication")
+    )
+    cybereason_malware_timestamp = models.DateTimeField(
+        default=None
+    )
+    cybereason_malops_timestamp = models.DateTimeField(
+        default=None
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -746,6 +769,13 @@ class Frontend(models.Model):
                     result['cortex_xdr_apikey'] = self.cortex_xdr_apikey
                     result['cortex_xdr_alerts_timestamp'] = self.cortex_xdr_alerts_timestamp
                     result['cortex_xdr_incidents_timestamp'] = self.cortex_xdr_incidents_timestamp
+
+                elif self.api_parser_type == "cybereason":
+                    result['cybereason_host'] = self.cybereason_host
+                    result['cybereason_apikey_id'] = self.cybereason_apikey_id
+                    result['cybereason_apikey'] = self.cybereason_apikey
+                    result['cybereason_malops_timestamp'] = self.cybereason_malops_timestamp
+                    result['cybereason_malware_timestamp'] = self.cybereason_malware_timestamp
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()

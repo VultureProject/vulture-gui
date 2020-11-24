@@ -37,6 +37,7 @@ from toolkit.api_parser.reachfive.reachfive import ReachFiveParser
 from toolkit.api_parser.mongodb.mongodb import MongoDBParser
 from toolkit.api_parser.defender_atp.defender_atp import DefenderATPParser
 from toolkit.api_parser.cortex_xdr.cortex_xdr import CortexXDRParser
+from toolkit.api_parser.cybereason.cybereason import CybereasonParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -54,7 +55,8 @@ PARSER_LIST = {
     "reachfive": ReachFiveParser,
     "mongodb": MongoDBParser,
     "defender_atp": DefenderATPParser,
-    "cortex_xdr": CortexXDRParser
+    "cortex_xdr": CortexXDRParser,
+    "cybereason": CybereasonParser
 }
 
 
