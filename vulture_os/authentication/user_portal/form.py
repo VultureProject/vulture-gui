@@ -30,7 +30,7 @@ from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMulti
 from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
-from applications.portal_template.models import portalTemplate
+from applications.portal_template.models import PortalTemplate
 from authentication.base_repository import BaseRepository
 from authentication.ldap.models import LDAPRepository
 from authentication.otp.models import OTPRepository
@@ -87,7 +87,7 @@ class UserAuthenticationForm(ModelForm):
             'enable_external': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'external_fqdn': TextInput(attrs={'class': 'form-control'}),
             'auth_type': Select(choices=AUTH_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
-            'portal_template': Select(choices=portalTemplate.objects.all().only(*portalTemplate.str_attrs()),
+            'portal_template': Select(choices=PortalTemplate.objects.all().only(*PortalTemplate.str_attrs()),
                                       attrs={'class': 'form-control select2'}),
             'auth_timeout': NumberInput(attrs={'class': 'form-control'}),
             'enable_timeout_restart': CheckboxInput(attrs={'class': 'form-control js-switch'}),

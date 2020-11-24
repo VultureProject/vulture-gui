@@ -26,21 +26,21 @@ __doc__ = 'Listeners URLS'
 from django.urls import path, re_path
 
 # Django project imports
-# from applications.backend import views, api
-# from applications.generic_list import ListBackend
-#
-#
+from applications.portal_template import views, api
+from applications.generic_list import ListPortalTemplate
+
+
 urlpatterns = [
-#     path('apps/backend/', ListBackend.as_view(), name="applications.backend.list"),
-#
+     path('apps/portal_template/', ListPortalTemplate.as_view(), name="applications.portal_template.list"),
+
 #     re_path('apps/backend/delete/(?P<object_id>[A-Fa-f0-9]+)',
 #             views.backend_delete,
 #             name="applications.backend.delete"),
-#
-#     re_path('apps/backend/edit/(?P<object_id>[A-Fa-f0-9]+)?',
-#             views.backend_edit,
-#             name="applications.backend.edit"),
-#
+
+     re_path('apps/portal_template/edit/(?P<object_id>[A-Fa-f0-9]+)?',
+             views.template_edit,
+             name="applications.portal_template.edit"),
+
 #     re_path('apps/backend/clone/(?P<object_id>[A-Fa-f0-9]+)',
 #             views.backend_clone,
 #             name="applications.backend.clone"),
@@ -61,7 +61,7 @@ urlpatterns = [
 #
 #     path('api/v1/apps/backend/<int:object_id>/', api.BackendAPIv1.as_view(), name="applications.backend.api"),
 #
-#     path('api/v1/apps/backend/<int:object_id>/<str:action>/',
+#     path('api/v1/apps/portal_template/<int:object_id>/<str:action>/',
 #          api.BackendAPIv1.as_view(),
 #          name="applications.backend.api"),
 ]

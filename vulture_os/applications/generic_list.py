@@ -36,6 +36,7 @@ from applications.backend.models import Backend
 from applications.logfwd.models import LogOM
 from applications.parser.models import Parser
 from applications.reputation_ctx.models import ReputationContext
+from applications.portal_template.models import PortalTemplate
 
 # Extern modules imports
 from json import loads as json_loads
@@ -137,6 +138,13 @@ class ListBackend(ListView):
 class ListReputationContext(ListBackend):
     template_name = "apps/reputation_ctx.html"
     obj = ReputationContext
+
+    # Get and Post methods inherithed from ListBackend
+
+
+class ListPortalTemplate(ListBackend):
+    template_name = "apps/portal_template.html"
+    obj = PortalTemplate
 
     # Get and Post methods inherithed from ListBackend
 

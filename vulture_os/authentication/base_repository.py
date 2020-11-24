@@ -88,4 +88,4 @@ class InternalRepository(BaseRepository):
         super().save(*args, **kwargs)
 
     def to_template(self):
-        return {}
+        return {'subtype': "internal"}

@@ -28,7 +28,7 @@ from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
 # Django project imports
-from applications.portal_template.models import portalTemplate
+from applications.portal_template.models import PortalTemplate
 from authentication.base_repository import BaseRepository
 from authentication.otp.models import OTPRepository
 # Do NOT remove those unused imports !!! There are here to trigger internal django fonctionnality
@@ -132,7 +132,7 @@ class UserAuthentication(models.Model):
         help_text=_("Type of authentication to ask from client")
     )
     portal_template = models.ForeignKey(
-        portalTemplate,
+        PortalTemplate,
         null=True,
         on_delete=models.PROTECT,
         verbose_name=_("Portal template"),
