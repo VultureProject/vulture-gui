@@ -99,7 +99,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='filterpolicy',
             name='log_level',
-            field=models.TextField(choices=[('CRITICAL', 'Critical'), ('ERROR', 'Error'), ('WARNING', 'Warning'), ('NOTICE', 'Notice'), ('INFO', 'Informational'), ('DEBUG', 'Debug')], default='WARNING', help_text='The logging level for this particular instance (closer to DEBUG means more info, but also more disk space taken and less performances overall)'),
+            field=models.TextField(choices=[('CRITICAL', 'Critical'), ('ERROR', 'Error'), ('WARNING', 'Warning'), ('INFO', 'Informational'), ('DEBUG', 'Debug')], default='WARNING', help_text='The logging level for this particular instance (closer to DEBUG means more info, but also more disk space taken and less performances overall)'),
         ),
         migrations.AlterField(
             model_name='filterpolicy',
