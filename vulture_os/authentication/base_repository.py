@@ -53,6 +53,11 @@ class BaseRepository(models.Model):
     def __str__(self):
         return "{} ({})".format(self.name, self.subtype)
 
+    def to_dict(self):
+        data = self.get_daughter().to_dict()
+        data['id'] = str(self.pk)
+        return data
+
     def get_daughter(self):
         for repo in REPO_LIST:
             if hasattr(self, repo):
@@ -89,3 +94,10 @@ class InternalRepository(BaseRepository):
 
     def to_template(self):
         return {'subtype': "internal"}
+    
+    def to_dict(self):
+        return {
+            "id": str(self.pk),
+            "name": self.name,
+            "subtype": self.subtype
+        }

@@ -26,6 +26,7 @@ __doc__ = 'LDAP Repository model'
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -216,6 +217,9 @@ class LDAPRepository(BaseRepository):
         default=3600,
         help_text='Oauth2 token time to live (in seconds)'
     )
+
+    def to_dict(self):
+        return model_to_dict(self)
 
     def to_template(self):
         """  returns the attributes of the class """
