@@ -40,8 +40,6 @@ OPERATOR_CHOICES = (
 
 
 class AuthAccessControl(models.Model):
-    _id = models.ObjectIdField()
-
     enabled = models.BooleanField(default=True)
 
     name = models.TextField(verbose_name=_("Friendly name"), help_text=_("Friendly name"), unique=True)
