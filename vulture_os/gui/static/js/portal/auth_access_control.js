@@ -180,10 +180,7 @@ auth_access_control_vue = new Vue({
 
         save_form(){
             this.reconstruct_rules();
-            var txt = $('#save_form_btn').html();
-            $('#save_form_btn').html('<i class="fa fa-spinner fa-spin"></i>');
-            $('#save_form_btn').prop('disabled', 'disabled');
-
+            
             for (var or_line of this.or_lines){
                 for (var and_line of or_line.lines){
                     if (this.check_acl(and_line) !== null){
@@ -191,6 +188,10 @@ auth_access_control_vue = new Vue({
                     }
                 }
             }
+            
+            var txt = $('#save_form_btn').html();
+            $('#save_form_btn').html('<i class="fa fa-spinner fa-spin"></i>');
+            $('#save_form_btn').prop('disabled', 'disabled');
 
             var data = {
                 or_lines: this.or_lines,
