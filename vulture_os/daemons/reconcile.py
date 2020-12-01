@@ -94,7 +94,7 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
     except Exception as e:
         logger.error("Reconcile: could not write alert {} to log file {} -> {}".format(evt_id, filepath, e))
 
-    redis.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(alertData))
+    redis.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(flatAlertData))
 
     time = flatAlertData.get('alert_time', None)
     if time:
