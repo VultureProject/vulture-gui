@@ -65,11 +65,14 @@ class MongoBase:
         from system.cluster.models import Node
 
         try:
-            return "mongodb://{}".format(str.join(',', [node.name + ":9091" for node in Node.objects.all().only('name')]))
+            node_list = "{}".format(str.join(',', [node.name + ":9091" for node in Node.objects.all().only('name')]))
+            if node_list:
+                return "mongodb://{}".format(node_list)
         except Exception as e:
             logger.error("Failed to retrieve replicaset_uri from Mongo : ")
             logger.exception(e)
 
+        logger.info("Could not connect to Node, connecting to local")
         return MongoBase.get_local_uri()
 
     def execute_aggregation(self, database, collection, agg):
