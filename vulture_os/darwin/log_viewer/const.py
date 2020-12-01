@@ -189,7 +189,8 @@ ACCESS_COLUMNS = {
     "darwin_user_agent_score": "integer",
     "defender_score": "integer",
     "tags": "string",
-    "country": "string"
+    "country": "string",
+    "advens": "dict"
 }
 
 ACCESS_TCP_COLUMNS = {
@@ -224,7 +225,8 @@ ACCESS_TCP_COLUMNS = {
     "darwin_reputation_error": "integer",
     "darwin_reputation_score": "integer",
     "tags": "string",
-    "country": "string"
+    "country": "string",
+    "advens": "dict"
 }
 
 DEFAULT_ACCESS_COLUMNS = {
