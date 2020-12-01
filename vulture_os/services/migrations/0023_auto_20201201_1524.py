@@ -12,7 +12,7 @@ def before_timestamp_rename(apps, schema_editor):
     frontend_objects = frontend_model.objects.using(db_alias)
 
     for frontend in frontend_objects.all():
-        if isinstance(frontend.cybereason_malops_timestamp, datetime:
+        if isinstance(frontend.cybereason_malops_timestamp, datetime):
             cybereason_mallops[frontend.id] = float(frontend.cybereason_malops_timestamp.timestamp())
 
 
