@@ -110,7 +110,7 @@ class CybereasonParser(ApiParser):
                     'facetName': "malopLastUpdateTime",
                     'filterType': 'GreaterThan',
                     'values': [
-                        int(since.timestamp()) * 1000
+                        since * 1000
                     ]
                 }]
             }
@@ -122,7 +122,7 @@ class CybereasonParser(ApiParser):
                 "filters": [{
                     "fieldName": "timestamp",
                     "operator": "GreaterThan",
-                    "values": [int(since.timestamp()) * 1000]
+                    "values": [since * 1000]
                 }],
                 "sortingFieldName": "timestamp",
                 "sortDirection": "DESC",
@@ -197,18 +197,16 @@ class CybereasonParser(ApiParser):
                 'elementValues': []
             }
 
-            timestamp_detected = int(malop_simple_values['malopLastUpdateTime']['values'][0]) / 1000
-            timestamp_detected = datetime.datetime.fromtimestamp(timestamp_detected)
+            timestamp_detected = float(malop_simple_values['malopLastUpdateTime']['values'][0]) / 1000
 
             timestamp_closed = None
             if malop_simple_values['closeTime']['values'][0] is not None:
-                timestamp_closed = int(malop_simple_values['closeTime']['values'][0]) / 1000
-                timestamp_closed = datetime.datetime.fromtimestamp(timestamp_closed).isoformat()
+                timestamp_closed = float(malop_simple_values['closeTime']['values'][0]) / 1000
 
             tmp_malop = {
                 "threat_id": malop_id,
                 "timestamp_closed": timestamp_closed,
-                "timestamp": timestamp_detected.isoformat(),
+                "timestamp": timestamp_detected,
                 'affected_devices': []
             }
 
@@ -306,8 +304,7 @@ class CybereasonParser(ApiParser):
         tmp_machines = {}
 
         for tmp_malware in malwares_data:
-            timestamp = int(tmp_malware['timestamp']) / 1000
-            timestamp = datetime.datetime.fromtimestamp(timestamp)
+            timestamp = float(tmp_malware['timestamp']) / 1000
 
             malware_guid = tmp_malware['guid']
 
@@ -317,7 +314,7 @@ class CybereasonParser(ApiParser):
                 tmp_machines[malware_guid] = [tmp_malware['machineName']]
 
             malwares[malware_guid] = {
-                "timestamp": timestamp.isoformat(),
+                "timestamp": timestamp,
                 'affected_devices': [],
                 "threat_id": tmp_malware['guid'],
                 "detection_type": tmp_malware['name'],
@@ -423,7 +420,9 @@ class CybereasonParser(ApiParser):
         for kind in ["malops", "malwares"]:
             logger.info("Cybereason:: Getting {}".format(kind))
 
-            status, tmp_logs = self.get_logs(kind, since=getattr(self, f"cybereason_{kind}_timestamp"))
+            # Default timestamp is 24 hours ago
+            since = getattr(self.frontend, f"cybereason_{kind}_timestamp") or (timezone.now()-datetime.timedelta(days=1)).timestamp()
+            status, tmp_logs = self.get_logs(kind, since=since)
 
             if not status:
                 raise CybereasonAPIError(tmp_logs)
@@ -433,18 +432,18 @@ class CybereasonParser(ApiParser):
 
             total = len(tmp_logs)
 
+            if total > 0:
+                # Logs sorted by timestamp descending, to first is newer
+                setattr(self.frontend, f"cybereason_{kind}_timestamp", tmp_logs[0]['timestamp'])
+
             def format_log(log):
+                log['timestamp'] = datetime.datetime.fromtimestamp(log['timestamp']).isoformat()
                 log['kind'] = kind
                 return json.dumps(log)
 
             self.write_to_file([format_log(l) for l in tmp_logs])
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
-
-            if len(tmp_logs) > 0:
-                # Replace "Z" by "+00:00" for datetime parsing
-                # No need to make_aware, date already contains timezone
-                setattr(self.frontend, f"cybereason_{kind}_timestamp", datetime.datetime.fromtimestamp(tmp_logs[-1]['timestamp']/1000, tz=timezone.utc))
 
         logger.info("Cybereason parser ending.")
 

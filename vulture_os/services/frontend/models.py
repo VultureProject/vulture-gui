@@ -609,11 +609,11 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("Cybereason password for authentication")
     )
-    cybereason_malware_timestamp = models.DateTimeField(
-        default=None
+    cybereason_malwares_timestamp = models.FloatField(
+        default=0.0
     )
-    cybereason_malops_timestamp = models.DateTimeField(
-        default=None
+    cybereason_malops_timestamp = models.FloatField(
+        default=0.0
     )
 
     last_api_call = models.DateTimeField(
@@ -772,10 +772,10 @@ class Frontend(models.Model):
 
                 elif self.api_parser_type == "cybereason":
                     result['cybereason_host'] = self.cybereason_host
-                    result['cybereason_apikey_id'] = self.cybereason_apikey_id
-                    result['cybereason_apikey'] = self.cybereason_apikey
+                    result['cybereason_username'] = self.cybereason_username
+                    result['cybereason_password'] = self.cybereason_password
                     result['cybereason_malops_timestamp'] = self.cybereason_malops_timestamp
-                    result['cybereason_malware_timestamp'] = self.cybereason_malware_timestamp
+                    result['cybereason_malwares_timestamp'] = self.cybereason_malwares_timestamp
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
