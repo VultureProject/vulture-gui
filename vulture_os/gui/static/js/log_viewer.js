@@ -740,6 +740,26 @@ function render_col(col, mapping){
             }
             return "";
         }
+    } else if (col === "advens"){
+        render = function(data, type, row){
+            result = "";
+            if (Object.keys(data).length > 0) {
+                result = "<ul>";
+                // For each key
+                Object.keys(data).forEach(function(key){
+                    aggreg_value = "";
+                    //TODO won't be enough when keys can have more subkeys...
+                    console.log(data[key]['darwin']);
+                    Object.values(data[key]['darwin']).forEach(function(value) {
+                        aggreg_value += "<li><label class='label label-danger'>" + value + "</label></li>";
+                    })
+                    if(aggreg_value)
+                        result += "<li><b>" + key + "</b>: " + aggreg_value + "</li>";
+                });
+                result += "</ul>";
+            }
+            return highlight_search(result);
+        }
     } else if (col === "entry"){
         render = function(data, type, row){
             return "<label class='label label-danger'>" + data + "</label>";
