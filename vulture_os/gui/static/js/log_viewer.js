@@ -814,7 +814,7 @@ function init_configuration(data){
 
     $('#selected-fields').empty();
 
-    $.each(mapping, function(field, type){
+    Object.keys(mapping).sort().forEach(function(field, type){
         $('#selected-fields').append(`<option value='${field}'>${field}</option>`);
     })
 
