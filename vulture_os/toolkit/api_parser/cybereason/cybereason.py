@@ -350,7 +350,7 @@ class CybereasonParser(ApiParser):
 
     def test(self):
         # Get logs from last 24 hours
-        query_time = datetime.datetime.now()-datetime.timedelta(days=30)
+        query_time = (datetime.datetime.now()-datetime.timedelta(days=30)).timestamp()
         try:
             status, logs = self.get_logs("malops", query_time, test=True)
             logger.info(json.dumps(logs))
