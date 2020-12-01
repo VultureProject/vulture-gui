@@ -802,6 +802,9 @@ class FilterPolicy(models.Model):
             if key in PASS_THROUGH_FIELDS:
                 json_conf[key] = value
 
+        # Add enrichment tags as additional alert tags
+        json_conf['alert_tags'] = self.enrichment_tags
+
         # Finally, translate the dictionary into json string
         try:
             json_conf = json_dumps(json_conf, sort_keys=True, indent=4)
