@@ -81,7 +81,15 @@ class CybereasonParser(ApiParser):
         "level": {
             'cybereason_key': "malopPriority",
             'value_key': 'values'
-        }
+        },
+        "timestamp_start": {
+            'cybereason_key': "malopStartTime",
+            'value_key': 'values'
+        },
+        "af_reason": {
+            'cybereason_key': "elementDisplayName",
+            'value_key': 'values'
+        },
     }
 
     def __init__(self, data):
@@ -90,7 +98,7 @@ class CybereasonParser(ApiParser):
         self.host = data["cybereason_host"]
         self.username = data["cybereason_username"]
         self.password = data["cybereason_password"]
-
+        self.observer_name = self.host.split("://")[1].split("/")[0]
         self.cyber_tool = CybereasonToolkit(self.host, self.username, self.password, self.proxies)
 
     def execute_query(self, kind, since, test=False, requestedType=None):
@@ -199,12 +207,17 @@ class CybereasonParser(ApiParser):
 
             timestamp_detected = float(malop_simple_values['malopLastUpdateTime']['values'][0]) / 1000
 
-            timestamp_closed = None
+            timestamp_closed = 0.0
             if malop_simple_values['closeTime']['values'][0] is not None:
                 timestamp_closed = float(malop_simple_values['closeTime']['values'][0]) / 1000
+            timestamp_start = 0.0
+            if malop_simple_values['malopStartTime']['values'][0] is not None:
+                timestamp_start = float(malop_simple_values['malopStartTime']['values'][0]) / 1000
 
             tmp_malop = {
+                "threat_url": self.host + "#/malop/" + malop_id,
                 "threat_id": malop_id,
+                "timestamp_start": timestamp_start,
                 "timestamp_closed": timestamp_closed,
                 "timestamp": timestamp_detected,
                 'affected_devices': []
@@ -214,10 +227,6 @@ class CybereasonParser(ApiParser):
                 'rootCauseElementNames', default_values
             ).get('values')
 
-            tmp_malop['affected_users'] = malop_simple_values.get(
-                'affectedUsers', default_values
-            ).get('values')
-
             tmp_malop['elements_hash'] = malop_simple_values.get(
                 'rootCauseElementHashes', default_values
             ).get('values')
@@ -225,6 +234,11 @@ class CybereasonParser(ApiParser):
             tmp_malop['killchain'] = malop_simple_values.get(
                 'malopActivityTypes', default_values
             ).get('values')
+
+            tmp_malop['comments'] = malop_simple_values.get(
+                'comments', default_values
+            ).get('values')
+
 
             for internal_field, cybereason_mapping in self.MAPPING_MALOPS.items():
                 try:
@@ -256,6 +270,11 @@ class CybereasonParser(ApiParser):
             devices = []
             for tmp in malop_element_values['affectedMachines']['elementValues']:
                 devices.append(tmp.get("guid"))
+
+            users = []
+            for tmp in malop_element_values['affectedUsers']['elementValues']:
+                users.append(tmp.get("name"))
+            tmp_malop['affected_users'] = users
 
             edr_suspicions_list = self.__get_evidence(malop_id)
             # edr_suspicions_list = []
@@ -317,12 +336,17 @@ class CybereasonParser(ApiParser):
                 "timestamp": timestamp,
                 'affected_devices': [],
                 "threat_id": tmp_malware['guid'],
-                "detection_type": tmp_malware['name'],
+                "name": tmp_malware['name'],
                 "category": tmp_malware['type'],
                 "threat_type": tmp_malware['elementType'],
                 "status": tmp_malware['status'],
+                "machine_name": tmp_malware['machineName'],
+                "engine": tmp_malware['detectionEngine'],
+                "detection_type": tmp_malware.get('detectionValueType', "-"),
+                "detection_value": tmp_malware.get('detectionValue', "-"),
                 'threat_need_attention': tmp_malware['needsAttention'],
-                'threat_file': tmp_malware['malwareDataModel'].get('detectionName', "-"),
+                'severity': tmp_malware.get('score', 0.0),
+                'threat_name': tmp_malware['malwareDataModel'].get('detectionName', "-"),
                 'threat_fullpath': tmp_malware['malwareDataModel'].get('filePath', "-")
             }
 
@@ -350,7 +374,7 @@ class CybereasonParser(ApiParser):
 
     def test(self):
         # Get logs from last 24 hours
-        query_time = (datetime.datetime.now()-datetime.timedelta(days=30)).timestamp()
+        query_time = (datetime.datetime.now()-datetime.timedelta(days=7)).timestamp()
         try:
             status, logs = self.get_logs("malops", query_time, test=True)
             logger.info(json.dumps(logs))
@@ -417,8 +441,14 @@ class CybereasonParser(ApiParser):
 
 
     def execute(self):
+        # Retrieve version of cybereason console
+        status, version_data = self.cyber_tool.get_version()
+        if not status:
+            raise CybereasonAPIError("Failed to retrieve console version : {}".format(version_data))
+        observer_version = version_data.get('data', {}).get('version', "0.0")
+
         for kind in ["malops", "malwares"]:
-            logger.info("Cybereason:: Getting {}".format(kind))
+            logger.info("Cybereason:: Getting {} events".format(kind))
 
             # Default timestamp is 24 hours ago
             since = getattr(self.frontend, f"cybereason_{kind}_timestamp") or (timezone.now()-datetime.timedelta(days=1)).timestamp()
@@ -433,12 +463,14 @@ class CybereasonParser(ApiParser):
             total = len(tmp_logs)
 
             if total > 0:
-                # Logs sorted by timestamp descending, to first is newer
+                # Logs sorted by timestamp descending, so first is newer
                 setattr(self.frontend, f"cybereason_{kind}_timestamp", tmp_logs[0]['timestamp'])
 
             def format_log(log):
                 log['timestamp'] = datetime.datetime.fromtimestamp(log['timestamp']).isoformat()
                 log['kind'] = kind
+                log['observer_version'] = observer_version
+                log['observer_name'] = self.observer_name
                 return json.dumps(log)
 
             self.write_to_file([format_log(l) for l in tmp_logs])

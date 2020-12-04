@@ -43,6 +43,7 @@ class CybereasonToolkit:
     MALOP_URI = "rest/crimes/unified"
     SENSOR_URI = "rest/sensors/query"
     MALWARE_URI = "rest/malware/query"
+    VERSION_URI = "rest/monitor/global/server/version/all"
 
     PROCESSES_URI = "rest/visualsearch/query/simple"
 
@@ -90,7 +91,7 @@ class CybereasonToolkit:
 
         return True, session
 
-    def execute_query(self, method, url, query):
+    def execute_query(self, method, url, query=None):
         response = self.session.request(
             method,
             url,
@@ -204,6 +205,16 @@ class CybereasonToolkit:
         malware_uri = f"{self.api_host}/{self.MALWARE_URI}"
         tmp_malwares = self.execute_query("POST", malware_uri, query)
         return True, tmp_malwares
+
+    def get_version(self):
+        if not self.session:
+            status, self.session = self.login_to_cybereason()
+            if not status:
+                return False, self.session
+
+        version_uri = f"{self.api_host}/{self.VERSION_URI}"
+        res = self.execute_query("GET", version_uri)
+        return True, res
 
     def get_processes(self, query):
         if not self.session:
