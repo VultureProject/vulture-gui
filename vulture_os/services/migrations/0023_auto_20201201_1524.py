@@ -3,8 +3,6 @@
 import django.core.validators
 from django.db import migrations, models
 from datetime import datetime
-import django.db.models.deletion
-import djongo.models.fields
 
 cybereason_mallops = {}
 
@@ -31,7 +29,6 @@ def after_timestamp_rename(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('darwin', '0010_auto_20201118_1301'),
         ('services', '0022_auto_20201123_1617'),
     ]
 
@@ -52,33 +49,4 @@ class Migration(migrations.Migration):
             field=models.FloatField(default=0.0),
         ),
         migrations.RunPython(after_timestamp_rename, migrations.RunPython.noop),
-        migrations.RemoveField(
-            model_name='frontend',
-            name='darwin_policy',
-        ),
-        migrations.AddField(
-            model_name='frontend',
-            name='darwin_policies',
-            field=djongo.models.fields.ArrayReferenceField(help_text='Darwin policies to use', null=True, on_delete=django.db.models.deletion.PROTECT, related_name='frontend_set', to='darwin.DarwinPolicy'),
-        ),
-        migrations.AlterField(
-            model_name='frontend',
-            name='impcap_filter_type',
-            field=models.TextField(choices=[('udp and port 53', 'DNS'), ('tcp[13] & 2 != 0', 'SYN FLAGS'), ('tcp and (port 80 or port 443)', 'WEB'), ('icmp or udp or (tcp and tcp[tcpflags] & tcp-syn == tcp-syn)', 'CONNECTIONS'), ('custom', 'Custom')], default='udp and port 53', help_text='Simple filters used by impcap', verbose_name='Impcap filter type'),
-        ),
-        migrations.AlterField(
-            model_name='frontend',
-            name='timeout_client',
-            field=models.PositiveIntegerField(default=60, help_text='HTTP request Timeout', validators=[django.core.validators.MaxValueValidator(3600)], verbose_name='Timeout'),
-        ),
-        migrations.AlterField(
-            model_name='frontend',
-            name='timeout_connect',
-            field=models.PositiveIntegerField(default=5000, help_text='HTTP request Timeout', validators=[django.core.validators.MaxValueValidator(20000)], verbose_name='Timeout'),
-        ),
-        migrations.AlterField(
-            model_name='frontend',
-            name='timeout_keep_alive',
-            field=models.PositiveIntegerField(default=500, help_text='HTTP Keep-Alive timeout', verbose_name='HTTP Keep-Alive timeout'),
-        ),
     ]
