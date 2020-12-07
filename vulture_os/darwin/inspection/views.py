@@ -66,7 +66,7 @@ def fetch_rules(request):
         if res.get('status'):
             return JsonResponse({
                 'status': res.get('status'),
-                'message': "successfully started update task"
+                'message': "Successfully started update task. This may take a while..."
             })
         else:
             logger.error(res.get('message'))

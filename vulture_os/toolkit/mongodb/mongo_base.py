@@ -65,11 +65,14 @@ class MongoBase:
         from system.cluster.models import Node
 
         try:
-            return "mongodb://{}".format(str.join(',', [node.name + ":9091" for node in Node.objects.all().only('name')]))
+            node_list = "{}".format(str.join(',', [node.name + ":9091" for node in Node.objects.all().only('name')]))
+            if node_list:
+                return "mongodb://{}".format(node_list)
         except Exception as e:
             logger.error("Failed to retrieve replicaset_uri from Mongo : ")
             logger.exception(e)
 
+        logger.info("Could not connect to Node, connecting to local")
         return MongoBase.get_local_uri()
 
     def execute_aggregation(self, database, collection, agg):
@@ -147,6 +150,23 @@ class MongoBase:
             logger.critical(e, exc_info=1)
             return False
 
+    def update_many(self, database, collection, query, newvalue):
+        try:
+            if not self.db:
+                self.connect()
+
+            db = self.db[database]
+            coll = db[collection]
+
+            coll.update(query, newvalue, multi=True)
+            return True
+        except Exception as e:
+            if settings.DEV_MODE:
+                raise
+
+            logger.critical(e, exc_info=1)
+            return False
+
     def update_one(self, database, query, newvalue):
         try:
             if not self.db:
@@ -176,10 +196,13 @@ class MongoBase:
                     'ssl': True,
                     'ssl_certfile': "/var/db/pki/node.pem",
                     'ssl_ca_certs': "/var/db/pki/ca.pem",
-                    'read_preference': ReadPreference.PRIMARY_PREFERRED}
+                    'read_preference': ReadPreference.PRIMARY_PREFERRED,
+                    "serverSelectionTimeoutMS": 5000}
             if primary:
                 args['replicaset'] = "Vulture"
             self.db = MongoClient(**args)
+            # Execute a request to test connection (pymongo doesn't try connecting until a command is executed on client)
+            self.db.server_info()
         except Exception as e:
             logger.error("connect: Error during mongoDB connexion: {}".format(str(e)), exc_info=1)
             return False

@@ -153,7 +153,7 @@ function refresh_api_parser_type(type_){
 
 $(function() {
 
-  toggle_impcap_filter_type();
+  load_impcap_filter_type();
 
   /* All events to refresh (re-apply) after a table is modified */
   function refresh_table_events() {
@@ -309,18 +309,35 @@ $(function() {
     }
   }
 
-  /* Do NOT touch this method ! */
-  var filter_displayed = "false";
+  var saved_impcap_filter = "";
+  var saved_impcap_filter_type = "";
+
+  function load_impcap_filter_type() {
+    let impcap_filter_type = $('#id_impcap_filter_type').val();
+    if( impcap_filter_type === "custom" ) {
+      $('#id_impcap_filter').prop("readonly", false);
+      saved_impcap_filter = $('#id_impcap_filter').val();
+    } else {
+      $('#id_impcap_filter').prop("readonly", true);
+      $('#id_impcap_filter').val($('#id_impcap_filter_type').val());
+    }
+
+    saved_impcap_filter_type = $('#id_impcap_filter_type').val();
+  }
+
   /* Show impcap_filter depending on what filter_type is chosen */
   function toggle_impcap_filter_type() {
     let impcap_filter_type = $('#id_impcap_filter_type').val();
     if( impcap_filter_type === "custom" ) {
       $('#id_impcap_filter').prop("readonly", false);
-      $('#id_impcap_filter').val("");
+      $('#id_impcap_filter').val(saved_impcap_filter);
     } else {
+      if( saved_impcap_filter_type == "custom" )
+        saved_impcap_filter = $('#id_impcap_filter').val();
       $('#id_impcap_filter').prop("readonly", true);
       $('#id_impcap_filter').val($('#id_impcap_filter_type').val());
     }
+    saved_impcap_filter_type = impcap_filter_type;
   }
   $('#id_impcap_filter_type').on('change', toggle_impcap_filter_type);
 
@@ -380,7 +397,7 @@ $(function() {
       refresh_input_logs_type(mode, $('#id_listening_mode').val());
     }
     if( mode === "impcap" ) {
-      toggle_impcap_filter_type();
+      load_impcap_filter_type();
     }
     if( mode == "impcap" || old_mode == "impcap" ) {
       refresh_dashboard_forwarder(old_mode, mode);
@@ -411,7 +428,7 @@ $(function() {
     }
   }).trigger("change");
 
-  $('#id_darwin_policy').on("change", function(e) {
+  $('#id_darwin_policies').on("change", function(e) {
     var policy = $(this).val();
     show_darwin_mode(policy);
   }).trigger('change');
