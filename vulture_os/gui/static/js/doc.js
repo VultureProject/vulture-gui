@@ -10,10 +10,9 @@ function bind_buttons(){
 $(function(){
 
 	$('#documentation').on('click', function(){
-		$.post(
+		$.get(
 			documentation_uri,
 			{
-				csrfmiddlewaretoken: getCookie('csrftoken'),
 				path: window.location.pathname
 			},
 
