@@ -10,6 +10,10 @@ function bind_buttons(){
 $(function(){
 
 	$('#documentation').on('click', function(){
+		let btn = this
+		let html = $(this).html();
+		$(this).html('<i class="fa fa-spinner fa-spin"></i>')
+
 		$.get(
 			documentation_uri,
 			{
@@ -17,6 +21,7 @@ $(function(){
 			},
 
 			function(response){
+				$(btn).html(html)
 				if (!response.status){
 					notify('error', gettext('Erreur'), response.error)
 					return;
@@ -27,7 +32,9 @@ $(function(){
 
 				$('#documentation_tab').html(response.html);
 
-				converter = new showdown.Converter(),
+				converter = new showdown.Converter({
+					literalMidWordUnderscores: true
+				}),
                 readme = converter.makeHtml(response.readme);
 				
 				$('#documentation_content').html(readme)
