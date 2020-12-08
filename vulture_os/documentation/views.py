@@ -57,7 +57,7 @@ def documentation(request):
         del path_splitted[i]
 
     new_path = path_join("/", *settings.DOCUMENTATION_PATH.split('/'),
-                         'vulture-doc-master', *path_splitted, "README.md")
+                         'vulture-doc', *path_splitted, "README.md")
 
     try:
         with open(new_path, 'r') as f:
