@@ -35,6 +35,7 @@ from toolkit.api_parser.cybereason.cybereason_toolkit import CybereasonToolkit
 import json
 import logging
 import datetime
+from pprint import pformat
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('crontab')
@@ -347,26 +348,28 @@ class CybereasonParser(ApiParser):
                 'threat_need_attention': tmp_malware['needsAttention'],
                 'severity': tmp_malware.get('score', 0.0),
                 'threat_name': tmp_malware['malwareDataModel'].get('detectionName', "-"),
-                'threat_fullpath': tmp_malware['malwareDataModel'].get('filePath', "-")
+                'threat_fullpath': tmp_malware['malwareDataModel'].get('filePath', "-"),
+                'threat_url': tmp_malware['malwareDataModel'].get('url') or "-"
             }
 
-        for guid, machines in tmp_machines.items():
-            tmp_affected_machines = self.__get_affected_devices(
-                machines,
-                "machineName",
-                test
-            )
-
-            for device in tmp_affected_machines:
-                malwares[guid]['affected_devices'].append(device)
-                if test:
-                    break
-
-            if test:
-                break
+        # for guid, machines in tmp_machines.items():
+        #     tmp_affected_machines = self.__get_affected_devices(
+        #         machines,
+        #         "machineName",
+        #         test
+        #     )
+        #
+        #     for device in tmp_affected_machines:
+        #         malwares[guid]['affected_devices'].append(device)
+        #         if test:
+        #             break
+        #
+        #     if test:
+        #         break
 
         for guid, value in malwares.items():
             value['guid'] = guid
+
             yield value
 
             if test:
