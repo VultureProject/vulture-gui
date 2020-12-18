@@ -148,7 +148,9 @@ def pf_whitelist_blacklist(request, list_type=None):
         action = request.JSON.get('action')
     except:
         #We are coming from the GUI
-        list_type = request.POST.get("list_type")
+        if not list_type:
+            list_type = request.POST.get("list_type")
+
         ip_address = request.POST.get("ip_address")
         action = request.POST.get("action")
 
@@ -156,19 +158,19 @@ def pf_whitelist_blacklist(request, list_type=None):
         return JsonResponse({
             'status': False,
             'error': _('Invalid Packet Filter list')
-        })
+        }, status=400)
 
     if action not in ('add', 'del'):
         return JsonResponse({
             'status': False,
             'error': _('Invalid action')
-        })
+        }, status=400)
 
     if not ip_address:
         return JsonResponse({
             'status': False,
             'error': _('No ip address specified')
-        })
+        }, status=400)
 
     config_model = Cluster.get_global_config()
     if list_type == "whitelist":
@@ -183,7 +185,7 @@ def pf_whitelist_blacklist(request, list_type=None):
             return JsonResponse({
                 'status': False,
                 'error': _('address already present in list')
-            })
+            }, status=400)
     elif action == "del":
         if ip_address in pf_list:
             pf_list.remove(ip_address)
@@ -191,7 +193,7 @@ def pf_whitelist_blacklist(request, list_type=None):
             return JsonResponse({
                 'status': False,
                 'error': _('address not present in list')
-            })
+            }, status=400)
 
     try:
         ConfigForm.validate_ip_list(pf_list)
@@ -201,7 +203,7 @@ def pf_whitelist_blacklist(request, list_type=None):
             config_model.pf_blacklist = ",".join(pf_list)
 
     except Exception as e:
-        return JsonResponse({'status': False, 'error': str(e)})
+        return JsonResponse({'status': False, 'error': str(e)}, status=500)
 
     config_model.save()
     return JsonResponse({'status': True, "data": ""})
