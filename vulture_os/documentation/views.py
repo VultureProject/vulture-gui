@@ -24,14 +24,17 @@ __email__ = ""
 __doc__ = 'Documentation Views'
 
 from django.template.loader import render_to_string
+from django.views.generic import TemplateView
 from os.path import join as path_join
 from django.http import JsonResponse
+from django.http import HttpResponse
+from django.shortcuts import render
 from django.conf import settings
 from bson import ObjectId
 
 
 def documentation(request):
-    path = request.POST.get('path')
+    path = request.GET.get('path')
 
     if not path:
         path = "/"
@@ -54,7 +57,7 @@ def documentation(request):
         del path_splitted[i]
 
     new_path = path_join("/", *settings.DOCUMENTATION_PATH.split('/'),
-                         'vulture-doc-master', *path_splitted, "README.md")
+                         'vulture-doc', *path_splitted, "README.md")
 
     try:
         with open(new_path, 'r') as f:
@@ -72,3 +75,10 @@ def documentation(request):
         'html': render_to_string("documentation/doc.html"),
         'readme': readme
     })
+
+
+def api_documentation(request):
+    with open(f"{settings.DOCUMENTATION_PATH}/vulture-doc/api/redoc.html", 'r') as f:
+        doc = f.read()
+    
+    return HttpResponse(doc)
