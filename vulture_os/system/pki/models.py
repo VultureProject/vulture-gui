@@ -582,7 +582,7 @@ class TLSProfile(models.Model):
 
     def generate_conf(self, backend=False):
         """ Most important : the cert """
-        result = " ssl crt {}".format(self.x509_certificate.get_base_filename() + ".pem")
+        result = " ssl crt '{}'".format(self.x509_certificate.get_base_filename() + ".pem")
         """ ALPN is not compatible with Backend """
         if not backend:
             """ Add list of ALPN """
