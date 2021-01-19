@@ -419,11 +419,7 @@ class X509Certificate(models.Model):
         :return: An all-in-one PEM file with private Key + Certificate + Chain
         """
 
-        rsa_key = self.key
-        rsa_key = rsa_key.replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----")
-        rsa_key = rsa_key.replace("-----END PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----")
-
-        buffer = self.cert + "\n" + rsa_key
+        buffer = self.cert + "\n" + self.key
         if self.chain:
             buffer = buffer + "\n" + self.chain
 
@@ -586,7 +582,7 @@ class TLSProfile(models.Model):
 
     def generate_conf(self, backend=False):
         """ Most important : the cert """
-        result = " ssl crt {}".format(self.x509_certificate.get_base_filename() + ".pem")
+        result = " ssl crt '{}'".format(self.x509_certificate.get_base_filename() + ".pem")
         """ ALPN is not compatible with Backend """
         if not backend:
             """ Add list of ALPN """
