@@ -273,8 +273,9 @@ class CybereasonParser(ApiParser):
                 devices.append(tmp.get("guid"))
 
             users = []
-            for tmp in malop_element_values['affectedUsers']['elementValues']:
-                users.append(tmp.get("name"))
+            if malop_element_values.get('affectedUsers'):
+                for tmp in malop_element_values['affectedUsers']['elementValues']:
+                    users.append(tmp.get("name"))
             tmp_malop['affected_users'] = users
 
             edr_suspicions_list = self.__get_evidence(malop_id)
