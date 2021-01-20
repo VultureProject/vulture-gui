@@ -79,8 +79,6 @@ class Authentication(object):
         return False
 
     def double_authentication_required(self):
-        logger.info(self.workflow.authentication.otp_repository is not None)
-        logger.info(self.redis_portal_session.is_double_authenticated(self.workflow.authentication.otp_repository.id))
         return self.workflow.authentication.otp_repository is not None and \
             not self.redis_portal_session.is_double_authenticated(self.workflow.authentication.otp_repository.id)
 
@@ -92,6 +90,7 @@ class Authentication(object):
         return ""
 
     def authenticate_sso_acls(self):
+        # FIXME : ACLs
         backend_list = list(self.workflow.authentication.repositories_fallback.all())
         backend_list.append(self.workflow.authentication.repository)
         e, login = None, ""
@@ -187,20 +186,13 @@ class Authentication(object):
     def register_user(self, authentication_results):
         oauth2_token = None
         # No OAuth2 disabled
-        # if self.application.enable_oauth2:
-        timeout = self.workflow.authentication.auth_timeout
-        oauth2_token = Uuid4().generate()
-        self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + oauth2_token)
-        if authentication_results['data'].get('oauth2', None):
-            self.redis_oauth2_session.register_authentication(authentication_results['data']['oauth2'],
-                                                              authentication_results['data']['oauth2']['token_ttl'])
-        else:
-            self.redis_oauth2_session.register_authentication({
-                'scope': '{}',
-                'token_return_type': 'both',
-                'token_ttl': timeout
-            }, timeout)
-        logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
+        if self.workflow.authentication.enable_oauth2:
+            oauth_timeout = self.workflow.authentication.oauth_timeout
+            oauth2_token = Uuid4().generate()
+            self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + oauth2_token)
+            self.redis_oauth2_session.register_authentication(authentication_results['data'],
+                                                              oauth_timeout)
+            logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
 
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),
@@ -209,8 +201,8 @@ class Authentication(object):
                                                                           self.workflow.authentication.otp_repository,
                                                                           self.credentials[0], self.credentials[1],
                                                                           oauth2_token,
-                                                                          authentication_results['data'],
-                                                                          timeout)
+                                                                          authentication_results,
+                                                                          self.workflow.authentication.auth_timeout)
         logger.debug("AUTH::register_user: Authentication results successfully written in Redis portal session")
 
         return portal_cookie, oauth2_token

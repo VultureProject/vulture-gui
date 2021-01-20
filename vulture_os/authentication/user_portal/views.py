@@ -35,12 +35,13 @@ from gui.forms.form_utils import DivErrorList
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 from authentication.user_portal.form import UserAuthenticationForm
-from authentication.user_portal.models import UserAuthentication
+from authentication.user_portal.models import UserAuthentication, RepoAttributesForm, RepoAttributes
 from services.frontend.models import Listener
 from services.frontend.form import ListenerForm
 from system.cluster.models  import Cluster
-from system.pki.models import PROTOCOLS_TO_INT, CERT_PATH
-from toolkit.http.utils import fetch_forms
+from system.pki.models import X509Certificate, PROTOCOLS_TO_INT
+from portal.system.sso_clients import SSOClient
+from toolkit.http.utils import parse_html
 
 # Extern modules imports
 from json import loads as json_loads
@@ -85,6 +86,8 @@ def user_authentication_edit(request, object_id=None, api=False):
     profile = None
     listener_obj = None
     listener_f = None
+    repo_attrs_form_list = []
+    repo_attrs_objs = []
     if object_id:
         try:
             profile = UserAuthentication.objects.get(pk=object_id)
@@ -98,7 +101,37 @@ def user_authentication_edit(request, object_id=None, api=False):
     else:
         form = UserAuthenticationForm(request.POST or None, instance=profile, error_class=DivErrorList)
 
+    def render_form(profile, **kwargs):
+        save_error = kwargs.get('save_error')
+        if api:
+            if form.errors:
+                return JsonResponse(form.errors.get_json_data(), status=400)
+            if save_error:
+                return JsonResponse({'error': save_error[0]}, status=500)
+
+        if not repo_attrs_form_list and profile:
+            for p in profile.repo_attributes:
+                repo_attrs_form_list.append(RepoAttributesForm(instance=p))
+        logger.info(repo_attrs_form_list)
+        return render(request, 'authentication/user_authentication_edit.html',
+                      {'form': form,
+                       'repo_attributes': repo_attrs_form_list,
+                       'repo_attribute_form': RepoAttributesForm(),
+                       **kwargs})
+
+
     if request.method in ("POST", "PUT"):
+        """ Handle repo attributes (user scope) """
+        try:
+            if api:
+                repo_attrs = request.JSON.get('repo_attributes', [])
+                assert isinstance(repo_attrs, list), "Repo attributes field must be a dict."
+            else:
+                repo_attrs = json_loads(request.POST.get('repo_attributes', "[]"))
+        except Exception as e:
+            return render_form(profile, save_error=["Error in Repo_Attributes field : {}".format(e),
+                                                           str.join('', format_exception(*exc_info()))])
+
         """ Handle JSON formatted listeners """
         if form.data.get('enable_external'):
             try:
@@ -126,6 +159,19 @@ def user_authentication_edit(request, object_id=None, api=False):
                     else:
                         form.add_error("external_listener_json", listener_f.errors.as_ul())
 
+        """ For each Health check header in list """
+        for repo_attr in repo_attrs:
+            repoattrform = RepoAttributesForm(repo_attr, error_class=DivErrorList)
+            if not repoattrform.is_valid():
+                if api:
+                    form.add_error(None, repoattrform.errors.get_json_data())
+                else:
+                    form.add_error('repo_attributes', repoattrform.errors.as_ul())
+                continue
+            # Save forms in case we re-print the page
+            repo_attrs_form_list.append(repoattrform)
+            repo_attrs_objs.append(repoattrform.save(commit=False))
+
         if form.is_valid():
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
@@ -133,14 +179,14 @@ def user_authentication_edit(request, object_id=None, api=False):
                 listener_obj = listener_f.save(commit=False)
                 listener_obj.save()
                 profile.external_listener = listener_obj
+            profile.repo_attributes = repo_attrs_objs
             profile.save()
 
             try:
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
             except Exception as e:
-                return render(request, 'authentication/user_authentication_edit.html', {'form': form,
-                                                                    'save_error': ["Cannot write configuration: {}".format(e),
-                                                                                   str.join('', format_exception(*exc_info()))]})
+                return render_form(profile, save_error=["Cannot write configuration: {}".format(e),
+                                                                                   str.join('', format_exception(*exc_info()))])
 
             # If everything succeed, redirect to list view
             return HttpResponseRedirect(reverse("portal.user_authentication.list"))
@@ -148,8 +194,7 @@ def user_authentication_edit(request, object_id=None, api=False):
     if not listener_f:
         listener_f = ListenerForm(instance=listener_obj, error_class=DivErrorList)
 
-    return render(request, 'authentication/user_authentication_edit.html', {'form': form,
-                                                                            'listener_form': listener_f})
+    return render_form(profile, listener_form=listener_f)
 
 
 # TODO @group_required('administrator', 'system_manager')
@@ -163,8 +208,10 @@ def sso_wizard(request):
         try:
             tls_proto = request.POST.get('sso_forward_tls_proto')
             tls_cert = request.POST.get('sso_forward_tls_cert')
+            tls_cert = request.POST.get('sso_forward_tls_cert')
             url = request.POST['sso_forward_url']
             user_agent = request.POST.get('sso_forward_user_agent') or request.META.get('HTTP_USER_AGENT')
+            redirect_before = request.POST.get('sso_forward_follow_redirect_before')
 
             #proxy_balancer_id = request.POST.get('proxy_balancer')
             #if proxy_balancer_id:
@@ -179,10 +226,11 @@ def sso_wizard(request):
     ssl_context = None
     ssl_client_certificate = None
     if url[:5] == "https" and tls_proto not in ('', 'None', None):
-        ssl_context = ssl.SSLContext(PROTOCOLS_TO_INT[tls_proto])
+        ssl_context = ssl.SSLContext()
+        ssl_context.minimum_version = PROTOCOLS_TO_INT[tls_proto]
         if tls_cert:
             ssl_context.verify_mode = ssl.CERT_REQUIRED
-            ssl_client_certificate = CERT_PATH
+            ssl_client_certificate = X509Certificate.objects.get(pk=tls_cert).bundle_filename
         else:
             ssl_context.verify_mode = ssl.CERT_NONE
 
@@ -206,12 +254,16 @@ def sso_wizard(request):
     #             uris.append(uri_tmp)
 
     try:
-        forms, final_uri, response, response_body = fetch_forms(logger, uris, request, user_agent,
-                                                                ssl_context=ssl_context,
-                                                                proxy_client_side_certificate=ssl_client_certificate)
+        # Directly use portal classes
+        sso_client = SSOClient(user_agent, [], request.META.get('HTTP_REFERER'), ssl_client_certificate, ssl_context)
+        url, response = sso_client.get(url, redirect_before)
+        forms = parse_html(response.content, url)
+
+        # forms, final_uri, response, response_body = fetch_forms(logger, uris, request, user_agent,
+        #                                                         ssl_context=ssl_context,
+        #                                                         proxy_client_side_certificate=ssl_client_certificate)
         form_list = list()
         i = 0
-
         # Retrieve attributes from robobrowser.Form objects
         for f in forms:
             if str(f.method).upper() == "POST":
@@ -230,7 +282,7 @@ def sso_wizard(request):
         response = {'status': True, 'forms': form_list}
     except TypeError as error:
         logger.exception(error)
-        response = {'status': False, 'reason': "No form detected in uri(s) {}".format(uris)}
+        response = {'status': False, 'reason': "No form detected in uri(s) {} : {}".format(uris, e)}
     except Exception as error:
         logger.exception(error)
         response = {'status': False, 'reason': str(error)}

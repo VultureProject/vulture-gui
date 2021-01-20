@@ -39,6 +39,7 @@ from redis                          import Redis, ConnectionError as RedisConnec
 # Extern modules imports
 from hashlib                        import sha1
 from ast                            import literal_eval
+import json
 
 # Logger configuration
 import logging
@@ -324,9 +325,11 @@ class REDISPortalSession(REDISSession):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")
 
+    def get_user_infos(self, backend_id):
+        return self.keys.get('user_infos_'+backend_id, {})
+
     def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
                                 oauth2_token, authentication_datas, timeout):
-        logger.info(dbauthentication_required)
         if dbauthentication_required:
             self.keys[app_id] = 0
         else:
@@ -403,6 +406,9 @@ class REDISPortalSession(REDISSession):
             cpt_loop += 1
 
         return result
+
+    def __str__(self):
+        return json.dumps(self.keys)
 
 
 class REDISOauth2Session(REDISSession):

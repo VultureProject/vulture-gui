@@ -32,11 +32,11 @@ import ldap
 import ldap.modlist as modlist
 
 # Required exceptions imports
-from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, UserNotFound
+from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, UserNotFound, LDAPSizeLimitExceeded
 
 # Logger configuration imports
 import logging
-logger = logging.getLogger('authentication')
+logger = logging.getLogger('portal_authentication')
 
 
 class LDAPClient(BaseAuth):
@@ -179,7 +179,7 @@ class LDAPClient(BaseAuth):
         self._ldap_connection = None
 
 
-    def _search(self, dn, ldap_query, username):
+    def _search(self, dn, ldap_query, username, attr_list=None):
         """ Private method used to perform a search operation over LDAP
 
         :param ldap_query: String with LDAP query filter
@@ -187,23 +187,37 @@ class LDAPClient(BaseAuth):
         :return: An list with results if query match, None otherwise
         """
         # Defining searched attributes
-        attributes_list = self.attributes_list
+        attributes_list = attr_list or self.attributes_list
         # Bind with svc account and look for provided username
         self._bind_connection(self.user, self.password)
         logger.debug("Searching for email/username/groups {}".format(username))
-        logger.debug("LDAP filter: basedn: {}, scope: {}, searchdn: {}, "
+        logger.info("LDAP filter: basedn: {}, scope: {}, searchdn: {}, "
                      "attributes: {}".format(dn, self.user_scope, ldap_query,
                                              attributes_list))
-
-        result = self._get_connection().search_s(dn, self.scope,
-                                                 ldap_query,
-                                                 attributes_list)
-        logger.debug("LDAP search_s result is: {}".format(result))
-        if len(result) > 0:
-            return result
-        else:
-            return None
-
+        # Create pagination control
+        page_control = ldap.controls.SimplePagedResultsControl(True, size=100, cookie='')
+        result = []
+        while True:
+            # Make query with server control pagination
+            msgid = self._get_connection().search_ext(dn, self.scope,
+                                                     ldap_query,
+                                                     attributes_list,
+                                                     serverctrls=[page_control])
+            try:
+                rtype, rdata, rmsgid, serverctrls = self._get_connection().result3(msgid)
+            except ldap.SIZELIMIT_EXCEEDED as e:
+                raise LDAPSizeLimitExceeded(len(result), result)
+            result.extend(rdata)
+            controls = [control for control in serverctrls
+                        if control.controlType == ldap.controls.SimplePagedResultsControl.controlType]
+            if not controls:
+                logger.error('The server ignores RFC 2696 control, quitting query.')
+                break
+            if not controls[0].cookie:
+                break
+            page_control.cookie = controls[0].cookie
+        logger.info("LDAP search_s result is: {}".format(result))
+        return self._process_results(result)
 
     def _search_oauth2(self, username):
         """ Private method used to perform a search operation over LDAP
@@ -234,7 +248,7 @@ class LDAPClient(BaseAuth):
             return None
 
 
-    def search_user(self, username):
+    def search_user(self, username, attr_list=None):
         """ Method used to search for a user inside LDAP repository
 
         :param username: String with username
@@ -246,7 +260,7 @@ class LDAPClient(BaseAuth):
             query_filter = "(&{}{})".format(query_filter, self.user_filter)
         dn = self._get_user_dn()
         self.scope = self.user_scope
-        return self._search(dn, query_filter, username)
+        return self._search(dn, query_filter, username, attr_list=attr_list)
 
     def enumerate_users(self):
         lst=list()
@@ -388,6 +402,22 @@ class LDAPClient(BaseAuth):
 
         return group_list
 
+    def search_user_groups_by_dn(self, dn):
+        if not self.group_member_attr:
+            return []
+        group_membership_attr = str(self.group_member_attr.lower())
+        self.attributes_list.append(group_membership_attr)
+        group_list = []
+        for group_info in self.search_group("*"):
+            group_dn=group_info[0]
+            members=group_info[1].get(self.group_member_attr.lower())
+            if members:
+                for member in members:
+                    if member==dn and group_dn not in group_list:
+                        group_list.append(group_dn)
+        self.attributes_list.remove(group_membership_attr)
+        return group_list
+
     def _get_user_dn(self):
         """ Return search DN of User. DN of user is a concatenation of Base DN
          and user DN
@@ -489,7 +519,7 @@ class LDAPClient(BaseAuth):
         if len(password) == 0:
             raise AuthenticationError("Empty password is not allowed")
         # Looking for user DN, if found we can try a bind
-        found = self.search_user(username)
+        found = self.search_user(username, attr_list=["+","*"])
 
         if found is not None:
             dn = found[0][0]
@@ -504,65 +534,7 @@ class LDAPClient(BaseAuth):
                 if return_status is True:
                     return True
 
-                phone, email = 'N/A', 'N/A'
-                if self.user_mobile_attr:
-                    phone = found[0][1].get(self.user_mobile_attr, 'N/A')
-                    if isinstance(phone, list):
-                        phone = phone[0]
-                if self.user_email_attr:
-                    email = found[0][1].get(self.user_email_attr, 'N/A')
-                    if isinstance(email, list):
-                        email = email[0]
-
-                result = {
-                    'dn'              : dn,
-                    'user_phone'      : phone,
-                    'user_email'      : email,
-                    'password_expired': self.is_password_expired(username),
-                    'account_locked'  : self.is_user_account_locked(username),
-                    'user_groups'     : self.search_user_groups(username)
-                }
-
-                if self.enable_oauth2:
-                    oauth2_found = self._search_oauth2(username)
-
-                    if str(self.oauth2_type_return) == 'dict':
-                        oauth2_scope = dict()
-                    elif self.oauth2_type_return == 'list':
-                        oauth2_scope = list()
-                    else:
-                        logger.error("LDAP::authenticate: Oauth2 type return is not dict nor list for user {}".format(dn))
-                        return result
-
-                    if self.oauth2_attributes:
-                        """ Return attributes needed for OAuth2 scopes """
-                        for attr in self.oauth2_attributes:
-                            try:
-                                if attr.lower() == 'dn':
-                                    attr_value = str(oauth2_found[0][0])
-                                else:
-                                    attr_value = oauth2_found[0][1].get(attr, None)
-                                    if attr_value is None:
-                                        logger.error("Unable to find oauth2 attribute named {} for user {} ".format(attr, dn))
-                                        attr_value = 'N/A'
-
-                                if str(self.oauth2_type_return) == 'dict':
-                                    oauth2_scope[attr] = attr_value
-
-                                elif str(self.oauth2_type_return) == 'list':
-                                    oauth2_scope.append(str(attr_value))
-
-                            except Exception as e:
-                                logger.error("Unable to find oauth2 attribute named {} for user {} : {}".format(attr, dn, e))
-                    else:
-                        oauth2_scope = '{}'
-
-                    oauth2_result = {
-                        'token_ttl': self.oauth2_token_ttl,
-                        'token_return_type': self.oauth2_token_return,
-                        'scope': oauth2_scope
-                    }
-                    result['oauth2'] = oauth2_result
+                result = self._format_user_results(dn, found[0][1])
 
                 return result
         else:
@@ -571,15 +543,58 @@ class LDAPClient(BaseAuth):
             raise UserNotFound("Unable to found {}".format(username))
 
 
+    def user_lookup_enrichment(self, ldap_attr, value):
+        """  """
+        # Defining user search filter
+        query_filter = "({}={})".format(ldap_attr, value)
+        if self.user_filter:
+            query_filter = "(&{}{})".format(query_filter, self.user_filter)
+        dn = self._get_user_dn()
+        self.scope = self.user_scope
+        # Search LDAP_ALL_USER_ATTRIBUTES & LDAP_ALL_OPERATIONAL_ATTRIBUTES
+        user_infos = self._search(dn, query_filter, value, attr_list=["+","*"])
+        if not user_infos:
+            logger.error("Ldap_client::user_lookup:User with {} in {} not found in LDAP".format(query_filter, self.scope))
+            raise UserNotFound("Unable to found user {}".format(value))
+        if len(user_infos) > 1:
+            logger.warning("Ldap_client::user_lookup: Found multiple users with {} in {} - Getting the first".format(query_filter, self.scope))
+        user_dn = user_infos[0][0]
+        user_attrs = self._format_user_results(user_dn, user_infos[0][1])
+        return user_attrs
+
+    def _format_user_results(self, user_dn, user_attrs):
+        res = {}
+        user_groups = []
+        # Standardize attributes
+        for key, val in user_attrs.items():
+            if key == self.user_mobile_attr:
+                key = "user_phone"
+            elif key == self.user_email_attr:
+                key = "user_email"
+            elif key == self.user_groups_attr:
+                user_groups = val
+                # Groups MUST be a list - do not convert to str if len == 1
+                continue
+            if isinstance(val, list) and len(val) == 1:
+                val = val[0]
+            res[key] = val
+        # Retrieve username with user_attr
+        username = res.get(self.user_attr)
+        if not username:
+            raise UserNotFound("Cannot retrieve {} for user {}".format(self.user_attr, user_dn))
+        res['dn'] = user_dn
+        res['account_locked'] = self.is_user_account_locked(username)
+        res['password_expired'] = self.is_password_expired(username)
+        res['user_groups'] = [*user_groups, *self.search_user_groups_by_dn(user_dn)]
+        return res
+
     def _process_results(self, results):
         """
         Returns a sanitized copy of raw LDAP results. This scrubs out
         references, decodes utf8, etc.
         :param results: result to parse
         """
-        results = filter(lambda r: r[0] is not None, results)
         results = _DeepStringCoder('utf-8').decode(results)
-
         return results
 
     def test_ldap_connection(self):
@@ -731,7 +746,7 @@ class _DeepStringCoder(object):
 
     def decode(self, value):
         try:
-            if isinstance(value, str):
+            if isinstance(value, bytes):
                 value = value.decode(self.encoding)
             elif isinstance(value, list):
                 value = self._decode_list(value)
@@ -753,7 +768,7 @@ class _DeepStringCoder(object):
         # for search results.
         decoded = ldap.cidict.cidict()
 
-        for k, v in value.iteritems():
+        for k, v in value.items():
             decoded[self.decode(k)] = self.decode(v)
 
         return decoded

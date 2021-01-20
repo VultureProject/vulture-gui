@@ -350,7 +350,8 @@ class PortalTemplate(models.Model):
             'register_email_field': self.register_email_field,
             'register_submit_field': self.register_submit_field,
             'input_login': INPUT_LOGIN,
-            'input_password': INPUT_PASSWORD
+            'input_password': INPUT_PASSWORD,
+            'style': self.css
         }
 
     def render_template(self, tpl_name, **kwargs):

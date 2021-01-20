@@ -128,21 +128,48 @@ def openid_callback(request, workflow_id, repo_id):
     # Retrieve cookies required for authentication
     portal_cookie_name = global_config.portal_cookie_name
 
+    logger.info(request.COOKIES.get(portal_cookie_name))
+
     try:
         code = request.GET['code']
         state = request.GET['state']
         portal_cookie = request.COOKIES[portal_cookie_name]
+
+        # Use POSTAuthentication to print errors with html templates
+        authentication = Authentication(portal_cookie, workflow)
+
         # Get user session with cookie
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         assert state == redis_portal_session['oauth_state']
         oauth2_session = repo.get_oauth2_session(callback_url)
-        # FIXME : Add other token infos in Redis
         token = repo.fetch_token(oauth2_session, code)['access_token']
         # Save token in Redis for later use
-        redis_portal_session['oauth_token'] = token
+        #redis_portal_session['oauth_token'] = token
+
         # Retrieve user's infos from provider
-        user_infos = repo.get_userinfo(oauth2_session)
-        return authentication_step2(request, portal_cookie_name, redis_portal_session, workflow, repo, user_infos)
+        claims = repo.get_userinfo(oauth2_session)
+
+        repo_attributes = {}
+        # Make LDAP Lookup if configured
+        if workflow.authentication.lookup_ldap_repo:
+            ldap_attr = workflow.authentication.lookup_ldap_attr
+            claim = claims.get(workflow.authentication.lookup_claim_attr)
+            if not claim:
+                logger.error("OpenID_callback: Cannot retrieve user claim '{}' from user claims '{}'".format(workflow.authentication.lookup_claim_attr, user_infos))
+            else:
+                ldap_connector = workflow.authentication.lookup_ldap_repo.get_client()
+                # Enrich user claims with LDAP infos - merge dictionnaries
+                repo_attributes = ldap_connector.user_lookup_enrichment(ldap_attr, claim)
+                logger.info(repo_attributes)
+
+        # Create user scope depending on GUI configuration attributes
+        user_scope = workflow.authentication.get_user_scope(claims, repo_attributes)
+
+        # Set authentication attributes required
+        authentication.backend_id = repo_id
+        authentication.credentials = [claims.get('name'), ""]
+        authentication.register_user(user_scope)
+
     except KeyError as e:
         # FIXME : What to do ?
         return HttpResponseRedirect()
@@ -155,26 +182,23 @@ def openid_callback(request, workflow_id, repo_id):
         logger.error("")
         return HttpResponseRedirect()
 
+    except Exception as e:
+        logger.exception(e)
+        return HttpResponseServerError()
 
-def authentication_step2(request, portal_cookie_name, redis_portal_session, workflow, repo, user_infos):
+    db_auth_response = make_db_authentication(request, portal, authentication)
+    if db_auth_response:
+        return db_auth_response
+
+    sso_response = make_sso_forward(request, portal_cookie_name, portal_cookie, authentication, user_scope)
+    if sso_response:
+        return sso_response
+
+
+def make_db_authentication(request, portal_cookie_name, portal_cookie, workflow, user_infos):
     """ If user is not double-authenticated and double-authentication needed : 
             try to retrieve credentials and authenticate him on otp-backend 
     """
-    # If SSO Forward uses OAuth2, generate random token
-    # TODO if workflow.sso_forward.oauth_used:
-    oauth2_token = random_sha256()
-    # Save user infos in Redis
-    # register_authentication(app_id, app_name, backend_id, dbauthentication_required, username, password,
-    #                        oauth2_token, authentication_datas, timeout)
-    portal_cookie = redis_portal_session.register_authentication(str(workflow.id),
-                                                 workflow.name,
-                                                 str(repo.id),
-                                                 workflow.authentication.otp_repository is not None,
-                                                 user_infos.get('name'),
-                                                 None,  # password
-                                                 oauth2_token,
-                                                 user_infos,
-                                                 workflow.authentication.auth_timeout) # Expiration timeout of cookie in Redis
 
     # Use POSTAuthentication to print errors with html templates
     authentication = POSTAuthentication(portal_cookie, workflow)
@@ -273,6 +297,19 @@ def authentication_step2(request, portal_cookie_name, redis_portal_session, work
                         .format(authentication.credentials[0]))
             return authentication.ask_credentials_response(request=request, error=e.message)
 
+    """ If no response has been returned yet : redirect to the asked-uri/default-uri with portal_cookie """
+    redirection_url = authentication.get_redirect_url()
+    logger.info("PORTAL::log_in: Redirecting user to '{}'".format(redirection_url))
+    try:
+        kerberos_token_resp = user_infos['token_resp']
+    except:
+        kerberos_token_resp = None
+
+    return response_redirect_with_portal_cookie(redirection_url, portal_cookie_name, portal_cookie,
+                                                redirection_url.startswith('https'), kerberos_token_resp)
+
+
+def make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_infos):
     # If we arrive here : the user is authenticated
     #  and double-authenticated if double-authentication needed
     sso_methods = {
@@ -281,9 +318,10 @@ def authentication_step2(request, portal_cookie_name, redis_portal_session, work
         'kerberos': SSOForwardKERBEROS
     }
 
+    portal = workflow.authentication
+
     """ If SSOForward enabled : perform-it """
-    # FIXME if authentication.application.sso_enabled:
-    if not True:
+    if portal.enable_sso_forward:
         # Try to retrieve credentials from authentication object
         try:
             if not authentication.credentials[0] or not authentication.credentials[1]:
@@ -302,8 +340,7 @@ def authentication_step2(request, portal_cookie_name, redis_portal_session, work
 
         try:
             # Instantiate SSOForward object with sso_forward type
-            sso_forward = sso_methods[authentication.application.sso_forward](request, authentication.application,
-                                                                              authentication)
+            sso_forward = sso_methods[portal.sso_forward_type](request, workflow, authentication, user_infos)
             logger.info("PORTAL::log_in: SSOForward successfully created")
             # Get credentials needed for sso forward : AutoLogon or Learning
             sso_data, profiles_to_stock, url = sso_forward.retrieve_credentials(request)
@@ -313,17 +350,15 @@ def authentication_step2(request, portal_cookie_name, redis_portal_session, work
                 sso_forward.stock_sso_field(authentication.credentials[0], profile_name, profile_value)
 
             # Use 'sso_data' and 'url' to authenticate user on application
-            response = sso_forward.authenticate(sso_data, post_url=url, redis_session=authentication.redis_session)
+            response = sso_forward.authenticate(sso_data, post_url=url, redis_session=authentication.redis_portal_session)
             logger.info("PORTAL::log_in: SSOForward performing success")
             # Generate response depending on application.sso_forward options
             final_response = sso_forward.generate_response(request, response, authentication.get_redirect_url())
             logger.info("PORTAL::log_in: SSOForward response successfuly generated")
 
-            # If the user has not yet a portal cookie : give-it
-            if not request.COOKIES.get(portal_cookie_name, None) or \
-                    not authentication.redis_base.hgetall(request.COOKIES.get(portal_cookie_name, None)):
-                final_response = set_portal_cookie(final_response, portal_cookie_name, portal_cookie,
-                                                   authentication.get_redirect_url())
+            # Refresh portal cookie
+            final_response = set_portal_cookie(final_response, portal_cookie_name, portal_cookie,
+                                               authentication.get_redirect_url())
 
             return final_response
 
@@ -346,16 +381,31 @@ def authentication_step2(request, portal_cookie_name, redis_portal_session, work
             logger.error("PORTAL::log_in: Unexpected error while trying to perform SSO Forward :")
             logger.exception(e)
 
-    """ If no response has been returned yet : redirect to the asked-uri/default-uri with portal_cookie """
-    redirection_url = authentication.get_redirect_url()
-    logger.info("PORTAL::log_in: Redirecting user to '{}'".format(redirection_url))
-    try:
-        kerberos_token_resp = authentication_results['data']['token_resp']
-    except:
-        kerberos_token_resp = None
 
-    return response_redirect_with_portal_cookie(redirection_url, portal_cookie_name, portal_cookie,
-                                                redirection_url.startswith('https'), kerberos_token_resp)
+
+
+def openid_authorize(request, portal_id):
+    try:
+        portal = UserAUthentication.objects.get(portal_id)
+    except Exception:
+        return HttpResponseServerError()
+
+    try:
+        client_id = request.GET['client_id']
+    except:
+        return portal.portal_template.render_template("html_error", message="Missing required parameter: client_id.")
+
+    try:
+        redirect_uri = request.GET['redirect_uri']
+        assert redirect_uri in portal.oauth_redirect_uris
+    except:
+        return portal.portal_template.render_template("html_error", message="Invalid redirect URI")
+
+    try:
+        assert client_id == portal.oauth_client_id
+    except:
+        return portal.portal_template.render_template("html_error", message="Client authentication failed due to unknown client.")
+
 
 
 
@@ -515,7 +565,7 @@ def log_in(request, workflow_id=None):
             return authentication.ask_credentials_response(request=request, portal_cookie_name=portal_cookie_name,
                                                            error="Portal cookie expired")
 
-        except (Application.DoesNotExist, ValidationError, InvalidId) as e:
+        except (Workflow.DoesNotExist, ValidationError, InvalidId) as e:
             """ Invalid POST 'vulture_two_factors_authentication' value """
             logger.error("PORTAL::log_in: Double-authentication failure for username {} : {}"
                          .format(authentication.credentials[0], str(e)))

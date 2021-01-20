@@ -41,6 +41,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
 
 # Required exceptions imports
+from toolkit.http.exceptions import FetchFormError
 
 # Logger configuration imports
 
@@ -50,13 +51,13 @@ vulture_custom_agent = 'Vulture/4 (FreeBSD; Vulture OS)'
 
 class SSLAdapter(HTTPAdapter):
     """ "Transport adapter" that allows us to use TLSv1 """
-    def __init__(self, ssl_version=None, **kwargs):
-        self.ssl_version = ssl_version
-        super(SSLAdapter, self).__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        self.ssl_context = kwargs.pop('ssl_context')
+        super(SSLAdapter, self).__init__(*args, **kwargs)
 
-    def init_poolmanager(self, connections, maxsize, block=False):
-         self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block, ssl_version=self.ssl_version)
-
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['ssl_context'] = self.ssl_context
+        self.poolmanager = PoolManager(*args, **kwargs)
 
 
 def get_cookie_values (response_cookie):
@@ -318,10 +319,8 @@ def fetch_forms(logger, uris, req, user_agent, headers=dict(), ssl_context=None,
     verify_certificate = False
     session = requests.Session()
     if ssl_context is not None:
-        # requests version 2.18.1 needed for the following line
-        session.mount("https://", SSLAdapter(ssl_context.protocol))
-        if ssl_context.verify_mode != ssl.CERT_NONE:
-            verify_certificate = "/var/db/pki/"
+        #ssl_context.options |= ssl.OP_NO_TLSv1_2 | ssl.OP_NO_TLSv1 | ssl.OP_NO_SSLv3
+        session.mount("https://", SSLAdapter(ssl_context=ssl_context))
 
     if not proxy_client_side_certificate or not ssl_context:
         proxy_client_side_certificate = None
@@ -341,6 +340,7 @@ def fetch_forms(logger, uris, req, user_agent, headers=dict(), ssl_context=None,
 
     # response_body=response.read()
     response = None
+    errors = {}
     for uri in uris:
         try:
             response = session.get(uri, verify=verify_certificate, cert=proxy_client_side_certificate)
@@ -348,18 +348,19 @@ def fetch_forms(logger, uris, req, user_agent, headers=dict(), ssl_context=None,
             break
         except Exception as e:
             logger.error("FETCH_FORMS::Exception while getting uri '{}' : {}".format(uri, e))
+            errors[uri] = e
 
     if not response:
-        raise Exception("FETCH_FORMS::No url could be fetched among the following list : {}".format(uris))
+        raise FetchFormError("FETCH_FORMS::No url could be fetched among the following list : {}".format(errors))
 
     try:
         if response.encoding.lower() != "utf-8":
             response_body = response.content.encode('utf-8')
     except Exception as e:
-        raise Exception("FETCH_FORMS::Exception while trying to encode response content : {}".format(e))
+        raise FetchFormError("FETCH_FORMS::Exception while trying to encode response content : {}".format(e))
 
     if response.status_code == 401 and response.reason == "Unauthorized":
-        return [], None, None, None
+        raise FetchFormError("FETCH_FORM")
 
     try:
         """ Check if we have to follow a meta redirect (301/302 are already handled by urllib2) """
@@ -393,6 +394,29 @@ def fetch_forms(logger, uris, req, user_agent, headers=dict(), ssl_context=None,
     # resp = mechanize.ParseString(response_body, response.url) #, backwards_compat=False)
 
     return resp, uri, response, response_body
+
+
+def parse_html(body_html, base_url):
+    parsed = BeautifulSoup(body_html, 'html.parser')
+    forms = list()
+    for form in parsed.findAll('form'):
+        f = Form(form)
+        # RoboBrowser does not handle submit button
+        for field in form.find_all('button'):
+            # If not name, continue
+            if not field.attrs.get('name'):
+                continue
+            if field.attrs.get('type') == "submit":
+                f.add_field(BaseField(field))
+        if not f.action:
+            f.action = base_url
+        elif not re.search("^https?://", f.action):
+            if f.action.startswith('/'):
+                f.action = "{}{}".format('/'.join(base_url.split('/')[:3]), f.action)
+            else:
+                f.action = "{}/{}".format('/'.join(base_url.split('/')[:3]), f.action)
+        forms.append(f)
+    return forms
 
 
 """ Return the URL of a string, without the fqdn and without query string

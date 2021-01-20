@@ -36,7 +36,8 @@ from authentication.ldap.models import LDAPRepository
 from authentication.otp.models import OTPRepository
 from authentication.openid.models import OpenIDRepository
 from authentication.user_portal.models import (AUTH_TYPE_CHOICES, SSO_TYPE_CHOICES, SSO_BASIC_MODE_CHOICES,
-                                               SSO_CONTENT_TYPE_CHOICES, UserAuthentication)
+                                               SSO_CONTENT_TYPE_CHOICES, UserAuthentication, RepoAttributes,
+                                               SOURCE_ATTRS_CHOICES)
 from gui.forms.form_utils import NoValidationField
 from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
 
@@ -57,6 +58,13 @@ class UserAuthenticationForm(ModelForm):
         queryset=BaseRepository.objects.exclude(subtype="OTP").only(*BaseRepository.str_attrs()),
         widget=SelectMultiple(attrs={'class': 'form-control select2'}),
     )
+    lookup_ldap_repo = ModelChoiceField(
+        label=_("Lookup ldap repository"),
+        queryset=LDAPRepository.objects.all().only(*LDAPRepository.str_attrs()),
+        widget=Select(attrs={'class': 'form-control select2'}),
+        required=False,
+        empty_label=_("No lookup")
+    )
     sso_forward_tls_cert = ModelChoiceField(
         label=_("Client certificate (optional)"),
         queryset=X509Certificate.objects.exclude(is_ca=True).only(*X509Certificate.str_attrs()),
@@ -66,10 +74,14 @@ class UserAuthenticationForm(ModelForm):
     external_listener_json = NoValidationField(
         label=_("Listener")
     )
+    repo_attributes = NoValidationField(
+        label=_("Create user scope")
+    )
 
     class Meta:
         model = UserAuthentication
         fields = ('name', 'enable_tracking', 'auth_type', 'portal_template', 'repositories',
+                  'lookup_ldap_repo', 'lookup_ldap_attr', 'lookup_claim_attr',
                   'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'otp_repository', 'otp_max_retry',
                   'disconnect_url', 'enable_disconnect_message', 'enable_disconnect_portal', 'enable_registration',
                   'group_registration', 'update_group_registration', 'enable_external', 'external_fqdn',
@@ -80,13 +92,15 @@ class UserAuthenticationForm(ModelForm):
                   'sso_forward_content_type','sso_forward_url','sso_forward_user_agent','sso_forward_content',
                   'sso_forward_enable_capture','sso_forward_capture_content','sso_forward_enable_replace',
                   'sso_forward_replace_pattern','sso_forward_replace_content','sso_forward_enable_additionnal',
-                  'sso_forward_additional_url', 'sso_forward_tls_proto', 'sso_forward_tls_cert')
+                  'sso_forward_additional_url', 'sso_forward_tls_proto', 'sso_forward_tls_cert', 'sso_forward_tls_check')
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'enable_tracking': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'enable_external': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'external_fqdn': TextInput(attrs={'class': 'form-control'}),
             'auth_type': Select(choices=AUTH_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
+            'lookup_ldap_attr': TextInput(attrs={'class': 'form-control'}),
+            'lookup_claim_attr': TextInput(attrs={'class': 'form-control'}),
             'portal_template': Select(choices=PortalTemplate.objects.all().only(*PortalTemplate.str_attrs()),
                                       attrs={'class': 'form-control select2'}),
             'auth_timeout': NumberInput(attrs={'class': 'form-control'}),
@@ -117,6 +131,7 @@ class UserAuthenticationForm(ModelForm):
             'sso_forward_type': Select(choices=SSO_TYPE_CHOICES, attrs={'class': "form-control select2"}),
             'sso_forward_content_type': Select(choices=SSO_CONTENT_TYPE_CHOICES, attrs={'class': "form-control select2"}),
             'sso_forward_tls_proto': Select(choices=TLS_PROTOCOL_CHOICES, attrs={'class': "form-control select2"}),
+            'sso_forward_tls_check': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'sso_forward_url': TextInput(attrs={'class': "form-control"}),
             'sso_forward_user_agent': TextInput(attrs={'class': "form-control"}),
             'sso_forward_content': Textarea(attrs={'class': "form-control", 'readonly':''}),
@@ -185,10 +200,16 @@ class UserAuthenticationForm(ModelForm):
         if cleaned_data.get('enable_registration') and repo and not cleaned_data.get('group_registration'):
             self.add_error('group_registration', "This field is required if registration enabled.")
         if cleaned_data.get('enable_registration') and (cleaned_data.get('group_registration') or
-                                                        cleaned_data.get('update_group_registration')) \
+                                                            cleaned_data.get('update_group_registration')) \
                 and not repo:
             self.add_error('group_registration', "To use this field, the mail repository must be LDAP.")
             self.add_error('update_group_registration', "To use this field, the mail repository must be LDAP.")
+
+        if cleaned_data.get('lookup_ldap_repo'):
+            if not cleaned_data.get('lookup_ldap_attr'):
+                self.add_error('lookup_ldap_attr', "This field is required with 'LDAP Lookup repository'")
+            if not cleaned_data.get('lookup_claim_attr'):
+                self.add_error('lookup_claim_attr', "This field is required with 'LDAP Lookup repository'")
 
         OpenIDRepository.objects.all()
 
