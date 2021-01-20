@@ -43,8 +43,11 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class InspectionPolicyAPIv1(View):
+    @method_decorator(csrf_exempt, name='dispatch')
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:

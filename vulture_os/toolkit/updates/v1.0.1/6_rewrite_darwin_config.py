@@ -71,6 +71,6 @@ if __name__ == "__main__":
                     print("Error while updating rsyslog configuration of frontend '{}': "
                           "{}.".format(frontend.name, api_res.get("message")))
 
-        node.api_request("services.darwin.darwin.build_conf")
+        node.api_request("services.darwin.darwin.reload_conf")
 
         print("Done.")

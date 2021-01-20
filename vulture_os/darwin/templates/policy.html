@@ -53,56 +53,18 @@
       mData: "name"
     },
     {
-      sTitle: '{% trans "Status" %}',
-      defaultContent: "",
-      name: "status",
-      mData: "status",
+      sTitle: '{% trans "Description" %}',
+      name: "description",
       aTargets: [2],
-      bSearchable: false,
-      mRender: function(data, type, row) {
-        var cpt = 0;
-        var result = "<ul>";
-        $.each(data, function(fname, statuses) {
-          result += "<li>" + fname;
-          if( !jQuery.isEmptyObject(statuses) )
-            result += '<ul id="ul_policy">';
-          $.each(statuses, function(node, status) {
-            result += "<li>";
-            switch( status ) {
-              case "RUNNING":
-                result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
-                break;
-              case "DOWN":
-                result += '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
-                break;
-              case "ERROR":
-                result += '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
-                break;
-              case "DISABLED":
-                result += '<i class="icon fa fa-toggle-off"></i>&nbsp;';
-                break;
-              case "STARTING":
-              case "CONFIGURING":
-                result += '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
-                break;
-            }
-            result += node + "</li>";
-            if( statuses.length > 0 )
-              result += "</ul>";
-            result += "</li>";
-          });
-          result += "</ul>";
-          cpt++;
-        });
-        return result;
-      }
+      defaultContent: "",
+      mData: "description"
     },
     {
-      sTitle: '{% trans "Filters" %}',
-      name: "filters",
+      sTitle: '{% trans "Inputs" %}',
+      name: "inputs",
       aTargets: [3],
       defaultContent: "",
-      mData: "filters",
+      mData: "inputs",
       mRender: function(data, type, row) {
         var result = "<ul>";
         for( l of data )
@@ -111,9 +73,60 @@
       }
     },
     {
+      sTitle: '{% trans "Status" %}',
+      defaultContent: "",
+      name: "status",
+      mData: "status",
+      aTargets: [4],
+      bSearchable: false,
+      mRender: function(data, type, row) {
+        var cpt = 0;
+        var result = "<ul>";
+        data.forEach(function(filter) {
+          $.each(filter, function(fname, statuses) {
+            if( !jQuery.isEmptyObject(statuses) ){
+              var status_list = "";
+              $.each(statuses, function(node, status) {
+                var status_render = "";
+                switch( status ) {
+                  case "RUNNING":
+                    status_render = '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+                    break;
+                  case "DOWN":
+                  case "DISABLED":
+                    status_render = '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
+                    break;
+                  case "ERROR":
+                    status_render = '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
+                    break;
+                  case "STARTING":
+                  case "CONFIGURING":
+                  case "STOPPING":
+                    status_render = '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
+                    break;
+                }
+                if (status_render.length > 0) {
+                  if (status_list.length === 0) {
+                    status_list += "<li>" + fname + '<ul id="ul_policy">';
+                  }
+                  status_list += '<li>' + status_render + node + '</li>';
+                }
+              });
+              if (status_list.length > 0)
+                status_list += '</ul></li>';
+              result += status_list;
+            }
+            cpt++;
+          });
+        });
+        result += "</ul>";
+        return result;
+      }
+    },
+    {
       sTitle: '{% trans "Action" %}',
       mData:"id",
-      aTargets: [4],
+      aTargets: [5],
       defaultContent: "",
       sWidth: "5%",
       mRender: function(data, type, row) {
@@ -182,7 +195,7 @@
 
   /* Reload table data every 5 seconds */
   setInterval( function() {
-    policy_table.fnDraw();
+    policy_table.fnDraw(false);
   }, 5000);
 
 {% endblock %}

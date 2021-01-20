@@ -36,7 +36,7 @@ from django.views.generic import View
 # Django project imports
 from darwin.access_control.models import AccessControl
 from darwin.defender_policy.models import DefenderPolicy
-from darwin.policy.models import DarwinFilter, DarwinPolicy
+from darwin.policy.models import DarwinPolicy
 from darwin.log_viewer.models import DefenderRuleset
 from darwin.inspection.models import InspectionPolicy, InspectionRule
 from services.frontend.models import BlacklistWhitelist, Frontend
@@ -104,11 +104,11 @@ class DeleteDarwinPolicy(DeleteView):
 
     # This method is mandatory for all child classes
     # Returns [] if nothing to do
-    def used_by(self, object):
+    def used_by(self, policy):
         """ Retrieve all objects that use the current object
         Return a list of strings, printed in template as "Used by this object:"
         """
-        return [frontend.name for frontend in Frontend.objects.filter(darwin_policy=object)]
+        return [frontend.name for frontend in Frontend.objects.filter(darwin_policies=policy)]
 
     # get methods inherited from mother class
     def post(self, request, object_id, **kwargs):
@@ -122,10 +122,13 @@ class DeleteDarwinPolicy(DeleteView):
             logger.info("Deleting filter policy configuration files associated with Darwin policy...")
 
             try:
+                filter_conf_paths = [obj.conf_path for obj in obj_inst.filterpolicy_set.all()]
+
                 obj_inst.delete()
 
-                Cluster.api_request("services.darwin.darwin.delete_policy_conf", object_id)
-                Cluster.api_request("services.darwin.darwin.build_conf")
+                for filter_conf_path in filter_conf_paths:
+                    Cluster.api_request("services.darwin.darwin.delete_filter_conf", filter_conf_path)
+                Cluster.api_request("services.darwin.darwin.reload_conf")
             except ProtectedError as e:
                 error = "Policy is still used. Cannot remove"
 
@@ -216,6 +219,7 @@ class DeleteInspectionRule(DeleteView):
         Return a list of strings, printed in template as "Used by this object:"
         """
         # TODO: Frontend use
+        return [str(i) for i in object.inspectionpolicy_set.all()]
         # return [str(i) for i in object.]
 
     # get methods inherited from mother class

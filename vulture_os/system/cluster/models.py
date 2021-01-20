@@ -667,6 +667,12 @@ class NetworkAddress(models.Model):
     objects = models.DjongoManager()
 
     def to_dict(self):
+        nic_list = list()
+        addresses_nic = NetworkAddressNIC.objects.filter(network_address=self)
+        for address_nic in addresses_nic:
+            nic = address_nic.nic
+            nic_list.append(str(nic.pk))
+
         return {
             "id": str(self.id),
             "name": self.name,
@@ -675,7 +681,8 @@ class NetworkAddress(models.Model):
             'prefix_or_netmask': self.prefix_or_netmask,
             'carp_vhid': self.carp_vhid,
             'vlan': self.vlan,
-            'fib': self.fib
+            'fib': self.fib,
+            "nic": nic_list
         }
 
     def to_template(self):

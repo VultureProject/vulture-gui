@@ -115,10 +115,10 @@ class FrontendForm(ModelForm):
                                      for parser in get_available_api_parser()])
 
         """ Darwin policy """
-        self.fields['darwin_policy'] = ModelChoiceField(
-            label=_("Darwin policy"),
-            queryset=DarwinPolicy.objects.all(),
-            widget=Select(attrs={'class': 'form-control select2'}),
+        self.fields['darwin_policies'] = ModelMultipleChoiceField(
+            label=_("Darwin policies"),
+            queryset=DarwinPolicy.objects.filter(is_internal=False),
+            widget=SelectMultiple(attrs={'class': 'form-control select2'}),
             required=False
         )
         """ Log forwarders """
@@ -209,6 +209,7 @@ class FrontendForm(ModelForm):
                            'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
                            "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                            "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
+                           "cybereason_host", "cybereason_username", "cybereason_password",
                            'darwin_mode']:
             self.fields[field_name].required = False
 
@@ -249,7 +250,7 @@ class FrontendForm(ModelForm):
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
-                  'file_path', 'node', 'darwin_policy', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
+                  'file_path', 'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
                   'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
                   'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
@@ -261,6 +262,7 @@ class FrontendForm(ModelForm):
                   'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
                   "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                   "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
+                  "cybereason_host", "cybereason_username", "cybereason_password",
                   'darwin_mode')
 
         widgets = {
@@ -336,6 +338,9 @@ class FrontendForm(ModelForm):
             'cortex_xdr_host': TextInput(attrs={'class': 'form-control'}),
             'cortex_xdr_apikey_id': TextInput(attrs={'class': 'form-control'}),
             'cortex_xdr_apikey': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_host': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_username': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_password': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
@@ -492,7 +497,7 @@ class FrontendForm(ModelForm):
                 self.add_error('logging_reputation_database_v6', "One of those fields is required.")
 
         """ If Darwin policy is enabled, darwon_mode is required """
-        if cleaned_data.get('darwin_policy'):
+        if cleaned_data.get('darwin_policies'):
             if not cleaned_data.get("darwin_mode"):
                 self.add_error("darwin_mode", "This field is required when a darwin policy is set")
 

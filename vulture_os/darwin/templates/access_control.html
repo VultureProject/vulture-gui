@@ -155,7 +155,7 @@
           function(response){
             if (check_json_error(response)){
               notify('success', '{% trans "Success" %}', '{% trans "ACL cloned" %}');
-              access_control_table.DataTable().fnDraw();
+              access_control_table.DataTable().fnDraw(false);
             }
           }
         )

@@ -225,13 +225,13 @@
                         </div>
                       </div>
                     </div> <!-- /.row -->
-                    <div class="row impcap-mode log-mode">
+                    <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Darwin policy" %}</label>
+                          <label class="col-sm-4 control-label">{% trans "Darwin policies" %}</label>
                           <div class="col-sm-5">
-                            {{form.darwin_policy}}
-                            {{form.darwin_policy.errors|safe}}
+                            {{form.darwin_policies}}
+                            {{form.darwin_policies.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -969,6 +969,30 @@
                           <div class="col-sm-5">
                             {{ form.cortex_xdr_apikey }}
                             {{ form.cortex_xdr_apikey.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_cybereason_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cybereason_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cybereason_host }}
+                            {{ form.cybereason_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cybereason_username.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cybereason_username }}
+                            {{ form.cybereason_username.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cybereason_password.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cybereason_password }}
+                            {{ form.cybereason_password.errors|safe }}
                           </div>
                         </div>
                       </div>
