@@ -23,6 +23,14 @@ var icon_by_type = {
         code: "\uf1c0",
         color: "#3A444E",
         size: 30
+    },
+    repo: {
+        internal: vulture_logo,
+        kerberos: kerberos_logo,
+        radius: radius_logo,
+        openid: openid_logo,
+        ldap: ldap_logo,
+        otp: otp_logo
     }
 }
 
@@ -816,6 +824,31 @@ var workflow_vue = new Vue({
                             tmp.label = step.data.name
                         break;
                     case "authentication":
+                        for (let auth of self.authentication_choices){
+                            if (auth.id === step.data.object_id){
+                                for (let repo of auth.repositories){
+                                    console.log(icon_by_type.repo[repo.subtype])
+                                    let node_tmp = {
+                                        id: `repo_node_${repo.id}`,
+                                        shape: 'image',
+                                        image: icon_by_type.repo[repo.subtype],
+                                        label: repo.name
+                                    }
+
+                                    nodes.push(node_tmp)
+                                    edges.push({
+                                        from: step.id,
+                                        to: `repo_node_${repo.id}`,
+                                        dashes: true,
+                                        arrows: 'to',
+                                        length: 300,
+                                        label: gettext('Repository'),
+                                        font: {align: 'bottom'}
+                                    })
+                                }
+                            }
+                        }
+
                         if (!tmp.label)
                             tmp.label = step.data.name
                         break;

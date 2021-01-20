@@ -26,6 +26,7 @@ __doc__ = 'OTP Repository model'
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -127,6 +128,9 @@ class OTPRepository(BaseRepository):
             if service[0] == self.otp_mail_service:
                 mail_service = service[1]
         return mail_service
+
+    def to_dict(self):
+        return model_to_dict(self)
 
     def to_template(self):
         """ Returns the attributes of the class """

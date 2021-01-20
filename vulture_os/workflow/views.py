@@ -303,7 +303,7 @@ def workflow_edit(request, object_id=None, api=False):
                     'acls': [a.to_template() for a in AccessControl.objects.filter(enabled=True)],
                     'backends': [b.to_dict() for b in Backend.objects.filter(enabled=True, mode=mode)],
                     'waf_policies': [w.to_template() for w in DefenderPolicy.objects.all()],
-                    'authentications': [a.to_template() for a in UserAuthentication.objects.all()],
+                    'authentications': [a.to_dict() for a in UserAuthentication.objects.all()],
                 }
 
             return JsonResponse({
@@ -320,7 +320,7 @@ def workflow_edit(request, object_id=None, api=False):
                     enabled=True,
                     mode=workflow_obj.frontend.mode
                 )],
-                'authentications': [a.to_template() for a in UserAuthentication.objects.all()]
+                'authentications': [a.to_dict() for a in UserAuthentication.objects.all()]
             })
 
         return render(request, "main/workflow_edit.html", {

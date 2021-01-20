@@ -25,6 +25,7 @@ __doc__ = 'LDAP Repository model'
 # Django system imports
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -443,6 +444,13 @@ class UserAuthentication(models.Model):
             'name': self.name,
             'openid_repos': [repo.to_template() for repo in self.openid_repos]
         }
+
+    def to_dict(self):
+        data = model_to_dict(self)
+        data['id'] = str(self.pk)
+        data['repositories'] = [r.to_dict() for r in self.repositories.all()]
+        data['portal_template'] = self.portal_template.to_dict()
+        return data
 
     @property
     def openid_repos(self):
