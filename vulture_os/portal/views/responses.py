@@ -64,7 +64,7 @@ def create_gzip_response(request, content):
 	return HttpResponse(content)
 
 
-def response_redirect_with_portal_cookie(url, portal_cookie_name, portal_cookie, cookie_secure, kerberos_resp):
+def response_redirect_with_portal_cookie(url, portal_cookie_name, portal_cookie, cookie_secure, kerberos_resp = None):
 	response = HttpResponseRedirect(url)
 	if not portal_cookie:
 		return HttpResponseServerError()

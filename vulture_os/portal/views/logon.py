@@ -40,6 +40,7 @@ from portal.system.authentications   import (Authentication, POSTAuthentication,
 from portal.system.sso_forwards      import SSOForwardPOST, SSOForwardBASIC, SSOForwardKERBEROS
 from workflow.models import Workflow
 from authentication.openid.models import OpenIDRepository
+from authentication.user_portal.models import UserAuthentication
 from portal.system.redis_sessions import REDISBase, REDISPortalSession
 
 # Required exceptions imports
@@ -105,7 +106,7 @@ def openid_start(request, workflow_id):
 
 
 def openid_callback(request, workflow_id, repo_id):
-    """ 
+    """
     """
     """ First, try to retrieve concerned objects """
     try:
@@ -196,8 +197,8 @@ def openid_callback(request, workflow_id, repo_id):
 
 
 def make_db_authentication(request, portal_cookie_name, portal_cookie, workflow, user_infos):
-    """ If user is not double-authenticated and double-authentication needed : 
-            try to retrieve credentials and authenticate him on otp-backend 
+    """ If user is not double-authenticated and double-authentication needed :
+            try to retrieve credentials and authenticate him on otp-backend
     """
 
     # Use POSTAuthentication to print errors with html templates
@@ -386,25 +387,43 @@ def make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authe
 
 def openid_authorize(request, portal_id):
     try:
-        portal = UserAUthentication.objects.get(portal_id)
-    except Exception:
+        scheme = request.META['HTTP_X_FORWARDED_PROTO']
+    except KeyError:
+        logger.error("PORTAL::openid_authorize: could not get scheme from request")
         return HttpResponseServerError()
 
     try:
+        portal = UserAuthentication.objects.get(pk=portal_id)
+    except UserAuthentication.DoesNotExist:
+        logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
+        return HttpResponseServerError()
+    except Exception as e:
+        logger.error("PORTAL::openid_authorize: an unknown error occured while searching for portal with id {}: {}".format(portal_id, e))
+        return HttpResponseServerError()
+
+    # Check mandatory URI parameters presence
+    try:
         client_id = request.GET['client_id']
-    except:
-        return portal.portal_template.render_template("html_error", message="Missing required parameter: client_id.")
-
-    try:
         redirect_uri = request.GET['redirect_uri']
-        assert redirect_uri in portal.oauth_redirect_uris
-    except:
-        return portal.portal_template.render_template("html_error", message="Invalid redirect URI")
+        scope = request.GET['scope']
+        response_type = request.GET['response_type']
+    except KeyError as e:
+        return portal.portal_template.render_template("html_error", message="Missing required parameter: {}.".format(e.args[0]))
 
+    # Check parameters validity
     try:
-        assert client_id == portal.oauth_client_id
-    except:
-        return portal.portal_template.render_template("html_error", message="Client authentication failed due to unknown client.")
+        assert client_id == portal.oauth_client_id, "Client authentication failed due to unknown client."
+        assert redirect_uri in portal.oauth_redirect_uris, "Incorrect redirect URI."
+        assert scope == "openid", "The requested scope is invalid."
+        assert response_type == "code", "The requested response_type is invalid."
+    except AssertionError as e:
+        return portal.portal_template.render_template("html_error", message=e)
+
+
+    #TODO add authentication
+
+
+    return response_redirect_with_portal_cookie(redirect_uri, portal_cookie_name, portal_cookie, scheme == "https")
 
 
 
@@ -433,7 +452,7 @@ def log_in(request, workflow_id=None):
     token_name         = global_config.public_token
     portal_cookie      = request.COOKIES.get(portal_cookie_name, None)
     try:
-        # Instantiate authentication object to retrieve application auth_type 
+        # Instantiate authentication object to retrieve application auth_type
         authentication = Authentication(portal_cookie, token_name, workflow)
         # And then instantiate the right authentication class with auth_type ('form','basic','kerberos')
         authentication = authentication_classes[authentication.workflow.authentication.auth_type](portal_cookie,
@@ -540,8 +559,8 @@ def log_in(request, workflow_id=None):
             return HttpResponseServerError()
 
 
-    """ If user is not double-authenticated and double-authentication needed : 
-            try to retrieve credentials and authenticate him on otp-backend 
+    """ If user is not double-authenticated and double-authentication needed :
+            try to retrieve credentials and authenticate him on otp-backend
     """
     # If the user is authenticated but not double-authenticated and double-authentication required
     if authentication.double_authentication_required():
