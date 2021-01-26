@@ -9,7 +9,7 @@ import toolkit.system.hashes
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('services', '0019_auto_20200915_1600'),
+        ('services', '0024_auto_20201207_1106'),
         ('authentication', '0002_delete_accesscontrol'),
     ]
 
