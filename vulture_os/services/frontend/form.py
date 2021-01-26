@@ -115,10 +115,10 @@ class FrontendForm(ModelForm):
                                      for parser in get_available_api_parser()])
 
         """ Darwin policy """
-        self.fields['darwin_policy'] = ModelChoiceField(
-            label=_("Darwin policy"),
-            queryset=DarwinPolicy.objects.all(),
-            widget=Select(attrs={'class': 'form-control select2'}),
+        self.fields['darwin_policies'] = ModelMultipleChoiceField(
+            label=_("Darwin policies"),
+            queryset=DarwinPolicy.objects.filter(is_internal=False),
+            widget=SelectMultiple(attrs={'class': 'form-control select2'}),
             required=False
         )
         """ Log forwarders """
@@ -205,7 +205,12 @@ class FrontendForm(ModelForm):
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
                            'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
                            'keep_source_fields', 'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
-                           'imperva_private_key', 'darwin_mode']:
+                           'imperva_private_key', 'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
+                           'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
+                           "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
+                           "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
+                           "cybereason_host", "cybereason_username", "cybereason_password",
+                           'darwin_mode']:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -245,14 +250,20 @@ class FrontendForm(ModelForm):
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
-                  'file_path', 'node', 'darwin_policy', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
+                  'file_path', 'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
                   'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
                   'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
                   "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
                   "akamai_client_token", 'akamai_config_id', 'office365_tenant_id', 'office365_client_id',
-                  'keep_source_fields', 'office365_client_secret', 'imperva_base_url', 'imperva_api_key',
-                  'imperva_api_id', 'imperva_private_key', 'darwin_mode')
+                  'keep_source_fields', 'office365_client_secret',
+                  'imperva_base_url', 'imperva_api_key', 'imperva_api_id', 'imperva_private_key',
+                  'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
+                  'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
+                  "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
+                  "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
+                  "cybereason_host", "cybereason_username", "cybereason_password",
+                  'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -314,7 +325,22 @@ class FrontendForm(ModelForm):
             'imperva_base_url': TextInput(attrs={'class': 'form-control'}),
             'imperva_api_key': TextInput(attrs={'class': 'form-control'}),
             'imperva_api_id': TextInput(attrs={'class': 'form-control'}),
-            'imperva_private_key': Textarea(attrs={'class': 'form-control'})
+            'imperva_private_key': Textarea(attrs={'class': 'form-control'}),
+            'reachfive_host': TextInput(attrs={'class': 'form-control'}),
+            'reachfive_client_id': TextInput(attrs={'class': 'form-control'}),
+            'reachfive_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'mongodb_api_user': TextInput(attrs={'class': 'form-control'}),
+            'mongodb_api_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'mongodb_api_group_id': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_tenant': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_appid': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'cortex_xdr_host': TextInput(attrs={'class': 'form-control'}),
+            'cortex_xdr_apikey_id': TextInput(attrs={'class': 'form-control'}),
+            'cortex_xdr_apikey': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_host': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_username': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_password': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
@@ -471,7 +497,7 @@ class FrontendForm(ModelForm):
                 self.add_error('logging_reputation_database_v6', "One of those fields is required.")
 
         """ If Darwin policy is enabled, darwon_mode is required """
-        if cleaned_data.get('darwin_policy'):
+        if cleaned_data.get('darwin_policies'):
             if not cleaned_data.get("darwin_mode"):
                 self.add_error("darwin_mode", "This field is required when a darwin policy is set")
 
@@ -479,12 +505,12 @@ class FrontendForm(ModelForm):
 
 
 class ListenerForm(ModelForm):
+
     class Meta:
         model = Listener
         fields = ('network_address', 'port', 'tls_profiles', 'whitelist_ips', 'max_src', 'max_rate',)
 
         widgets = {
-            'network_address': Select(choices=NetworkAddress.objects.all(), attrs={'class': 'form-control select2'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
             'tls_profiles': SelectMultiple(choices=TLSProfile.objects.all(), attrs={'class': 'form-control select2'}),
             'whitelist_ips': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
@@ -497,6 +523,12 @@ class ListenerForm(ModelForm):
         # Do not set id of html fields, that causes issues in JS/JQuery
         kwargs['auto_id'] = False
         super().__init__(*args, **kwargs)
+        self.fields['network_address'] = ModelChoiceField(
+            label=_("Network address"),
+            queryset=NetworkAddress.objects.all(),
+            widget=Select(attrs={'class': 'form-control select2'}),
+            required=True
+        )
         # Remove the blank input generated by django
         self.fields['network_address'].empty_label = None
         self.fields['tls_profiles'].empty_label = "Plain text"

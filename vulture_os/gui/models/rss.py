@@ -36,7 +36,7 @@ class RSS(models.Model):
 
     def to_template(self):
         return {
-            'id': self.id,
+            'id': str(self.id),
             'title': self.title,
             'date': naturalday(self.date),
             'level': self.level,

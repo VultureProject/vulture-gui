@@ -37,6 +37,14 @@ logger = logging.getLogger('crontab')
 def execute_parser(frontend):
     parser_class = get_api_parser(frontend['api_parser_type'])
 
+    # tenant_name has been introduced later in Vulture-GUI
+    # As a result, it may be nonexisting on some vulture instance whose configurations have not been updated
+    # So define a 'fake' one to prevent a KeyError
+    try:
+        frontend['tenant_name']
+    except KeyError:
+        frontend['tenant_name'] = "PleaseChangeMe"
+
     parser = parser_class(frontend)
     if not parser.can_run():
         logger.info("API Parser {} (tenant={}): already running".format(frontend['name'], frontend['tenant_name']))

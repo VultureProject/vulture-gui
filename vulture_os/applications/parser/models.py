@@ -85,7 +85,7 @@ class Parser(models.Model):
         :return     A JSON object
         """
         result = {
-            'id': self.id,
+            'id': str(self.id),
             'name': self.name,
             'rulebase': self.rulebase,
             'to_test': self.to_test,

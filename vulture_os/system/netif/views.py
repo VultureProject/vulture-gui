@@ -73,6 +73,7 @@ def netif_edit(request, object_id=None, api=False):
         else:
             form = NetIfForm(request.POST or None, instance=netif_model)
 
+
     if request.method in ("POST", "PUT") and form.is_valid():
 
         netif = form.save(commit=False)

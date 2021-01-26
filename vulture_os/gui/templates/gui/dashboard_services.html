@@ -10,166 +10,32 @@
 
 
 {% block content %}
-  <script>
-      var netdataTheme = 'slate';
-      var netdataNoFontAwesome = true;
-      var netdataNoBootstrap = true;
-      var netdataDontStart = true;
-  </script>
-
-  <script src='/netdata/{{ CURRENT_NODE }}/dashboard.js?v20180326-2'></script>
-  <script>
-      // --- OPTIONS FOR THE CHARTS --
-      // destroy charts not shown (lowers memory on the browsers)
-
-      // set this to 'true' to destroy, 'false' to hide the charts
-      NETDATA.options.current.destroy_on_hide = false;
-
-      // set this to false, to always show all dimensions
-      NETDATA.options.current.eliminate_zero_dimensions = true;
-
-      // set this to false, to lower the pressure on the browser
-      NETDATA.options.current.concurrent_refreshes = true;
-
-      // if you need to support slow mobile phones, set this to false
-      NETDATA.options.current.parallel_refresher = true;
-
-      // set this to false, to always update the charts, even if focus is lost
-      NETDATA.options.current.stop_updates_when_focus_is_lost = true;
-
-      // since we have many servers and limited sockets,
-      // abort ajax calls when we scroll
-      NETDATA.options.current.abort_ajax_on_scroll = true;
-  </script>
 
   <div class="row">
     <div class="col-md-12" id="dashboard_general">
       {% for node in nodes %}
-        <div class="panel panel-colorful netdata-panel">
+        <div class="col-md-4 panel mar-rgt">
           <div class="panel-heading">
               <h1 class="panel-title">
-                <a target="_blank" href="/netdata/{{ node.name }}/">{{ node.name|upper }}</a>
+                <a target="_blank" >{{ node.name|upper }}</a>
                 <small>({% trans "Last check: " %} ${ monitor_date('{{ node.name }}')} )</small>
               </h1>
-          </div>
-          <div class="panel-body">
-            <div class="row">
-              <div class="col-md-2">
-                <table class="table table-condensed table-monitoring">
-                  <thead>
-                    <tr>
-                      <th>{% trans "Service" %}</th>
-                      <th>{% trans "State" %}</th>
-                    </tr>
-                  </thead>
-                  <tbody v-html="services('{{ node.name }}')"></tbody>
-                </table>
-              </div>
-              <div class="col-md-10">
-                <div class="netdata-row">
-                  <div data-netdata="system.swap" 
-                      data-dimensions="used" 
-                      data-host="/netdata/{{ node.name }}"
-                      data-append-options="percentage" 
-                      data-chart-library="easypiechart" 
-                      data-title="Used Swap" 
-                      data-units="%" 
-                      data-easypiechart-max-value="100" 
-                      data-width="11%" 
-                      data-before="0" 
-                      data-after="-660" 
-                      data-points="660" 
-                      data-colors="#DD4400">
-                  </div>
-
-                  <div data-netdata="system.io" 
-                      data-dimensions="in" 
-                      data-host="/netdata/{{ node.name }}"
-                      data-chart-library="easypiechart" 
-                      data-title="Disk Read" 
-                      data-width="11%" 
-                      data-before="0" 
-                      data-after="-660" 
-                      data-points="660" 
-                      data-common-units="system.io.mainhead">
-                  </div>
-
-                  <div data-netdata="system.io" 
-                      data-dimensions="out" 
-                      data-host="/netdata/{{ node.name }}"
-                      data-chart-library="easypiechart" 
-                      data-title="Disk Write" 
-                      data-width="11%" 
-                      data-before="0" 
-                      data-after="-660" 
-                      data-points="660" 
-                      data-common-units="system.io.mainhead">
-                  </div>
-
-                  <div data-netdata="system.cpu" 
-                      data-chart-library="gauge" 
-                      data-title="CPU" 
-                      data-host="/netdata/{{ node.name }}"
-                      data-units="%" 
-                      data-gauge-max-value="100" 
-                      data-width="20%" 
-                      data-after="-660" 
-                      data-points="660" 
-                      data-colors="#22AA99">
-                  </div>
-
-                  <div data-netdata="system.ipv4" 
-                      data-dimensions="received" 
-                      data-host="/netdata/{{ node.name }}"
-                      data-chart-library="easypiechart" 
-                      data-title="IPv4 Inbound" 
-                      data-width="11%" 
-                      data-before="0" 
-                      data-after="-660" 
-                      data-points="660" 
-                      data-common-units="system.ipv4.mainhead">
-                  </div>
-
-                  <div data-netdata="system.ipv4" 
-                      data-dimensions="sent" 
-                      data-host="/netdata/{{ node.name }}"
-                      data-chart-library="easypiechart" 
-                      data-title="IPv4 Outbound" 
-                      data-width="11%" 
-                      data-before="0" 
-                      data-after="-660" 
-                      data-points="660" 
-                      data-common-units="system.ipv4.mainhead">
-                  </div>
-
-                  <div data-netdata="system.ram" 
-                      data-dimensions="used|buffers|active|wired" 
-                      data-host="/netdata/{{ node.name }}"
-                      data-append-options="percentage" 
-                      data-chart-library="easypiechart" 
-                      data-title="Used RAM" 
-                      data-units="%" 
-                      data-easypiechart-max-value="100" 
-                      data-width="11%" 
-                      data-after="-660" 
-                      data-points="660" 
-                      data-colors="#EE9911">
-                  </div>
-                
-                  <div data-netdata="system.load" 
-                    data-width="100%" 
-                    data-height="100px" 
-                    data-dygraph-valuerange="[null, null]"
-                    data-host="/netdata/{{ node.name }}"
-                    data-before="0" 
-                    data-after="-480" 
-                    data-colors="" 
-                    data-decimal-digits="-1">
-                  </div>
+            </div>
+            <div class="panel-body col-md-12">
+              <div class="row col-md-12">
+                <div class="col-md-12">
+                  <table class="table table-condensed table-monitoring">
+                    <thead>
+                      <tr>
+                        <th>{% trans "Service" %}</th>
+                        <th>{% trans "State" %}</th>
+                      </tr>
+                    </thead>
+                    <tbody v-html="services('{{ node.name }}')"></tbody>
+                  </table>
                 </div>
               </div>
             </div>
-          </div>
         </div>
       {% endfor %}
     </div>
@@ -177,10 +43,6 @@
 {% endblock %}
 
 {% block jquery_code %}
-
-  setTimeout(function(){
-    NETDATA.start();
-  }, 200);
 
   var mandatory_services = ["VULTURED", "RSYSLOGD", "PF"];
 

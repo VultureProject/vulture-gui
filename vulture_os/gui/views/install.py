@@ -24,7 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Install View of Vulture OS'
 
 from applications.logfwd.models import LogOMMongoDB
-from darwin.policy.models import DarwinPolicy, FilterPolicy
+from darwin.policy.models import DarwinPolicy
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
@@ -72,6 +72,8 @@ def cluster_create(admin_user=None, admin_password=None):
     if new_node:
         logger.info("Registering new node '{}'".format(node.name))
         node.internet_ip = node.management_ip
+        node.backends_outgoing_ip = node.management_ip
+        node.logom_outgoing_ip = node.management_ip
         node.save()
 
     """ Read network config and store it into mongo """
@@ -171,13 +173,6 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Download reputation databases before crontab """
     node.api_request("gui.crontab.feed.security_update")
 
-    """ And configure + restart netdata """
-    logger.debug("API call to netdata configure_node")
-    node.api_request('services.netdata.netdata.configure_node')
-
-    logger.debug("API call to restart netdata service")
-    node.api_request('services.netdata.netdata.restart_service')
-
     """ No need to restart rsyslog because the conf is not complete """
     logger.debug("API call to configure rsyslog")
     node.api_request("services.rsyslogd.rsyslog.build_conf")
@@ -187,12 +182,15 @@ def cluster_create(admin_user=None, admin_password=None):
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")
 
-    logger.debug("API call to write default Darwin filters conf")
-    for policy in DarwinPolicy.objects.all():
-        node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
+    logger.debug("API call to fetch default yara rules")
+    node.api_request("toolkit.yara.yara.fetch_yara_rules")
+    node.api_request("toolkit.yara.yara.compile_all_rules")
 
-    logger.debug("API call to configure Darwin default policy")
-    node.api_request("services.darwin.darwin.build_conf")
+    logger.debug("API call to reload whole darwin configuration")
+    DarwinPolicy.update_buffering()
+    node.api_request("services.darwin.darwin.init_default_yara_policy")
+    node.api_request("services.darwin.darwin.init_default_ioc_policy")
+    node.api_request("services.darwin.darwin.reload_all")
 
     logger.debug("API call to configure Apache GUI")
     node.api_request("services.apache.apache.reload_conf")
@@ -216,16 +214,16 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     """ We are coming from the CLI interface """
     try:
-        infos = requests.get(
+        cluster_infos = requests.get(
             "https://{}:8000/api/v1/system/cluster/info".format(master_ip),
             headers={'Cluster-api-key': secret_key},
             verify=False
         ).json()
 
-        if not infos['status']:
-            raise Exception('Error at API Request Cluster Info: {}'.format(infos['data']))
+        if not cluster_infos['status']:
+            raise Exception('Error at API Request Cluster Info: {}'.format(cluster_infos['data']))
 
-        time_master = infos['data'][master_hostname]['unix_timestamp']
+        time_master = cluster_infos['data'][master_hostname]['unix_timestamp']
 
         time_now = time.time()
         if abs(time_now - time_master) > 60 or abs(time_now + time_master) < 60:
@@ -338,6 +336,11 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         logger.error("cluster_join:: Unable to find slave node !")
         return False
 
+    """ Write other slaves into /etc/hosts """
+    for node_name, node_infos in cluster_infos['data'].items():
+        if node_name not in (get_hostname(), master_hostname):
+            node.api_request("toolkit.network.network.make_hostname_resolvable", (node_name, node_infos['management_ip']))
+
     """ Update uri of internal Log Forwarder """
     logfwd = LogOMMongoDB.objects.get()
     logfwd.uristr = mongo.get_replicaset_uri()
@@ -356,23 +359,11 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     """ Download reputation databases before crontab """
     node.api_request("gui.crontab.feed.security_update")
 
-    """ And configure + restart netdata """
-    logger.debug("API call to netdata configure_node")
-    # API call to Cluster - to refresh nodes on each node conf
-    Cluster.api_request('services.netdata.netdata.configure_node')
-
-    logger.debug("API call to restart netdata service")
-    node.api_request('services.netdata.netdata.restart_service')
-
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")
 
-    logger.debug("API call to write Darwin policies conf")
-    for policy in DarwinPolicy.objects.all():
-        node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
-
-    logger.debug("API call to configure Darwin")
-    node.api_request("services.darwin.darwin.build_conf")
+    logger.debug("API call to reload whole darwin configuration")
+    node.api_request("services.darwin.darwin.reload_all")
 
     # API call to while Cluster - to refresh Nodes list in conf
     logger.debug("API call to update configuration of Apache GUI")
@@ -385,5 +376,9 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     logger.debug("API call to configure logrotate")
     node.api_request("services.logrotate.logrotate.reload_conf")
+
+    # Compile all Inspection policy rules on local node
+    logger.debug("API call to compile all Inspection Policies locally")
+    node.api_request("toolkit.yara.yara.compile_all_rules")
 
     return True

@@ -416,8 +416,8 @@ $(window).on("popstate", function() {
 
   function reload_queries() {
     interval_queries = setInterval( function() {
-      inspection_policies_table.fnDraw();
-      inspection_rules_table.fnDraw();
+      inspection_policies_table.fnDraw(false);
+      inspection_rules_table.fnDraw(false);
     }, 5000);
   }
 

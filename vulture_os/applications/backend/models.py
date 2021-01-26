@@ -302,11 +302,13 @@ class Backend(models.Model):
         :return     A JSON object
         """
         result = {
-            'id': self.id,
-            'enable': self.enabled,
+            'id': str(self.id),
+            'enabled': self.enabled,
             'name': self.name,
             'mode': self.mode,
             'balancing_mode': self.balancing_mode,
+            'timeout_connect': self.timeout_connect,
+            'timeout_server': self.timeout_server,
             'balancing_param': self.balancing_param,
             'status': dict(self.status),  # It is an OrderedDict
             'servers': [],
@@ -603,6 +605,7 @@ class Server(models.Model):
             'target': self.target,
             'port': self.port,
             'backend':  self.backend,
+            'mode': self.mode,
             'weight': self.weight,
         }
 

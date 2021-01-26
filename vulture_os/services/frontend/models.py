@@ -35,7 +35,7 @@ from djongo import models
 # Django project imports
 from applications.logfwd.models import LogOM, LogOMMongoDB
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
-from darwin.policy.models import DarwinPolicy, FilterPolicy
+from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinBuffering
 from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, NetworkInterfaceCard, Node
@@ -96,6 +96,7 @@ IMPCAP_FILTER_CHOICES = (
     ('udp and port 53', "DNS"),
     ('tcp[13] & 2 != 0', "SYN FLAGS"),
     ('tcp and (port 80 or port 443)', "WEB"),
+    ('icmp or udp or (tcp and tcp[tcpflags] & tcp-syn == tcp-syn)', "CONNECTIONS"),
     ('custom', "Custom"),
 )
 
@@ -186,13 +187,13 @@ class Frontend(models.Model):
     )
     """ *** DARWIN OPTIONS *** """
     """ Darwin policy """
-    darwin_policy = models.ForeignKey(
+    darwin_policies = models.ArrayReferenceField(
         to=DarwinPolicy,
         on_delete=models.PROTECT,
         null=True,
         blank=False,
         related_name="frontend_set",
-        help_text=_("Darwin policy to use")
+        help_text=_("Darwin policies to use")
     )
     """ Darwin mode """
     darwin_mode = models.TextField(
@@ -523,6 +524,99 @@ class Frontend(models.Model):
         default=""
     )
 
+    # ReachFive API events attributes
+    reachfive_host = models.TextField(
+        help_text=_("ReachFive host"),
+        default="reachfive.domain.com",
+        verbose_name=_("ReachFive api endpoint domain")
+    )
+    reachfive_client_id = models.TextField(
+        help_text=_("ReachFive client ID"),
+        default="",
+        verbose_name=_("ReachFive client ID for authentication")
+    )
+    reachfive_client_secret = models.TextField(
+        help_text=_("ReachFive client secret"),
+        default="",
+        verbose_name=_("ReachFive client secret for authentication")
+    )
+    # MongoDB API logs attributes
+    mongodb_api_user = models.TextField(
+        help_text=_("MongoDB API user"),
+        default="",
+        verbose_name=_("MongoDB user for authentication")
+    )
+    mongodb_api_password = models.TextField(
+        help_text=_("MongoDB API password"),
+        default="",
+        verbose_name=_("MongoDB API password for authentication")
+    )
+    mongodb_api_group_id = models.TextField(
+        help_text=_("MongoDB Group ID"),
+        default="",
+        verbose_name=_("MongoDB API group ID to retrieve log events from")
+    )
+    # Defender ATP API logs attributes
+    mdatp_api_tenant = models.TextField(
+        help_text=_("Microsoft Defender ATP Tenant ID"),
+        default="",
+        verbose_name=_("Microsoft Defender Tenant ID")
+    )
+    mdatp_api_appid = models.TextField(
+        help_text=_("Microsoft Defender ATP App ID"),
+        default="",
+        verbose_name=_("Microsoft Defender ATP App ID")
+    )
+    mdatp_api_secret = models.TextField(
+        help_text=_("Microsoft Defender ATP App secret"),
+        default="",
+        verbose_name=_("Microsoft Defender ATP App secret")
+    )
+    # Cortex XDR API events attributes
+    cortex_xdr_host = models.TextField(
+        verbose_name=_("Cortex XDR FQDN"),
+        default="xdr.domain.com",
+        help_text=_("Cortex XDR api endpoint domain (without api-)")
+    )
+    cortex_xdr_apikey_id = models.TextField(
+        verbose_name=_("Cortex XDR API Key ID"),
+        default="",
+        help_text=_("ID of the API Key from Cortex XDR settings")
+    )
+    cortex_xdr_apikey = models.TextField(
+        verbose_name=_("Cortex XDR API Key"),
+        default="",
+        help_text=_("API Key from Cortex XDR settings")
+    )
+    cortex_xdr_alerts_timestamp = models.DateTimeField(
+        default=None
+    )
+    cortex_xdr_incidents_timestamp = models.DateTimeField(
+        default=None
+    )
+    # CyberReason API events attributes
+    cybereason_host = models.TextField(
+        help_text=_("Cybereason host"),
+        default="domain.cybereason.net",
+        verbose_name=_("Cybereason api endpoint")
+    )
+    cybereason_username = models.TextField(
+        help_text=_("Cybereason username"),
+        default="",
+        verbose_name=_("Cybereason username for authentication")
+    )
+    cybereason_password = models.TextField(
+        help_text=_("Cybereason password"),
+        default="",
+        verbose_name=_("Cybereason password for authentication")
+    )
+    cybereason_malwares_timestamp = models.FloatField(
+        default=0.0
+    )
+    cybereason_malops_timestamp = models.FloatField(
+        default=0.0
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -562,15 +656,18 @@ class Frontend(models.Model):
         :return     A JSON object
         """
         result = {
-            'id': self.id,
-            'enable': self.enabled,
+            'id': str(self.id),
+            'enabled': self.enabled,
             'name': self.name,
             'tags': self.tags,
             'mode': self.mode,
             'enable_logging': self.enable_logging,
             'status': dict(self.status),  # It is an OrderedDict
             'https_redirect': self.https_redirect,
-            'listeners': []
+            'listeners': [],
+            'tenant_name': self.tenants_config.name,
+            'timeout_connect': self.timeout_connect,
+            'timeout_client': self.timeout_client
         }
 
         """ Add listeners, except if listening_mode is file """
@@ -651,6 +748,35 @@ class Frontend(models.Model):
                     result['imperva_api_key'] = self.imperva_api_key
                     result['imperva_private_key'] = self.imperva_private_key
                     result['imperva_last_log_file'] = self.imperva_last_log_file
+
+                elif self.api_parser_type == "reachfive":
+                    result['reachfive_host'] = self.reachfive_host
+                    result['reachfive_client_id'] = self.reachfive_client_id
+                    result['reachfive_client_secret'] = self.reachfive_client_secret
+
+                elif self.api_parser_type == "mongodb":
+                    result['mongodb_api_user'] = self.mongodb_api_user
+                    result['mongodb_api_password'] = self.mongodb_api_password
+                    result['mongodb_api_group_id'] = self.mongodb_api_group_id
+
+                elif self.api_parser_type == "defender_atp":
+                    result['mdatp_api_tenant'] = self.mdatp_api_tenant
+                    result['mdatp_api_appid'] = self.mdatp_api_appid
+                    result['mdatp_api_secret'] = self.mdatp_api_secret
+
+                elif self.api_parser_type == "cortex_xdr":
+                    result['cortex_xdr_host'] = self.cortex_xdr_host
+                    result['cortex_xdr_apikey_id'] = self.cortex_xdr_apikey_id
+                    result['cortex_xdr_apikey'] = self.cortex_xdr_apikey
+                    result['cortex_xdr_alerts_timestamp'] = self.cortex_xdr_alerts_timestamp
+                    result['cortex_xdr_incidents_timestamp'] = self.cortex_xdr_incidents_timestamp
+
+                elif self.api_parser_type == "cybereason":
+                    result['cybereason_host'] = self.cybereason_host
+                    result['cybereason_username'] = self.cybereason_username
+                    result['cybereason_password'] = self.cybereason_password
+                    result['cybereason_malops_timestamp'] = self.cybereason_malops_timestamp
+                    result['cybereason_malwares_timestamp'] = self.cybereason_malwares_timestamp
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
@@ -857,7 +983,7 @@ class Frontend(models.Model):
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
             'serialized_blwl_list': serialized_blwl_list,
-            'darwin_policies': FilterPolicy.objects.filter(policy=self.darwin_policy),
+            'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
             'tenants_config': self.tenants_config
@@ -871,7 +997,7 @@ class Frontend(models.Model):
         return result
 
     def generate_conf(self, listener_list=None, header_list=None):
-        """ Render the conf with Jinja template and self.to_template() method 
+        """ Render the conf with Jinja template and self.to_template() method
         :return     The generated configuration as string, or raise
         """
         """ If no HAProxy conf - Rsyslog only conf """
@@ -1002,7 +1128,7 @@ class Frontend(models.Model):
         return internal_ruleset + "\n\n" + tpl.render(Context(log_oms, autoescape=False)) + "\n"
 
     def render_log_condition_failure(self):
-        """ Render log_forwarders' config from self.log_forwarders_parse_failure 
+        """ Render log_forwarders' config from self.log_forwarders_parse_failure
             & Associate the correct template depending on parser
         :return  Str containing the rendered config
         """
@@ -1040,9 +1166,48 @@ class Frontend(models.Model):
             conf['log_condition'] = self.render_log_condition()
             conf['log_condition_failure'] = self.render_log_condition_failure()
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
+
+            darwin_actions = []
+            for darwin_filter in FilterPolicy.objects.filter(policy__in=self.darwin_policies.all(), enabled=True):
+                if not darwin_filter.filter_type.is_launchable:
+                    continue
+
+                action = {
+                    "filter_type": darwin_filter.filter_type.name,
+                    "threshold": darwin_filter.threshold,
+                    "enrichment_tags": ["darwin.{}".format(darwin_filter.filter_type.name)],
+                    "calls": []
+                }
+
+                # if filter is buffered
+                # - enrichment should be disabled
+                # - socket should point to related buffer filter
+                # - inputs should include buffer source
+                if darwin_filter.buffering.exists():
+                    # shouldn't raise, but exceptions are handled at the end of the function anyway
+                    buffering = darwin_filter.buffering.get()
+                    action['disable_enrichment'] = True
+                    action['buffer_source'] = "{}_{}_{}".format(buffering.destination_filter.name, self.name, buffering.destination_filter.policy.id)
+                    action['filter_socket'] = buffering.buffer_filter.socket_path
+                else:
+                    action['filter_socket'] = darwin_filter.socket_path
+
+                if darwin_filter.mmdarwin_enabled and darwin_filter.mmdarwin_parameters:
+                    call = {
+                        "inputs": darwin_filter.mmdarwin_parameters,
+                        "outputs": [p.replace('.', '!') for p in darwin_filter.mmdarwin_parameters if p[0] in ['!', '.']]
+                    }
+                    action['calls'].append(call)
+
+                if darwin_filter.enrichment_tags:
+                    action['enrichment_tags'].extend(darwin_filter.enrichment_tags)
+
+                darwin_actions.append(action)
+
             return template.render({'frontend': conf,
                                     'node': Cluster.get_current_node(),
-                                    'global_config': Cluster.get_global_config()})
+                                    'global_config': Cluster.get_global_config(),
+                                    'darwin_actions': darwin_actions})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound as e:
@@ -1056,6 +1221,8 @@ class Frontend(models.Model):
                                           "{}".format(e.message), "rsyslog")
         except TemplateSyntaxError as e:
             exception = ServiceJinjaError("Syntax error in the template: '{}'".format(e.message), "rsyslog")
+        except (DarwinBuffering.DoesNotExist, DarwinBuffering.MultipleObjectsReturned) as e:
+            exception = ServiceJinjaError("Could not get the expected unique buffering from a darwin filter: '{}'".format(e.message), "rsyslog")
         # If there was an exception, raise a more general exception with the message and the traceback
         raise exception
 
@@ -1257,7 +1424,7 @@ class Listener(models.Model):
         return {
             'id': str(self.id),
             'network_address': str(self.network_address),
-            'network_address_id': self.network_address.pk,
+            'network_address_id': str(self.network_address.pk),
             'port': self.port,
             'frontend': self.frontend,
             'whitelist_ips': self.whitelist_ips,

@@ -39,6 +39,7 @@ logger = logging.getLogger('authentication')
 
 def build_response(id, module_url, command_list):
     result = {
+        "status": True,
         'id': str(id),
         'links': {
             'get': {
@@ -70,3 +71,10 @@ def build_response(id, module_url, command_list):
         }
 
     return JsonResponse(result, status=201)
+
+
+def build_form_errors(form_errors):
+    # Append global errors
+    if form_errors.get('__all__'):
+        form_errors['non_field_errors'] = form_errors.pop('__all__')
+    return dict(form_errors.items())

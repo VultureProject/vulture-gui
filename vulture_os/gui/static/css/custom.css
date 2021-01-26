@@ -525,10 +525,6 @@ li {
     z-index: 1;
 }
 
-.tabs-netdata{
-    /*background: #272B30 !important;*/
-}
-
 .logo_service{
     width: 40px;
 }
@@ -555,10 +551,6 @@ li {
 
 .small-box-sm{
     padding: 1px 10px;
-}
-
-.netdata-row{
-    text-align: center;
 }
 
 .box-title-lg{
@@ -593,16 +585,12 @@ ul li{
     list-style-type: none;
 }
 
-.netdata-panel{
-    background-color: #272B30;
-}
-
-.netdata-panel .panel-title{
-    color: #ccc !important;
+.panel-title{
+    color: #333 !important;
 }
 
 .table-monitoring thead tr th{
-    color: #ccc !important;
+    color: #333 !important;
 }
 
 .text-green{
@@ -617,8 +605,14 @@ ul li{
   color: #dd4b39 !important;
 }
 
+.mega-dropdown-menu{
+    padding: 10px 0 1px 0 !important;
+    border-radius: 0px !important;
+}
+
 .mega-dropdown-menu h3{
     margin-top: 0px !important;
+    margin-left: 10px;
 }
 
 .navbar-top-links>.mega-dropdown>.dropdown-menu.mega-dropdown-menu{
@@ -930,4 +924,9 @@ ul li{
 #list-rss{
     overflow: auto;
     max-height: 400px;
+}
+
+.hint_darwin_filter{
+    margin-top: 0;
+    margin-bottom: 25px;
 }

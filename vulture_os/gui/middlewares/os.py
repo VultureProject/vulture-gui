@@ -26,6 +26,7 @@ __doc__ = 'Middleware for GUI of Vulture OS'
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
+from system.cluster.models import Node
 
 from django.conf import settings
 from django.urls import reverse
@@ -57,6 +58,7 @@ class OsMiddleware:
         # No authentication for API (protected later by decorators)
         if request.path_info.startswith('/api/'):
             return self.get_response(request)
+            
 
         # Check if is authenticated
         if "login" in request.path_info:

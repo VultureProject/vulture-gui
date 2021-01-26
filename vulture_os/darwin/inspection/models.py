@@ -18,10 +18,10 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 __author__ = "Théo BERTIN"
 __credits__ = []
 __license__ = "GPLv3"
-__version__ = "4.0.0"
+__version__ = "3.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'MMcapture model'
+__doc__ = 'Yara model'
 
 # Django system imports
 from django.conf import settings
@@ -51,9 +51,9 @@ DEFAULT_YARA_MODULES_IMPORT = "import \"pe\"\n" \
 
 DEFAULT_YARA_CATEGORIES = (
     "malware",
-    "Webshells",
-    "CVE_Rules",
-    "Exploit-Kits"
+    "webshells",
+    "cve_rules",
+    "exploit_kits"
 )
 
 
@@ -61,12 +61,11 @@ PACKET_INSPECTION_TECHNO = (
     ("yara", "yara"),
 )
 
-YARA_CONF_PATH = "/home/darwin/conf/fcontent_inspection"
-YARA_RULES_PATH = YARA_CONF_PATH + "/yara-rules"
+YARA_CONF_PATH = "/var/db/darwin"
 YARA_TEST_CONF_PATH = "/var/tmp"
 
 DARWIN_PERMS = "640"
-DARWIN_OWNERS = "darwin:vlt-conf"
+DARWIN_OWNERS = "vlt-os:vlt-conf"
 
 
 class InspectionRule(models.Model):
@@ -171,7 +170,7 @@ class InspectionPolicy(models.Model):
         InspectionRule,
         null=True,
         blank=False,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         help_text=_("rules in policy")
     )
 
@@ -189,7 +188,7 @@ class InspectionPolicy(models.Model):
 
     def to_dict(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'techno': self.techno,
             'name': self.name,
             'last_update': self.last_update,
@@ -199,7 +198,7 @@ class InspectionPolicy(models.Model):
 
     def to_html_template(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'techno': self.techno,
             'name': self.name,
             'last_update': self.last_update.strftime("%d/%m/%Y %H:%M:%S"),

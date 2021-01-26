@@ -33,6 +33,12 @@ from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
 from toolkit.api_parser.imperva.imperva import ImpervaParser
 from toolkit.api_parser.office365.office365 import Office365Parser
 from toolkit.api_parser.symantec.symantec import SymantecParser
+from toolkit.api_parser.reachfive.reachfive import ReachFiveParser
+from toolkit.api_parser.mongodb.mongodb import MongoDBParser
+from toolkit.api_parser.defender_atp.defender_atp import DefenderATPParser
+from toolkit.api_parser.cortex_xdr.cortex_xdr import CortexXDRParser
+from toolkit.api_parser.cybereason.cybereason import CybereasonParser
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -45,7 +51,12 @@ PARSER_LIST = {
     "office_365": Office365Parser,
     "symantec": SymantecParser,
     'imperva': ImpervaParser,
-    "akamai": AkamaiParser
+    "akamai": AkamaiParser,
+    "reachfive": ReachFiveParser,
+    "mongodb": MongoDBParser,
+    "defender_atp": DefenderATPParser,
+    "cortex_xdr": CortexXDRParser,
+    "cybereason": CybereasonParser
 }
 
 

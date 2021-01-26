@@ -225,13 +225,13 @@
                         </div>
                       </div>
                     </div> <!-- /.row -->
-                    <div class="row impcap-mode log-mode">
+                    <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Darwin policy" %}</label>
+                          <label class="col-sm-4 control-label">{% trans "Darwin policies" %}</label>
                           <div class="col-sm-5">
-                            {{form.darwin_policy}}
-                            {{form.darwin_policy.errors|safe}}
+                            {{form.darwin_policies}}
+                            {{form.darwin_policies.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -328,7 +328,7 @@
                           </div>
                         </div>
                       </div> <!-- /.row -->
-                      <div class="row tcp-mode http-mode">
+                      <div class="row tcp-mode haproxy-conf">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{% trans "Timeout client" %}</label>
@@ -873,6 +873,126 @@
                           <div class="col-sm-5">
                             {{ form.symantec_password }}
                             {{ form.symantec_password.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_reachfive_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.reachfive_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.reachfive_host }}
+                            {{ form.reachfive_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.reachfive_client_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.reachfive_client_id }}
+                            {{ form.reachfive_client_id.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.reachfive_client_secret.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.reachfive_client_secret }}
+                            {{ form.reachfive_client_secret.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_mongodb_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mongodb_api_user.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mongodb_api_user }}
+                            {{ form.mongodb_api_user.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mongodb_api_password.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mongodb_api_password }}
+                            {{ form.mongodb_api_password.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mongodb_api_group_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mongodb_api_group_id }}
+                            {{ form.mongodb_api_group_id.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_defender_atp_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mdatp_api_tenant.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mdatp_api_tenant }}
+                            {{ form.mdatp_api_tenant.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mdatp_api_appid.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mdatp_api_appid }}
+                            {{ form.mdatp_api_appid.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.mdatp_api_secret.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.mdatp_api_secret }}
+                            {{ form.mdatp_api_secret.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_cortex_xdr_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cortex_xdr_host }}
+                            {{ form.cortex_xdr_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_apikey_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cortex_xdr_apikey_id }}
+                            {{ form.cortex_xdr_apikey_id.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cortex_xdr_apikey.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cortex_xdr_apikey }}
+                            {{ form.cortex_xdr_apikey.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-12 api_clients_row" id="api_cybereason_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cybereason_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cybereason_host }}
+                            {{ form.cybereason_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cybereason_username.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cybereason_username }}
+                            {{ form.cybereason_username.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cybereason_password.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cybereason_password }}
+                            {{ form.cybereason_password.errors|safe }}
                           </div>
                         </div>
                       </div>

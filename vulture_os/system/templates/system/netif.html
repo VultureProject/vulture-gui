@@ -91,13 +91,27 @@
       mData: "prefix_or_netmask"
     },
     {
-      sTitle: '{% trans "CARP Redundancy" %}',
+      sTitle: '{% trans "CARP vhid" %}',
       name: "carp_vhid", aTargets: [6],
       defaultContent: "",
       mData: "carp_vhid",
       mRender: function(data, type, row) {
         if (data > 0) {
-            return "Enabled with Virtual Host ID = " + data;
+            return data;
+        }
+        else {
+            return "Disabled";
+        }
+      }
+    },
+    {
+      sTitle: '{% trans "VLAN" %}',
+      name: "vlan", aTargets: [7],
+      defaultContent: "",
+      mData: "vlan",
+      mRender: function(data, type, row) {
+        if (data > 0) {
+            return data;
         }
         else {
             return "Disabled";
@@ -107,7 +121,7 @@
     {
       sTitle: '{% trans "Action" %}',
       mData:"id",
-      aTargets: [7],
+      aTargets: [8],
       defaultContent: "",
       mRender: function(data, type, row) {
         if (row.is_system) {

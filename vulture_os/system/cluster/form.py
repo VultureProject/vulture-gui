@@ -51,11 +51,15 @@ class NodeForm(ModelForm):
 
         fields = ['name', 'management_ip', 'pf_custom_config', 'pf_limit_states',
                   'pf_limit_frags', 'pf_limit_src', 'static_routes',
-                  'gateway', 'gateway_ipv6', 'internet_ip', 'scanner_ip', 'pstats_forwarders']
+                  'gateway', 'gateway_ipv6', 'internet_ip', 'scanner_ip', 'pstats_forwarders',
+                  'backends_outgoing_ip', 'logom_outgoing_ip']
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'management_ip': TextInput(attrs={'class': 'form-control'}),
+            'internet_ip': TextInput(attrs={'class': 'form-control'}),
+            'backends_outgoing_ip': TextInput(attrs={'class': 'form-control'}),
+            'logom_outgoing_ip': TextInput(attrs={'class': 'form-control'}),
             'pf_custom_config': Textarea(attrs={'class': 'form-control'}),
             'pf_limit_states': TextInput(attrs={'class': 'form-control'}),
             'pf_limit_frags': TextInput(attrs={'class': 'form-control'}),
@@ -63,7 +67,6 @@ class NodeForm(ModelForm):
             'static_routes': Textarea(attrs={'class': 'form-control'}),
             'gateway': TextInput(attrs={'class': 'form-control'}),
             'gateway_ipv6': TextInput(attrs={'class': 'form-control'}),
-            'internet_ip': TextInput(attrs={'class': 'form-control'}),
             'pstats_forwarders': SelectMultiple(attrs={'class': 'form-control select2'}),
         }
 
@@ -71,6 +74,8 @@ class NodeForm(ModelForm):
         super().__init__(*args, **kwargs)
         # Set non required fields
         self.fields["pstats_forwarders"].required = False
+        # Protect hostname change, has it will entirely break the cluster: hostname has to be changed via the "admin.sh" system menu
+        self.fields['name'].widget.attrs['readonly'] = True
 
     def clean_scanner_ip(self):
         value = self.cleaned_data.get('scanner_ip')

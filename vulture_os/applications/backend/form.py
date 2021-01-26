@@ -153,6 +153,9 @@ class BackendForm(ModelForm):
 
     def clean_http_backend_dir(self):
         val = self.cleaned_data.get('http_backend_dir')
+        if len(val) == 0:
+            return val
+
         if val[0] != '/':
             val = "/" + val
         if val != "/" and val[-1] == "/":

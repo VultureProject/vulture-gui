@@ -32,11 +32,12 @@ from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
 from applications.logfwd.models import LogOM
+from darwin.policy.models import DarwinBuffering, DarwinPolicy
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener
 from system.cluster.models import Cluster, Node
-from toolkit.api.responses import build_response
+from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
 from toolkit.api_parser.utils import get_api_parser
 
@@ -121,8 +122,12 @@ def frontend_delete(request, object_id, api=False):
         # Whatever the type, delete the file because its name is its id
         rsyslog_filename = frontend.get_rsyslog_base_filename()  # if frontend.mode != "tcp" else ""
 
+        # Check if darwin buffering should be reloaded
+        # that is, if the frontend is associated with a policy with at least one filter with buffering configured
+        was_darwin_buffered = DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists()
+
         try:
-            # If POST request and no error: detete frontend
+            # If POST request and no error: delete frontend
             frontend.delete()
 
             # TODO: Verify which node(s) are concerned for API requests ?
@@ -139,6 +144,11 @@ def frontend_delete(request, object_id, api=False):
             # Regenerate Rsyslog system conf and restart
             Cluster.api_request('services.rsyslogd.rsyslog.build_conf')
 
+            # Reload darwin buffering if necessary
+            if was_darwin_buffered:
+                DarwinPolicy.update_buffering()
+                Cluster.api_request("services.darwin.darwin.reload_conf")
+
             if api:
                 return JsonResponse({
                     'status': True
@@ -149,6 +159,13 @@ def frontend_delete(request, object_id, api=False):
             logger.error("Error trying to delete Frontend '{}': Object is currently used :".format(frontend.name))
             logger.exception(e)
             error = "Object is currently used by a Workflow, cannot be deleted"
+
+            if api:
+                return JsonResponse({
+                    'status': False,
+                    'error': error,
+                    'protected': True
+                }, status=500)
 
         except Exception as e:
             # If API request failure, bring up the error
@@ -178,6 +195,7 @@ def frontend_edit(request, object_id=None, api=False):
     header_form_list = []
     reputationctx_form_list = []
     node_listeners = dict()
+    darwin_buffering_needs_refresh = False
     if object_id:
         try:
             frontend = Frontend.objects.get(pk=object_id)
@@ -197,7 +215,8 @@ def frontend_edit(request, object_id=None, api=False):
         if api:
             if form.errors:
                 logger.error("Frontend api form error : {}".format(form.errors.get_json_data()))
-                return JsonResponse(form.errors.get_json_data(), status=400)
+                return JsonResponse({"errors": build_form_errors(form.errors)}, status=400)
+
             if save_error:
                 logger.error("Frontend api save error : {}".format(save_error))
                 return JsonResponse({'error': save_error[0]}, status=500)
@@ -205,16 +224,20 @@ def frontend_edit(request, object_id=None, api=False):
         if not listener_form_list and front:
             for l_tmp in front.listener_set.all():
                 listener_form_list.append(ListenerForm(instance=l_tmp))
+
         if not header_form_list and front:
             for h_tmp in front.headers.all():
                 header_form_list.append(HeaderForm(instance=h_tmp))
+
         # If it is a new object, add default-example headers
         if not front and request.method == "GET":
             for header in DEFAULT_FRONTEND_HEADERS:
                 header_form_list.append(HeaderForm(header))
+
         if not reputationctx_form_list and front:
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
+
         redis_fwd = LogOM.objects.filter(name="Internal_Dashboard").only('id').first()
         return render(request, 'services/frontend_edit.html',
                       {'form': form, 'listeners': listener_form_list, 'listener_form': ListenerForm(),
@@ -238,6 +261,11 @@ def frontend_edit(request, object_id=None, api=False):
                                                      str.join('', format_exception(*exc_info()))])
         header_objs = []
         reputationctx_objs = []
+
+        if DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists():
+            logger.debug("frontend_edit: frontend has darwin bufferings, will update buffering policy")
+            darwin_buffering_needs_refresh = True
+
         if form.data.get('mode') == "http":
             """ Handle JSON formatted headers """
             try:
@@ -256,15 +284,13 @@ def frontend_edit(request, object_id=None, api=False):
                 try:
                     instance_h = frontend.headers.get(pk=header['id']) if frontend and header['id'] else None
                 except ObjectDoesNotExist:
-                    form.add_error(None, "Request-header with id {} not found. Injection detected ?")
+                    form.add_error("headers", "Request-header with id {} not found.".format(header['id']))
                     continue
                 """ And instantiate form with the object, or None """
                 header_f = HeaderForm(header, instance=instance_h)
                 if not header_f.is_valid():
-                    if api:
-                        form.add_error(None, header_f.errors.get_json_data())
-                    else:
-                        form.add_error('headers', header_f.errors.as_ul())
+                    form.add_error("headers", header_f.errors.get_json_data() if api else
+                                              header_f.errors.as_ul())
                     continue
                 # Save forms in case we re-print the page
                 header_form_list.append(header_f)
@@ -287,8 +313,8 @@ def frontend_edit(request, object_id=None, api=False):
             """ Instantiate form """
             reputationctx_f = FrontendReputationContextForm(reputationctx)
             if not reputationctx_f.is_valid():
-                form.add_error(None if api else "reputation_ctx",
-                               reputationctx_f.errors.get_json_data() if api else reputationctx_f.errors.as_ul())
+                form.add_error("reputation_ctx", reputationctx_f.errors.get_json_data() if api else
+                                                 reputationctx_f.errors.as_ul())
                 continue
             # Save forms in case we re-print the page
             reputationctx_form_list.append(reputationctx_f)
@@ -297,22 +323,25 @@ def frontend_edit(request, object_id=None, api=False):
 
         listener_objs = []
         if form.data.get('mode') != "impcap" and form.data.get('listening_mode') not in ("file", "api"):
+            # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap" and "API"
+            if form.data.get('enabled') and not listener_ids:
+                form.add_error(None, "At least one listener is required if frontend is enabled.")
+
             """ For each listener in list """
             for listener in listener_ids:
                 """ If id is given, retrieve object from mongo """
                 try:
-                    instance_l = Listener.objects.get(pk=listener['id']) if listener['id'] else None
+                    instance_l = Listener.objects.get(pk=listener['id']) if listener.get('id') else None
                 except ObjectDoesNotExist:
-                    form.add_error(None, "Listener with id {} not found.".format(listener['id']))
+                    form.add_error("listeners", "Listener with id {} not found.".format(listener['id']))
                     continue
 
                 """ And instantiate form with the object, or None """
                 listener_f = ListenerForm(listener, instance=instance_l)
                 if not listener_f.is_valid():
                     if api:
-                        form.add_error("listeners", listener_f.errors.as_json())
-                    else:
-                        form.add_error("listeners", listener_f.errors.as_ul())
+                        form.add_error("listeners", listener_f.errors.as_json() if api else
+                                                    listener_f.errors.as_ul())
                     continue
                 listener_form_list.append(listener_f)
                 listener_obj = listener_f.save(commit=False)
@@ -344,11 +373,6 @@ def frontend_edit(request, object_id=None, api=False):
             # Listen on all nodes in case of a master mongo change
             for node in Node.objects.all():
                 node_listeners[node] = []
-
-        # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap" and "API"
-        if not listener_objs and frontend.enabled and frontend.mode != "impcap" and frontend.listening_mode not in ("file", "api"):
-            form.add_error(None, "At least one listener is required if frontend is enabled.")
-            return render_form(frontend)
 
         try:
             """ For each node, the conf differs if listener chosen """
@@ -413,10 +437,6 @@ def frontend_edit(request, object_id=None, api=False):
                 logger.exception(e)
                 return render_form(frontend, save_error=["Cluster API request failure: {}".format(e),
                                                          str.join('', format_exception(*exc_info()))])
-
-        if form.errors:
-            logger.error("Frontend form errors: {}".format(form.errors))
-            return render_form(frontend)
 
         """ If the conf is OK, save the Frontend object """
         # Is that object already in db or not
@@ -515,6 +535,17 @@ def frontend_edit(request, object_id=None, api=False):
                                             frontend.log_forwarders_parse_failure.filter(logomfile__enabled=True).count()):
                 # Reload LogRotate config
                 Cluster.api_request("services.logrotate.logrotate.reload_conf")
+
+            # If the frontend is associated with a policy containing buffered filters
+            # then the buffering policy needs a refresh
+            if DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists():
+                # Don't remove this condition, the variable can also be set above
+                darwin_buffering_needs_refresh = True
+
+            # Reload darwin buffering if necessary
+            if darwin_buffering_needs_refresh:
+                DarwinPolicy.update_buffering()
+                Cluster.api_request("services.darwin.darwin.reload_conf")
 
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """

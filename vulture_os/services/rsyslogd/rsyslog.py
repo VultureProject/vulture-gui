@@ -82,7 +82,7 @@ class RsyslogService(Service):
 
 
 def configure_node(node_logger):
-    """ Generate and write netdata conf files """
+    """ Generate and write rsyslog conf files """
     result = ""
 
     node = Cluster.get_current_node()
