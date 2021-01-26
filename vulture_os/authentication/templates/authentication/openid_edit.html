@@ -1,0 +1,271 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="openid_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-12">
+              {% if form.non_field_errors %}
+              <div class="panel">
+                <div class="panel-body">
+                  {# Print form errors correctly #}
+                  <div class="alert alert-danger alert-dismissible">
+                    <h4><i class="icon fa fa-ban"></i> Form errors </h4>
+                    <div class="tab-content no-padding">
+                      {{ form.non_field_errors|safe }}
+                    </div>
+                  </div>
+                </div> <!-- /.box-body -->
+              </div> <!-- /.box -->
+              {% endif %}
+              <div class="panel">
+                <div class="panel-heading">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "OpenID Repository edition" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.name.label }}</label>
+                        <div class="col-sm-5">
+                          {{form.name}}
+                          {{form.name.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                      <label class="col-sm-4 control-label">{{ form.provider.label }}</label>
+                      <div class="col-sm-5">
+                        {{form.provider}}
+                        {{form.provider.errors|safe}}
+                      </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.provider_url.label }}</label>
+                        <div class="col-sm-5">
+                          {{form.provider_url}}
+                          {{form.provider_url.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{ form.client_id.label }}</label>
+                        <div class="col-sm-5">
+                          {{form.client_id}}
+                          {{form.client_id.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.client_secret.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.client_secret}}
+                          {{form.client_secret.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="text-center mar-btm">
+                        <button class="btn btn-warning" id="test_provider" type="button">
+                          {% trans "Retrieve configuration" %}
+                        </button>
+                        <input type="hidden" name="provider_has_been_tested" id="id_provider_has_been_tested" value="{% if object_id %}1{% else %}0{% endif %}"/>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                </div> <!-- /.box-body -->
+                <div class="panel-footer">
+                  <a type="button" href="{% url 'authentication.openid.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                  <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Save" %}</button>
+                </div> <!-- /.box-footer -->
+              </div> <!-- /.box -->
+            </div>
+          </div>
+        </form>
+      </div> <!-- /.col-md-12 -->
+    </div> <!-- /.row -->
+  </section> <!-- /.content -->
+
+  <div class="modal" id="modal-test-openid">
+      <div class="modal-dialog">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal"><i class="pci-cross pci-circle"></i></button>
+                  <h4 class="modal-title">{% trans "OpenID configuration" %}</h4>
+              </div>
+
+              <div class="modal-body" id="modal-test-openid-body">
+
+              </div>
+
+              <div class="modal-footer">
+                  <button class="btn btn-primary" data-dismiss="modal" type="button">{% trans "Continue" %}</button>
+              </div>
+          </div>
+      </div>
+  </div>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  /* Initialize select2 objects */
+  $('.select2').select2();
+
+  /* Switchery mandatory code */
+  var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+    elems.forEach(function(html) {
+    var switchery = new Switchery(html, {
+      'color': '#FA9834',
+    });
+  });
+
+
+  /* Show fields depending on chosen provider */
+  function handle_provider(e) {
+    var provider = $('#id_provider').val();
+    $('.provider-specific').hide();
+    $('.provider-'+provider).show();
+  }
+  $('#id_provider').on("change", handle_provider);
+  handle_provider();
+
+
+  function get_data(){
+    var data = {
+      name: "test",
+      provider: $('#id_provider').val(),
+      provider_url: $('#id_provider_url').val(),
+      client_id: $('#id_client_id').val(),
+      client_secret: $('#id_client_secret').val(),
+    };
+
+    var type_ = $('#id_provider').val();
+    console.log(type_)
+    $("." + type_ + " input").each(function(){
+      var name = $(this).attr('name');
+      switch($(this).attr('type')){
+        case "checkbox":
+          data[name] = $(this).is(':checked');
+          break;
+        case "text":
+          data[name] = $(this).val();
+          break;
+        case "password":
+          data[name] = $(this).val();
+          break;
+      }
+    })
+
+    $("." + type_ + " textarea").each(function(){
+      var name = $(this).attr('name');
+      data[name] = $(this).val();
+    })
+
+    $("." + type_ + " select").each(function(){
+      var name = $(this).attr('name');
+      data[name] = $(this).val();
+    })
+
+    return data;
+  }
+
+
+  $('#test_provider').unbind('click');
+  $('#test_provider').on('click', function(){
+    PNotify.removeAll();
+
+    var btn = this;
+    var txt = $(btn).html();
+    $(btn).html('<i class="fa fa-spinner fa-spin"></i>');
+    $(btn).prop('disabled', true);
+
+    var data = get_data();
+
+    $.post(
+      "{% url 'authentication.openid.test_provider' %}",
+      data,
+
+      function(response){
+        $(btn).prop('disabled', false);
+        $(btn).html(txt);
+        handle_form_errors(response);
+        if (!check_json_error(response)){
+          $('#provider_has_been_tested').val('0');
+          return;
+        }
+
+        var data = response.data;
+        $('#provider_has_been_tested').val('1');
+        $('#modal-test-openid-body').html('<pre>' + JSON.stringify(data, null, 4) + "</pre>");
+        $('#modal-test-openid').modal('show');
+      }
+    ).fail(function(response){
+      notify('error', response.status, response.responseText)
+
+      $(btn).prop('disabled', false);
+      $(btn).html(txt);
+    })
+  })
+
+  function handle_form_errors(data){
+    if (typeof(data['form_errors']) !== 'undefined'){
+      $('.errorlist').remove();
+      $.each(data['form_errors'], function(field_name, error_list){
+        field_selector = $('#id_'+field_name);
+        var ul = $('<ul/>').insertAfter(field_selector);
+        $.each(error_list, function(idx, err_msg){
+          console.log(err_msg);
+          var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
+          var group = $('<span/>').text(err_msg).appendTo(li);
+        });
+      });
+    }
+  }
+
+  //}); // end of function()
+
+{% endblock %}

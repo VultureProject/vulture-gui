@@ -65,8 +65,11 @@
                       <li><a href="#tab_otp" data-toggle="tab">{% trans "OTP" %}</a></li>
                       <li><a href="#tab_disconnect" data-toggle="tab">{% trans "Disconnect" %}</a></li>
                       <li><a href="#tab_registration" data-toggle="tab">{% trans "Auto-registration" %}</a></li>
+                      <li><a href="#tab_oauth" data-toggle="tab">{% trans "OAuth2" %}</a></li>
+                      <li><a href="#tab_sso_forward" data-toggle="tab">{% trans "SSO Forward" %}</a></li>
                     </ul>
                     <div class="tab-content">
+                      </br>
                       <div class="tab-pane active" id="tab_general">
                         <div class="row">
                           <div class="col-md-12">
@@ -79,6 +82,7 @@
                             </div>
                           </div>
                         </div> <!-- /.row -->
+                        <!--
                         <div class="row">
                           <div class="col-md-12">
                             <div class="form-group">
@@ -90,24 +94,53 @@
                             </div>
                           </div>
                         </div> <!-- /.row -->
+                        -->
                         <div class="row">
                           <div class="col-md-12">
                             <div class="form-group">
-                              <label class="col-sm-4 control-label">{{ form.repository.label }}</label>
-                              <div class="col-sm-5">
-                                {{form.repository}}
-                                {{form.repository.errors|safe}}
-                              </div>
+                            <label class="col-sm-4 control-label">{{ form.enable_external.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.enable_external}}
+                              {{form.enable_external.errors|safe}}
+                            </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row external">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.external_fqdn.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.external_fqdn}}
+                              {{form.external_fqdn.errors|safe}}
+                            </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row external">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.external_listener_json.label }}</label>
+                              <table id="external_listener_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                                <thead>
+                                  {{ listener_form.as_table_headers|safe }}
+                                </thead>
+                                <tbody>
+                                {{ listener_form.as_table_td|safe }}
+                                </tbody>
+                              </table>
+                              {{ form.external_listener_json.errors|safe }}
+                              <input id="external_listener_json" name="external_listener_json" value="" type="hidden">
                             </div>
                           </div>
                         </div> <!-- /.row -->
                         <div class="row">
                           <div class="col-md-12">
                             <div class="form-group">
-                              <label class="col-sm-4 control-label">{{ form.repositories_fallback.label }}</label>
+                              <label class="col-sm-4 control-label">{{ form.repositories.label }}</label>
                                 <div class="col-sm-5">
-                                  {{form.repositories_fallback}}
-                                  {{form.repositories_fallback.errors|safe}}
+                                  {{form.repositories}}
+                                  {{form.repositories.errors|safe}}
                                 </div>
                             </div>
                           </div>
@@ -131,6 +164,61 @@
                                   {{form.portal_template}}
                                   {{form.portal_template.errors|safe}}
                                 </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row openid">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.lookup_ldap_repo.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.lookup_ldap_repo}}
+                                  {{form.lookup_ldap_repo.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row lookup-ldap">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.lookup_ldap_attr.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.lookup_ldap_attr}}
+                                  {{form.lookup_ldap_attr.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row lookup-ldap">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.lookup_claim_attr.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.lookup_claim_attr}}
+                                  {{form.lookup_claim_attr.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.repo_attributes.label}}</label>
+                              <div class="col-sm-5">
+                                <table id="repo_attributes_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                                  <thead>
+                                    {{ repo_attribute_form.as_table_headers|safe }}
+                                  </thead>
+                                  <tbody>
+                                    {% for r in repo_attributes %}
+                                      {{r.as_table_td|safe}}
+                                    {% endfor %}
+                                  </tbody>
+                                </table>
+                                <button class="addlink addplus" id="add_repo_attribute" type="button">{% trans "Add an Entry" %}</button>
+                                {{ form.repo_attributes.errors|safe }}
+                                <input id="repo_attributes" name="repo_attributes" value="" type="hidden">
+                              </div>
                             </div>
                           </div>
                         </div> <!-- /.row -->
@@ -265,6 +353,307 @@
                           </div>
                         </div> <!-- /.row -->
                       </div> <!-- /.tab-pane -->
+                      <div class="tab-pane" id="tab_oauth">
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.enable_oauth.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_oauth}}
+                                  {{form.enable_oauth.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row oauth">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.oauth_client_id.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.oauth_client_id}}
+                                <button class="btn btn btn btn-default" data-toggle="tooltip" data-container="body" data-title="Copy ID" data-class="btn btn btn-default" data-clipboard-target="#id_oauth_client_id" type="button" title="" aria-label="Copy ID" data-original-title="Copy ID">
+                                  <img class="clippy" src="/static/img/clippy.svg" alt="Copy to clipboard" width="13">
+                                </button>
+                              </div>
+                              {{form.oauth_client_id.errors|safe}}
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row oauth">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.oauth_client_secret.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.oauth_client_secret}}
+                                <button class="btn btn btn btn-default" data-toggle="tooltip" data-container="body" data-title="Copy secret" data-class="btn btn btn-default" data-clipboard-target="#id_oauth_client_secret" type="button" title="" aria-label="Copy secret" data-original-title="Copy secret">
+                                  <img class="clippy" src="/static/img/clippy.svg" alt="Copy to clipboard" width="13">
+                                </button>
+                              </div>
+                              {{form.oauth_client_secret.errors|safe}}
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row oauth">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">Redirect URI(s)</label>
+                              <div class="col-sm-5">
+                                {{form.oauth_redirect_uris}}
+                                {{form.oauth_redirect_uris.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                      </div> <!-- /.tab-pane -->
+                      <div class="tab-pane" id="tab_sso_forward">
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.enable_sso_forward.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_sso_forward}}
+                                  {{form.enable_sso_forward.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row sso_forward">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.sso_forward_type.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.sso_forward_type}}
+                                  {{form.sso_forward_type.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row sso_forward">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.sso_forward_content_type.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.sso_forward_content_type}}
+                                  {{form.sso_forward_content_type.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row sso_forward">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.sso_forward_url.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.sso_forward_url}}
+                                  {{form.sso_forward_url.errors|safe}}
+                                </div>
+                                <div class="col-sm-3">
+                                  <button class="btn btn btn btn-default" name="test_wizard" id="id_test_wizard" type="button">Wizard</button>
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row sso_forward">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{% trans "SSO forward status" %}</label>
+                              <div class="col-sm-1">
+                                {% if form.sso_forward_content.value == "" %}
+                                <span id="sso_forward_status" style="color:red">{% trans "Not configured"%}</span>
+                                {% else %}
+                                <span id="sso_forward_status" style="color:green">{% trans "Configured"%}</span>
+                                {% endif %}
+                              </div>
+                              <div id="sso_forward_content_div" class="col-sm-5" hidden>
+                                {{form.sso_forward_content}}
+                                {{form.sso_forward_content.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <fieldset class="col-lg-12 sol-sm-12 sso_forward_tls">
+                          <legend>{% trans "TLS options" %}</legend>
+                          <div class="row sso_forward sso_forward_tls">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_tls_check.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_tls_check}}
+                                    {{form.sso_forward_tls_check.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward sso_forward_tls">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_tls_proto.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_tls_proto}}
+                                    {{form.sso_forward_tls_proto.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward sso_forward_tls">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_tls_cert.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_tls_cert}}
+                                    {{form.sso_forward_tls_cert.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                        </fieldset>
+                        <fieldset class="col-lg-12 sol-sm-12">
+                          <legend>{% trans "Behavior Options" %}</legend>
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_user_agent.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_user_agent}}
+                                    {{form.sso_forward_user_agent.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_direct_post.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_direct_post}}
+                                    {{form.sso_forward_direct_post.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_get_method.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_get_method}}
+                                    {{form.sso_forward_get_method.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_follow_redirect_before.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_follow_redirect_before}}
+                                    {{form.sso_forward_follow_redirect_before.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_follow_redirect.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_follow_redirect}}
+                                    {{form.sso_forward_follow_redirect.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_return_post.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_return_post}}
+                                    {{form.sso_forward_return_post.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_enable_capture.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_enable_capture}}
+                                    {{form.sso_forward_enable_capture.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward" id="sso_forward_capture_content">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_capture_content.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_capture_content}}
+                                    {{form.sso_forward_capture_content.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_enable_replace.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_enable_replace}}
+                                    {{form.sso_forward_enable_replace.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward" id="sso_forward_replace_pattern">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_replace_pattern.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_replace_pattern}}
+                                    {{form.sso_forward_replace_pattern.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward" id="sso_forward_replace_content">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_replace_content.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_replace_content}}
+                                    {{form.sso_forward_replace_content.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_enable_additionnal.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_enable_additionnal}}
+                                    {{form.sso_forward_enable_additionnal.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row sso_forward" id="sso_forward_additional_url">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_forward_additional_url.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_forward_additional_url}}
+                                    {{form.sso_forward_additional_url.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                        </fieldset>
+                      </div> <!-- /.tab-pane -->
                     </div> <!-- /.tab-content -->
                   </div> <!-- /.nav-tabs-custom -->
                 </div> <!-- /.box-body -->
@@ -279,6 +668,23 @@
       </div> <!-- /.col-md-12 -->
     </div> <!-- /.row -->
 </section> <!-- /.content -->
+
+<div id="modal_sso_wizard" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title">{% trans "SSO Forward configuration" %}</h4>
+        </div>
+        <div class="modal-body" id="sso_modal">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
+          <button type="button" id="btn_sso_wizard" class="btn btn-success btn-flat">{% trans "Save" %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 {% endblock %}
 
@@ -299,6 +705,16 @@
   /* Initialize select2 objects */
   $('.select2').select2();
 
+  /* Initialize ClipboardJS */
+  var clipboard = new ClipboardJS('.btn');
+  clipboard.on('success', function(e) {
+      showTooltip(e.trigger,'Copied!');
+      console.log(e);
+  });
+  clipboard.on('error', function(e) {
+      console.error(e);
+  });
+
   /* Switchery mandatory code */
   var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
     elems.forEach(function(html) {
@@ -306,6 +722,38 @@
       'color': '#FA9834',
     });
   });
+
+
+  /* Show openid class if openid repo is chosen */
+  function toggle_repos() {
+    var repos = $('#id_repositories');
+    var openid = false;
+    for( repo of repos.find(':selected') ) {
+      if( repo.text.indexOf("(openid)") > 0 ) {
+        openid = true;
+      }
+    }
+    if( openid ) {
+      $('.openid').show();
+    } else {
+      $('.openid').hide();
+    }
+  }
+  $('#id_repositories').on('change', toggle_repos);
+  toggle_repos();
+
+
+  /* Show lookup-ldap class if lookup_ldap repo is chosen */
+  function toggle_lookup_ldap() {
+    console.log($('#id_lookup_ldap_repo').find(":selected")[0].value == "")
+    if( $('#id_lookup_ldap_repo').find(":selected")[0].value == "" ) {
+      $('.lookup-ldap').hide();
+    } else {
+      $('.lookup-ldap').show();
+    }
+  }
+  $('#id_lookup_ldap_repo').on('change', toggle_lookup_ldap);
+  toggle_lookup_ldap();
 
 
   /* Show fields depending on auth_type chosen */
@@ -344,17 +792,295 @@
   toggle_disconnect();
 
 
-  /* Show or hide registration fields depending on enable_registration */
-  function toggle_registration(event) {
-    if( document.querySelector('#id_enable_registration').checked )
-      $('.registration').show();
-    else
-      $('.registration').hide();
+  const sso_forward_toggle_fields = {
+    'id_sso_forward_enable_capture': ["sso_forward_capture_content"],
+    'id_sso_forward_enable_replace': ["sso_forward_replace_pattern","sso_forward_replace_content"],
+    'id_sso_forward_enable_additionnal': ["sso_forward_additional_url"]
+  };
+
+  function toggle_sso_forward_field(toggle_name) {
+    if( $('#'+toggle_name).is(":checked") ) {
+      for( field of sso_forward_toggle_fields[toggle_name] ) {
+        $('#'+field).show();
+      }
+    } else {
+      for( field of sso_forward_toggle_fields[toggle_name] ) {
+        $('#'+field).hide();
+      }
+    }
   }
-  $('#id_enable_registration').on("change", toggle_registration);
-  toggle_registration();
+
+  function toggle_sso_forward_url() {
+    if( $('#id_sso_forward_url').val().startsWith("https://") ) {
+     $('.sso_forward_tls').show();
+    } else {
+      $('.sso_forward_tls').hide();
+    }
+  }
+
+  function toggle_sso_forward_type() {
+    if( $('#id_sso_forward_type').find(":selected").val() == "form" ) {
+     $('.sso_forward_tls').show();
+    } else {
+      $('.sso_forward_tls').hide();
+    }
+  }
 
 
-  //}); // end of function()
+  /* Show and hide content fields depending on associated checkbox */
+  function toggle_sso_forward() {
+    for( const key of Object.keys(sso_forward_toggle_fields)) {
+      $('#'+key).on('change', function(e) {
+        toggle_sso_forward_field(key);
+      });
+      toggle_sso_forward_field(key);
+    }
+    /* Show SSO forward tls options only for https url */
+    $('#id_sso_forward_url').on('change keyup', toggle_sso_forward_url);
+    toggle_sso_forward_url();
+  }
+
+  /* Show or hide registration fields depending on enable_registration */
+  function toggle_class(classe) {
+    console.log(classe)
+    if( $('#id_enable_'+classe).is(":checked") ) {
+      $('.'+classe).show();
+      // Call function toggle_<classe> if exists
+      try {
+        eval('var myfunc = toggle_'+classe);
+        console.log(myfunc);
+        myfunc();
+      } catch(e) {console.error(e);}
+    } else {
+      $('.'+classe).hide();
+    }
+  }
+
+  /* Show attributes depending on chosen options */
+  //for( classe of ['registration', 'oauth', 'external', 'sso_forward']) {
+    $('#id_enable_registration').on("change", function(e){ console.log("registration");toggle_class("registration"); });
+  toggle_class("registration");
+  $('#id_enable_oauth').on("change", function(e){ console.log("oauth");toggle_class("oauth"); });
+  toggle_class("oauth");
+  $('#id_enable_external').on("change", function(e){ console.log("external");toggle_class("external"); });
+  toggle_class("external");
+  $('#id_enable_sso_forward').on("change", function(e){ console.log("sso_forward");toggle_class("sso_forward"); });
+  toggle_class("sso_forward");
+  //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
+  //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
+  //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
+  //}
+
+
+  $('#btn_sso_wizard').on('click', function(e) {
+    var res = [];
+    var filled = false;
+    $('#sso_modal div[class~="sso_field"]').each(function(num, field) {
+      console.log(field);
+      var field_json = {
+        'name': $(field).data('name')+";vlt;"+$(field).data('id'),
+        'send_type': $(field).data('send_type')
+      };
+      field_json['value'] = $(field).find('input')[0].value;
+      field_json['type'] = $(field).find('select :selected')[0].value;
+      // Better performance than push
+      res[res.length] = field_json;
+      filled = true;
+    });
+    console.log(res)
+    $('#id_sso_forward_content').val(JSON.stringify(res));
+    // Change "Not configured" to "Configured"
+    if( filled ) {
+      $('#sso_forward_status').css('color', "green");
+      $('#sso_forward_status').text("Configured");
+    }
+    $("#modal_sso_wizard").modal('hide');
+  });
+
+
+  function handle_form_errors(data){
+    if (typeof(data['form_errors']) !== 'undefined'){
+      $('.errorlist').remove();
+      $.each(data['form_errors'], function(field_name, error_list){
+        field_selector = $('#id_'+field_name);
+        var ul = $('<ul/>').insertAfter(field_selector);
+        $.each(error_list, function(idx, err_msg){
+          console.log(err_msg);
+          var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
+          var group = $('<span/>').text(err_msg).appendTo(li);
+        });
+      });
+    }
+  }
+
+
+  function sso_field_choice_change(field) {
+    input_field = field[0].parentElement.parentElement.children[2].children[0];
+    data_field = $(field[0].parentElement.parentElement.parentElement.children[1]);
+
+    switch(field.val()) {
+      case "auto":
+      case "autologon_user":
+      case "autologon_password":
+        $(input_field).val(data_field.data("value"));
+        $(input_field).attr("disabled", "disabled");
+        break;
+      case "oauth2_token":
+        $(input_field).val("f5af9f51-07e6-4332-8f1a-c0c11c1e3728");
+        $(input_field).attr("disabled", "disabled");
+        break;
+      case "custom":
+        $(input_field).val("Please tape a custom value");
+        $(input_field).removeAttr("disabled");
+        break;
+      case "learn":
+      case "learn_secret":
+        $(input_field).val("Input field name");
+        $(input_field).removeAttr("disabled");
+        break;
+      case "repo":
+        $(input_field).val("Attribute name");
+        $(input_field).removeAttr("disabled");
+        break;
+      case "no_send":
+        $(input_field).val(autologon_user);
+        $(input_field).attr("disabled", "disabled");
+        break;
+      case "auto":
+        $(input_field).val(data_field.data('value'));
+        $(input_field).attr("disabled", "disabled");
+        break;
+    }
+  }
+
+
+  $('#id_test_wizard').on('click', function(e) {
+    $('.test_user').html('');
+    sso_url = $('#id_sso_forward_url').val();
+    url = "/portal/user_authentication/sso_wizard/";
+    form_data = $('#user_authentication_edit_form').serializeArray();
+    var indexed_data = {};
+    $.map(form_data, function(n, i){
+        indexed_data[n['name']] = n['value'];
+    });
+    $.post(url, indexed_data, function(data){
+      status = data['status'];
+      handle_form_errors(data);
+      result = "";
+      if(status == 'true') {
+        for(form of data['forms']) {
+          result += '<p><p>';
+          result += '<legend>Form "'+form['name']+'" (id='+form['id']+')</legend>';
+          for(field of form['controls']) {
+            field_val = field['value'];
+            field_type = field['type'];
+            for( sso_profile of JSON.parse($('#id_sso_forward_content').val()) ) {
+              if( sso_profile['send_type'] != "form" ) {
+                continue;
+              }
+              field_name = sso_profile['name'].split(';vlt;')[0];
+              field_id = sso_profile['name'].split(';vlt;')[1];
+              if( field_name == field['name'] || field_id == field['id'] ) {
+                field_val = sso_profile['value'];
+                field_type = sso_profile['type'];
+              }
+            }
+            result += '<div class="row">';
+            result += '<div class="col-md-12">';
+            result += '<div class="form-group">';
+            result += '<label class="col-sm-12 control-label"><code>'+_.escape('<input name="'+field['name']+'" id="'+field['id']+'" type="'+field_type+'">')+'</code></label>';
+            result += '<div class="col-sm-12 sso_field" data-name="'+field['name']+'" data-id="'+field['id']+'" data-type="'+field_type+'" data-value="'+field_val+'" data-send_type="form">';
+            result += '<div class="col-sm-2"></div>';
+            result += '<div class="col-sm-4"><select value="'+field_type+'" onchange="sso_field_choice_change($(this));"><option value="auto">Dynamic Value</option><option value="oauth2_token">OAuth2 Token</option><option value="autologon_user">Autologon User</option><option value="autologon_password">Autologon Password</option><option value="custom">Custom Text Value</option><option value="learn">Learning</option><option value="learn_secret">Learning Secret</option><option value="repo">Repository attribute</option><option value="no_send">Do not send</option></select></div>';
+            result += '<div class="col-sm-6"><input type="text" placeholder="'+field_val+'" disabled></input></div>';
+            result += '</div>';
+            result += '</div>';
+            result += '</div>';
+            result += '</div>';
+          }
+          result += '</p></fieldset>';
+        }
+      }
+      else{
+        reason = data['reason'];
+        result += "<b style='color:red;'>{% trans 'Unable to retrieve form, reason: '%}" + reason + "</b>";
+      }
+      $('#sso_modal').html(result);
+      $("#modal_sso_wizard").modal('show');
+    });
+  });
+
+
+  /* Show sso_forward_content if mouse is over sso_forward_status */
+  $('#sso_forward_status,#sso_forward_content_div').on('mouseover', function(e) {
+    console.log("mouse over")
+    $('#sso_forward_content_div').show();
+  });
+  $('#sso_forward_status,#sso_forward_content_div').on('mouseout', function(e) {
+    console.log("mouse out")
+    $('#sso_forward_content_div').hide();
+  });
+
+
+  function get_repo_attrs() {
+    let repo_attrs = new Array()
+    $('#repo_attributes_table tbody tr').each(function(index, tr){
+      let name = tr.children[0].children[0].value
+      let value = tr.children[1].children[0].value
+      repo_attrs.push({'key': name, 'source_attr': value});
+    });
+    return repo_attrs;
+  }
+
+  /* All events to refresh (re-apply) after a table is modified */
+  function refresh_table_events() {
+
+    /* Function used to delete an object .btnDelete */
+    $('.btnDelete').on('click', function(e) {
+      console.log("test")
+      $(this).parent().parent().remove();
+    });
+    /* Re-initialize select2 objects */
+    Array.prototype.slice.call(document.querySelectorAll('.select2')).forEach(function(html) {
+      $(html).select2({'disabled': $(html).attr('readonly')});
+    });
+  }
+  /* Initialize all custom fields */
+  refresh_table_events();
+
+  /* Add default RepoAttributeForm to repo_attributes_table */
+  $("#add_repo_attribute").on("click", function(e) {
+    $('#repo_attributes_table').append(`{{repo_attribute_form.as_table_td|safe}}`);
+    refresh_table_events();
+  });
+
+
+  /*  */
+  $('#user_authentication_edit_form').submit(function(event) {
+    $('#external_listener_table tbody tr').each(function(index, tr) {
+      var id = tr.children[0].innerHTML;
+      var network_address_id = tr.children[1].children[0].value;
+      var port = tr.children[2].children[0].valueAsNumber;
+      var tls_profiles = $(tr.children[3].children[0]).val();
+      // It's a bootstrap-tagsinput, so retrieve the second child
+      // Temporary fix suggested by KGU to prevent bugs with the tagsinput lib imported
+      var wl_ips = undefined;
+      if (tr.children[4].children[1] !== undefined) {
+          wl_ips = tr.children[4].children[1].value;
+      } else {
+          wl_ips = tr.children[4].children[0].value;
+      }
+      var max_src = tr.children[5].children[0].valueAsNumber;
+      var max_rate = tr.children[6].children[0].valueAsNumber;
+      $('#external_listener_json').val(JSON.stringify({'id': id, 'network_address': network_address_id, 'port': port, 'tls_profiles': tls_profiles,
+                      'whitelist_ips': wl_ips, 'max_src': max_src, 'max_rate': max_rate}));
+    });
+
+    $('#repo_attributes').val(JSON.stringify(get_repo_attrs()));
+
+    //event.preventDefault()
+  });
+
+//}); // end of function()
 
 {% endblock %}

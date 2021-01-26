@@ -52,18 +52,18 @@ vulture_custom_agent = 'Vulture/3 (FreeBSD; Vulture OS)'
 
 class SSLAdapter(HTTPAdapter):
     """ "Transport adapter" that allows us to use TLSv1 """
-    def __init__(self, ssl_version=None, **kwargs):
-        self.ssl_version = ssl_version
-        super(SSLAdapter, self).__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        self.ssl_context = kwargs.pop('ssl_context')
+        super(SSLAdapter, self).__init__(*args, **kwargs)
 
-
-    def init_poolmanager(self, connections, maxsize, block=False):
-         self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block, ssl_version=self.ssl_version)
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['ssl_context'] = self.ssl_context
+        self.poolmanager = PoolManager(*args, **kwargs)
 
 
 
 class SSOClient(object):
-    def __init__(self, vulture_user_agent, user_agent, headers_in, referer, client_certificate, ssl_context):
+    def __init__(self, user_agent, headers_in, referer, client_certificate, ssl_context):
         """
 		:param logger: logger instance
 		:param uri: The 'action' uri where to post the form
@@ -80,15 +80,12 @@ class SSOClient(object):
         self.client_side_cert = None
         if ssl_context:
             # Only compatible with request-2.18.1 !!!
-            self.session.mount("https://", SSLAdapter(ssl_context.protocol))
+            self.session.mount("https://", SSLAdapter(ssl_context=ssl_context))
             self.verify_certificate = "/var/db/pki/" if ssl_context.verify_mode == CERT_REQUIRED else CERT_NONE
             self.client_side_cert = client_certificate
             logger.debug("SSOClient::_init_: SSL/TLS context successfully created")
 
-        if vulture_user_agent:
-            self.session.headers.update({'User-Agent': vulture_custom_agent})
-        else:
-            self.session.headers.update({'User-Agent': user_agent or vulture_custom_agent})
+        self.session.headers.update({'User-Agent': user_agent})
         logger.debug("SSOClient::_init_: SSOClient user-agent used is '{}'".format(self.session.headers.get("User-Agent")))
 
         if referer:
@@ -96,7 +93,7 @@ class SSOClient(object):
             logger.debug("SSOClient::_init_: SSOClient referer used is '{}'".format(self.session.headers.get("Referer")))
 
         for header in headers_in:
-            if header.name.lower() == "cookie":
+            if header.header_name.lower() == "cookie":
                 self.add_cookies(header.value)
             else:
                 self.session.headers.update({header.name: header.value})

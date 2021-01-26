@@ -1,7 +1,7 @@
 #!/home/vlt-os/env/bin/python
 """This file is part of Vulture OS.
 
-Vulture OS is free software: you can redistribute it and/or modify
+Vulture OS is free scomoftware: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -69,6 +69,11 @@ class Authentication:
                     'link': 'otp',
                     'text': _('MFA & OTP'),
                     'url': '/authentication/otp/'
+                },
+                {
+                    'link': 'openid',
+                    'text': _('OpenID federation'),
+                    'url': '/authentication/openid/'
                 },
                 {
                     'link': 'learning_profiles',
