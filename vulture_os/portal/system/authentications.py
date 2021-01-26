@@ -229,11 +229,13 @@ class Authentication(object):
 
     def get_redirect_url(self):
         try:
-            return self.workflow.get_redirect_uri() or \
-                self.redis_portal_session.keys.get('url_{}'.format(self.workflow.id), None)
+            return self.redis_portal_session.keys.get('url_{}'.format(self.workflow.id), None) or self.workflow.get_redirect_uri()
         except:
             return self.redis_portal_session.keys.get('url_{}'.format(self.workflow.id), None) or \
                 self.workflow.get_redirect_uri()
+
+    def set_redirect_url(self, redirect_url):
+        self.redis_portal_session['url_{}'.format(self.workflow.id)] = redirect_url
 
     def get_url_portal(self):
         try:

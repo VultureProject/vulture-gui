@@ -56,6 +56,7 @@ from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeed
                                              CredentialsError, REDISWriteError, TwoManyOTPAuthFailure, ACLError)
 from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.system.hashes import random_sha256
+from toolkit.http.utils import build_url
 
 # Extern modules imports
 from requests_oauthlib import OAuth2Session
@@ -111,6 +112,7 @@ def openid_callback(request, workflow_id, repo_id):
     try:
         repo = OpenIDRepository.objects.get(pk=repo_id)
         workflow = Workflow.objects.get(pk=workflow_id)
+        portal = workflow.authentication
     except Exception as e:
         logger.exception(e)
         return HttpResponseForbidden("Injection detected.")
@@ -122,6 +124,8 @@ def openid_callback(request, workflow_id, repo_id):
     fqdn = workflow.fqdn
     w_path = workflow.public_dir
     callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo_id)
+
+    redirect_url = build_url(scheme, fqdn, port, w_path)
 
     global_config = Cluster.get_global_config()
     """ Retrieve token and cookies to instantiate Redis wrapper objects """
@@ -137,6 +141,8 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Use POSTAuthentication to print errors with html templates
         authentication = Authentication(portal_cookie, workflow)
+        # Set redirect url in redis
+        authentication.set_redirect_url(redirect_url)
 
         # Get user session with cookie
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
@@ -186,13 +192,17 @@ def openid_callback(request, workflow_id, repo_id):
         logger.exception(e)
         return HttpResponseServerError()
 
-    db_auth_response = make_db_authentication(request, portal, authentication)
+    db_auth_response = make_db_authentication(request, portal_cookie_name, portal_cookie, workflow, user_scope)
     if db_auth_response:
         return db_auth_response
 
-    sso_response = make_sso_forward(request, portal_cookie_name, portal_cookie, authentication, user_scope)
+    sso_response = make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope,
+                                    redirect_url)
     if sso_response:
         return sso_response
+
+    # If no SSO enabled, redirect with portal cookie
+
 
 
 def make_db_authentication(request, portal_cookie_name, portal_cookie, workflow, user_infos):

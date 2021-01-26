@@ -60,6 +60,15 @@ class SSLAdapter(HTTPAdapter):
         self.poolmanager = PoolManager(*args, **kwargs)
 
 
+
+def build_url(scheme, domain, port, path):
+    url = scheme + domain
+    if (scheme == "https" and port != 443) or (scheme == "http" and port != 80):
+        url += ":{}".format(port)
+    url += path
+    return url
+
+
 def get_cookie_values (response_cookie):
     """ FIXME: This is a hack, to be improved """
     for m in re.findall(r"xpires=[a-zA-Z0-9,\-: ]+", response_cookie):
