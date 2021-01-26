@@ -31,7 +31,8 @@ from os.path import join
 
 
 urlpatterns = [
-	path('documentation', doc_view.documentation, name="documentation")
+	path('documentation', doc_view.documentation, name="documentation"),
+	path('documentation/api', doc_view.api_documentation, name="documentation.api"),
 ]
 
 urlpatterns += static("documentation/", document_root=join(settings.BASE_DIR, 'documentation', 'static'))

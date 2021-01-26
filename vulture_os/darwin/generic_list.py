@@ -36,7 +36,7 @@ from django.views.generic import View
 from darwin.defender_policy.models import DefenderPolicy
 from darwin.inspection.models import InspectionPolicy, InspectionRule
 from authentication.generic_list import ListLDAPRepository
-from darwin.policy.models import DarwinFilter, DarwinPolicy
+from darwin.policy.models import DarwinPolicy
 from services.frontend.models import BlacklistWhitelist
 from darwin.access_control.models import AccessControl
 from darwin.defender_policy.models import DefenderPolicy
@@ -130,9 +130,10 @@ class ListDarwinPolicy(ListView):
 
         col_order = "{}{}".format(order[request.POST['sSortDir_0']], col_sort)
 
-        s = Q()
+        # Don't include internal policies in GUI list
+        s = Q(is_internal=False)
         if search:
-            s = Q(name__icontains=search)
+            s = s & Q(name__icontains=search)
 
         objs = []
         max_objs = self.obj.objects.filter(s).count()

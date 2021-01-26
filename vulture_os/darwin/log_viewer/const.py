@@ -189,7 +189,8 @@ ACCESS_COLUMNS = {
     "darwin_user_agent_score": "integer",
     "defender_score": "integer",
     "tags": "string",
-    "country": "string"
+    "country": "string",
+    "advens": "dict"
 }
 
 ACCESS_TCP_COLUMNS = {
@@ -224,7 +225,8 @@ ACCESS_TCP_COLUMNS = {
     "darwin_reputation_error": "integer",
     "darwin_reputation_score": "integer",
     "tags": "string",
-    "country": "string"
+    "country": "string",
+    "advens": "dict"
 }
 
 DEFAULT_ACCESS_COLUMNS = {
@@ -472,51 +474,50 @@ DEFAULT_MESSAGE_QUEUE_COLUMNS = {
 }
 
 DARWIN_COLUMNS = {
-    "evt_id": "string",
-    "time": "string",
-    "evt_time": "string",
-    "filter_name": "string",
-    "certitude": "integer",
-    "details": "string"
+    "alert_time": "datetime",
+    "alert_subtype": "string",
+    "level": "string",
+    "rule_name": "string",
+    "tags": "dict",
+    "entry": "string",
+    "score": "integer",
+    "details": "dict"
 }
 
 DARWIN_COLUMNS.update(IMPCAP_COLUMNS)
+DARWIN_COLUMNS.update(ACCESS_COLUMNS)
+DARWIN_COLUMNS.update(ACCESS_TCP_COLUMNS)
 
 DEFAULT_DARWIN_COLUMNS = {
     "0": {
-        'name': 'time',
-        'width': 1,
+        'name': 'alert_time',
+        'width': 3,
         "x": 0
     },
     "1": {
-        'name': 'frontend_name',
-        'width': 1,
-        "x": 1
-    },
-    "2": {
-        'name': 'filter',
-        'width': 1,
-        "x": 2
-    },
-    "3": {
-        'name': 'net_src_ip',
+        'name': 'alert_subtype',
         'width': 1,
         "x": 3
     },
-    "4": {
-        'name': 'net_dst_ip',
-        'width': 1,
+    "2": {
+        'name': 'rule_name',
+        'width': 2,
         "x": 4
     },
-    "5": {
-        'name': 'certitude',
-        'width': 1,
-        "x": 5
-    },
-    "6": {
-        'name': 'details',
-        'width': 1,
+    "3": {
+        'name': 'tags',
+        'width': 2,
         "x": 6
+    },
+    "4": {
+        'name': 'entry',
+        'width': 2,
+        "x": 8
+    },
+    "5": {
+        'name': 'details',
+        'width': 2,
+        "x": 10
     },
 }
 
