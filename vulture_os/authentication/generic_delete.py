@@ -35,9 +35,12 @@ from django.views.generic import View
 from authentication.kerberos.models import KerberosRepository
 from authentication.ldap.models import LDAPRepository
 from authentication.learning_profiles.models import LearningProfile
+from authentication.openid.models import OpenIDRepository
 from authentication.otp.models import OTPRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
+from authentication.auth_access_control.models import AuthAccessControl
+from authentication.portal_template.models import PortalTemplate
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -154,3 +157,26 @@ class DeleteLearningProfile(DeleteView):
     delete_url = "/authentication/learning_profiles/delete/"
 
     # get, post and used_by methods herited from mother class
+
+
+class DeleteOpenIDRepository(DeleteView):
+    menu_name = _("Authentication -> Repository OpenID -> Delete")
+    obj = OpenIDRepository
+    redirect_url = "/authentication/openid/"
+    delete_url = "/authentication/openid/delete/"
+
+    # get, post and used_by methods herited from mother class
+
+
+class DeleteAuthAccessControl(DeleteView):
+    menu_name = _("Authentication -> Access Control -> Delete")
+    obj = AuthAccessControl
+    redirect_url = "/portal/authentication/acl/"
+    delete_url = "/portal/authentication/acl/delete/"
+
+
+class DeletePortalTemplate(DeleteView):
+    menu_name = _("Authentication -> Portal Template -> Delete")
+    obj = PortalTemplate
+    redirect_url = "/portal/template/"
+    delete_url = "/portal/template/delete/"

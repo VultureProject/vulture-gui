@@ -42,7 +42,6 @@ urlpatterns = [
     path('rss/', rss, name='gui.rss'),
     path('process_queue/', process_queue_state, name='gui.process_queue'),
 
-
     # This is the entry point for Continous Integration
     #    This API is a wrapper arround all views in the project: yet very powerful, but very dangerous also
     #    Access to port 8000 should be restricted has much as possible.
