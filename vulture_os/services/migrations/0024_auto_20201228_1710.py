@@ -19,11 +19,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='cisco_meraki_timestamp',
-            field=models.DictField(default={}, blank=True, null=True),
+            field=djongo.models.fields.DictField(default={}, blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='frontend',
             name='cisco_meraki_timestamp',
-            field=models.DictField(default={}),
+            field=djongo.models.fields.DictField(default={}),
         ),
     ]
