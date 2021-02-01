@@ -157,7 +157,7 @@ class CortexXDRParser(ApiParser):
 
                 def format_log(log):
                     log['kind'] = kind
-                    log['timestamp'] = datetime.fromtimestamp(log[KIND_TIME_FIELDS[kind]]/1000, tz=timezone.utc).isoformat()
+                    log['timestamp'] = datetime.fromtimestamp((log[KIND_TIME_FIELDS[kind]] or log['detection_timestamp'])/1000, tz=timezone.utc).isoformat()
                     return json.dumps(log)
 
                 self.write_to_file([format_log(l) for l in logs])

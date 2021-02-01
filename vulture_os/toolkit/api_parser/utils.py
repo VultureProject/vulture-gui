@@ -38,6 +38,7 @@ from toolkit.api_parser.mongodb.mongodb import MongoDBParser
 from toolkit.api_parser.defender_atp.defender_atp import DefenderATPParser
 from toolkit.api_parser.cortex_xdr.cortex_xdr import CortexXDRParser
 from toolkit.api_parser.cybereason.cybereason import CybereasonParser
+from toolkit.api_parser.cisco_meraki.cisco_meraki import CiscoMerakiParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -56,6 +57,7 @@ PARSER_LIST = {
     "mongodb": MongoDBParser,
     "defender_atp": DefenderATPParser,
     "cortex_xdr": CortexXDRParser,
+    "cisco_meraki": CiscoMerakiParser,
     "cybereason": CybereasonParser
 }
 

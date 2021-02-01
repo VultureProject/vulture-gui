@@ -616,6 +616,15 @@ class Frontend(models.Model):
     cybereason_malops_timestamp = models.FloatField(
         default=0.0
     )
+    # Cisco-Meraki API events attributes
+    cisco_meraki_apikey = models.TextField(
+        verbose_name=_("Cisco Meraki API key"),
+        help_text=_("API key used to retrieve logs - as configured in Meraki settings"),
+        default="",
+    )
+    cisco_meraki_timestamp = models.DictField(
+        default={}
+    )
 
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -777,6 +786,10 @@ class Frontend(models.Model):
                     result['cybereason_password'] = self.cybereason_password
                     result['cybereason_malops_timestamp'] = self.cybereason_malops_timestamp
                     result['cybereason_malwares_timestamp'] = self.cybereason_malwares_timestamp
+
+                elif self.api_parser_type == "cisco_meraki":
+                    result['cisco_meraki_apikey'] = self.cisco_meraki_apikey
+                    result['cisco_meraki_timestamp'] = self.cisco_meraki_timestamp
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
