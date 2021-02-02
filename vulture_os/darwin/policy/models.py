@@ -688,6 +688,10 @@ class FilterPolicy(models.Model):
     def _generate_lkup_conf(self):
         json_conf = {}
 
+        db_type = self.config.get('db_type', None)
+        if db_type and db_type in ['rsyslog', 'text', 'json']:
+            json_conf['db_type'] = db_type
+
         # Resolve reputation_ctx_id into database for fhostlookup
         reputation_ctx_id = self.config.get('reputation_ctx_id', None)
         if reputation_ctx_id:
