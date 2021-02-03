@@ -10,7 +10,10 @@ var mapping_text = {
     "node_id": gettext("Node"),
     "status": gettext("Status"),
     "result": gettext("Results"),
-    'action': gettext('Action')
+    'action': gettext('Action'),
+    "alert_time": gettext("Date"),
+    "rule_name": gettext("Rule"),
+    "alert_subtype": gettext("Alert Subtype")
 }
 
 var reportrange;
@@ -683,7 +686,7 @@ function render_col(col, mapping){
         return data;
     }
 
-    if ($.inArray(col, ['date_add', 'modified', 'time', '@timestamp', 'timestamp_app', 'timestamp', 'unix_timestamp', 'date_time']) > -1){
+    if ($.inArray(col, ['date_add', 'modified', 'time', '@timestamp', 'timestamp_app', 'timestamp', 'unix_timestamp', 'date_time', 'alert_time']) > -1){
         render = function(data, type, row){
             try{
                 var date = moment(data);
@@ -728,9 +731,38 @@ function render_col(col, mapping){
         }
     } else if (col === "tags"){
         render = function(data, type, row){
-            if (data)
-                return "<label class='label label-danger'>" + highlight_search(data) + "</label>";
+            if (data.length > 0) {
+                result = "<ul>";
+                $.each(data, function(index, tag){
+                    result += "<li>" + tag + "</li>";
+                });
+                return result + "</ul>";
+            }
             return "";
+        }
+    } else if (col === "advens"){
+        render = function(data, type, row){
+            result = "";
+            if (Object.keys(data).length > 0) {
+                result = "<ul>";
+                // For each key
+                Object.keys(data).forEach(function(key){
+                    aggreg_value = "";
+                    //TODO won't be enough when keys can have more subkeys...
+                    console.log(data[key]['darwin']);
+                    Object.values(data[key]['darwin']).forEach(function(value) {
+                        aggreg_value += "<li><label class='label label-danger'>" + value + "</label></li>";
+                    })
+                    if(aggreg_value)
+                        result += "<li><b>" + key + "</b>: " + aggreg_value + "</li>";
+                });
+                result += "</ul>";
+            }
+            return highlight_search(result);
+        }
+    } else if (col === "entry"){
+        render = function(data, type, row){
+            return "<label class='label label-danger'>" + data + "</label>";
         }
     } else if (Array.isArray(mapping)){
         render = function(data, type, row){
@@ -782,7 +814,7 @@ function init_configuration(data){
 
     $('#selected-fields').empty();
 
-    $.each(mapping, function(field, type){
+    Object.keys(mapping).sort().forEach(function(field, type){
         $('#selected-fields').append(`<option value='${field}'>${field}</option>`);
     })
 
@@ -1524,7 +1556,7 @@ function init_search(data){
                 try{
                     $('#queryBuilder').queryBuilder('setRulesFromSQL', search_sql);
                 } catch(err){
-                    notify('error', gettext('Error'), gettext('Invlid query'))
+                    notify('error', gettext('Error'), gettext('Invalid query'))
                     return;
                 }
             }

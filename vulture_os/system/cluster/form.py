@@ -74,6 +74,8 @@ class NodeForm(ModelForm):
         super().__init__(*args, **kwargs)
         # Set non required fields
         self.fields["pstats_forwarders"].required = False
+        # Protect hostname change, has it will entirely break the cluster: hostname has to be changed via the "admin.sh" system menu
+        self.fields['name'].widget.attrs['readonly'] = True
 
     def clean_scanner_ip(self):
         value = self.cleaned_data.get('scanner_ip')

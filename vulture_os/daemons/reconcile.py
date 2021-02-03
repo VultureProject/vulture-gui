@@ -28,6 +28,8 @@ from django.conf import settings
 
 # Django project imports
 from darwin.log_viewer.const import LOGS_DATABASE as MONGO_DATABASE
+from darwin.policy.models import ALERTS_REDIS_CHANNEL_NAME as REDIS_CHANNEL
+from darwin.policy.models import ALERTS_REDIS_LIST_NAME as REDIS_LIST
 from system.cluster.models import Cluster
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
@@ -47,8 +49,6 @@ logger = logging.getLogger('daemon')
 
 # Variables for logging
 MONGO_COLLECTION = "darwin_alerts"
-REDIS_LIST = "darwin_alerts"
-REDIS_CHANNEL = "darwin.alerts"
 REDIS_RECONCILIED_CHANNEL = "vlt.darwin.alerts"
 ALERTS_FILE = "/var/log/darwin/reconciled-alerts.log"
 
@@ -76,14 +76,17 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
             else:
                 try:
                     context = json.loads(context.decode())
-                    context['evt_time'] = context.pop("time", "")
-                    flatAlertData.update(context)
-                    alertData['context'] = context
+                    alertData['context'] = deepcopy(context)
+                    #Prefer updating this way to keep alert fields in case of key clash
+                    context.update(flatAlertData)
+                    flatAlertData = context
                 except json.JSONDecodeError as e:
                     logger.error("Reconcile: context is not a valid JSON: {}".format(e))
+                    logger.debug("Reconcile: context is: {}".format(context))
 
         if context is None:
             logger.warning("Reconcile: could not find valid context for id {}".format(evt_id))
+            alertData['context'] = {}
 
     try:
         with open(filepath, "a") as logFile:
@@ -93,12 +96,12 @@ def alert_handler(alert, mongo, redis, filepath, max_tries=3, sec_between_retrie
 
     redis.redis.publish(REDIS_RECONCILIED_CHANNEL, json.dumps(flatAlertData))
 
-    time = flatAlertData.get('time', None)
+    time = flatAlertData.get('alert_time', None)
     if time:
-        time = datetime.strptime(time, "%Y-%m-%d%Z%H:%M:%S%z")
-        flatAlertData['time'] = time
+        time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%SZ")
+        flatAlertData['alert_time'] = time
     else:
-        logger.warning("Reconcile: while treating alert, no 'time' field was found!")
+        logger.warning("Reconcile: while treating alert, no 'alert_time' field was found!")
 
     # replace '.' by '_' in field names to avoid insertion errors
     flatAlertData = dict((key.replace('.', '_'), value) for key, value in flatAlertData.items())

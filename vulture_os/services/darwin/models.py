@@ -28,7 +28,7 @@ from django.db.models import Q
 from djongo import models
 
 # Django project imports
-from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter
+from darwin.policy.models import DarwinPolicy, FilterPolicy
 
 # Required exceptions imports
 
@@ -48,9 +48,9 @@ class DarwinSettings(models.Model):
         """
         """ Variables used by template rendering """
 
+        filters = FilterPolicy.objects.all()
         return {
-            'session_filter': DarwinFilter.objects.get(name='session'),
-            'policies': DarwinPolicy.objects.all()
+            'filters': [filt for filt in filters if filt.filter_type.is_launchable]
         }
 
     def __str__(self):

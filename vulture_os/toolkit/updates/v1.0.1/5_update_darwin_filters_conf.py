@@ -53,20 +53,20 @@ if __name__ == "__main__":
             filter.config["alert_redis_channel_name"] = "darwin.alerts"
             filter.config["log_file_path"] = "/var/log/darwin/alerts.log"
 
-            if filter.filter.name == 'tanomaly':
+            if filter.filter_type.name == 'tanomaly':
                 if filter.config.get("redis_list_name", None):
                     del filter.config['redis_list_name']
                 filter.mmdarwin_enabled = False
                 filter.mmdarwin_parameters = []
 
             # Remove useless cache for filters not using it
-            if filter.filter.name not in ['dga', 'hostlookup']:
+            if filter.filter_type.name not in ['dga', 'hostlookup']:
                 filter.cache_size = 0
 
             if filter.nb_thread == 10:
                 filter.nb_thread = 5
 
-            if filter.filter.name == "content_inspection" and filter.nb_thread == 30:
+            if filter.filter_type.name == "content_inspection" and filter.nb_thread == 30:
                 filter.nb_thread = 8
 
             # Put default log level to Warning
