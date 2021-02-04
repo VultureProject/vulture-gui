@@ -31,6 +31,8 @@ from system.cluster.models import Cluster, Node
 from gui.forms.form_utils import DivErrorList
 from django.utils.translation import ugettext_lazy as _
 from toolkit.api.responses import build_response
+from subprocess import CalledProcessError
+from services.pf.pf import test_config as test_pf_config
 
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -145,8 +147,24 @@ def cluster_edit(request, object_id, api=False, update=False):
         gateway_ipv6_changed = "gateway_ipv6" in form.changed_data
         static_route_changed = "static_routes" in form.changed_data
         pstats_forwarders_changed = "pstats_forwarders" in form.changed_data
+        pf_custom_param_config_changed = "pf_custom_param_config" in form.changed_data
+        pf_custom_nat_config_changed = "pf_custom_nat_config" in form.changed_data
+        pf_custom_rdr_config_changed = "pf_custom_rdr_config" in form.changed_data
+        pf_custom_config_changed = "pf_custom_config" in form.changed_data
 
         node = form.save(commit=False)
+
+        if pf_custom_param_config_changed or \
+            pf_custom_nat_config_changed or \
+            pf_custom_rdr_config_changed or \
+            pf_custom_config_changed:
+            try:
+                test_pf_config(node.pf_custom_param_config+"\n"+
+                               node.pf_custom_nat_config + "\n" +
+                               node.pf_custom_rdr_config + "\n" +
+                               node.pf_custom_config + "\n")
+            except CalledProcessError:
+                return render_form(save_error="Invalid PF configuration")
         node.save()
 
         if ip_changed or gateway_changed or gateway_ipv6_changed or static_route_changed:

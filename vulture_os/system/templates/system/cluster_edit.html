@@ -23,6 +23,17 @@
                 <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Node settings" %}</h1>
             </div>
             <div class="panel-body">
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+                  <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                    <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
+                  </ul>
+                  <div class="tab-content no-padding">
+                    <pre class="console-type">{{ save_error }}</pre>
+                  </div>
+                </div>
+              {% endif %}
               {# Print form errors correctly #}
               {{ form.errors|safe }}
               <div class="nav-tabs-custom nav-tabs-no-margin">
@@ -180,7 +191,47 @@
                         </div>
                       </div>
                     </div> <!-- /.row -->
-                    <div class="row">
+                    <div class="col-sm-4 pull-right">
+                      <div class="form-group">
+                        <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".browsers-compat">
+                          <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                        </button>
+                      </div>
+                    </div>
+                    <div class="row collapse browsers-compat">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Custom PF initial parameters configuration" %}</label>
+                          <div class="col-sm-5">
+                          {{form.pf_custom_param_config}}
+                          {{form.pf_custom_param_config.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row collapse browsers-compat">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Custom PF NAT Configuration" %}</label>
+                          <div class="col-sm-5">
+                          {{form.pf_custom_nat_config}}
+                          {{form.pf_custom_nat_config.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row collapse browsers-compat">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Custom PF RDR Configuration" %}</label>
+                          <div class="col-sm-5">
+                          {{form.pf_custom_rdr_config}}
+                          {{form.pf_custom_rdr_config.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row collapse browsers-compat">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% trans "Custom PF Configuration" %}</label>
