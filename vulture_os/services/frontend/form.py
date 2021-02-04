@@ -238,10 +238,10 @@ class FrontendForm(ModelForm):
         #  convert space separated string into list
         if self.initial.get('compression_algos'):
             self.initial['compression_algos'] = self.initial.get('compression_algos').split(' ')
-        self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
-        self.initial['kafka_brokers'] = ",".join(self.initial.get('kafka_brokers', []) or self.fields['kafka_brokers'].initial)
+        # Convert list field from model to text input comma separated
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
+        self.initial['kafka_brokers'] = ",".join(self.initial.get('kafka_brokers', []) or self.fields['kafka_brokers'].initial)
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
