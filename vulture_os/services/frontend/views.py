@@ -306,7 +306,7 @@ def frontend_edit(request, object_id=None, api=False):
             reputationctx_objs.append(reputationctx_f.save(commit=False))
 
         listener_objs = []
-        if form.data.get('mode') != "impcap" and form.data.get('listening_mode') not in ("file", "api"):
+        if form.data.get('mode') != "impcap" and form.data.get('listening_mode') not in ("file", "api", "kafka"):
             # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap" and "API"
             if form.data.get('enabled') and not listener_ids:
                 form.add_error(None, "At least one listener is required if frontend is enabled.")
@@ -351,7 +351,7 @@ def frontend_edit(request, object_id=None, api=False):
 
         if frontend.mode == "impcap":
             node_listeners[frontend.impcap_intf.node] = []
-        elif frontend.listening_mode == "file":
+        elif frontend.listening_mode in ("file", "kafka"):
             node_listeners[frontend.node] = []
         elif frontend.listening_mode == "api":
             # Listen on all nodes in case of a master mongo change
@@ -391,8 +391,7 @@ def frontend_edit(request, object_id=None, api=False):
                     logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
 
                 """ If it is an Rsyslog only conf """
-                if (frontend.mode == "log" and frontend.listening_mode in ("udp", "file", 'api')) \
-                        or frontend.mode == "impcap":
+                if frontend.rsyslog_only_conf:
 
                     """ And if it was not before saving """
                     if "mode" in changed_data or "listening_mode" in changed_data:

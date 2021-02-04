@@ -89,7 +89,8 @@ LISTENING_MODE_CHOICES = (
     ('tcp,udp', "TCP & UDP"),
     ('relp', "RELP (TCP)"),
     ('file', "FILE"),
-    ('api', 'API CLIENT')
+    ('api', 'API CLIENT'),
+    ('kafka', 'KAFKA')
 )
 
 IMPCAP_FILTER_CHOICES = (
@@ -368,6 +369,22 @@ class Frontend(models.Model):
     file_path = models.TextField(
         default="/var/log/darwin/alerts.log",
         help_text=_("Local file path to listen on")
+    )
+    """ Kafka mode attributes """
+    kafka_brokers = models.ListField(
+        default=["192.168.1.2:9092"],
+        help_text=_("Kafka broker(s) to connect to"),
+        verbose_name=_("Kafka Broker(s)")
+    )
+    kafka_topic = models.TextField(
+        default="mytopic",
+        help_text=_("Kafka topic to connect to"),
+        verbose_name=_("Kafka Topic")
+    )
+    kafka_consumer_group = models.TextField(
+        default="my_group",
+        help_text=_("Kafka consumer group to use to poll logs"),
+        verbose_name=_("Kafka consumer group")
     )
 
     node = models.ForeignKey(

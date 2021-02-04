@@ -181,7 +181,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row log-mode -->
-                    <div class="row log-mode file-mode">
+                    <div class="row log-mode file-mode kafka-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.node.label }}</label>
@@ -199,6 +199,39 @@
                           <div class="col-sm-5">
                             {{form.file_path}}
                             {{form.file_path.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode kafka-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.kafka_brokers.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.kafka_brokers}}
+                            {{form.kafka_brokers.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode kafka-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.kafka_topic.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.kafka_topic}}
+                            {{form.kafka_topic.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode kafka-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.kafka_consumer_group.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.kafka_consumer_group}}
+                            {{form.kafka_consumer_group.errors|safe}}
                           </div>
                         </div>
                       </div>
