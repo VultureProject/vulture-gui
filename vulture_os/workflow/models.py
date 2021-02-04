@@ -176,7 +176,7 @@ class Workflow(models.Model):
         defender_policy = None
         authentication = None
         if self.defender_policy:
-            defender_policy = self.defender_policy.to_dict()
+            defender_policy = self.defender_policy.to_template()
         
         if self.authentication:
             authentication = self.authentication.to_template()
