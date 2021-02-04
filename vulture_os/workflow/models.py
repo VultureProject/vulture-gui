@@ -218,7 +218,8 @@ class Workflow(models.Model):
             'public_dir': self.public_dir,
             'frontend': self.frontend,
             'backend': self.backend,
-            'authentication': self.authentication
+            'authentication': self.authentication,
+            'defender_policy': self.defender_policy
         }
 
     def generate_conf(self):
