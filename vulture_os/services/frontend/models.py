@@ -35,7 +35,7 @@ from djongo import models
 # Django project imports
 from applications.logfwd.models import LogOM, LogOMMongoDB
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
-from darwin.policy.models import DarwinPolicy, FilterPolicy
+from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinBuffering
 from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, NetworkInterfaceCard, Node
@@ -97,6 +97,7 @@ IMPCAP_FILTER_CHOICES = (
     ('udp and port 53', "DNS"),
     ('tcp[13] & 2 != 0', "SYN FLAGS"),
     ('tcp and (port 80 or port 443)', "WEB"),
+    ('icmp or udp or (tcp and tcp[tcpflags] & tcp-syn == tcp-syn)', "CONNECTIONS"),
     ('custom', "Custom"),
 )
 
@@ -187,13 +188,13 @@ class Frontend(models.Model):
     )
     """ *** DARWIN OPTIONS *** """
     """ Darwin policy """
-    darwin_policy = models.ForeignKey(
+    darwin_policies = models.ArrayReferenceField(
         to=DarwinPolicy,
         on_delete=models.PROTECT,
         null=True,
         blank=False,
         related_name="frontend_set",
-        help_text=_("Darwin policy to use")
+        help_text=_("Darwin policies to use")
     )
     """ Darwin mode """
     darwin_mode = models.TextField(
@@ -1012,7 +1013,7 @@ class Frontend(models.Model):
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
             'serialized_blwl_list': serialized_blwl_list,
-            'darwin_policies': FilterPolicy.objects.filter(policy=self.darwin_policy),
+            'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
             'tenants_config': self.tenants_config
@@ -1026,7 +1027,7 @@ class Frontend(models.Model):
         return result
 
     def generate_conf(self, listener_list=None, header_list=None):
-        """ Render the conf with Jinja template and self.to_template() method 
+        """ Render the conf with Jinja template and self.to_template() method
         :return     The generated configuration as string, or raise
         """
         """ If no HAProxy conf - Rsyslog only conf """
@@ -1157,7 +1158,7 @@ class Frontend(models.Model):
         return internal_ruleset + "\n\n" + tpl.render(Context(log_oms, autoescape=False)) + "\n"
 
     def render_log_condition_failure(self):
-        """ Render log_forwarders' config from self.log_forwarders_parse_failure 
+        """ Render log_forwarders' config from self.log_forwarders_parse_failure
             & Associate the correct template depending on parser
         :return  Str containing the rendered config
         """
@@ -1195,9 +1196,48 @@ class Frontend(models.Model):
             conf['log_condition'] = self.render_log_condition()
             conf['log_condition_failure'] = self.render_log_condition_failure()
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
+
+            darwin_actions = []
+            for darwin_filter in FilterPolicy.objects.filter(policy__in=self.darwin_policies.all(), enabled=True):
+                if not darwin_filter.filter_type.is_launchable:
+                    continue
+
+                action = {
+                    "filter_type": darwin_filter.filter_type.name,
+                    "threshold": darwin_filter.threshold,
+                    "enrichment_tags": ["darwin.{}".format(darwin_filter.filter_type.name)],
+                    "calls": []
+                }
+
+                # if filter is buffered
+                # - enrichment should be disabled
+                # - socket should point to related buffer filter
+                # - inputs should include buffer source
+                if darwin_filter.buffering.exists():
+                    # shouldn't raise, but exceptions are handled at the end of the function anyway
+                    buffering = darwin_filter.buffering.get()
+                    action['disable_enrichment'] = True
+                    action['buffer_source'] = "{}_{}_{}".format(buffering.destination_filter.name, self.name, buffering.destination_filter.policy.id)
+                    action['filter_socket'] = buffering.buffer_filter.socket_path
+                else:
+                    action['filter_socket'] = darwin_filter.socket_path
+
+                if darwin_filter.mmdarwin_enabled and darwin_filter.mmdarwin_parameters:
+                    call = {
+                        "inputs": darwin_filter.mmdarwin_parameters,
+                        "outputs": [p.replace('.', '!') for p in darwin_filter.mmdarwin_parameters if p[0] in ['!', '.']]
+                    }
+                    action['calls'].append(call)
+
+                if darwin_filter.enrichment_tags:
+                    action['enrichment_tags'].extend(darwin_filter.enrichment_tags)
+
+                darwin_actions.append(action)
+
             return template.render({'frontend': conf,
                                     'node': Cluster.get_current_node(),
-                                    'global_config': Cluster.get_global_config()})
+                                    'global_config': Cluster.get_global_config(),
+                                    'darwin_actions': darwin_actions})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound as e:
@@ -1211,6 +1251,8 @@ class Frontend(models.Model):
                                           "{}".format(e.message), "rsyslog")
         except TemplateSyntaxError as e:
             exception = ServiceJinjaError("Syntax error in the template: '{}'".format(e.message), "rsyslog")
+        except (DarwinBuffering.DoesNotExist, DarwinBuffering.MultipleObjectsReturned) as e:
+            exception = ServiceJinjaError("Could not get the expected unique buffering from a darwin filter: '{}'".format(e.message), "rsyslog")
         # If there was an exception, raise a more general exception with the message and the traceback
         raise exception
 

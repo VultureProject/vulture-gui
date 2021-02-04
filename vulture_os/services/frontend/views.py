@@ -32,6 +32,7 @@ from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
 from applications.logfwd.models import LogOM
+from darwin.policy.models import DarwinBuffering, DarwinPolicy
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener
@@ -121,8 +122,12 @@ def frontend_delete(request, object_id, api=False):
         # Whatever the type, delete the file because its name is its id
         rsyslog_filename = frontend.get_rsyslog_base_filename()  # if frontend.mode != "tcp" else ""
 
+        # Check if darwin buffering should be reloaded
+        # that is, if the frontend is associated with a policy with at least one filter with buffering configured
+        was_darwin_buffered = DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists()
+
         try:
-            # If POST request and no error: detete frontend
+            # If POST request and no error: delete frontend
             frontend.delete()
 
             # TODO: Verify which node(s) are concerned for API requests ?
@@ -138,6 +143,11 @@ def frontend_delete(request, object_id, api=False):
 
             # Regenerate Rsyslog system conf and restart
             Cluster.api_request('services.rsyslogd.rsyslog.build_conf')
+
+            # Reload darwin buffering if necessary
+            if was_darwin_buffered:
+                DarwinPolicy.update_buffering()
+                Cluster.api_request("services.darwin.darwin.reload_conf")
 
             if api:
                 return JsonResponse({
@@ -185,6 +195,7 @@ def frontend_edit(request, object_id=None, api=False):
     header_form_list = []
     reputationctx_form_list = []
     node_listeners = dict()
+    darwin_buffering_needs_refresh = False
     if object_id:
         try:
             frontend = Frontend.objects.get(pk=object_id)
@@ -250,6 +261,11 @@ def frontend_edit(request, object_id=None, api=False):
                                                      str.join('', format_exception(*exc_info()))])
         header_objs = []
         reputationctx_objs = []
+
+        if DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists():
+            logger.debug("frontend_edit: frontend has darwin bufferings, will update buffering policy")
+            darwin_buffering_needs_refresh = True
+
         if form.data.get('mode') == "http":
             """ Handle JSON formatted headers """
             try:
@@ -518,6 +534,17 @@ def frontend_edit(request, object_id=None, api=False):
                                             frontend.log_forwarders_parse_failure.filter(logomfile__enabled=True).count()):
                 # Reload LogRotate config
                 Cluster.api_request("services.logrotate.logrotate.reload_conf")
+
+            # If the frontend is associated with a policy containing buffered filters
+            # then the buffering policy needs a refresh
+            if DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists():
+                # Don't remove this condition, the variable can also be set above
+                darwin_buffering_needs_refresh = True
+
+            # Reload darwin buffering if necessary
+            if darwin_buffering_needs_refresh:
+                DarwinPolicy.update_buffering()
+                Cluster.api_request("services.darwin.darwin.reload_conf")
 
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """

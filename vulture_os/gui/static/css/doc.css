@@ -24,3 +24,7 @@
 .logo_full_doc_not_found{
     width: 50%;
 }
+
+#documentation_tab blockquote{
+    border-left: 3px solid orange !important;
+}

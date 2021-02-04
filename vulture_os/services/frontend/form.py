@@ -115,10 +115,10 @@ class FrontendForm(ModelForm):
                                      for parser in get_available_api_parser()])
 
         """ Darwin policy """
-        self.fields['darwin_policy'] = ModelChoiceField(
-            label=_("Darwin policy"),
-            queryset=DarwinPolicy.objects.all(),
-            widget=Select(attrs={'class': 'form-control select2'}),
+        self.fields['darwin_policies'] = ModelMultipleChoiceField(
+            label=_("Darwin policies"),
+            queryset=DarwinPolicy.objects.filter(is_internal=False),
+            widget=SelectMultiple(attrs={'class': 'form-control select2'}),
             required=False
         )
         """ Log forwarders """
@@ -256,7 +256,7 @@ class FrontendForm(ModelForm):
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group',
-                  'node', 'darwin_policy', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
+                  'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
                   'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
                   'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
@@ -524,7 +524,7 @@ class FrontendForm(ModelForm):
                 self.add_error('logging_reputation_database_v6', "One of those fields is required.")
 
         """ If Darwin policy is enabled, darwon_mode is required """
-        if cleaned_data.get('darwin_policy'):
+        if cleaned_data.get('darwin_policies'):
             if not cleaned_data.get("darwin_mode"):
                 self.add_error("darwin_mode", "This field is required when a darwin policy is set")
 
