@@ -262,10 +262,6 @@ def frontend_edit(request, object_id=None, api=False):
         header_objs = []
         reputationctx_objs = []
 
-        if DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists():
-            logger.debug("frontend_edit: frontend has darwin bufferings, will update buffering policy")
-            darwin_buffering_needs_refresh = True
-
         if form.data.get('mode') == "http":
             """ Handle JSON formatted headers """
             try:
@@ -543,6 +539,7 @@ def frontend_edit(request, object_id=None, api=False):
 
             # Reload darwin buffering if necessary
             if darwin_buffering_needs_refresh:
+                logger.debug("frontend_edit: frontend has darwin bufferings, will update buffering policy")
                 DarwinPolicy.update_buffering()
                 Cluster.api_request("services.darwin.darwin.reload_conf")
 
