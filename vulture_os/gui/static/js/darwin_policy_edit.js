@@ -150,7 +150,14 @@ function init_vue(){
                 tmp_enrichment_tags.push({text: tmp})
               filter.enrichment_tags = tmp_enrichment_tags
 
-              filter.continuous_analysis_enabled = (filter.buffering != null)
+              if (filter.buffering == null) {
+                filter.buffering = {}
+                filter.buffering.interval = 300
+                filter.buffering.required_log_lines = 10
+                filter.continuous_analysis_enabled = false
+              } else {
+                filter.continuous_analysis_enabled = true
+              }
               self.policy.filters.push(filter)
             }
           }
@@ -219,7 +226,7 @@ function init_vue(){
 
       renderCustomConfig(filter){
         let rsyslog_params = ""
-        let continuous_analysis_enabled = ""
+        let continuous_analysis_infos = ""
         let filter_type_name = (available_filter_types[filter.filter_type]) ? available_filter_types[filter.filter_type].name : ""
 
         if (filter.mmdarwin_enabled){
@@ -241,8 +248,8 @@ function init_vue(){
         }
 
         if (filter.continuous_analysis_enabled){
-          continuous_analysis_enabled = `<b>${gettext('Continuous Analysis')}:</b><ul><li><b>${gettext("Analysis interval")}:</b> ${filter.buffering.interval}</li>`
-          continuous_analysis_enabled += `<li><b>${gettext("Analysis min entries")}:</b> ${filter.buffering.required_log_lines}</li></ul>`
+          continuous_analysis_infos = `<b>${gettext('Continuous Analysis')}:</b><ul><li><b>${gettext("Analysis interval")}:</b> ${filter.buffering.interval}</li>`
+          continuous_analysis_infos += `<li><b>${gettext("Analysis min entries")}:</b> ${filter.buffering.required_log_lines}</li></ul>`
         }
 
         let customConfig = ""
@@ -265,7 +272,7 @@ function init_vue(){
               <p><b>${gettext("Yara Scan Type")}:</b> ${filter.config.yara_scan_type}</p>
               <p><b>${gettext("Yara Scan Max Size")}:</b> ${filter.config.yara_scan_max_size}</p>
               <p><b>${gettext("Max Memory usage")}:</b> ${filter.config.max_memory_usage}</p>
-              <p><b>${gettext("Yara Rule File")}:</b> ${label_yara_rule_file}</p>
+              <p><b>${gettext("Yara Rule File")}:</b> <label class='label label-primary'>${label_yara_rule_file}</label></p>
             `
             break
 
@@ -282,7 +289,7 @@ function init_vue(){
                 label_hostlookup_rule_file = tmp.label
             }
             customConfig = `
-              <p><b>${gettext("Database")}:</b> ${label_hostlookup_rule_file}</p>
+              <p><b>${gettext("Database")}:</b> <label class='label label-primary'>${label_hostlookup_rule_file}</label></p>
             `
             break
 
@@ -338,7 +345,7 @@ function init_vue(){
 
         return `
           ${rsyslog_params}
-          ${continuous_analysis_enabled}
+          ${continuous_analysis_infos}
           ${customConfig}
         `
       },
