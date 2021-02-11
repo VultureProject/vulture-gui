@@ -59,7 +59,14 @@ function init_vue(){
           reputation_ctx_id: null,
           max_tokens: 75,
           timeout: 0,
-          fastmode: true
+          fastmode: true,
+          model: "",
+          percent_more_alert: 0,
+          percent_less_alert: 0,
+          percent_more_warning: null,
+          percent_less_warning: null,
+          minimal_variation: null,
+          lower_absolute: null,
         },
         continuous_analysis_enabled: false,
         buffering: {
@@ -86,7 +93,9 @@ function init_vue(){
       yara_rule_file_choices: [],
 
       yara_policies_list: [],
-      hostlookup_reputation_choices: []
+      hostlookup_reputation_choices: [],
+      vast_model_choices: [],
+      vaml_model_choices: []
     },
 
     mounted() {
@@ -125,6 +134,10 @@ function init_vue(){
                   self.fetch_reputation_ctx()
                 else if (filter_type.name === "yara")
                   self.fetch_yara_rule_file()
+                else if (filter_type.name === "vast")
+                  self.fetch_vast_models()
+                else if (filter_type.name === "vaml")
+                  self.fetch_vaml_models()
               }
 
               let tmp_mmdarwin_parameters = []
@@ -155,6 +168,10 @@ function init_vue(){
             this.fetch_reputation_ctx()
           else if (filter_type.name === "yara")
             this.fetch_yara_rule_file()
+          else if (filter_type.name === "vast")
+            this.fetch_vast_models()
+          else if (filter_type.name === "vaml")
+            this.fetch_vaml_models()
 
           if (!filter_type.is_launchable) {
             this.filter.enabled = false
@@ -175,11 +192,9 @@ function init_vue(){
       renderButtonColor(filter_type_id) {
         let filter_type = available_filter_types[filter_type_id]
         if(filter_type && filter_type.is_launchable){
-          console.log("is launchable")
           return {checked: '#75C791', unchecked: '#BFCBD9'}
         }
         else {
-          console.log("is not launchable")
           return {checked: '#E45050', unchecked: '#BFCBD9'}
         }
       },
@@ -286,6 +301,39 @@ function init_vue(){
               <p><b>${gettext("Rule file list")}:</b> ${rule_file_list.join('&nbsp;')}</p>
             `
             break
+
+          case "vast":
+            customConfig = `
+              <p><b>${gettext("Model")}:</b> <label class='label label-primary'>${filter.config.model}</label></p>
+            `
+            break;
+
+          case "vaml":
+            customConfig = `
+              <p><b>${gettext("Model")}:</b> <label class='label label-primary'>${filter.config.model}</label></p>
+              <p><b>${gettext("Percent more before alert")}:</b> ${filter.config.percent_more_alert}</p>
+              <p><b>${gettext("Percent less before alert")}:</b> ${filter.config.percent_less_alert}</p>
+              `
+            if ("percent_more_warning" in filter.config 
+                && filter.config.percent_more_warning != ""
+                && filter.config.percent_more_warning != null) {
+              customConfig += `<p><b>${gettext("Percent more before warning")}:</b> ${filter.config.percent_more_warning}</p>`
+            }
+            if ("percent_less_warning" in filter.config 
+                && filter.config.percent_less_warning != ""
+                && filter.config.percent_less_warning != null) {
+              customConfig += `<p><b>${gettext("Percent less before warning")}:</b> ${filter.config.percent_less_warning}</p>`
+            }
+            if ("minimal_variation" in filter.config 
+                && filter.config.minimal_variation != ""
+                && filter.config.minimal_variation != null) {
+              customConfig += `<p><b>${gettext("Minimal variation")}:</b> ${filter.config.minimal_variation}</p>`
+            }
+            if ("lower_absolute" in filter.config 
+                && filter.config.lower_absolute != ""
+                && filter.config.lower_absolute != null) {
+              customConfig += `<p><b>${gettext("Lower absolute")}:</b> ${filter.config.lower_absolute}</p>`
+            }
         }
 
         return `
@@ -360,6 +408,50 @@ function init_vue(){
         )
       },
 
+      fetch_vast_models() {
+        let self = this
+
+        $.get(
+          darwin_filter_ressources_uri + "/vast/model",
+          null,
+
+          function(response) {
+            self.vast_model_choices = []
+            response.data.forEach(function(value, id) {
+              self.vast_model_choices.push({
+                label: value,
+                id: id
+              })
+            })
+          }
+        ).fail(function(response) {
+          let error = response.responseJSON.error
+          notify('error', gettext('Error'), error)
+        })
+      },
+
+      fetch_vaml_models() {
+        let self = this
+
+        $.get(
+          darwin_filter_ressources_uri + "/vaml/model",
+          null,
+
+          function(response) {
+            self.vaml_model_choices = []
+            response.data.forEach(function(value, id) {
+              self.vaml_model_choices.push({
+                label: value,
+                id: id
+              })
+            })
+          }
+        ).fail(function(response) {
+          let error = response.responseJSON.error
+          notify('error', gettext('Error'), error)
+        })
+      },
+
       custom_rsyslog_calls(filter_type_id) {
         return (available_filter_types[filter_type_id]) ? available_filter_types[filter_type_id].custom_rsyslog_calls_possible : false
       },
@@ -416,7 +508,14 @@ function init_vue(){
             reputation_ctx_id: null,
             max_tokens: 75,
             timeout: 0,
-            fastmode: true
+            fastmode: true,
+            model: "",
+            percent_more_alert: 0,
+            percent_less_alert: 0,
+            percent_more_warning: null,
+            percent_less_warning: null,
+            minimal_variation: null,
+            lower_absolute: null,
           },
           continuous_analysis_enabled: false,
           buffering: {
@@ -467,6 +566,25 @@ function init_vue(){
                 config.timeout = parseInt(tmp_filter.config.timeout, 10)
                 config.yara_policies_id = tmp_filter.config.yara_policies_id
                 break
+
+              case "vast":
+                config.model = tmp_filter.config.model
+                break
+
+              case "vaml":
+                config.model = tmp_filter.config.model
+                // this is not a mistake, holidays_file has the same name as the model
+                config.holidays_file = tmp_filter.config.model
+                config.percent_more_alert = parseFloat(tmp_filter.config.percent_more_alert, 10)
+                config.percent_less_alert = parseFloat(tmp_filter.config.percent_less_alert, 10)
+                if (tmp_filter.config.percent_more_warning !== null)
+                  config.percent_more_warning = parseFloat(tmp_filter.config.percent_more_warning, 10)
+                if (tmp_filter.config.percent_less_warning !== null)
+                  config.percent_less_warning = parseFloat(tmp_filter.config.percent_less_warning, 10)
+                if (tmp_filter.config.minimal_variation !== null)
+                  config.minimal_variation = parseFloat(tmp_filter.config.minimal_variation, 10)
+                if (tmp_filter.config.lower_absolute !== null)
+                  config.lower_absolute = parseFloat(tmp_filter.config.lower_absolute, 10)
           }
 
           for (let tmp of tmp_filter.mmdarwin_parameters)
