@@ -1392,7 +1392,7 @@ class Frontend(models.Model):
     @property
     def rsyslog_only_conf(self):
         """ Check if this frontend has only rsyslog configuration, not haproxy at all """
-        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api")))
+        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka")))
 
 
 class Listener(models.Model):
