@@ -217,8 +217,9 @@ class NodeAPIv1(View):
 
     @api_need_key('cluster_api_key')
     def patch(self, request, object_id):
-        allowed_fields = ('pf_limit_states', 'pf_limit_frags', 'pf_limit_src', 'pf_custom_config', 'gateway',
-                          'gateway_ipv6', 'static_routes', 'management_ip', 'pstats_forwarders')
+        allowed_fields = ('pf_limit_states', 'pf_limit_frags', 'pf_limit_src',
+                          'pf_custom_param_config', 'pf_custom_nat_config', 'pf_custom_rdr_config', 'pf_custom_config',
+                          'gateway', 'gateway_ipv6', 'static_routes', 'management_ip', 'pstats_forwarders')
 
         try:
             for key in request.JSON.keys():

@@ -211,10 +211,10 @@ class InspectionPolicy(models.Model):
         return self.to_html_template()
 
     def get_full_filename(self):
-        return YARA_CONF_PATH + '/' + self.name + "_" + self.last_update.strftime("%Y-%m-%d_%H-%M-00") + ".yar"
+        return YARA_CONF_PATH + '/' + self.name + ".yar"
 
     def get_full_test_filename(self):
-        return YARA_TEST_CONF_PATH + '/' + self.name + "_" + self.last_update.strftime("%Y-%m-%d_%H-%M-00") + ".yar"
+        return YARA_TEST_CONF_PATH + '/' + self.name + ".yar"
 
     def generate_content(self):
         content = DEFAULT_YARA_MODULES_IMPORT + '\n'
