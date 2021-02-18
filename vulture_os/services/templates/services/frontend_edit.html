@@ -1071,6 +1071,37 @@
                         </div>
                       </div>
 
+                      <div class="col-md-12 api_clients_row" id="api_proofpoint_tap_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.proofpoint_tap_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.proofpoint_tap_host }}
+                            {{ form.proofpoint_tap_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.proofpoint_tap_endpoint.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.proofpoint_tap_endpoint }}
+                            {{ form.proofpoint_tap_endpoint.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.proofpoint_tap_principal.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.proofpoint_tap_principal }}
+                            {{ form.proofpoint_tap_principal.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.proofpoint_tap_secret.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.proofpoint_tap_secret }}
+                            {{ form.proofpoint_tap_secret.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
                       <div class="col-md-12">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
