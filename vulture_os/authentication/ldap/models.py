@@ -196,27 +196,6 @@ class LDAPRepository(BaseRepository):
         default="member",
         help_text=_("Attribute which contains  list of group members")
     )
-    """ * OAuth2 related attributes * """
-    enable_oauth2 = models.BooleanField(
-        help_text=_('Export oauth2 attributes')
-    )
-    oauth2_attributes = models.TextField(
-        help_text=_('Oauth2 attribute(s)')
-    )
-    oauth2_type_return = models.TextField(
-        default=OAUTH2_TYPE_CHOICES[0][0],
-        choices=OAUTH2_TYPE_CHOICES,
-        help_text='Type of returned scope values'
-    )
-    oauth2_token_return = models.TextField(
-        default=OAUTH2_TOKEN_CHOICES[0][0],
-        choices=OAUTH2_TOKEN_CHOICES,
-        help_text='Token response place (in header, or in response, or both)'
-    )
-    oauth2_token_ttl = models.PositiveIntegerField(
-        default=3600,
-        help_text='Oauth2 token time to live (in seconds)'
-    )
 
     def to_dict(self):
         return model_to_dict(self)
