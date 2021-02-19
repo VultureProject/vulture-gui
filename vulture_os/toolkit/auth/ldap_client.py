@@ -28,6 +28,7 @@ __doc__ = 'LDAP authentication client wrapper'
 from toolkit.auth.base_auth import BaseAuth
 
 # Extern modules imports
+import copy
 import ldap
 import ldap.modlist as modlist
 
@@ -114,15 +115,6 @@ class LDAPClient(BaseAuth):
             self.attributes_list.append(str(self.user_email_attr))
         self.scope = None
 
-        self.enable_oauth2 = settings.enable_oauth2
-        try:
-            self.oauth2_attributes = settings.oauth2_attributes.split(",")
-        except:
-            self.oauth2_attributes = list()
-        self.oauth2_type_return = settings.oauth2_type_return
-        self.oauth2_token_return = settings.oauth2_token_return
-        self.oauth2_token_ttl = settings.oauth2_token_ttl
-
         proto = 'ldap'
         self.start_tls = False
         if settings.encryption_scheme == 'start-tls':
@@ -178,6 +170,51 @@ class LDAPClient(BaseAuth):
         self._ldap_connection.unbind_s()
         self._ldap_connection = None
 
+    # def _schema(self):
+    #     self._bind_connection(self.user, self.password)
+
+    #     res = self._get_connection().search_s("cn=subschema", ldap.SCOPE_BASE, "(objectclass=*)", ["*", "+"])
+    #     subschema_entry = res[0]
+    #     subschema_subentry = ldap.cidict.cidict(subschema_entry[1])
+    #     subschema = ldap.schema.SubSchema(subschema_subentry)
+    #     object_class_oids = subschema.listall(ldap.schema.models.ObjectClass)
+    #     tmp_object_classes = [
+    #         subschema.get_obj(ldap.schema.models.ObjectClass, oid) for oid in object_class_oids
+    #     ]
+
+    #     object_classes = {}
+    #     for elem in tmp_object_classes:
+    #         object_classes[elem.names[0]] = elem
+
+    #     tmp_schema = {}
+    #     for name, classe in object_classes.items():
+    #         tmp_schema[name] = {
+    #             "must": list(classe.must),
+    #             "may": list(classe.may)
+    #         }
+
+    #         parents = classe.sup
+    #         while len(parents) > 0:
+    #             for parent in parents:
+    #                 try:
+    #                     parent_schema = object_classes[parent]
+    #                     tmp_schema[name]['must'].extend(parent_schema.must)
+    #                     tmp_schema[name]['may'].extend(parent_schema.may)
+    #                 except KeyError:
+    #                     parents = []
+    #                     break
+
+    #                 parents = parent_schema.sup
+
+    #     schema = {}
+    #     for key, values in tmp_schema.items():
+    #         schema[key] = {
+    #             "must": sorted(list(set(values['must']))),
+    #             "may": sorted(list(set(values['may']))),
+    #         }
+
+    #     self.unbind_connection()
+    #     return schema
 
     def _search(self, dn, ldap_query, username, attr_list=None):
         """ Private method used to perform a search operation over LDAP
@@ -247,6 +284,12 @@ class LDAPClient(BaseAuth):
         else:
             return None
 
+    def search_by_dn(self, dn, attr_list=None):
+        self._bind_connection(self.user, self.password)
+        result = self._get_connection().search_s(dn, ldap.SCOPE_SUBTREE, '(objectClass=*)', attr_list)
+        results = self._process_results(result)
+        self.unbind_connection()
+        return results
 
     def search_user(self, username, attr_list=None):
         """ Method used to search for a user inside LDAP repository
@@ -341,7 +384,7 @@ class LDAPClient(BaseAuth):
         raise ChangePasswordError("Cannot find user '{}'".format(username))
 
 
-    def search_group(self, groupname):
+    def search_group(self, groupname, attr_list=None):
         """ Method used to search a group inside LDAP repository
 
         :param groupname: String with groupname
@@ -355,7 +398,7 @@ class LDAPClient(BaseAuth):
         self.scope = self.group_scope
         group_member_attr = str(self.group_member_attr.lower())
         self.attributes_list.append(group_member_attr)
-        results = self._search(dn, query_filter, groupname)
+        results = self._search(dn, query_filter, groupname, attr_list=attr_list)
         self.attributes_list.remove(group_member_attr)
         return results
 
@@ -396,7 +439,7 @@ class LDAPClient(BaseAuth):
             members=group_info[1].get(self.group_member_attr.lower())
             if members:
                 for member in members:
-                    if member==userdn and group_dn not in group_list:
+                    if member == userdn and group_dn not in group_list:
                         group_list.append(group_dn)
         self.attributes_list.remove(group_membership_attr)
 
@@ -521,7 +564,7 @@ class LDAPClient(BaseAuth):
         # Looking for user DN, if found we can try a bind
         found = self.search_user(username, attr_list=["+","*"])
 
-        if found is not None:
+        if found is not None and len(found) > 0:
             dn = found[0][0]
             logger.debug("User {} was found in LDAP, its DN is: {}"
                         .format(username.encode('utf-8'), dn))
@@ -693,7 +736,6 @@ class LDAPClient(BaseAuth):
         return response
 
     def add_new_user(self, username, password, email, phone, group, update_group):
-
         self._bind_connection(self.user, self.password)
 
         # Concatenate username with group ou and cn
@@ -702,19 +744,19 @@ class LDAPClient(BaseAuth):
             dn += ","+str(g)
 
         attrs = {
-            'objectClass': ['inetOrgPerson', 'top'],
-            'sn': str(username),
-            self.user_attr: str(username),
-            'userPassword' : str(password),
-            'description' : "User automatically registrered by Vulture"
+            'objectClass': [b'inetOrgPerson', b'top'],
+            'sn': [bytes(username, "utf-8")],
+            self.user_attr: [bytes(username, "utf-8")],
+            'userPassword' : [bytes(password, "utf-8")],
+            'description' : [b"User automatically registrered by Vulture"]
         }
 
         if self.user_groups_attr:
-            attrs[self.user_groups_attr] = str(group)
+            attrs[self.user_groups_attr] = [bytes(group, "utf-8")]
         if self.user_mobile_attr:
-            attrs[self.user_mobile_attr] = str(phone)
+            attrs[self.user_mobile_attr] = [bytes(phone, "utf-8")]
         if self.user_email_attr:
-            attrs[self.user_email_attr] = str(email)
+            attrs[self.user_email_attr] = [bytes(email, "utf-8")]
 
         # Convert our dict to nice syntax for the add-function using modlist-module
         ldif = modlist.addModlist(attrs)
@@ -733,7 +775,52 @@ class LDAPClient(BaseAuth):
         # Its nice to the server to disconnect and free resources when done
         self.unbind_connection()
 
+    def add_user(self, dn, attributes, group_dn):
+        self._bind_connection(self.user, self.password)
 
+        for k, v in attributes.items():
+            attributes[k] = [bytes(d, "utf-8") for d in v]
+
+        ldif = modlist.addModlist(attributes)
+        self._get_connection().add_s(dn, ldif)
+
+        attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
+        logger.debug("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
+        self._get_connection().modify_s(group_dn, attrs)
+        self.unbind_connection()
+
+    def update_user(self, dn, old_attributes, new_attributes):
+        self._bind_connection(self.user, self.password)
+
+        # Convert values to bytes
+        for k, v in old_attributes.items():
+            old_attributes[k] = [bytes(d, "utf-8") for d in v]
+
+        for k, v in new_attributes.items():
+            new_attributes[k] = [bytes(d, "utf-8") for d in v]
+
+        ldif = modlist.modifyModlist(old_attributes, new_attributes)
+        self._get_connection().modify_s(dn, ldif)
+        self.unbind_connection()
+
+    def delete_user(self, dn, groups):
+        self._bind_connection(self.user, self.password)
+
+        for group in groups:
+            group_dn = group['dn']
+            del group['dn']
+            old_group = copy.deepcopy(group)
+            group[self.group_member_attr].remove(dn)
+
+            final_group = {}
+            for k, v in group.items():
+                final_group[k] = [bytes(e, 'utf-8') for e in v]
+
+            ldif = modlist.modifyModlist(old_group, final_group)
+            self._get_connection().modify_s(group_dn, ldif)
+
+        self._get_connection().delete_s(dn)
+        self.unbind_connection()
 
 class _DeepStringCoder(object):
     """

@@ -29,14 +29,18 @@ from django.urls import path, re_path
 from authentication.generic_list import ListLDAPRepository
 from authentication.generic_delete import DeleteLDAPRepository
 from authentication.ldap import views
+from authentication.ldap import api
 
 
 # Required exceptions imports
 
 
 urlpatterns = [
-    # List view
+        # List view
     path('authentication/ldap/', ListLDAPRepository.as_view(), name="authentication.ldap.list"),
+
+    re_path('^authentication/ldap/view/(?P<object_id>[A-Fa-f0-9]+)$', views.ldap_view, name="authentication.ldap.view"),
+
     # Edit view
     re_path('^authentication/ldap/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
             views.ldap_edit,
@@ -52,9 +56,20 @@ urlpatterns = [
 
     # Authentication test views
     path('authentication/ldap/user_search_test/',
-         views.user_search_test,
-         name="authentication.ldap.user_search_test"),
+            views.user_search_test,
+            name="authentication.ldap.user_search_test"),
     path('authentication/ldap/group_search_test/',
-         views.group_search_test,
-         name="authentication.ldap.group_search_test"),
+            views.group_search_test,
+            name="authentication.ldap.group_search_test"),
+    
+    # API
+    path('api/v1/authentication/ldap/view/<int:object_id>/',
+        api.LDAPViewApi.as_view(),
+        name="authentication.api.ldap.view"
+    ),
+
+    path('api/v1/authentication/ldap/<int:object_id>/',
+        api.LDAPApi.as_view(),
+        name="authentication.api.ldap"
+    )
 ]
