@@ -31,42 +31,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from authentication.ldap.models import LDAPRepository
 from django.utils.translation import ugettext_lazy as _
+from authentication.ldap import tools
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
-
-
-AVAILABLE_GROUP_KEYS = ("group_attr",)
-AVAILABLE_USER_KEYS = ("user_attr", "user_account_locked_attr", "user_change_password_attr", "user_mobile_attr", "user_email_attr")
-
-def find_user(ldap_repo, user_dn, attr_list):
-    client = ldap_repo.get_client()
-    user = client.search_by_dn(user_dn, attr_list=attr_list)
-
-    dn, attrs = user[0]
-    user = {"dn": dn}
-
-    for key in AVAILABLE_USER_KEYS:
-        ldap_key = getattr(ldap_repo, key)
-        if ldap_key:
-            user[ldap_key] = attrs.get(ldap_key, "")
-
-    return user
-
-def find_group(ldap_repo, group_dn, attr_list):
-    client = ldap_repo.get_client()
-    group = client.search_by_dn(group_dn, attr_list=attr_list)
-
-    dn, attrs = group[0]
-    group = {"dn": dn}
-
-    for key in AVAILABLE_GROUP_KEYS:
-        ldap_key = getattr(ldap_repo, key)
-        if ldap_key:
-            group[ldap_key] = attrs[ldap_key]
-
-    group[ldap_repo.group_member_attr] = attrs[ldap_repo.group_member_attr]
-    return group
 
 @method_decorator(csrf_exempt, name="dispatch")
 class LDAPApi(View):
@@ -77,12 +45,12 @@ class LDAPApi(View):
             client = ldap_repository.get_client()
 
             user_keys = []
-            for key in AVAILABLE_USER_KEYS:
+            for key in tools.AVAILABLE_USER_KEYS:
                 if getattr(ldap_repository, key):
                     user_keys.append(getattr(ldap_repository, key))
 
             group_keys = []
-            for key in AVAILABLE_GROUP_KEYS:
+            for key in tools.AVAILABLE_GROUP_KEYS:
                 if getattr(ldap_repository, key):
                     group_keys.append(getattr(ldap_repository, key))
 
@@ -103,31 +71,18 @@ class LDAPViewApi(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id):
         try:
-            object_type = request.GET.get('object_type', 'all')
+            object_type = request.GET['object_type'].lower()
             ldap_repository = LDAPRepository.objects.get(pk=object_id)
-            client = ldap_repository.get_client()
 
+            if object_type not in ('users', 'groups'):
+                raise KeyError()
 
-            if object_type.lower() == "users":
-                group_dn = request.GET.get('group_dn')
-                if group_dn:
-                    group = find_group(ldap_repository, group_dn, ['*'])
-                    members  = []
-                    for member_dn in group['member']:
-                        members.append(find_user(ldap_repository, member_dn, ["*"]))
+            if object_type == "users":
+                group_dn = request.GET['group_dn']
+                data = tools.get_users(ldap_repository, group_dn)
 
-                    data = members
-
-            elif object_type.lower() == "groups":
-                group_base_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
-                
-                data = []
-                for group_dn in client.enumerate_groups():
-                    if group_base_dn not in group_dn:
-                        continue
-
-                    group = find_group(ldap_repository, group_dn, ['*'])
-                    data.append(group)
+            elif object_type == "groups":
+                data = tools.get_groups(ldap_repository)
 
             return JsonResponse({object_type: data})
 
@@ -136,6 +91,13 @@ class LDAPViewApi(View):
                 "status": False,
                 "error": _("Repository does not exist")
             }, status=404)
+
+        except KeyError:
+            return JsonResponse({
+                "status": False,
+                "error": _("Invalid call")
+            }, status=400)
+
         except Exception as error:
             logger.critical(error, exc_info=1)
             if settings.DEV_MODE:
@@ -156,11 +118,7 @@ class LDAPViewApi(View):
             userPassword = request.JSON.get('userPassword')
 
             attributes = {}
-
-            if userPassword:
-                attributes['userPassword'] = [userPassword]
-
-            for key in AVAILABLE_USER_KEYS:
+            for key in tools.AVAILABLE_USER_KEYS:
                 ldap_key = getattr(ldap_repository, key)
                 if ldap_key:
                     data = request.JSON.get(ldap_key)
@@ -170,9 +128,9 @@ class LDAPViewApi(View):
 
                     attributes[ldap_key] = data
 
-            old_objects = find_user(ldap_repository, dn, ['*'])
+            old_objects = tools.find_user(ldap_repository, dn, ['*'])
             del(old_objects['dn'])
-            ldap_response = client.update_user(dn, old_objects, attributes)
+            ldap_response = client.update_user(dn, old_objects, attributes, userPassword)
             return JsonResponse({
                 "message": _("Data saved")
             }, status=200)
@@ -197,28 +155,20 @@ class LDAPViewApi(View):
     def post(self, request, object_id):
         try:
             ldap_repository = LDAPRepository.objects.get(pk=object_id)
-            client = ldap_repository.get_client()
-
             group_dn = request.JSON['group_dn']
             tmp_user = request.JSON['user']
             userPassword = request.JSON.get('userPassword', '')
  
             # Calculate DN
             user_attr = tmp_user[ldap_repository.user_attr]
-            dn = f"{ldap_repository.user_attr}={user_attr},{group_dn}"
-            user = {
-                "sn": [user_attr],
-                "cn": [user_attr],
-                "userPassword": [userPassword],
-                ldap_repository.user_attr: [user_attr],
-                "objectClass": ["inetOrgPerson", "top"],
-                "description": ["User created by Vulture"],
-            }
 
-            for k, v in tmp_user.items():
-                user[k] = [v]
+            attrs = {}
+            for attribute in ('user_account_locked_attr', 'user_change_password_attr', 'user_mobile_attr', 'user_email_attr'):
+                ldap_attr = getattr(ldap_repository, attribute)
+                if ldap_attr and tmp_user.get(ldap_attr):
+                    attrs[ldap_attr] = [tmp_user[ldap_attr]]
 
-            ldap_response = client.add_user(dn, user, group_dn)
+            ldap_response = tools.create_user(ldap_repository, group_dn, user_attr, userPassword, attrs)
             return JsonResponse({
                 "status": True
             }, status=201)
@@ -244,7 +194,7 @@ class LDAPViewApi(View):
             ldap_repository = LDAPRepository.objects.get(pk=object_id)
             dn = request.JSON.get('dn')
             client = ldap_repository.get_client()
-            groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(dn)]
+            groups = [tools.find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(dn)]
             client.delete_user(dn, groups)
             return JsonResponse({
                 "status": True

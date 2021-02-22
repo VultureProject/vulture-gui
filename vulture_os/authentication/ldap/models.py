@@ -197,6 +197,9 @@ class LDAPRepository(BaseRepository):
         help_text=_("Attribute which contains  list of group members")
     )
 
+    def create_group_dn(self, group_name):
+        return f"{self.group_attr}={group_name},{self.group_dn},{self.base_dn}"
+
     def to_dict(self):
         return model_to_dict(self)
 

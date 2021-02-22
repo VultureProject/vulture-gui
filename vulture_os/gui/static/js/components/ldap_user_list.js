@@ -5,7 +5,7 @@ let users_list_template = `
       <button class="btn" v-if="!users">
         <i class="fa fa-spinner fa-spin"></i>
       </button>
-      <button class="btn" @click="addUser()"><i class="fa fa-plus"></i></button>
+      <a class="btn btn-flat btn-default" href="#" @click="addUser()"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp;Add an entry</a>
     </div>
     <h3 class="panel-title">
       <i class="fa fa-users"></i>&nbsp;&nbsp;&nbsp;&nbsp;<span v-html="group.dn"/>

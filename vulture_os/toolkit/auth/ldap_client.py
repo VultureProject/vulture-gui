@@ -354,7 +354,6 @@ class LDAPClient(BaseAuth):
         :param cleartext_password: String with cleartext password
         :return: True if Success, False otherwise
         """
-
         username = username.encode('utf-8')
         cleartext_password = cleartext_password.encode('utf-8')
 
@@ -775,7 +774,7 @@ class LDAPClient(BaseAuth):
         # Its nice to the server to disconnect and free resources when done
         self.unbind_connection()
 
-    def add_user(self, dn, attributes, group_dn):
+    def add_user(self, dn, attributes, group_dn, userPassword):
         self._bind_connection(self.user, self.password)
 
         for k, v in attributes.items():
@@ -787,9 +786,13 @@ class LDAPClient(BaseAuth):
         attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
         logger.debug("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
         self._get_connection().modify_s(group_dn, attrs)
+
+        if userPassword:
+            self._get_connection().passwd_s(dn, None, userPassword)
+
         self.unbind_connection()
 
-    def update_user(self, dn, old_attributes, new_attributes):
+    def update_user(self, dn, old_attributes, new_attributes, userPassword):
         self._bind_connection(self.user, self.password)
 
         # Convert values to bytes
@@ -801,6 +804,10 @@ class LDAPClient(BaseAuth):
 
         ldif = modlist.modifyModlist(old_attributes, new_attributes)
         self._get_connection().modify_s(dn, ldif)
+        
+        if userPassword:
+            self._get_connection().passwd_s(dn, None, userPassword)
+
         self.unbind_connection()
 
     def delete_user(self, dn, groups):
