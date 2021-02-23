@@ -154,7 +154,7 @@ class Workflow(models.Model):
         """ Retrieve list/custom objects """
 
         """ And returns the attributes of the class """
-        return {
+        tmp = {
             'id': str(self.id),
             'name': self.name,
             'fqdn': self.fqdn,
@@ -168,9 +168,10 @@ class Workflow(models.Model):
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             'acls': self.workflowacl_set.count(),
-            'authentication_id': str(self.authentication.pk),
-            'authentication': str(self.authentication)
-        }
+            "authentication": None
+        }       
+        
+        return tmp
 
     def to_dict(self):
         defender_policy = None
@@ -189,16 +190,19 @@ class Workflow(models.Model):
             'backend': self.backend.to_dict(),
             'frontend_id': str(self.frontend.pk),
             'backend_id': str(self.backend.pk),
-            'authentication_id': str(self.authentication.pk),
             'workflow_json': json.dumps(self.workflow_json),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             'public_dir': self.public_dir,
+            'authentication_id': None,
             'fqdn': self.fqdn,
             'defender_policy': defender_policy,
             'authentication': authentication,
             'acls': [acl.to_dict() for acl in self.workflowacl_set.all()]
         }
+
+        if self.authentication:
+            result['authentication_id'] = str(self.authentication.pk)
 
         return result
 
