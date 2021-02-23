@@ -30,7 +30,7 @@ logger = logging.getLogger('api')
 
 
 AVAILABLE_GROUP_KEYS = ("group_attr",)
-AVAILABLE_USER_KEYS = ("user_attr", "user_account_locked_attr", "user_change_password_attr", "user_mobile_attr", "user_email_attr")
+AVAILABLE_USER_KEYS = ("user_attr", "user_account_locked_attr", "user_change_password_attr", "user_mobile_attr", "user_email_attr", "user_smartcardid_attr")
 
 
 def find_user(ldap_repo, user_dn, attr_list):

@@ -280,6 +280,17 @@
                           </div>
                         </div> <!-- /.row -->
                         <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.user_smartcardid_attr.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.user_smartcardid_attr}}
+                                  {{form.user_smartcardid_attr.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
                           <div class="col-sm-12" style="text-align:center;">
                             <button name="user_search_test" id="user_search_test" class="btn btn-success btn-flat"><span>{% trans "Test User authentication settings" %}</span></button>
                           </div>
@@ -393,6 +404,7 @@
                 <div id="user_email" class="test_user"></div>
                 <div id="account_locked" class="test_user"></div>
                 <div id="password_expired" class="test_user"></div>
+                <div id="smartcardid" class="test_user"></div>
                 <div id="user_groups" class="test_user"></div>
               </div>
             </div>
@@ -547,6 +559,7 @@
       $('#user_email').html('{% trans "Email address" %}: '+ data['user_email']);
       $('#account_locked').html('{% trans "Account locked" %}: '+ data['account_locked']);
       $('#password_expired').html('{% trans "Need change pass" %}: '+ data['password_expired']);
+      $('#smartcardid').html('{% trans "Smart Card ID" %}: '+ data['smartcardid']);
       $('#user_groups').html('{% trans "User groups" %}:');
       group_list = $('#user_groups');
       var ul = $('<ul/>').appendTo(group_list);

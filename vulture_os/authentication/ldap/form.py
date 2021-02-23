@@ -48,7 +48,7 @@ class LDAPRepositoryForm(ModelForm):
     class Meta:
         model = LDAPRepository
         fields = ('name', 'host', 'port', 'protocol', 'encryption_scheme', 'connection_dn', 'dn_password', 'base_dn',
-                  'user_scope', 'user_dn', 'user_attr', 'user_filter', 'user_account_locked_attr',
+                  'user_scope', 'user_dn', 'user_attr', 'user_filter', 'user_account_locked_attr', 'user_smartcardid_attr',
                   'user_change_password_attr', 'user_groups_attr', 'user_mobile_attr', 'user_email_attr',
                   'group_scope', 'group_dn', 'group_attr', 'group_filter', 'group_member_attr')
         widgets = {
@@ -69,6 +69,7 @@ class LDAPRepositoryForm(ModelForm):
             'user_groups_attr': TextInput(attrs={'class': 'form-control'}),
             'user_mobile_attr': TextInput(attrs={'class': 'form-control'}),
             'user_email_attr': TextInput(attrs={'class': 'form-control'}),
+            'user_smartcardid_attr': TextInput(attrs={'class': 'form-control'}),
             'group_scope': Select(choices=LDAP_SCOPES_CHOICES, attrs={'class': 'form-control select2'}),
             'group_dn': TextInput(attrs={'class': 'form-control'}),
             'group_attr': TextInput(attrs={'class': 'form-control'}),

@@ -170,6 +170,12 @@ class LDAPRepository(BaseRepository):
         verbose_name=_("Email attribute"),
         help_text=_("Attribute which contains user's email address")
     )
+
+    user_smartcardid_attr = models.TextField(
+        verbose_name=_("Smart Card ID attribute"),
+        default="",
+        help_text=_("Attribute which contains user's SmartCard ID")
+    )
     """ * Group search related attributes * """
     group_scope = models.PositiveIntegerField(
         verbose_name=_("Group search scope"),

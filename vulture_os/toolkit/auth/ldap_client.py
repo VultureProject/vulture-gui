@@ -89,6 +89,7 @@ class LDAPClient(BaseAuth):
         self.user_mobile_attr = settings.user_mobile_attr
         self.user_email_attr = settings.user_email_attr
         self.user_groups_attr = settings.user_groups_attr
+        self.user_smartcardid_attr = settings.user_smartcardid_attr
         # Group related settings
         try:
             self.group_dn = settings.group_dn
@@ -613,6 +614,8 @@ class LDAPClient(BaseAuth):
                 key = "user_phone"
             elif key == self.user_email_attr:
                 key = "user_email"
+            elif key == self.user_smartcardid_attr:
+                key = "user_smartcardid"
             elif key == self.user_groups_attr:
                 user_groups = val
                 # Groups MUST be a list - do not convert to str if len == 1
@@ -666,7 +669,7 @@ class LDAPClient(BaseAuth):
             'reason': None
         }
         try:
-            user_info = self.search_user(username)
+            user_info = self.search_user(username, attr_list=["+","*"])
             response['account_locked'] = self.is_user_account_locked(username)
             response['password_expired'] = self.is_password_expired(username)
             response['user_groups'] = self.search_user_groups(username)
@@ -691,6 +694,16 @@ class LDAPClient(BaseAuth):
                 response['user_email'] = email_info
             else:
                 response['user_email'] = 'N/A'
+
+            if user_info and self.user_smartcardid_attr is not None:
+                smartcardid_info = user_info[0][1].get(self.user_smartcardid_attr.lower())
+                if isinstance(smartcardid_info, list):
+                    smartcardid_info = smartcardid_info[0]
+                if isinstance(smartcardid_info, bytes):
+                    smartcardid_info = smartcardid_info.decode('utf-8')
+                response["smartcardid"] = smartcardid_info
+            else:
+                response["smartcardid"] = "N/A"
 
         except ldap.INVALID_CREDENTIALS:
             logger.error("Invalid credentials : '{}' '{}'".format(self.user, self.password))
