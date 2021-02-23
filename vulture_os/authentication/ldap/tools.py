@@ -97,6 +97,7 @@ def create_user(ldap_repository, group_dn, user_name, userPassword, attrs):
 
     user.update(attrs)
     client = ldap_repository.get_client()
+    logger.info(f"User {user_name} created in LDAP {ldap_repository.name}")
     return client.add_user(user_dn, user, group_dn, userPassword)
 
 
@@ -114,7 +115,9 @@ def update_user(ldap_repository, group_dn, user_name, attrs, userPassword):
     dn = old_user['dn']
     del(old_user['dn'])
     client = ldap_repository.get_client()
-    return client.update_user(dn, old_user, attrs, userPassword)
+    r = client.update_user(dn, old_user, attrs, userPassword)
+    logger.info(f"User {user_name} updated in LDAP {ldap_repository.name}")
+    return r
 
 def delete_user(ldap_repository, group_dn, user_name):
     user = None
@@ -129,4 +132,6 @@ def delete_user(ldap_repository, group_dn, user_name):
     
     client = ldap_repository.get_client()
     groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(member['dn'])]
-    return client.delete_user(member['dn'], groups)
+    r = client.delete_user(member['dn'], groups)
+    logger.info(f"User {user_name} deleted in LDAP {ldap_repository.name}")
+    return r
