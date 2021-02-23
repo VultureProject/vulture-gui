@@ -129,6 +129,11 @@ class IDPApiView(View):
             except KeyError:
                 pass
 
+            try:
+                attrs[ldap_repo.user_smartcardid_attr] = request.JSON['smartcardid']
+            except KeyError:
+                pass
+
             group_dn = ldap_repo.create_group_dn(user[ldap_repo.user_groups_attr])
             ldap_response = tools.create_user(ldap_repo, group_dn, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
             return JsonResponse({
@@ -187,6 +192,11 @@ class IDPApiView(View):
                 attrs[ldap_repo.user_mobile_attr] = [request.JSON['mobile']]
             except KeyError:
                 attrs[ldap_repo.user_mobile_attr] = []
+
+            try:
+                attrs[ldap_repo.user_smartcardid_attr] = [request.JSON['smartcardid']]
+            except KeyError:
+                attrs[ldap_repo.user_smartcardid_attr] = []
 
             group_dn = ldap_repo.create_group_dn(group)
             status = tools.update_user(ldap_repo, group_dn, user_name, attrs, request.JSON.get('userPassword'))
