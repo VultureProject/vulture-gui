@@ -397,32 +397,33 @@ class Frontend(models.Model):
     redis_mode = models.TextField(
         default="queue",
         choices=REDIS_MODE_CHOICES,
-        help_text=_("Redis comsumer mode"),
-        verbose_name=_("Redis consumer mode - 'Queue' mode is recommended to avoid data loss")
+        help_text=_("Redis comsumer mode - 'Queue' mode is recommended to avoid data loss"),
+        verbose_name=_("Redis consumer mode")
     )
     redis_use_lpop = models.BooleanField(
         default=False,
-        help_text=_("Use LPOP instead of default RPOP"),
-        verbose_name=_("Default queue mode uses 'RPOP', toggle the button if you want to use 'LPOP'")
+        help_text=_("Default queue mode uses 'RPOP', toggle the button if you want to use 'LPOP'"),
+        verbose_name=_("Use LPOP")
     )
     redis_server = models.TextField(
         default="127.0.0.3",
-        help_text=_("Redis Server"),
-        verbose_name=_("Redis server to use. Default Vulture internal server is available on 127.0.0.3:6379")
+        help_text=_("Default Vulture internal server is available on 127.0.0.3"),
+        verbose_name=_("Redis server to use")
     )
     redis_port = models.PositiveIntegerField(
         default="6379",
-        help_text=_("Redis Server"),
-        verbose_name=_("Redis server to use. Default Vulture internal server is available on 127.0.0.3:6379")
+        help_text=_("Default redis port is 6379"),
+        verbose_name=_("Redis port to use")
     )
     redis_key = models.TextField(
         default="vulture",
-        help_text=_("Redis key"),
-        verbose_name=_("The redis key you want to po pfrom / the redis channel you want to subscribe to")
+        help_text=_("The redis key you want to pop from the queue / the redis channel you want to subscribe to"),
+        verbose_name=_("Redis key")
     )
     redis_password = models.TextField(
-        help_text=_('Redis password'),
-        default=""
+        default="",
+        help_text=_("Optional password to use via the 'AUTH' redis command when connecting to redis"),
+        verbose_name=_("Redis password")
     )
 
 
