@@ -229,28 +229,38 @@ $(function() {
       $('.file-mode').show();
       $('.api-mode').hide();
       $('.kafka-mode').hide();
+      $('.redis-mode').hide();
     } else if (mode === "log" && listening_mode === "api"){
       $('.network-mode').hide();
       $('.file-mode').hide();
       $('.api-mode').show();
       $('.kafka-mode').hide();
+      $('.redis-mode').hide();
     } else if (mode === "log" && listening_mode === "kafka"){
       $('.network-mode').hide();
       $('.file-mode').hide();
       $('.api-mode').hide();
       $('.kafka-mode').show();
+      $('.redis-mode').hide();
+    } else if (mode === "log" && listening_mode === "redis"){
+      $('.network-mode').hide();
+      $('.file-mode').hide();
+      $('.api-mode').hide();
+      $('.kafka-mode').hide();
+      $('.redis-mode').show();
     } else {
       $('.network-mode').show();
       $('.file-mode').hide();
       $('.api-mode').hide();
       $('.kafka-mode').hide();
+      $('.redis-mode').hide();
     }
   }
 
   /* Show rsyslog only fields, or hide them */
   function show_custom_conf(mode, listening_mode) {
     /* If it is an Rsyslog only conf */
-    if( (mode === "log" && (listening_mode === "udp" || listening_mode === "file" || listening_mode === "api" || listening_mode === "kafka")) || mode === "impcap") {
+    if( (mode === "log" && (listening_mode === "udp" || listening_mode === "file" || listening_mode === "api" || listening_mode === "kafka" || listening_mode === "redis")) || mode === "impcap") {
       $('.haproxy-conf').hide();
     } else {
       $('.haproxy-conf').show();
