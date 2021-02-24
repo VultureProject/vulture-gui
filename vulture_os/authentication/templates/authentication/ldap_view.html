@@ -26,6 +26,7 @@
             <div id="demo-panel-ref" class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
+                        <button class="btn btn-primary btn-flat" data-target="#modal-add-group" data-toggle="modal"><i class="fa fa-plus"></i>&nbsp;&nbsp;{% trans "Add an entry" %}</button>
                     </div>
                     <h3 class="panel-title"><i class="fa fa-sitemap"></i>&nbsp;${ldap_repository.name}</h3>
                 </div>
@@ -38,6 +39,43 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    <div class="modal" id="modal-add-group" role="dialog" tabindex="-1" aria-labelled-by="modal-add-group" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="form-horizontal" @submit.prevent="addGroup()">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">{% trans "Group form" %}</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12 form-group">
+                                <label class="col-sm-3 control-label text-right text-bold">{% trans "Group name" %}</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" v-model="form_group.group_name"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 form-group">
+                                <label class="col-sm-3 control-label text-right text-bold">{% trans "Members" %}</label>
+                                <div class="col-sm-9">
+                                    <vue-tags-input 
+                                        v-model="form_group.members"
+                                        :tags="members"
+                                        :autocomplete-items="autocomplete_members"
+                                        :add-only-from-autocomplete="true"
+                                        @tags-changed="memberTagsChanged"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success"><i class="fa fa-save"></i>&nbsp;{% trans "Save" %}</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
   </section>

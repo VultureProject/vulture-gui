@@ -205,6 +205,16 @@
                         <div class="row">
                           <div class="col-md-12">
                             <div class="form-group">
+                              <label class="col-sm-4 control-label">{% trans "Object Class" %}</label>
+                                <div class="col-sm-5">
+                                  <input type="text" class="form-control" disabled value="InetOrgPerson"/>
+                                </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
                               <label class="col-sm-4 control-label">{{ form.user_attr.label }}</label>
                                 <div class="col-sm-5">
                                   {{form.user_attr}}
@@ -319,6 +329,16 @@
                               <div class="col-sm-2">
                                 <input id="group_dn" type="text" class="form-control" disabled=""/>
                               </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{% trans "Object Class" %}</label>
+                                <div class="col-sm-5">
+                                  <input type="text" class="form-control" disabled value="groupOfNames"/>
+                                </div>
                             </div>
                           </div>
                         </div> <!-- /.row -->

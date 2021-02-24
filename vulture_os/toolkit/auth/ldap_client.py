@@ -787,6 +787,16 @@ class LDAPClient(BaseAuth):
         # Its nice to the server to disconnect and free resources when done
         self.unbind_connection()
 
+    def add_group(self, dn, attrs):
+        self._bind_connection(self.user, self.password)
+
+        for k, v in attrs.items():
+            attrs[k] = [bytes(d, 'utf-8') for d in v]
+
+        ldif = modlist.addModlist(attrs)
+        self._get_connection().add_s(dn, ldif)
+        self.unbind_connection()
+
     def add_user(self, dn, attributes, group_dn, userPassword):
         self._bind_connection(self.user, self.password)
 

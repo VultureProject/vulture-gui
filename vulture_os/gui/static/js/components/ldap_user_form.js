@@ -63,6 +63,7 @@ let UserFormComponent = Vue.component("UserForm", {
         },
 
         saveUser() {
+            this.user_data.object_type = "user"
             if (this.user_data.dn) {
                 this.user_data.userPassword = this.userPassword
                 axios.put(ldap_view_api_uri, this.user_data)

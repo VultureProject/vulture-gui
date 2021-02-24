@@ -68,10 +68,6 @@ let UserListComponent = Vue.component("UserList", {
         })
     },
 
-    editUser(dn) {
-        console.log(dn)
-    },
-
     initTable() {
       if (this.user_table) {
         this.user_table.fnDestroy()

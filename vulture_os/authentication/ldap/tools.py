@@ -63,6 +63,19 @@ def find_group(ldap_repo, group_dn, attr_list):
     group[ldap_repo.group_member_attr] = attrs[ldap_repo.group_member_attr]
     return group
 
+def search_users(ldap_repo, search, by_dn=False):
+    client = ldap_repo.get_client()
+    tmp_users = client.search_user(f"{search}*", attr_list=["+","*"])
+    data = []
+
+    for dn, attrs in tmp_users:
+        user_attr  = attrs.get(ldap_repo.user_attr)
+        if not by_dn:
+            data.append(user_attr[0])
+        else:
+            data.append(dn)
+
+    return data
 
 def get_users(ldap_repository, group_dn):
     group = find_group(ldap_repository, group_dn, ['*'])
@@ -85,6 +98,30 @@ def get_groups(ldap_repository):
     return data
 
 
+def create_group(ldap_repository, group_name, members_username):
+    group_dn = f"{ldap_repository.group_attr}={group_name},{ldap_repository.group_dn},{ldap_repository.base_dn}"
+
+    client = ldap_repository.get_client()
+
+    members = []
+    for member in members_username:
+        try:
+            user = search_users(ldap_repository, member, by_dn=True)[0]
+        except KeyError:
+            return False, f"User {member} does not exist"
+        
+        members.append(user)
+
+    attrs = {
+        ldap_repository.group_attr: [group_name],
+        "objectClass": ["groupOfNames", "top"],
+        "member": members
+    }
+    r = client.add_group(group_dn, attrs)
+    logger.info(f"Group {group_dn} created in LDAP {ldap_repository.name}")
+    return True, r
+
+
 def create_user(ldap_repository, group_dn, user_name, userPassword, attrs):
     user_dn = f"{ldap_repository.user_attr}={user_name},{group_dn}"
     user = {
@@ -97,8 +134,9 @@ def create_user(ldap_repository, group_dn, user_name, userPassword, attrs):
 
     user.update(attrs)
     client = ldap_repository.get_client()
+    r = client.add_user(user_dn, user, group_dn, userPassword)
     logger.info(f"User {user_name} created in LDAP {ldap_repository.name}")
-    return client.add_user(user_dn, user, group_dn, userPassword)
+    return r
 
 
 def update_user(ldap_repository, group_dn, user_name, attrs, userPassword):

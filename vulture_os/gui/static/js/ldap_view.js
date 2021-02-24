@@ -17,11 +17,16 @@ let ldap_view = new Vue({
   delimiters: ['${', '}'],
   data: {
     ldap_repository: null,
+    form_group: {
+      group_name: "",
+      members: ""
+    },
     group_table: null,
     group_keys: [],
     user_keys: [],
     groups: [],
-    users: []
+    members: [],
+    autocomplete_members: []
   },
 
   mounted() {
@@ -35,14 +40,63 @@ let ldap_view = new Vue({
   },
 
   watch: {
+    "form_group.members": "autocomplete_users",
     groups() {
       this.initGroupTable()
     }
   },
 
   methods: {
-    editGroup(dn) {
-      console.log(dn)
+    autocomplete_users(elem) {
+      this.autocomplete_members = []
+      if (this.form_group.members.length < 2) return;
+      axios.get(ldap_view_api_uri, {params: {object_type: "users", search: elem}})
+        .then((response) => {
+          let data = []
+          for (let tmp of response.data.users)
+            data.push({text: tmp})
+
+          this.autocomplete_members = data
+        })
+      return []
+    },
+    memberTagsChanged(newTags) {
+      this.members = newTags
+      this.autocomplete_members = []
+    },
+
+    addGroup() {
+      let members = []
+      for (let m of this.members)
+        members.push(m.text)
+
+      if (members.length === 0){
+        notify('error', gettext('Error'), gettext("At least one member is required"))
+        return
+      }
+
+      let data = {
+        object_type: "group",
+        group_name: this.form_group.group_name,
+        member: members
+      }
+
+      axios.post(ldap_view_api_uri, data)
+        .then((response) => {
+          if (response.status === 201) {
+            this.memberTagsChanged([])
+            this.form_group = {
+              group_name: "",
+              members: ""
+            }
+            $('#modal-add-group').modal('hide')
+            notify('success', gettext("Success"), gettext("Group successfully created"))
+            this.getGroups()
+          }
+      })
+      .catch((error) => {
+          console.error(error.response.data)
+      })
     },
 
     initGroupTable() {
@@ -88,6 +142,11 @@ let ldap_view = new Vue({
       })
     },
     getGroups(){
+      if (this.group_table) {
+        this.group_table.fnDestroy()
+        $('#groups_list').empty()
+      }
+
       axios.get(ldap_view_api_uri, {params: {'object_type': 'groups'}})
         .then((response) => {
           this.groups = response.data.groups

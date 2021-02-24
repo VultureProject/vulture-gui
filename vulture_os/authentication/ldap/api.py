@@ -26,6 +26,7 @@ import logging
 from django.views import View
 from django.conf import settings
 from django.http import JsonResponse
+from authentication import ldap
 from gui.decorators.apicall import api_need_key
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -78,8 +79,12 @@ class LDAPViewApi(View):
                 raise KeyError()
 
             if object_type == "users":
-                group_dn = request.GET['group_dn']
-                data = tools.get_users(ldap_repository, group_dn)
+                if request.GET.get('group_dn'):
+                    group_dn = request.GET['group_dn']
+                    data = tools.get_users(ldap_repository, group_dn)
+                elif request.GET.get('search'):
+                    search = request.GET['search']
+                    data = tools.search_users(ldap_repository, search)
 
             elif object_type == "groups":
                 data = tools.get_groups(ldap_repository)
@@ -155,20 +160,33 @@ class LDAPViewApi(View):
     def post(self, request, object_id):
         try:
             ldap_repository = LDAPRepository.objects.get(pk=object_id)
-            group_dn = request.JSON['group_dn']
-            tmp_user = request.JSON['user']
-            userPassword = request.JSON.get('userPassword', '')
- 
-            # Calculate DN
-            user_attr = tmp_user[ldap_repository.user_attr]
 
-            attrs = {}
-            for attribute in ('user_account_locked_attr', 'user_change_password_attr', 'user_mobile_attr', 'user_email_attr'):
-                ldap_attr = getattr(ldap_repository, attribute)
-                if ldap_attr and tmp_user.get(ldap_attr):
-                    attrs[ldap_attr] = [tmp_user[ldap_attr]]
+            if request.JSON['object_type'].lower() == "user":
+                group_dn = request.JSON['group_dn']
+                tmp_user = request.JSON['user']
+                userPassword = request.JSON.get('userPassword', '')
+    
+                # Calculate DN
+                user_attr = tmp_user[ldap_repository.user_attr]
 
-            ldap_response = tools.create_user(ldap_repository, group_dn, user_attr, userPassword, attrs)
+                attrs = {}
+                for attribute in ('user_account_locked_attr', 'user_change_password_attr', 'user_mobile_attr', 'user_email_attr'):
+                    ldap_attr = getattr(ldap_repository, attribute)
+                    if ldap_attr and tmp_user.get(ldap_attr):
+                        attrs[ldap_attr] = [tmp_user[ldap_attr]]
+
+                ldap_response = tools.create_user(ldap_repository, group_dn, user_attr, userPassword, attrs)
+            
+            elif request.JSON['object_type'].lower() == "group":
+                group_name = request.JSON['group_name']
+                members = request.JSON['member']
+                status, ldap_response = tools.create_group(ldap_repository, group_name, members)
+                if not status:
+                    return JsonResponse({
+                        "status": False,
+                        "error": ldap_response
+                    }, status=400)
+
             return JsonResponse({
                 "status": True
             }, status=201)
