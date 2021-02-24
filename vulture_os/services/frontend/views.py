@@ -318,8 +318,8 @@ def frontend_edit(request, object_id=None, api=False):
             reputationctx_objs.append(reputationctx_f.save(commit=False))
 
         listener_objs = []
-        if form.data.get('mode') != "impcap" and form.data.get('listening_mode') not in ("file", "api", "kafka"):
-            # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap" and "API"
+        if form.data.get('mode') != "impcap" and form.data.get('listening_mode') not in ("file", "api", "kafka", "redis"):
+            # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap", and "API"
             if form.data.get('enabled') and not listener_ids:
                 form.add_error(None, "At least one listener is required if frontend is enabled.")
 
@@ -363,7 +363,7 @@ def frontend_edit(request, object_id=None, api=False):
 
         if frontend.mode == "impcap":
             node_listeners[frontend.impcap_intf.node] = []
-        elif frontend.listening_mode in ("file", "kafka"):
+        elif frontend.listening_mode in ("file", "kafka", "redis"):
             node_listeners[frontend.node] = []
         elif frontend.listening_mode == "api":
             # Listen on all nodes in case of a master mongo change

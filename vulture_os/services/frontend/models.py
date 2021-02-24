@@ -90,7 +90,13 @@ LISTENING_MODE_CHOICES = (
     ('relp', "RELP (TCP)"),
     ('file', "FILE"),
     ('api', 'API CLIENT'),
-    ('kafka', 'KAFKA')
+    ('kafka', 'KAFKA'),
+    ('redis', 'REDIS'),
+)
+
+REDIS_MODE_CHOICES = (
+    ('queue', "Queue mode, using push/pop"),
+    ('subscribe',"Channel mode, using pub/sub"),
 )
 
 IMPCAP_FILTER_CHOICES = (
@@ -387,6 +393,38 @@ class Frontend(models.Model):
         help_text=_("Kafka consumer group to use to poll logs"),
         verbose_name=_("Kafka consumer group")
     )
+    """ Redis attributes """
+    redis_mode = models.TextField(
+        default="queue",
+        choices=REDIS_MODE_CHOICES,
+        help_text=_("Redis comsumer mode"),
+        verbose_name=_("Redis consumer mode - 'Queue' mode is recommended to avoid data loss")
+    )
+    redis_use_lpop = models.BooleanField(
+        default=False,
+        help_text=_("Use LPOP instead of default RPOP"),
+        verbose_name=_("Default queue mode uses 'RPOP', toggle the button if you want to use 'LPOP'")
+    )
+    redis_server = models.TextField(
+        default="127.0.0.3",
+        help_text=_("Redis Server"),
+        verbose_name=_("Redis server to use. Default Vulture internal server is available on 127.0.0.3:6379")
+    )
+    redis_port = models.PositiveIntegerField(
+        default="6379",
+        help_text=_("Redis Server"),
+        verbose_name=_("Redis server to use. Default Vulture internal server is available on 127.0.0.3:6379")
+    )
+    redis_key = models.TextField(
+        default="vulture",
+        help_text=_("Redis key"),
+        verbose_name=_("The redis key you want to po pfrom / the redis channel you want to subscribe to")
+    )
+    redis_password = models.TextField(
+        help_text=_('Redis password'),
+        default=""
+    )
+
 
     node = models.ForeignKey(
         to=Node,
@@ -1431,7 +1469,7 @@ class Frontend(models.Model):
     @property
     def rsyslog_only_conf(self):
         """ Check if this frontend has only rsyslog configuration, not haproxy at all """
-        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka")))
+        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka", "redis")))
 
 
 class Listener(models.Model):
