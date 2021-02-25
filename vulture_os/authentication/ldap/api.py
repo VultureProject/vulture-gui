@@ -171,7 +171,7 @@ class LDAPViewApi(View):
             if request.JSON['object_type'].lower() == "user":
                 group_dn = request.JSON['group_dn']
                 tmp_user = request.JSON['user']
-                userPassword = request.JSON.get('userPassword', '')
+                userPassword = request.JSON.get('userPassword')
 
                 # Calculate DN
                 user_attr = tmp_user[ldap_repository.user_attr]
