@@ -61,7 +61,7 @@ class IDPApiView(View):
 
             object_type = request.GET["object_type"].lower()
             if object_type not in ("groups", "users", "search"):
-                raise KeyError
+                raise KeyError()
 
             if object_type == "groups":
                 data = tools.get_groups(ldap_repo)
@@ -85,7 +85,8 @@ class IDPApiView(View):
                     "data": data
                 })
 
-        except KeyError:
+        except KeyError as err:
+            logger.debug(err)
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")
@@ -147,7 +148,8 @@ class IDPApiUserView(View):
             return JsonResponse({
                 "status": True
             }, status=201)
-        except KeyError:
+        except KeyError as err:
+            logger.debug(err)
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")
@@ -181,30 +183,11 @@ class IDPApiUserView(View):
                 ldap_repo.user_attr: [user_name]
             }
 
-            try:
-                attrs[ldap_repo.user_email_attr] = [request.JSON['email']]
-            except KeyError:
-                attrs[ldap_repo.user_email_attr] = []
-
-            try:
-                attrs[ldap_repo.user_account_locked_attr] = [request.JSON['is_locked']]
-            except KeyError:
-                attrs[ldap_repo.user_account_locked_attr] = []
-                
-            try:
-                attrs[ldap_repo.user_change_password_attr] = [request.JSON['need_change_password']]
-            except KeyError:
-                attrs[ldap_repo.user_change_password_attr] = []
-
-            try:
-                attrs[ldap_repo.user_mobile_attr] = [request.JSON['mobile']]
-            except KeyError:
-                attrs[ldap_repo.user_mobile_attr] = []
-
-            try:
-                attrs[ldap_repo.user_smartcardid_attr] = [request.JSON['smartcardid']]
-            except KeyError:
-                attrs[ldap_repo.user_smartcardid_attr] = []
+            attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
+            attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
+            attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
+            attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
+            attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
 
             status = tools.update_user(ldap_repo, group_name, user_name, attrs, request.JSON.get('userPassword'))
             if status is False:
@@ -216,7 +199,8 @@ class IDPApiUserView(View):
             return JsonResponse({
                 "status": True
             })
-        except KeyError:
+        except KeyError as err:
+            logger.debug(err)
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")
@@ -256,7 +240,8 @@ class IDPApiUserView(View):
             return JsonResponse({
                 "status": True
             })
-        except KeyError:
+        except KeyError as err:
+            logger.debug(err)
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")
@@ -299,7 +284,8 @@ class IDPApiGroupView(View):
                 "status": True
             }, status=201)
 
-        except KeyError:
+        except KeyError as err:
+            logger.debug(err)
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")

@@ -151,6 +151,12 @@ def update_user(ldap_repository, group_name, user_name, attrs, userPassword):
 
     if not old_user:
         return False
+
+    for k, v in attrs.items():
+        if not v:
+            attrs[k] = []
+        else:
+            attrs[k] = [v]
     
     dn = old_user['dn']
     del(old_user['dn'])

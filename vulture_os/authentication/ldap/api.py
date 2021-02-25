@@ -60,7 +60,7 @@ class LDAPApi(View):
                 "available_user_keys": user_keys,
                 "data": ldap_repository.to_dict()
             })
-        
+
         except LDAPRepository.DoesNotExist:
             return JsonResponse({
                 "error": _("Object does not exist")
@@ -97,7 +97,8 @@ class LDAPViewApi(View):
                 "error": _("Repository does not exist")
             }, status=404)
 
-        except KeyError:
+        except KeyError as err:
+            logger.debug(err)
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")
@@ -145,6 +146,13 @@ class LDAPViewApi(View):
                 "error": _("LDAP Repository does not exist")
             }, status=404)
 
+        except KeyError as err:
+            logger.debug(err)
+            return JsonResponse({
+                "status": False,
+                "error": _("Invalid call")
+            }, status=400)
+
         except Exception as e:
             logger.critical(e, exc_info=1)
             error = _("An error has occured")
@@ -155,7 +163,7 @@ class LDAPViewApi(View):
             return JsonResponse({
                 "error": error
             }, status=500)
-    
+
     @api_need_key('cluster_api_key')
     def post(self, request, object_id):
         try:
@@ -165,7 +173,7 @@ class LDAPViewApi(View):
                 group_dn = request.JSON['group_dn']
                 tmp_user = request.JSON['user']
                 userPassword = request.JSON.get('userPassword', '')
-    
+
                 # Calculate DN
                 user_attr = tmp_user[ldap_repository.user_attr]
 
@@ -176,7 +184,7 @@ class LDAPViewApi(View):
                         attrs[ldap_attr] = [tmp_user[ldap_attr]]
 
                 ldap_response = tools.create_user(ldap_repository, group_dn, user_attr, userPassword, attrs)
-            
+
             elif request.JSON['object_type'].lower() == "group":
                 group_name = request.JSON['group_name']
                 members = request.JSON['member']
@@ -190,12 +198,19 @@ class LDAPViewApi(View):
             return JsonResponse({
                 "status": True
             }, status=201)
-        
+
+        except KeyError as err:
+            logger.debug(err)
+            return JsonResponse({
+                "status": False,
+                "error": _("Invalid call")
+            }, status=400)
+
         except LDAPRepository.DoesNotExist:
             return JsonResponse({
                 "error": _("LDAP Repository does not exist")
             }, status=404)
-        
+
         except Exception as e:
             logger.critical(e, exc_info=1)
             error = _("An error has occured")
@@ -210,13 +225,21 @@ class LDAPViewApi(View):
     def delete(self, request, object_id):
         try:
             ldap_repository = LDAPRepository.objects.get(pk=object_id)
-            dn = request.JSON.get('dn')
+            dn = request.JSON['dn']
             client = ldap_repository.get_client()
             groups = [tools.find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(dn)]
             client.delete_user(dn, groups)
             return JsonResponse({
                 "status": True
             })
+
+        except KeyError as err:
+            logger.debug(err)
+            return JsonResponse({
+                "status": False,
+                "error": _("Invalid call")
+            }, status=400)
+
         except LDAPRepository.DoesNotExist:
             return JsonResponse({
                 "error": _("LDAP Repository does not exist")
@@ -228,7 +251,7 @@ class LDAPViewApi(View):
 
             if settings.DEV_MODE:
                 raise
-            
+
             return JsonResponse({
                 "error": error
             }, status=500)
