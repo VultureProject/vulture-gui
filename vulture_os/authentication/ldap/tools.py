@@ -77,7 +77,8 @@ def search_users(ldap_repo, search, by_dn=False):
 
     return data
 
-def get_users(ldap_repository, group_dn):
+def get_users(ldap_repository, group_name):
+    group_dn = ldap_repository.create_group_dn(group_name)
     group = find_group(ldap_repository, group_dn, ['*'])
     members  = []
     for member_dn in group['member']:
@@ -99,8 +100,7 @@ def get_groups(ldap_repository):
 
 
 def create_group(ldap_repository, group_name, members_username):
-    group_dn = f"{ldap_repository.group_attr}={group_name},{ldap_repository.group_dn},{ldap_repository.base_dn}"
-
+    group_dn = ldap_repository.create_group_dn(group_name)
     client = ldap_repository.get_client()
 
     members = []
@@ -122,7 +122,8 @@ def create_group(ldap_repository, group_name, members_username):
     return True, r
 
 
-def create_user(ldap_repository, group_dn, user_name, userPassword, attrs):
+def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
+    group_dn = ldap_repository.create_group_dn(group_name)
     user_dn = f"{ldap_repository.user_attr}={user_name},{group_dn}"
     user = {
         "sn": [user_name],
@@ -139,8 +140,9 @@ def create_user(ldap_repository, group_dn, user_name, userPassword, attrs):
     return r
 
 
-def update_user(ldap_repository, group_dn, user_name, attrs, userPassword):
+def update_user(ldap_repository, group_name, user_name, attrs, userPassword):
     old_user = None
+    group_dn = ldap_repository.create_group_dn(group_name)
     members = get_users(ldap_repository, group_dn)
     for member in members:
         if member['dn'].startswith(f"{ldap_repository.user_attr}={user_name}"):
@@ -157,8 +159,9 @@ def update_user(ldap_repository, group_dn, user_name, attrs, userPassword):
     logger.info(f"User {user_name} updated in LDAP {ldap_repository.name}")
     return r
 
-def delete_user(ldap_repository, group_dn, user_name):
+def delete_user(ldap_repository, group_name, user_name):
     user = None
+    group_dn = ldap_repository.create_group_dn(group_name)
     members = get_users(ldap_repository, group_dn)
     for member in members:
         if member['dn'].startswith(f"{ldap_repository.user_attr}={user_name}"):

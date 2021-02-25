@@ -72,8 +72,7 @@ class IDPApiView(View):
             
             elif object_type == "users":
                 group_name = request.GET['group_name']
-                group_dn = ldap_repo.create_group_dn(group_name)
-                data = tools.get_users(ldap_repo, group_dn)
+                data = tools.get_users(ldap_repo, group_name)
                 users = [elem[ldap_repo.user_attr][0] for elem in data]
                 return JsonResponse({
                     "data": users
@@ -142,8 +141,8 @@ class IDPApiUserView(View):
             except KeyError:
                 pass
 
-            group_dn = ldap_repo.create_group_dn(user[ldap_repo.user_groups_attr])
-            ldap_response = tools.create_user(ldap_repo, group_dn, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
+            group_name = user[ldap_repo.user_groups_attr]
+            ldap_response = tools.create_user(ldap_repo, group_name, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
 
             return JsonResponse({
                 "status": True
@@ -176,7 +175,7 @@ class IDPApiUserView(View):
             ldap_repo = get_repo(portal)
 
             user_name = request.JSON['username']
-            group = request.JSON['group']
+            group_name = request.JSON['group']
 
             attrs = {
                 ldap_repo.user_attr: [user_name]
@@ -207,8 +206,7 @@ class IDPApiUserView(View):
             except KeyError:
                 attrs[ldap_repo.user_smartcardid_attr] = []
 
-            group_dn = ldap_repo.create_group_dn(group)
-            status = tools.update_user(ldap_repo, group_dn, user_name, attrs, request.JSON.get('userPassword'))
+            status = tools.update_user(ldap_repo, group_name, user_name, attrs, request.JSON.get('userPassword'))
             if status is False:
                 return JsonResponse({
                     "status": False,
@@ -246,10 +244,9 @@ class IDPApiUserView(View):
             ldap_repo = get_repo(portal)
 
             user_name = request.JSON['username']
-            group = request.JSON['group']
+            group_name = request.JSON['group']
 
-            group_dn = ldap_repo.create_group_dn(group)
-            status = tools.delete_user(ldap_repo, group_dn, user_name)
+            status = tools.delete_user(ldap_repo, group_name, user_name)
             if status is False:
                 return JsonResponse({
                     "status": False,
