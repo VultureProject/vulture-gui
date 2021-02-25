@@ -43,7 +43,6 @@ class LDAPApi(View):
     def get(self, request, object_id):
         try:
             ldap_repository = LDAPRepository.objects.get(pk=object_id)
-            client = ldap_repository.get_client()
 
             user_keys = []
             for key in tools.AVAILABLE_USER_KEYS:
