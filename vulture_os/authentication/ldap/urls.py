@@ -36,7 +36,7 @@ from authentication.ldap import api
 
 
 urlpatterns = [
-        # List view
+    # List view
     path('authentication/ldap/', ListLDAPRepository.as_view(), name="authentication.ldap.list"),
 
     re_path('^authentication/ldap/view/(?P<object_id>[A-Fa-f0-9]+)$', views.ldap_view, name="authentication.ldap.view"),
