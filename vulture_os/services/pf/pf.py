@@ -214,3 +214,9 @@ class PFService(Service):
                 write_conf(logger, [file_path, config, PF_OWNERS, PF_PERMS])
 
         return conf_reloaded
+
+
+def test_config(config):
+    return check_output(["/sbin/pfctl", "-n", "-f", "-"],
+                        stderr=PIPE,
+                        input=config.encode('utf8')).decode('utf8')

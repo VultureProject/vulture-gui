@@ -89,7 +89,8 @@ LISTENING_MODE_CHOICES = (
     ('tcp,udp', "TCP & UDP"),
     ('relp', "RELP (TCP)"),
     ('file', "FILE"),
-    ('api', 'API CLIENT')
+    ('api', 'API CLIENT'),
+    ('kafka', 'KAFKA')
 )
 
 IMPCAP_FILTER_CHOICES = (
@@ -370,6 +371,22 @@ class Frontend(models.Model):
         default="/var/log/darwin/alerts.log",
         help_text=_("Local file path to listen on")
     )
+    """ Kafka mode attributes """
+    kafka_brokers = models.ListField(
+        default=["192.168.1.2:9092"],
+        help_text=_("Kafka broker(s) to connect to"),
+        verbose_name=_("Kafka Broker(s)")
+    )
+    kafka_topic = models.TextField(
+        default="mytopic",
+        help_text=_("Kafka topic to connect to"),
+        verbose_name=_("Kafka Topic")
+    )
+    kafka_consumer_group = models.TextField(
+        default="my_group",
+        help_text=_("Kafka consumer group to use to poll logs"),
+        verbose_name=_("Kafka consumer group")
+    )
 
     node = models.ForeignKey(
         to=Node,
@@ -626,6 +643,38 @@ class Frontend(models.Model):
         default={}
     )
 
+    proofpoint_tap_host = models.TextField(
+        help_text=_("ProofPoint TAP host"),
+        default="https://tap-api-v2.proofpoint.com",
+        verbose_name=_("ProofPoint API root url")
+    )
+
+    proofpoint_tap_endpoint = models.TextField(
+        help_text=_("ProofPoint TAP endpoint"),
+        choices=[
+            ("/all", "all"),
+            ("/clicks/blocked", "clicks/blocked"),
+            ("/clicks/permitted", "clicks/permitted"),
+            ("/messages/blocked", "messages/blocked"),
+            ("/messages/delivered", "messages/delivered"),
+            ("/issues", "issues"),
+        ],
+        default="/all",
+        verbose_name=_("Types of messages to query from Proofpoint API")
+    )
+
+    proofpoint_tap_principal = models.TextField(
+        help_text=_("ProofPoint TAP principal"),
+        default="",
+        verbose_name=_("API 'principal' (username)")
+    )
+
+    proofpoint_tap_secret = models.TextField(
+        help_text=_("ProofPoint TAP secret"),
+        default="",
+        verbose_name=_("API 'secret' (password)")
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -790,6 +839,12 @@ class Frontend(models.Model):
                 elif self.api_parser_type == "cisco_meraki":
                     result['cisco_meraki_apikey'] = self.cisco_meraki_apikey
                     result['cisco_meraki_timestamp'] = self.cisco_meraki_timestamp
+
+                elif self.api_parser_type == "proofpoint_tap":
+                    result['proofpoint_tap_host'] = self.proofpoint_tap_host
+                    result['proofpoint_tap_endpoint'] = self.proofpoint_tap_endpoint
+                    result['proofpoint_tap_principal'] = self.proofpoint_tap_principal
+                    result['proofpoint_tap_secret'] = self.proofpoint_tap_secret
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
@@ -1369,7 +1424,7 @@ class Frontend(models.Model):
     @property
     def rsyslog_only_conf(self):
         """ Check if this frontend has only rsyslog configuration, not haproxy at all """
-        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api")))
+        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka")))
 
 
 class Listener(models.Model):

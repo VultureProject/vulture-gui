@@ -1,6 +1,6 @@
 [
   {
-    "model": "applications.portalTemplate",
+    "model": "authentication.portalTemplate",
     "pk": 1,
     "fields": {
       "name": "Default Template",

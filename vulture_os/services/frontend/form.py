@@ -197,7 +197,8 @@ class FrontendForm(ModelForm):
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'impcap_filter', 'impcap_filter_type',
                            'impcap_intf', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
-                           'parser_tag', 'file_path', 'node', 'api_parser_type', 'api_parser_use_proxy',
+                           'parser_tag', 'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group',
+                           'node', 'api_parser_type', 'api_parser_use_proxy',
                            'elasticsearch_host', 'elasticsearch_auth', 'elasticsearch_verify_ssl',
                            'elasticsearch_username', 'elasticsearch_password', 'elasticsearch_index', 'forcepoint_host',
                            'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
@@ -210,8 +211,8 @@ class FrontendForm(ModelForm):
                            "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                            "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                            "cybereason_host", "cybereason_username", "cybereason_password",
-                           "cisco_meraki_apikey",
-                           'darwin_mode']:
+                           "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
+                           'proofpoint_tap_secret', 'darwin_mode']:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -237,7 +238,10 @@ class FrontendForm(ModelForm):
         #  convert space separated string into list
         if self.initial.get('compression_algos'):
             self.initial['compression_algos'] = self.initial.get('compression_algos').split(' ')
+
+        # Convert list field from model to text input comma separated
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
+        self.initial['kafka_brokers'] = ",".join(self.initial.get('kafka_brokers', []) or self.fields['kafka_brokers'].initial)
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
@@ -251,7 +255,8 @@ class FrontendForm(ModelForm):
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
-                  'file_path', 'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
+                  'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group',
+                  'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
                   'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
                   'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
@@ -264,8 +269,8 @@ class FrontendForm(ModelForm):
                   "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                   "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                   "cybereason_host", "cybereason_username", "cybereason_password",
-                  "cisco_meraki_apikey",
-                  'darwin_mode')
+                  "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
+                  'proofpoint_tap_secret', 'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -299,6 +304,9 @@ class FrontendForm(ModelForm):
             'https_redirect': CheckboxInput(attrs={'class': 'js-switch'}),
             'parser_tag': TextInput(attrs={'class': 'form-control'}),
             'file_path': TextInput(attrs={'class': 'form-control'}),
+            'kafka_brokers': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+            'kafka_topic': TextInput(attrs={'class': 'form-control'}),
+            'kafka_consumer_group': TextInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
             'elasticsearch_host': TextInput(attrs={
                 'class': 'form-control',
@@ -344,6 +352,10 @@ class FrontendForm(ModelForm):
             'cybereason_username': TextInput(attrs={'class': 'form-control'}),
             'cybereason_password': TextInput(attrs={'class': 'form-control'}),
             'cisco_meraki_apikey': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_tap_host': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_tap_endpoint': Select(attrs={'class': 'form-control select2'}),
+            'proofpoint_tap_principal': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
         }
 
     def clean_name(self):
@@ -432,6 +444,12 @@ class FrontendForm(ModelForm):
                 raise ValidationError("Field '{}' is not valid")
             return field_val
 
+    def clean_kafka_brokers(self):
+        data = self.cleaned_data.get('kafka_brokers')
+        if not data:
+            return []
+        return data.split(',')
+
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
@@ -477,6 +495,16 @@ class FrontendForm(ModelForm):
                 self.add_error('node', "This field is required.")
             if not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
+
+        if mode == "log" and cleaned_data.get('listening_mode') == "kafka":
+            if not cleaned_data.get('node'):
+                self.add_error('node', "This field is required.")
+            if not cleaned_data.get('kafka_brokers'):
+                self.add_error('kafka_brokers', "This field is required.")
+            if not cleaned_data.get('kafka_topic'):
+                self.add_error('kafka_topic', "This field is required.")
+            if not cleaned_data.get('kafka_consumer_group'):
+                self.add_error('kafka_consumer_group', "This field is required.")
 
         """ If cache is enabled, cache_total_max_size and cache_max_age required """
         if cleaned_data.get('enable_cache'):

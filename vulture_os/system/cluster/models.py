@@ -68,6 +68,9 @@ class Node(models.Model):
     pf_limit_states = models.IntegerField(default=500000)
     pf_limit_frags = models.IntegerField(default=25000)
     pf_limit_src = models.IntegerField(default=50000)
+    pf_custom_param_config = models.TextField(blank=True, default="### Custom global parameters\n")
+    pf_custom_nat_config = models.TextField(blank=True, default="### Custom NAT rules\n")
+    pf_custom_rdr_config = models.TextField(blank=True, default="### Custom RDR rules\n")
     pf_custom_config = models.TextField(blank=True, default="")
     gateway = models.TextField(blank=True)
     gateway_ipv6 = models.TextField(blank=True)
@@ -114,6 +117,9 @@ class Node(models.Model):
             "pf_limit_frags": self.pf_limit_frags,
             "pf_limit_src": self.pf_limit_src,
             "pf_custom_config": self.pf_custom_config,
+            "pf_custom_param_config": self.pf_custom_param_config,
+            "pf_custom_rdr_config": self.pf_custom_rdr_config,
+            "pf_custom_nat_config": self.pf_custom_nat_config,
             "gateway": self.gateway,
             "gateway_ipv6": self.gateway_ipv6,
             "static_routes": self.static_routes
@@ -135,6 +141,9 @@ class Node(models.Model):
             "pf_limit_frags": self.pf_limit_frags,
             "pf_limit_src": self.pf_limit_src,
             "pf_custom_config": self.pf_custom_config,
+            "pf_custom_param_config": self.pf_custom_param_config,
+            "pf_custom_nat_config": self.pf_custom_nat_config,
+            "pf_custom_rdr_config": self.pf_custom_rdr_config,
             "gateway": self.gateway,
             "gateway_ipv6": self.gateway_ipv6,
             "static_routes": self.static_routes,
