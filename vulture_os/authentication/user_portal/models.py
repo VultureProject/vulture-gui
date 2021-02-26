@@ -180,7 +180,7 @@ class UserAuthentication(models.Model):
     )
     enable_external = models.BooleanField(
         default=False,
-        verbose_name=_("External portal"),
+        verbose_name=_("Enable Identity Provider"),
         help_text=_("Listen portal on dedicated host - required for ")
     )
     external_listener = models.ForeignKey(
@@ -461,7 +461,7 @@ class UserAuthentication(models.Model):
         result = {
             'id': str(self.id),
             'name': self.name,
-            'enable_tracking': self.enable_tracking,
+            'enable_external': self.enable_external,
             'repositories': [str(repo) for repo in self.repositories.all()],
             'enable_captcha': self.enable_captcha,
             'otp_repository': str(self.otp_repository) if self.otp_repository else "",
