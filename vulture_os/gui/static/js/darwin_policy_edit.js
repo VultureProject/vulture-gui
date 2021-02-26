@@ -321,22 +321,22 @@ function init_vue(){
               <p><b>${gettext("Percent more before alert")}:</b> ${filter.config.percent_more_alert}</p>
               <p><b>${gettext("Percent less before alert")}:</b> ${filter.config.percent_less_alert}</p>
               `
-            if ("percent_more_warning" in filter.config 
+            if ("percent_more_warning" in filter.config
                 && filter.config.percent_more_warning != ""
                 && filter.config.percent_more_warning != null) {
               customConfig += `<p><b>${gettext("Percent more before warning")}:</b> ${filter.config.percent_more_warning}</p>`
             }
-            if ("percent_less_warning" in filter.config 
+            if ("percent_less_warning" in filter.config
                 && filter.config.percent_less_warning != ""
                 && filter.config.percent_less_warning != null) {
               customConfig += `<p><b>${gettext("Percent less before warning")}:</b> ${filter.config.percent_less_warning}</p>`
             }
-            if ("minimal_variation" in filter.config 
+            if ("minimal_variation" in filter.config
                 && filter.config.minimal_variation != ""
                 && filter.config.minimal_variation != null) {
               customConfig += `<p><b>${gettext("Minimal variation")}:</b> ${filter.config.minimal_variation}</p>`
             }
-            if ("lower_absolute" in filter.config 
+            if ("lower_absolute" in filter.config
                 && filter.config.lower_absolute != ""
                 && filter.config.lower_absolute != null) {
               customConfig += `<p><b>${gettext("Lower absolute")}:</b> ${filter.config.lower_absolute}</p>`
