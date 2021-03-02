@@ -1,3 +1,9 @@
+var sanitizeHTML = function (str) {
+    var temp = document.createElement('div');
+    temp.textContent = str;
+    return temp.innerHTML;
+};
+
 var lang_tool = ace.require("ace/ext/language_tools");
 var ctx;
 var options_graph;
@@ -58,38 +64,38 @@ var daysOfWeek = [gettext("Su"), gettext("Mo"), gettext("Tu"), gettext("We"), ge
 var monthNames = [gettext("January"), gettext("February"), gettext("March"), gettext("April"), gettext("May"), gettext("June"), gettext("July"), gettext("August"), gettext("September"), gettext("October"), gettext("November"), gettext("December")];
 
 
-$(function(){
+$(function () {
     reportrange = $('#reportrange_logs').daterangepicker({
-        format             : 'MM/DD/YYYY HH:mm:ss',
-        minDate            : '01/01/1970',
-        showDropdowns      : true,
-        showWeekNumbers    : true,
-        timePicker         : true,
+        format: 'MM/DD/YYYY HH:mm:ss',
+        minDate: '01/01/1970',
+        showDropdowns: true,
+        showWeekNumbers: true,
+        timePicker: true,
         timePickerIncrement: 1,
-        timePicker24Hour   : true,
-        timePickerSeconds  : false,
-        ranges             : ranges,
-        opens              : 'right',
-        buttonClasses      : ['btn', 'btn-sm'],
-        applyClass         : 'btn-primary',
-        cancelClass        : 'btn-default',
-        separator          : ' to ',
+        timePicker24Hour: true,
+        timePickerSeconds: false,
+        ranges: ranges,
+        opens: 'right',
+        buttonClasses: ['btn', 'btn-sm'],
+        applyClass: 'btn-primary',
+        cancelClass: 'btn-default',
+        separator: ' to ',
         locale: {
-            applyLabel      : apply_label,
-            cancelLabel     : cancel_label,
-            fromLabel       : from_label,
-            toLabel         : to_label,
+            applyLabel: apply_label,
+            cancelLabel: cancel_label,
+            fromLabel: from_label,
+            toLabel: to_label,
             customRangeLabel: custom_label,
-            daysOfWeek      : daysOfWeek,
-            monthNames      : monthNames,
-            firstDay        : 1,
+            daysOfWeek: daysOfWeek,
+            monthNames: monthNames,
+            firstDay: 1,
         },
         dateLimit: {
             days: 30
         }
-    }, function(start, end, label) {
+    }, function (start, end, label) {
         start_time = start.valueOf();
-        end_time   = end.valueOf();
+        end_time = end.valueOf();
 
         if (label === custom_label)
             label = start.format("DD/MM/YYYY HH:mm") + " <i class='fa fa-arrow-right'></i> " + end.format("DD/MM/YYYY HH:mm")
@@ -111,17 +117,17 @@ $(function(){
     var end = sessionStorage.getItem('endDate');
     var label = sessionStorage.getItem('label');
 
-    if (start && end && label){
-       $('#reportrange_logs').html(label);
-       $('#reportrange_logs').data('daterangepicker').setStartDate(moment(start));
-       $('#reportrange_logs').data('daterangepicker').setEndDate(moment(end));
+    if (start && end && label) {
+        $('#reportrange_logs').html(label);
+        $('#reportrange_logs').data('daterangepicker').setStartDate(moment(start));
+        $('#reportrange_logs').data('daterangepicker').setEndDate(moment(end));
     } else {
-       $('#reportrange_logs').html(gettext('Today'));
+        $('#reportrange_logs').html(gettext('Today'));
     }
 
-    $('#real_time').on('click', function(){
+    $('#real_time').on('click', function () {
         // Hide or show reportrange/pagination controls and ajax loader information
-        if ($(this).data('active')){
+        if ($(this).data('active')) {
             $(this).removeClass('btn-warning').addClass('btn-default');
             $('#spinner_ajax').removeClass('fa-pulse');
             $('#reportrange_logs').prop('disabled', false);
@@ -158,9 +164,9 @@ $(function(){
         }
     });
 
-    $('#btn-graph').on('click', function(){
+    $('#btn-graph').on('click', function () {
         var pressed = $(this).attr('aria-pressed');
-        if (pressed === "false"){
+        if (pressed === "false") {
             show_graph = true;
 
             $('#traffic').css('height', "800px");
@@ -173,7 +179,7 @@ $(function(){
             $('#graph_logs_div').hide();
             $('#table_logs_div').hide();
 
-            setTimeout(function(){
+            setTimeout(function () {
                 init_vis();
             }, 100);
 
@@ -195,53 +201,53 @@ $(function(){
         fetch_data();
     })
 
-    $('.btn-open').on('click', function(){
+    $('.btn-open').on('click', function () {
         var state = $(this).data('state');
         var row = $(this).data('row');
 
-        if (state === 'close'){
-            $('#'+row).slideDown(500);
+        if (state === 'close') {
+            $('#' + row).slideDown(500);
             $(this).data('state', 'open');
 
-        } else if (state === 'open'){
-            $('#'+row).slideUp(500);
+        } else if (state === 'open') {
+            $('#' + row).slideUp(500);
             $(this).data('state', 'close');
         }
     })
 
-    $('.btn-close').on('click', function(){
+    $('.btn-close').on('click', function () {
         var row = $(this).data('row');
-        $("#"+row).slideUp(500);
+        $("#" + row).slideUp(500);
     })
 
-    $('.resize-font').on('click', function(){
+    $('.resize-font').on('click', function () {
         var type = $(this).data('type');
         var size = parseInt($('#table_logs tbody td').css('fontSize'));
 
         switch (type) {
             case 'smaller':
                 var font = size - 1 + "px";
-                $('#table_logs tbody td').css({'fontSize': font});
+                $('#table_logs tbody td').css({ 'fontSize': font });
                 break;
 
             case 'bigger':
                 var font = size + 1 + "px";
-                $('#table_logs tbody td').css({'fontSize': font});
+                $('#table_logs tbody td').css({ 'fontSize': font });
                 break;
 
             case 'origin':
-                $('#table_logs tbody td').css({'fontSize': "10px"});
+                $('#table_logs tbody td').css({ 'fontSize': "10px" });
                 break;
         }
     })
 
     $('#btn-execute').unbind('click');
-    $('#btn-execute').on('click', function(){
+    $('#btn-execute').on('click', function () {
         fetch_data()
     })
 
     $('#btn-reset').unbind('click');
-    $('#btn-reset').on('click', function(){
+    $('#btn-reset').on('click', function () {
         $('#queryBuilder').queryBuilder('reset');
         $('#queryBuilder_ace').queryBuilder('reset');
         editor.setValue('');
@@ -249,7 +255,7 @@ $(function(){
         fetch_data()
     })
 
-    $('#add_field').on('click', function(){
+    $('#add_field').on('click', function () {
         var value = $("#selected-fields").val();
 
         var el = $.parseHTML(`<div class="grid-stack-item"><a href="#" data-grid='${value}' class='delete_grid'><i class='fa fa-times'></i></a><div class="grid-stack-item-content">${value}</div></div>`);
@@ -257,14 +263,14 @@ $(function(){
         var nodes = grid.grid.nodes;
 
         var l = 0;
-        for (var i in nodes){
+        for (var i in nodes) {
             if (nodes[i].id === value)
                 return false;
 
             l += nodes[i].width;
         }
 
-        if (l === 12){
+        if (l === 12) {
             notify('error', max_column, '');
             return false;
         }
@@ -275,36 +281,36 @@ $(function(){
         $('.delete_grid').on('click', delete_grid);
     })
 
-    $('.resize-font').on('click', function(){
+    $('.resize-font').on('click', function () {
         var type = $(this).data('type');
         var size = parseInt($('#table_logs tbody td').css('fontSize'));
 
         switch (type) {
             case 'smaller':
                 var font = size - 1 + "px";
-                $('#table_logs tbody td').css({'fontSize': font});
+                $('#table_logs tbody td').css({ 'fontSize': font });
                 break;
 
             case 'bigger':
                 var font = size + 1 + "px";
-                $('#table_logs tbody td').css({'fontSize': font});
+                $('#table_logs tbody td').css({ 'fontSize': font });
                 break;
 
             case 'origin':
-                $('#table_logs tbody td').css({'fontSize': "10px"});
+                $('#table_logs tbody td').css({ 'fontSize': "10px" });
                 break;
         }
     })
 
-    $("body").on('click', function(){
+    $("body").on('click', function () {
         $('#table_logs tbody tr').removeClass('selected');
     })
 
-    $('#save_search').on('click', function(){
+    $('#save_search').on('click', function () {
         save_search();
     })
 
-    $('#load_search').on('click', function(){
+    $('#load_search').on('click', function () {
         var value = $("#saved-search").val().split('|');
 
         var pk = value[0];
@@ -315,8 +321,8 @@ $(function(){
         fetch_data();
     })
 
-    $('#saved-search').on('change', function(){
-        if ($(this).val() === ""){
+    $('#saved-search').on('change', function () {
+        if ($(this).val() === "") {
             $('#load_search').hide();
             $('#delete_search').hide();
             return false;
@@ -326,7 +332,7 @@ $(function(){
         $('#load_search').show();
     })
 
-    $('#save_config').on('click', function(){
+    $('#save_config').on('click', function () {
         var grid = $('.grid-stack').data('gridstack');
         var tmp_nodes = grid.grid.nodes;
         var nodes = {};
@@ -334,12 +340,12 @@ $(function(){
         var size = parseInt($('#table_logs tbody td').css('fontSize'));
         var length = $('#lengthtable').val();
 
-        if (length > 200){
+        if (length > 200) {
             $('#lengthtable').val(200);
             length = 200;
         }
 
-        for (var i in tmp_nodes){
+        for (var i in tmp_nodes) {
             nodes[tmp_nodes[i].x] = {
                 name: tmp_nodes[i].id,
                 width: tmp_nodes[i].width,
@@ -357,8 +363,8 @@ $(function(){
                 length: length,
             },
 
-            function(response){
-                if (check_json_error(response)){
+            function (response) {
+                if (check_json_error(response)) {
                     $('button[data-row="row-configuration"]').click();
                     notify('success', gettext('Success'), gettext('Configuration saved'));
 
@@ -379,7 +385,7 @@ $(function(){
         )
     })
 
-    $('#delete_search').on('click', function(){
+    $('#delete_search').on('click', function () {
         // Delete the selected search
         var search_val = $('#saved-search').val();
         if (search_val === "")
@@ -394,8 +400,8 @@ $(function(){
                 pk: pk
             },
 
-            function(response){
-                if (check_json_error(response)){
+            function (response) {
+                if (check_json_error(response)) {
                     notify('success', gettext('Success'), gettext('Search deleted'));
                     $('#load_search').hide();
                     $('#delete_search').hide();
@@ -408,15 +414,15 @@ $(function(){
     })
 })
 
-function fetch_data(){
-    if (!is_loading){
+function fetch_data() {
+    if (!is_loading) {
         $('#table_logs').dataTable().fnDraw();
         if (show_graph)
             init_graph();
     }
 }
 
-function reinit_vis(noinit){
+function reinit_vis(noinit) {
     if (network)
         network.destroy();
 
@@ -430,7 +436,7 @@ function reinit_vis(noinit){
         init_vis();
 }
 
-function init_vis(){
+function init_vis() {
     var container = document.getElementById('traffic');
 
     var data = {
@@ -455,7 +461,7 @@ function init_vis(){
             diamonds: {
                 size: 2,
                 label: '',
-                color: {background:'red',border:'white'},
+                color: { background: 'red', border: 'white' },
                 shape: 'diamond'
             },
             dotsWithLabel: {
@@ -463,7 +469,7 @@ function init_vis(){
                 shape: 'dot',
                 color: 'cyan'
             },
-            mints: {color:'rgb(0,255,140)', size: 10},
+            mints: { color: 'rgb(0,255,140)', size: 10 },
             icons: {
                 shape: 'icon',
                 icon: {
@@ -479,17 +485,17 @@ function init_vis(){
     network = new vis.Network(container, data, options);
 }
 
-function init_graph(){
-    try{
+function init_graph() {
+    try {
         var rules = $('#queryBuilder').queryBuilder('getMongo');
-    } catch(err){
+    } catch (err) {
         var rules = {}
     }
 
     var startDate = reportrange.data('daterangepicker').startDate;
     var endDate = reportrange.data('daterangepicker').endDate;
 
-    if ($('#real_time').data('active')){
+    if ($('#real_time').data('active')) {
         startDate = moment().subtract(5, 'minutes');
         endDate = moment();
     }
@@ -509,11 +515,11 @@ function init_graph(){
         'graph',
         data,
 
-        function(response){
+        function (response) {
             var data = response.data;
 
-            for (var tmp of data){
-                if ($.inArray(tmp.src_ip, vis_nodes) === -1){
+            for (var tmp of data) {
+                if ($.inArray(tmp.src_ip, vis_nodes) === -1) {
                     vis_nodes.push(tmp.src_ip);
 
                     vis_tmp_nodes.add([{
@@ -523,7 +529,7 @@ function init_graph(){
                     }])
                 }
 
-                if ($.inArray(tmp.dst_ip, vis_nodes) === -1){
+                if ($.inArray(tmp.dst_ip, vis_nodes) === -1) {
                     vis_nodes.push(tmp.dst_ip);
 
                     vis_tmp_nodes.add([{
@@ -537,8 +543,8 @@ function init_graph(){
                 var dst_src = `${tmp.dst_ip}-${tmp.src_ip}`;
 
 
-                if ($.inArray(src_dst, vis_edges) === -1){
-                    if ($.inArray(dst_src, vis_edges) === -1){
+                if ($.inArray(src_dst, vis_edges) === -1) {
+                    if ($.inArray(dst_src, vis_edges) === -1) {
                         vis_edges.push(src_dst);
                         vis_edges.push(dst_src);
 
@@ -557,7 +563,7 @@ function init_graph(){
     )
 }
 
-function packet_filter_context_menu_callback(type, log_line){
+function packet_filter_context_menu_callback(type, log_line) {
     $.post(
         system_pf_list_uri,
         {
@@ -566,8 +572,8 @@ function packet_filter_context_menu_callback(type, log_line){
             ip_address: log_line
         },
 
-        function(response){
-            if (!response.status){
+        function (response) {
+            if (!response.status) {
                 notify('danger', gettext('Error'), response.error);
             } else {
                 notify('success', gettext('Success'));
@@ -576,12 +582,12 @@ function packet_filter_context_menu_callback(type, log_line){
     )
 }
 
-function waf_context_menu_callback(type, log_line){
-    var uri = access_rule_uri + "?log_id="+log_line._id;
+function waf_context_menu_callback(type, log_line) {
+    var uri = access_rule_uri + "?log_id=" + log_line._id;
     window.open(uri, "_blank");
 }
 
-function rules_preview(){
+function rules_preview() {
     // Show preview of queryBuilder rules. SQL Syntax
     var rules_sql = $('#queryBuilder').queryBuilder('getSQL', false);
     if (rules_sql)
@@ -590,15 +596,15 @@ function rules_preview(){
         $('#logs_preview_rule').val('');
 }
 
-function event_querybuilder(){
+function event_querybuilder() {
     // Refresh SQL at every change on queryBuilder
     // Event 'rulesChanged' doesn't work
-    $('#queryBuilder').on('afterAddGroup.queryBuilder afterUpdateGroupCondition.queryBuilder afterDeleteGroup.queryBuilder afterAddRule.queryBuilder afterUpdateRuleFilter.queryBuilder afterUpdateRuleOperator.queryBuilder afterUpdateRuleValue.queryBuilder afterDeleteRule.queryBuilder afterReset.queryBuilder afterSetRules.queryBuilder', function(){
+    $('#queryBuilder').on('afterAddGroup.queryBuilder afterUpdateGroupCondition.queryBuilder afterDeleteGroup.queryBuilder afterAddRule.queryBuilder afterUpdateRuleFilter.queryBuilder afterUpdateRuleOperator.queryBuilder afterUpdateRuleValue.queryBuilder afterDeleteRule.queryBuilder afterReset.queryBuilder afterSetRules.queryBuilder', function () {
         scroll_id = null;
     })
 }
 
-function save_search(){
+function save_search() {
     PNotify.removeAll();
 
     var search_name = $('#search_name').val();
@@ -607,7 +613,7 @@ function save_search(){
     if (rules === null)
         return false;
 
-    if (search_name === ""){
+    if (search_name === "") {
         notify('error', erreur, name_obl);
         return false;
     }
@@ -621,15 +627,15 @@ function save_search(){
             rules: JSON.stringify(rules)
         },
 
-        function(response){
-            if (check_json_error(response)){
+        function (response) {
+            if (check_json_error(response)) {
                 notify('success', gettext('Success'), gettext("Search saved"));
 
                 $('#search_name').val("");
 
                 $('#saved-search').empty();
                 $('#saved-search').append("<option value=''>----</option>")
-                for (var i in response.searches){
+                for (var i in response.searches) {
                     var tmp = response.searches[i];
                     $('#saved-search').append("<option value='{0}|{1}'>{2}</option>".format(tmp.pk, JSON.stringify(tmp.search), tmp.name));
                 }
@@ -640,33 +646,33 @@ function save_search(){
     )
 }
 
-function delete_grid(e){
+function delete_grid(e) {
     e.stopPropagation();
     var value = $(this).data('grid');
 
     var grid = $('.grid-stack').data('gridstack');
     var nodes = grid.grid.nodes;
 
-    for (var i in nodes){
-        if (nodes[i].id === value){
+    for (var i in nodes) {
+        if (nodes[i].id === value) {
             grid.removeWidget(nodes[i].el);
             break;
         }
     }
 }
 
-function highlight_search(data){
+function highlight_search(data) {
     var searched_values = [];
-    $("#queryBuilder").find(".rule-value-container").each(function(){
+    $("#queryBuilder").find(".rule-value-container").each(function () {
         var search = $($(this).find('input')[0]).val();
 
-        if (search && $.inArray(search, searched_values) === -1){
+        if (search && $.inArray(search, searched_values) === -1) {
             searched_values.push(search);
 
             var s = new RegExp(search, "gi");
-            try{
+            try {
                 data = data.replace(s, "<span style='background-color: #FFFF00'>" + search + "</span>")
-            } catch(err){
+            } catch (err) {
                 return data;
             }
         }
@@ -675,8 +681,9 @@ function highlight_search(data){
     return data;
 }
 
-function render_col(col, mapping){
-    var render = function(data, type, row){
+function render_col(col, mapping) {
+    var render = function (data, type, row) {
+        data = sanitizeHTML(data)
         if (data === null)
             return "";
         else if (data instanceof Object)
@@ -686,17 +693,18 @@ function render_col(col, mapping){
         return data;
     }
 
-    if ($.inArray(col, ['date_add', 'modified', 'time', '@timestamp', 'timestamp_app', 'timestamp', 'unix_timestamp', 'date_time', 'alert_time']) > -1){
-        render = function(data, type, row){
-            try{
+    if ($.inArray(col, ['date_add', 'modified', 'time', '@timestamp', 'timestamp_app', 'timestamp', 'unix_timestamp', 'date_time', 'alert_time']) > -1) {
+        render = function (data, type, row) {
+            data = sanitizeHTML(data)
+            try {
                 var date = moment(data);
                 return date.format("DD/MM/YYYY HH:mm:ss")
-            } catch(err){
+            } catch (err) {
                 return data;
             }
         }
-    } else if (col === "log_level"){
-        render = function(data, type, row){
+    } else if (col === "log_level") {
+        render = function (data, type, row) {
             var log_level = {
                 "DEBUG": "<label class='label label-default'>DEBUG</span>",
                 "INFO": "<label class='label label-info'>INFO</span>",
@@ -707,66 +715,75 @@ function render_col(col, mapping){
 
             return log_level[data];
         }
-    } else if ($.inArray(col, predator_columns) > -1){
-        render = function(data, type, row){
+    } else if ($.inArray(col, predator_columns) > -1) {
+        render = function (data, type, row) {
+            data = sanitizeHTML(data)
+
             var html = "";
             if (col === "src_ip" && row.country)
                 html += "<img src='/static/img/flags/" + row.country.toLowerCase() + ".png' class='img-country'/>&nbsp;&nbsp"
             html += highlight_search(data);
             return `<a href='#' class='predator_info' data-column='${col}' data-info='${data}'>${html}</a>`
         }
-    } else if ($.inArray(col, ['dns_queries']) > -1){
-        render = function(data, type, row){
+    } else if ($.inArray(col, ['dns_queries']) > -1) {
+        render = function (data, type, row) {
+            data = sanitizeHTML(data)
+
             result = "<ul>";
-            $.each(data, function(no, dns_query){
+            $.each(data, function (no, dns_query) {
                 result += "<li>QName : " + highlight_search(dns_query.qname) + ",\t DGA Anomaly : " + highlight_search(dns_query.darwin_decision) + "%</li>";
             });
             return result + "</ul>";
         }
-    } else if (col === "country"){
-        render = function(data, type, row){
+    } else if (col === "country") {
+        render = function (data, type, row) {
+            data = sanitizeHTML(data)
+
             if (data)
                 return "<img src='/static/img/flags/" + data.toLowerCase() + ".png' class='img-country'/>&nbsp;&nbsp" + highlight_search(data);
             return "<i class='fa fa-ban'></i>";
         }
-    } else if (col === "tags"){
-        render = function(data, type, row){
+    } else if (col === "tags") {
+        render = function (data, type, row) {
+            data = sanitizeHTML(data)
             if (data.length > 0) {
                 result = "<ul>";
-                $.each(data, function(index, tag){
+                $.each(data, function (index, tag) {
                     result += "<li>" + tag + "</li>";
                 });
                 return result + "</ul>";
             }
             return "";
         }
-    } else if (col === "advens"){
-        render = function(data, type, row){
+    } else if (col === "advens") {
+        render = function (data, type, row) {
+            data = sanitizeHTML(data)
             result = "";
             if (Object.keys(data).length > 0) {
                 result = "<ul>";
                 // For each key
-                Object.keys(data).forEach(function(key){
+                Object.keys(data).forEach(function (key) {
                     aggreg_value = "";
                     //TODO won't be enough when keys can have more subkeys...
-                    console.log(data[key]['darwin']);
-                    Object.values(data[key]['darwin']).forEach(function(value) {
+                    Object.values(data[key]['darwin']).forEach(function (value) {
                         aggreg_value += "<li><label class='label label-danger'>" + value + "</label></li>";
                     })
-                    if(aggreg_value)
+                    if (aggreg_value)
                         result += "<li><b>" + key + "</b>: " + aggreg_value + "</li>";
                 });
                 result += "</ul>";
             }
             return highlight_search(result);
         }
-    } else if (col === "entry"){
-        render = function(data, type, row){
+    } else if (col === "entry") {
+        render = function (data, type, row) {
+            data = sanitizeHTML(data)
             return "<label class='label label-danger'>" + data + "</label>";
         }
-    } else if (Array.isArray(mapping)){
-        render = function(data, type, row){
-            if (mapping[0] === "foreign_key" && mapping[1] === "Node"){
+    } else if (Array.isArray(mapping)) {
+        render = function (data, type, row) {
+            data = sanitizeHTML(data)
+            if (mapping[0] === "foreign_key" && mapping[1] === "Node") {
                 return nodes_id[data]
             }
 
@@ -774,7 +791,8 @@ function render_col(col, mapping){
         }
     } else if (col === "certitude") {
         // For Darwin entries
-        render = function(data, type, row){
+        data = sanitizeHTML(data)
+        render = function (data, type, row) {
             return "<label class='label label-danger'>" + highlight_search(data) + "</label>";
         }
     }
@@ -783,16 +801,16 @@ function render_col(col, mapping){
     return render
 }
 
-function destroy_table(){
-    if (table_loaded){
-        try{
-            $('#table_logs').dataTable().fnDestroy()
+function destroy_table() {
+    if (table_loaded) {
+        try {
+            $('#table_logs').dataTable().destroy()
             $('#table_logs').empty();
-        } catch(err){}
+        } catch (err) { }
     }
 }
 
-function init_configuration(data){
+function init_configuration(data) {
 
     mapping = data.mapping;
     config = data.config;
@@ -814,11 +832,11 @@ function init_configuration(data){
 
     $('#selected-fields').empty();
 
-    Object.keys(mapping).sort().forEach(function(field, type){
+    Object.keys(mapping).sort().forEach(function (field, type) {
         $('#selected-fields').append(`<option value='${field}'>${field}</option>`);
     })
 
-    for (var i in config.displayed_columns){
+    for (var i in config.displayed_columns) {
         var field = config.displayed_columns[i];
         var html = `<div class="grid-stack-item"><a href="#" data-grid='${field.name}' class='delete_grid'><i class='fa fa-times'></i></a><div class="grid-stack-item-content">${field.name}</div></div>`;
         grid.addWidget(html, field.x, 1, field.width, 1, false, 1, 4, 1, 1, field.name);
@@ -827,14 +845,14 @@ function init_configuration(data){
     $('.delete_grid').on('click', delete_grid);
 }
 
-function init_detail_info(mapping){
+function init_detail_info(mapping) {
     $('.detail_info').unbind('click');
 
-    $('.detail_info').on('click', function(){
+    $('.detail_info').on('click', function () {
         var rules = $('#queryBuilder').queryBuilder('getRules');
-        var rule  = null;
+        var rule = null;
 
-        var key   = $(this).text().split(':  ')[0];
+        var key = $(this).text().split(':  ')[0];
         var value = $(this).text().split(':  ')[1];
         var type = mapping[key];
 
@@ -856,7 +874,7 @@ function init_detail_info(mapping){
         if (type === "double")
             tmp_rule.input = "number"
 
-        if (selected_type === "pf" && key == "hostname"){
+        if (selected_type === "pf" && key == "hostname") {
             tmp_rule.input = "select";
             tmp_rule.values = nodes;
         }
@@ -876,8 +894,8 @@ function init_detail_info(mapping){
     });
 }
 
-function init_timeline(tmp_data){
-    if (!chart){
+function init_timeline(tmp_data) {
+    if (!chart) {
         options_graph = {
             type: 'bar',
             data: {
@@ -903,7 +921,7 @@ function init_timeline(tmp_data){
                     xAxes: [{
                         type: 'time',
                         time: {
-                            tooltipFormat:'DD/MM HH:mm:ss',
+                            tooltipFormat: 'DD/MM HH:mm:ss',
                             unit: "hour",
                             unitStepSize: 2,
                             displayFormats: {
@@ -920,7 +938,7 @@ function init_timeline(tmp_data){
                             display: true,
                             drawBorder: true,
                             drawOnChartArea: false,
-                        } 
+                        }
                     }],
                     yAxes: [{
                         ticks: {
@@ -930,7 +948,7 @@ function init_timeline(tmp_data){
                             display: true,
                             drawBorder: true,
                             drawOnChartArea: true,
-                        } 
+                        }
                     }]
                 }
             }
@@ -947,14 +965,14 @@ function init_timeline(tmp_data){
         var selectionContext = overlay.getContext('2d');
 
         var selectionRect = {
-          w: 0,
-          startX: 0,
-          startY: 0
+            w: 0,
+            startX: 0,
+            startY: 0
         };
 
         var drag = false;
 
-        function pointerDown(evt){
+        function pointerDown(evt) {
             const points = chart.getElementsAtEventForMode(evt, 'index', {
                 intersect: false
             });
@@ -967,31 +985,31 @@ function init_timeline(tmp_data){
             // save points[0]._index for filtering
         }
 
-        function pointerMove(evt){
+        function pointerMove(evt) {
             const rect = canvas.getBoundingClientRect();
-          if (drag) {
-            const rect = canvas.getBoundingClientRect();
-            selectionRect.w = (evt.clientX - rect.left) - selectionRect.startX;
-            selectionContext.globalAlpha = 0.5;
-            selectionContext.clearRect(0, 0, canvas.width, canvas.height);
-            selectionContext.fillRect(selectionRect.startX,
-              selectionRect.startY,
-              selectionRect.w,
-              chart.chartArea.bottom - chart.chartArea.top);
+            if (drag) {
+                const rect = canvas.getBoundingClientRect();
+                selectionRect.w = (evt.clientX - rect.left) - selectionRect.startX;
+                selectionContext.globalAlpha = 0.5;
+                selectionContext.clearRect(0, 0, canvas.width, canvas.height);
+                selectionContext.fillRect(selectionRect.startX,
+                    selectionRect.startY,
+                    selectionRect.w,
+                    chart.chartArea.bottom - chart.chartArea.top);
 
-          } else {
-            selectionContext.clearRect(0, 0, canvas.width, canvas.height);
-            var x = evt.clientX - rect.left;
-            if (x > chart.chartArea.left) {
-              selectionContext.fillRect(x,
-                chart.chartArea.top,
-                1,
-                chart.chartArea.bottom - chart.chartArea.top);
+            } else {
+                selectionContext.clearRect(0, 0, canvas.width, canvas.height);
+                var x = evt.clientX - rect.left;
+                if (x > chart.chartArea.left) {
+                    selectionContext.fillRect(x,
+                        chart.chartArea.top,
+                        1,
+                        chart.chartArea.bottom - chart.chartArea.top);
+                }
             }
-          }
         }
 
-        function pointerUp(evt){
+        function pointerUp(evt) {
             const points = chart.getElementsAtEventForMode(evt, 'index', {
                 intersect: false
             });
@@ -1001,7 +1019,7 @@ function init_timeline(tmp_data){
             var end_date = moment(options_graph.data.labels[points[0]._index], "YYYY-MM-DD:HH:mm");
 
 
-            if (start_date > end_date){
+            if (start_date > end_date) {
                 var tmp = start_date;
                 start_date = end_date;
                 end_date = tmp;
@@ -1030,7 +1048,7 @@ function init_timeline(tmp_data){
     chart.data.labels = [];
     chart.data.datasets[0].data = [];
 
-    $.each(tmp_data.graph_data, function(k, v){
+    $.each(tmp_data.graph_data, function (k, v) {
         chart.data.labels.push(moment(k))
         chart.data.datasets[0].data.push({
             x: moment(k),
@@ -1043,7 +1061,7 @@ function init_timeline(tmp_data){
     chart.update();
 }
 
-function init_datatable(data){
+function init_datatable(data) {
     destroy_table();
 
     mapping = data.mapping;
@@ -1054,12 +1072,12 @@ function init_datatable(data){
     var columnsDefs = [];
     var i = 0;
 
-    for (var j in config.displayed_columns){
+    for (var j in config.displayed_columns) {
         var field = config.displayed_columns[j];
 
         triable_columns.push(field.name);
 
-        if ($.inArray(field.name, ['unix_timestamp', 'timestamp_app', 'time']) > -1){
+        if ($.inArray(field.name, ['unix_timestamp', 'timestamp_app', 'time']) > -1) {
             var human_label = gettext('Date')
         } else {
             if (mapping_text[field.name])
@@ -1073,7 +1091,7 @@ function init_datatable(data){
             name: field.name,
             aTargets: [i],
             mData: field.name,
-            sWidth: (field.width/12) * 100 + "%",
+            sWidth: (field.width / 12) * 100 + "%",
             mRender: render_col(field.name, mapping[field.name]),
             defaultContent: '-'
         })
@@ -1085,33 +1103,33 @@ function init_datatable(data){
         sDom: '<pri<"top">t<"bottom"p>',
         oLanguage: {
             sLengthMenu: '_MENU_',
-            oPaginate  :{
-                sNext    : '',
+            oPaginate: {
+                sNext: '',
                 sPrevious: ''
             }
         },
-        bAutoWidth    : true,
-        bServerSide   : true,
-        bfilter       : false,
-        bDestroy      : true,
-        aaSorting     : [[0, 'desc']],
+        bAutoWidth: true,
+        bServerSide: true,
+        bfilter: false,
+        bDestroy: true,
+        aaSorting: [[0, 'desc']],
         iDisplayLength: config.nb_lines,
-        bProcessing   : true,
-        bSort         : true,
-        aoColumnDefs  : columnsDefs,
-        sAjaxSource   : 'logs',
-        sServerMethod : 'POST',
-        fnServerData: function(sSource, aoData, fnCallback){
-            try{
+        bProcessing: true,
+        bSort: true,
+        aoColumnDefs: columnsDefs,
+        sAjaxSource: 'logs',
+        sServerMethod: 'POST',
+        fnServerData: function (sSource, aoData, fnCallback) {
+            try {
                 var rules = $('#queryBuilder').queryBuilder('getMongo');
-            } catch(err){
+            } catch (err) {
                 var rules = {}
             }
 
             var startDate = reportrange.data('daterangepicker').startDate;
             var endDate = reportrange.data('daterangepicker').endDate;
 
-            if ($('#real_time').data('active')){
+            if ($('#real_time').data('active')) {
                 startDate = moment().subtract(5, 'minutes').startOf('minutes');
                 endDate = moment().endOf('minutes');
             }
@@ -1150,30 +1168,30 @@ function init_datatable(data){
             })
 
             $.ajax({
-                type   : "POST",
-                url    : sSource,
-                data   : aoData,
-                success: function(data, callback){
-                    if (data.need_auth){
+                type: "POST",
+                url: sSource,
+                data: aoData,
+                success: function (data, callback) {
+                    if (data.need_auth) {
                         window.location.href = window.location.href;
                         return false;
                     }
 
-                    if (!data.status){
+                    if (!data.status) {
                         notify('error', gettext('Erreur'), data.error);
                     } else {
 
                         init_timeline(data);
 
                         fnCallback(data);
-                        $('#table_logs tbody td').css({'fontSize': config.font_size});
+                        $('#table_logs tbody td').css({ 'fontSize': config.font_size });
                     }
                 }
             })
         },
-        fnCreatedRow: function(nRow, aData, iDataIndex){
-            $(aData).each(function(key, value) {
-                $.each(value.dns_queries, function(key, query) {
+        fnCreatedRow: function (nRow, aData, iDataIndex) {
+            $(aData).each(function (key, value) {
+                $.each(value.dns_queries, function (key, query) {
                     if (query.darwin_decision > 80) {
                         $(nRow).css('backgroundColor', '#e75336');
                         $(nRow).css('color', '#fff');
@@ -1182,7 +1200,7 @@ function init_datatable(data){
                         query.darwin_decision = '<span style=color:#f44336;font-weight:bold;>' + query.darwin_decision + "</span>";
                     }
                 });
-                if(value.darwin_is_alert) {
+                if (value.darwin_is_alert) {
                     $(nRow).css('backgroundColor', '#e75336');
                     $(nRow).css('color', '#fff');
                     $(nRow).find('a').css('color', '#fff');
@@ -1190,39 +1208,39 @@ function init_datatable(data){
                 }
             });
 
-            $(nRow).on('click', function(e){
+            $(nRow).on('click', function (e) {
                 e.stopPropagation();
 
                 $('#table_logs tbody tr').removeClass('selected');
                 $(this).addClass('selected');
-                $(nRow).find('td').each(function(){
+                $(nRow).find('td').each(function () {
                     $(this).addClass('row_selected');
                 })
 
                 var sOut = "";
 
                 const ordered = {};
-                Object.keys(aData).sort().forEach(function(key) {
-                  ordered[key] = aData[key];
+                Object.keys(aData).sort().forEach(function (key) {
+                    ordered[key] = aData[key]
                 });
 
-                $.each(ordered, function(key, value){
-                    if (key !== "_id"){
+                $.each(ordered, function (key, value) {
+                    if (key !== "_id") {
                         if (value instanceof Object)
                             value = JSON.stringify(value);
 
-                        if (value){
+                        if (value) {
                             value = highlight_search(value.toString());
-                            sOut += `<span class='detail_info large'><span class='key'>${key}:</span>&nbsp;&nbsp;<span class='value'>${value}</span></span>`;
+                            sOut += `<span class='detail_info large'><span class='key'>${key}:</span>&nbsp;&nbsp;<span class='value'>${sanitizeHTML(value)}</span></span>`;
                         }
                     }
                 })
 
-                if ($('#table_logs').dataTable().fnIsOpen(nRow)){
+                if ($('#table_logs').dataTable().fnIsOpen(nRow)) {
                     $('#table_logs').dataTable().fnClose(nRow);
                     $(this).removeClass('selected');
 
-                    $(nRow).find('td').each(function(){
+                    $(nRow).find('td').each(function () {
                         $(this).removeClass('row_selected');
                     })
                 } else {
@@ -1233,50 +1251,50 @@ function init_datatable(data){
         }
     }
 
-    var table = $('#table_logs').dataTable(settings).on('draw.dt', function(){
+    var table = $('#table_logs').dataTable(settings).on('draw.dt', function () {
         prepare_enrich_action();
 
         $.contextMenu({
             selector: "#table_logs tbody tr",
             autoHide: true,
 
-            build: function($trigger, e){
+            build: function ($trigger, e) {
                 var items = {};
 
                 var table2 = $('#table_logs').dataTable();
                 var data = table2.fnGetData($trigger[0])
 
-                if ($.inArray(selected_type, ['pf', 'access']) !== -1){
+                if ($.inArray(selected_type, ['pf', 'access']) !== -1) {
                     items.pf_whitelist = {
                         name: gettext('PF Whitelist'),
-                        callback: function(key, opt){
+                        callback: function (key, opt) {
                             packet_filter_context_menu_callback("whitelist", data)
                         }
                     }
 
                     items.pf_blacklist = {
                         name: gettext('PF Blacklist'),
-                        callback: function(key, opt){
+                        callback: function (key, opt) {
                             packet_filter_context_menu_callback("blacklist", data)
                         }
                     }
                 }
 
-                if (selected_type === "access"){
+                if (selected_type === "access") {
                     items.waf_rule = {
                         name: gettext('WAF Rule'),
-                        callback: function(key, opt){
+                        callback: function (key, opt) {
                             waf_context_menu_callback(key, data)
                         }
                     }
                 }
 
-                return {items: items}
+                return { items: items }
             }
         })
-    }).on('preDraw.dt', function(e, settings, data){
+    }).on('preDraw.dt', function (e, settings, data) {
         is_loading = true;
-    }).on('draw.dt', function(){
+    }).on('draw.dt', function () {
         is_loading = false;
     });
 
@@ -1285,13 +1303,13 @@ function init_datatable(data){
     if (interval)
         clearInterval(interval)
 
-    interval = setInterval(function(){
+    interval = setInterval(function () {
         if ($('#real_time').data('active'))
             fetch_data();
     }, 5000);
 }
 
-function fetch_mapping(type_logs, type_app){
+function fetch_mapping(type_logs, type_app) {
     $.post(
         '',
         {
@@ -1299,8 +1317,8 @@ function fetch_mapping(type_logs, type_app){
             action: 'get_mapping'
         },
 
-        function(response){
-            if (check_json_error(response)){
+        function (response) {
+            if (check_json_error(response)) {
                 init_configuration(response);
                 init_datatable(response);
                 init_search(response);
@@ -1309,7 +1327,7 @@ function fetch_mapping(type_logs, type_app){
     )
 }
 
-function fetch_applications(type_logs){
+function fetch_applications(type_logs) {
     $('#list-applications').html('');
     $('#btn-applications').html('');
     // destroy_table();
@@ -1321,21 +1339,21 @@ function fetch_applications(type_logs){
             action: 'get_available_apps'
         },
 
-        function(response){
-            if (check_json_error(response)){
-                $.each(response.applications, function(pk, name){
+        function (response) {
+            if (check_json_error(response)) {
+                $.each(response.applications, function (pk, name) {
                     $('#list-applications').append(`<li><a class='choice-applications' href="#" data-id='${pk}'>${name}</a></li>`);
                 })
 
-                $('.choice-applications').on('click', function(){
+                $('.choice-applications').on('click', function () {
                     selected_app = $(this).data('id');
-                    sessionStorage.setItem('default_app_'+type_logs, selected_app);
+                    sessionStorage.setItem('default_app_' + type_logs, selected_app);
 
                     $('#btn-applications').html($(this).html());
                     fetch_mapping(selected_type, selected_app);
                 })
 
-                default_app = sessionStorage.getItem('default_app_'+type_logs);
+                default_app = sessionStorage.getItem('default_app_' + type_logs);
                 if (default_app)
                     $(`*[data-id="${default_app}"]`).click();
             }
@@ -1343,23 +1361,23 @@ function fetch_applications(type_logs){
     )
 }
 
-function prepare_type_logs_selector(){
+function prepare_type_logs_selector() {
     $('#list-type-logs').html('');
     destroy_table();
 
     $.post(
         '',
-        {action: 'get_available_logs'},
+        { action: 'get_available_logs' },
 
-        function(response){
-            if (check_json_error(response)){
+        function (response) {
+            if (check_json_error(response)) {
                 nodes_id = response.nodes;
 
-                $.each(response.logs, function(type, text){
+                $.each(response.logs, function (type, text) {
                     $('#list-type-logs').append(`<li><a class='choice-type-logs' href='#' data-type='${type}'>${text}</a></li>`);
                 })
 
-                $('.choice-type-logs').on('click', function(){
+                $('.choice-type-logs').on('click', function () {
                     selected_app = null;
                     selected_type = $(this).data('type');
                     sessionStorage.setItem('default_type', selected_type);
@@ -1372,7 +1390,7 @@ function prepare_type_logs_selector(){
 
                     $('#btn-type-logs').html($(this).html());
 
-                    if ($.inArray(selected_type, ['access', 'impcap']) > -1){
+                    if ($.inArray(selected_type, ['access', 'impcap']) > -1) {
                         $('#btn-applications').show();
                         fetch_applications(selected_type);
 
@@ -1402,7 +1420,7 @@ function prepare_type_logs_selector(){
     )
 }
 
-function init_search(data){
+function init_search(data) {
     mapping = data.mapping;
     config = data.config;
     search_list = data.searches;
@@ -1414,8 +1432,8 @@ function init_search(data){
     $('#saved-search').empty();
     $('#saved-search').append("<option value=''>----</option>")
 
-    $.each(mapping, function(field, type){
-        if (type !== "dict"){
+    $.each(mapping, function (field, type) {
+        if (type !== "dict") {
             if (type === "float")
                 type = "double";
             else if (type === "number")
@@ -1431,12 +1449,12 @@ function init_search(data){
             if (type === "double" || type === "integer")
                 filter.input = "number"
 
-            if (selected_type === "pf" && field == "hostname"){
+            if (selected_type === "pf" && field == "hostname") {
                 filter.input = "select";
                 filter.values = nodes;
             }
 
-            if (Array.isArray(type)){
+            if (Array.isArray(type)) {
                 filter.input = "number"
                 filter.type = "integer"
             }
@@ -1445,13 +1463,13 @@ function init_search(data){
         }
     })
 
-    try{
+    try {
         $('#queryBuilder').queryBuilder('destroy');
-    } catch(err){}
+    } catch (err) { }
 
-    try{
+    try {
         $('#queryBuilder_ace').queryBuilder('destroy');
-    } catch(err){}
+    } catch (err) { }
 
     builder = $('#queryBuilder').queryBuilder({
         sort_filters: true,
@@ -1480,11 +1498,11 @@ function init_search(data){
     editor.setTheme("ace/theme/chrome");
     editor.session.setMode("ace/mode/search");
 
-    ace.config.loadModule("ace/snippets/search", function(m) {
+    ace.config.loadModule("ace/snippets/search", function (m) {
         if (m) {
             m.snippets = [];
 
-            for (var i in search_list){
+            for (var i in search_list) {
                 var tmp = search_list[i];
                 $('#saved-search').append("<option value='{0}|{1}'>{2}</option>".format(tmp.pk, JSON.stringify(tmp.search), tmp.name))
 
@@ -1503,8 +1521,8 @@ function init_search(data){
         }
     });
 
-    editor.on('focus', function(){
-        if (editor.getValue() === ""){
+    editor.on('focus', function () {
+        if (editor.getValue() === "") {
 
         }
     })
@@ -1524,9 +1542,9 @@ function init_search(data){
     });
 
     lang_tool.addCompleter({
-        getCompletions: function(editor, session, pos, prefix, callback){
+        getCompletions: function (editor, session, pos, prefix, callback) {
             var autocomplete = [];
-            $.each(mapping, function(field, type_field){
+            $.each(mapping, function (field, type_field) {
                 autocomplete.push({
                     score: 1,
                     name: field,
@@ -1543,19 +1561,19 @@ function init_search(data){
     editor.renderer.updateFontSize();
 
     $('#logs_preview_rule').unbind('keypress');
-    $('#logs_preview_rule').on('keypress', function(e){
-        if (e.keyCode === 13){
+    $('#logs_preview_rule').on('keypress', function (e) {
+        if (e.keyCode === 13) {
             e.preventDefault();
             PNotify.removeAll();
 
             var search_sql = editor.getValue();
-            if (search_sql == ""){
+            if (search_sql == "") {
                 $('#queryBuilder').queryBuilder('reset');
                 $('#queryBuilder_ace').queryBuilder('reset');
             } else {
-                try{
+                try {
                     $('#queryBuilder').queryBuilder('setRulesFromSQL', search_sql);
-                } catch(err){
+                } catch (err) {
                     notify('error', gettext('Error'), gettext('Invalid query'))
                     return;
                 }
@@ -1590,18 +1608,18 @@ prepare_type_logs_selector();
 
 $('.btn-open').click();
 
-$('#saved-search').on('click', function(e){
+$('#saved-search').on('click', function (e) {
     e.stopPropagation();
 })
 
-$('.dropdown-menu-lg').on('click', function(e){
+$('.dropdown-menu-lg').on('click', function (e) {
     e.stopPropagation();
 })
 
-$('.dropdown-menu-xlg').on('click', function(e){
+$('.dropdown-menu-xlg').on('click', function (e) {
     e.stopPropagation();
 })
 
-$('.dropdown-menu-xlg li').on('click', function(e){
+$('.dropdown-menu-xlg li').on('click', function (e) {
     e.stopPropagation();
 })
