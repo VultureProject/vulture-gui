@@ -36,7 +36,7 @@ let UserFormComponent = Vue.component("UserForm", {
         user_data: Object,
         user_edit_keys: Array
     },
-    
+
     data() {
         return {
             form: {},
@@ -44,17 +44,17 @@ let UserFormComponent = Vue.component("UserForm", {
         }
     },
 
-    mounted() {},
+    mounted() { },
 
     methods: {
         formatTags(tmp_tags) {
             if (!tmp_tags)
                 return
-            
+
             let tags = []
-            for (let tmp of tmp_tags){
+            for (let tmp of tmp_tags) {
                 if (!tmp.text)
-                    tags.push({text: tmp})
+                    tags.push({ text: tmp })
                 else
                     tags.push(tmp)
             }
@@ -80,7 +80,8 @@ let UserFormComponent = Vue.component("UserForm", {
                 let tmp = {
                     group_dn: this.group_dn,
                     user: this.user_data,
-                    userPassword: this.userPassword
+                    userPassword: this.userPassword,
+                    object_type: "user"
                 }
 
                 axios.post(ldap_view_api_uri, tmp)
