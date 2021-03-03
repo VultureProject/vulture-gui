@@ -78,7 +78,11 @@ def search_users(ldap_repo, search, by_dn=False):
     return data
 
 def get_users(ldap_repository, group_name):
-    group_dn = ldap_repository.create_group_dn(group_name)
+    if ldap_repository.base_dn not in group_name:
+        group_dn = ldap_repository.create_group_dn(group_name)
+    else:
+        group_dn = group_name
+
     group = find_group(ldap_repository, group_dn, ['*'])
     members  = []
     for member_dn in group['member']:
