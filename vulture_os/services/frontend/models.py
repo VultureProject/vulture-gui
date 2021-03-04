@@ -801,7 +801,7 @@ class Frontend(models.Model):
                     result['office365_client_secret'] = self.office365_client_secret
 
                 elif self.api_parser_type == "imperva":
-                    result['imperva_base_url'] = self.imperva_base_url
+                    result['imperva_base_url'] = self.lo
                     result['imperva_api_id'] = self.imperva_api_id
                     result['imperva_api_key'] = self.imperva_api_key
                     result['imperva_private_key'] = self.imperva_private_key
@@ -1097,13 +1097,17 @@ class Frontend(models.Model):
         for node_name, conf in self.configuration.items():
             if not conf:
                 return
+            test_conf = conf.replace("frontend {}".format(self.name),
+                                     "frontend test_{}".format(self.id or "test")) \
+                            .replace("listen {}".format(self.name),
+                                     "listen test_{}".format(self.id or "test"))
             if node_name != Cluster.get_current_node().name:
                 try:
                     global_config = Cluster().get_global_config()
                     cluster_api_key = global_config.cluster_api_key
                     infos = post("https://{}:8000/api/services/frontend/test_conf/".format(node_name),
                                  headers={'cluster-api-key': cluster_api_key},
-                                 data={'conf': conf, 'filename': test_filename, 'disabled': not self.enabled},
+                                 data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
                                  verify=False, timeout=9).json()
                 except Exception as e:
                     logger.error(e)
@@ -1114,10 +1118,7 @@ class Frontend(models.Model):
             else:
                 # Replace name of frontend to prevent duplicate frontend while testing conf
                 test_haproxy_conf(test_filename,
-                                  conf.replace("frontend {}".format(self.name),
-                                               "frontend test_{}".format(self.id or "test"))
-                                      .replace("listen {}".format(self.name),
-                                               "listen test_{}".format(self.id or "test")),
+                                  test_conf,
                                   disabled=(not self.enabled))
 
     def get_base_filename(self):

@@ -644,6 +644,7 @@ ul li{
 
 #row-navbar .input-group, #row-navbar .input-group .btn-navbar, #row-navbar .input-group #logs_preview_rule{
     height: 54px;
+    max-height: 54px !important;
 }
 
 .dropdown-menu-xlg{

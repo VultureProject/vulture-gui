@@ -318,7 +318,7 @@ class FrontendForm(ModelForm):
             'elasticsearch_password': PasswordInput(attrs={'class': 'form-control'}),
             'elasticsearch_index': TextInput(attrs={'class': 'form-control'}),
             'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
-            'forcepoint_password': PasswordInput(attrs={'class': 'form-control'}),
+            'forcepoint_password': TextInput(attrs={'class': 'form-control'}),
             'symantec_username': TextInput(attrs={'class': 'form-control'}),
             'symantec_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'aws_access_key_id': TextInput(attrs={'class': 'form-control'}),
