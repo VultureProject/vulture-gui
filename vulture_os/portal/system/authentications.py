@@ -186,7 +186,7 @@ class Authentication(object):
     def register_user(self, authentication_results):
         oauth2_token = None
         # No OAuth2 disabled
-        if self.workflow.authentication.enable_oauth2:
+        if self.workflow.authentication.enable_oauth:
             oauth_timeout = self.workflow.authentication.oauth_timeout
             oauth2_token = Uuid4().generate()
             self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + oauth2_token)
@@ -197,7 +197,6 @@ class Authentication(object):
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),
                                                                           str(self.backend_id),
-                                                                          self.workflow.get_redirect_uri(),
                                                                           self.workflow.authentication.otp_repository,
                                                                           self.credentials[0], self.credentials[1],
                                                                           oauth2_token,
@@ -282,6 +281,10 @@ class Authentication(object):
                                 secure=self.get_redirect_url().startswith('https'))
 
         return response
+
+    def generate_response(self):
+        response = HttpResponseRedirect()
+        response.set_cookie()
 
 
 class POSTAuthentication(Authentication):

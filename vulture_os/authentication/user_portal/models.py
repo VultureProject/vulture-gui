@@ -329,6 +329,11 @@ class UserAuthentication(models.Model):
         default=["https://myapp.com/oauth2/callback"],
         help_text=_("Use one line per allowed URI")
     )
+    oauth_timeout = models.PositiveIntegerField(
+        default=600,
+        verbose_name=_("OAuth2 tokens timeout"),
+        help_text=_("Time in seconds after which oauth2 tokens will expire")
+    )
     enable_sso_forward = models.BooleanField(
         default=False,
         help_text=_('Forward credentials to backend')

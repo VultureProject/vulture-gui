@@ -35,6 +35,7 @@ from authentication.base_repository import BaseRepository
 from toolkit.auth.authy_client import AuthyClient
 from toolkit.auth.vulturemail_client import VultureMailClient
 from toolkit.auth.totp_client import TOTPClient
+from toolkit.system.hashes import random_sha1
 
 # Extern modules imports
 import requests
@@ -67,6 +68,7 @@ PROVIDERS_TYPE = (
     ('digitalocean', 'DigitalOcean'),
     ('bitbucket', 'Bitbucket'),
     ('gitea', 'Gitea'),
+    ('digital_pass', 'Digital Pass'),
 )
 
 
@@ -132,6 +134,9 @@ class OpenIDRepository(BaseRepository):
     last_config_time = models.DateTimeField(
         null=True
     )
+    id_alea = models.TextField(
+        default=random_sha1
+    )
 
     def __str__(self):
         return "{} ({})".format(self.name, self.str_provider())
@@ -153,11 +158,11 @@ class OpenIDRepository(BaseRepository):
 
     def to_template(self):
         """ Returns the attributes of the class """
-        print("YOUHOU !!!!!")
         return {
             'id': str(self.id),
             'name': self.name,
-            'provider': self.provider
+            'provider': self.provider,
+            'id_alea': self.id_alea
         }
 
     def to_html_template(self):
@@ -200,7 +205,7 @@ class OpenIDRepository(BaseRepository):
             self.authorization_endpoint = config['authorization_endpoint']
             self.token_endpoint = config['token_endpoint']
             self.userinfo_endpoint = config['userinfo_endpoint']
-            self.end_session_endpoint = config.get('end_session_endpoint', config['revocation_endpoint'])
+            self.end_session_endpoint = config.get('end_session_endpoint') or config['revocation_endpoint']
             self.last_config_time = timezone.now()
             if not test:
                 self.save()

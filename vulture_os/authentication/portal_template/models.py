@@ -46,7 +46,7 @@ logger = logging.getLogger('gui')
 
 INPUT_LOGIN = "vltprtlsrnm"
 INPUT_PASSWORD = "vltprtlpsswrd"
-
+HAPROXY_HEADER = "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nConnection: close\r\n\r\n"
 
 class PortalTemplate(models.Model):
     """ Vulture portal's template model representation
@@ -63,7 +63,7 @@ class PortalTemplate(models.Model):
         help_text=_('Cascading Style Sheet for template')
     )
     html_login = models.TextField(
-        default="<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\"/>\n    <title>Vulture Login</title>\n    <link rel=\"stylesheet\" href=\"/templates/static/html/bootstrap.min.css\" integrity=\"sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7\" crossorigin=\"anonymous\">\n    {{style}}\n </head>\n <body>\n    <div class=\"container\">\n        <div class=\"card card-container\">\n            <form action='' method='POST' autocomplete='off' class='form-signin'>\n                <img id=\"vulture_img\" src=\"/templates/static/img/vulture-logo-small.png\"/>\n                {% if error_message != \"\" %}\n                  <div class=\"alert alert-danger\" role=\"alert\">{{error_message}}</div>\n                {% endif %}\n                <span id=\"reauth-email\" class=\"reauth-email\"></span>\n                <input type=\"text\" name=\"{{input_login}}\" class=\"form-control\" placeholder=\"Login\" required/>\n                <input type=\"password\" name=\"{{input_password}}\" class=\"form-control\" placeholder=\"Password\" required/>\n                {% if captcha %}\n                    {{captcha}}\n                    <input type=\"text\" name=\"{{input_captcha}}\" class=\"form-control\" placeholder=\"Captcha\" required/>\n\n                {% endif %}\n                <button class=\"btn btn-lg btn-warning btn-block btn-signin\" type=\"submit\">{{login_submit_field}}</button>\n                {% for repo in openid_repos %}\n                <a href=\"{{repo.start_url}}\">Login with {{repo.provider}}</a>\n                {% endfor %}\n                <a href=\"{{lostPassword}}\">Forgotten password ?</a>\n            </form>\n        </div>\n    </div>\n </body>\n</html>",
+        default="<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\"/>\n    <title>Vulture Login</title>\n    <link rel=\"stylesheet\" href=\"/templates/static/html/bootstrap.min.css\" integrity=\"sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7\" crossorigin=\"anonymous\">\n    <style>{{style}}</style>\n </head>\n <body>\n    <div class=\"container\">\n        <div class=\"card card-container\">\n            <form action='' method='POST' autocomplete='off' class='form-signin'>\n                <img id=\"vulture_img\" src=\"/templates/static/img/vulture-logo-small.png\"/>\n                {% if error_message != \"\" %}\n                  <div class=\"alert alert-danger\" role=\"alert\">{{error_message}}</div>\n                {% endif %}\n                <span id=\"reauth-email\" class=\"reauth-email\"></span>\n                <input type=\"text\" name=\"{{input_login}}\" class=\"form-control\" placeholder=\"Login\" required/>\n                <input type=\"password\" name=\"{{input_password}}\" class=\"form-control\" placeholder=\"Password\" required/>\n                {% if captcha %}\n                    {{captcha}}\n                    <input type=\"text\" name=\"{{input_captcha}}\" class=\"form-control\" placeholder=\"Captcha\" required/>\n\n                {% endif %}\n                <button class=\"btn btn-lg btn-warning btn-block btn-signin\" type=\"submit\">{{login_submit_field}}</button>\n                {% for repo in openid_repos %}\n                <a href=\"{{repo.start_url}}\">Login with {{repo.provider}}</a>\n                {% endfor %}\n                <a href=\"{{lostPassword}}\">Forgotten password ?</a>\n            </form>\n        </div>\n    </div>\n </body>\n</html>",
         help_text=_('HTML Content for the login page')
     )
     html_learning = models.TextField(
@@ -359,7 +359,7 @@ class PortalTemplate(models.Model):
     def write_template(self, tpl_name, **kwargs):
         """ This method has to be called by api_request (Vultured) """
         filename = self.tpl_filename(tpl_name)
-        write_conf(logger, [self.tpl_filename(tpl_name), self.render_template(tpl_name, **kwargs), HAPROXY_OWNER, HAPROXY_PERMS])
+        write_conf(logger, [self.tpl_filename(tpl_name), HAPROXY_HEADER+self.render_template(tpl_name, **kwargs), HAPROXY_OWNER, HAPROXY_PERMS])
         return "Template {} successfully written".format(filename)
 
 

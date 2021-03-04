@@ -208,7 +208,7 @@ def sso_wizard(request):
         try:
             tls_proto = request.POST.get('sso_forward_tls_proto')
             tls_cert = request.POST.get('sso_forward_tls_cert')
-            tls_cert = request.POST.get('sso_forward_tls_cert')
+            tls_check = request.POST.get('sso_forward_tls_check')
             url = request.POST['sso_forward_url']
             user_agent = request.POST.get('sso_forward_user_agent') or request.META.get('HTTP_USER_AGENT')
             redirect_before = request.POST.get('sso_forward_follow_redirect_before')
@@ -255,7 +255,8 @@ def sso_wizard(request):
 
     try:
         # Directly use portal classes
-        sso_client = SSOClient(user_agent, [], request.META.get('HTTP_REFERER'), ssl_client_certificate, ssl_context)
+        sso_client = SSOClient(user_agent, [], request.META.get('HTTP_REFERER'), ssl_client_certificate, ssl_context,
+                               verify_certificate=tls_check)
         url, response = sso_client.get(url, redirect_before)
         forms = parse_html(response.content, url)
 

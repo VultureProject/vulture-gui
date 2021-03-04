@@ -168,7 +168,7 @@ class Workflow(models.Model):
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             'acls': self.workflowacl_set.count(),
-            'authentication_id': str(self.authentication.pk),
+            'authentication_id': str(self.authentication.pk) if self.authentication else "",
             'authentication': str(self.authentication)
         }
 
@@ -189,7 +189,7 @@ class Workflow(models.Model):
             'backend': self.backend.to_dict(),
             'frontend_id': str(self.frontend.pk),
             'backend_id': str(self.backend.pk),
-            'authentication_id': str(self.authentication.pk),
+            'authentication_id': str(self.authentication.pk) if self.authentication else "",
             'workflow_json': json.dumps(self.workflow_json),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),

@@ -202,8 +202,8 @@ class SSOClient(object):
         # Because if we do, no need to replace content
         """ Check if we want to perform an additional GET request after SSO Request
         """
-        if application.sso_after_post_request_enabled and application.sso_after_post_request:
-            after_sso_url = application.sso_after_post_request
+        if application.authentication.sso_forward_enable_additionnal and application.authentication.sso_forward_additional_url:
+            after_sso_url = application.authentication.sso_forward_additional_url
             if matched:
                 i = 1
                 for pattern in matched.groups():
@@ -217,10 +217,10 @@ class SSOClient(object):
                 logger.error("SSOClient::advanced_sso_perform: Unable to GET url '{}' : ".format(after_sso_url))
                 logger.exception(e)
 
-        elif application.sso_replace_content_enabled and application.sso_replace_pattern and application.sso_replace_content:
+        elif application.authentication.sso_forward_enable_replace and application.authentication.sso_forward_replace_pattern and application.authentication.sso_forward_replace_content:
             try:
-                sso_replace_pattern = application.sso_replace_pattern
-                sso_replace_content = application.sso_replace_content
+                sso_replace_pattern = application.authentication.sso_forward_replace_pattern
+                sso_replace_content = application.authentication.sso_forward_replace_content
                 if matched:
                     i = 1
                     for pattern in matched.groups():
@@ -228,7 +228,7 @@ class SSOClient(object):
                         sso_replace_content = sso_replace_content.replace('$'+str(i), pattern)
                         i += 1
                 regex = compile(sso_replace_pattern)
-                sso_response_body = regex.sub(sso_replace_content, unicode(response.content.decode('utf-8'))).encode('utf-8')
+                sso_response_body = regex.sub(sso_replace_content, response.content.decode('utf-8')).encode('utf-8')
                 return sso_response_body
 
             except Exception as e:

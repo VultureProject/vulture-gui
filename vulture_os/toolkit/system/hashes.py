@@ -23,9 +23,12 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'System Utils for Hashes'
 
 
-from hashlib import sha3_256
+from hashlib import sha3_256, sha1
 from os import urandom
 
 
 def random_sha256():
     return sha3_256(urandom(64)).hexdigest()
+
+def random_sha1():
+    return sha1(urandom(64)).hexdigest()

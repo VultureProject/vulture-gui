@@ -58,6 +58,7 @@ from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeed
 from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.system.hashes import random_sha256
 from toolkit.http.utils import build_url
+from oauthlib.oauth2 import OAuth2Error
 
 # Extern modules imports
 from requests_oauthlib import OAuth2Session
@@ -80,10 +81,10 @@ def openid_start(request, workflow_id):
     # Build the callback url
     # Get scheme
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
-    port = request.META['SERVER_PORT']
+    port = int(request.META['SERVER_PORT'])
     fqdn = workflow.fqdn
     w_path = workflow.public_dir
-    callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo.id)
+    callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo.id_alea)
 
     oauth2_session = repo.get_oauth2_session(callback_url)
     authorization_url, state = repo.get_authorization_url(oauth2_session)
@@ -124,7 +125,7 @@ def openid_callback(request, workflow_id, repo_id):
     port = request.META['SERVER_PORT']
     fqdn = workflow.fqdn
     w_path = workflow.public_dir
-    callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo_id)
+    callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo.id_alea)
 
     redirect_url = build_url(scheme, fqdn, port, w_path)
 
@@ -182,27 +183,30 @@ def openid_callback(request, workflow_id, repo_id):
         return HttpResponseRedirect()
 
     except RedisConnectionError as e:
-        logger.error("")
+        logger.exception(e)
         return HttpResponseServerError()
 
     except AssertionError as e:
-        logger.error("")
-        return HttpResponseRedirect()
+        logger.exception(e)
+        return HttpResponseRedirect(redirect_url)
+
+    except OAuth2Error as e:
+        logger.exception(e)
+        return HttpResponseRedirect(redirect_url)
 
     except Exception as e:
         logger.exception(e)
         return HttpResponseServerError()
 
     db_auth_response = make_db_authentication(request, portal_cookie_name, portal_cookie, workflow, user_scope)
+    logger.info(db_auth_response)
     if db_auth_response:
         return db_auth_response
 
-    sso_response = make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope,
-                                    redirect_url)
-    if sso_response:
-        return sso_response
-
     # If no SSO enabled, redirect with portal cookie
+    return make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope) \
+                   or authentication.generate_response()
+
 
 
 
@@ -308,16 +312,7 @@ def make_db_authentication(request, portal_cookie_name, portal_cookie, workflow,
                         .format(authentication.credentials[0]))
             return authentication.ask_credentials_response(request=request, error=e.message)
 
-    """ If no response has been returned yet : redirect to the asked-uri/default-uri with portal_cookie """
-    redirection_url = authentication.get_redirect_url()
-    logger.info("PORTAL::log_in: Redirecting user to '{}'".format(redirection_url))
-    try:
-        kerberos_token_resp = user_infos['token_resp']
-    except:
-        kerberos_token_resp = None
-
-    return response_redirect_with_portal_cookie(redirection_url, portal_cookie_name, portal_cookie,
-                                                redirection_url.startswith('https'), kerberos_token_resp)
+    # If nothing, no response to return
 
 
 def make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_infos):
@@ -366,10 +361,6 @@ def make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authe
             # Generate response depending on application.sso_forward options
             final_response = sso_forward.generate_response(request, response, authentication.get_redirect_url())
             logger.info("PORTAL::log_in: SSOForward response successfuly generated")
-
-            # Refresh portal cookie
-            final_response = set_portal_cookie(final_response, portal_cookie_name, portal_cookie,
-                                               authentication.get_redirect_url())
 
             return final_response
 
