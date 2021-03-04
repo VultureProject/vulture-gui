@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Frontends & Listeners model classes'
+__doc__ = 'Workflow model classes'
 
 # Django system imports
 from django.conf import settings
@@ -154,7 +154,7 @@ class Workflow(models.Model):
         """ Retrieve list/custom objects """
 
         """ And returns the attributes of the class """
-        return {
+        tmp = {
             'id': str(self.id),
             'name': self.name,
             'fqdn': self.fqdn,
@@ -171,12 +171,13 @@ class Workflow(models.Model):
             'authentication_id': str(self.authentication.pk) if self.authentication else "",
             'authentication': str(self.authentication)
         }
+        return tmp
 
     def to_dict(self):
         defender_policy = None
         authentication = None
         if self.defender_policy:
-            defender_policy = self.defender_policy.to_dict()
+            defender_policy = self.defender_policy.to_template()
         
         if self.authentication:
             authentication = self.authentication.to_template()
@@ -218,7 +219,8 @@ class Workflow(models.Model):
             'public_dir': self.public_dir,
             'frontend': self.frontend,
             'backend': self.backend,
-            'authentication': self.authentication
+            'authentication': self.authentication,
+            'defender_policy': self.defender_policy
         }
 
     def generate_conf(self):

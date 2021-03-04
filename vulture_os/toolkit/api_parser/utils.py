@@ -38,6 +38,8 @@ from toolkit.api_parser.mongodb.mongodb import MongoDBParser
 from toolkit.api_parser.defender_atp.defender_atp import DefenderATPParser
 from toolkit.api_parser.cortex_xdr.cortex_xdr import CortexXDRParser
 from toolkit.api_parser.cybereason.cybereason import CybereasonParser
+from toolkit.api_parser.cisco_meraki.cisco_meraki import CiscoMerakiParser
+from toolkit.api_parser.proofpoint_tap.proofpoint_tap import ProofpointTAPParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -56,7 +58,9 @@ PARSER_LIST = {
     "mongodb": MongoDBParser,
     "defender_atp": DefenderATPParser,
     "cortex_xdr": CortexXDRParser,
-    "cybereason": CybereasonParser
+    "cisco_meraki": CiscoMerakiParser,
+    "cybereason": CybereasonParser,
+    "proofpoint_tap": ProofpointTAPParser,
 }
 
 

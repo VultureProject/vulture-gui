@@ -827,12 +827,15 @@ var workflow_vue = new Vue({
                         for (let auth of self.authentication_choices){
                             if (auth.id === step.data.object_id){
                                 for (let repo of auth.repositories){
-                                    console.log(icon_by_type.repo[repo.subtype])
+                                    let image = icon_by_type.repo[repo.subtype]
+                                    if (!image)
+                                        image = vulture_logo
+
                                     let node_tmp = {
                                         id: `repo_node_${repo.id}`,
-                                        shape: 'image',
-                                        image: icon_by_type.repo[repo.subtype],
-                                        label: repo.name
+                                        label: repo.name,
+                                        shape: "image",
+                                        image: image
                                     }
 
                                     nodes.push(node_tmp)

@@ -78,7 +78,6 @@
                       <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Connection settings" %}</a></li>
                       <li><a href="#tab_user" data-toggle="tab">{% trans "User settings" %}</a></li>
                       <li><a href="#tab_group" data-toggle="tab">{% trans "Group settings" %}</a></li>
-                      <li><a href="#tab_oauth2" data-toggle="tab">{% trans "OAuth2 settings" %}</a></li>
                     </ul>
                     <div class="tab-content">
                       <br/>
@@ -206,6 +205,16 @@
                         <div class="row">
                           <div class="col-md-12">
                             <div class="form-group">
+                              <label class="col-sm-4 control-label">{% trans "Object Class" %}</label>
+                                <div class="col-sm-5">
+                                  <input type="text" class="form-control" disabled value="InetOrgPerson"/>
+                                </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
                               <label class="col-sm-4 control-label">{{ form.user_attr.label }}</label>
                                 <div class="col-sm-5">
                                   {{form.user_attr}}
@@ -281,6 +290,17 @@
                           </div>
                         </div> <!-- /.row -->
                         <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.user_smartcardid_attr.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.user_smartcardid_attr}}
+                                  {{form.user_smartcardid_attr.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
                           <div class="col-sm-12" style="text-align:center;">
                             <button name="user_search_test" id="user_search_test" class="btn btn-success btn-flat"><span>{% trans "Test User authentication settings" %}</span></button>
                           </div>
@@ -309,6 +329,16 @@
                               <div class="col-sm-2">
                                 <input id="group_dn" type="text" class="form-control" disabled=""/>
                               </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{% trans "Object Class" %}</label>
+                                <div class="col-sm-5">
+                                  <input type="text" class="form-control" disabled value="groupOfNames"/>
+                                </div>
                             </div>
                           </div>
                         </div> <!-- /.row -->
@@ -348,63 +378,6 @@
                         <div class="row">
                           <div class="col-sm-12" style="text-align:center;">
                             <button id="group_search_test" class="btn btn-success btn-flat"><span>{% trans "Test group settings" %}</span></button>
-                          </div>
-                        </div> <!-- /.row -->
-                      </div> <!-- /.tab-pane -->
-                      <div class="tab-pane" id="tab_oauth2">
-                        <div class="row">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{ form.enable_oauth2.label }}</label>
-                                <div class="col-sm-5">
-                                  {{form.enable_oauth2}}
-                                  {{form.enable_oauth2.errors|safe}}
-                                </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row -->
-                        <div class="row oauth2">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.oauth2_attributes.label }}</label>
-                              <div class="col-sm-5">
-                                {{form.oauth2_attributes}}
-                                {{form.oauth2_attributes.errors|safe}}
-                              </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row -->
-                        <div class="row oauth2">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{ form.oauth2_type_return.label }}</label>
-                                <div class="col-sm-5">
-                                  {{form.oauth2_type_return}}
-                                  {{form.oauth2_type_return.errors|safe}}
-                                </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row -->
-                        <div class="row oauth2">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{ form.oauth2_token_return.label }}</label>
-                                <div class="col-sm-5">
-                                  {{form.oauth2_token_return}}
-                                  {{form.oauth2_token_return.errors|safe}}
-                                </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row -->
-                        <div class="row oauth2">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{ form.oauth2_token_ttl.label }}</label>
-                                <div class="col-sm-5">
-                                  {{form.oauth2_token_ttl}}
-                                  {{form.oauth2_token_ttl.errors|safe}}
-                                </div>
-                            </div>
                           </div>
                         </div> <!-- /.row -->
                       </div> <!-- /.tab-pane -->
@@ -451,6 +424,7 @@
                 <div id="user_email" class="test_user"></div>
                 <div id="account_locked" class="test_user"></div>
                 <div id="password_expired" class="test_user"></div>
+                <div id="smartcardid" class="test_user"></div>
                 <div id="user_groups" class="test_user"></div>
               </div>
             </div>
@@ -605,6 +579,7 @@
       $('#user_email').html('{% trans "Email address" %}: '+ data['user_email']);
       $('#account_locked').html('{% trans "Account locked" %}: '+ data['account_locked']);
       $('#password_expired').html('{% trans "Need change pass" %}: '+ data['password_expired']);
+      $('#smartcardid').html('{% trans "Smart Card ID" %}: '+ data['smartcardid']);
       $('#user_groups').html('{% trans "User groups" %}:');
       group_list = $('#user_groups');
       var ul = $('<ul/>').appendTo(group_list);

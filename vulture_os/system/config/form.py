@@ -62,7 +62,6 @@ class ConfigForm(ModelForm):
             'pf_whitelist': TextInput(attrs={'class': 'form-control', 'data-role': 'tagsinput'}),
             'pf_blacklist': TextInput(attrs={'class': 'form-control', 'data-role': 'tagsinput'}),
             'cluster_api_key': TextInput(attrs={'class': 'form-control'}),
-            'ldap_repository': Select(choices=LDAPRepository.objects.all(), attrs={'class': 'select2 form-control'}),
             'oauth2_header_name': TextInput(attrs={'class': 'form-control'}),
             'portal_cookie_name': TextInput(attrs={'class': 'form-control'}),
             'public_token': TextInput(attrs={'class': 'form-control'}),
@@ -72,6 +71,7 @@ class ConfigForm(ModelForm):
             'rsa_encryption_key': Textarea(attrs={'class': 'form-control'}),
             'logs_ttl': NumberInput(attrs={'class': 'form-control'}),
             'internal_tenants': Select(choices=Tenants.objects.all(),attrs={'class': 'form-control select2'}),
+            'ldap_repository': Select(choices=LDAPRepository.objects.all(),attrs={'class': 'form-control select2'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -79,8 +79,6 @@ class ConfigForm(ModelForm):
         super().__init__(*args, **kwargs)
         self = bootstrap_tooltips(self)
         self.fields['internal_tenants'].empty_label = None
-        self.fields['ldap_repository'].empty_label = "Internal"
-        self.fields['ldap_repository'].required = False
 
     @staticmethod
     def validate_ip_list(field_value):
