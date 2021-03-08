@@ -314,7 +314,7 @@ class FrontendForm(ModelForm):
             'redis_server': TextInput(attrs={'class': 'form-control'}),
             'redis_port': TextInput(attrs={'class': 'form-control'}),
             'redis_key': TextInput(attrs={'class': 'form-control'}),
-            'redis_password': TextInput(attrs={'class': 'form-control'}),
+            'redis_password': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
             'elasticsearch_host': TextInput(attrs={
                 'class': 'form-control',
