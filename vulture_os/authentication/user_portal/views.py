@@ -31,6 +31,7 @@ from django.urls import reverse
 
 # Django project imports
 from gui.forms.form_utils import DivErrorList
+from toolkit.api.responses import build_response
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -125,10 +126,14 @@ def user_authentication_edit(request, object_id=None, api=False):
         try:
             if api:
                 repo_attrs = request.JSON.get('repo_attributes', [])
-                assert isinstance(repo_attrs, list), "Repo attributes field must be a dict."
+                assert isinstance(repo_attrs, list), "Repo attributes field must be a list."
             else:
                 repo_attrs = json_loads(request.POST.get('repo_attributes', "[]"))
         except Exception as e:
+            if api:
+                return JsonResponse({
+                    "error": "".join(format_exception(*exc_info()))
+                })
             return render_form(profile, save_error=["Error in Repo_Attributes field : {}".format(e),
                                                            str.join('', format_exception(*exc_info()))])
 
@@ -142,6 +147,10 @@ def user_authentication_edit(request, object_id=None, api=False):
                     listener_json = json_loads(request.POST.get('external_listener_json', "{}"))
                 assert listener_json, "Listener required if external enabled"
             except Exception as e:
+                if api:
+                    return JsonResponse({
+                        "error": "".join(format_exception(*exc_info()))
+                    })
                 return render(request, 'authentication/user_authentication_edit.html', {'form': form,
                                                                                     'save_error':["Error in external listener field : {}".format(e),
                                                                                                   str.join('', format_exception(*exc_info()))]})
@@ -185,10 +194,17 @@ def user_authentication_edit(request, object_id=None, api=False):
             try:
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
             except Exception as e:
+                if api:
+                    return JsonResponse({
+                        "error": "".join(format_exception(*exc_info()))
+                    })
+
                 return render_form(profile, save_error=["Cannot write configuration: {}".format(e),
                                                                                    str.join('', format_exception(*exc_info()))])
 
             # If everything succeed, redirect to list view
+            if api:
+                return build_response(profile.id, "api.portal.user_authentication", [])
             return HttpResponseRedirect(reverse("portal.user_authentication.list"))
 
     if not listener_f:
