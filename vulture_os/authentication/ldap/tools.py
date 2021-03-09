@@ -36,7 +36,7 @@ AVAILABLE_USER_KEYS = ("user_attr", "user_account_locked_attr", "user_change_pas
 def find_user(ldap_repo, user_dn, attr_list):
     client = ldap_repo.get_client()
     user = client.search_by_dn(user_dn, attr_list=attr_list)
-
+    
     dn, attrs = user[0]
     user = {"dn": dn}
 
@@ -127,12 +127,14 @@ def create_group(ldap_repository, group_name, members_username):
 
 
 def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
-    group_dn = group_name
+    group_dn = False
+    if group_name:
+        group_dn = group_name
 
-    if ldap_repository.base_dn not in group_dn:
-        group_dn = ldap_repository.create_group_dn(group_name)
+        if ldap_repository.base_dn not in group_dn:
+            group_dn = ldap_repository.create_group_dn(group_name)
 
-    user_dn = f"{ldap_repository.user_attr}={user_name},{group_dn}"
+    user_dn = ldap_repository.create_user_dn(user_name)
     user = {
         "sn": [user_name],
         "cn": [user_name],

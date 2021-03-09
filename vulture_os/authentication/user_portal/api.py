@@ -72,7 +72,6 @@ class UserPortalApi(View):
     def post(self, request):
         try:
             response = user_portal_view.user_authentication_edit(request, None, api=True)
-            print(response)
             return response
         
         except Exception as e:

@@ -68,6 +68,11 @@ urlpatterns = [
         name="authentication.api.ldap.view"
     ),
 
+    path('api/v1/authentication/ldap/',
+        api.LDAPApi.as_view(),
+        name="authentication.api.ldap"
+    ),
+
     path('api/v1/authentication/ldap/<int:object_id>/',
         api.LDAPApi.as_view(),
         name="authentication.api.ldap"

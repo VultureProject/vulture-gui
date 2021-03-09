@@ -29,6 +29,7 @@ from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpRespo
 from django.shortcuts import render
 
 # Django project imports
+from toolkit.api.responses import build_response, build_form_errors
 from gui.forms.form_utils import DivErrorList
 
 # Required exceptions imports
@@ -73,7 +74,7 @@ def ldap_view(request, object_id):
     return render(request, 'authentication/ldap_view.html', {"object_id": object_id})
 
 
-def ldap_edit(request, object_id=None):
+def ldap_edit(request, object_id=None, api=False):
     ldap = None
     if object_id:
         try:
@@ -81,9 +82,16 @@ def ldap_edit(request, object_id=None):
         except ObjectDoesNotExist:
             return HttpResponseForbidden("Injection detected")
 
-    form = LDAPRepositoryForm(request.POST or None, instance=ldap, error_class=DivErrorList)
+    if hasattr(request, "JSON") and api:
+        form = LDAPRepositoryForm(request.JSON or None, instance=ldap, error_class=DivErrorList)
+    else:
+        form = LDAPRepositoryForm(request.POST or None, instance=ldap, error_class=DivErrorList)
 
     def render_form(objectid=None, **kwargs):
+        if api:
+            logger.error("Frontend api form error : {}".format(form.errors.get_json_data()))
+            return JsonResponse({"errors": build_form_errors(form.errors)}, status=400)
+
         return render(request, 'authentication/ldap_edit.html',
                       {'form': form, 'object_id': objectid, **kwargs})
 
@@ -100,12 +108,14 @@ def ldap_edit(request, object_id=None):
             else:
                 return render_form(ldap.id if ldap else None)
 
-    if request.method == "POST" and form.is_valid():
+    if request.method in ("POST", "PUT") and form.is_valid():
         # Save the form to get an id if there is not already one
         ldap = form.save(commit=False)
         ldap.save()
-
         # If everything succeed, redirect to list view
+        if api:
+            return build_response(ldap.id, "services.frontend.api", [])
+
         return HttpResponseRedirect('/authentication/ldap/')
 
     return render_form(ldap.id if ldap else None)

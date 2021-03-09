@@ -118,7 +118,7 @@ class IDPApiUserView(View):
             user = {
                 ldap_repo.user_attr: request.JSON['username'],
                 ldap_repo.user_email_attr: request.JSON['email'],
-                ldap_repo.user_groups_attr: request.JSON['group']
+                ldap_repo.user_groups_attr: request.JSON.get('group')
             }
 
             attrs = {}
