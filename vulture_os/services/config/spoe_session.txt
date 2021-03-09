@@ -22,3 +22,4 @@ spoe-agent session-agent
 spoe-message check-session
         args req.cook({{ global_config.portal_cookie_name }}) var(proc.repo_ids)
         event on-frontend-http-request
+

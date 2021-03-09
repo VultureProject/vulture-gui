@@ -216,6 +216,7 @@ def save_workflow(request, workflow_obj, object_id=None):
         # Reloading configuration
         nodes = workflow_obj.frontend.reload_conf()
         workflow_obj.backend.reload_conf()
+        workflow_obj.save_conf()
 
         # We need to reload the new defender policy configuration if:
         # we set a defender policy and (if we create an object, or if we updated the policy, the FQDN or the

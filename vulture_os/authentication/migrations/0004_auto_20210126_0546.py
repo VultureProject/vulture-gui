@@ -4,16 +4,43 @@ import authentication.user_portal.models
 from django.db import migrations, models
 import django.db.models.deletion
 import djongo.models.fields
+import toolkit.system.hashes
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('system', '0014_auto_20210126_0546'),
+        ('system', '0015_auto_20210305_1048'),
         ('authentication', '0003_auto_20200915_1600'),
     ]
 
     operations = [
+        migrations.RemoveField(
+            model_name='ldaprepository',
+            name='enable_oauth2',
+        ),
+        migrations.RemoveField(
+            model_name='ldaprepository',
+            name='oauth2_attributes',
+        ),
+        migrations.RemoveField(
+            model_name='ldaprepository',
+            name='oauth2_token_return',
+        ),
+        migrations.RemoveField(
+            model_name='ldaprepository',
+            name='oauth2_token_ttl',
+        ),
+        migrations.RemoveField(
+            model_name='ldaprepository',
+            name='oauth2_type_return',
+        ),
+        migrations.AddField(
+            model_name='ldaprepository',
+            name='user_smartcardid_attr',
+            field=models.TextField(default='', help_text="Attribute which contains user's SmartCard ID",
+                                   verbose_name='Smart Card ID attribute'),
+        ),
         migrations.CreateModel(
             name='AuthAccessControl',
             fields=[
@@ -29,7 +56,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.TextField(default='Portal template', help_text='Friendly name to reference the template')),
                 ('css', models.TextField(default='/*\n * Specific styles of signin component\n */\n/*\n * General styles\n */\nbody, html {\n    height: 100%;\n    background: #FBFBF0 linear-gradient(135deg, #70848D, #21282E) repeat scroll 0% 0%;\n}\n\n.card-container.card {\n    max-width: 350px;\n    padding: 40px 40px;\n}\n\n#self_service {\n    max-width: 450px;\n    padding: 40px 40px;\n}\n\n.list-group-item {\n    text-align: left;\n}\n\n.btn {\n    font-weight: 700;\n    height: 36px;\n    -moz-user-select: none;\n    -webkit-user-select: none;\n    user-select: none;\n    cursor: default;\n}\n\n/*\n * Card component\n */\n.card {\n    text-align:center;\n    background-color: #F7F7F7;\n    /* just in case there no content*/\n    padding: 20px 25px 30px;\n    margin: 0 auto 25px;\n    margin-top: 50px;\n    /* shadows and rounded borders */\n    -moz-border-radius: 2px;\n    -webkit-border-radius: 2px;\n    border-radius: 2px;\n    -moz-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);\n    -webkit-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);\n    box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);\n}\n\n#vulture_img{\n    width:150px;\n}\n\n.form-signin{\n    text-align: center;\n}\n\n#captcha{\n    border:1px solid #c5c5c5;\n    margin-bottom: 10px;\n}\n\n.alert{\n    margin-bottom: 0px;\n    margin-top:15px;\n}\n\n.reauth-email {\n    display: block;\n    color: #404040;\n    line-height: 2;\n    margin-bottom: 10px;\n    font-size: 14px;\n    text-align: center;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.form-signin #inputEmail,\n.form-signin #inputPassword {\n    direction: ltr;\n    height: 44px;\n    font-size: 16px;\n}\n\ninput[type=email],\ninput[type=password],\ninput[type=text],\nbutton {\n    width: 100%;\n    display: block;\n    margin-bottom: 10px;\n    z-index: 1;\n    position: relative;\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.form-signin .form-control:focus {\n    border-color: rgb(104, 145, 162);\n    outline: 0;\n    -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgb(104, 145, 162);\n    box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgb(104, 145, 162);\n}\n\n.btn.btn-signin {\n    background-color: #F1A14C;\n    padding: 0px;\n    font-weight: 700;\n    font-size: 14px;\n    height: 36px;\n    -moz-border-radius: 3px;\n    -webkit-border-radius: 3px;\n    border-radius: 3px;\n    border: none;\n    -o-transition: all 0.218s;\n    -moz-transition: all 0.218s;\n    -webkit-transition: all 0.218s;\n    transition: all 0.218s;\n}\n\n.btn.btn-signin:hover{\n    cursor: pointer;\n}\n\n.forgot-password {\n    color: rgb(104, 145, 162);\n}\n\n.forgot-password:hover,\n.forgot-password:active,\n.forgot-password:focus{\n    color: rgb(12, 97, 33);\n}\n', help_text='Cascading Style Sheet for template')),
-                ('html_login', models.TextField(default='<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="utf-8"/>\n    <title>Vulture Login</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    {{style}}\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container">\n            <form action=\'\' method=\'POST\' autocomplete=\'off\' class=\'form-signin\'>\n                <img id="vulture_img" src="/templates/static/img/vulture-logo-small.png"/>\n                {% if error_message != "" %}\n                  <div class="alert alert-danger" role="alert">{{error_message}}</div>\n                {% endif %}\n                <span id="reauth-email" class="reauth-email"></span>\n                <input type="text" name="{{input_login}}" class="form-control" placeholder="Login" required/>\n                <input type="password" name="{{input_password}}" class="form-control" placeholder="Password" required/>\n                {% if captcha %}\n                    {{captcha}}\n                    <input type="text" name="{{input_captcha}}" class="form-control" placeholder="Captcha" required/>\n\n                {% endif %}\n                <button class="btn btn-lg btn-warning btn-block btn-signin" type="submit">{{login_submit_field}}</button>\n                {% for repo in openid_repos %}\n                <a href="{{repo.start_url}}">Login with {{repo.provider}}</a>\n                {% endfor %}\n                <a href="{{lostPassword}}">Forgotten password ?</a>\n            </form>\n        </div>\n    </div>\n </body>\n</html>', help_text='HTML Content for the login page')),
+                ('html_login', models.TextField(default='<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="utf-8"/>\n    <title>Vulture Login</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    <style>{{style}}</style>\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container">\n            <form action=\'\' method=\'POST\' autocomplete=\'off\' class=\'form-signin\'>\n                <img id="vulture_img" src="/templates/static/img/vulture-logo-small.png"/>\n                {% if error_message != "" %}\n                  <div class="alert alert-danger" role="alert">{{error_message}}</div>\n                {% endif %}\n                <span id="reauth-email" class="reauth-email"></span>\n                <input type="text" name="{{input_login}}" class="form-control" placeholder="Login" required/>\n                <input type="password" name="{{input_password}}" class="form-control" placeholder="Password" required/>\n                {% if captcha %}\n                    {{captcha}}\n                    <input type="text" name="{{input_captcha}}" class="form-control" placeholder="Captcha" required/>\n\n                {% endif %}\n                <button class="btn btn-lg btn-warning btn-block btn-signin" type="submit">{{login_submit_field}}</button>\n                {% for repo in openid_repos %}\n                <a href="{{repo.start_url}}">Login with {{repo.provider}}</a>\n                {% endfor %}\n                <a href="{{lostPassword}}">Forgotten password ?</a>\n            </form>\n        </div>\n    </div>\n </body>\n</html>', help_text='HTML Content for the login page')),
                 ('html_learning', models.TextField(default='<!DOCTYPE html>\n<html>\n <head>\n    <meta charset="utf-8" />\n    <title>Vulture Learning</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    {{style}}\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container" style="text-align:center;">\n            <p>Learning form</p>\n            {{form_begin}}\n                {{input_submit}}\n            {{form_end}}\n        </div>\n    </div>\n </body>\n</html>', help_text='HTML Content for the learning page')),
                 ('html_logout', models.TextField(default='<!DOCTYPE html>\n<html>\n <head>\n    <meta charset="utf-8" />\n    <title>Vulture Logout</title>\n     <link rel="stylesheet" href="//templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n     {{style}}\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container" style="text-align:center;">\n            <p style="font-size:15px;font-weight:bold;">You have been successfully disconnected</p>\n            <a href="{{app_url}}">Return to the application</a>\n        </div>\n    </div>\n </body>\n</html>', help_text='HTML Content for the logout page')),
                 ('html_self', models.TextField(default='<!DOCTYPE html>\n<html>\n <head>\n    <meta charset="utf-8" />\n    <title>Vulture Self-Service</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    {{style}}\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container" style="text-align:center;" id="self_service">\n            <img id="vulture_img" src="/templates/static/img/vulture-logo-small.png"/>\n            <br><br>\n            {% if error_message != "" %}\n                <div class="alert alert-danger">{{error_message}}</div>\n            {% endif %}\n            <p>Hello <b>{{username}}</b>!</p>\n            <p>You currently have access to the following apps:</p>\n            <ul class="list-group">\n                {% for app in application_list %}\n                  <li class="list-group-item"><b>{{app.name}}</b> - <a href="{{app.url}}">{{app.url}}</a>{% if app.status %}<span class="badge">Logged</span>{% endif %}</li>\n                {% endfor %}\n            </ul>\n            <a href="{{changePassword}}">Change password</a>\n            <br><a href="{{logout}}">Logout</a>\n        </div>\n    </div>\n </body>\n</html>', help_text='HTML Content for the self-service page')),
@@ -221,33 +248,26 @@ class Migration(migrations.Migration):
             field=models.TextField(default='Vulture/4 (BSD; Vulture OS)', help_text="Override 'User-Agent' header for SSO forward requests", verbose_name='Override User-Agent (set empty if not)'),
         ),
         migrations.AlterField(
-            model_name='openidrepository',
-            name='authorization_endpoint',
-            field=models.TextField(default='', help_text='', verbose_name='Authorization url'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='end_session_endpoint',
-            field=models.TextField(default='', help_text='', verbose_name='Disconnect url'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='issuer',
-            field=models.TextField(default='', help_text='', verbose_name='Issuer to use'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='token_endpoint',
-            field=models.TextField(default='', help_text='', verbose_name='Get token url'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='userinfo_endpoint',
-            field=models.TextField(default='', help_text='', verbose_name='Get user infos url'),
-        ),
-        migrations.AlterField(
             model_name='userauthentication',
             name='portal_template',
             field=models.ForeignKey(help_text='Select the template to use for user authentication portal', null=True, on_delete=django.db.models.deletion.PROTECT, to='authentication.PortalTemplate', verbose_name='Portal template'),
+        ),
+        migrations.AddField(
+            model_name='userauthentication',
+            name='oauth_timeout',
+            field=models.PositiveIntegerField(default=600,
+                                              help_text='Time in seconds after which oauth2 tokens will expire',
+                                              verbose_name='OAuth2 tokens timeout'),
+        ),
+        migrations.AlterField(
+            model_name='userauthentication',
+            name='enable_external',
+            field=models.BooleanField(default=False, help_text='Listen portal on dedicated host - required for ',
+                                      verbose_name='Enable Identity Provider'),
+        ),
+        migrations.AddField(
+            model_name='openidrepository',
+            name='id_alea',
+            field=models.TextField(default=toolkit.system.hashes.random_sha1),
         ),
     ]
