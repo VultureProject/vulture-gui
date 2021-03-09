@@ -801,7 +801,7 @@ class Frontend(models.Model):
                     result['office365_client_secret'] = self.office365_client_secret
 
                 elif self.api_parser_type == "imperva":
-                    result['imperva_base_url'] = self.lo
+                    result['imperva_base_url'] = self.imperva_base_url
                     result['imperva_api_id'] = self.imperva_api_id
                     result['imperva_api_key'] = self.imperva_api_key
                     result['imperva_private_key'] = self.imperva_private_key
