@@ -49,7 +49,7 @@ DEFENDER_PERMS = "644"
 class LogViewerConfiguration(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     type_logs = models.TextField()
-    displayed_columns = models.DictField()
+    displayed_columns = models.JSONField()
     nb_lines = models.IntegerField(default=25)
     font_size = models.IntegerField(default=12)
 
@@ -70,7 +70,7 @@ class LogViewerSearches(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     type_logs = models.TextField()
     name = models.TextField()
-    search = models.DictField()
+    search = models.JSONField()
 
     def to_template(self):
         return {
@@ -83,7 +83,7 @@ class LogViewerSearches(models.Model):
 
 class DefenderRule(models.Model):
     zone = models.TextField()
-    ids = models.ListField(models.IntegerField, default=[])
+    ids = models.JSONField(models.IntegerField, default=[])
     key = models.TextField()
     value = models.TextField()
     url = models.TextField()
@@ -259,7 +259,7 @@ class DefenderProcessRule(models.Model):
     expiration_date = models.DateTimeField(auto_now_add=True)
     rule_id = models.IntegerField()
     rule_key = models.TextField(default="")
-    data = models.DictField(default={})
+    data = models.JSONField(default={})
 
     objects = models.DjongoManager()
 

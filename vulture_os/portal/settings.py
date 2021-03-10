@@ -24,7 +24,7 @@ except ImportError:
     SECRET_KEY = secret_key
 
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = ["*"]
@@ -102,12 +102,14 @@ DATABASES = {
     'default': {
         'ENGINE': 'djongo',
         'NAME': 'vulture',
-        'HOST': get_hostname(),
         'REPLICASET': 'Vulture',
-        'PORT': 9091,
-        'SSL': True,
-        'SSL_CERTFILE': '/var/db/pki/node.pem',
-        'SSL_CA_CERTS': '/var/db/pki/ca.pem',
+        "CLIENT": {
+            'host': get_hostname(),
+            'port': 9091,
+            'SSL': True,
+            'SSL_CERTFILE': '/var/db/pki/node.pem',
+            'SSL_CA_CERTS': '/var/db/pki/ca.pem',
+        },
         'READPREFERENCE': ReadPreference.PRIMARY_PREFERRED
     }
 }

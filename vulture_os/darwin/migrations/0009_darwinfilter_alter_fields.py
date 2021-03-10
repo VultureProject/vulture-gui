@@ -24,6 +24,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='filterpolicy',
             name='config',
-            field=djongo.models.fields.DictField(default={'alert_redis_channel_name': 'darwin.alerts', 'alert_redis_list_name': 'darwin_alerts', 'log_file_path': '/var/log/darwin/alerts.log', 'redis_socket_path': '/var/sockets/redis/redis.sock'}),
+            field=djongo.models.fields.JSONField(default={'alert_redis_channel_name': 'darwin.alerts', 'alert_redis_list_name': 'darwin_alerts', 'log_file_path': '/var/log/darwin/alerts.log', 'redis_socket_path': '/var/sockets/redis/redis.sock'}),
         )
     ]

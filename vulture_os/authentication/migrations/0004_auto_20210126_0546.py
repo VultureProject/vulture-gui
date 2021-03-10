@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('enabled', models.BooleanField(default=True)),
                 ('name', models.TextField(help_text='Friendly name', unique=True, verbose_name='Friendly name')),
-                ('rules', djongo.models.fields.ListField(default=[])),
+                ('rules', djongo.models.fields.JSONField(default=[])),
             ],
         ),
         migrations.CreateModel(
@@ -145,7 +145,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='userauthentication',
             name='repo_attributes',
-            field=djongo.models.fields.ArrayModelField(default=[], help_text='Repo attributes whitelist, for re-use in SSO and ACLs', model_container=authentication.user_portal.models.RepoAttributes, model_form_class=authentication.user_portal.models.RepoAttributesForm, verbose_name='Create user scope'),
+            field=djongo.models.fields.ArrayField(default=[], help_text='Repo attributes whitelist, for re-use in SSO and ACLs', model_container=authentication.user_portal.models.RepoAttributes, model_form_class=authentication.user_portal.models.RepoAttributesForm, verbose_name='Create user scope'),
         ),
         migrations.AddField(
             model_name='userauthentication',

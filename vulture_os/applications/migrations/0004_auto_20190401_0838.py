@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('name', models.TextField(default='Parser', help_text='Custom name of the current object', unique=True, verbose_name='Friendly name')),
                 ('rulebase', models.TextField(default='version=2\nrule=:%timestamp_app:float{"format": "number"}%', help_text='Parser rules', verbose_name='Rulebase')),
                 ('to_test', models.TextField(default='1553103776.045449327', help_text='Lines to apply te parser on', verbose_name='Lines to test')),
-                ('tags', djongo.models.fields.ListField(default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default=''))),
+                ('tags', djongo.models.fields.JSONField(default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default=''))),
             ],
         ),
         migrations.AddField(

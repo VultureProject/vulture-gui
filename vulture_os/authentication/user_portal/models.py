@@ -108,6 +108,9 @@ class RepoAttributes(models.Model):
         help_text=_("Attribute key to keep in scope")
     )
 
+    class Meta:
+        abstract = True
+
     def get_attribute(self, claims, repo_attrs):
         if self.source_attr == "claim":
             return claims.get(self.key, "")
@@ -240,8 +243,7 @@ class UserAuthentication(models.Model):
         verbose_name=_('Lookup claim key name'),
         help_text=_("Claim name used to map user to ldap attribute")
     )
-    repo_attributes = models.ArrayModelField(
-        default=[],
+    repo_attributes = models.ArrayField(
         model_container=RepoAttributes,
         model_form_class=RepoAttributesForm,
         verbose_name=_('Create user scope'),
@@ -322,7 +324,7 @@ class UserAuthentication(models.Model):
         verbose_name=_("Secret (client_id)"),
         help_text=_("Client_secret used to contact OAuth2 provider urls")
     )
-    oauth_redirect_uris = models.ListField(
+    oauth_redirect_uris = models.JSONField(
         models.CharField(
             null=False
         ),
@@ -475,11 +477,11 @@ class UserAuthentication(models.Model):
         }
         return result
 
-    def get_openid_callback_url(self, req_scheme, req_port, workflow_host, workflow_path, repo_id):
+    def get_openid_callback_url(self, req_scheme, workflow_host, workflow_path, repo_id):
         if self.enable_external:
             base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
         else:
-            base_url = build_url(req_scheme, workflow_host, req_port, workflow_path)
+            base_url = req_scheme + "://" + workflow_host + workflow_path
         base_url += '/' if base_url[-1] != '/' else ''
         return base_url+"oauth2/callback/{}".format(repo_id)
 

@@ -158,7 +158,7 @@ class PortalTemplate(models.Model):
         default="An email has been sent to you with instructions to reset your password",
         help_text=_('An email has been sent to you with instruction to reset your password')
     )
-    # images = models.ListField(models.ImageField(null=True), default=[], help_text=_('Images you can use in your templates'))
+    # images = models.JSONField(models.ImageField(null=True), default=[], help_text=_('Images you can use in your templates'))
     email_register_subject = models.TextField(
         default="Registration request for {{ app.name }}",
         help_text=_('Email subject for registration')

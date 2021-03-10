@@ -26,7 +26,7 @@ __doc__ = 'System utils authentication'
 
 # Django system imports
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 
 # Django project imports
 # FIXME from gui.models.repository_settings  import KerberosRepository, LDAPRepository
@@ -283,8 +283,7 @@ class Authentication(object):
         return response
 
     def generate_response(self):
-        response = HttpResponseRedirect()
-        response.set_cookie()
+        return HttpResponseRedirect(self.get_redirect_url())
 
 
 class POSTAuthentication(Authentication):

@@ -69,10 +69,10 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('portal_authentication')
 
 
-def openid_start(request, workflow_id):
+def openid_start(request, workflow_id, repo_id):
     """ First, try to retrieve concerned objects """
     try:
-        repo = OpenIDRepository.objects.get(pk=request.GET['repo'])
+        repo = OpenIDRepository.objects.get(pk=repo_id)
         workflow = Workflow.objects.get(pk=workflow_id)
     except Exception as e:
         logger.exception(e)
@@ -80,11 +80,12 @@ def openid_start(request, workflow_id):
 
     # Build the callback url
     # Get scheme
+    logger.info(request.META)
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
-    port = int(request.META['SERVER_PORT'])
-    fqdn = workflow.fqdn
+    # Asked FQDN (with or without port if needed)
+    fqdn = request.META['HTTP_HOST']
     w_path = workflow.public_dir
-    callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo.id_alea)
+    callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
 
     oauth2_session = repo.get_oauth2_session(callback_url)
     authorization_url, state = repo.get_authorization_url(oauth2_session)
@@ -122,12 +123,12 @@ def openid_callback(request, workflow_id, repo_id):
     # Build the callback url
     # Get scheme
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
-    port = request.META['SERVER_PORT']
-    fqdn = workflow.fqdn
+    port = int(request.META['HTTP_X_FORWARDED_PORT'])
+    fqdn = request.META['HTTP_HOST']
     w_path = workflow.public_dir
-    callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo.id_alea)
+    callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
 
-    redirect_url = build_url(scheme, fqdn, port, w_path)
+    redirect_url = scheme + "://" + fqdn + w_path
 
     global_config = Cluster.get_global_config()
     """ Retrieve token and cookies to instantiate Redis wrapper objects """
@@ -135,6 +136,8 @@ def openid_callback(request, workflow_id, repo_id):
     portal_cookie_name = global_config.portal_cookie_name
 
     logger.info(request.COOKIES.get(portal_cookie_name))
+
+    logger.info(request.GET)
 
     try:
         code = request.GET['code']
@@ -156,7 +159,7 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Retrieve user's infos from provider
         claims = repo.get_userinfo(oauth2_session)
-
+        logger.info(claims)
         repo_attributes = {}
         # Make LDAP Lookup if configured
         if workflow.authentication.lookup_ldap_repo:

@@ -134,7 +134,7 @@ class Workflow(models.Model):
         help_text=_("Backend"),
     )
 
-    workflow_json = models.ListField(default=[])
+    workflow_json = models.JSONField(default=[])
 
     class Meta:
         unique_together = (('frontend', 'fqdn', 'public_dir', 'backend'),)

@@ -117,7 +117,7 @@ class ReputationContext(models.Model):
         verbose_name=_("POST body"),
         help_text=_("Body to send if method is POST")
     )
-    custom_headers = models.DictField(
+    custom_headers = models.JSONField(
         default={},
         verbose_name=_("Custom headers"),
         help_text=_("Headers to send while retrieving url")
@@ -140,14 +140,14 @@ class ReputationContext(models.Model):
         verbose_name=_("Password"),
         help_text=_("Password to use for authentication")
     )
-    tags = models.ListField(
+    tags = models.JSONField(
         models.SlugField(default=""),
         default=[],
         help_text=_("Tags to set on this object for search")
     )
     """ Field not stored in DB, it's just used as cache between fonction classes """
     content = models.BinaryField(
-        default=""
+        default=b""
     )
     """ MMDB database attributes """
     # There cannot be multiple files with the same filename

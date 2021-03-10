@@ -43,7 +43,7 @@ class AuthAccessControl(models.Model):
     enabled = models.BooleanField(default=True)
 
     name = models.TextField(verbose_name=_("Friendly name"), help_text=_("Friendly name"), unique=True)
-    rules = models.ListField(default=[])
+    rules = models.JSONField(default=[])
 
     def __str__(self):
         return f"Authentication ACL {self.name}"
