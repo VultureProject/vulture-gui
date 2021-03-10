@@ -247,6 +247,8 @@ class UserAuthentication(models.Model):
         model_container=RepoAttributes,
         model_form_class=RepoAttributesForm,
         verbose_name=_('Create user scope'),
+        null=True,
+        default=None,
         help_text=_("Repo attributes whitelist, for re-use in SSO and ACLs")
     )
     auth_timeout = models.PositiveIntegerField(

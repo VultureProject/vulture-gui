@@ -11,7 +11,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.RemoveField(model_name="tlsprofile", name="protocols"),
+        migrations.AddField(
             model_name='tlsprofile',
             name='protocols',
             field=djongo.models.fields.JSONField(default=['tlsv12'], help_text='Allowed protocol ciphers.', verbose_name=models.TextField(choices=[('tlsv13', 'TLSv1.3'), ('tlsv12', 'TLSv1.2'), ('tlsv11', 'TLSv1.1'), ('tlsv10', 'TLSv1.0')])),
