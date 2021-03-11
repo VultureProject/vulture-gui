@@ -206,9 +206,10 @@ def openid_callback(request, workflow_id, repo_id):
         return db_auth_response
 
     # If no SSO enabled, redirect with portal cookie
-    return make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope) \
+    response = make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope) \
                    or authentication.generate_response()
 
+    return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
 
 
 
