@@ -134,10 +134,6 @@ def openid_callback(request, workflow_id, repo_id):
     # Retrieve cookies required for authentication
     portal_cookie_name = global_config.portal_cookie_name
 
-    logger.info(request.COOKIES.get(portal_cookie_name))
-
-    logger.info(request.GET)
-
     try:
         code = request.GET['code']
         state = request.GET['state']
@@ -181,8 +177,8 @@ def openid_callback(request, workflow_id, repo_id):
         authentication.register_user(user_scope)
 
     except KeyError as e:
-        # FIXME : What to do ?
-        return HttpResponseRedirect()
+        logger.exception(e)
+        return HttpResponseRedirect(redirect_url)
 
     except RedisConnectionError as e:
         logger.exception(e)
