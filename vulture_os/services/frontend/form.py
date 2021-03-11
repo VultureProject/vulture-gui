@@ -35,7 +35,7 @@ from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (COMPRESSION_ALGO_CHOICES, Frontend, FrontendReputationContext, Listener,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, IMPCAP_FILTER_CHOICES,
-                                      DARWIN_MODE_CHOICES)
+                                      DARWIN_MODE_CHOICES, REDIS_MODE_CHOICES)
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
 from system.error_templates.models import ErrorTemplate
@@ -198,6 +198,7 @@ class FrontendForm(ModelForm):
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'impcap_filter', 'impcap_filter_type',
                            'impcap_intf', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group',
+                           'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'api_parser_type', 'api_parser_use_proxy',
                            'elasticsearch_host', 'elasticsearch_auth', 'elasticsearch_verify_ssl',
                            'elasticsearch_username', 'elasticsearch_password', 'elasticsearch_index', 'forcepoint_host',
@@ -256,6 +257,7 @@ class FrontendForm(ModelForm):
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group',
+                  'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                   'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
                   'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
                   'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
@@ -307,6 +309,12 @@ class FrontendForm(ModelForm):
             'kafka_brokers': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'kafka_topic': TextInput(attrs={'class': 'form-control'}),
             'kafka_consumer_group': TextInput(attrs={'class': 'form-control'}),
+            'redis_mode': Select(choices=REDIS_MODE_CHOICES, attrs={'class': 'form-control select2'}),
+            'redis_use_lpop': CheckboxInput(attrs={'class': 'js-switch'}),
+            'redis_server': TextInput(attrs={'class': 'form-control'}),
+            'redis_port': TextInput(attrs={'class': 'form-control'}),
+            'redis_key': TextInput(attrs={'class': 'form-control'}),
+            'redis_password': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
             'elasticsearch_host': TextInput(attrs={
                 'class': 'form-control',
@@ -318,7 +326,7 @@ class FrontendForm(ModelForm):
             'elasticsearch_password': PasswordInput(attrs={'class': 'form-control'}),
             'elasticsearch_index': TextInput(attrs={'class': 'form-control'}),
             'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
-            'forcepoint_password': PasswordInput(attrs={'class': 'form-control'}),
+            'forcepoint_password': TextInput(attrs={'class': 'form-control'}),
             'symantec_username': TextInput(attrs={'class': 'form-control'}),
             'symantec_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'aws_access_key_id': TextInput(attrs={'class': 'form-control'}),
@@ -505,6 +513,16 @@ class FrontendForm(ModelForm):
                 self.add_error('kafka_topic', "This field is required.")
             if not cleaned_data.get('kafka_consumer_group'):
                 self.add_error('kafka_consumer_group', "This field is required.")
+
+        if mode == "log" and cleaned_data.get('listening_mode') == "redis":
+            if not cleaned_data.get('redis_server'):
+                self.add_error('redis_server', "This field is required.")
+            if not cleaned_data.get('redis_port'):
+                self.add_error('redis_port', "This field is required.")
+            if not cleaned_data.get('redis_key'):
+                self.add_error('redis_key', "This field is required.")
+            if not cleaned_data.get('redis_mode'):
+                self.add_error('redis_mode', "This field is required.")
 
         """ If cache is enabled, cache_total_max_size and cache_max_age required """
         if cleaned_data.get('enable_cache'):
