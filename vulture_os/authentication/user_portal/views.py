@@ -173,6 +173,8 @@ def user_authentication_edit(request, object_id=None, api=False):
             repo_attrs_objs.append(repoattrform.save(commit=False))
 
         if form.is_valid():
+            # Check changed attributes before form.save
+            repo_changed = "repositories" in form.changed_data
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
             if profile.enable_external:
@@ -183,6 +185,9 @@ def user_authentication_edit(request, object_id=None, api=False):
             profile.save()
 
             try:
+                if repo_changed and profile.workflow_set.count() > 0:
+                    for workflow in profile.workflow_set.all():
+                        workflow.frontend.reload_conf()
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
                 Cluster.api_request("services.haproxy.haproxy.reload_service")
             except Exception as e:
