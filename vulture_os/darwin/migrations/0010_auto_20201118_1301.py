@@ -85,7 +85,11 @@ class Migration(migrations.Migration):
             name='cache_size',
             field=models.PositiveIntegerField(default=0, help_text='The number of cache entries the filter can have to keep previous results', verbose_name='Cache size'),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="filterpolicy",
+            name="config",
+        ),
+        migrations.AddField(
             model_name='filterpolicy',
             name='config',
             field=djongo.models.fields.JSONField(blank=True, default={}, help_text='A dictionary containing all specific parameters of this filter'),
@@ -110,7 +114,11 @@ class Migration(migrations.Migration):
             name='mmdarwin_enabled',
             field=models.BooleanField(default=False, help_text='!!! ADVANCED FEATURE !!! Activates a custom call to Darwin from Rsyslog'),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="filterpolicy",
+            name="mmdarwin_parameters",
+        ),
+        migrations.AddField(
             model_name='filterpolicy',
             name='mmdarwin_parameters',
             field=djongo.models.fields.JSONField(blank=True, default=[], help_text='!!! ADVANCED FEATURE !!! the list of rsyslog fields to take when executing the custom call to Darwin (syntax is Rsyslog ', validators=[darwin.policy.models.validate_mmdarwin_parameters]),
@@ -135,7 +143,11 @@ class Migration(migrations.Migration):
             name='policy',
             field=models.ForeignKey(help_text='The policy associated with this filter instance', on_delete=django.db.models.deletion.CASCADE, to='darwin.DarwinPolicy'),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="filterpolicy",
+            name="status",
+        ),
+        migrations.AddField(
             model_name='filterpolicy',
             name='status',
             field=djongo.models.fields.JSONField(default={}, help_text="The statuses of the filter on each cluster's node"),
