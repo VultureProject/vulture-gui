@@ -36,6 +36,7 @@ from toolkit.auth.authy_client import AuthyClient
 from toolkit.auth.vulturemail_client import VultureMailClient
 from toolkit.auth.totp_client import TOTPClient
 from toolkit.system.hashes import random_sha1
+from toolkit.network.network import get_proxy
 
 # Extern modules imports
 import requests
@@ -197,7 +198,7 @@ class OpenIDRepository(BaseRepository):
         refresh_time = timezone.now() - timedelta(hours=CONFIG_RELOAD_INTERVAL)
         if (self.last_config_time is None or self.last_config_time < refresh_time)\
                 or test:
-            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url))
+            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url), proxies=get_proxy())
             r.raise_for_status()
             config = r.json()
             logger.info(config)
@@ -213,7 +214,9 @@ class OpenIDRepository(BaseRepository):
                 return config
 
     def get_oauth2_session(self, redirect_uri):
-        return OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=["openid"])
+        session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=["openid"])
+        session.proxies=get_proxy()
+        return session
 
     def get_authorization_url(self, oauth2_session):
         """
