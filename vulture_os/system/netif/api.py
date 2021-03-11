@@ -95,7 +95,7 @@ def netif_refresh(request):
         return JsonResponse({
             'status': False,
             'message': 'waiting for POST request'
-        })
+        }, status=400)
 
     try:
         Cluster.api_request('toolkit.network.network.refresh_nic')

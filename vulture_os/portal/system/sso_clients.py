@@ -52,18 +52,18 @@ vulture_custom_agent = 'Vulture/3 (FreeBSD; Vulture OS)'
 
 class SSLAdapter(HTTPAdapter):
     """ "Transport adapter" that allows us to use TLSv1 """
-    def __init__(self, ssl_version=None, **kwargs):
-        self.ssl_version = ssl_version
-        super(SSLAdapter, self).__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        self.ssl_context = kwargs.pop('ssl_context')
+        super(SSLAdapter, self).__init__(*args, **kwargs)
 
-
-    def init_poolmanager(self, connections, maxsize, block=False):
-         self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block, ssl_version=self.ssl_version)
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['ssl_context'] = self.ssl_context
+        self.poolmanager = PoolManager(*args, **kwargs)
 
 
 
 class SSOClient(object):
-    def __init__(self, vulture_user_agent, user_agent, headers_in, referer, client_certificate, ssl_context):
+    def __init__(self, user_agent, headers_in, referer, client_certificate, ssl_context, verify_certificate=False):
         """
 		:param logger: logger instance
 		:param uri: The 'action' uri where to post the form
@@ -80,15 +80,12 @@ class SSOClient(object):
         self.client_side_cert = None
         if ssl_context:
             # Only compatible with request-2.18.1 !!!
-            self.session.mount("https://", SSLAdapter(ssl_context.protocol))
-            self.verify_certificate = "/var/db/pki/" if ssl_context.verify_mode == CERT_REQUIRED else CERT_NONE
+            self.session.mount("https://", SSLAdapter(ssl_context=ssl_context))
+            self.verify_certificate = "/var/db/pki/" if ssl_context.verify_mode == CERT_REQUIRED else verify_certificate
             self.client_side_cert = client_certificate
             logger.debug("SSOClient::_init_: SSL/TLS context successfully created")
 
-        if vulture_user_agent:
-            self.session.headers.update({'User-Agent': vulture_custom_agent})
-        else:
-            self.session.headers.update({'User-Agent': user_agent or vulture_custom_agent})
+        self.session.headers.update({'User-Agent': user_agent})
         logger.debug("SSOClient::_init_: SSOClient user-agent used is '{}'".format(self.session.headers.get("User-Agent")))
 
         if referer:
@@ -96,7 +93,7 @@ class SSOClient(object):
             logger.debug("SSOClient::_init_: SSOClient referer used is '{}'".format(self.session.headers.get("Referer")))
 
         for header in headers_in:
-            if header.name.lower() == "cookie":
+            if header.header_name.lower() == "cookie":
                 self.add_cookies(header.value)
             else:
                 self.session.headers.update({header.name: header.value})
@@ -205,8 +202,8 @@ class SSOClient(object):
         # Because if we do, no need to replace content
         """ Check if we want to perform an additional GET request after SSO Request
         """
-        if application.sso_after_post_request_enabled and application.sso_after_post_request:
-            after_sso_url = application.sso_after_post_request
+        if application.authentication.sso_forward_enable_additionnal and application.authentication.sso_forward_additional_url:
+            after_sso_url = application.authentication.sso_forward_additional_url
             if matched:
                 i = 1
                 for pattern in matched.groups():
@@ -220,10 +217,10 @@ class SSOClient(object):
                 logger.error("SSOClient::advanced_sso_perform: Unable to GET url '{}' : ".format(after_sso_url))
                 logger.exception(e)
 
-        elif application.sso_replace_content_enabled and application.sso_replace_pattern and application.sso_replace_content:
+        elif application.authentication.sso_forward_enable_replace and application.authentication.sso_forward_replace_pattern and application.authentication.sso_forward_replace_content:
             try:
-                sso_replace_pattern = application.sso_replace_pattern
-                sso_replace_content = application.sso_replace_content
+                sso_replace_pattern = application.authentication.sso_forward_replace_pattern
+                sso_replace_content = application.authentication.sso_forward_replace_content
                 if matched:
                     i = 1
                     for pattern in matched.groups():
@@ -231,7 +228,7 @@ class SSOClient(object):
                         sso_replace_content = sso_replace_content.replace('$'+str(i), pattern)
                         i += 1
                 regex = compile(sso_replace_pattern)
-                sso_response_body = regex.sub(sso_replace_content, unicode(response.content.decode('utf-8'))).encode('utf-8')
+                sso_response_body = regex.sub(sso_replace_content, response.content.decode('utf-8')).encode('utf-8')
                 return sso_response_body
 
             except Exception as e:

@@ -92,7 +92,7 @@ class Strongswan(models.Model):
     ipsec_rightsubnet = models.TextField(default="")
     status = models.TextField(default="WAITING")
     statusall = models.TextField(default="")
-    tunnels_status = models.DictField(default={})
+    tunnels_status = models.JSONField(default={})
     tunnels_up = models.PositiveIntegerField(default=0)
     tunnels_connecting = models.PositiveIntegerField(default=0)
 

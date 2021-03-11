@@ -26,7 +26,7 @@ __doc__ = 'System utils sso_forward'
 
 # Django system imports
 from django.conf                      import settings
-from django.http                      import HttpResponse
+from django.http                      import HttpResponse, HttpResponseRedirect
 
 # Django project imports
 from authentication.base_repository import BaseRepository
@@ -34,6 +34,8 @@ from authentication.learning_profiles.models import LearningProfile
 from portal.system.sso_clients               import SSOClient
 from views.responses                  import create_gzip_response
 from toolkit.system.aes_utils import AESCipher
+from system.pki.models import PROTOCOLS_TO_INT, CERT_PATH
+from toolkit.http.utils import parse_html
 
 # Required exceptions imports
 from bson.errors                      import InvalidId
@@ -62,26 +64,31 @@ learning_field_html = {'learn':'text', 'learn_secret':'password'}
 
 
 class SSOForward(object):
-    def __init__(self, request, application, authentication):
+    def __init__(self, request, application, authentication, user_infos):
         self.ssl_context = None
-        if application.ssl_protocol not in ('', 'None', None):
-            self.ssl_context = SSLContext(int(application.ssl_protocol))
-            if application.ssl_verify_certificate is True:
+        ssl_client_certificate = None
+        if application.authentication.sso_forward_url[:5] == "https" and application.authentication.sso_forward_tls_proto:
+            self.ssl_context = SSLContext()
+            # Use setter instead of kwargs, kwargs does not work...
+            self.ssl_context.minimum_version = PROTOCOLS_TO_INT[application.authentication.sso_forward_tls_proto]
+            if application.authentication.sso_forward_tls_cert:
                 self.ssl_context.verify_mode = CERT_REQUIRED
+                ssl_client_certificate = CERT_PATH
             else:
                 self.ssl_context.verify_mode = CERT_NONE
-            if application.ssl_cipher:
-                self.ssl_context.set_ciphers(application.ssl_cipher)
 
-        self.sso_client   = SSOClient(application.sso_vulture_agent, request.META.get('HTTP_USER_AGENT',None),
-                                    [h for h in application.headers_in if h.action in ('set','add')], 
+        self.sso_client   = SSOClient(application.authentication.sso_forward_user_agent or request.META.get('HTTP_USER_AGENT',None),
+                                      application.backend.headers.filter(enabled=True, type="request",
+                                                       action__in=['add-header', 'set-header']),
                                     request.META.get('HTTP_REFERER', None),
-                                    application.ssl_client_certificate or None,
+                                    ssl_client_certificate,
                                     self.ssl_context)
         self.application  = application
         self.credentials  = authentication.credentials
         self.backend_id   = authentication.backend_id
         self.oauth2_token = authentication.redis_portal_session.get_oauth2_token(authentication.authenticated_on_backend())
+        #self.user_infos = authentication.redis_portal_session.get_user_infos(self.backend_id)
+        self.user_infos = user_infos
         logger.debug("SSOFORWARD::_init_: Object successfully created")
 
 
@@ -142,16 +149,17 @@ class SSOForward(object):
             return {field_username:self.credentials[0], field_password:self.credentials[1]}, dict(), ""
 
 
-    def generate_response(self, request, response, asked_url):
-        final_response = HttpResponse()
+    def generate_response(self, request, response, redirect_url):
 
+        final_response = HttpResponseRedirect(redirect_url)
         final_response = self.sso_client.fill_response(response, final_response, self.application.get_redirect_uri())
-        final_response.status_code = response.status_code
 
         """ We want to immediately return the result of the SSO Forward POST Request """
-        if self.application.sso_forward_return_post:
+        if self.application.authentication.sso_forward_return_post:
+            final_response.status_code = response.status_code
+
             matched = None
-            if self.application.sso_capture_content_enabled and self.application.sso_capture_content:
+            if self.application.authentication.sso_forward_enable_capture and self.application.authentication.sso_forward_capture_content:
                 ##TODO: MAKE THE CAPTURE/REPLACE/ADDITIONNAL REQUEST 
                 #  ON ALL THE RESPONSE (HEADERS INCLUDED !)
                 # response_raw = ""
@@ -159,60 +167,35 @@ class SSOForward(object):
                 #     response_raw += str(key)+": "+str(item)+"\r\n"
                 # response_raw += response.text
 
-                matched = re_search(self.application.sso_capture_content, response.content) # response_raw
+                matched = re_search(self.application.authentication.sso_forward_capture_content, response.content) # response_raw
 
             final_response_body = self.sso_client.advanced_sso_perform(matched, self.application, response)
 
             if "gzip" in final_response.get('Content-Encoding', ""):
                 final_response = create_gzip_response(request, final_response_body)
                 final_response = self.sso_client.fill_response(response, final_response, self.application.get_redirect_uri())
-                final_response.status_code = response.status_code
             else:
                 final_response.content = final_response_body
             final_response['Content-Length'] = len(final_response.content)
             logger.debug("SSOForward::generate_response: sso_forward_return_post activated - final response generated")
 
-
-        elif response.status_code not in (301,302,303) or not self.application.sso_forward_follow_redirect:
-            """ simply redirect to the default Application entry point """
-            final_response.status_code = 302
-            # redirect user to url redirected
-            final_response['Location'] = asked_url
-            del final_response['Content-Length']
-            del final_response['Content-Encoding']
-            logger.debug("SSOForward::generate_response: Generated response redirects to '{}'".format(asked_url))
+        # elif response.status_code not in (301,302,303) or not self.application.authentication.sso_forward_follow_redirect:
+        #     """ simply redirect to the default Application entry point """
+        #     final_response.status_code = 302
+        #     # redirect user to url redirected
+        #     final_response['Location'] = asked_url
+        #     del final_response['Content-Length']
+        #     del final_response['Content-Encoding']
+        #     logger.debug("SSOForward::generate_response: Generated response redirects to '{}'".format(asked_url))
 
         return final_response
 
 
 
 class SSOForwardPOST(SSOForward):
-    def __init__(self, request, application, authentication):
-        super(SSOForwardPOST, self).__init__(request, application, authentication)
+    def __init__(self, request, application, authentication, user_infos):
+        super(SSOForwardPOST, self).__init__(request, application, authentication, user_infos)
         self.credentials = authentication.credentials
-
-
-    def parse_html(self, body_html, base_url):
-        parsed = BeautifulSoup(body_html, 'html.parser')
-        forms = list()
-        for form in parsed.findAll('form'):
-            f = Form(form)
-            # RoboBrowser does not handle submit button
-            for field in form.find_all('button'):
-                # If not name, continue
-                if not field.attrs.get('name'):
-                    continue
-                if field.attrs.get('type') == "submit":
-                    f.add_field(BaseField(field))
-            if not f.action:
-                f.action = base_url
-            elif not re_search("^https?://", f.action):
-                if f.action.startswith('/'):
-                    f.action = "{}{}".format('/'.join(base_url.split('/')[:3]), f.action)
-                else:
-                    f.action = "{}/{}".format('/'.join(base_url.split('/')[:3]), f.action)
-            forms.append(f)
-        return forms
 
 
     def get_autologon_user(self, **kwargs):
@@ -225,6 +208,10 @@ class SSOForwardPOST(SSOForward):
 
     def get_oauth2_token(self, **kwargs):
         return False, self.oauth2_token
+
+
+    def get_user_info(self, **kwargs):
+        return False, self.user_infos.get(kwargs['sso_profile']['value'], "")
 
 
     def get_learn_and_secret(self, **kwargs):
@@ -252,17 +239,17 @@ class SSOForwardPOST(SSOForward):
 
 
     def retrieve_credentials(self, request):
-        sso_profiles = json_loads(self.application.sso_profile)
+        sso_profiles = json_loads(self.application.authentication.sso_forward_content)
         # Make a request
-        logger.debug("SSOForwardPOST::authenticate: Trying to retrieve URL '{}'".format(self.application.sso_url))
+        logger.debug("SSOForwardPOST::authenticate: Trying to retrieve URL '{}'".format(self.application.authentication.sso_forward_url))
 
         control_ids, control_names, control_values = dict(), dict(), dict()
 
-        if not self.application.sso_direct_post:
-            url, response = self.sso_client.get(self.application.sso_url, True)
-            logger.info("SSOForwardPOST::authenticate: Url '{}' successfully retrieven".format(self.application.sso_url))
+        if not self.application.authentication.sso_forward_direct_post:
+            url, response = self.sso_client.get(self.application.authentication.sso_forward_url, True)
+            logger.info("SSOForwardPOST::authenticate: Url '{}' successfully retrieven".format(self.application.authentication.sso_forward_url))
             # convert-it to robobrowser.forms.Form list
-            forms = [i for i in self.parse_html(response.content, self.application.sso_url) if str(i.method).upper() != 'GET']
+            forms = [i for i in parse_html(response.content, self.application.authentication.sso_forward_url) if str(i.method).upper() != 'GET']
             # retrieve id of form
             form_id = -1
             for sso_profile in sso_profiles:
@@ -296,10 +283,11 @@ class SSOForwardPOST(SSOForward):
                                 'learn'              :self.get_learn_and_secret,
                                 'learn_secret'       :self.get_learn_and_secret,
                                 'auto'               :self.get_auto,
+                                'repo'               :self.get_user_info,
                                 'custom'             :self.get_custom}
 
         # Fill POST form data if (name and value) of field are defined
-        for name, value in control_values.iteritems():
+        for name, value in control_values.items():
             if name and value:
                 form_data[name] = value
 
@@ -353,12 +341,12 @@ class SSOForwardPOST(SSOForward):
         if fields_to_learn:
             raise CredentialsMissingError("SSOForwardPOST::retrieve_credentials: Learning field(s) missing : {}".format(fields_to_learn), fields_to_learn)
 
-        return form_data, profiles_to_stock, forms[form_id].action if not self.application.sso_direct_post else self.application.sso_url
+        return form_data, profiles_to_stock, forms[form_id].action if not self.application.authentication.sso_forward_direct_post else self.application.authentication.sso_forward_url
 
 
     def authenticate(self, post_datas, **kwargs):
         post_url = kwargs['post_url']
-        url, response  = self.sso_client.post(post_url, self.application.sso_forward_content_type or "default", post_datas, self.application.sso_forward_follow_redirect)
+        url, response  = self.sso_client.post(post_url, self.application.authentication.sso_forward_content_type or "default", post_datas, self.application.authentication.sso_forward_follow_redirect)
 
         return response
 

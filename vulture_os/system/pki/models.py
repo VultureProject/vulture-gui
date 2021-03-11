@@ -36,17 +36,24 @@ from system.exceptions import VultureSystemConfigError
 from toolkit.system.x509 import mk_signed_cert
 
 import subprocess
+from ssl import TLSVersion
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 
+PROTOCOLS_TO_INT = {
+    'tlsv10': int(TLSVersion.TLSv1),
+    'tlsv11': int(TLSVersion.TLSv1_1),
+    'tlsv12': int(TLSVersion.TLSv1_2),
+    'tlsv13': int(TLSVersion.TLSv1_3),
+}
+
 PROTOCOL_CHOICES = (
     ('tlsv13', 'TLSv1.3'),
     ('tlsv12', 'TLSv1.2'),
     ('tlsv11', 'TLSv1.1'),
-    ('tlsv10', 'TLSv1.0'),
-    ('sslv3', 'SSLv3')
+    ('tlsv10', 'TLSv1.0')
 )
 
 BROWSER_CHOICES = (
@@ -425,6 +432,10 @@ class X509Certificate(models.Model):
 
         return buffer
 
+    @property
+    def bundle_filename(self):
+        return self.get_base_filename()+".pem"
+
     def get_extensions(self):
         """ Return the list of extensions of this certificate 
         depending on attributes """
@@ -514,7 +525,7 @@ class TLSProfile(models.Model):
         help_text=_("Compatibility of web browsers.")
     )
     """ Allowed listening protocols """
-    protocols = models.ListField(
+    protocols = models.JSONField(
         models.TextField(choices=PROTOCOL_CHOICES),
         default=["tlsv12"],
         help_text=_("Allowed protocol ciphers.")
@@ -526,7 +537,7 @@ class TLSProfile(models.Model):
         help_text=_("Allowed protocol ciphers.")
     )
     """ Allowed http protocols """
-    alpn = models.ListField(
+    alpn = models.JSONField(
         models.TextField(choices=ALPN_CHOICES),
         default=["h2", "http/1.1"],
         help_text=_("Advertise the TLS ALPN extensions list.")

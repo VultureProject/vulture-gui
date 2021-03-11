@@ -1,6 +1,6 @@
 {% extends 'layout2.html' %}
 {% load i18n %}
-{% load staticfiles %}
+{% load static %}
 
 {% block css_include %}
 {% endblock %}
@@ -50,7 +50,7 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Activé" %}',
+      sTitle: '{% trans "Enabled" %}',
       name: "enabled",
       aTargets: [1],
       defaultContent: "",

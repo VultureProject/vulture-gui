@@ -1,0 +1,229 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+    <link rel="stylesheet" href="{% static 'plugins/datatables/datatables.min.css' %}">
+{% endblock %}
+
+{% block js_include %}
+    <script src="{% static 'plugins/datatables/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'plugins/datatables/dataTables.bootstrap.js' %}"></script>
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+          <div class="panel">
+            <div class="nav-tabs-custom nav-tabs-no-margin">
+              <ul class="nav nav-tabs">
+                <li class="active"><a href="#tab_template" data-toggle="tab">{% trans "Templates" %}</a></li>
+                {% comment %} <li><a href="#tab_image" data-toggle="tab">{% trans "Images" %}</a></li> {% endcomment %}
+              </ul>
+            </div>
+            <div class="tab-content">
+              <div class="tab-pane active" id="tab_template">
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div class="panel-control">
+                          <a class="btn btn-flat btn-primary" href="{% url 'portal.template.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                        </div>
+                        <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Portal Templates" %}</h1>
+                    </div>
+                    <div class="panel-body">
+                      <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="portal_template_list">
+                      </table>
+                    </div>
+                </div>
+              </div>
+
+              <div class="tab-pane" id="tab_image">
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div class="panel-control">
+                          <a class="btn btn-flat btn-primary" href="{% url 'portal.template.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                        </div>
+                        <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Images" %}</h1>
+                    </div>
+                    <div class="panel-body">
+                      <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="image_list">
+                        <thead>
+                          <tr>
+                            <th width="5%">{% trans "Preview" %}</th>
+                            <th width="55%">{% trans "Name" %}</th>
+                            <th width="20%">{% trans "URI" %}</th>
+                            <th width="10%">{% trans "Action" %}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                      </table>
+                    </div>
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+    <!--<i class="fa fa-fw fa-fighter-jet"></i>-->
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+
+  let portal_template_clone_uri = "{% url 'portal.template.clone' %}";
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "", 
+      mData: "id",
+      bVisible: false,
+    },
+    {
+      sTitle: '{% trans "Name" %}',
+      name: "name",
+      aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      mData:"id",
+      aTargets: [2],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        result = '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% trans 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>&nbsp;';
+        if( !row.internal ) {
+          result += '<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/portal/template/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+        }
+        return result;
+      }
+    }
+  ];
+
+  var portail_template_table = $("#portal_template_list").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+          columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      });
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (!data.status){
+            notify('error', "{% trans 'Error' %}", data.error);
+          } else {
+            fnCallback(data);
+          }
+        }
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+      }) // /$.fail
+      .done( function( data ) {
+        if (!data.status){
+          notify('error', "{% trans 'Error' %}", data.error);
+        } else {
+          fnCallback(data);
+        }
+      }); // /$.done
+    }, // /fnServerData
+
+    fnCreatedRow: function(nRow, aData, iDataIndex){
+
+      /* Events binding to start a reputation_ctx */
+      
+
+      /* Events binding to edit a reputation_context */
+      $(nRow).on('click', function(e){
+          var id = aData['id'];
+          window.location.href = "{% url 'portal.template.edit' %}" + id;
+      });
+
+      $(nRow).find('.btn-clone').on('click', function(e) {
+        e.stopPropagation();
+        let txt = $(this).html()
+        $(this).html("<i class='fa fa-spinner fa-spin'></i>")
+        $(this).prop('disabled', true)
+        let id = aData['id'];
+
+        axios.post(portal_template_clone_uri, {pk: id})
+          .then((response) => {
+            notify('success', gettext('Success'), gettext("Authentication ACL cloned"))
+            portail_template_table.DataTable().fnDraw();
+          })
+          .then(() => {
+            $(this).html(txt)
+            $(this).prop('disabled', false)  
+          })
+      })
+
+
+    } // fnCreatedRow: function
+  }); 
+
+
+  $('#image_list').DataTable({
+        "dom": "<p<'searchbox'f><t>>",
+        "autoWidth": false,
+        "order": [[1, 'asc']],
+        "aoColumns": [
+            {'mData': 'preview', 'name': 'preview', 'aTargets': [0], 'bSortable': false, 'mRender': function(data, type, row){
+                return "<img src='" + data + "' style='width:30px; height:auto;' />";
+            }},
+            {'mData': 'name', 'name': 'name', 'aTargets': [1]},
+            {'mData': 'uri', 'name': 'uri', 'aTargets': [2], 'bSortable': false},
+            {'mData': 'action', 'name': 'action', 'aTargets': [3], 'bSortable': false},
+        ],
+        "language": {
+            "search": "",
+            "lengthMenu": '_MENU_',
+            "pagingType": "bootstrap",
+            "paginate": {
+                "next": '<img src="{% static 'img/right.png' %}"/>',
+                "previous": '<img src="{% static 'img/left.png' %}"/>'
+            }
+        },
+    });
+
+    {% for img in images %}
+      $('#image_list').dataTable().fnAddData({
+        'preview': '{{ img.create_preview_html }}',
+        'name': '{{ img.name }}',
+        'uri': '{{ img.get_image_uri }}',
+        'action': '<a class="has-popover action_button" href="/template/image/delete/{{img.id}}"><span><i class="fa fa-trash-o"></i></span></a>'
+      });
+    {%  endfor %}
+
+
+{% endblock %}

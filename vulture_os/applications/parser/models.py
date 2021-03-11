@@ -64,7 +64,7 @@ class Parser(models.Model):
         verbose_name=_("Lines to test"),
         help_text=_("Lines to apply te parser on")
     )
-    tags = models.ListField(
+    tags = models.JSONField(
         models.SlugField(default=""),
         default=[],
         blank=True,

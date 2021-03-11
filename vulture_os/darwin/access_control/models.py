@@ -132,7 +132,7 @@ class AccessControl(models.Model):
     enabled = models.BooleanField(default=True)
 
     acls = models.TextField(default="")
-    rules = models.ListField(default=[])
+    rules = models.JSONField(default=[])
 
     @staticmethod
     def str_attrs():

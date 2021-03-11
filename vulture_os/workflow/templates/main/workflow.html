@@ -1,6 +1,6 @@
 {% extends "layout2.html" %}
 {% load i18n %}
-{% load staticfiles %}
+{% load static %}
 
 {% block css_include %}
 
@@ -164,18 +164,29 @@
             return "<i class='fa fa-ban'></i>";
           return data;
         }
+      },{
+        sTitle: '{% trans "Authentication" %}',
+        name: "authentication",
+        aTargets: [7],
+        defaultContent: "",
+        mData: "authentication",
+        mRender: function(data, type, row){
+          if (data === "None")
+            return "<i class='fa fa-ban'></i>";
+          return data;
+        }
       },
       {
         sTitle: '{% trans "ACLs" %}',
         name: "acls",
-        aTargets: [7],
+        aTargets: [8],
         defaultContent: "",
         mData: "acls"
       },
       {
         sTitle: '{% trans "Action" %}',
         mData:"id",
-        aTargets: [8],
+        aTargets: [9],
         sWidth: "5%",
         defaultContent: "",
         mRender: function(data, type, row) {
@@ -217,7 +228,7 @@
             }
           }
         }) // /$.ajax
-        .fail( function( jqXHR, textStatus ) {
+        .fail( function( jqXHR, textStatus, data) {
           check_json_error(data)
         }) // /$.fail
         .done( function( data ) {
@@ -241,7 +252,7 @@
   });
 
   setInterval(function(){
-    workflow_table.fnDraw()
+    $("#workflow_table").DataTable().fnDraw()
   }, 5000)
 
 

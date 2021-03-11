@@ -1,0 +1,862 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+  <link href="{% static 'plugins/ace/monokai.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block js_include %}
+  <script src="{% static 'plugins/ace/ace.js' %}"></script>
+  <script src="{% static 'plugins/ace/mode-django.js' %}"></script>
+  <script src="{% static 'plugins/ace/mode-css.js' %}"></script>
+  <script src="{% static 'plugins/ace/ext-language_tools.js' %}"></script>
+  <script src="{% static 'js/portal/template_edit.js' %}"></script>
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content" id="template_edit_vue">
+    <form id="portal_template_form" class="form-horizontal bootstrap-validator-form" @submit.prevent="save_form" method="post" novalidate="novalidate">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          {% if form.non_field_errors or save_error %}
+          <div class="panel panel-colorful panel-danger">
+            <div class="panel-heading">
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                </ul>
+                <h4 class="panel-title">Configuration error</h4>
+              {% endif %}
+            </div>
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {% if form.non_field_errors %}
+                <div>
+                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <div class="tab-content no-padding">
+                    {{ form.non_field_errors|safe }}
+                  </div>
+                </div>
+              {% endif %}
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre class="console-type">{{ save_error.0 }}</pre>
+                    </div>
+                    <div class="tab-pane" id="tab_2">
+                      <pre class="console-type">{{ save_error.1 }}</pre>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <div class="panel">
+            <div class="panel-body">
+              <div class="nav-tabs-custom nav-tabs-no-margin">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+                  <li class=""><a href="#tab_style" data-toggle="tab">{% trans "Style" %}</a></li>
+                  <li class=""><a href="#tab_login" data-toggle="tab">{% trans "Login" %}</a></li>
+                  <li class=""><a href="#tab_logout" data-toggle="tab">{% trans "Logout" %}</a></li>
+                  <li class=""><a href="#tab_learning" data-toggle="tab">{% trans "Learning" %}</a></li>
+                  <li class=""><a href="#tab_self" data-toggle="tab">{% trans "Self-Service" %}</a></li>
+                  <li class=""><a href="#tab_password" data-toggle="tab">{% trans "Password" %}</a></li>
+                  <li class=""><a href="#tab_dialogs" data-toggle="tab">{% trans "Email & Dialogs" %}</a></li>
+                  <li class=""><a href="#tab_otp" data-toggle="tab">{% trans "OTP" %}</a></li>
+                  <li class=""><a href="#tab_message" data-toggle="tab">{% trans "Message" %}</a></li>
+                  <li class=""><a href="#tab_errors" data-toggle="tab">{% trans "HTML Errors" %}</a></li>
+                  <li class=""><a href="#tab_registration" data-toggle="tab">{% trans "User Registration" %}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <br/>
+                  <div class="tab-pane active" id="tab_general">
+                    <div class="row">
+                      <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <div class="col-sm-5">
+                              {{form.name}}
+                              {{form.name.errors|safe}}
+                            </div>
+                          </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_style">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-2 control-label">{% trans "Cascading Style sheet " %}</label>
+                          <div class="col-sm-7">
+                            {{ form.css }}
+                            {{form.css.errors}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_login">
+                    <div class="row">
+                      <div class="form-group">
+                        <div class="template_helper col-sm-12">
+                        {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                        <br><br>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-offset-3">
+                        <label class="col-sm-2 control-label">{% trans "Portal Template" %}</label>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="template_helper col-md-3">
+                        {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                        <ul>
+                          <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The error message when authentication goes wrong"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% trans "The starting &lt;form action='...'&gt;"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% trans "The ending &lt;/form&gt;"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_login&#125;&#125;</color></b>: {% trans "The Login Input for authentication portal"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_password&#125;&#125;</color></b>: {% trans "The Password Input for authentication portal"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% trans "The 'login' button"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;lostPassword&#125;&#125;</color></b>: {% trans "The URI for lost password"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;captcha&#125;&#125;</color></b>: {% trans "Image captcha"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_captcha&#125;&#125;</color></b>: {% trans "The captcha input"%}</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-5">
+                          {{form.html_login}}
+                          {{form.html_login.errors}}
+                      </div>
+                      <div class="col-md-2">
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Login field name" %}</label>
+                          {{ form.login_login_field }}
+                          {{ form.login_login_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Password field name" %}</label>
+                          {{ form.login_password_field }}
+                          {{ form.login_password_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Captcha field name" %}</label>
+                          {{ form.login_captcha_field }}
+                          {{ form.login_captcha_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Submit button field name" %}</label>
+                          {{ form.login_submit_field }}
+                          {{ form.login_submit_field.errors }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">&nbsp;</label>
+                        <div class="col-sm-5">
+                          <button type="button" @click="preview('html_login')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_logout">
+                    <div class="row">
+                        <div class="form-group">
+                            <div class="template_helper col-sm-12">
+                            {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                            <br><br>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="template_helper col-md-3">
+                        {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                        <ul>
+                            <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                            <li><b style="color:#39454C;">&#123;&#123;app_url&#125;&#125;</color></b>: {% trans "The application url (needed to redirect the user)"%}</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-9">
+                          <label class="">{% trans "Logout Template" %}</label>
+                          {{form.html_logout}}
+                          {{form.html_logout.errors}}
+                      </div>
+                    </div>
+                    <div class="row">
+                      <label class="col-sm-4 control-label">&nbsp;</label>
+                      <div class="col-sm-5">
+                        <button type="button" @click="preview('html_logout')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_learning">
+                    <div class="row">
+                      <div class="form-group">
+                        <div class="template_helper col-sm-12">
+                          {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                          <br><br>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-offset-3">
+                        <label class="col-md-9">{% trans "Learning Template" %}</label>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="template_helper col-md-3">
+                        {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                        <ul>
+                            <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                            <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% trans "The starting &lt;form action='...'&gt;"%}</li>
+                            <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% trans "The ending &lt;/form&gt;"%}</li>
+                            <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% trans "All the fields required for learning + the 'login' button"%}</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-5">
+                        {{form.html_learning}}
+                        {{form.html_learning.errors}}
+                      </div>
+                      <div class="col-md-2">
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Submit button name" %}</label>
+                          {{ form.learning_submit_field }}
+                          {{ form.learning_submit_field.errors }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">&nbsp;</label>
+                        <div class="col-sm-5">
+                          <button type="button" @click="preview('html_learning')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_self">
+                    <div class="row">
+                      <div class="form-group">
+                        <div class="template_helper col-sm-12">
+                          {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                          <br><br>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-offset-6">
+                        <label class="col-sm-2 control-label">{% trans "Self-service Template" %}</label>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="template_helper col-md-6">
+                        {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                        <ul>
+                          <li><b style="color:#39454C;">&#123;&#123;application_list&#125;&#125;</color></b>: {% trans "A list of applications the user has access to. Applications have the following attributes"%}</li>
+                        </ul>
+                        <ul>
+                          <li><b style="color:#39454C;">&#123;&#123;name&#125;&#125;</color></b>: {% trans "The friendly name of the application"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;uri&#125;&#125;</color></b>: {% trans "The public URI of the application"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;status&#125;&#125;</color></b>: {% trans "Indicates if the user is logged on it"%}</li>
+                        </ul>
+                        <ul>
+                          <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;changePassword&#125;&#125;</color></b>: {% trans "The URI to change password"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;logout&#125;&#125;</color></b>: {% trans "The URI to disconnect from all applications"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;username&#125;&#125;</color></b>: {% trans "The name of the current user"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The message telling what happens"%}</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-6">
+                        {{form.html_self}}
+                        {{form.html_self.errors}}
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">&nbsp;</label>
+                        <div class="col-sm-5">
+                          <button type="button" @click="preview('html_self')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_password">
+                    <div class="row">
+                      <div class="form-group">
+                        <div class="template_helper col-sm-12">
+                          {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                          <br><br>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-offset-3">
+                        <label class="col-md-12">{% trans "Password Management Template" %}</label>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="template_helper col-md-3">
+                          {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                          <ul>
+                              <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% trans "The starting &lt;form action='...'&gt;"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% trans "The ending &lt;/form&gt;"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;input_password_old&#125;&#125;</color></b>: {% trans "The Old password Input"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;input_password_1&#125;&#125;</color></b>: {% trans "The New password Input (#1)"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;input_password_2&#125;&#125;</color></b>: {% trans "The New password Input (#2)"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;input_email&#125;&#125;</color></b>: {% trans "The email Input, to recover password"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% trans "The 'submit' button"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;dialog_change&#125;&#125;</color></b>: {% trans "Boolean: True if password change"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;dialog_lost&#125;&#125;</color></b>: {% trans "Boolean: True if lost password"%}</li>
+                              <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The message telling what happens"%}</li>
+                          </ul>
+                      </div>
+                      <div class="col-md-5">
+                          {{form.html_password}}
+                          {{form.html_password.errors}}
+                      </div>
+                      <div class="col-md-2">
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Old password field name" %}</label>
+                          {{ form.password_old_field }}
+                          {{ form.password_old_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "New password field name" %}</label>
+                          {{ form.password_new1_field }}
+                          {{ form.password_new1_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "New password confirmation field name" %}</label>
+                          {{ form.password_new2_field }}
+                          {{ form.password_new2_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Email field name" %}</label>
+                          {{ form.password_email_field }}
+                          {{ form.password_email_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Submit button field name" %}</label>
+                          {{ form.password_submit_field }}
+                          {{ form.password_submit_field.errors }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <label class="col-sm-4 control-label">&nbsp;</label>
+                      <div class="col-sm-5">
+                        <button type="button" @click="preview('html_password')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_dialogs">
+                    <div class="row">
+                        <div class="form-group">
+                            <div class="template_helper col-sm-12">
+                            {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                            <br><br>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">{% trans "Email From:" %}</label>
+                            <div class="col-sm-6">
+                                {{form.email_from}}
+                                {{form.email_from.errors}}
+                            </div>
+                            <div class="template_helper col-sm-12 col-md-4">
+                                {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                                <ul>
+                                    <li><b style="color:#39454C;">&#123;&#123;resetLink&#125;&#125;</color></b>: {% trans "The URI to change password"%}</li>
+                                    <li><b style="color:#39454C;">&#123;&#123;app.name&#125;&#125;</color></b>: {% trans "The Name of the app for which we request a password reset"%}</li>
+                                    <li><b style="color:#39454C;">&#123;&#123;app.url&#125;&#125;</color></b>: {% trans "The URL of the app for which we request a password reset"%}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">{% trans "Email Subject:" %}</label>
+                            <div class="col-sm-6">
+                                {{form.email_subject}}
+                                {{form.email_subject.errors}}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">{% trans "Email Body:" %}</label>
+                            <div class="col-sm-6">
+                                {{form.email_body}}
+                                {{form.email_body.errors}}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">{% trans "'Password has been changed'" %}</label>
+                            <div class="col-sm-6">
+                                {{form.error_password_change_ok}}
+                                {{form.error_password_change_ok.errors}}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">{% trans "'Password cannot be changed'" %}</label>
+                            <div class="col-sm-6">
+                                {{form.error_password_change_ko}}
+                                {{form.error_password_change_ko.errors}}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">{% trans "'An email has been sent'" %}</label>
+                            <div class="col-sm-6">
+                                {{form.error_email_sent}}
+                                {{form.error_email_sent.errors}}
+                            </div>
+                        </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_otp">
+                    <div class="row">
+                      <div class="form-group">
+                        <div class="template_helper col-sm-12">
+                          {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                          <br><br>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-offset-3">
+                        <label class="col-sm-2 control-label">{% trans "OTP Template" %}</label>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="template_helper col-md-3">
+                        {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                        <ul>
+                          <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The error message when OTP code verification goes wrong"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% trans "The starting &lt;form action='...'&gt;"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% trans "The ending &lt;/form&gt;"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_key&#125;&#125;</color></b>: {% trans "The key input"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% trans "The 'login' button"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;resend_button&#125;&#125;</color></b>: {% trans "The 'resend mail/sms' button"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;qrcode&#125;&#125;</color></b>: {% trans "The 'src' html tag of the TOTP QRcode"%}</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-5">
+                        {{form.html_otp}}
+                        {{form.html_otp.errors}}
+                      </div>
+                      <div class="col-md-2">
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "OTP key field name" %}</label>
+                          {{ form.otp_key_field }}
+                          {{ form.otp_key_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "OTP submit field name" %}</label>
+                          {{ form.otp_submit_field }}
+                          {{ form.otp_submit_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "OTP resend field name" %}</label>
+                          {{ form.otp_resend_field }}
+                          {{ form.otp_resend_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Onetouch answer message" %}</label>
+                          {{ form.otp_onetouch_field }}
+                          {{ form.otp_onetouch_field.errors }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">&nbsp;</label>
+                        <div class="col-sm-5">
+                          <button type="button" @click="preview('html_otp')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_message">
+                    <div class="row">
+                      <div class="form-group">
+                        <div class="template_helper col-sm-12">
+                        {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                        <br><br>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-offset-6">
+                        <label class="col-sm-2 control-label">{% trans "Message Template" %}</label>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="template_helper col-md-6">
+                        {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                        <ul>
+                          <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;message&#125;&#125;</color></b>: {% trans "The message"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;link_redirect&#125;&#125;</color></b>: {% trans "The redirect link to home"%}</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-6">
+                          {{form.html_message}}
+                          {{form.html_message.errors}}
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">&nbsp;</label>
+                        <div class="col-sm-5">
+                          <button type="button" @click="preview('html_message')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_errors">
+                    <div class="form-group">
+                        <div class="template_helper col-sm-12">
+                        {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                        <br><br>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            <label class="col-sm-2 control-label">{% trans "Error Template" %}</label>
+                            <div class="col-sm-10">
+                                {{form.html_error}}
+                                {{form.html_error.errors}}
+                            </div>
+                        </div>
+                        <div class="template_helper col-sm-6">
+                            {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                            <ul>
+                                <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                                <li><b style="color:#39454C;">&#123;&#123;message&#125;&#125;</color></b>: {% trans "The message error"%}</li>
+                            </ul>
+
+                            <div class="form-group">
+                                <label class="control-label">{% trans "403 Error Message" %}</label>
+                                {{form.html_error_403}}
+                                {{form.html_error_403.errors}}
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">{% trans "404 Error Message" %}</label>
+                                {{form.html_error_404}}
+                                {{form.html_error_404.errors}}
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">{% trans "405 Error Message" %}</label>
+                                {{form.html_error_405}}
+                                {{form.html_error_405.errors}}
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">{% trans "406 Error Message" %}</label>
+                                {{form.html_error_406}}
+                                {{form.html_error_406.errors}}
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">{% trans "500 Error Message" %}</label>
+                                {{form.html_error_500}}
+                                {{form.html_error_500.errors}}
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">{% trans "501 Error Message" %}</label>
+                                {{form.html_error_501}}
+                                {{form.html_error_501.errors}}
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">{% trans "502 Error Message" %}</label>
+                                {{form.html_error_502}}
+                                {{form.html_error_502.errors}}
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">{% trans "503 Error Message" %}</label>
+                                {{form.html_error_503}}
+                                {{form.html_error_503.errors}}
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">{% trans "504 Error Message" %}</label>
+                                {{form.html_error_504}}
+                                {{form.html_error_504.errors}}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div style="text-align:center;">
+                            <button type="button" @click="preview('html_error')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                  <div class="tab-pane" id="tab_registration">
+                    <div class="row">
+                      <div class="form-group">
+                        <div class="template_helper col-sm-12">
+                          {% trans "<b><u>Note on Template</u></b>: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)
+                          <br><br>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-offset-3">
+                        <label class="col-sm-2 control-label">{% trans "Registration Template" %}</label>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="template_helper col-md-3">
+                        {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                        <ul>
+                          <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% trans "The starting &lt;form action='...'&gt;"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% trans "The ending &lt;/form&gt;"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_username&#125;&#125;</color></b>: {% trans "The username Input"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;captcha&#125;&#125;</color></b>: {% trans "The captcha"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_captcha&#125;&#125;</color></b>: {% trans "The captcha Input"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;ask_phone&#125;&#125;</color></b>: {% trans "Boolean: True if the phone has to be inquire"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_phone&#125;&#125;</color></b>: {% trans "The phone number Input"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_password_1&#125;&#125;</color></b>: {% trans "The password Input (#1)"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_password_2&#125;&#125;</color></b>: {% trans "The password Input confirmation (#2)"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% trans "The 'submit' button"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;step1&#125;&#125;</color></b>: {% trans "Boolean: True if registration step 1"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;step2&#125;&#125;</color></b>: {% trans "Boolean: True if registration step 2"%}</li>
+                          <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The message telling what happens"%}</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-5">
+                        {{form.html_registration}}
+                        {{form.html_registration.errors}}
+                      </div>
+                      <div class="col-md-2">
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Captcha field name" %}</label>
+                          {{ form.register_captcha_field }}
+                          {{ form.register_captcha_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Username field name" %}</label>
+                          {{ form.register_username_field }}
+                          {{ form.register_username_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Phone field name" %}</label>
+                          {{ form.register_phone_field }}
+                          {{ form.register_phone_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Password field name" %}</label>
+                          {{ form.register_password1_field }}
+                          {{ form.register_password1_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Password confirmation field name" %}</label>
+                          {{ form.register_password2_field }}
+                          {{ form.register_password2_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Email field name" %}</label>
+                          {{ form.register_email_field }}
+                          {{ form.register_email_field.errors }}
+                        </div>
+                        <div class="form-group">
+                          <label class="control-label">{%  trans "Submit button name" %}</label>
+                          {{ form.register_submit_field }}
+                          {{ form.register_submit_field.errors }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">&nbsp;</label>
+                        <div class="col-sm-5">
+                          <button type="button" @click="preview('html_registration')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="form-group">
+                        <label class="col-sm-2 control-label">{% trans "Email Body:" %}</label>
+                        <div class="col-sm-6">
+                            {{form.email_register_body}}
+                            {{form.email_register_body.errors}}
+                        </div>
+                          <div class="template_helper col-sm-12 col-md-4">
+                              {% trans "<b><u>The following tags are available: </u></b>"%}<br>
+                              <ul>
+                                  <li><b style="color:#39454C;">&#123;&#123;registerLink&#125;&#125;</color></b>: {% trans "The URI to confirm registration"%}</li>
+                                  <li><b style="color:#39454C;">&#123;&#123;app.name&#125;&#125;</color></b>: {% trans "The Name of the app for which we request an account registration"%}</li>
+                                  <li><b style="color:#39454C;">&#123;&#123;app.url&#125;&#125;</color></b>: {% trans "The URL of the app for which we request an account registrationt"%}</li>
+                              </ul>
+                          </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                          <div class="form-group">
+                              <label class="col-sm-2 control-label">{% trans "Email Subject:" %}</label>
+                              <div class="col-sm-6">
+                                  {{form.email_register_subject}}
+                                  {{form.email_register_subject.errors}}
+                              </div>
+                          </div>
+                      </div>
+                    <div class="row">
+                      <div class="form-group">
+                        <label class="col-sm-2 control-label">{% trans "Email From:" %}</label>
+                        <div class="col-sm-6">
+                            {{form.email_register_from}}
+                            {{form.email_register_from.errors}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-pane -->
+
+                </div> <!-- /.tab-content -->
+              </div>
+            </div>
+            <div class="panel-footer">
+              <a type="button" href="{% url 'portal.template.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+              <button type="submit" id="save_form_btn" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  let portal_template_uri = "{% url 'portal.template.list' %}"
+  let portal_template_api_uri = "{% url 'api.portal.template' %}";
+
+  let object_id = "{{ object_id }}";
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  $(function() {
+
+    /* Switchery mandatory code */
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(html) {
+      var switchery = new Switchery(html, {
+        'color': '#FA9834',
+      });
+    });
+
+
+    function handle_form_errors(data){
+      if (typeof(data['form_errors']) !== 'undefined'){
+        $('.errorlist').remove();
+        $.each(data['form_errors'], function(field_name, error_list){
+          field_selector = $('#id_'+field_name);
+          var ul = $('<ul/>').insertAfter(field_selector);
+          $.each(error_list, function(idx, err_msg){
+            console.log(err_msg);
+            var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
+            var group = $('<span/>').text(err_msg).appendTo(li);
+          });
+        });
+      }
+    }
+
+
+    /* All events to refresh (re-apply) after a table is modified */
+    function refresh_table_events() {
+
+      /* Function used to delete an object .btnDelete */
+      $('.btnDelete').on('click', function(e) {
+        $(this).parent().parent().remove();
+      });
+      /* Re-initialize select2 objects */
+      $('.select2').select2();
+
+      /* Re-initialize Tag-Editor events */
+      /* Try to destroy old tag-editor elements */
+      try { $(".tag-editor-space").tagEditor('destroy');
+      } catch(e) {};
+      try { $(".tag-editor-comma").tagEditor('destroy');
+      } catch(e) {};
+      /* And re-add TagEditor behavior for tag-editor custom classes */
+      $(".tag-editor-space").tagEditor({
+        delimiter: ' '
+      });
+      $(".tag-editor-comma").tagEditor({
+        delimiter: ','
+      });
+    }
+
+    /* Parser test */
+    $('#parser_test').on("click", function(e) {
+      $('#parser_status').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Testing ..." %}');
+      $('#result').val('');
+
+      url = "/apps/parser/test/";
+      form_data = $('#parser_edit_form').serializeArray();
+      $.ajax({
+        type   : "POST",
+        url    : url,
+        data: form_data
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        $('#parser_status').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+                                     "Status code : " + jqXHR.status + "</br>" +
+                                     "Message : " + jqXHR.statusText);
+      }) // /$.fail
+      .done( function( msg ) {
+        handle_form_errors(msg);
+        if( msg['status'] ) {
+          $('#parser_status').html('<b style="color:green;">{% trans "Successful connection" %}</b>');
+          const message_type = $.type(msg['message']);
+          if( message_type === "object" || message_type === "array" ) {
+            $('#result').html(JSON.stringify(msg['message'], undefined, 4));
+          } else {
+            $('#result').html(msg['message']);
+          }
+        } else {
+          reason = msg['error'];
+          $('#parser_status').html("<b style='color:red;'>{% trans 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
+        }
+      }); // /$.done
+      e.preventDefault();
+    });
+
+    $('.tag-editor').css({"min-width": "100px"});
+
+    /* Initialize all custom fields */
+    refresh_table_events();
+
+  }); // end of function()
+
+{% endblock %}
