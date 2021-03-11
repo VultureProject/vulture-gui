@@ -40,7 +40,7 @@ except ImportError:
 
 LOG_LEVEL = "INFO"
 
-DEBUG = False
+DEBUG = True
 DEV_MODE = False
 TEMPLATE_DEBUG = DEBUG
 
@@ -139,12 +139,14 @@ DATABASES = {
     'default': {
         'ENGINE': 'djongo',
         'NAME': 'vulture',
-        'HOST': get_hostname(),
         'REPLICASET': 'Vulture',
-        'PORT': 9091,
-        'SSL': True,
-        'SSL_CERTFILE': '/var/db/pki/node.pem',
-        'SSL_CA_CERTS': '/var/db/pki/ca.pem',
+        "CLIENT": {
+            'host': get_hostname(),
+            'port': 9091,
+            'SSL': True,
+            'SSL_CERTFILE': '/var/db/pki/node.pem',
+            'SSL_CA_CERTS': '/var/db/pki/ca.pem',
+        },
         'READPREFERENCE': ReadPreference.PRIMARY_PREFERRED
     }
 }

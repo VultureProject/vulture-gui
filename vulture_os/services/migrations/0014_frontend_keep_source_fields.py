@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='keep_source_fields',
-            field=djongo.models.fields.DictField(default={}, null=True, blank=True),
+            field=djongo.models.fields.JSONField(default={}, null=True, blank=True),
         ),
         migrations.AlterField(
             model_name='frontend',
             name='keep_source_fields',
-            field=djongo.models.fields.DictField(default={}),
+            field=djongo.models.fields.JSONField(default={}),
         ),
     ]

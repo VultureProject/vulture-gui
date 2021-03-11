@@ -140,7 +140,6 @@ class ListReputationContext(ListBackend):
 
     # Get and Post methods inherithed from ListBackend
 
-
 class ListParser(ListView):
     template_name = "apps/parser.html"
     obj = Parser

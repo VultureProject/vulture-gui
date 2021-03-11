@@ -241,7 +241,7 @@ class SELFServiceChange(SELFService):
         backend_list = list(self.application.getAuthBackendFallback())
         backend_list.append(self.application.getAuthBackend())
         for backend in backend_list:
-            if self.redis_portal_session.authenticated_backend(backend.id) == '1':
+            if self.redis_portal_session.authenticated_backend(backend.id):
                 return str(backend.id)
         return ""
 

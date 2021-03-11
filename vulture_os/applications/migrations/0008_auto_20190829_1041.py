@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='parser',
             name='tags',
-            field=djongo.models.fields.ListField(blank=True, default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default='')),
+            field=djongo.models.fields.JSONField(blank=True, default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default='')),
         ),
         migrations.AlterField(
             model_name='server',

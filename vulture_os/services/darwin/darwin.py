@@ -166,22 +166,9 @@ def reload_all(node_logger):
 
     # Reload the main Darwin configuration (don't update filters yet)
     logger.info("Darwin::reload_all:: rewriting main configuration file")
-    DarwinService().reload_conf()
+    reload_conf(node_logger)
 
-    # Get all currently running and active filters
-    update_filters = set()
-    res_running_filters = _send_command(node_logger, "{\"type\": \"monitor\"}")
-    update_filters.update(res_running_filters.keys())
-
-    update_filters.update([f.name for f in FilterPolicy.objects.filter(enabled=True) if f.filter_type.is_launchable])
-
-    # Don't use _reload_filters(), we want to force update on ALL filters (not just new and deleted ones)
-    reply = _send_command(node_logger, "{{\"type\": \"update_filters\", \"filters\": {}}}".format(str(list(update_filters)).replace("'", '"')))
-    if reply.get('status') == "KO":
-            raise ServiceReloadError("Darwin manager failed to update some filter(s): {}".format(reply.get('errors', '')), "Darwin")
-    elif reply.get('status') != "OK":
-        raise ServiceReloadError("Darwin manager returned an unexpected result: {}".format(reply.get('errors', '')), "Darwin")
-
+    return restart_service(node_logger)
 
 
 def delete_filter_conf(node_logger, filter_conf_path):

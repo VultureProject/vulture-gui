@@ -64,3 +64,10 @@ class OTPError(Exception):
 class ChangePasswordError(Exception):
     def __init__(self, message):
         super(ChangePasswordError, self).__init__(message)
+
+
+class LDAPSizeLimitExceeded(Exception):
+    def __init__(self, max_size, partial_results):
+        super(Exception, self).__init__("Size limit exceeded")
+        self.max_size = max_size
+        self.partial_results = partial_results
