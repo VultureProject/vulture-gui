@@ -184,15 +184,12 @@ class Authentication(object):
             raise e or AuthenticationError
 
     def register_user(self, authentication_results):
-        oauth2_token = None
-        # No OAuth2 disabled
-        if self.workflow.authentication.enable_oauth:
-            oauth_timeout = self.workflow.authentication.oauth_timeout
-            oauth2_token = Uuid4().generate()
-            self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + oauth2_token)
-            self.redis_oauth2_session.register_authentication(authentication_results['data'],
-                                                              oauth_timeout)
-            logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
+        # Always create oauth2 token, with oauth2_timeout or auth_timeout
+        oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
+        oauth2_token = Uuid4().generate()
+        self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + oauth2_token)
+        self.redis_oauth2_session.register_authentication(authentication_results, oauth_timeout)
+        logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
 
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),

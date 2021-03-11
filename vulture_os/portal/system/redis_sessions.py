@@ -417,8 +417,12 @@ class REDISOauth2Session(REDISSession):
 
 
     def register_authentication(self, oauth2_data, timeout):
+        data = {
+            'token_ttl': timeout,
+            'scope': str(oauth2_data)
+        }
         if not self.keys:
-            self.keys = oauth2_data
+            self.keys = data
         else:
             for key,item in oauth2_data.items():
                 self.keys[key] = item
