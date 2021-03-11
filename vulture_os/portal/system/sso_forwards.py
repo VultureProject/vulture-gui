@@ -26,7 +26,7 @@ __doc__ = 'System utils sso_forward'
 
 # Django system imports
 from django.conf                      import settings
-from django.http                      import HttpResponse
+from django.http                      import HttpResponse, HttpResponseRedirect
 
 # Django project imports
 from authentication.base_repository import BaseRepository
@@ -149,8 +149,9 @@ class SSOForward(object):
             return {field_username:self.credentials[0], field_password:self.credentials[1]}, dict(), ""
 
 
-    def generate_response(self, request, response, final_response):
+    def generate_response(self, request, response, redirect_url):
 
+        final_response = HttpResponseRedirect(redirect_url)
         final_response = self.sso_client.fill_response(response, final_response, self.application.get_redirect_uri())
 
         """ We want to immediately return the result of the SSO Forward POST Request """

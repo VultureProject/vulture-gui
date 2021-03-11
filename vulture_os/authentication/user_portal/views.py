@@ -184,6 +184,7 @@ def user_authentication_edit(request, object_id=None, api=False):
 
             try:
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
+                Cluster.api_request("services.haproxy.haproxy.reload_service")
             except Exception as e:
                 return render_form(profile, save_error=["Cannot write configuration: {}".format(e),
                                                                                    str.join('', format_exception(*exc_info()))])
@@ -283,7 +284,7 @@ def sso_wizard(request):
         response = {'status': True, 'forms': form_list}
     except TypeError as error:
         logger.exception(error)
-        response = {'status': False, 'reason': "No form detected in uri(s) {} : {}".format(uris, e)}
+        response = {'status': False, 'reason': "No form detected in uri(s) {} : {}".format(uris, error)}
     except Exception as error:
         logger.exception(error)
         response = {'status': False, 'reason': str(error)}

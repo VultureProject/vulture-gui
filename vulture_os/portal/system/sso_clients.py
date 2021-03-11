@@ -63,7 +63,7 @@ class SSLAdapter(HTTPAdapter):
 
 
 class SSOClient(object):
-    def __init__(self, user_agent, headers_in, referer, client_certificate, ssl_context):
+    def __init__(self, user_agent, headers_in, referer, client_certificate, ssl_context, verify_certificate=False):
         """
 		:param logger: logger instance
 		:param uri: The 'action' uri where to post the form
@@ -81,7 +81,7 @@ class SSOClient(object):
         if ssl_context:
             # Only compatible with request-2.18.1 !!!
             self.session.mount("https://", SSLAdapter(ssl_context=ssl_context))
-            self.verify_certificate = "/var/db/pki/" if ssl_context.verify_mode == CERT_REQUIRED else CERT_NONE
+            self.verify_certificate = "/var/db/pki/" if ssl_context.verify_mode == CERT_REQUIRED else verify_certificate
             self.client_side_cert = client_certificate
             logger.debug("SSOClient::_init_: SSL/TLS context successfully created")
 

@@ -123,7 +123,6 @@ def openid_callback(request, workflow_id, repo_id):
     # Build the callback url
     # Get scheme
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
-    port = int(request.META['HTTP_X_FORWARDED_PORT'])
     fqdn = request.META['HTTP_HOST']
     w_path = workflow.public_dir
     callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
