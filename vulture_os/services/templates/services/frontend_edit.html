@@ -181,7 +181,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row log-mode -->
-                    <div class="row log-mode file-mode kafka-mode">
+                    <div class="row log-mode file-mode kafka-mode redis-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.node.label }}</label>
@@ -232,6 +232,72 @@
                           <div class="col-sm-5">
                             {{form.kafka_consumer_group}}
                             {{form.kafka_consumer_group.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode redis-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.redis_server.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.redis_server}}
+                            {{form.redis_server.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode redis-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.redis_port.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.redis_port}}
+                            {{form.redis_port.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode redis-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.redis_mode.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.redis_mode}}
+                            {{form.redis_mode.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode redis-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.redis_use_lpop.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.redis_use_lpop}}
+                            {{form.redis_use_lpop.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode redis-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.redis_key.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.redis_key}}
+                            {{form.redis_key.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode redis-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.redis_password.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.redis_password}}
+                            {{form.redis_password.errors|safe}}
                           </div>
                         </div>
                       </div>
