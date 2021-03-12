@@ -219,10 +219,6 @@ def sso_wizard(request):
             user_agent = request.POST.get('sso_forward_user_agent') or request.META.get('HTTP_USER_AGENT')
             redirect_before = request.POST.get('sso_forward_follow_redirect_before')
 
-            #proxy_balancer_id = request.POST.get('proxy_balancer')
-            #if proxy_balancer_id:
-            #    proxy_balancer = ProxyBalancer.objects.get(pk=proxy_balancer_id)
-
         except KeyError as e:
             return JsonResponse({'status': False, 'reason': "Missing field : {}".format(str(e))})
 
