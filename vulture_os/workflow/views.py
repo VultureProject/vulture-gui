@@ -275,7 +275,7 @@ def save_workflow(request, workflow_obj, object_id=None):
         logger.critical(e, exc_info=1)
         return JsonResponse({
             'status': False,
-            'error': _('An error has occured')
+            'error': _('An error has occurred')
         })
 
 

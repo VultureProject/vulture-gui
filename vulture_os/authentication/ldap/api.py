@@ -154,7 +154,7 @@ class LDAPViewApi(View):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
 
             if settings.DEV_MODE:
                 raise
@@ -212,7 +212,7 @@ class LDAPViewApi(View):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
             if settings.DEV_MODE:
                 raise
 
@@ -246,7 +246,7 @@ class LDAPViewApi(View):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
 
             if settings.DEV_MODE:
                 raise

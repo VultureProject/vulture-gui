@@ -398,7 +398,7 @@ def openid_authorize(request, portal_id):
         logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
         return HttpResponseServerError()
     except Exception as e:
-        logger.error("PORTAL::openid_authorize: an unknown error occured while searching for portal with id {}: {}".format(portal_id, e))
+        logger.error("PORTAL::openid_authorize: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
         return HttpResponseServerError()
 
     # Check mandatory URI parameters presence
