@@ -229,7 +229,6 @@ $(function() {
       $('.api-mode').hide();
       $('.kafka-mode').hide();
       $('.redis-mode').hide();
-      $('.file-mode').show()
       // ALWAYS put show at last
       $('.file-mode').show();
     } else if (mode === "log" && listening_mode === "api"){
