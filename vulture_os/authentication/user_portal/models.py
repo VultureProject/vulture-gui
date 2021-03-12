@@ -45,6 +45,7 @@ from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMulti
                           SelectMultiple, TextInput, Textarea)
 
 # Extern modules imports
+from bson import ObjectId
 
 # Required exceptions imports
 
@@ -96,6 +97,8 @@ SOURCE_ATTRS_CHOICES = (
 )
 
 class RepoAttributes(models.Model):
+    # Needed to patch Djongo ArrayField error
+    _id = models.ObjectIdField(default=ObjectId)
     key = models.TextField(
         default="username",
         verbose_name=_("Attribute key name"),
@@ -107,9 +110,6 @@ class RepoAttributes(models.Model):
         verbose_name=_("Attribute name"),
         help_text=_("Attribute key to keep in scope")
     )
-
-    class Meta:
-        abstract = True
 
     def get_attribute(self, claims, repo_attrs):
         if self.source_attr == "claim":
@@ -128,6 +128,18 @@ class RepoAttributes(models.Model):
             return claims.get(self.key) or repo_attrs.get(self.key, "")
         elif self.source_attr == "repo_pref":
             return repo_attrs.get(self.key) or claims.get(self.key, "")
+
+    def __getitem__(self, item):
+        """ PATCH FOR DJONGO ERROR (RepoAttributes is not subscriptable) """
+        if item == "_id":
+            return self._id
+        elif item == "key":
+            return self.key
+        elif item == "source_attr":
+            return self.source_attr
+
+    def __str__(self):
+        return "{} = {}".format(self.key, self.source_attr)
 
 
 class RepoAttributesForm(ModelForm):
@@ -430,6 +442,7 @@ class UserAuthentication(models.Model):
         help_text=_('URL of additionnal request')
     )
 
+    #objects = models.DjongoManager()
 
     def __str__(self):
         return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])
@@ -454,11 +467,18 @@ class UserAuthentication(models.Model):
             'openid_repos': [repo.to_template() for repo in self.openid_repos]
         }
 
+    def get_repo_attributes(self):
+        if not self.repo_attributes:
+            return []
+        else:
+            return [RepoAttributes(r) for r in self.repo_attributes]
+
     def to_dict(self):
         data = model_to_dict(self)
         data['id'] = str(self.pk)
         data['repositories'] = [r.to_dict() for r in self.repositories.all()]
         data['portal_template'] = self.portal_template.to_dict()
+        data['repo_attributes'] = self.repo_attributes
         return data
 
     @property
@@ -493,6 +513,6 @@ class UserAuthentication(models.Model):
 
     def get_user_scope(self, claims, repo_attrs):
         user_scope = {}
-        for u in self.repo_attributes:
+        for u in self.get_repo_attributes():
             user_scope[u.key] = u.get_attribute(claims, repo_attrs)
         return user_scope

@@ -110,9 +110,9 @@ def user_authentication_edit(request, object_id=None, api=False):
                 return JsonResponse({'error': save_error[0]}, status=500)
 
         if not repo_attrs_form_list and profile:
-            for p in profile.repo_attributes:
+            for p in profile.get_repo_attributes():
                 repo_attrs_form_list.append(RepoAttributesForm(instance=p))
-        logger.info(repo_attrs_form_list)
+
         return render(request, 'authentication/user_authentication_edit.html',
                       {'form': form,
                        'repo_attributes': repo_attrs_form_list,
@@ -181,6 +181,8 @@ def user_authentication_edit(request, object_id=None, api=False):
                 listener_obj = listener_f.save(commit=False)
                 listener_obj.save()
                 profile.external_listener = listener_obj
+            for repo_attr in repo_attrs_objs:
+                repo_attr.save()
             profile.repo_attributes = repo_attrs_objs
             profile.save()
 
