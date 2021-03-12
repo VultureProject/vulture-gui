@@ -167,7 +167,6 @@ class OpenIDRepository(BaseRepository):
         }
 
     def to_html_template(self):
-        # FIXME
         """ Returns needed attributes for html rendering """
         return {
             'id': str(self.id),
@@ -182,7 +181,6 @@ class OpenIDRepository(BaseRepository):
         super().save(*args, **kwargs)
 
     def get_client(self):
-        # FIXME
         if self.otp_phone_service == "authy" and self.otp_type in ["phone", "onetouch"]:
             return AuthyClient(self)
         elif self.otp_type == 'email' and self.otp_mail_service == 'vlt_mail_service':
