@@ -205,7 +205,7 @@ def log_viewer(request):
         logger.error(e, exc_info=1)
         return JsonResponse({
             'status': False,
-            'error': _('An error has occured')
+            'error': _('An error has occurred')
         })
 
 

@@ -71,6 +71,11 @@ class Authentication:
                     'url': '/authentication/otp/'
                 },
                 {
+                    'link': 'openid',
+                    'text': _('OpenID federation'),
+                    'url': '/authentication/openid/'
+                },
+                {
                     'link': 'learning_profiles',
                     'text': _('SSO Profiles'),
                     'url': '/authentication/learning_profiles/'

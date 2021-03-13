@@ -1,0 +1,139 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+	<script src="{% static 'js/portal/auth_access_control.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+  <section class="content form-horizontal" id="auth_access_control_vue">
+  	<div class="row">
+  		<div class="col-md-12">
+  			<div class="panel">
+  				<div class="panel-header with-border">
+  					<h3 class="panel-title">{% trans "Authentication Access control" %}</h3>
+  				</div>
+  				<div class="panel-body" id="ac-body">
+					<div class="nav-tabs-custom nav-tabs-no-margin">
+					    <ul class="nav nav-tabs">
+						    <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+						    <li><a href="#tab_conditions" data-toggle="tab">{% trans "Conditions" %}</a></li>
+						</ul>
+						<div class="tab-content">
+							<div class="tab-pane active" id="tab_general">
+                  				<br/>
+								<div class="row">
+									<div class="col-md-12">
+										<div class="form-group">
+											<label class="col-sm-4 control-label">{{ form.enabled.label }}</label>
+											<div class="col-sm-5">{{form.enabled}}</div>
+										</div>
+									</div>
+
+									<div class="col-md-12">
+										<div class="form-group">
+											<label class="col-sm-4 control-label">{{ form.name.label }}</label>
+											<div class="col-sm-5">{{form.name}}</div>
+										</div>
+									</div>
+								</div>
+							</div>
+                  			<div class="tab-pane" id="tab_conditions">
+                  				<br/>
+								<div class="row">
+									<div class="col-md-12" id="condition-list">
+										<div v-for="(or_line, or_index) in or_lines" class="panel panel-bordered-primary condition_block" :data-index="or_index">
+											<div class="panel-heading">
+												<div class="panel-control">
+													<button v-if="or_lines.length > 0" type="button" class="btn btn-xs btn-danger btn-flat" v-on:click="remove_or(or_line.pk)"><i class="fas fa-trash-alt"></i></button>
+												</div>
+											</div>
+											<div class="panel-body">
+												<table class="table table_acl">
+													<thead>
+														<tr>
+															<th></th>
+															<th>{% trans "Variable" %}</th>
+															<th>{% trans "Operator" %}</th>
+															<th>{% trans "Value" %}</th>
+															<th>{% trans "Action" %}</th>
+														</tr>
+													</thead>
+													<tbody class="body_lines">
+														<tr v-for="(and, and_index) in or_line.lines" :id="render_id(or_index, and_index)" :class="render_class_end_line(and.error)" :data-index="and_index">
+															<td v-html="render_and(and_index)"></td>
+															<td>
+																<input type="text" :id="render_variable_id(or_index, and_index)" class="variable_name form-control" :value="and.variable_name"/>
+															</td>
+															<td>
+																<select class="form-control operator reload">
+																	<option value="">{% trans "Choose operator" %}</option>
+																	<option :selected="is_selected('operator', and, 'eq')" value="eq">{% trans "Equal" %}</option>
+																	<option :selected="is_selected('operator', and, 'ne')" value="ne">{% trans "Not equal" %}</option>
+																</select>
+																<span class="text-danger" v-html="render_error(and.error, 'operator')"></span>
+															</td>
+															<td class="td-value">
+																<input type="text" placeholder="{% trans 'Insert your value' %}" class="form-control value reload" :value="and.value"/>
+																<span class="text-danger" v-html="render_error(and.error, 'value')"></span>
+															</td>
+															<td>
+																<button class="btn btn-xs btn-danger" type="button" v-on:click="remove_and(or_line.pk, and_index)"><i class="fas fa-trash-alt"></i> Delete</button>
+															</td>
+														</tr>
+													</tbody>
+													<tfoot>
+														<tr>
+															<td></td>
+															<td></td>
+															<td></td>
+															<td></td>
+															<td>
+																<button type="button" v-on:click="add_and(or_line.pk, or_index)" class="btn btn-success btn-flat"><i class="fa fa-plus">&nbsp;&nbsp;</i>{% trans "Add Rule" %}</button>
+															</td>
+														</tr>
+													</tfoot>
+												</table>
+											</div>
+										</div>
+										<button type="button" class="btn btn-warning btn-flat pull-right" v-on:click="add_or"><i class="fas fa-plus">&nbsp;&nbsp;</i>{% trans "OR" %}</button>
+									</div>
+								</div>
+							</div> 
+						</div>
+					</div>
+				</div>
+  				<div class="panel-footer">
+  					<a href="{% url 'portal.authentication_access_control' %}" class="btn btn-flat btn-default"><i class="fa fa-times">&nbsp;&nbsp;</i>{% trans "Cancel" %}</a>
+        			<button type="button" v-on:click="save_form" id="save_form_btn" class="btn btn-flat btn-success pull-right"><i class="fa fa-check">&nbsp;&nbsp;</i>{% trans "Save" %}</button>
+  				</div>
+  			</div>
+  		</div>
+  	</div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+	let object_id = '{{ object_id }}';
+	let auth_access_control_list_uri = '{% url "portal.authentication_access_control" %}'
+	let auth_access_control_api_uri = '{% url "api.portal.authentication_access_control" %}'
+	
+	$(function() {
+		/* Switchery mandatory code */
+		var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+		  elems.forEach(function(html) {
+		  var switchery = new Switchery(html, {
+			'color': '#FA9834',
+		  });
+		});
+
+		/* Re-initialize select2 objects */
+		$('.select2').select2({placeholder: 'Select an option'});
+	})
+{% endblock %}

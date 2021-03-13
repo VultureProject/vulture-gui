@@ -1,6 +1,6 @@
 {% extends "layout2.html" %}
 {% load i18n %}
-{% load staticfiles %}
+{% load static %}
 
 {% block css_include %}
     <link rel="stylesheet" href="{% static 'plugins/visjs/visjs.min.css' %}"/>
@@ -74,7 +74,8 @@
                                     <label><i class="fa fa-sitemap fa-2x"></i>&nbsp;&nbsp;{% trans "Frontend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><i class="fa fa-lock fa-2x"></i>&nbsp;&nbsp;{% trans "ACL" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><i class="fa fa-server fa-2x"></i>&nbsp;&nbsp;{% trans "Backend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <label><i class="fa fa-database fa-2x"></i>&nbsp;&nbsp;{% trans "Logs" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-user fa-2x"></i>&nbsp;&nbsp;{% trans "Authentication" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-database fa-2x"></i>&nbsp;&nbsp;{% trans "Database" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><img id="favicon-legend" src="{% static 'img/favicon.ico' %}"/>&nbsp;&nbsp;{% trans "Defender Policy" %}</label>
                                 </div>
                             </div>
@@ -97,6 +98,11 @@
 
     var workflow_id = "{{ workflow.pk }}";
     var vulture_logo = "{% static 'img/vulture-logo.png' %}";
+    var radius_logo = "{% static 'img/logos/radius.png' %}";
+    var kerberos_logo = "{% static 'img/logos/kerberos.png' %}";
+    var ldap_logo = "{% static 'img/logos/ldap.png' %}";
+    var openid_logo = "{% static 'img/logos/openid.png' %}";
+    var otp_logo = "{% static 'img/logos/otp.png' %}";
     var server_icon = "{% static 'plugins/visjs/img/network/server-icon.jpg' %}";
     var favicon = "{% static 'img/favicon.ico' %}";
     var access_control_add_uri = "{% url 'darwin.access_control.edit' %}";

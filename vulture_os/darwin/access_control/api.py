@@ -91,6 +91,7 @@ class ACLAPIv1(View):
             'error': error
         }, status=500)
 
+    @api_need_key('cluster_api_key')
     def post(self, request):
         try:
             return access_control_edit(request, api=True)

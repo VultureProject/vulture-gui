@@ -116,7 +116,7 @@ class Migration(migrations.Migration):
                 ('name', models.SlugField(help_text='Friendly name', max_length=255, unique=True, verbose_name='Friendly name')),
                 ('enabled', models.BooleanField(default=True)),
                 ('acls', models.TextField(default='')),
-                ('rules', djongo.models.fields.ListField(default=[])),
+                ('rules', djongo.models.fields.JSONField(default=[])),
             ],
         ),
         migrations.RunPython(initial_access_control),
@@ -139,7 +139,7 @@ class Migration(migrations.Migration):
                 ('expiration_date', models.DateTimeField(auto_now_add=True)),
                 ('rule_id', models.IntegerField()),
                 ('rule_key', models.TextField(default='')),
-                ('data', djongo.models.fields.DictField(default={})),
+                ('data', djongo.models.fields.JSONField(default={})),
             ],
         ),
         migrations.CreateModel(
@@ -197,7 +197,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='config',
-            field=djongo.models.fields.DictField(default={}),
+            field=djongo.models.fields.JSONField(default={}),
         ),
         migrations.AddField(
             model_name='filterpolicy',
@@ -207,7 +207,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='mmdarwin_parameters',
-            field=djongo.models.fields.ListField(default=[]),
+            field=djongo.models.fields.JSONField(default=[]),
         ),
         migrations.AddField(
             model_name='filterpolicy',

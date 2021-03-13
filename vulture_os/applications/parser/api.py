@@ -72,7 +72,7 @@ def parser_test(request):
         return JsonResponse({'status': False, 'error': str(e), 'error_details': e.traceback})
     except Exception as e:
         logger.exception(e)
-        return JsonResponse({'status': False, 'error': "Unknown error occured: {}".format(str(e)),
+        return JsonResponse({'status': False, 'error': "Unknown error occurred: {}".format(str(e)),
                              'error_details': str.join('', format_exception(*exc_info()))})
 
 
@@ -98,7 +98,7 @@ class ParserAPIv1(View):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
 
             if settings.DEV_MODE:
                 error = str(e)
@@ -130,7 +130,7 @@ class ParserAPIv1(View):
             if settings.DEV_MODE:
                 error = str(e)
             else:
-                error = _("An error has occured")
+                error = _("An error has occurred")
 
         return JsonResponse({
             'error': error
@@ -143,7 +143,7 @@ class ParserAPIv1(View):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
 
             if settings.DEV_MODE:
                 error = str(e)
@@ -159,7 +159,7 @@ class ParserAPIv1(View):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
 
             if settings.DEV_MODE:
                 error = str(e)

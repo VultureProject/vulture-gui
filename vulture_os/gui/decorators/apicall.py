@@ -12,7 +12,6 @@ logger = logging.getLogger('api')
 def api_need_key(key_name):
     """ Decorator used to check if the given API Key is correct
     passed in
-
     :param group_names: List of groups
     :return:
     """
@@ -49,5 +48,3 @@ def api_need_key(key_name):
 
         return inner
     return decorator
-
-
