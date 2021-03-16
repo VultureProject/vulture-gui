@@ -26,6 +26,7 @@ __doc__ = 'LDAP Repository views'
 # Django system imports
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http.response import HttpResponseNotFound
 from django.shortcuts import render
 
 # Django project imports
@@ -61,7 +62,7 @@ def ldap_clone(request, object_id):
         ldap = LDAPRepository.objects.get(pk=object_id)
     except Exception as e:
         logger.exception(e)
-        return HttpResponseForbidden("Injection detected")
+        return HttpResponseNotFound("Object not found")
 
     ldap.pk = None
     ldap.name = "Copy_of_" + str(ldap.name)
@@ -80,7 +81,7 @@ def ldap_edit(request, object_id=None, api=False):
         try:
             ldap = LDAPRepository.objects.get(pk=object_id)
         except ObjectDoesNotExist:
-            return HttpResponseForbidden("Injection detected")
+            return HttpResponseNotFound('Object not found')
 
     if hasattr(request, "JSON") and api:
         form = LDAPRepositoryForm(request.JSON or None, instance=ldap, error_class=DivErrorList)
