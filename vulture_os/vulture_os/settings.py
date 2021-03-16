@@ -40,7 +40,7 @@ except ImportError:
 
 LOG_LEVEL = "INFO"
 
-DEBUG = True
+DEBUG = False
 DEV_MODE = False
 TEMPLATE_DEBUG = DEBUG
 
