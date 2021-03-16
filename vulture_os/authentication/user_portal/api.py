@@ -83,8 +83,8 @@ class UserPortalApi(View):
 
         return JsonResponse({
             'error': error
-        }, status=500) 
-        
+        }, status=500)
+
     @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
