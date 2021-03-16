@@ -851,7 +851,7 @@ class LDAPClient(BaseAuth):
 
         self.unbind_connection()
 
-    def delete_user(self, dn, groups):
+    def delete_user(self, dn, groups=[]):
         self._bind_connection(self.user, self.password)
 
         for group in groups:

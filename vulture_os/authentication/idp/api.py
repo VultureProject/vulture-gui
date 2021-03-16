@@ -143,10 +143,11 @@ class IDPApiUserView(View):
                 pass
 
             group_name = user[ldap_repo.user_groups_attr]
-            ldap_response = tools.create_user(ldap_repo, group_name, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
+            ldap_response, user_id = tools.create_user(ldap_repo, group_name, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
 
             return JsonResponse({
-                "status": True
+                "status": True,
+                "user_id": user_id
             }, status=201)
         except KeyError as err:
             logger.debug(err)
@@ -177,19 +178,28 @@ class IDPApiUserView(View):
             ldap_repo = get_repo(portal)
 
             user_name = request.JSON['username']
-            group_name = request.JSON['group']
+            group_name = request.JSON.get('group')
 
             attrs = {
                 ldap_repo.user_attr: [user_name]
             }
 
-            attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
-            attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
-            attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
-            attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
-            attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
+            if ldap_repo.user_email_attr:
+                attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
+            
+            if ldap_repo.user_account_locked_attr:
+                attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
+            
+            if ldap_repo.user_change_password_attr:
+                attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
+            
+            if ldap_repo.user_mobile_attr:
+                attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
+            
+            if ldap_repo.user_smartcardid_attr:
+                attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
 
-            status = tools.update_user(ldap_repo, group_name, user_name, attrs, request.JSON.get('userPassword'))
+            status, user_dn = tools.update_user(ldap_repo, group_name, user_name, attrs, request.JSON.get('userPassword'))
             if status is False:
                 return JsonResponse({
                     "status": False,
@@ -197,7 +207,8 @@ class IDPApiUserView(View):
                 }, status=404)
 
             return JsonResponse({
-                "status": True
+                "status": True,
+                "user_id": user_dn
             })
         except KeyError as err:
             logger.debug(err)
@@ -228,7 +239,7 @@ class IDPApiUserView(View):
             ldap_repo = get_repo(portal)
 
             user_name = request.JSON['username']
-            group_name = request.JSON['group']
+            group_name = request.JSON.get('group')
 
             status = tools.delete_user(ldap_repo, group_name, user_name)
             if status is False:

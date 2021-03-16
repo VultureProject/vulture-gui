@@ -240,7 +240,7 @@ class LDAPViewApi(View):
                     if ldap_attr and tmp_user.get(ldap_attr):
                         attrs[ldap_attr] = [tmp_user[ldap_attr]]
 
-                ldap_response = tools.create_user(ldap_repository, group_dn, user_attr, userPassword, attrs)
+                ldap_response, user_dn = tools.create_user(ldap_repository, group_dn, user_attr, userPassword, attrs)
 
             elif request.JSON['object_type'].lower() == "group":
                 group_name = request.JSON['group_name']
