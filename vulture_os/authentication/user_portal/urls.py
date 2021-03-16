@@ -28,8 +28,7 @@ from django.urls import path, re_path
 # Django project imports
 from authentication.generic_list import ListUserAuthentication
 from authentication.generic_delete import DeleteUserAuthentication
-from authentication.user_portal import views
-from authentication.user_portal import api
+from authentication.user_portal import views, api
 
 
 
