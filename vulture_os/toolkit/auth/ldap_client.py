@@ -817,7 +817,7 @@ class LDAPClient(BaseAuth):
         try:
             self._get_connection().add_s(dn, ldif)
         except (ldap.ALREADY_EXISTS, ldap.TYPE_OR_VALUE_EXISTS):
-            # Notthing to do here
+            # Nothing to do here
             pass
 
         if group_dn:
