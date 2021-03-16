@@ -82,7 +82,7 @@ class PortalTemplateAPIv1(View):
         
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
             if settings.DEV_MODE:
                 error = str(e)
             
@@ -109,7 +109,7 @@ class PortalTemplateAPIv1(View):
         
         except Exception as err:
             logger.critical(err, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
             if settings.DEV_MODE:
                 error = str(err)
             
@@ -130,7 +130,7 @@ class PortalTemplateAPIv1(View):
 
         except Exception as err:
             logger.critical(err, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
 
             if settings.DEV_MODE:
                 error = str(err)
@@ -169,5 +169,5 @@ def portal_template_clone(request):
             raise
 
         return JsonResponse({
-            "error": _("An error has occured")
+            "error": _("An error has occurred")
         }, status=500)

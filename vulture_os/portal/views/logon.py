@@ -134,10 +134,6 @@ def openid_callback(request, workflow_id, repo_id):
     # Retrieve cookies required for authentication
     portal_cookie_name = global_config.portal_cookie_name
 
-    logger.info(request.COOKIES.get(portal_cookie_name))
-
-    logger.info(request.GET)
-
     try:
         code = request.GET['code']
         state = request.GET['state']
@@ -181,8 +177,8 @@ def openid_callback(request, workflow_id, repo_id):
         authentication.register_user(user_scope)
 
     except KeyError as e:
-        # FIXME : What to do ?
-        return HttpResponseRedirect()
+        logger.exception(e)
+        return HttpResponseRedirect(redirect_url)
 
     except RedisConnectionError as e:
         logger.exception(e)
@@ -206,9 +202,10 @@ def openid_callback(request, workflow_id, repo_id):
         return db_auth_response
 
     # If no SSO enabled, redirect with portal cookie
-    return make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope) \
+    response = make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope) \
                    or authentication.generate_response()
 
+    return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
 
 
 
@@ -401,7 +398,7 @@ def openid_authorize(request, portal_id):
         logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
         return HttpResponseServerError()
     except Exception as e:
-        logger.error("PORTAL::openid_authorize: an unknown error occured while searching for portal with id {}: {}".format(portal_id, e))
+        logger.error("PORTAL::openid_authorize: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
         return HttpResponseServerError()
 
     # Check mandatory URI parameters presence

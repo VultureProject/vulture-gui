@@ -62,7 +62,7 @@ class ACLAPIv1(View):
 
         except Exception as e:
             logger.critical(e, exc_info=1)
-            error = _("An error has occured")
+            error = _("An error has occurred")
 
             if settings.DEV_MODE:
                 error = str(e)
@@ -85,7 +85,7 @@ class ACLAPIv1(View):
             if settings.DEV_MODE:
                 error = str(e)
             else:
-                error = _("An error has occured")
+                error = _("An error has occurred")
 
         return JsonResponse({
             'error': error
@@ -101,7 +101,7 @@ class ACLAPIv1(View):
             if settings.DEV_MODE:
                 error = str(e)
             else:
-                error = _("An error has occured")
+                error = _("An error has occurred")
 
         return JsonResponse({
             'error': error

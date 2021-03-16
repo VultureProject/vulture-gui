@@ -51,7 +51,7 @@
       "register_password1_field": "Password",
       "register_password2_field": "Password confirmation",
       "register_email_field": "Email",
-      "register_submit_field": "Register",
+      "register_submit_field": "Register"
     }
   }
 ]

@@ -174,7 +174,7 @@ let template_edit_vue = new Vue({
                     html=html.replace("\{\{form_begin\}\}","<form action='/login' method='POST' autocomplete='off'>");
                     html=html.replace("\{\{form_end\}\}","</form>");
                     html=html.replace("\{\{input_email\}\}","<input type='text' name='vltrgstremail' value='Email' class='form-control'>");
-                    html=html.replace("\{\{error_message\}\}","An error occured <br> <b>Please contact your administrator</b>");
+                    html=html.replace("\{\{error_message\}\}","An error occurred <br> <b>Please contact your administrator</b>");
                     html=html.replace("\{\{input_username\}\}","<input type='text' name='username' value='Username' class='form-control'>");
                     html=html.replace("\{\{captcha\}\}","<img id='captcha' src='/static/img/example_captcha.png' alt='captcha'/>");
                     html=html.replace("\{\{input_captcha\}\}","<input type='text' name='captcha' value='Captcha' class='form-control'>");

@@ -19,11 +19,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='cisco_meraki_timestamp',
-            field=djongo.models.fields.JSONField(default={}, blank=True, null=True),
-        ),
-        migrations.AlterField(
-            model_name='frontend',
-            name='cisco_meraki_timestamp',
             field=djongo.models.fields.JSONField(default={}),
         ),
     ]

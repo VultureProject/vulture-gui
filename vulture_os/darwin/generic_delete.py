@@ -47,6 +47,8 @@ from workflow.models import Workflow
 from django.core.exceptions import ObjectDoesNotExist
 from services.exceptions import ServiceError
 
+from bson import ObjectId
+
 # Logger configuration imports
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -301,4 +303,17 @@ class DeleteAccessControl(DeleteView):
     redirect_url = "/darwin/acl/"
     delete_url = "/darwin/acl/delete/"
 
+    # This method is mandatory for all child classes
+    # Returns [] if nothing to do
+    def used_by(self, object):
+        """ Retrieve all objects that use the current object
+        Return a list of strings, printed in template as "Used by this object:"
+        """
+        return [str(acl.access_control) for acl in object.workflowacl_set.all()]
+
     # get, post and used_by methods herited from mother class
+    def get(self, request, object_id, **kwargs):
+        return super().get(request, ObjectId(object_id), **kwargs)
+
+    def post(self, request, object_id, **kwargs):
+        return super().post(request, ObjectId(object_id), **kwargs)

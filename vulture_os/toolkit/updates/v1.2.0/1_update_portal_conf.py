@@ -47,5 +47,4 @@ if __name__ == "__main__":
     else:
         # Refresh spoe_session.txt
         node.api_request("services.haproxy.haproxy.configure_node")
-        node.api_request("toolkit.yara.yara.compile_all_rules")
         print("Done.")

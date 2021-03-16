@@ -112,9 +112,9 @@ def user_authentication_edit(request, object_id=None, api=False):
                 return JsonResponse({'error': save_error[0]}, status=500)
 
         if not repo_attrs_form_list and profile:
-            for p in profile.repo_attributes:
+            for p in profile.get_repo_attributes():
                 repo_attrs_form_list.append(RepoAttributesForm(instance=p))
-        logger.info(repo_attrs_form_list)
+
         return render(request, 'authentication/user_authentication_edit.html',
                       {'form': form,
                        'repo_attributes': repo_attrs_form_list,
@@ -183,16 +183,23 @@ def user_authentication_edit(request, object_id=None, api=False):
             repo_attrs_objs.append(repoattrform.save(commit=False))
 
         if form.is_valid():
+            # Check changed attributes before form.save
+            repo_changed = "repositories" in form.changed_data
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
             if profile.enable_external:
                 listener_obj = listener_f.save(commit=False)
                 listener_obj.save()
                 profile.external_listener = listener_obj
+            for repo_attr in repo_attrs_objs:
+                repo_attr.save()
             profile.repo_attributes = repo_attrs_objs
             profile.save()
 
             try:
+                if repo_changed and profile.workflow_set.count() > 0:
+                    for workflow in profile.workflow_set.all():
+                        workflow.frontend.reload_conf()
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
                 Cluster.api_request("services.haproxy.haproxy.reload_service")
             except Exception as e:
@@ -230,10 +237,6 @@ def sso_wizard(request):
             url = request.POST['sso_forward_url']
             user_agent = request.POST.get('sso_forward_user_agent') or request.META.get('HTTP_USER_AGENT')
             redirect_before = request.POST.get('sso_forward_follow_redirect_before')
-
-            #proxy_balancer_id = request.POST.get('proxy_balancer')
-            #if proxy_balancer_id:
-            #    proxy_balancer = ProxyBalancer.objects.get(pk=proxy_balancer_id)
 
         except KeyError as e:
             return JsonResponse({'status': False, 'reason': "Missing field : {}".format(str(e))})
