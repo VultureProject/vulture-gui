@@ -59,7 +59,7 @@ class UserPortalApi(View):
                 data = UserAuthentication.objects.get(name=request.GET['name']).to_dict()
             else:
                 data = [ua.to_dict() for ua in UserAuthentication.objects.all()]
-            
+
             return JsonResponse({
                 "data": data
             })
