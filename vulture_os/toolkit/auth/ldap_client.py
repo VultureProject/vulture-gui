@@ -287,8 +287,12 @@ class LDAPClient(BaseAuth):
 
     def search_by_dn(self, dn, attr_list=None):
         self._bind_connection(self.user, self.password)
-        result = self._get_connection().search_s(dn, ldap.SCOPE_SUBTREE, '(objectClass=*)', attr_list)
-        results = self._process_results(result)
+        try:
+            result = self._get_connection().search_s(dn, ldap.SCOPE_SUBTREE, '(objectClass=*)', attr_list)
+            results = self._process_results(result)
+        except ldap.NO_SUCH_OBJECT:
+            results = []
+
         self.unbind_connection()
         return results
 
@@ -791,6 +795,9 @@ class LDAPClient(BaseAuth):
         self._bind_connection(self.user, self.password)
 
         for k, v in attrs.items():
+            if not isinstance(v, list):
+                v = [v]
+
             attrs[k] = [bytes(d, 'utf-8') for d in v]
 
         ldif = modlist.addModlist(attrs)
@@ -801,14 +808,25 @@ class LDAPClient(BaseAuth):
         self._bind_connection(self.user, self.password)
 
         for k, v in attributes.items():
+            if not isinstance(v, list):
+                v = [v]
+
             attributes[k] = [bytes(d, "utf-8") for d in v]
 
         ldif = modlist.addModlist(attributes)
-        self._get_connection().add_s(dn, ldif)
+        try:
+            self._get_connection().add_s(dn, ldif)
+        except (ldap.ALREADY_EXISTS, ldap.TYPE_OR_VALUE_EXISTS):
+            # Nothing to do here
+            pass
 
-        attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
-        logger.debug("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
-        self._get_connection().modify_s(group_dn, attrs)
+        if group_dn:
+            attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
+            logger.debug("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
+            try:
+                self._get_connection().modify_s(group_dn, attrs)
+            except ldap.TYPE_OR_VALUE_EXISTS:
+                pass
 
         if userPassword:
             self._get_connection().passwd_s(dn, None, userPassword)
@@ -846,8 +864,12 @@ class LDAPClient(BaseAuth):
             for k, v in group.items():
                 final_group[k] = [bytes(e, 'utf-8') for e in v]
 
-            ldif = modlist.modifyModlist(old_group, final_group)
-            self._get_connection().modify_s(group_dn, ldif)
+            if len(group[self.group_member_attr]) == 0:
+                # Group is empty, we can delete it
+                self._get_connection().delete_s(group_dn)
+            else:
+                ldif = modlist.modifyModlist(old_group, final_group)
+                self._get_connection().modify_s(group_dn, ldif)
 
         self._get_connection().delete_s(dn)
         self.unbind_connection()

@@ -32,6 +32,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from authentication.ldap.models import LDAPRepository
 from django.utils.translation import ugettext_lazy as _
+from authentication.ldap.views import ldap_edit
+from authentication.generic_delete import DeleteLDAPRepository
 from authentication.ldap import tools
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -40,9 +42,17 @@ logger = logging.getLogger('api')
 @method_decorator(csrf_exempt, name="dispatch")
 class LDAPApi(View):
     @api_need_key('cluster_api_key')
-    def get(self, request, object_id):
+    def get(self, request, object_id=None):
         try:
-            ldap_repository = LDAPRepository.objects.get(pk=object_id)
+            if object_id:
+                ldap_repository = LDAPRepository.objects.get(pk=object_id)
+            elif request.GET.get('name'):
+                ldap_repository = LDAPRepository.objects.get(name=request.GET['name'])
+            else:
+                ldap_repos = [ld.to_dict() for ld in LDAPRepository.objects.all()]
+                return JsonResponse({
+                    "data": ldap_repos
+                })
 
             user_keys = []
             for key in tools.AVAILABLE_USER_KEYS:
@@ -63,7 +73,55 @@ class LDAPApi(View):
         except LDAPRepository.DoesNotExist:
             return JsonResponse({
                 "error": _("Object does not exist")
-            }, status=400)
+            }, status=404)
+
+    @api_need_key('cluster_api_key')
+    def post(self, request):
+        try:
+            return ldap_edit(request, None, api=True)
+        
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            if settings.DEV_MODE:
+                error = str(e)
+            else:
+                error = _("An error has occurred")
+
+        return JsonResponse({
+            'error': error
+        }, status=500) 
+        
+    @api_need_key('cluster_api_key')
+    def put(self, request, object_id):
+        try:
+            return ldap_edit(request, object_id, api=True)
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+            return JsonResponse({
+                'error': error
+            }, status=500)
+
+    @api_need_key('cluster_api_key')
+    def delete(self, request, object_id):
+        try:
+            return DeleteLDAPRepository().post(request, object_id=object_id, confirm=True, api=True)
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+            return JsonResponse({
+                'error': error
+            }, status=500)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
