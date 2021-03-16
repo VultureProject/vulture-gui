@@ -36,7 +36,6 @@ AVAILABLE_USER_KEYS = ("user_attr", "user_account_locked_attr", "user_change_pas
 def find_user(ldap_repo, user_dn, attr_list):
     client = ldap_repo.get_client()
     user = client.search_by_dn(user_dn, attr_list=attr_list)
-    
     dn, attrs = user[0]
     user = {"dn": dn}
 
