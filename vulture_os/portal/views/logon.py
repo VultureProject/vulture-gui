@@ -58,6 +58,7 @@ from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeed
 from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.system.hashes import random_sha256
 from toolkit.http.utils import build_url
+from oauthlib.oauth2 import OAuth2Error
 
 # Extern modules imports
 from requests_oauthlib import OAuth2Session
@@ -68,10 +69,10 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('portal_authentication')
 
 
-def openid_start(request, workflow_id):
+def openid_start(request, workflow_id, repo_id):
     """ First, try to retrieve concerned objects """
     try:
-        repo = OpenIDRepository.objects.get(pk=request.GET['repo'])
+        repo = OpenIDRepository.objects.get(pk=repo_id)
         workflow = Workflow.objects.get(pk=workflow_id)
     except Exception as e:
         logger.exception(e)
@@ -79,11 +80,12 @@ def openid_start(request, workflow_id):
 
     # Build the callback url
     # Get scheme
+    logger.info(request.META)
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
-    port = request.META['SERVER_PORT']
-    fqdn = workflow.fqdn
+    # Asked FQDN (with or without port if needed)
+    fqdn = request.META['HTTP_HOST']
     w_path = workflow.public_dir
-    callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo.id)
+    callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
 
     oauth2_session = repo.get_oauth2_session(callback_url)
     authorization_url, state = repo.get_authorization_url(oauth2_session)
@@ -121,19 +123,16 @@ def openid_callback(request, workflow_id, repo_id):
     # Build the callback url
     # Get scheme
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
-    port = request.META['SERVER_PORT']
-    fqdn = workflow.fqdn
+    fqdn = request.META['HTTP_HOST']
     w_path = workflow.public_dir
-    callback_url = workflow.authentication.get_openid_callback_url(scheme, port, fqdn, w_path, repo_id)
+    callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
 
-    redirect_url = build_url(scheme, fqdn, port, w_path)
+    redirect_url = scheme + "://" + fqdn + w_path
 
     global_config = Cluster.get_global_config()
     """ Retrieve token and cookies to instantiate Redis wrapper objects """
     # Retrieve cookies required for authentication
     portal_cookie_name = global_config.portal_cookie_name
-
-    logger.info(request.COOKIES.get(portal_cookie_name))
 
     try:
         code = request.GET['code']
@@ -155,7 +154,7 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Retrieve user's infos from provider
         claims = repo.get_userinfo(oauth2_session)
-
+        logger.info(claims)
         repo_attributes = {}
         # Make LDAP Lookup if configured
         if workflow.authentication.lookup_ldap_repo:
@@ -178,31 +177,35 @@ def openid_callback(request, workflow_id, repo_id):
         authentication.register_user(user_scope)
 
     except KeyError as e:
-        # FIXME : What to do ?
-        return HttpResponseRedirect()
+        logger.exception(e)
+        return HttpResponseRedirect(redirect_url)
 
     except RedisConnectionError as e:
-        logger.error("")
+        logger.exception(e)
         return HttpResponseServerError()
 
     except AssertionError as e:
-        logger.error("")
-        return HttpResponseRedirect()
+        logger.exception(e)
+        return HttpResponseRedirect(redirect_url)
+
+    except OAuth2Error as e:
+        logger.exception(e)
+        return HttpResponseRedirect(redirect_url)
 
     except Exception as e:
         logger.exception(e)
         return HttpResponseServerError()
 
     db_auth_response = make_db_authentication(request, portal_cookie_name, portal_cookie, workflow, user_scope)
+    logger.info(db_auth_response)
     if db_auth_response:
         return db_auth_response
 
-    sso_response = make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope,
-                                    redirect_url)
-    if sso_response:
-        return sso_response
-
     # If no SSO enabled, redirect with portal cookie
+    response = make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_scope) \
+                   or authentication.generate_response()
+
+    return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
 
 
 
@@ -308,16 +311,7 @@ def make_db_authentication(request, portal_cookie_name, portal_cookie, workflow,
                         .format(authentication.credentials[0]))
             return authentication.ask_credentials_response(request=request, error=e.message)
 
-    """ If no response has been returned yet : redirect to the asked-uri/default-uri with portal_cookie """
-    redirection_url = authentication.get_redirect_url()
-    logger.info("PORTAL::log_in: Redirecting user to '{}'".format(redirection_url))
-    try:
-        kerberos_token_resp = user_infos['token_resp']
-    except:
-        kerberos_token_resp = None
-
-    return response_redirect_with_portal_cookie(redirection_url, portal_cookie_name, portal_cookie,
-                                                redirection_url.startswith('https'), kerberos_token_resp)
+    # If nothing, no response to return
 
 
 def make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authentication, user_infos):
@@ -367,10 +361,6 @@ def make_sso_forward(request, portal_cookie_name, portal_cookie, workflow, authe
             final_response = sso_forward.generate_response(request, response, authentication.get_redirect_url())
             logger.info("PORTAL::log_in: SSOForward response successfuly generated")
 
-            # Refresh portal cookie
-            final_response = set_portal_cookie(final_response, portal_cookie_name, portal_cookie,
-                                               authentication.get_redirect_url())
-
             return final_response
 
         # If learning credentials cannot be retrieven : ask them
@@ -408,7 +398,7 @@ def openid_authorize(request, portal_id):
         logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
         return HttpResponseServerError()
     except Exception as e:
-        logger.error("PORTAL::openid_authorize: an unknown error occured while searching for portal with id {}: {}".format(portal_id, e))
+        logger.error("PORTAL::openid_authorize: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
         return HttpResponseServerError()
 
     # Check mandatory URI parameters presence

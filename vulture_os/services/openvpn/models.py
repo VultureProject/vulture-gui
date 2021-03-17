@@ -72,7 +72,7 @@ class Openvpn(models.Model):
     tls_profile         = models.ForeignKey(to=TLSProfile, on_delete=models.CASCADE, help_text=_("TLS Profile to use."))
     proto               = models.TextField(choices=PROTO, default="tcp")
     status              = models.TextField(default="WAITING")
-    tunnels_status      = models.DictField(default={})
+    tunnels_status      = models.JSONField(default={})
 
     def to_template(self):
         """ Dictionary used to create configuration file.

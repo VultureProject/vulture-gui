@@ -26,7 +26,7 @@ __doc__ = 'System utils sso_forward'
 
 # Django system imports
 from django.conf                      import settings
-from django.http                      import HttpResponse
+from django.http                      import HttpResponse, HttpResponseRedirect
 
 # Django project imports
 from authentication.base_repository import BaseRepository
@@ -149,16 +149,17 @@ class SSOForward(object):
             return {field_username:self.credentials[0], field_password:self.credentials[1]}, dict(), ""
 
 
-    def generate_response(self, request, response, asked_url):
-        final_response = HttpResponse()
+    def generate_response(self, request, response, redirect_url):
 
+        final_response = HttpResponseRedirect(redirect_url)
         final_response = self.sso_client.fill_response(response, final_response, self.application.get_redirect_uri())
-        final_response.status_code = response.status_code
 
         """ We want to immediately return the result of the SSO Forward POST Request """
         if self.application.authentication.sso_forward_return_post:
+            final_response.status_code = response.status_code
+
             matched = None
-            if self.application.sso_capture_content_enabled and self.application.sso_capture_content:
+            if self.application.authentication.sso_forward_enable_capture and self.application.authentication.sso_forward_capture_content:
                 ##TODO: MAKE THE CAPTURE/REPLACE/ADDITIONNAL REQUEST 
                 #  ON ALL THE RESPONSE (HEADERS INCLUDED !)
                 # response_raw = ""
@@ -166,28 +167,26 @@ class SSOForward(object):
                 #     response_raw += str(key)+": "+str(item)+"\r\n"
                 # response_raw += response.text
 
-                matched = re_search(self.application.authentication.sso_capture_content, response.content) # response_raw
+                matched = re_search(self.application.authentication.sso_forward_capture_content, response.content) # response_raw
 
             final_response_body = self.sso_client.advanced_sso_perform(matched, self.application, response)
 
             if "gzip" in final_response.get('Content-Encoding', ""):
                 final_response = create_gzip_response(request, final_response_body)
                 final_response = self.sso_client.fill_response(response, final_response, self.application.get_redirect_uri())
-                final_response.status_code = response.status_code
             else:
                 final_response.content = final_response_body
             final_response['Content-Length'] = len(final_response.content)
             logger.debug("SSOForward::generate_response: sso_forward_return_post activated - final response generated")
 
-
-        elif response.status_code not in (301,302,303) or not self.application.authentication.sso_forward_follow_redirect:
-            """ simply redirect to the default Application entry point """
-            final_response.status_code = 302
-            # redirect user to url redirected
-            final_response['Location'] = asked_url
-            del final_response['Content-Length']
-            del final_response['Content-Encoding']
-            logger.debug("SSOForward::generate_response: Generated response redirects to '{}'".format(asked_url))
+        # elif response.status_code not in (301,302,303) or not self.application.authentication.sso_forward_follow_redirect:
+        #     """ simply redirect to the default Application entry point """
+        #     final_response.status_code = 302
+        #     # redirect user to url redirected
+        #     final_response['Location'] = asked_url
+        #     del final_response['Content-Length']
+        #     del final_response['Content-Encoding']
+        #     logger.debug("SSOForward::generate_response: Generated response redirects to '{}'".format(asked_url))
 
         return final_response
 

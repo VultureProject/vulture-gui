@@ -1,0 +1,89 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+  <link rel="stylesheet" href="{% static 'plugins/vue/vue-select.min.css' %}"/>
+  <link rel="stylesheet" href="{% static 'plugins/jstree/themes/default/style.min.css' %}"/>
+{% endblock %}
+
+{% block js_include %}
+    <script src="{% static 'plugins/vue/vue-js-toggle-button.min.js' %}"></script>
+    <script src="{% static 'plugins/vue/vue-select.min.js' %}"></script>
+    <script src="{% static 'plugins/jstree/jstree.min.js' %}"></script>
+    <script src="{% static 'plugins/vue/vue-tags-input.min.js' %}"></script>
+    <script src="{% static 'js/components/ldap_user_form.js' %}"></script>
+    <script src="{% static 'js/components/ldap_user_list.js' %}"></script>
+    <script src="{% static 'js/ldap_view.js' %}"></script>
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content" id="ldap_view">
+    <div class="row" v-if="ldap_repository">
+        <div class="col-md-12">
+            <div id="demo-panel-ref" class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                        <button class="btn btn-primary btn-flat" data-target="#modal-add-group" data-toggle="modal"><i class="fa fa-plus"></i>&nbsp;&nbsp;{% trans "Add an entry" %}</button>
+                    </div>
+                    <h3 class="panel-title"><i class="fa fa-sitemap"></i>&nbsp;${ldap_repository.name}</h3>
+                </div>
+    
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="groups_list"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modal-add-group" role="dialog" tabindex="-1" aria-labelled-by="modal-add-group" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="form-horizontal" @submit.prevent="addGroup()">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">{% trans "Group form" %}</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12 form-group">
+                                <label class="col-sm-3 control-label text-right text-bold">{% trans "Group name" %}</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" v-model="form_group.group_name"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 form-group">
+                                <label class="col-sm-3 control-label text-right text-bold">{% trans "Members" %}</label>
+                                <div class="col-sm-9">
+                                    <vue-tags-input 
+                                        v-model="form_group.members"
+                                        :tags="members"
+                                        :autocomplete-items="autocomplete_members"
+                                        :add-only-from-autocomplete="true"
+                                        @tags-changed="memberTagsChanged"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success"><i class="fa fa-save"></i>&nbsp;{% trans "Save" %}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+    let ldap_object_id = "{{ object_id }}";
+    let ldap_view_api_uri = "{% url 'authentication.api.ldap.view' object_id %}";
+    let ldap_api_uri = "{% url 'authentication.api.ldap' object_id %}";
+{% endblock %}

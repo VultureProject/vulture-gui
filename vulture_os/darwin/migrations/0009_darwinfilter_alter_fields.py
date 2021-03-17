@@ -21,9 +21,13 @@ class Migration(migrations.Migration):
             name='log_level',
             field=models.TextField(choices=[('ERROR', 'Error'), ('WARNING', 'Warning'), ('INFO', 'Informational'), ('DEBUG', 'Debug')], default='WARNING'),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="filterpolicy",
+            name="config",
+        ),
+        migrations.AddField(
             model_name='filterpolicy',
             name='config',
-            field=djongo.models.fields.DictField(default={'alert_redis_channel_name': 'darwin.alerts', 'alert_redis_list_name': 'darwin_alerts', 'log_file_path': '/var/log/darwin/alerts.log', 'redis_socket_path': '/var/sockets/redis/redis.sock'}),
+            field=djongo.models.fields.JSONField(default={'alert_redis_channel_name': 'darwin.alerts', 'alert_redis_list_name': 'darwin_alerts', 'log_file_path': '/var/log/darwin/alerts.log', 'redis_socket_path': '/var/sockets/redis/redis.sock'}),
         )
     ]

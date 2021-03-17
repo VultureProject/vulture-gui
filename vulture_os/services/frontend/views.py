@@ -331,6 +331,7 @@ def frontend_edit(request, object_id=None, api=False):
 
         listener_objs = []
         if form.data.get('mode') not in ["impcap", "filebeat"] and form.data.get('listening_mode') not in ("file", "api", "kafka", "redis"):
+
             # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap", and "API"
             if form.data.get('enabled') and not listener_ids:
                 form.add_error(None, "At least one listener is required if frontend is enabled.")

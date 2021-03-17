@@ -218,6 +218,7 @@ $(function() {
       $('.api-mode').hide();
       $('.kafka-mode').hide();
       $('.redis-mode').hide();
+      // ALWAYS put show at last
       $('.file-mode').show();
     } else if (mode === "filebeat" && filebeat_listening_mode === "api") {
       $('.network-mode').hide();
@@ -231,24 +232,28 @@ $(function() {
       $('.file-mode').hide();
       $('.kafka-mode').hide();
       $('.redis-mode').hide();
+      // ALWAYS put show at last
       $('.api-mode').show();
     } else if (mode === "log" && listening_mode === "kafka"){
       $('.network-mode').hide();
       $('.file-mode').hide();
       $('.api-mode').hide();
       $('.redis-mode').hide();
+      // ALWAYS put show at last
       $('.kafka-mode').show();
     } else if (mode === "log" && listening_mode === "redis"){
       $('.network-mode').hide();
       $('.file-mode').hide();
       $('.api-mode').hide();
       $('.kafka-mode').hide();
+      // ALWAYS put show at last
       $('.redis-mode').show();
     } else {
       $('.file-mode').hide();
       $('.api-mode').hide();
       $('.kafka-mode').hide();
       $('.redis-mode').hide();
+      // ALWAYS put show at last
       $('.network-mode').show();
     }
   }

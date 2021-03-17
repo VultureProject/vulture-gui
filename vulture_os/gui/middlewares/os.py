@@ -23,7 +23,7 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Middleware for GUI of Vulture OS'
 
-from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.conf.urls.static import static
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from system.cluster.models import Node

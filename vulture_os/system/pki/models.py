@@ -525,7 +525,7 @@ class TLSProfile(models.Model):
         help_text=_("Compatibility of web browsers.")
     )
     """ Allowed listening protocols """
-    protocols = models.ListField(
+    protocols = models.JSONField(
         models.TextField(choices=PROTOCOL_CHOICES),
         default=["tlsv12"],
         help_text=_("Allowed protocol ciphers.")
@@ -537,7 +537,7 @@ class TLSProfile(models.Model):
         help_text=_("Allowed protocol ciphers.")
     )
     """ Allowed http protocols """
-    alpn = models.ListField(
+    alpn = models.JSONField(
         models.TextField(choices=ALPN_CHOICES),
         default=["h2", "http/1.1"],
         help_text=_("Advertise the TLS ALPN extensions list.")

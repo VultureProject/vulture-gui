@@ -26,11 +26,13 @@ __doc__ = 'LDAP Repository views'
 # Django system imports
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http.response import HttpResponseNotFound
 from django.shortcuts import render
 from django.urls import reverse
 
 # Django project imports
 from gui.forms.form_utils import DivErrorList
+from toolkit.api.responses import build_response
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -72,7 +74,7 @@ def user_authentication_clone(request, object_id):
         profile = UserAuthentication.objects.get(pk=object_id)
     except Exception as e:
         logger.exception(e)
-        return HttpResponseForbidden("Injection detected")
+        return HttpResponseNotFound("Object not found")
 
     profile.pk = None
     profile.name = "Copy_of_" + str(profile.name)
@@ -93,7 +95,7 @@ def user_authentication_edit(request, object_id=None, api=False):
             profile = UserAuthentication.objects.get(pk=object_id)
             listener_obj = profile.external_listener if profile.enable_external else None
         except ObjectDoesNotExist:
-            return HttpResponseForbidden("Injection detected")
+            return HttpResponseNotFound("Object not found")
 
     """ Create form with object if exists, and request.POST (or JSON) if exists """
     if hasattr(request, "JSON") and api:
@@ -110,9 +112,9 @@ def user_authentication_edit(request, object_id=None, api=False):
                 return JsonResponse({'error': save_error[0]}, status=500)
 
         if not repo_attrs_form_list and profile:
-            for p in profile.repo_attributes:
+            for p in profile.get_repo_attributes():
                 repo_attrs_form_list.append(RepoAttributesForm(instance=p))
-        logger.info(repo_attrs_form_list)
+
         return render(request, 'authentication/user_authentication_edit.html',
                       {'form': form,
                        'repo_attributes': repo_attrs_form_list,
@@ -125,10 +127,14 @@ def user_authentication_edit(request, object_id=None, api=False):
         try:
             if api:
                 repo_attrs = request.JSON.get('repo_attributes', [])
-                assert isinstance(repo_attrs, list), "Repo attributes field must be a dict."
+                assert isinstance(repo_attrs, list), "Repo attributes field must be a list."
             else:
                 repo_attrs = json_loads(request.POST.get('repo_attributes', "[]"))
         except Exception as e:
+            if api:
+                return JsonResponse({
+                    "error": "".join(format_exception(*exc_info()))
+                }, status=400)
             return render_form(profile, save_error=["Error in Repo_Attributes field : {}".format(e),
                                                            str.join('', format_exception(*exc_info()))])
 
@@ -142,6 +148,10 @@ def user_authentication_edit(request, object_id=None, api=False):
                     listener_json = json_loads(request.POST.get('external_listener_json', "{}"))
                 assert listener_json, "Listener required if external enabled"
             except Exception as e:
+                if api:
+                    return JsonResponse({
+                        "error": "".join(format_exception(*exc_info()))
+                    }, status=400)
                 return render(request, 'authentication/user_authentication_edit.html', {'form': form,
                                                                                     'save_error':["Error in external listener field : {}".format(e),
                                                                                                   str.join('', format_exception(*exc_info()))]})
@@ -173,22 +183,37 @@ def user_authentication_edit(request, object_id=None, api=False):
             repo_attrs_objs.append(repoattrform.save(commit=False))
 
         if form.is_valid():
+            # Check changed attributes before form.save
+            repo_changed = "repositories" in form.changed_data
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
             if profile.enable_external:
                 listener_obj = listener_f.save(commit=False)
                 listener_obj.save()
                 profile.external_listener = listener_obj
+            for repo_attr in repo_attrs_objs:
+                repo_attr.save()
             profile.repo_attributes = repo_attrs_objs
             profile.save()
 
             try:
+                if repo_changed and profile.workflow_set.count() > 0:
+                    for workflow in profile.workflow_set.all():
+                        workflow.frontend.reload_conf()
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
+                Cluster.api_request("services.haproxy.haproxy.reload_service")
             except Exception as e:
+                if api:
+                    return JsonResponse({
+                        "error": "".join(format_exception(*exc_info()))
+                    }, status=400)
+
                 return render_form(profile, save_error=["Cannot write configuration: {}".format(e),
                                                                                    str.join('', format_exception(*exc_info()))])
 
             # If everything succeed, redirect to list view
+            if api:
+                return build_response(profile.id, "api.portal.user_authentication", [])
             return HttpResponseRedirect(reverse("portal.user_authentication.list"))
 
     if not listener_f:
@@ -208,14 +233,10 @@ def sso_wizard(request):
         try:
             tls_proto = request.POST.get('sso_forward_tls_proto')
             tls_cert = request.POST.get('sso_forward_tls_cert')
-            tls_cert = request.POST.get('sso_forward_tls_cert')
+            tls_check = request.POST.get('sso_forward_tls_check')
             url = request.POST['sso_forward_url']
             user_agent = request.POST.get('sso_forward_user_agent') or request.META.get('HTTP_USER_AGENT')
             redirect_before = request.POST.get('sso_forward_follow_redirect_before')
-
-            #proxy_balancer_id = request.POST.get('proxy_balancer')
-            #if proxy_balancer_id:
-            #    proxy_balancer = ProxyBalancer.objects.get(pk=proxy_balancer_id)
 
         except KeyError as e:
             return JsonResponse({'status': False, 'reason': "Missing field : {}".format(str(e))})
@@ -255,7 +276,8 @@ def sso_wizard(request):
 
     try:
         # Directly use portal classes
-        sso_client = SSOClient(user_agent, [], request.META.get('HTTP_REFERER'), ssl_client_certificate, ssl_context)
+        sso_client = SSOClient(user_agent, [], request.META.get('HTTP_REFERER'), ssl_client_certificate, ssl_context,
+                               verify_certificate=tls_check)
         url, response = sso_client.get(url, redirect_before)
         forms = parse_html(response.content, url)
 
@@ -282,7 +304,7 @@ def sso_wizard(request):
         response = {'status': True, 'forms': form_list}
     except TypeError as error:
         logger.exception(error)
-        response = {'status': False, 'reason': "No form detected in uri(s) {} : {}".format(uris, e)}
+        response = {'status': False, 'reason': "No form detected in uri(s) {} : {}".format(uris, error)}
     except Exception as error:
         logger.exception(error)
         response = {'status': False, 'reason': str(error)}

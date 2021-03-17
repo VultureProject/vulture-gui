@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ('remote_port', models.PositiveIntegerField(default=443)),
                 ('proto', models.TextField(choices=[('tcp', 'TCP')], default='tcp')),
                 ('status', models.TextField(default='WAITING')),
-                ('tunnels_status', djongo.models.fields.DictField(default={})),
+                ('tunnels_status', djongo.models.fields.JSONField(default={})),
                 ('node', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='system.Node')),
                 ('tls_profile', models.ForeignKey(help_text='TLS Profile to use.', on_delete=django.db.models.deletion.CASCADE, to='system.TLSProfile')),
             ],

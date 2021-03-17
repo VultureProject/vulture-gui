@@ -43,6 +43,7 @@ from services.frontend.models import Frontend
 from applications.backend.models import Backend
 
 # Extern modules imports
+from bson import ObjectId
 from copy import deepcopy
 import validators
 import json
@@ -171,7 +172,7 @@ def save_workflow(request, workflow_obj, object_id=None):
                 workflow_obj.save()
 
             elif step['data']['type'] == "acl":
-                access_control = AccessControl.objects.get(pk=step['data']['object_id'])
+                access_control = AccessControl.objects.get(pk=ObjectId(step['data']['object_id']))
 
                 workflow_acl = WorkflowACL(
                     access_control=access_control,
@@ -216,6 +217,7 @@ def save_workflow(request, workflow_obj, object_id=None):
         # Reloading configuration
         nodes = workflow_obj.frontend.reload_conf()
         workflow_obj.backend.reload_conf()
+        workflow_obj.save_conf()
 
         # We need to reload the new defender policy configuration if:
         # we set a defender policy and (if we create an object, or if we updated the policy, the FQDN or the
@@ -274,7 +276,7 @@ def save_workflow(request, workflow_obj, object_id=None):
         logger.critical(e, exc_info=1)
         return JsonResponse({
             'status': False,
-            'error': _('An error has occured')
+            'error': _('An error has occurred')
         })
 
 
@@ -303,7 +305,7 @@ def workflow_edit(request, object_id=None, api=False):
                     'acls': [a.to_template() for a in AccessControl.objects.filter(enabled=True)],
                     'backends': [b.to_dict() for b in Backend.objects.filter(enabled=True, mode=mode)],
                     'waf_policies': [w.to_template() for w in DefenderPolicy.objects.all()],
-                    'authentications': [a.to_dict() for a in UserAuthentication.objects.all()],
+                    'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)],
                 }
 
             return JsonResponse({
@@ -320,7 +322,7 @@ def workflow_edit(request, object_id=None, api=False):
                     enabled=True,
                     mode=workflow_obj.frontend.mode
                 )],
-                'authentications': [a.to_dict() for a in UserAuthentication.objects.all()]
+                'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)]
             })
 
         return render(request, "main/workflow_edit.html", {

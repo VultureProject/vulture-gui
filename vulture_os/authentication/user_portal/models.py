@@ -45,6 +45,7 @@ from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMulti
                           SelectMultiple, TextInput, Textarea)
 
 # Extern modules imports
+from bson import ObjectId
 
 # Required exceptions imports
 
@@ -96,6 +97,8 @@ SOURCE_ATTRS_CHOICES = (
 )
 
 class RepoAttributes(models.Model):
+    # Needed to patch Djongo ArrayField error
+    _id = models.ObjectIdField(default=ObjectId)
     key = models.TextField(
         default="username",
         verbose_name=_("Attribute key name"),
@@ -125,6 +128,18 @@ class RepoAttributes(models.Model):
             return claims.get(self.key) or repo_attrs.get(self.key, "")
         elif self.source_attr == "repo_pref":
             return repo_attrs.get(self.key) or claims.get(self.key, "")
+
+    def __getitem__(self, item):
+        """ PATCH FOR DJONGO ERROR (RepoAttributes is not subscriptable) """
+        if item == "_id":
+            return self._id
+        elif item == "key":
+            return self.key
+        elif item == "source_attr":
+            return self.source_attr
+
+    def __str__(self):
+        return "{} = {}".format(self.key, self.source_attr)
 
 
 class RepoAttributesForm(ModelForm):
@@ -180,7 +195,7 @@ class UserAuthentication(models.Model):
     )
     enable_external = models.BooleanField(
         default=False,
-        verbose_name=_("External portal"),
+        verbose_name=_("Enable Identity Provider"),
         help_text=_("Listen portal on dedicated host - required for ")
     )
     external_listener = models.ForeignKey(
@@ -240,11 +255,12 @@ class UserAuthentication(models.Model):
         verbose_name=_('Lookup claim key name'),
         help_text=_("Claim name used to map user to ldap attribute")
     )
-    repo_attributes = models.ArrayModelField(
-        default=[],
+    repo_attributes = models.ArrayField(
         model_container=RepoAttributes,
         model_form_class=RepoAttributesForm,
         verbose_name=_('Create user scope'),
+        null=True,
+        default=None,
         help_text=_("Repo attributes whitelist, for re-use in SSO and ACLs")
     )
     auth_timeout = models.PositiveIntegerField(
@@ -322,12 +338,17 @@ class UserAuthentication(models.Model):
         verbose_name=_("Secret (client_id)"),
         help_text=_("Client_secret used to contact OAuth2 provider urls")
     )
-    oauth_redirect_uris = models.ListField(
+    oauth_redirect_uris = models.JSONField(
         models.CharField(
             null=False
         ),
         default=["https://myapp.com/oauth2/callback"],
         help_text=_("Use one line per allowed URI")
+    )
+    oauth_timeout = models.PositiveIntegerField(
+        default=600,
+        verbose_name=_("OAuth2 tokens timeout"),
+        help_text=_("Time in seconds after which oauth2 tokens will expire")
     )
     enable_sso_forward = models.BooleanField(
         default=False,
@@ -421,6 +442,7 @@ class UserAuthentication(models.Model):
         help_text=_('URL of additionnal request')
     )
 
+    #objects = models.DjongoManager()
 
     def __str__(self):
         return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])
@@ -445,11 +467,18 @@ class UserAuthentication(models.Model):
             'openid_repos': [repo.to_template() for repo in self.openid_repos]
         }
 
+    def get_repo_attributes(self):
+        if not self.repo_attributes:
+            return []
+        else:
+            return [RepoAttributes(r) for r in self.repo_attributes]
+
     def to_dict(self):
         data = model_to_dict(self)
         data['id'] = str(self.pk)
         data['repositories'] = [r.to_dict() for r in self.repositories.all()]
         data['portal_template'] = self.portal_template.to_dict()
+        data['repo_attributes'] = self.repo_attributes
         return data
 
     @property
@@ -461,7 +490,7 @@ class UserAuthentication(models.Model):
         result = {
             'id': str(self.id),
             'name': self.name,
-            'enable_tracking': self.enable_tracking,
+            'enable_external': self.enable_external,
             'repositories': [str(repo) for repo in self.repositories.all()],
             'enable_captcha': self.enable_captcha,
             'otp_repository': str(self.otp_repository) if self.otp_repository else "",
@@ -470,11 +499,11 @@ class UserAuthentication(models.Model):
         }
         return result
 
-    def get_openid_callback_url(self, req_scheme, req_port, workflow_host, workflow_path, repo_id):
+    def get_openid_callback_url(self, req_scheme, workflow_host, workflow_path, repo_id):
         if self.enable_external:
             base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
         else:
-            base_url = build_url(req_scheme, workflow_host, req_port, workflow_path)
+            base_url = req_scheme + "://" + workflow_host + workflow_path
         base_url += '/' if base_url[-1] != '/' else ''
         return base_url+"oauth2/callback/{}".format(repo_id)
 
@@ -484,6 +513,6 @@ class UserAuthentication(models.Model):
 
     def get_user_scope(self, claims, repo_attrs):
         user_scope = {}
-        for u in self.repo_attributes:
+        for u in self.get_repo_attributes():
             user_scope[u.key] = u.get_attribute(claims, repo_attrs)
         return user_scope

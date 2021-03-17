@@ -26,6 +26,7 @@ __doc__ = 'Classes used to delete objects'
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.http.response import JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
@@ -83,13 +84,17 @@ class DeleteView(View):
         })
 
     def post(self, request, object_id, **kwargs):
-        confirm = request.POST.get('confirm')
+        confirm = request.POST.get('confirm', request.JSON.get('confirm'))
+
         if confirm == 'yes':
             try:
                 obj_inst = self.obj.objects.get(pk=object_id)
             except ObjectDoesNotExist:
                 return HttpResponseForbidden('Injection detected.')
             obj_inst.delete()
+        
+        if kwargs.get('api'):
+            return JsonResponse({"status": True})
         return HttpResponseRedirect(self.redirect_url)
 
     def used_by(self, objet):

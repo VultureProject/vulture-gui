@@ -41,6 +41,7 @@ from iptools.ipv4 import netmask2prefix
 import time
 
 from applications.logfwd.models import LogOMHIREDIS
+from system.pki.models import X509Certificate
 from services.exceptions import ServiceExit
 
 from re import findall as re_findall, compile as re_compile
@@ -447,6 +448,9 @@ class Node(models.Model):
                 message.result = str(e)
 
             message.save()
+
+    def get_certificate(self):
+        return X509Certificate.objects.get(name=self.name, status="V", chain=X509Certificate.objects.get(status="V", is_vulture_ca=True, name__startswith="Vulture_PKI").cert)
 
 
 class Cluster (models.Model):

@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Frontends & Listeners model classes'
+__doc__ = 'Workflow model classes'
 
 # Django system imports
 from django.conf import settings
@@ -134,7 +134,7 @@ class Workflow(models.Model):
         help_text=_("Backend"),
     )
 
-    workflow_json = models.ListField(default=[])
+    workflow_json = models.JSONField(default=[])
 
     class Meta:
         unique_together = (('frontend', 'fqdn', 'public_dir', 'backend'),)
@@ -154,7 +154,7 @@ class Workflow(models.Model):
         """ Retrieve list/custom objects """
 
         """ And returns the attributes of the class """
-        return {
+        tmp = {
             'id': str(self.id),
             'name': self.name,
             'fqdn': self.fqdn,
@@ -168,9 +168,10 @@ class Workflow(models.Model):
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             'acls': self.workflowacl_set.count(),
-            'authentication_id': str(self.authentication.pk),
+            'authentication_id': str(self.authentication.pk) if self.authentication else "",
             'authentication': str(self.authentication)
         }
+        return tmp
 
     def to_dict(self):
         defender_policy = None
@@ -189,7 +190,7 @@ class Workflow(models.Model):
             'backend': self.backend.to_dict(),
             'frontend_id': str(self.frontend.pk),
             'backend_id': str(self.backend.pk),
-            'authentication_id': str(self.authentication.pk),
+            'authentication_id': str(self.authentication.pk) if self.authentication else "",
             'workflow_json': json.dumps(self.workflow_json),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),

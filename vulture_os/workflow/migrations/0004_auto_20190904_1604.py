@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='workflow',
             name='workflow_json',
-            field=djongo.models.fields.ListField(default=[]),
+            field=djongo.models.fields.JSONField(default=[]),
         ),
         migrations.AlterField(
             model_name='workflow',

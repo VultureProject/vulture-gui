@@ -1,6 +1,6 @@
 {% extends 'layout2.html' %}
 {% load i18n %}
-{% load staticfiles %}
+{% load static %}
 
 {% block css_include %}
 {% endblock %}
@@ -57,11 +57,11 @@
       mData: "name"
     },
     {
-      sTitle: '{% trans "Tracking" %}',
-      name: "enable_tracking",
+      sTitle: '{% trans "IDP" %}',
+      name: "enable_external",
       aTargets: [2],
       defaultContent: "",
-      mData: "enable_tracking",
+      mData: "enable_external",
       mRender: function(data, type, row) {
         if (data)
           return "<label class='label label-success'><i class='fas fa-check-circle'></i></label>";

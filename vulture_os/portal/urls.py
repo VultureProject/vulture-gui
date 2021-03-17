@@ -47,7 +47,7 @@ urlpatterns = [
     # # Registration & login
     # re_path('/(?P<token_name>[A-Za-z0-9]+)/register/(?P<proxy_app_id>[A-Za-z0-9]+)$', registration, name="Registration"),
     re_path('^/login/(?P<workflow_id>[A-Za-z0-9]+)/$', log_in, name="Log in"),
-    re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/oauth2/start', openid_start, name="OpenID start"),
+    re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/oauth2/start/(?P<repo_id>[A-Za-z0-9]+)', openid_start, name="OpenID start"),
     re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/oauth2/callback/(?P<repo_id>[A-Za-z0-9]+)', openid_callback, name="OpenID callback"),
     # re_path('/2fa/otp', log_in),
     #

@@ -172,7 +172,7 @@ class Frontend(models.Model):
         help_text=_("Name of HAProxy frontend"),
     )
     """ Tags """
-    tags = models.ListField(
+    tags = models.JSONField(
         models.SlugField(default=""),
         default=[],
         help_text=_("Tags to set on this object for search")
@@ -321,7 +321,7 @@ class Frontend(models.Model):
     )
 
     """ Generated configuration depending on Node listening on """
-    configuration = models.DictField(
+    configuration = models.JSONField(
         default={}
     )
     """ Type of template used by rsyslog to parse/forward logs """
@@ -334,7 +334,7 @@ class Frontend(models.Model):
         help_text=_("Tag used in rsyslog template")
     )
     """ Status of frontend for each nodes """
-    status = models.DictField(
+    status = models.JSONField(
         default={}
     )
     """ Mode of listening - tcp is handled by HAProxy, udp by Rsyslog """
@@ -430,7 +430,7 @@ class Frontend(models.Model):
         help_text=_("Local file path to listen on")
     )
     """ Kafka mode attributes """
-    kafka_brokers = models.ListField(
+    kafka_brokers = models.JSONField(
         default=["192.168.1.2:9092"],
         help_text=_("Kafka broker(s) to connect to"),
         verbose_name=_("Kafka Broker(s)")
@@ -730,16 +730,15 @@ class Frontend(models.Model):
         help_text=_("API key used to retrieve logs - as configured in Meraki settings"),
         default="",
     )
-    cisco_meraki_timestamp = models.DictField(
+    cisco_meraki_timestamp = models.JSONField(
         default={}
     )
-
+    # Proofpoint TAP attributes
     proofpoint_tap_host = models.TextField(
         help_text=_("ProofPoint TAP host"),
         default="https://tap-api-v2.proofpoint.com",
         verbose_name=_("ProofPoint API root url")
     )
-
     proofpoint_tap_endpoint = models.TextField(
         help_text=_("ProofPoint TAP endpoint"),
         choices=[
@@ -753,24 +752,33 @@ class Frontend(models.Model):
         default="/all",
         verbose_name=_("Types of messages to query from Proofpoint API")
     )
-
     proofpoint_tap_principal = models.TextField(
         help_text=_("ProofPoint TAP principal"),
         default="",
         verbose_name=_("API 'principal' (username)")
     )
-
     proofpoint_tap_secret = models.TextField(
         help_text=_("ProofPoint TAP secret"),
         default="",
         verbose_name=_("API 'secret' (password)")
+    )
+    # SentinelOne attributes
+    sentinel_one_host = models.TextField(
+        verbose_name = _("SentinelOne Host"),
+        help_text = _("Hostname (without scheme or path) of the SentinelOne server"),
+        default = "srv.sentinelone.net",
+    )
+    sentinel_one_apikey = models.TextField(
+        verbose_name = _("Sentinel One API key"),
+        help_text = _("API key used to retrieve logs - as configured in SentinelOne settings"),
+        default = "",
     )
 
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
 
-    keep_source_fields = models.DictField(
+    keep_source_fields = models.JSONField(
         default={}
     )
 
@@ -936,6 +944,9 @@ class Frontend(models.Model):
                     result['proofpoint_tap_endpoint'] = self.proofpoint_tap_endpoint
                     result['proofpoint_tap_principal'] = self.proofpoint_tap_principal
                     result['proofpoint_tap_secret'] = self.proofpoint_tap_secret
+                elif self.api_parser_type == "sentinel_one":
+                    result['sentinel_one_host'] = self.sentinel_one_host
+                    result['sentinel_one_apikey'] = self.sentinel_one_apikey
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
@@ -1191,13 +1202,17 @@ class Frontend(models.Model):
         for node_name, conf in self.configuration.items():
             if not conf:
                 return
+            test_conf = conf.replace("frontend {}".format(self.name),
+                                     "frontend test_{}".format(self.id or "test")) \
+                            .replace("listen {}".format(self.name),
+                                     "listen test_{}".format(self.id or "test"))
             if node_name != Cluster.get_current_node().name:
                 try:
                     global_config = Cluster().get_global_config()
                     cluster_api_key = global_config.cluster_api_key
                     infos = post("https://{}:8000/api/services/frontend/test_conf/".format(node_name),
                                  headers={'cluster-api-key': cluster_api_key},
-                                 data={'conf': conf, 'filename': test_filename, 'disabled': not self.enabled},
+                                 data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
                                  verify=False, timeout=9).json()
                 except Exception as e:
                     logger.error(e)
@@ -1208,10 +1223,7 @@ class Frontend(models.Model):
             else:
                 # Replace name of frontend to prevent duplicate frontend while testing conf
                 test_haproxy_conf(test_filename,
-                                  conf.replace("frontend {}".format(self.name),
-                                               "frontend test_{}".format(self.id or "test"))
-                                      .replace("listen {}".format(self.name),
-                                               "listen test_{}".format(self.id or "test")),
+                                  test_conf,
                                   disabled=(not self.enabled))
 
     def get_base_filename(self):
@@ -1581,6 +1593,7 @@ class Frontend(models.Model):
     def filebeat_only_conf(self):
         """ Check if this frontend has only filebeat configuration, not haproxy at all """
         return self.mode == "filebeat" and self.filebeat_listening_mode in ("udp", "file", "api")
+
 
 
 class Listener(models.Model):

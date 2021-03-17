@@ -14,12 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='kafka_brokers',
-            field=djongo.models.fields.ListField(default=['192.168.1.2:9092'], help_text='Kafka broker(s) to connect to', verbose_name='Kafka Broker(s)', null=True, blank=True),
-        ),
-        migrations.AlterField(
-            model_name='frontend',
-            name='kafka_brokers',
-            field=djongo.models.fields.ListField(default=['192.168.1.2:9092'], help_text='Kafka broker(s) to connect to', verbose_name='Kafka Broker(s)'),
+            field=djongo.models.fields.JSONField(default=['192.168.1.2:9092'], help_text='Kafka broker(s) to connect to', verbose_name='Kafka Broker(s)'),
         ),
         migrations.AddField(
             model_name='frontend',

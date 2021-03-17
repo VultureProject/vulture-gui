@@ -35,6 +35,8 @@ from authentication.base_repository import BaseRepository
 from toolkit.auth.authy_client import AuthyClient
 from toolkit.auth.vulturemail_client import VultureMailClient
 from toolkit.auth.totp_client import TOTPClient
+from toolkit.system.hashes import random_sha1
+from toolkit.network.network import get_proxy
 
 # Extern modules imports
 import requests
@@ -67,6 +69,7 @@ PROVIDERS_TYPE = (
     ('digitalocean', 'DigitalOcean'),
     ('bitbucket', 'Bitbucket'),
     ('gitea', 'Gitea'),
+    ('digital_pass', 'Digital Pass'),
 )
 
 
@@ -104,6 +107,11 @@ class OpenIDRepository(BaseRepository):
         help_text=_("Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. "
                     "See your identity provider's documentation.")
     )
+    scopes = models.JSONField(
+        default=["openid"],
+        verbose_name=_("Token scope"),
+        help_text=_("Scope to send while requesting token")
+    )
     issuer = models.TextField(
         default="",
         verbose_name=_("Issuer to use"),
@@ -132,6 +140,9 @@ class OpenIDRepository(BaseRepository):
     last_config_time = models.DateTimeField(
         null=True
     )
+    id_alea = models.TextField(
+        default=random_sha1
+    )
 
     def __str__(self):
         return "{} ({})".format(self.name, self.str_provider())
@@ -153,15 +164,14 @@ class OpenIDRepository(BaseRepository):
 
     def to_template(self):
         """ Returns the attributes of the class """
-        print("YOUHOU !!!!!")
         return {
             'id': str(self.id),
             'name': self.name,
-            'provider': self.provider
+            'provider': self.provider,
+            'id_alea': self.id_alea
         }
 
     def to_html_template(self):
-        # FIXME
         """ Returns needed attributes for html rendering """
         return {
             'id': str(self.id),
@@ -176,7 +186,6 @@ class OpenIDRepository(BaseRepository):
         super().save(*args, **kwargs)
 
     def get_client(self):
-        # FIXME
         if self.otp_phone_service == "authy" and self.otp_type in ["phone", "onetouch"]:
             return AuthyClient(self)
         elif self.otp_type == 'email' and self.otp_mail_service == 'vlt_mail_service':
@@ -192,7 +201,7 @@ class OpenIDRepository(BaseRepository):
         refresh_time = timezone.now() - timedelta(hours=CONFIG_RELOAD_INTERVAL)
         if (self.last_config_time is None or self.last_config_time < refresh_time)\
                 or test:
-            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url))
+            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url), proxies=get_proxy())
             r.raise_for_status()
             config = r.json()
             logger.info(config)
@@ -200,7 +209,7 @@ class OpenIDRepository(BaseRepository):
             self.authorization_endpoint = config['authorization_endpoint']
             self.token_endpoint = config['token_endpoint']
             self.userinfo_endpoint = config['userinfo_endpoint']
-            self.end_session_endpoint = config.get('end_session_endpoint', config['revocation_endpoint'])
+            self.end_session_endpoint = config.get('end_session_endpoint') or config['revocation_endpoint']
             self.last_config_time = timezone.now()
             if not test:
                 self.save()
@@ -208,7 +217,9 @@ class OpenIDRepository(BaseRepository):
                 return config
 
     def get_oauth2_session(self, redirect_uri):
-        return OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=["openid"])
+        session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=self.scope)
+        session.proxies=get_proxy()
+        return session
 
     def get_authorization_url(self, oauth2_session):
         """

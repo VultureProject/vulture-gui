@@ -22,8 +22,8 @@ class Migration(migrations.Migration):
                 ('_id', djongo.models.fields.ObjectIdField(auto_created=True, default=bson.objectid.ObjectId, primary_key=True, serialize=False)),
                 ('name', models.SlugField(help_text='Friendly name', max_length=255, unique=True, verbose_name='Friendly name')),
                 ('acls', models.TextField(default='')),
-                ('rules', djongo.models.fields.ListField(default=[])),
-                ('reputation_tags', djongo.models.fields.ListField(default=[], help_text='Reputation tags used in this configuration', verbose_name=models.SlugField(choices=[['attack', 'Attack']], default='attack'))),
+                ('rules', djongo.models.fields.JSONField(default=[])),
+                ('reputation_tags', djongo.models.fields.JSONField(default=[], help_text='Reputation tags used in this configuration', verbose_name=models.SlugField(choices=[['attack', 'Attack']], default='attack'))),
             ],
         ),
         migrations.CreateModel(

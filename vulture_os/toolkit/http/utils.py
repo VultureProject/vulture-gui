@@ -62,10 +62,11 @@ class SSLAdapter(HTTPAdapter):
 
 
 def build_url(scheme, domain, port, path):
-    url = scheme + domain
+    url = scheme + "://" + domain
     if (scheme == "https" and port != 443) or (scheme == "http" and port != 80):
         url += ":{}".format(port)
     url += path
+    print(url)
     return url
 
 
@@ -481,10 +482,3 @@ def check_uri(uri):
     if match:
         return True
     return False
-
-def build_url(scheme, fqdn, port, path):
-    res = "{}://{}".format(scheme, fqdn)
-    if (scheme == "http" and port != 80) or \
-            (scheme == "https" and port != 443):
-        res += ":{}".format(port)
-    return res + path

@@ -26,7 +26,7 @@ __doc__ = 'System utils authentication'
 
 # Django system imports
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 
 # Django project imports
 # FIXME from gui.models.repository_settings  import KerberosRepository, LDAPRepository
@@ -184,20 +184,16 @@ class Authentication(object):
             raise e or AuthenticationError
 
     def register_user(self, authentication_results):
-        oauth2_token = None
-        # No OAuth2 disabled
-        if self.workflow.authentication.enable_oauth2:
-            oauth_timeout = self.workflow.authentication.oauth_timeout
-            oauth2_token = Uuid4().generate()
-            self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + oauth2_token)
-            self.redis_oauth2_session.register_authentication(authentication_results['data'],
-                                                              oauth_timeout)
-            logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
+        # Always create oauth2 token, with oauth2_timeout or auth_timeout
+        oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
+        oauth2_token = Uuid4().generate()
+        self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + oauth2_token)
+        self.redis_oauth2_session.register_authentication(authentication_results, oauth_timeout)
+        logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
 
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),
                                                                           str(self.backend_id),
-                                                                          self.workflow.get_redirect_uri(),
                                                                           self.workflow.authentication.otp_repository,
                                                                           self.credentials[0], self.credentials[1],
                                                                           oauth2_token,
@@ -282,6 +278,9 @@ class Authentication(object):
                                 secure=self.get_redirect_url().startswith('https'))
 
         return response
+
+    def generate_response(self):
+        return HttpResponseRedirect(self.get_redirect_url())
 
 
 class POSTAuthentication(Authentication):

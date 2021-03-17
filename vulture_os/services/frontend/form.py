@@ -36,6 +36,7 @@ from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (COMPRESSION_ALGO_CHOICES, Frontend, FrontendReputationContext, Listener,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, IMPCAP_FILTER_CHOICES,
                                       DARWIN_MODE_CHOICES, REDIS_MODE_CHOICES, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST)
+
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
 from system.error_templates.models import ErrorTemplate
@@ -214,7 +215,7 @@ class FrontendForm(ModelForm):
                            "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                            "cybereason_host", "cybereason_username", "cybereason_password",
                            "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
-                           'proofpoint_tap_secret', 'darwin_mode']:
+                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode']:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -274,7 +275,9 @@ class FrontendForm(ModelForm):
                   "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                   "cybereason_host", "cybereason_username", "cybereason_password",
                   "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
-                  'proofpoint_tap_secret', 'darwin_mode')
+                  "proofpoint_tap_secret",
+                  "sentinel_one_host", "sentinel_one_apikey",
+                  'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -319,7 +322,7 @@ class FrontendForm(ModelForm):
             'redis_server': TextInput(attrs={'class': 'form-control'}),
             'redis_port': TextInput(attrs={'class': 'form-control'}),
             'redis_key': TextInput(attrs={'class': 'form-control'}),
-            'redis_password': TextInput(attrs={'class': 'form-control'}),
+            'redis_password': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
             'elasticsearch_host': TextInput(attrs={
                 'class': 'form-control',
@@ -331,7 +334,7 @@ class FrontendForm(ModelForm):
             'elasticsearch_password': PasswordInput(attrs={'class': 'form-control'}),
             'elasticsearch_index': TextInput(attrs={'class': 'form-control'}),
             'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
-            'forcepoint_password': PasswordInput(attrs={'class': 'form-control'}),
+            'forcepoint_password': TextInput(attrs={'class': 'form-control'}),
             'symantec_username': TextInput(attrs={'class': 'form-control'}),
             'symantec_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'aws_access_key_id': TextInput(attrs={'class': 'form-control'}),
@@ -369,6 +372,8 @@ class FrontendForm(ModelForm):
             'proofpoint_tap_endpoint': Select(attrs={'class': 'form-control select2'}),
             'proofpoint_tap_principal': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):

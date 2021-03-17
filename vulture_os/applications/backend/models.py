@@ -150,7 +150,7 @@ class Backend(models.Model):
         default="{}"
     )
     """ Status of frontend for each nodes """
-    status = models.DictField(
+    status = models.JSONField(
         default={}
     )
     """ Headers """
@@ -224,7 +224,7 @@ class Backend(models.Model):
         verbose_name=_("Version")
     )
     """ """
-    http_health_check_headers = models.DictField(
+    http_health_check_headers = models.JSONField(
         default={},
         help_text=_("HTTP Health Check Headers"),
         verbose_name=_("HTTP Health Check Headers")
@@ -270,7 +270,7 @@ class Backend(models.Model):
         verbose_name=_("Balancing parameter")
     )
     """ Tags """
-    tags = models.ListField(
+    tags = models.JSONField(
         models.SlugField(default=""),
         default=[],
         help_text=_("Tags to set on this object for search")

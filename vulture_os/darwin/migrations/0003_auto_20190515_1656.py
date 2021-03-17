@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('zone', models.TextField()),
-                ('ids', djongo.models.fields.ListField(default=[], verbose_name=django.db.models.fields.IntegerField)),
+                ('ids', djongo.models.fields.JSONField(default=[], verbose_name=django.db.models.fields.IntegerField)),
                 ('key', models.TextField()),
                 ('value', models.TextField()),
                 ('url', models.TextField()),

@@ -1,6 +1,6 @@
 {% extends "layout2.html" %}
 {% load i18n %}
-{% load staticfiles %}
+{% load static %}
 
 {% block css_include %}
 
@@ -400,6 +400,17 @@
                               <div class="col-sm-5">
                                 {{form.oauth_redirect_uris}}
                                 {{form.oauth_redirect_uris.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row oauth">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.oauth_timeout.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.oauth_timeout}}
+                                {{form.oauth_timeout.errors|safe}}
                               </div>
                             </div>
                           </div>
@@ -974,15 +985,17 @@
           for(field of form['controls']) {
             field_val = field['value'];
             field_type = field['type'];
-            for( sso_profile of JSON.parse($('#id_sso_forward_content').val()) ) {
-              if( sso_profile['send_type'] != "form" ) {
-                continue;
-              }
-              field_name = sso_profile['name'].split(';vlt;')[0];
-              field_id = sso_profile['name'].split(';vlt;')[1];
-              if( field_name == field['name'] || field_id == field['id'] ) {
-                field_val = sso_profile['value'];
-                field_type = sso_profile['type'];
+            if( $('#id_sso_forward_content').val() != "" ) {
+              for( sso_profile of JSON.parse() ) {
+                if( sso_profile['send_type'] != "form" ) {
+                  continue;
+                }
+                field_name = sso_profile['name'].split(';vlt;')[0];
+                field_id = sso_profile['name'].split(';vlt;')[1];
+                if( field_name == field['name'] || field_id == field['id'] ) {
+                  field_val = sso_profile['value'];
+                  field_type = sso_profile['type'];
+                }
               }
             }
             result += '<div class="row">';

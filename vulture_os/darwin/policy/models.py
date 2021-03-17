@@ -532,14 +532,14 @@ class FilterPolicy(models.Model):
         )
 
     """ The list of custom fields to take from the rsyslog message to send to Darwin """
-    mmdarwin_parameters = models.ListField(
+    mmdarwin_parameters = models.JSONField(
         default=[],
         blank=True,
         help_text=_("!!! ADVANCED FEATURE !!! the list of rsyslog fields to take when executing the custom call to Darwin (syntax is Rsyslog "),
         validators=[validate_mmdarwin_parameters])
 
     """ The tag put in rsyslog enrichment field in case of match """
-    enrichment_tags = models.ListField(
+    enrichment_tags = models.JSONField(
         default=[],
         blank=True,
         help_text=_("The tag to use as enrichment value for this filter, if none is set the filter type is used")
@@ -552,7 +552,7 @@ class FilterPolicy(models.Model):
         )
 
     """ Status of filter for each nodes """
-    status = models.DictField(
+    status = models.JSONField(
         default={},
         help_text=_("The statuses of the filter on each cluster's node"),
         )
@@ -582,7 +582,7 @@ class FilterPolicy(models.Model):
     )
 
     """ The configuration written in the filter's configuration file """
-    config = models.DictField(
+    config = models.JSONField(
         default={},
         blank=True,
         help_text=_("A dictionary containing all specific parameters of this filter"),

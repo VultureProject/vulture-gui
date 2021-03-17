@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='filterpolicy',
             name='enrichment_tags',
-            field=djongo.models.fields.ListField(blank=True, default=list(), help_text='The tag to use as enrichment value for this filter, if none is set the filter type is used'),
+            field=djongo.models.fields.JSONField(blank=True, default=list(), help_text='The tag to use as enrichment value for this filter, if none is set the filter type is used'),
         ),
         migrations.AddField(
             model_name='filterpolicy',
@@ -85,10 +85,14 @@ class Migration(migrations.Migration):
             name='cache_size',
             field=models.PositiveIntegerField(default=0, help_text='The number of cache entries the filter can have to keep previous results', verbose_name='Cache size'),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="filterpolicy",
+            name="config",
+        ),
+        migrations.AddField(
             model_name='filterpolicy',
             name='config',
-            field=djongo.models.fields.DictField(blank=True, default={}, help_text='A dictionary containing all specific parameters of this filter'),
+            field=djongo.models.fields.JSONField(blank=True, default={}, help_text='A dictionary containing all specific parameters of this filter'),
         ),
         migrations.AlterField(
             model_name='filterpolicy',
@@ -110,10 +114,14 @@ class Migration(migrations.Migration):
             name='mmdarwin_enabled',
             field=models.BooleanField(default=False, help_text='!!! ADVANCED FEATURE !!! Activates a custom call to Darwin from Rsyslog'),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="filterpolicy",
+            name="mmdarwin_parameters",
+        ),
+        migrations.AddField(
             model_name='filterpolicy',
             name='mmdarwin_parameters',
-            field=djongo.models.fields.ListField(blank=True, default=[], help_text='!!! ADVANCED FEATURE !!! the list of rsyslog fields to take when executing the custom call to Darwin (syntax is Rsyslog ', validators=[darwin.policy.models.validate_mmdarwin_parameters]),
+            field=djongo.models.fields.JSONField(blank=True, default=[], help_text='!!! ADVANCED FEATURE !!! the list of rsyslog fields to take when executing the custom call to Darwin (syntax is Rsyslog ', validators=[darwin.policy.models.validate_mmdarwin_parameters]),
         ),
         migrations.AlterField(
             model_name='filterpolicy',
@@ -135,10 +143,14 @@ class Migration(migrations.Migration):
             name='policy',
             field=models.ForeignKey(help_text='The policy associated with this filter instance', on_delete=django.db.models.deletion.CASCADE, to='darwin.DarwinPolicy'),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="filterpolicy",
+            name="status",
+        ),
+        migrations.AddField(
             model_name='filterpolicy',
             name='status',
-            field=djongo.models.fields.DictField(default={}, help_text="The statuses of the filter on each cluster's node"),
+            field=djongo.models.fields.JSONField(default={}, help_text="The statuses of the filter on each cluster's node"),
         ),
         migrations.AlterField(
             model_name='filterpolicy',

@@ -72,7 +72,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='userauthentication',
             name='oauth_redirect_uris',
-            field=djongo.models.fields.ListField(default=['https://myapp.com/oauth2/callback'], help_text='Use one line per allowed URI', verbose_name=models.CharField()),
+            field=djongo.models.fields.JSONField(default=['https://myapp.com/oauth2/callback'], help_text='Use one line per allowed URI', verbose_name=models.CharField()),
         ),
         migrations.AddField(
             model_name='userauthentication',
