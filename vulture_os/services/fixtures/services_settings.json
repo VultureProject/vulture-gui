@@ -34,5 +34,11 @@
     "pk": 1,
     "fields": {
     }
+  },
+  {
+    "model": "services.FilebeatSettings",
+    "pk": 1,
+    "fields": {
+    }
   }
 ]

@@ -57,6 +57,7 @@ RC_CONF_OWNERS = "root:wheel"
 # service name : jail name
 JAIL_SERVICES = {
     'rsyslogd': "rsyslog",
+    'filebeat': "rsyslog", # Filebeat is running into rsyslog jail
     'redis': "redis",
     'sentinel': "redis",  # sentinel is running into redis jail
     'mongod': "mongodb",

@@ -322,6 +322,8 @@ class Node(models.Model):
             proto = "tcp"
             if l.frontend.mode == "log" and "udp" in l.frontend.listening_mode:
                 proto = l.frontend.listening_mode
+            elif l.frontend.mode == "filebeat" and l.frontend.filebeat_listening_mode == "udp":
+                proto = l.frontend.filebeat_listening_mode
             """ Return (ip, port, interface.family) """
             listeners_enabled.append((l.whitelist_ips, l.network_address.ip, l.port, l.rsyslog_port,
                                       proto, l.network_address.family, l.max_src, l.max_rate))

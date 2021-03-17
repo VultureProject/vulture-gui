@@ -4,13 +4,12 @@
 
 {% block css_include %}
 
-
 {% endblock %}
 
 {% block js_include %}
+  <script>var filebeat_config = {{ filebeat_module_config|safe }};</script>
   <script src="{% static 'js/listener.js' %}"></script>
 {% endblock %}
-
 
 {% block content %}
 
@@ -63,7 +62,7 @@
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
                   <li><a href="#tab_network" data-toggle="tab" class="network-mode">{% trans "Listeners" %}</a></li>
-                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode">{% trans "API Client" %}</a></li>
+                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode">{% trans "Vendor API" %}</a></li>
                   <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% trans "HTTP Options" %}</a></li>
                   <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% trans "HTTP Headers" %}</a></li>
                   <li><a href="#tab_enrichment" data-toggle="tab" class="logging">{% trans "Logs Enrichment" %}</a></li>
@@ -147,11 +146,11 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row http-mode-logging -->
-                    <div class="row log-mode">
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode no-filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Listening mode" %}</label>
+                          <label class="col-sm-4 control-label">{% trans "Rsyslog Listening mode" %}</label>
                           <div class="col-sm-5">
                             {{form.listening_mode}}
                             {{form.listening_mode.errors|safe}}
@@ -159,7 +158,40 @@
                         </div>
                       </div>
                     </div> <!-- /.row log-mode -->
-                    <div class="row log-mode" id="ruleset-div">
+                    <div class="row log-mode filebeat-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Filebeat Listening mode" %}</label>
+                          <div class="col-sm-5">
+                            {{form.filebeat_listening_mode}}
+                            {{form.filebeat_listening_mode.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode filebeat-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Filebeat Module" %}</label>
+                          <div class="col-sm-5">
+                            {{form.filebeat_module}}
+                            {{form.filebeat_module.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode filebeat-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Filebeat Configuration" %}</label>
+                          <div class="col-sm-5">
+                            {{form.filebeat_config}}
+                            {{form.filebeat_config.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode no-filebeat-mode" id="ruleset-div">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% trans "Input logs type" %}</label>
@@ -181,7 +213,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row log-mode -->
-                    <div class="row log-mode file-mode kafka-mode redis-mode">
+                    <div class="row log-mode filebeat-mode filebeat-api-mode file-mode kafka-mode redis-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.node.label }}</label>
@@ -302,7 +334,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row log-mode -->
-                    <div class="row log-mode listening-tcp">
+                    <div class="row log-mode listening-tcp no-filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% trans "Disable 'Octet-counted framing' (advanced) :" %}</label>
