@@ -96,6 +96,17 @@
                   </div> <!-- /.row -->
                   <div class="row">
                     <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.scopes.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.scopes}}
+                          {{form.scopes.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
                       <div class="text-center mar-btm">
                         <button class="btn btn-warning" id="test_provider" type="button">
                           {% trans "Retrieve configuration" %}
@@ -181,6 +192,7 @@
       provider_url: $('#id_provider_url').val(),
       client_id: $('#id_client_id').val(),
       client_secret: $('#id_client_secret').val(),
+      scopes: $('#id_scopes').val(),
     };
 
     var type_ = $('#id_provider').val();

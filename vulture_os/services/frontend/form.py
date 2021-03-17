@@ -213,7 +213,7 @@ class FrontendForm(ModelForm):
                            "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                            "cybereason_host", "cybereason_username", "cybereason_password",
                            "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
-                           'proofpoint_tap_secret', 'darwin_mode']:
+                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode']:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -272,7 +272,9 @@ class FrontendForm(ModelForm):
                   "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                   "cybereason_host", "cybereason_username", "cybereason_password",
                   "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
-                  'proofpoint_tap_secret', 'darwin_mode')
+                  "proofpoint_tap_secret",
+                  "sentinel_one_host", "sentinel_one_apikey",
+                  'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -364,6 +366,8 @@ class FrontendForm(ModelForm):
             'proofpoint_tap_endpoint': Select(attrs={'class': 'form-control select2'}),
             'proofpoint_tap_principal': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):

@@ -107,6 +107,11 @@ class OpenIDRepository(BaseRepository):
         help_text=_("Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. "
                     "See your identity provider's documentation.")
     )
+    scopes = models.JSONField(
+        default=["openid"],
+        verbose_name=_("Token scope"),
+        help_text=_("Scope to send while requesting token")
+    )
     issuer = models.TextField(
         default="",
         verbose_name=_("Issuer to use"),
@@ -212,7 +217,7 @@ class OpenIDRepository(BaseRepository):
                 return config
 
     def get_oauth2_session(self, redirect_uri):
-        session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=["openid"])
+        session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=self.scope)
         session.proxies=get_proxy()
         return session
 
