@@ -40,6 +40,7 @@ from toolkit.api_parser.cortex_xdr.cortex_xdr import CortexXDRParser
 from toolkit.api_parser.cybereason.cybereason import CybereasonParser
 from toolkit.api_parser.cisco_meraki.cisco_meraki import CiscoMerakiParser
 from toolkit.api_parser.proofpoint_tap.proofpoint_tap import ProofpointTAPParser
+from toolkit.api_parser.sentinel_one.sentinel_one import SentinelOneParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -61,6 +62,7 @@ PARSER_LIST = {
     "cisco_meraki": CiscoMerakiParser,
     "cybereason": CybereasonParser,
     "proofpoint_tap": ProofpointTAPParser,
+    "sentinel_one": SentinelOneParser,
 }
 
 

@@ -45,13 +45,14 @@ class OpenIDRepositoryForm(ModelForm):
 
     class Meta:
         model = OpenIDRepository
-        fields = ('name', 'provider', 'provider_url', 'client_id', 'client_secret')
+        fields = ('name', 'provider', 'provider_url', 'client_id', 'client_secret', 'scopes')
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'provider': Select(choices=PROVIDERS_TYPE, attrs={'class': 'form-control select2'}),
             'provider_url': TextInput(attrs={'class': 'form-control'}),
             'client_id': TextInput(attrs={'class': 'form-control'}),
-            'client_secret': TextInput(attrs={'class': 'form-control'})
+            'client_secret': TextInput(attrs={'class': 'form-control'}),
+            'scopes': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"})
         }
 
     def __init__(self, *args, **kwargs):
@@ -65,9 +66,17 @@ class OpenIDRepositoryForm(ModelForm):
         if not self.initial.get('name'):
             self.fields['name'].initial = "OpenID Repository"
 
+        self.initial['scopes'] = ','.join(self.initial.get('scopes', []) or self.fields['scopes'].initial)
+
     def clean_name(self):
         """ Replace all spaces by underscores to prevent bugs later """
         return self.cleaned_data['name'].replace(' ', '_')
+
+    def clean_scopes(self):
+        scopes = self.cleaned_data.get('scopes')
+        if scopes:
+            return [i.replace(" ", "") for i in self.cleaned_data['scopes'].split(',')]
+        return []
 
     def clean(self, *args, **kwargs):
         cleaned_data = super().clean()

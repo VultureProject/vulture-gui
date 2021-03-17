@@ -681,13 +681,12 @@ class Frontend(models.Model):
     cisco_meraki_timestamp = models.JSONField(
         default={}
     )
-
+    # Proofpoint TAP attributes
     proofpoint_tap_host = models.TextField(
         help_text=_("ProofPoint TAP host"),
         default="https://tap-api-v2.proofpoint.com",
         verbose_name=_("ProofPoint API root url")
     )
-
     proofpoint_tap_endpoint = models.TextField(
         help_text=_("ProofPoint TAP endpoint"),
         choices=[
@@ -701,17 +700,26 @@ class Frontend(models.Model):
         default="/all",
         verbose_name=_("Types of messages to query from Proofpoint API")
     )
-
     proofpoint_tap_principal = models.TextField(
         help_text=_("ProofPoint TAP principal"),
         default="",
         verbose_name=_("API 'principal' (username)")
     )
-
     proofpoint_tap_secret = models.TextField(
         help_text=_("ProofPoint TAP secret"),
         default="",
         verbose_name=_("API 'secret' (password)")
+    )
+    # SentinelOne attributes
+    sentinel_one_host = models.TextField(
+        verbose_name = _("SentinelOne Host"),
+        help_text = _("Hostname (without scheme or path) of the SentinelOne server"),
+        default = "srv.sentinelone.net",
+    )
+    sentinel_one_apikey = models.TextField(
+        verbose_name = _("Sentinel One API key"),
+        help_text = _("API key used to retrieve logs - as configured in SentinelOne settings"),
+        default = "",
     )
 
     last_api_call = models.DateTimeField(
@@ -884,6 +892,9 @@ class Frontend(models.Model):
                     result['proofpoint_tap_endpoint'] = self.proofpoint_tap_endpoint
                     result['proofpoint_tap_principal'] = self.proofpoint_tap_principal
                     result['proofpoint_tap_secret'] = self.proofpoint_tap_secret
+                elif self.api_parser_type == "sentinel_one":
+                    result['sentinel_one_host'] = self.sentinel_one_host
+                    result['sentinel_one_apikey'] = self.sentinel_one_apikey
 
             if self.enable_logging_reputation:
                 result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
