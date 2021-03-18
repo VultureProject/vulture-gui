@@ -169,6 +169,7 @@
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
                           <button type="button" @click="preview('html_login')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                          <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                         </div>
                       </div>
                     </div>
@@ -201,6 +202,7 @@
                       <label class="col-sm-4 control-label">&nbsp;</label>
                       <div class="col-sm-5">
                         <button type="button" @click="preview('html_logout')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                       </div>
                     </div>
                   </div> <!-- /.tab-pane -->
@@ -246,6 +248,7 @@
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
                           <button type="button" @click="preview('html_learning')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                          <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                         </div>
                       </div>
                     </div>
@@ -294,6 +297,7 @@
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
                           <button type="button" @click="preview('html_self')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                          <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                         </div>
                       </div>
                     </div>
@@ -366,6 +370,7 @@
                       <label class="col-sm-4 control-label">&nbsp;</label>
                       <div class="col-sm-5">
                         <button type="button" @click="preview('html_password')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                        <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                       </div>
                     </div>
                   </div> <!-- /.tab-pane -->
@@ -491,6 +496,7 @@
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
                           <button type="button" @click="preview('html_otp')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                          <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                         </div>
                       </div>
                     </div>
@@ -529,6 +535,7 @@
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
                           <button type="button" @click="preview('html_message')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                          <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                         </div>
                       </div>
                     </div>
@@ -606,6 +613,7 @@
                     <div class="row">
                         <div style="text-align:center;">
                             <button type="button" @click="preview('html_error')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                            <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                         </div>
                     </div>
                   </div> <!-- /.tab-pane -->
@@ -691,6 +699,7 @@
                         <label class="col-sm-4 control-label">&nbsp;</label>
                         <div class="col-sm-5">
                           <button type="button" @click="preview('html_registration')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                          <button type="button" class="btn btn-warning btn-images">{% trans "Show Images" %}</button>
                         </div>
                       </div>
                     </div>
@@ -742,7 +751,40 @@
         </div>
       </div>
     </form>
+    <div id="show_images" class="modal fade">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title">{% trans "Templates Images" %}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-lg-12 col-md-12 col-sm-12">
+                {% trans "Click on the image to copy the URI." %}
+              </div>
+
+              <div class="col-lg-12 col-md-12 col-sm-12">
+                <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="image_list">
+                  <thead>
+                    <tr>
+                      <th width="20%">{% trans "Preview" %}</th>
+                      <th width="80%"><span><i class="fa fa-clipboard"></i></span>&nbsp;&nbsp;{% trans "URI" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
+  <textarea id="toCopy"></textarea>
 
 {% endblock %}
 
@@ -856,6 +898,71 @@
 
     /* Initialize all custom fields */
     refresh_table_events();
+
+    $('#image_list').DataTable({
+    "searching": false,
+    "iDisplayLength": 6,
+    "autoWidth": false,
+    "order": [[1, 'asc']],
+    "aoColumns": [
+        {'mData': 'preview', 'name': 'preview', 'aTargets': [0], 'bSortable': false, 'mRender': function(data, type, row){
+            return "<img src='" + data + "' style='width: 100%; height:auto;' />";
+        }},
+        {'mData': 'uri', 'name': 'uri', 'aTargets': [1], 'bSortable': false},
+    ],
+    "language": {
+        "lengthMenu": '_MENU_',
+        "pagingType": "bootstrap",
+        "paginate": {
+          "next": '<img src="{% static 'img/right.png' %}"/>',
+          "previous": '<img src="{% static 'img/left.png' %}"/>'
+        }
+    },
+    fnCreatedRow: function(row, data) {
+      $(row).on("click", function(e) {
+        e.stopPropagation()
+        copy(data.uri)
+
+        new PNotify({
+            title: 'URI Copied',
+            text: 'Press Ctrl+v to paste the image URI.',
+            type: 'success',
+            styling: 'bootstrap3',
+            nonblock: {
+                nonblock: true
+            }
+        });
+      })
+    }
+  });
+
+  function copy(text){
+    $('#toCopy').val(text);
+    $('#toCopy').show();
+    toCopy.select();
+    document.execCommand('copy');
+    $('#toCopy').hide();
+  }
+
+  setTimeout(() => {
+    axios.get("/api/v1/portal/images/")
+      .then((response) => {
+        for (let image of response.data.res) {
+          let data = {
+            id: image.id,
+            name: image.name,
+            preview: image.create_preview_html,
+            uri: image.get_image_uri
+          }
+
+          $('#image_list').dataTable().fnAddData(data)
+        }
+      })
+  }, 200)
+
+  $(".btn-images").click(function(e) {
+    $('#show_images').modal('show')
+  })
 
   }); // end of function()
 
