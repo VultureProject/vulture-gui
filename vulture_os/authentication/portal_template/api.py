@@ -24,8 +24,8 @@ __doc__ = 'Frontends API'
 
 
 # Django system imports
-from authentication.portal_template.form import PortalTemplateForm
-from authentication.portal_template.models import PortalTemplate
+from authentication.portal_template.models import PortalTemplate, TemplateImage
+from authentication.portal_template.form import PortalTemplateForm, TemplateImageForm
 from django.views.decorators.http import require_http_methods
 from django.utils.translation import ugettext_lazy as _
 from django.utils.decorators import method_decorator
@@ -171,3 +171,39 @@ def portal_template_clone(request):
         return JsonResponse({
             "error": _("An error has occurred")
         }, status=500)
+
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PortalImageAPIv1(View):
+    @api_need_key("cluster_api_key")
+    def get(self, request):
+        try:
+            object_id = request.GET.get('object_id')
+            name = request.GET.get('name')
+
+            if object_id:
+                ret = TemplateImage.objects.get(pk=object_id).to_dict()
+            elif name:
+                ret = TemplateImage.objects.get(name=name).to_dict()
+            else:
+                ret = [p.to_dict() for p in TemplateImage.objects.all()]
+            
+            return JsonResponse({
+                "res": ret
+            })
+
+        except TemplateImage.DoesNotExist:
+            return JsonResponse({
+                "error": _("Object does not exist")
+            }, status=404)
+        
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+            if settings.DEV_MODE:
+                error = str(e)
+            
+            return JsonResponse({
+                "error": error
+            }, status=500)
