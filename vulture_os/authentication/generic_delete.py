@@ -25,7 +25,7 @@ __doc__ = 'Classes used to delete objects'
 # Django system imports
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponseNotFound, HttpResponseRedirect
 from django.http.response import JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -70,7 +70,7 @@ class DeleteView(View):
         try:
             obj_inst = self.obj.objects.get(pk=object_id)
         except ObjectDoesNotExist:
-            return HttpResponseForbidden('Object not found.')
+            return HttpResponseNotFound('Object not found.')
 
         used_by = self.used_by(obj_inst)
 
@@ -93,7 +93,7 @@ class DeleteView(View):
             try:
                 obj_inst = self.obj.objects.get(pk=object_id)
             except ObjectDoesNotExist:
-                return HttpResponseForbidden('Object not found.')
+                return HttpResponseNotFound('Object not found.')
             obj_inst.delete()
         
         if kwargs.get('api'):
