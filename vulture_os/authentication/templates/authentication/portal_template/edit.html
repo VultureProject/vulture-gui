@@ -921,7 +921,7 @@
     fnCreatedRow: function(row, data) {
       $(row).on("click", function(e) {
         e.stopPropagation()
-        copy(data.uri)
+        copy(data.preview)
 
         new PNotify({
             title: 'URI Copied',
