@@ -25,7 +25,7 @@ __doc__ = 'Classes used to delete objects'
 # Django system imports
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponseNotFound, HttpResponseRedirect
 from django.http.response import JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -41,7 +41,7 @@ from authentication.otp.models import OTPRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
 from authentication.auth_access_control.models import AuthAccessControl
-from authentication.portal_template.models import PortalTemplate
+from authentication.portal_template.models import PortalTemplate, TemplateImage
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -70,7 +70,7 @@ class DeleteView(View):
         try:
             obj_inst = self.obj.objects.get(pk=object_id)
         except ObjectDoesNotExist:
-            return HttpResponseForbidden('Injection detected.')
+            return HttpResponseNotFound('Object not found.')
 
         used_by = self.used_by(obj_inst)
 
@@ -84,13 +84,16 @@ class DeleteView(View):
         })
 
     def post(self, request, object_id, **kwargs):
-        confirm = request.POST.get('confirm', request.JSON.get('confirm'))
+        if hasattr(request, "JSON"):
+            confirm = request.JSON.get('confirm')
+        else:
+            confirm = request.POST.get('confirm')
 
         if confirm == 'yes':
             try:
                 obj_inst = self.obj.objects.get(pk=object_id)
             except ObjectDoesNotExist:
-                return HttpResponseForbidden('Injection detected.')
+                return HttpResponseNotFound('Object not found.')
             obj_inst.delete()
         
         if kwargs.get('api'):
@@ -185,3 +188,9 @@ class DeletePortalTemplate(DeleteView):
     obj = PortalTemplate
     redirect_url = "/portal/template/"
     delete_url = "/portal/template/delete/"
+
+class DeletePortalImage(DeleteView):
+    menu_name = _("Authentication -> Portal Template -> Delete")
+    obj = TemplateImage
+    redirect_url = "/portal/template/"
+    delete_url = "/portal/images/delete/"

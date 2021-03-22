@@ -1,0 +1,11 @@
+{% load i18n %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="form-group">
+            <label>{% trans "Cascading Style sheet " %}</label>
+            {{ form.css }}
+            {{form.css.errors}}
+        </div>
+    </div>
+</div>
