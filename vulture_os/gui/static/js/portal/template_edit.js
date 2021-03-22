@@ -71,6 +71,9 @@ let template_edit_vue = new Vue({
 
                     //css = css.replace('"static', '"/static');
                     html = html.replace('\{\{style\}\}', "<style>" + css + "</style>");
+                    for (let [image_tag, values] of Object.entries(images_list)) {
+                        html = html.replace(`\{\{${image_tag}\}\}`, values.preview)
+                    }
                     html = html.replace('\{\{message\}\}', error_403 + "<br>" + error_404 + "<br>" + error_405 + "<br>" + error_406 + "<br>" + error_500 + "<br>" + error_501 + "<br>" + error_502 + "<br>" + error_503 + "<br>" + error_504);
                     win.document.write(html);
                     break
@@ -101,6 +104,9 @@ let template_edit_vue = new Vue({
 
                 case "html_logout":
                     var win = window.open('', 'logout_preview');
+                    for (let [image_tag, values] of Object.entries(images_list)) {
+                        html = html.replace(`\{\{${image_tag}\}\}`, values.preview)
+                    }
                     html = html.replace('\{\{style\}\}', '<style>' + css + '</style>');
                     html = html.replace('\{\{app_url\}\}', 'http://app.example.com/test/');
                     html = html.replace("\{% csrf_token %\}", "");
@@ -112,6 +118,9 @@ let template_edit_vue = new Vue({
 
                 case "html_learning":
                     var win = window.open('', 'learning_preview');
+                    for (let [image_tag, values] of Object.entries(images_list)) {
+                        html = html.replace(`\{\{${image_tag}\}\}`, values.preview)
+                    }
                     html = html.replace('\{\{style\}\}', '<style>' + css + '</style>');
                     html = html.replace("\{\{form_begin\}\}", "<form action='/login' method='POST' autocomplete='off'>");
                     html = html.replace("\{\{form_end\}\}", "</form>");
@@ -125,6 +134,9 @@ let template_edit_vue = new Vue({
 
                 case "html_self":
                     var win = window.open('', 'self_preview');
+                    for (let [image_tag, values] of Object.entries(images_list)) {
+                        html = html.replace(`\{\{${image_tag}\}\}`, values.preview)
+                    }
                     html = html.replace('\{\{style\}\}', '<style>' + css + '</style>');
                     html = html.replace("\{\{form_begin\}\}", "<form action='/login' method='POST' autocomplete='off'>");
                     html = html.replace("\{\{form_end\}\}", "</form>");
@@ -140,6 +152,9 @@ let template_edit_vue = new Vue({
 
                 case "html_password":
                     var win = window.open('', 'password_preview');
+                    for (let [image_tag, values] of Object.entries(images_list)) {
+                        html = html.replace(`\{\{${image_tag}\}\}`, values.preview)
+                    }
                     html = html.replace('\{\{style\}\}', '<style>' + css + '</style>');
                     html = html.replace("\{\{form_begin\}\}", "<form action='/login' method='POST' autocomplete='off'>");
                     html = html.replace("\{\{form_end\}\}", "</form>");
@@ -159,6 +174,9 @@ let template_edit_vue = new Vue({
 
                 case "html_otp":
                     var win = window.open('', 'otp_preview');
+                    for (let [image_tag, values] of Object.entries(images_list)) {
+                        html = html.replace(`\{\{${image_tag}\}\}`, values.preview)
+                    }
                     html = html.replace('\{\{style\}\}', '<style>' + css + '</style>');
                     html = html.replace("\{\{form_begin\}\}", "<form action='/login' method='POST' autocomplete='off'>");
                     html = html.replace("\{\{form_begin\}\}", "<form action='/login' method='POST' autocomplete='off'>");
@@ -179,6 +197,9 @@ let template_edit_vue = new Vue({
 
                 case "html_registration":
                     var win = window.open('', 'registration_preview');
+                    for (let [image_tag, values] of Object.entries(images_list)) {
+                        html = html.replace(`\{\{${image_tag}\}\}`, values.preview)
+                    }
                     html = html.replace('\{\{style\}\}', '<style>' + css + '</style>');
                     html = html.replace("\{\{form_begin\}\}", "<form action='/login' method='POST' autocomplete='off'>");
                     html = html.replace("\{\{form_end\}\}", "</form>");
@@ -202,6 +223,9 @@ let template_edit_vue = new Vue({
 
                 case "html_message":
                     var win = window.open('', 'message_preview');
+                    for (let [image_tag, values] of Object.entries(images_list)) {
+                        html = html.replace(`\{\{${image_tag}\}\}`, values.preview)
+                    }
                     html = html.replace('\{\{style\}\}', '<style>' + css + '</style>');
                     html = html.replace("\{\{message\}\}", "This is an example message.");
                     html = html.replace("\{% csrf_token %\}", "");
