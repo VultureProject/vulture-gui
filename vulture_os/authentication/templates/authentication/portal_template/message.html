@@ -1,0 +1,55 @@
+
+
+{% load i18n %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="template_helper">
+            <p>{% trans "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="template_helper col-md-3">
+            <div class="panel  panel-bordered panel-dark">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{% trans "The following tags are available: "%}</h3>
+                </div>
+                <div class="panel-body">
+                    <ul>
+                        <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;message&#125;&#125;</color></b>: {% trans "The message"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;link_redirect&#125;&#125;</color></b>: {% trans "The redirect link to home"%}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="panel  panel-bordered panel-dark">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{% trans "The following images are available: "%}</h3>
+                </div>
+                <div class="panel-body">
+                    <p> Use this tags like that: <code>&lt;img src="&#123;&#123;image_tag&#125;&#125;"/&gt;</code></p>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">{% trans "Name" %}</th>
+                                <th style="width: 70%;">{% trans "Image" %}</th>
+                                <th style="width: 20%;">{% trans "Tag" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody style="height: 10px; overflow: auto;" class="availables_image"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            {{form.html_message}}
+            {{form.html_message.errors}}
+            <p class="text-center">
+                <button type="button" @click="preview('html_message')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+            </p>
+        </div>
+    </div>
+</div>

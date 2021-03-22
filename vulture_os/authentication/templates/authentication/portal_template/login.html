@@ -1,0 +1,88 @@
+{% load i18n %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="template_helper">
+            <p>{% trans "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="template_helper col-md-3">
+            <div class="panel  panel-bordered panel-dark">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{% trans "The following tags are available: "%}</h3>
+                </div>
+                <div class="panel-body">
+                    <ul>
+                        <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The error message when authentication goes wrong"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% trans "The starting &lt;form action='...'&gt;"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% trans "The ending &lt;/form&gt;"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_login&#125;&#125;</color></b>: {% trans "The Login Input for authentication portal"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_password&#125;&#125;</color></b>: {% trans "The Password Input for authentication portal"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% trans "The 'login' button"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;lostPassword&#125;&#125;</color></b>: {% trans "The URI for lost password"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;captcha&#125;&#125;</color></b>: {% trans "Image captcha"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_captcha&#125;&#125;</color></b>: {% trans "The captcha input"%}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="panel  panel-bordered panel-dark">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{% trans "The following images are available: "%}</h3>
+                </div>
+                <div class="panel-body">
+                    <p> Use this tags like that: <code>&lt;img src="&#123;&#123;image_tag&#125;&#125;"/&gt;</code></p>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">{% trans "Name" %}</th>
+                                <th style="width: 70%;">{% trans "Image" %}</th>
+                                <th style="width: 20%;">{% trans "Tag" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody style="height: 10px; overflow: auto;" class="availables_image"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            {{form.html_login}}
+            {{form.html_login.errors}}
+
+            <p class="text-center">
+                <button type="button" @click="preview('html_login')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+            </p>
+        </div>
+
+        <div class="col-md-2">
+            <div class="panel  panel-colorful panel-dark">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Login field name" %}</label>
+                        {{ form.login_login_field }}
+                        {{ form.login_login_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Password field name" %}</label>
+                        {{ form.login_password_field }}
+                        {{ form.login_password_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Captcha field name" %}</label>
+                        {{ form.login_captcha_field }}
+                        {{ form.login_captcha_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Submit button field name" %}</label>
+                        {{ form.login_submit_field }}
+                        {{ form.login_submit_field.errors }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
