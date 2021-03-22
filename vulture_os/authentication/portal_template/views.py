@@ -23,14 +23,10 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Portal templates View'
 
 import base64
-import io
-from hashlib import sha1
-from PIL import Image
 
 # Django system imports
 from django.conf import settings
 from django.shortcuts import render
-from django.core.files.base import ContentFile
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponseNotFound, HttpResponseRedirect
@@ -80,8 +76,6 @@ def image_edit(request, object_id: str = None):
 
         image.name = form.cleaned_data.get('name') 
         image.image_type = request.FILES["content"].content_type
-        image.save()
-        image.uid = sha1(str(image.id).encode('utf8')).hexdigest()
         image.save()
 
         return HttpResponseRedirect('/portal/template/')

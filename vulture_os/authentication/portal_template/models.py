@@ -370,14 +370,12 @@ class TemplateImage(models.Model):
     name = models.TextField(help_text=_('The name of the image'))
     image_type = models.TextField()
     content = models.TextField(help_text=_('Image you can use in the portal templates'))
-    uid = models.TextField(null=True, help_text=_('A unique identifier to get the image from portal'))
 
     def to_dict(self):
         return {
             "id": str(self.pk),
             "name": self.name,
             "image_type": self.image_type,
-            "uid": self.uid,
             "create_preview_html": self.create_preview_html(),
             "get_image_uri": self.get_image_uri()
         }
