@@ -1559,7 +1559,12 @@ class Listener(models.Model):
         """ Generate Listener HAProxy configuration
         :return     A string - Bind directive
         """
-        result = "bind {}:{}".format(JAIL_ADDRESSES['haproxy'][self.network_address.family], self.rsyslog_port)
+        if self.network_address.family == "inet6":
+            address = "[{}]".format(JAIL_ADDRESSES['haproxy'][self.network_address.family])
+        else:
+            address = JAIL_ADDRESSES['haproxy'][self.network_address.family]
+
+        result = "bind {}:{}".format(address, self.rsyslog_port)
         if self.tls_profiles:
             for tls_profile in self.tls_profiles.all():
                 result += tls_profile.generate_conf() + " "

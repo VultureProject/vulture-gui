@@ -631,7 +631,7 @@ class Server(models.Model):
         :return     A string - Bind directive
         """
         result = "server srv{} {}{} weight {}".format(self.id or get_random_string(),
-                                                       self.target,
+                                                       "[{}]".format(self.target) if ":" in self.target else self.target,
                                                        ":" + str(self.port) if self.mode == "net" else "",
                                                        self.weight)
         if self.source:
