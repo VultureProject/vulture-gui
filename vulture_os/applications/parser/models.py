@@ -65,9 +65,9 @@ class Parser(models.Model):
         help_text=_("Lines to apply te parser on")
     )
     tags = models.JSONField(
-        models.SlugField(default=""),
         default=[],
         blank=True,
+        verbose_name=_("Tags"),
         help_text=_("Tags to set on this object for search")
     )
 

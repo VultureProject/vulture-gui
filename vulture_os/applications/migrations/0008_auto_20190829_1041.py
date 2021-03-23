@@ -12,10 +12,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="parser",
+            name="tags"
+        ),
+        migrations.AddField(
             model_name='parser',
             name='tags',
-            field=djongo.models.fields.JSONField(blank=True, default=[], help_text='Tags to set on this object for search', verbose_name=models.SlugField(default='')),
+            field=djongo.models.fields.JSONField(blank=True, default=[], help_text='Tags to set on this object for search', verbose_name='Tags'),
         ),
         migrations.AlterField(
             model_name='server',

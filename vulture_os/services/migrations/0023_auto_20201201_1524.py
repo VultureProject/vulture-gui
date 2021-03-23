@@ -43,7 +43,11 @@ class Migration(migrations.Migration):
             field=models.FloatField(default=0.0),
         ),
         migrations.RunPython(before_timestamp_rename, migrations.RunPython.noop),
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name='frontend',
+            name='cybereason_malops_timestamp',
+        ),
+        migrations.AddField(
             model_name='frontend',
             name='cybereason_malops_timestamp',
             field=models.FloatField(default=0.0),
