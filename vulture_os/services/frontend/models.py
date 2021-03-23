@@ -1098,7 +1098,8 @@ class Frontend(models.Model):
             'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
-            'tenants_config': self.tenants_config
+            'tenants_config': self.tenants_config,
+            'external_idps': self.userauthentication_set.filter(enable_external=True)
         }
 
         if self.mode == "impcap":
@@ -1588,6 +1589,9 @@ class Listener(models.Model):
                 # Let port 1000 if no listener defined yet
                 pass
         super().save(*args, **kwargs)
+
+    def get_nodes(self):
+        return [nic.node for nic in self.network_address.nic.all()]
 
 
 class FrontendReputationContext(models.Model):

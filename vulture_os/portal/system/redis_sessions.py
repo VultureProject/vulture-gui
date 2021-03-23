@@ -67,7 +67,8 @@ class REDISSession(object):
         return self.keys.get(key)
 
     def write_in_redis(self, timeout):
-        if self.handler.hmset(self.key, self.keys):
+        # Do NOT write user_infos in Redis, it has already be done  in set_user_infos
+        if self.handler.hmset(self.key, {k:v for k,v in self.keys.items() if not k.startswith("user_infos_")}):
             return self.handler.expire(self.key, timeout)
         else:
             return False
@@ -246,22 +247,32 @@ class REDISPortalSession(REDISSession):
         self.handler.hset(str(self.key), 'otp', otp_info)
 
     def get_login(self, backend_id):
-        return self.handler.hget(self.key, 'login_{}'.format(backend_id))
+        return self.handler.hget(self.key, f'login_{backend_id}')
 
     def authenticated_app(self, workflow_id):
         return self.handler.hget(self.key, str(workflow_id)) == "1"
 
     def authenticated_backend(self, backend_id):
-        return self.handler.hget(self.key, str(backend_id)) == "1"
+        return str(self.handler.hget(self.key, f"auth_backend_{backend_id}")) == "1"
 
     def is_double_authenticated(self, otp_backend_id):
-        return self.handler.hget(self.key, 'doubleauthenticated_{}'.format(str(otp_backend_id))) == "1"
+        return str(self.handler.hget(self.key, 'doubleauthenticated_{}'.format(str(otp_backend_id)))) == "1"
 
     def get_oauth2_token(self, backend_id):
-        return self.handler.hget(self.key, 'oauth2_'+str(backend_id))
+        return self.handler.hget(self.key, f'oauth2_{backend_id}')
+
+    def get_auth_backend(self, workflow_id):
+        return self.handler.hget(self.key, f'backend_{workflow_id}')
+
+    def get_user_info(self, backend_id):
+        return json.loads(self.handler.hget(self.key, f'user_infos_{backend_id}') or "{}")
+
+    def set_user_infos(self, backend_id, user_infos):
+        self.keys[f'user_infos_{backend_id}'] = user_infos
+        return self.handler.hset(self.key, f'user_infos_{backend_id}', json.dumps(user_infos or {}))
 
     def retrieve_captcha(self, workflow_id):
-        return self.handler.hget(self.key, 'captcha_{}'.format(workflow_id))
+        return self.handler.hget(self.key, f'captcha_{workflow_id}')
 
     def register_captcha(self, workflow_id):
         chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -269,6 +280,9 @@ class REDISPortalSession(REDISSession):
         self.keys['captcha_{}'.format(workflow_id)] = secret_key
         self.handler.hset(self.key, 'captcha_{}'.format(workflow_id), secret_key)
         return secret_key
+
+    def create_openid_token(self):
+
 
     """ Retrieve encrypted password in REDIS, decrypt it and return it plain text """
     def getAutologonPassword(self, app_id, backend, username):
@@ -315,33 +329,30 @@ class REDISPortalSession(REDISSession):
         # TODO : otp_retries_{otp_backend_id}
         self.keys.pop('otp_retries', None)
         self.keys[workflow_id] = 0
-        self.keys[backend_id] = 0
-        self.keys.pop('backend_' + str(workflow_id), None)
-        self.keys.pop('login_' + str(backend_id), None)
-        self.keys.pop('oauth2_' + str(backend_id), None)
-        self.keys.pop('app_id_' + str(backend_id), None)
+        self.keys[f'auth_backend_{backend_id}'] = 0
+        self.keys.pop(f'backend_{workflow_id}', None)
+        self.keys.pop(f'login_{backend_id}', None)
+        self.keys.pop(f'oauth2_{backend_id}', None)
+        self.keys.pop(f'app_id_{backend_id}', None)
 
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")
 
-    def get_user_infos(self, backend_id):
-        return self.keys.get('user_infos_'+backend_id, {})
-
     def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
                                 oauth2_token, authentication_datas, timeout):
         if dbauthentication_required:
-            self.keys[app_id] = 0
+            self.keys[str(app_id)] = 0
         else:
-            self.keys[app_id] = 1
+            self.keys[str(app_id)] = 1
         # The user is authenticated on repository
-        self.keys[backend_id] = 1
+        self.keys[f"auth_backend_{backend_id}"] = 1
         #self.keys['url_'+app_id]  = url
-        self.keys['backend_'+app_id] = backend_id
-        self.keys['login_'+backend_id] = username
+        self.keys[f"backend_{app_id}"] = str(backend_id)
+        self.keys[f"login_{backend_id}"] = username
         if oauth2_token:
-            self.keys['oauth2_'+backend_id] = oauth2_token
-        self.keys['app_id_' + backend_id] = app_id
+            self.keys[f"oauth2_{backend_id}"] = str(oauth2_token)
+        self.keys[f"app_id_{backend_id}"] = str(app_id)
 
         # WARNING : THE KEYS ARE NOT INITIALIZED ANYMORE !
         # self.keys['otp']        = None
@@ -353,15 +364,16 @@ class REDISPortalSession(REDISSession):
         #self.keys['user_phone'] = authentication_datas.get('user_phone', 'N/A')
         #self.keys['user_email'] = authentication_datas.get('user_email', 'N/A')
         # Save all user infos
-        self.keys['user_infos_'+backend_id] = str(authentication_datas)
+        self.set_user_infos(backend_id, authentication_datas)
 
         if password:
             # Encrypt the password with the application id and user login and store it in portal session
             pwd = LearningProfile()
             p = pwd.set_data(app_id, app_name, backend_id, BaseRepository.objects.get(pk=backend_id).name, username,
                              'vlt_autologon_password', password)
-            self.keys['password_'+backend_id] = p
+            self.keys[f'password_{backend_id}'] = p
 
+        logger.info(self.keys)
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")
@@ -370,13 +382,13 @@ class REDISPortalSession(REDISSession):
 
     def register_doubleauthentication(self, app_id, otp_backend_id):
         backend_id = self.keys['backend_'+app_id]
-        self.keys[backend_id] = 1
-        self.handler.hset(self.key, backend_id, "1")
+        self.keys[f"auth_backend_{backend_id}"] = 1
+        self.handler.hset(self.key, f"auth_backend_{backend_id}", "1")
         self.keys['doubleauthenticated_{}'.format(str(otp_backend_id))] = "1"
         self.handler.hset(self.key, 'doubleauthenticated_{}'.format(str(otp_backend_id)), "1")
 
     def register_sso(self, timeout, backend_id, app_id, url, username, oauth2_token):
-        self.keys[backend_id]         = 1
+        self.keys[f"auth_backend_{backend_id}"] = 1
         self.keys['url_'+app_id]          = url
         self.keys['backend_'+app_id]      = backend_id
         self.keys['login_'+backend_id]    = username
@@ -433,6 +445,11 @@ class REDISOauth2Session(REDISSession):
 
         return self.key
 
+class RedisOpenIDSession(REDISSession):
+    def __init__(self, redis_handler, openid_token):
+        super().__init__(redis_handler, openid_token)
+
+    def register_authentication(self, ):
 
 
 class REDISBase(object):
