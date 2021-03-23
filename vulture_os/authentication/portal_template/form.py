@@ -24,13 +24,13 @@ __doc__ = 'Backends & Servers dedicated form classes'
 
 # Django system imports
 from django.conf import settings
-from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInput, Textarea, Form, \
-    ChoiceField, CharField
+from django.forms import ModelForm, TextInput, Textarea, Form
+from django.forms.fields import CharField
+from django.forms.widgets import FileInput
+from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
-from gui.forms.form_utils import NoValidationField
-from authentication.portal_template.models import PortalTemplate, TemplateImage
-from system.pki.models import TLSProfile
+from authentication.portal_template.models import PortalTemplate
 
 # Required exceptions imports
 
@@ -116,12 +116,8 @@ class PortalTemplateForm(ModelForm):
         super().__init__(*args, **kwargs)
 
 
-class TemplateImageForm(ModelForm):
+class TemplateImageForm(Form):
     """ Image insertion form représentation
     """
-
-    class Meta:
-        document = TemplateImage
-        widgets = {
-            'name': TextInput(attrs={'class': 'form-control'}),
-        }
+    name = CharField(label=_("Image name"), widget=TextInput(attrs={"class": "form-control"}))
+    content = CharField(label=_("File"), widget=FileInput(attrs={"class": "form-control"}))

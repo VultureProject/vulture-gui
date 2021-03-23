@@ -29,8 +29,10 @@ from django.conf import settings
 from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter
 from django.utils.translation import ugettext_lazy as _
+from services.rsyslogd.rsyslog import build_conf as rsyslog_build_conf
 from services.service import Service
 from services.darwin.models import DarwinSettings
+from system.cluster.models import Cluster
 from system.config.models import write_conf, delete_conf as delete_conf_file
 from darwin.inspection.models import InspectionPolicy
 
@@ -154,12 +156,22 @@ def reload_all(node_logger):
     """ Triggers a rewrite of all filters' configuration file, main configuration file and reload all filters
     """
     logger.info("Darwin::reload_all:: Reloading all Darwin configuration")
+    this_node = Cluster.get_current_node()
 
     # Reload every filter's config file
     for policy in DarwinPolicy.objects.all().only("id"):
         try:
             logger.debug("Darwin::reload_all:: updating configuration files for policy {}".format(policy.id))
             write_policy_conf(node_logger, policy.id)
+            logger.info("Darwin::reload_all:: Regenerating configuration for associated Listeners...")
+            # SHOULD always be the case (should is key here)
+            if this_node is not None:
+                for frontend in policy.frontend_set.all():
+                    if this_node in frontend.get_nodes():
+                        rsyslog_build_conf(node_logger, frontend.pk)
+                logger.info("Darwin::reload_all:: Successfully updated configuration files")
+            else:
+                logger.error("Darwin::reload_all:: Couldn't get current node, cannot update Rsyslog configuration files")
         except VultureSystemError as e:
             logger.error("Darwin::reload_all:: error while reloading policy {} : {}".format(policy.id, e))
             continue

@@ -28,7 +28,7 @@ from django.urls import path, re_path
 # Django project imports
 from authentication.portal_template import views, api
 from authentication.generic_list import ListPortalTemplate
-from authentication.generic_delete import DeletePortalTemplate
+from authentication.generic_delete import DeletePortalTemplate, DeletePortalImage
 
 
 urlpatterns = [
@@ -38,4 +38,8 @@ urlpatterns = [
     path('api/v1/portal/template/', api.PortalTemplateAPIv1.as_view(), name="api.portal.template"),
     re_path('^api/v1/portal/template/(?P<object_id>[A-Fa-f0-9]+)?$', api.PortalTemplateAPIv1.as_view(), name="api.portal.template"),
     re_path('^portal/template/delete/(?P<object_id>[A-Fa-f0-9]+)?$', DeletePortalTemplate.as_view(), name="portal.template.delete"),
+
+    path('api/v1/portal/images/', api.PortalImageAPIv1.as_view(), name="api.portal.image"),
+    re_path('portal/images/edit/(?P<object_id>[A-Fa-f0-9]+)?', views.image_edit, name="portal.image.edit"),
+    re_path('^portal/images/delete/(?P<object_id>[A-Fa-f0-9]+)?$', DeletePortalImage.as_view(), name="portal.image.delete"),
 ]

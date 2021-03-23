@@ -935,3 +935,7 @@ ul li{
 .form-control{
     width: 100% !important;
 }
+
+#toCopy{
+    display: none;
+}
