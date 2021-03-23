@@ -177,6 +177,7 @@ class IDPApiUserView(View):
             portal = UserAuthentication.objects.get(pk=object_id)
             ldap_repo = get_repo(portal)
 
+            dn = request.JSON['id']
             user_name = request.JSON['username']
             group_name = request.JSON.get('group')
 
@@ -199,7 +200,7 @@ class IDPApiUserView(View):
             if ldap_repo.user_smartcardid_attr:
                 attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
 
-            status, user_dn = tools.update_user(ldap_repo, group_name, user_name, attrs, request.JSON.get('userPassword'))
+            status, user_dn = tools.update_user(ldap_repo, group_name, dn, user_name, attrs, request.JSON.get('userPassword'))
             if status is False:
                 return JsonResponse({
                     "status": False,
@@ -238,10 +239,10 @@ class IDPApiUserView(View):
             portal = UserAuthentication.objects.get(pk=object_id)
             ldap_repo = get_repo(portal)
 
-            user_name = request.JSON['username']
+            user_dn = request.JSON['id']
             group_name = request.JSON.get('group')
 
-            status = tools.delete_user(ldap_repo, group_name, user_name)
+            status = tools.delete_user(ldap_repo, group_name, user_dn)
             if status is False:
                 return JsonResponse({
                     "status": False,
