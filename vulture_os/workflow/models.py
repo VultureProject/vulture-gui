@@ -296,12 +296,12 @@ class Workflow(models.Model):
         port = listener.port
 
         if listener.tls_profiles.count() > 0:
-            if port == "443":
+            if port in ("443", 443):
                 url = "https://" + str(self.fqdn) + str(self.public_dir)
             else:
                 url = "https://" + str(self.fqdn) + ":" + str(port) + str(self.public_dir)
         else:
-            if port == "80":
+            if port in ("80", 80):
                 url = "http://" + str(self.fqdn) + str(self.public_dir)
             else:
                 url = "http://" + str(self.fqdn) + ":" + str(port) + str(self.public_dir)
