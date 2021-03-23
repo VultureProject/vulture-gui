@@ -40,6 +40,7 @@ from authentication.user_portal.models import (AUTH_TYPE_CHOICES, SSO_TYPE_CHOIC
                                                SOURCE_ATTRS_CHOICES)
 from gui.forms.form_utils import NoValidationField
 from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
+from services.frontend.models import Frontend
 
 # Extern modules imports
 
@@ -71,8 +72,12 @@ class UserAuthenticationForm(ModelForm):
         widget=Select(attrs={'class': 'form-control select2'}),
         required=False
     )
-    external_listener_json = NoValidationField(
-        label=_("Listener")
+    external_listener = ModelChoiceField(
+        label=_("Listen IDP on"),
+        queryset=Frontend.objects.filter(enabled=True, mode="http").only(*Frontend.str_attrs()),
+        widget=Select(attrs={'class': 'form-control select2'}),
+        required=False,
+        empty_label=None
     )
     repo_attributes = NoValidationField(
         label=_("Create user scope")
@@ -85,7 +90,7 @@ class UserAuthenticationForm(ModelForm):
                   'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'otp_repository', 'otp_max_retry',
                   'disconnect_url', 'enable_disconnect_message', 'enable_disconnect_portal', 'enable_registration',
                   'group_registration', 'update_group_registration', 'enable_external', 'external_fqdn',
-                  'external_listener_json', 'enable_oauth', 'oauth_client_id', 'oauth_client_secret',
+                  'external_listener', 'enable_oauth', 'oauth_client_id', 'oauth_client_secret',
                   'oauth_redirect_uris', 'oauth_timeout',
                   'enable_sso_forward','sso_forward_type','sso_forward_direct_post','sso_forward_get_method',
                   'sso_forward_follow_redirect_before','sso_forward_follow_redirect','sso_forward_return_post',
@@ -179,8 +184,11 @@ class UserAuthenticationForm(ModelForm):
         cleaned_data = super().clean()
 
         """ If external enabled, external options required """
-        if cleaned_data.get('enable_external') and not cleaned_data.get('external_fqdn'):
-            self.add_error('external_fqdn', "This field is required if external enabled.")
+        if cleaned_data.get('enable_external'):
+            if not cleaned_data.get('external_fqdn'):
+                self.add_error('external_fqdn', "This field is required if external enabled.")
+            if not cleaned_data.get('external_listener'):
+                self.add_error('external_listener', "This field is required if external enabled.")
 
         """ Portal template is required if auth_type = HTTP """
         if cleaned_data.get('auth_type') == "http" and not cleaned_data.get('portal_template'):
@@ -211,6 +219,8 @@ class UserAuthenticationForm(ModelForm):
                 self.add_error('lookup_ldap_attr', "This field is required with 'LDAP Lookup repository'")
             if not cleaned_data.get('lookup_claim_attr'):
                 self.add_error('lookup_claim_attr', "This field is required with 'LDAP Lookup repository'")
+
+
 
         OpenIDRepository.objects.all()
 

@@ -86,14 +86,11 @@ def user_authentication_clone(request, object_id):
 
 def user_authentication_edit(request, object_id=None, api=False):
     profile = None
-    listener_obj = None
-    listener_f = None
     repo_attrs_form_list = []
     repo_attrs_objs = []
     if object_id:
         try:
             profile = UserAuthentication.objects.get(pk=object_id)
-            listener_obj = profile.external_listener if profile.enable_external else None
         except ObjectDoesNotExist:
             return HttpResponseNotFound("Object not found")
 
@@ -138,37 +135,6 @@ def user_authentication_edit(request, object_id=None, api=False):
             return render_form(profile, save_error=["Error in Repo_Attributes field : {}".format(e),
                                                            str.join('', format_exception(*exc_info()))])
 
-        """ Handle JSON formatted listeners """
-        if form.data.get('enable_external'):
-            try:
-                if api:
-                    listener_json = request.JSON.get('external_listener_json', {})
-                    assert isinstance(listener_json, list), "Listeners field must be a dict."
-                else:
-                    listener_json = json_loads(request.POST.get('external_listener_json', "{}"))
-                assert listener_json, "Listener required if external enabled"
-            except Exception as e:
-                if api:
-                    return JsonResponse({
-                        "error": "".join(format_exception(*exc_info()))
-                    }, status=400)
-                return render(request, 'authentication/user_authentication_edit.html', {'form': form,
-                                                                                    'save_error':["Error in external listener field : {}".format(e),
-                                                                                                  str.join('', format_exception(*exc_info()))]})
-            """ If id is given, retrieve object from mongo """
-            try:
-                instance_l = Listener.objects.get(pk=listener_json['id']) if listener_json.get('id') else None
-            except ObjectDoesNotExist:
-                form.add_error(None, "Listener with id {} not found.".format(listener_json['id']))
-            else:
-                """ And instantiate form with the object, or None """
-                listener_f = ListenerForm(listener_json, instance=instance_l)
-                if not listener_f.is_valid():
-                    if api:
-                        form.add_error("external_listener_json", listener_f.errors.as_json())
-                    else:
-                        form.add_error("external_listener_json", listener_f.errors.as_ul())
-
         """ For each Health check header in list """
         for repo_attr in repo_attrs:
             repoattrform = RepoAttributesForm(repo_attr, error_class=DivErrorList)
@@ -187,10 +153,6 @@ def user_authentication_edit(request, object_id=None, api=False):
             repo_changed = "repositories" in form.changed_data
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
-            if profile.enable_external:
-                listener_obj = listener_f.save(commit=False)
-                listener_obj.save()
-                profile.external_listener = listener_obj
             for repo_attr in repo_attrs_objs:
                 repo_attr.save()
             profile.repo_attributes = repo_attrs_objs
@@ -200,7 +162,10 @@ def user_authentication_edit(request, object_id=None, api=False):
                 if repo_changed and profile.workflow_set.count() > 0:
                     for workflow in profile.workflow_set.all():
                         workflow.frontend.reload_conf()
+                if profile.enable_external:
+                    profile.external_listener.reload_conf()
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
+                profile.save_conf()
                 Cluster.api_request("services.haproxy.haproxy.reload_service")
             except Exception as e:
                 if api:
@@ -216,10 +181,7 @@ def user_authentication_edit(request, object_id=None, api=False):
                 return build_response(profile.id, "api.portal.user_authentication", [])
             return HttpResponseRedirect(reverse("portal.user_authentication.list"))
 
-    if not listener_f:
-        listener_f = ListenerForm(instance=listener_obj, error_class=DivErrorList)
-
-    return render_form(profile, listener_form=listener_f)
+    return render_form(profile)
 
 
 # TODO @group_required('administrator', 'system_manager')

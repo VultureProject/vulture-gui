@@ -120,17 +120,11 @@
                         <div class="row external">
                           <div class="col-md-12">
                             <div class="form-group">
-                              <label class="col-sm-4 control-label">{{ form.external_listener_json.label }}</label>
-                              <table id="external_listener_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
-                                <thead>
-                                  {{ listener_form.as_table_headers|safe }}
-                                </thead>
-                                <tbody>
-                                {{ listener_form.as_table_td|safe }}
-                                </tbody>
-                              </table>
-                              {{ form.external_listener_json.errors|safe }}
-                              <input id="external_listener_json" name="external_listener_json" value="" type="hidden">
+                              <label class="col-sm-4 control-label">{{ form.external_listener.label }}</label>
+                              <div class="col-sm-5">
+                                {{ form.external_listener }}
+                                {{ form.external_listener.errors|safe }}
+                              </div>
                             </div>
                           </div>
                         </div> <!-- /.row -->
@@ -851,6 +845,19 @@
     toggle_sso_forward_url();
   }
 
+
+  function toggle_external() {
+    /* If External selected, auto enable OAuth */
+    if( $('#id_enable_external').is(":checked") && !$('#id_enable_oauth').is(":checked") ) {
+      $('#id_enable_oauth').trigger('click');
+      $('#id_enable_oauth').prop("disabled", true);
+    } else if( !$('#id_enable_external').is(":checked") ) {
+      /* If enable External unselected, re-enable oauth button */
+      $('#id_enable_oauth').prop("disabled", false);
+    }
+  }
+
+
   /* Show or hide registration fields depending on enable_registration */
   function toggle_class(classe) {
     console.log(classe)
@@ -1070,24 +1077,6 @@
 
   /*  */
   $('#user_authentication_edit_form').submit(function(event) {
-    $('#external_listener_table tbody tr').each(function(index, tr) {
-      var id = tr.children[0].innerHTML;
-      var network_address_id = tr.children[1].children[0].value;
-      var port = tr.children[2].children[0].valueAsNumber;
-      var tls_profiles = $(tr.children[3].children[0]).val();
-      // It's a bootstrap-tagsinput, so retrieve the second child
-      // Temporary fix suggested by KGU to prevent bugs with the tagsinput lib imported
-      var wl_ips = undefined;
-      if (tr.children[4].children[1] !== undefined) {
-          wl_ips = tr.children[4].children[1].value;
-      } else {
-          wl_ips = tr.children[4].children[0].value;
-      }
-      var max_src = tr.children[5].children[0].valueAsNumber;
-      var max_rate = tr.children[6].children[0].valueAsNumber;
-      $('#external_listener_json').val(JSON.stringify({'id': id, 'network_address': network_address_id, 'port': port, 'tls_profiles': tls_profiles,
-                      'whitelist_ips': wl_ips, 'max_src': max_src, 'max_rate': max_rate}));
-    });
 
     $('#repo_attributes').val(JSON.stringify(get_repo_attrs()));
 
