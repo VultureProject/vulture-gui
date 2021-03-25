@@ -44,6 +44,7 @@ from system.cluster.models  import Cluster
 from system.pki.models import X509Certificate, PROTOCOLS_TO_INT
 from portal.system.sso_clients import SSOClient
 from toolkit.http.utils import parse_html
+from authentication.openid.models import OpenIDRepository
 
 # Extern modules imports
 from json import loads as json_loads
@@ -95,10 +96,12 @@ def user_authentication_edit(request, object_id=None, api=False):
             return HttpResponseNotFound("Object not found")
 
     """ Create form with object if exists, and request.POST (or JSON) if exists """
+    # Do NOT remove this line
+    empty = {} if api else None
     if hasattr(request, "JSON") and api:
-        form = UserAuthenticationForm(request.JSON or None, instance=profile, error_class=DivErrorList)
+        form = UserAuthenticationForm(request.JSON or {}, instance=profile, error_class=DivErrorList)
     else:
-        form = UserAuthenticationForm(request.POST or None, instance=profile, error_class=DivErrorList)
+        form = UserAuthenticationForm(request.POST or empty, instance=profile, error_class=DivErrorList)
 
     def render_form(profile, **kwargs):
         save_error = kwargs.get('save_error')
@@ -122,7 +125,7 @@ def user_authentication_edit(request, object_id=None, api=False):
     if request.method in ("POST", "PUT"):
         """ Handle repo attributes (user scope) """
         try:
-            if api:
+            if api and hasattr(request, "JSON"):
                 repo_attrs = request.JSON.get('repo_attributes', [])
                 assert isinstance(repo_attrs, list), "Repo attributes field must be a list."
             else:
@@ -151,12 +154,23 @@ def user_authentication_edit(request, object_id=None, api=False):
         if form.is_valid():
             # Check changed attributes before form.save
             repo_changed = "repositories" in form.changed_data
+            external_fqdn_changed = "external_fqdn" in form.changed_data
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
             for repo_attr in repo_attrs_objs:
                 repo_attr.save()
             profile.repo_attributes = repo_attrs_objs
             profile.save()
+
+            # If standalone IDP portal (enable_external)
+            if profile.enable_external:
+                # Automatically create OpenID repo
+                openid_repo, created = OpenIDRepository.objects.get_or_create(client_id=profile.oauth_client_id,
+                                                                              client_secret=profile.oauth_client_secret,
+                                                                              provider="openid")
+                openid_repo.provider_url = "https" if profile.external_listener.has_tls else "http" + "://" + profile.external_fqdn
+                openid_repo.name = "Connector {}".format(profile.name)
+                openid_repo.save()
 
             try:
                 if repo_changed and profile.workflow_set.count() > 0:
