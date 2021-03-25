@@ -126,7 +126,7 @@ def create_group(ldap_repository, group_name, members_username):
 
 
 def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
-    group_dn = False
+    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
     if group_name:
         group_dn = group_name
 
