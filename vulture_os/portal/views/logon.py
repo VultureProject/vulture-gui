@@ -58,7 +58,7 @@ from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeed
                                              CredentialsError, REDISWriteError, TwoManyOTPAuthFailure, ACLError)
 from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.system.hashes import random_sha256
-from toolkit.http.utils import build_url
+from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
 
 # Extern modules imports
@@ -272,9 +272,8 @@ def openid_authorize(request, portal_id):
 
     workflow = Workflow(authentication=portal, fqdn=portal.external_fqdn, id=str(portal._id), name=portal.name)
 
-    response = authenticate(request, workflow, portal_cookie, token_name, sso_forward=False, openid=True) \
-               or \
-               HttpResponseRedirect(redirect_uri)
+    # OpenID=True returns a response redirect with token
+    response = authenticate(request, workflow, portal_cookie, token_name, sso_forward=False, openid=True)
 
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, scheme == "https")
 
@@ -481,8 +480,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                         .format(authentication.credentials[0]))
             return authentication.ask_credentials_response(request=request, error=e.message)
 
-    # SSO Forward is not compatible with OpenID
-    if sso_forward and not openid:
+    if sso_forward:
         # If we arrive here : the user is authenticated
         #  and double-authenticated if double-authentication needed
         sso_methods = {
@@ -551,7 +549,11 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
     # If we arrive here, the user is authenticated
     if openid:
-        token = authentication.register_openid()
+        token = authentication.register_openid(scope=request.GET['scope'], client_id=request.GET['client_id'],
+                                               redirect_uri=request.GET['redirect_uri'])
+        return HttpResponseRedirect(build_url_params(request.GET['redirect_uri'],
+                                                     state=request.GET('state'),
+                                                     code=token))
 
 
 def log_in(request, workflow_id=None):

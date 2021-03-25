@@ -261,6 +261,10 @@ class REDISPortalSession(REDISSession):
     def get_oauth2_token(self, backend_id):
         return self.handler.hget(self.key, f'oauth2_{backend_id}')
 
+    def set_oauth2_token(self, backend_id, oauth2_token):
+        self.keys[f'oauth2_{backend_id}'] = oauth2_token
+        return self.handler.hset(self.key, f'oauth2_{backend_id}', oauth2_token)
+
     def get_auth_backend(self, workflow_id):
         return self.handler.hget(self.key, f'backend_{workflow_id}')
 
@@ -449,7 +453,16 @@ class RedisOpenIDSession(REDISSession):
     def __init__(self, redis_handler, openid_token):
         super().__init__(redis_handler, openid_token)
 
-    def register_authentication(self, ):
+    def register(self, oauth2_token, **kwargs):
+        self.keys = kwargs
+        self.keys['access_token'] = oauth2_token
+
+        # This is a temporary token, used for redirection and access_token retrieve
+        if not self.write_in_redis(30):
+            logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")
+            raise REDISWriteError("REDISOauth2Session::register_authentication: Unable to write Oauth2 infos in REDIS")
+
+        return self.key
 
 
 class REDISBase(object):

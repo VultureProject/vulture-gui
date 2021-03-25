@@ -60,6 +60,10 @@ class SSLAdapter(HTTPAdapter):
         self.poolmanager = PoolManager(*args, **kwargs)
 
 
+def build_url_params(url, **kwargs):
+    if kwargs:
+        return "{}?{}".format(url, urlencode(kwargs))
+    return url
 
 def build_url(scheme, domain, port, path):
     url = scheme + "://" + domain

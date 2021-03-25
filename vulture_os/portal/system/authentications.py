@@ -30,7 +30,8 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 
 # Django project imports
 # FIXME from gui.models.repository_settings  import KerberosRepository, LDAPRepository
-from portal.system.redis_sessions import REDISBase, REDISAppSession, REDISPortalSession, REDISOauth2Session
+from portal.system.redis_sessions import (REDISBase, REDISAppSession, REDISPortalSession, REDISOauth2Session,
+                                          RedisOpenIDSession)
 from portal.views.responses import (split_domain, basic_authentication_response, kerberos_authentication_response,
                                     post_authentication_response, otp_authentication_response,
                                     learning_authentication_response)
@@ -191,8 +192,6 @@ class Authentication(object):
                                                                           authentication_results,
                                                                           self.workflow.authentication.auth_timeout)
         logger.debug("AUTH::register_user: Authentication results successfully written in Redis portal session")
-        if openid_token:
-            REDISOauth2Session(self.redis_base, f"token_{openid_token}")., self.oauth2_token)
         return portal_cookie, self.oauth2_token
 
     def register_sso(self, backend_id):
@@ -214,6 +213,14 @@ class Authentication(object):
             logger.debug("AUTH::register_sso: DoubleAuthentication required : "
                          "successfully written in Redis for user '{}'".format(username))
         return portal_cookie, self.oauth2_token
+
+    def register_openid(self, openid_token, **kwargs):
+        # Generate a new OAuth2 token
+        self.oauth2_token = Uuid4().generate()
+        # Register it into session
+        self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
+        # Create a new temporary token containing oauth2_token + kwargs
+        RedisOpenIDSession(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, **kwargs)
 
     def get_redirect_url(self):
         try:
