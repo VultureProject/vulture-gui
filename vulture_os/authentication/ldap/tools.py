@@ -164,9 +164,12 @@ def update_user(ldap_repository, group_name, dn, user_name, attrs, userPassword)
         if ldap_repository.base_dn not in group_dn:
             group_dn = ldap_repository.create_group_dn(group_name)
 
-    old_user = find_user(ldap_repository, dn, attr_list=["*"])
-    if not old_user:
-        return False
+    try:
+        old_user = find_user(ldap_repository, dn, attr_list=["*"])
+        if not old_user:
+            raise IndexError()
+    except IndexError:
+        return create_user(ldap_repository, group_name, user_name, userPassword, attrs)
 
     for k, v in attrs.items():
         if not v:
