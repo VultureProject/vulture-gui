@@ -824,7 +824,7 @@ class LDAPClient(BaseAuth):
 
         if group_dn:
             attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
-            logger.debug("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
+            logger.info("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
             try:
                 self._get_connection().modify_s(group_dn, attrs)
             except ldap.TYPE_OR_VALUE_EXISTS:
