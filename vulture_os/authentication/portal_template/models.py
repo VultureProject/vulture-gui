@@ -367,9 +367,9 @@ class TemplateImage(models.Model):
     """
     Vulture's portal template image.
     """
-    name = models.TextField(help_text=_('The name of the image'))
-    image_type = models.TextField()
-    content = models.TextField(help_text=_('Image you can use in the portal templates'))
+    name = models.TextField(default="", help_text=_('The name of the image'))
+    image_type = models.TextField(default="")
+    content = models.TextField(default="", help_text=_('Image you can use in the portal templates'))
 
     def to_dict(self):
         return {
