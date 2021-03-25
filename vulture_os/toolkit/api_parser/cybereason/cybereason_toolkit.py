@@ -80,14 +80,14 @@ class CybereasonToolkit:
         )
 
         if response.status_code != 200:
-            error = f"Error at Cybereason API Call Code: {response.status_code} Content: {response.content}"
+            error = f"Error at Cybereason API Call Code: {response.status_code}, Url: {login_url}, Content: {response.content}"
             logger.error(error)
-            return False, _('Authentication failed')
+            return False, _(f'Authentication failed on {login_url}')
 
         if "app-login" in response.content.decode('utf-8'):
-            error = f"Error at Cybereason API Call Code: {response.status_code} Content: {response.content}"
+            error = f"Error at Cybereason API Call Code: {response.status_code}, Url: {login_url}, Content: {response.content}"
             logger.error(error)
-            return False, _('Authentication failed')
+            return False, _(f'Authentication failed on {login_url}')
 
         return True, session
 
