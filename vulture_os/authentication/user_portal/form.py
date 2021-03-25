@@ -220,8 +220,4 @@ class UserAuthenticationForm(ModelForm):
             if not cleaned_data.get('lookup_claim_attr'):
                 self.add_error('lookup_claim_attr', "This field is required with 'LDAP Lookup repository'")
 
-
-
-        OpenIDRepository.objects.all()
-
         return cleaned_data
