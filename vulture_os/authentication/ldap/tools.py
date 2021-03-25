@@ -182,7 +182,7 @@ def update_user(ldap_repository, group_name, dn, user_name, attrs, userPassword)
     return r, dn
 
 def delete_user(ldap_repository, group_name, user_dn):
-    group_dn = False
+    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
     if group_name:
         group_dn = group_name
 
@@ -190,8 +190,8 @@ def delete_user(ldap_repository, group_name, user_dn):
             group_dn = ldap_repository.create_group_dn(group_name)
    
     client = ldap_repository.get_client()
-    # groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(member['dn'])]
-    # r = client.delete_user(member['dn'], groups)
-    r = client.delete_user(user_dn)
+
+    groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(user_dn)]
+    r = client.delete_user(user_dn, groups)
     logger.info(f"User {user_dn} deleted in LDAP {ldap_repository.name}")
     return r
