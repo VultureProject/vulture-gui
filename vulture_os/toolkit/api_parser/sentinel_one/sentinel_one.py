@@ -105,14 +105,16 @@ class SentinelOneParser(ApiParser):
                 url,
                 params=query,
                 headers=self.HEADERS,
-                timeout=timeout
+                timeout=timeout,
+                proxies=self.proxies
             )
         elif method == "POST":
             response = self.session.post(
                 url,
                 data=query,
                 headers=self.HEADERS,
-                timeout=timeout
+                timeout=timeout,
+                proxies=self.proxies
             )
         else:
             raise SentinelOneAPIError(f"Request method unrecognized : {method}")

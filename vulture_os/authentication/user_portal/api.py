@@ -25,10 +25,9 @@ __doc__ = 'User portal API'
 
 # Django system imports
 from django.conf import settings
-from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden)
+from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
-from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 
 # Django project imports
@@ -38,14 +37,15 @@ from authentication.user_portal import views as user_portal_view
 from authentication.user_portal.models import UserAuthentication
 from authentication.generic_delete import DeleteUserAuthentication
 
-# Extern modules imports
-from sys import exc_info
-from traceback import format_exception
-
 # Logger configuration imports
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
+
+def write_templates(node_logger, portal_id):
+    """  """
+    portal = UserAuthentication.objects.get(pk=portal_id)
+    return portal.write_login_template()
 
 
 @method_decorator(csrf_exempt, name="dispatch")

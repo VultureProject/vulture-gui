@@ -367,14 +367,17 @@ class TemplateImage(models.Model):
     """
     Vulture's portal template image.
     """
-    name = models.TextField(help_text=_('The name of the image'))
-    # content = models.ImageField(help_text=_('Image you can use in the portal templates'))
-    uid = models.TextField(null=True, help_text=_('A unique identifier to get the image from portal'))
+    name = models.TextField(default="", help_text=_('The name of the image'))
+    image_type = models.TextField(default="")
+    content = models.TextField(default="", help_text=_('Image you can use in the portal templates'))
 
     def to_dict(self):
         return {
+            "id": str(self.pk),
             "name": self.name,
-            "uid": self.uid
+            "image_type": self.image_type,
+            "create_preview_html": self.create_preview_html(),
+            "get_image_uri": self.get_image_uri()
         }
 
     def get_image_uri(self):
@@ -395,7 +398,7 @@ class TemplateImage(models.Model):
         :return: A string with pre-formatted html for the image
         """
 
-        return "<img src='data:image/{};base64,{}'/>".format(self.content.format.lower(), base64.b64encode(self.content.read()))
+        return "<img src='data:image/{};base64,{}'/>".format(self.image_type, self.content)
 
     def create_preview_html(self):
         """
@@ -403,4 +406,4 @@ class TemplateImage(models.Model):
         :return: A string with pre-formatted html for the image
         """
 
-        return "data:image/{};base64,{}".format(self.content.format.lower(), base64.b64encode(self.content.read()))
+        return "data:image/{};base64,{}".format(self.image_type, self.content)

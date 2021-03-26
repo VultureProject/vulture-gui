@@ -18,53 +18,59 @@
     <div class="row">
         <div class="col-md-12">
           <div class="panel">
-            <div class="nav-tabs-custom nav-tabs-no-margin">
-              <ul class="nav nav-tabs">
-                <li class="active"><a href="#tab_template" data-toggle="tab">{% trans "Templates" %}</a></li>
-                {% comment %} <li><a href="#tab_image" data-toggle="tab">{% trans "Images" %}</a></li> {% endcomment %}
-              </ul>
+            <div class="panel-heading">
+              <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Portal Templates" %}</h1>
             </div>
-            <div class="tab-content">
-              <div class="tab-pane active" id="tab_template">
-                <div class="panel">
-                    <div class="panel-heading">
-                        <div class="panel-control">
-                          <a class="btn btn-flat btn-primary" href="{% url 'portal.template.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+            <div class="panel-body">
+              <div class="nav-tabs-custom nav-tabs-no-margin">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#tab_template" data-toggle="tab">{% trans "Templates" %}</a></li>
+                  <li><a href="#tab_image" data-toggle="tab">{% trans "Images" %}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane active" id="tab_template">
+                    <div class="panel">
+                        <div class="panel-heading">
+                            <div class="panel-control">
+                              <a class="btn btn-flat btn-primary" href="{% url 'portal.template.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                            </div>
                         </div>
-                        <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Portal Templates" %}</h1>
+                        <div class="panel-body">
+                          <div class="row">
+                            <div class="col-md-12">
+                              <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="portal_template_list"></table>
+                            </div>
+                          </div>
+                        </div>
                     </div>
-                    <div class="panel-body">
-                      <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="portal_template_list">
-                      </table>
-                    </div>
-                </div>
-              </div>
+                  </div>
 
-              <div class="tab-pane" id="tab_image">
-                <div class="panel">
-                    <div class="panel-heading">
-                        <div class="panel-control">
-                          <a class="btn btn-flat btn-primary" href="{% url 'portal.template.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                  <div class="tab-pane" id="tab_image">
+                    <div class="panel">
+                        <div class="panel-heading">
+                            <div class="panel-control">
+                              <a class="btn btn-flat btn-primary" href="{% url 'portal.image.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                            </div>
                         </div>
-                        <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Images" %}</h1>
+                        <div class="panel-body">
+                          <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="image_list">
+                            <thead>
+                              <tr>
+                                <th>{% trans "Preview" %}</th>
+                                <th>{% trans "Name" %}</th>
+                                <th>{% trans "Action" %}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                          </table>
+                        </div>
                     </div>
-                    <div class="panel-body">
-                      <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="image_list">
-                        <thead>
-                          <tr>
-                            <th width="5%">{% trans "Preview" %}</th>
-                            <th width="55%">{% trans "Name" %}</th>
-                            <th width="20%">{% trans "URI" %}</th>
-                            <th width="10%">{% trans "Action" %}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                      </table>
-                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
         </div>
     </div>
     <!--<i class="fa fa-fw fa-fighter-jet"></i>-->
@@ -95,13 +101,15 @@
       name: "name",
       aTargets: [1],
       defaultContent: "",
-      mData: "name"
+      mData: "name",
+      sWidth: "90%",
     },
     {
       sTitle: '{% trans "Action" %}',
       mData:"id",
       aTargets: [2],
       defaultContent: "",
+      sWidth: "10%",
       mRender: function(data, type, row) {
         result = '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% trans 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>&nbsp;';
         if( !row.internal ) {
@@ -194,36 +202,39 @@
 
 
   $('#image_list').DataTable({
-        "dom": "<p<'searchbox'f><t>>",
-        "autoWidth": false,
-        "order": [[1, 'asc']],
-        "aoColumns": [
-            {'mData': 'preview', 'name': 'preview', 'aTargets': [0], 'bSortable': false, 'mRender': function(data, type, row){
-                return "<img src='" + data + "' style='width:30px; height:auto;' />";
-            }},
-            {'mData': 'name', 'name': 'name', 'aTargets': [1]},
-            {'mData': 'uri', 'name': 'uri', 'aTargets': [2], 'bSortable': false},
-            {'mData': 'action', 'name': 'action', 'aTargets': [3], 'bSortable': false},
-        ],
-        "language": {
-            "search": "",
-            "lengthMenu": '_MENU_',
-            "pagingType": "bootstrap",
-            "paginate": {
-                "next": '<img src="{% static 'img/right.png' %}"/>',
-                "previous": '<img src="{% static 'img/left.png' %}"/>'
-            }
-        },
-    });
+    language: language_datatable,
+    "autoWidth": false,
+    "order": [[1, 'asc']],
+    "aoColumns": [
+        {'mData': 'preview', sWidth: "85%", 'name': 'preview', 'aTargets': [0], 'bSortable': false, 'mRender': function(data, type, row){
+          return "<img src='" + data + "' style='width:100px; height:auto;' />";
+        }},
+        {'mData': 'name', sWidth: "10%", 'name': 'name', 'aTargets': [1]},
+        {'mData': 'name', sWidth: "5%", 'name': 'action', 'aTargets': [2], 'bSortable': false, mRender: function(data, type, row) {
+          return  `<a class="btn btn-xs btn-danger" href="/portal/images/delete/${row.id}"><span><i class="fa fa-trash"></i></span></a>`
+        }},
+    ],
 
-    {% for img in images %}
-      $('#image_list').dataTable().fnAddData({
-        'preview': '{{ img.create_preview_html }}',
-        'name': '{{ img.name }}',
-        'uri': '{{ img.get_image_uri }}',
-        'action': '<a class="has-popover action_button" href="/template/image/delete/{{img.id}}"><span><i class="fa fa-trash-o"></i></span></a>'
-      });
-    {%  endfor %}
+    fnCreatedRow: function(nRow, aData) {
+      $(nRow).on('click', function(e) {
+        let id = aData["id"]
+        window.location.href = "{% url 'portal.image.edit' %}" + id
+      })
+    }
+});
 
+axios.get("/api/v1/portal/images/")
+  .then((response) => {
+    for (let image of response.data.res) {
+      console.log(image)
+      let data = {
+        id: image.id,
+        preview: image.create_preview_html,
+        name: image.name,
+      }
+
+      $('#image_list').dataTable().fnAddData(data)
+    }
+  })
 
 {% endblock %}

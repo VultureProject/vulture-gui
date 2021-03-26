@@ -126,7 +126,7 @@ def create_group(ldap_repository, group_name, members_username):
 
 
 def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
-    group_dn = False
+    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
     if group_name:
         group_dn = group_name
 
@@ -142,6 +142,12 @@ def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
         "description": ["User created by Vulture"]
     }
 
+    for k, v in attrs.items():
+        if not v:
+            attrs[k] = []
+        elif not isinstance(v, list):
+            attrs[k] = [v]
+
     user.update(attrs)
     client = ldap_repository.get_client()
     r = client.add_user(user_dn, user, group_dn, userPassword)
@@ -149,7 +155,7 @@ def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
     return r, user_dn
 
 
-def update_user(ldap_repository, group_name, user_name, attrs, userPassword):
+def update_user(ldap_repository, group_name, dn, user_name, attrs, userPassword):
     old_user = None
     group_dn = False
     if group_name:
@@ -158,11 +164,12 @@ def update_user(ldap_repository, group_name, user_name, attrs, userPassword):
         if ldap_repository.base_dn not in group_dn:
             group_dn = ldap_repository.create_group_dn(group_name)
 
-    user_dn = search_users(ldap_repository, user_name, by_dn=True)[0]
-    old_user = find_user(ldap_repository, user_dn, attr_list=["*"])
-
-    if not old_user:
-        return False
+    try:
+        old_user = find_user(ldap_repository, dn, attr_list=["*"])
+        if not old_user:
+            raise IndexError()
+    except IndexError:
+        return create_user(ldap_repository, group_name, user_name, userPassword, attrs)
 
     for k, v in attrs.items():
         if not v:
@@ -175,24 +182,19 @@ def update_user(ldap_repository, group_name, user_name, attrs, userPassword):
     client = ldap_repository.get_client()
     r = client.update_user(dn, old_user, attrs, userPassword)
     logger.info(f"User {user_name} updated in LDAP {ldap_repository.name}")
-    return r, user_dn
+    return r, dn
 
-def delete_user(ldap_repository, group_name, user_name):
-    user = None
-    group_dn = False
+def delete_user(ldap_repository, group_name, user_dn):
+    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
     if group_name:
         group_dn = group_name
 
         if ldap_repository.base_dn not in group_dn:
             group_dn = ldap_repository.create_group_dn(group_name)
-
-    user_dn = search_users(ldap_repository, user_name, by_dn=True)[0]
-    if not user_dn:
-        return False
-    
+   
     client = ldap_repository.get_client()
-    # groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(member['dn'])]
-    # r = client.delete_user(member['dn'], groups)
-    r = client.delete_user(user_dn)
-    logger.info(f"User {user_name} deleted in LDAP {ldap_repository.name}")
+
+    groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(user_dn)]
+    r = client.delete_user(user_dn, groups)
+    logger.info(f"User {user_dn} deleted in LDAP {ldap_repository.name}")
     return r

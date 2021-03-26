@@ -36,7 +36,7 @@ from django.utils.decorators import method_decorator
 # Django project imports
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
-from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy, DarwinBuffering, DGA_MODELS_PATH
+from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy, DarwinBuffering, VAST_MODELS_PATH, VAML_MODELS_PATH
 from darwin.policy.views import policy_edit, COMMAND_LIST
 from system.cluster.models import Cluster, Node
 from services.frontend.models import Frontend
@@ -46,6 +46,7 @@ from toolkit.api.responses import build_response
 # Extern modules imports
 from glob import glob as file_glob
 import json
+from os import path as os_path
 from pymongo.errors import DuplicateKeyError
 from sys import exc_info
 
@@ -414,3 +415,39 @@ class DarwinPolicyAPIv1(View):
             return JsonResponse({
                 'error': error
             }, status=500)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class DarwinFilterRessourcesAPIv1(View):
+    @api_need_key('cluster_api_key')
+    def get(self, request, filter_type, ressource):
+        glob = None
+        data = []
+        try:
+            if filter_type == "vast":
+                if ressource == "model":
+                    glob = VAST_MODELS_PATH + "*.dat"
+            elif filter_type == "vaml":
+                if ressource == "model":
+                    glob = VAML_MODELS_PATH + "*.dat"
+
+            if glob is not None:
+                data = [os_path.splitext(os_path.basename(file))[0] for file in file_glob(glob)]
+            else:
+                return JsonResponse({
+                    'error': 'wrong ressource or filter type'
+                }, status=404)
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+            return JsonResponse({
+                'error': error
+            }, status=500)
+
+        return JsonResponse({
+            'data': data
+        }, status=200)

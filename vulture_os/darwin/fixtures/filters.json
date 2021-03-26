@@ -115,6 +115,28 @@
     }
   },
   {
+    "model": "darwin.DarwinFilter",
+    "pk": 11,
+    "fields": {
+      "name": "vast",
+      "longname": "STatistical VAriation",
+      "description": "Detection of abnormal variation through statistical approach",
+      "is_internal": false,
+      "can_be_buffered": true
+    }
+  },
+  {
+    "model": "darwin.DarwinFilter",
+    "pk": 12,
+    "fields": {
+      "name": "vaml",
+      "longname": "VAriation Machine Learning",
+      "description": "Detection of abnormal variation through supervised regression",
+      "is_internal": false,
+      "can_be_buffered": true
+    }
+  },
+  {
     "model": "darwin.FilterPolicy",
     "pk": 1,
     "fields": {

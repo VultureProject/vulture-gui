@@ -423,8 +423,8 @@ class LDAPClient(BaseAuth):
 
         """ Search "memberOf style" groups inside the given user entry """
         self.attributes_list.append(user_groups_attr)
-
         user_info = self.search_user(username)
+        self.attributes_list.remove(user_groups_attr)
 
         if user_info:
             userdn=user_info[0][0]
@@ -432,7 +432,8 @@ class LDAPClient(BaseAuth):
             #This can return None
             if not group_list:
                 group_list=list()
-        self.attributes_list.remove(user_groups_attr)
+        else:
+            raise UserNotFound("User {} not found in {}".format(username, self.user_scope))
 
         logger.debug("{}'s groups are: {}".format(username.encode('utf-8'), group_list))
 
@@ -722,6 +723,7 @@ class LDAPClient(BaseAuth):
             response['status'] = False
             response['reason'] = "User doesn't exist"
         except (ldap.LDAPError, Exception) as e:
+            logger.exception(e)
             response['status'] = False
             response['reason'] = str(e)
 
@@ -822,7 +824,7 @@ class LDAPClient(BaseAuth):
 
         if group_dn:
             attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
-            logger.debug("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
+            logger.info("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
             try:
                 self._get_connection().modify_s(group_dn, attrs)
             except ldap.TYPE_OR_VALUE_EXISTS:
