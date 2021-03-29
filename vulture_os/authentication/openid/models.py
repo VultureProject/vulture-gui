@@ -201,7 +201,8 @@ class OpenIDRepository(BaseRepository):
         refresh_time = timezone.now() - timedelta(hours=CONFIG_RELOAD_INTERVAL)
         if (self.last_config_time is None or self.last_config_time < refresh_time)\
                 or test:
-            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url), proxies=get_proxy())
+            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url), proxies=get_proxy(),
+                             verify=False)
             r.raise_for_status()
             config = r.json()
             logger.info(config)
@@ -217,7 +218,7 @@ class OpenIDRepository(BaseRepository):
                 return config
 
     def get_oauth2_session(self, redirect_uri):
-        session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=self.scope)
+        session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=self.scopes)
         session.proxies=get_proxy()
         return session
 
