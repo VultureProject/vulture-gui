@@ -25,6 +25,7 @@ __doc__ = 'ErrorTemplate model classes'
 # Django system imports
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -257,6 +258,9 @@ from the upstream server or application.</p>
             'name': self.name,
             'frontends': [str(frontend) for frontend in self.frontend_set.all()]
         }
+
+    def to_dict(self):
+        return model_to_dict(self)
 
     def get_base_filename(self, code):
         return "{}_{}.html".format(self.name, code)
