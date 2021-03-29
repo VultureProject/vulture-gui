@@ -59,6 +59,13 @@ class UserAuthenticationForm(ModelForm):
         queryset=BaseRepository.objects.exclude(subtype="OTP").only(*BaseRepository.str_attrs()),
         widget=SelectMultiple(attrs={'class': 'form-control select2'}),
     )
+    # Field used only by GUI, not saved
+    not_openid_repositories = ModelMultipleChoiceField(
+        label=_("Authentication repositories"),
+        queryset=BaseRepository.objects.exclude(subtype__in=["OTP", "openid"]).only(*BaseRepository.str_attrs()),
+        widget=SelectMultiple(attrs={'class': 'form-control select2'}),
+        required=False
+    )
     lookup_ldap_repo = ModelChoiceField(
         label=_("Lookup ldap repository"),
         queryset=LDAPRepository.objects.all().only(*LDAPRepository.str_attrs()),
@@ -72,6 +79,7 @@ class UserAuthenticationForm(ModelForm):
         widget=Select(attrs={'class': 'form-control select2'}),
         required=False
     )
+    # OAuth2 MUST uses httpS !
     external_listener = ModelChoiceField(
         label=_("Listen IDP on"),
         queryset=Frontend.objects.filter(enabled=True, mode="http").only(*Frontend.str_attrs()),
@@ -85,7 +93,7 @@ class UserAuthenticationForm(ModelForm):
 
     class Meta:
         model = UserAuthentication
-        fields = ('name', 'enable_tracking', 'auth_type', 'portal_template', 'repositories',
+        fields = ('name', 'enable_tracking', 'auth_type', 'portal_template', 'repositories', 'not_openid_repositories',
                   'lookup_ldap_repo', 'lookup_ldap_attr', 'lookup_claim_attr',
                   'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'otp_repository', 'otp_max_retry',
                   'disconnect_url', 'enable_disconnect_message', 'enable_disconnect_portal', 'enable_registration',
@@ -164,6 +172,7 @@ class UserAuthenticationForm(ModelForm):
             self.fields[field].required = False
         # Format oauth_redirect_uris
         self.initial['oauth_redirect_uris'] = '\n'.join(self.initial.get('oauth_redirect_uris', []) or self.fields['oauth_redirect_uris'].initial)
+        self.initial['not_openid_repositories'] = self.initial.get('repositories')
 
     def clean_name(self):
         """ Replace all spaces by underscores to prevent bugs later """

@@ -344,7 +344,7 @@ class UserAuthentication(models.Model):
     oauth_client_secret = models.CharField(
         max_length=64,
         default=random_sha256,
-        verbose_name=_("Secret (client_id)"),
+        verbose_name=_("Secret (client_secret)"),
         help_text=_("Client_secret used to contact OAuth2 provider urls")
     )
     oauth_redirect_uris = models.JSONField(
@@ -451,7 +451,7 @@ class UserAuthentication(models.Model):
         help_text=_('URL of additionnal request')
     )
 
-    #objects = models.DjongoManager()
+    objects = models.DjongoManager()
 
     def __str__(self):
         return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])
@@ -526,7 +526,7 @@ class UserAuthentication(models.Model):
 
     def write_login_template(self):
         """ Write templates as static, to serve them without rendering """
-        return self.portal_template.write_template("html_login", openid_repos=self.openid_repos)
+        return self.portal_template.write_template("html_login", openid_repos=self.openid_repos, portal_id=self.id)
 
     def get_user_scope(self, claims, repo_attrs):
         user_scope = {}
@@ -593,6 +593,7 @@ class UserAuthentication(models.Model):
             "authorization_endpoint": f"{issuer}/oauth2/authorize",
             "token_endpoint": f"{issuer}/oauth2/token",
             "userinfo_endpoint": f"{issuer}/oauth2/userinfo",
+            "revocation_endpoint": f"{issuer}/oauth2/revoke",
             "scopes_supported": [
                 "openid"
             ],
