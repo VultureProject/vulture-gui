@@ -217,9 +217,10 @@ def security_update(node_logger=None, tenant_id=None):
     # If tenant id given, only write on disk related reputation databases
     if tenant_id:
         encoded_token = b64encode(tenant.predator_apikey.encode('utf8')).decode('utf8')
-        reputation_ctxs = ReputationContext.mongo_find({"filename": {"$regex": ".*_{}.[a-z]+$".format(encoded_token)}})
+        reputation_ctxs = ReputationContext.mongo_find({"enable_hour_download": "true",
+                                                        "filename": {"$regex": ".*_{}.[a-z]+$".format(encoded_token)}})
     else:
-        reputation_ctxs = ReputationContext.objects.all()
+        reputation_ctxs = ReputationContext.objects.filter(enable_hour_download=True)
     for reputation_ctx in reputation_ctxs:
         try:
             content = reputation_ctx.download()
