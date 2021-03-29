@@ -43,6 +43,7 @@ from workflow.models import Workflow
 from authentication.openid.models import OpenIDRepository
 from authentication.user_portal.models import UserAuthentication
 from portal.system.redis_sessions import REDISBase, REDISPortalSession
+from portal.views.responses import error_response
 
 # Required exceptions imports
 from bson.errors                     import InvalidId
@@ -99,34 +100,39 @@ def openid_start(request, workflow_id, repo_id):
         logger.exception(e)
         return HttpResponseForbidden("Injection detected.")
 
-    # Build the callback url
-    # Get scheme
-    logger.info(request.META)
-    scheme = request.META['HTTP_X_FORWARDED_PROTO']
-    # Asked FQDN (with or without port if needed)
-    fqdn = request.META['HTTP_HOST']
-    w_path = workflow.public_dir
-    callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
+    try:
+        # Build the callback url
+        # Get scheme
+        scheme = request.META['HTTP_X_FORWARDED_PROTO']
+        # Asked FQDN (with or without port if needed)
+        fqdn = request.META['HTTP_HOST']
+        w_path = workflow.public_dir
+        callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
 
-    oauth2_session = repo.get_oauth2_session(callback_url)
-    authorization_url, state = repo.get_authorization_url(oauth2_session)
+        oauth2_session = repo.get_oauth2_session(callback_url)
+        authorization_url, state = repo.get_authorization_url(oauth2_session)
 
-    global_config = Cluster.get_global_config()
-    """ Retrieve token and cookies to instantiate Redis wrapper objects """
-    # Retrieve cookies required for authentication
-    portal_cookie_name = global_config.portal_cookie_name
-    portal_cookie = request.COOKIES.get(portal_cookie_name, random_sha256())
-    # We must stock the state into Redis
-    redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
-    redis_portal_session["oauth_state"] = state
-    redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
+        global_config = Cluster.get_global_config()
+        """ Retrieve token and cookies to instantiate Redis wrapper objects """
+        # Retrieve cookies required for authentication
+        portal_cookie_name = global_config.portal_cookie_name
+        portal_cookie = request.COOKIES.get(portal_cookie_name, random_sha256())
+        # We must stock the state into Redis
+        redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
+        redis_portal_session["oauth_state"] = state
+        redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
 
-    # Finally we redirect the user to authorization_url
-    response = HttpResponseRedirect(authorization_url)
-    # Needed for Safari and mobiles support
-    response['Content-Length'] = 0
-    response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(fqdn), httponly=False, secure=scheme=="https")
-    return response
+        # Finally we redirect the user to authorization_url
+        response = HttpResponseRedirect(authorization_url)
+        # Needed for Safari and mobiles support
+        response['Content-Length'] = 0
+        response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(fqdn), httponly=False, secure=scheme=="https")
+
+        return response
+
+    except Exception as e:
+        logger.exception(e)
+        return error_response(workflow.authentication.portal_template, "An error occurred")
 
 
 def openid_callback(request, workflow_id, repo_id):
@@ -162,7 +168,7 @@ def openid_callback(request, workflow_id, repo_id):
         portal_cookie = request.COOKIES[portal_cookie_name]
 
         # Use POSTAuthentication to print errors with html templates
-        authentication = Authentication(portal_cookie, workflow)
+        authentication = Authentication(portal_cookie, workflow, scheme)
         # Set redirect url in redis
         authentication.set_redirect_url(redirect_url)
 
@@ -183,7 +189,7 @@ def openid_callback(request, workflow_id, repo_id):
             ldap_attr = workflow.authentication.lookup_ldap_attr
             claim = claims.get(workflow.authentication.lookup_claim_attr)
             if not claim:
-                logger.error("OpenID_callback: Cannot retrieve user claim '{}' from user claims '{}'".format(workflow.authentication.lookup_claim_attr, user_infos))
+                logger.error("OpenID_callback: Cannot retrieve user claim '{}' from user claims '{}'".format(workflow.authentication.lookup_claim_attr, claims))
             else:
                 ldap_connector = workflow.authentication.lookup_ldap_repo.get_client()
                 # Enrich user claims with LDAP infos - merge dictionnaries
@@ -218,7 +224,8 @@ def openid_callback(request, workflow_id, repo_id):
         logger.exception(e)
         return HttpResponseServerError()
 
-    response = authenticate(portal_cookie, workflow, token_name, double_auth_only=True, sso_forward=True) or authentication.generate_response()
+    response = authenticate(request, workflow, portal_cookie, token_name, double_auth_only=True, sso_forward=True, openid=False) \
+               or authentication.generate_response()
 
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
 
@@ -247,16 +254,18 @@ def openid_authorize(request, portal_id):
         scope = request.GET['scope']
         response_type = request.GET['response_type']
     except KeyError as e:
-        return portal.portal_template.render_template("html_error", message="Missing required parameter: {}.".format(e.args[0]))
+        logger.exception(e)
+        return error_response(portal.portal_template, "Invalid parameter: {}.".format(e.args[0]))
 
     # Check parameters validity
     try:
         assert client_id == portal.oauth_client_id, "Client authentication failed due to unknown client."
-        assert redirect_uri in portal.oauth_redirect_uris, "Incorrect redirect URI."
+        assert redirect_uri in portal.oauth_redirect_uris, "Invalid redirect URI."
         assert scope == "openid", "The requested scope is invalid."
         assert response_type == "code", "The requested response_type is invalid."
     except AssertionError as e:
-        return portal.portal_template.render_template("html_error", message=e)
+        logger.exception(e)
+        return error_response(portal.portal_template, str(e))
 
     try:
         global_config = Cluster.get_global_config()
@@ -270,25 +279,28 @@ def openid_authorize(request, portal_id):
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
 
-    workflow = Workflow(authentication=portal, fqdn=portal.external_fqdn, id=str(portal._id), name=portal.name)
+    # Prefix ID to prevent conflicts between portal.id and workflow.id
+    workflow = Workflow(authentication=portal, fqdn=portal.external_fqdn, id=f"portal_{portal.id}", name=portal.name)
 
     # OpenID=True returns a response redirect with token
     response = authenticate(request, workflow, portal_cookie, token_name, sso_forward=False, openid=True)
 
-    return set_portal_cookie(response, portal_cookie_name, portal_cookie, scheme == "https")
+    return set_portal_cookie(response, portal_cookie_name, portal_cookie, f"https://{portal.external_fqdn}")
 
 
 
 def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=False, sso_forward=True, openid=False):
+
+    scheme = request.META['HTTP_X_FORWARDED_PROTO']
 
     if not double_auth_only:
         authentication_classes = {'form':POSTAuthentication, 'basic':BASICAuthentication, 'kerberos':KERBEROSAuthentication}
 
         try:
             # Instantiate authentication object to retrieve application auth_type
-            authentication = Authentication(portal_cookie, workflow)
+            authentication = Authentication(portal_cookie, workflow, scheme)
             # And then instantiate the right authentication class with auth_type ('form','basic','kerberos')
-            authentication = authentication_classes[workflow.authentication.auth_type](portal_cookie, workflow)
+            authentication = authentication_classes[workflow.authentication.auth_type](portal_cookie, workflow, scheme)
             logger.debug("PORTAL::log_in: Authentication successfully created")
 
         # Application does not need authentication
@@ -362,14 +374,13 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             except ACLError as e:
                 logger.error("PORTAL::log_in: ACLError while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request, error="Not authorized")
+                return authentication.ask_credentials_response(request=request, error="Bad credentials")
 
             except (DBAPIError, PyMongoError, LDAPError) as e:
                 logger.error("PORTAL::log_in: Repository driver Error while trying to authentication user '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request,
-                                                               error="Connection to repository failed <br> "
-                                                                     "<b> Contact your administrator </b>")
+                                                               error="Bad credentials")
 
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
                 # vltprtlsrnm is always empty during the initial redirection. Don't log that
@@ -387,14 +398,14 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 logger.exception(e)
                 return HttpResponseServerError()
     else:
-        authentication = POSTAuthentication(portal_cookie, workflow)
+        authentication = POSTAuthentication(portal_cookie, workflow, scheme)
 
     # If the user is authenticated but not double-authenticated and double-authentication required
     if authentication.double_authentication_required():
         logger.info("PORTAL::log_in: Double authentication required for user {}".format(authentication.credentials[0]))
         try:
             # Instantiate DOUBLEAuthentication object
-            db_authentication = DOUBLEAuthentication(portal_cookie, workflow)
+            db_authentication = DOUBLEAuthentication(portal_cookie, workflow, scheme)
             logger.debug("PORTAL::log_in: DoubleAuthentication successfully created")
             # And try to retrieve credentials
             db_authentication.retrieve_credentials(request)
@@ -408,7 +419,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             """ If redis_portal_session does not exists or can't retrieve otp key in redis """
             logger.error("PORTAL::log_in: DoubleAuthentication failure for username '{}' : {}"
                          .format(authentication.credentials[0], str(e)))
-            return authentication.ask_credentials_response(request=request, portal_cookie_name=portal_cookie_name,
+            return authentication.ask_credentials_response(request=request,
                                                            error="Portal cookie expired")
 
         except (Workflow.DoesNotExist, ValidationError, InvalidId) as e:

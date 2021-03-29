@@ -115,9 +115,17 @@ def render_button(b_class, text, type="submit", name="", value=""):
 
 
 #def post_authentication_response(request, template, action_url, public_dir, token_name, b64_generated_captcha, error=""):
-def post_authentication_response(request, template, public_dir, error=""):
+def post_authentication_response(request, template, public_dir, catpcha=None, error="", **kwargs):
 	lostPassword   = '{}/self/lost'.format(public_dir)
-	return HttpResponse(template.render_html_login({'lostPassword': lostPassword, 'error_message': error}))
+	return HttpResponse(template.render_template("html_login",
+												 lostPassword=lostPassword,
+												 catpcha=catpcha,
+												 error_message=error,
+												 **kwargs))
+
+
+def error_response(template, error):
+	return HttpResponse(template.render_template("html_error", message=error))
 
 
 def otp_authentication_response(request, template_id, app_id, action_url, token_name, token, otp_type, qrcode, error=""):

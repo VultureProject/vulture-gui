@@ -60,10 +60,11 @@ logger = logging.getLogger('portal_authentication')
 
 
 class Authentication(object):
-    def __init__(self, portal_cookie, workflow):
+    def __init__(self, portal_cookie, workflow, proto):
         self.redis_base = REDISBase()
         self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie)
         self.workflow = workflow
+        self.proto = proto
 
         self.backend_id = self.authenticated_on_backend()
 
@@ -160,7 +161,7 @@ class Authentication(object):
                                         logger=logger)
 
     def authenticate(self, request):
-        e = None
+        error = None
         for backend in self.workflow.authentication.repositories.exclude(subtype="openid"):
             try:
                 authentication_results = self.authenticate_on_backend(backend)
@@ -173,8 +174,9 @@ class Authentication(object):
                 logger.error("AUTH::authenticate: Authentication failure for username '{}' on fallback backend '{}'"
                              " : '{}'".format(self.credentials[0], str(backend), str(e)))
                 logger.exception(e)
+                error = e
                 continue
-        raise e or AuthenticationError
+        raise error or AuthenticationError
 
     def register_user(self, authentication_results):
         # Always create oauth2 token, with oauth2_timeout or auth_timeout
@@ -273,8 +275,9 @@ class Authentication(object):
         portal_cookie_name = kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
             response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
-                                domain=self.get_redirect_url_domain(), httponly=True,
-                                secure=self.get_redirect_url().startswith('https'))
+                                domain=split_domain(self.workflow.fqdn),
+                                httponly=True,
+                                secure=self.proto == "https")
 
         return response
 
@@ -283,8 +286,8 @@ class Authentication(object):
 
 
 class POSTAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow):
-        super(POSTAuthentication, self).__init__(portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow, proto):
+        super(POSTAuthentication, self).__init__(portal_cookie, workflow, proto)
 
     def retrieve_credentials(self, request):
         username = request.POST['vltprtlsrnm']
@@ -304,11 +307,10 @@ class POSTAuthentication(Authentication):
         else:
             captcha = False
 
-        response = post_authentication_response(kwargs.get('request'), self.workflow.authentication.portal_template,
-                                                # FIXME : auth_portal ?
-                                                # self.workflow.auth_portal or
-                                                self.workflow.get_redirect_uri(),
+        response = post_authentication_response(kwargs.get('request'),
+                                                self.workflow.authentication.portal_template,
                                                 self.workflow.public_dir,
+                                                captcha=captcha,
                                                 error=kwargs.get('error', ""))
 
         portal_cookie_name = kwargs.get('portal_cookie_name', None)
@@ -321,8 +323,8 @@ class POSTAuthentication(Authentication):
 
 
 class BASICAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow):
-        super(BASICAuthentication, self).__init__(portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow, proto):
+        super(BASICAuthentication, self).__init__(portal_cookie, workflow, proto)
 
     def retrieve_credentials(self, request):
         authorization_header = request.META.get("HTTP_AUTHORIZATION").replace("Basic ", "")
@@ -343,8 +345,8 @@ class BASICAuthentication(Authentication):
 
 
 class KERBEROSAuthentication(Authentication):
-    def __init__(self, token_name, portal_cookie, workflow):
-        super(KERBEROSAuthentication, self).__init__(token_name, portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow, proto):
+        super().__init__(portal_cookie, workflow, proto)
 
     def retrieve_credentials(self, request):
         self.credentials = request.META["HTTP_AUTHORIZATION"].replace("Negotiate ", "")
@@ -402,8 +404,8 @@ class KERBEROSAuthentication(Authentication):
 
 
 class DOUBLEAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow):
-        super(DOUBLEAuthentication, self).__init__(portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow, proto):
+        super().__init__(portal_cookie, workflow, proto)
         assert (self.redis_portal_session.exists())
         assert self.backend_id
         self.credentials[0] = self.redis_portal_session.get_login(self.backend_id)
@@ -526,9 +528,7 @@ class DOUBLEAuthentication(Authentication):
 
 
 class OAUTH2Authentication(Authentication):
-    def __init__(self, workflow_id):
-        assert (workflow_id)
-        self.application = Workflow.objects.get(pk=workflow_id)
+    def __init__(self, portal_cookie, workflow, proto):
         self.redis_base = REDISBase()
 
     def retrieve_credentials(self, username, password, portal_cookie):

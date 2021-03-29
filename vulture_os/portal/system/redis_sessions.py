@@ -285,12 +285,9 @@ class REDISPortalSession(REDISSession):
         self.handler.hset(self.key, 'captcha_{}'.format(workflow_id), secret_key)
         return secret_key
 
-    def create_openid_token(self):
 
-
-    """ Retrieve encrypted password in REDIS, decrypt it and return it plain text """
     def getAutologonPassword(self, app_id, backend, username):
-
+        """ Retrieve encrypted password in REDIS, decrypt it and return it plain text """
         # Get the encrypted password's value for the current backend
         p = self.handler.hget(self.key, 'password_'+backend)
         if not p:
