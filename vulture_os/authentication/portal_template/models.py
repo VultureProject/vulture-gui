@@ -353,13 +353,13 @@ class PortalTemplate(models.Model):
         logger.info({**self.attrs_dict(), **kwargs})
         return tpl.render(Context({**self.attrs_dict(), **kwargs}))
 
-    def tpl_filename(self, tpl_name):
-        return f"{HAPROXY_PATH}/templates/{tpl_name}_{self.id}.html"
+    def tpl_filename(self, tpl_name, portal_id=None):
+        return f"{HAPROXY_PATH}/templates/{tpl_name}_{portal_id or self.id}.html"
 
     def write_template(self, tpl_name, **kwargs):
         """ This method has to be called by api_request (Vultured) """
         filename = self.tpl_filename(tpl_name)
-        write_conf(logger, [self.tpl_filename(tpl_name), HAPROXY_HEADER+self.render_template(tpl_name, **kwargs), HAPROXY_OWNER, HAPROXY_PERMS])
+        write_conf(logger, [self.tpl_filename(tpl_name, kwargs.get('portal_id')), HAPROXY_HEADER+self.render_template(tpl_name, **kwargs), HAPROXY_OWNER, HAPROXY_PERMS])
         return "Template {} successfully written".format(filename)
 
 
