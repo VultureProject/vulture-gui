@@ -488,7 +488,7 @@ class UserAuthentication(models.Model):
         if not self.repo_attributes:
             return []
         else:
-            return [RepoAttributes(r) for r in self.repo_attributes]
+            return [RepoAttributes(**r) for r in self.repo_attributes]
 
     def to_dict(self):
         data = model_to_dict(self)
