@@ -40,6 +40,8 @@ from authentication.openid.models import OpenIDRepository
 
 # Logger configuration imports
 import logging
+
+from toolkit.api.responses import build_response
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -70,7 +72,7 @@ def clone(request, object_id):
     return render(request, 'authentication/openid_edit.html', {'form': form})
 
 
-def edit(request, object_id=None):
+def edit(request, object_id=None, api=False):
     repo = None
     if object_id:
         try:
@@ -78,7 +80,10 @@ def edit(request, object_id=None):
         except ObjectDoesNotExist:
             return HttpResponseForbidden("Injection detected")
 
-    form = OpenIDRepositoryForm(request.POST or None, instance=repo, error_class=DivErrorList)
+    if hasattr(request, "JSON") and api:
+        form = OpenIDRepositoryForm(request.JSON or None, instance=repo, error_class=DivErrorList)
+    else:
+        form = OpenIDRepositoryForm(request.POST or None, instance=repo, error_class=DivErrorList)
 
     if request.method in ("POST", "PUT") and form.is_valid():
         # Save the form to get an id if there is not already one
@@ -89,6 +94,9 @@ def edit(request, object_id=None):
         repo.save()
 
         # If everything succeed, redirect to list view
+        if api:
+            return build_response(repo.id, "authentication.openid.api", [])
+
         return HttpResponseRedirect('/authentication/openid/')
 
     return render(request, 'authentication/openid_edit.html', {'form': form})
