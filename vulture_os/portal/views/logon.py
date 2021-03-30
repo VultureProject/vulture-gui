@@ -71,6 +71,9 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('portal_authentication')
 
 
+STATE_REDIS_KEY = "oauth_state"
+
+
 def openid_configuration(request, portal_id):
     try:
         portal = UserAuthentication.objects.get(pk=portal_id)
@@ -119,7 +122,7 @@ def openid_start(request, workflow_id, repo_id):
         portal_cookie = request.COOKIES.get(portal_cookie_name, random_sha256())
         # We must stock the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
-        redis_portal_session["oauth_state"] = state
+        redis_portal_session[STATE_REDIS_KEY] = state
         redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
 
         # Finally we redirect the user to authorization_url
@@ -165,7 +168,8 @@ def openid_callback(request, workflow_id, repo_id):
     try:
         code = request.GET['code']
         state = request.GET['state']
-        portal_cookie = request.COOKIES[portal_cookie_name]
+        # Cookie can be empty, it will be created in Authentication class
+        portal_cookie = request.COOKIES.get(portal_cookie_name)
 
         # Use POSTAuthentication to print errors with html templates
         authentication = Authentication(portal_cookie, workflow, scheme)
@@ -174,7 +178,9 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Get user session with cookie
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
-        assert state == redis_portal_session['oauth_state']
+        assert state == redis_portal_session[STATE_REDIS_KEY]
+        # If state is correct, remove-it in Redis to prevent re-use
+        redis_portal_session.delete_key(STATE_REDIS_KEY)
         oauth2_session = repo.get_oauth2_session(callback_url)
         token = repo.fetch_token(oauth2_session, code)['access_token']
         # Save token in Redis for later use
@@ -198,6 +204,7 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Create user scope depending on GUI configuration attributes
         user_scope = workflow.authentication.get_user_scope(claims, repo_attributes)
+        logger.info(user_scope)
 
         # Set authentication attributes required
         authentication.backend_id = repo_id
@@ -222,7 +229,7 @@ def openid_callback(request, workflow_id, repo_id):
 
     except Exception as e:
         logger.exception(e)
-        return HttpResponseServerError()
+        return error_response(workflow.authentication.portal_template, "An error occurred")
 
     response = authenticate(request, workflow, portal_cookie, token_name, double_auth_only=True, sso_forward=True, openid=False) \
                or authentication.generate_response()
@@ -560,10 +567,14 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
     # If we arrive here, the user is authenticated
     if openid:
-        token = authentication.register_openid(scope=request.GET['scope'], client_id=request.GET['client_id'],
-                                               redirect_uri=request.GET['redirect_uri'])
+        token = random_sha256()
+        authentication.register_openid(token,
+                                       scope=request.GET['scope'],
+                                       client_id=request.GET['client_id'],
+                                       redirect_uri=request.GET['redirect_uri'])
+
         return HttpResponseRedirect(build_url_params(request.GET['redirect_uri'],
-                                                     state=request.GET('state'),
+                                                     state=request.GET.get('state', ""),
                                                      code=token))
 
 

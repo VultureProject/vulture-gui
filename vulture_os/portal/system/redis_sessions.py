@@ -275,6 +275,13 @@ class REDISPortalSession(REDISSession):
         self.keys[f'user_infos_{backend_id}'] = user_infos
         return self.handler.hset(self.key, f'user_infos_{backend_id}', json.dumps(user_infos or {}))
 
+    def delete_key(self, key):
+        # Remove key in keys attribute to prevent cache re-use
+        # Do not raise if key does not exist
+        self.keys.pop(key, None)
+        # And remove key in Redis
+        return self.handler.hdel(self.key, key)
+
     def retrieve_captcha(self, workflow_id):
         return self.handler.hget(self.key, f'captcha_{workflow_id}')
 
@@ -374,7 +381,6 @@ class REDISPortalSession(REDISSession):
                              'vlt_autologon_password', password)
             self.keys[f'password_{backend_id}'] = p
 
-        logger.info(self.keys)
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")
