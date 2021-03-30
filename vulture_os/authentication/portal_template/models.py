@@ -321,7 +321,7 @@ class PortalTemplate(models.Model):
 
     def attrs_dict(self):
         """ Return all fields attributes """
-        return {
+        result = {
             'login_login_field': self.login_login_field,
             'login_password_field': self.login_password_field,
             'login_captcha_field': self.login_captcha_field,
@@ -347,10 +347,12 @@ class PortalTemplate(models.Model):
             'input_password': INPUT_PASSWORD,
             'style': self.css
         }
+        for image in TemplateImage.objects.all():
+            result[f"image_{image.id}"] = image.create_preview_html()
+        return result
 
     def render_template(self, tpl_name, **kwargs):
         tpl = Template(getattr(self, tpl_name))
-        logger.info({**self.attrs_dict(), **kwargs})
         return tpl.render(Context({**self.attrs_dict(), **kwargs}))
 
     def tpl_filename(self, tpl_name, portal_id=None):
