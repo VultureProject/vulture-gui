@@ -823,6 +823,7 @@ class Frontend(models.Model):
             'https_redirect': self.https_redirect,
             'listeners': [],
             'tenant_name': self.tenants_config.name,
+            "tenants_config": self.tenants_config.pk,
             'timeout_connect': self.timeout_connect,
             'timeout_client': self.timeout_client
         }
@@ -949,8 +950,11 @@ class Frontend(models.Model):
                     result['sentinel_one_apikey'] = self.sentinel_one_apikey
 
             if self.enable_logging_reputation:
-                result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
-                result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
+                if self.logging_reputation_database_v4:
+                    result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
+
+                if self.logging_reputation_database_v6:
+                    result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
 
             if self.enable_logging_geoip:
                 result['logging_geoip_database'] = self.logging_geoip_database.to_template()
@@ -1153,7 +1157,7 @@ class Frontend(models.Model):
             'tenants_config': self.tenants_config,
             'filebeat_module': self.filebeat_module,
             'filebeat_config': self.filebeat_config,
-            'filebeat_listening_mode': self.filebeat_listening_mode
+            'filebeat_listening_mode': self.filebeat_listening_mode,
             'external_idps': self.userauthentication_set.filter(enable_external=True)
         }
 
