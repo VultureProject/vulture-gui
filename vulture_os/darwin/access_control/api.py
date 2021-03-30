@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'ACL API'
 
 # Django system imports
+from bson import ObjectId
 from django.conf import settings
 from django.views import View
 from django.http import JsonResponse
@@ -47,18 +48,20 @@ class ACLAPIv1(View):
     def get(self, request, object_id=None):
         try:
             if object_id:
-                try:
-                    acl = AccessControl.objects.get(pk=object_id).to_template()
-                except AccessControl.DoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
+                acl = AccessControl.objects.get(pk=ObjectId(object_id)).to_template()
+            elif request.GET.get('name'):
+                acl = AccessControl.objects.get(name=request.GET['name']).to_template()
             else:
                 acl = [a.to_template() for a in AccessControl.objects.all()]
 
             return JsonResponse({
                 'data': acl
             })
+
+        except AccessControl.DoesNotExist:
+            return JsonResponse({
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)
@@ -106,3 +109,19 @@ class ACLAPIv1(View):
         return JsonResponse({
             'error': error
         }, status=500)
+
+    @api_need_key("cluster_api_key")
+    def delete(self, request, object_id):
+        try:
+            obj = AccessControl.objects.get(pk=ObjectId(object_id))
+            obj.delete()
+
+            return JsonResponse({
+                "status": True
+            }, status=204)
+        except AccessControl.DoesNotExist:
+            raise
+            return JsonResponse({
+                "status": False,
+                "error": _("Object does not exists")
+            }, status=404)
