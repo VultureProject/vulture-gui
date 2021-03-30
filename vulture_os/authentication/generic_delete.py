@@ -157,6 +157,28 @@ class DeleteUserAuthentication(DeleteView):
     def used_by(self, objet):
         return []
 
+    def post(self, request, object_id, **kwargs):
+        if hasattr(request, "JSON"):
+            confirm = request.JSON.get('confirm')
+        else:
+            confirm = request.POST.get('confirm')
+
+        if confirm == 'yes':
+            try:
+                obj_inst = self.obj.objects.get(pk=object_id)
+            except ObjectDoesNotExist:
+                return HttpResponseNotFound('Object not found.')
+
+            # Firstly estroy deferenced objects
+            OpenIDRepository.objects.filter(client_id=obj_inst.oauth_client_id,
+                                            client_secret=obj_inst.oauth_client_secret,
+                                            provider="openid").delete()
+            obj_inst.delete()
+
+        if kwargs.get('api'):
+            return JsonResponse({"status": True})
+        return HttpResponseRedirect(self.redirect_url)
+
 
 class DeleteLearningProfile(DeleteView):
     menu_name = _("Authentication -> Learning Profiles -> Delete")
