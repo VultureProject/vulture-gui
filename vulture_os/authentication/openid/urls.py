@@ -29,6 +29,7 @@ from django.urls import path, re_path
 from authentication.generic_list import ListOpenIDRepository
 from authentication.generic_delete import DeleteOpenIDRepository
 from authentication.openid import views
+from authentication.openid import api
 
 
 # Required exceptions imports
@@ -36,21 +37,31 @@ from authentication.openid import views
 
 urlpatterns = [
     # List view
-    path('authentication/openid/', ListOpenIDRepository.as_view(), name="authentication.openid.list"),
-    # Edit view
-    re_path('^authentication/openid/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
-            views.edit,
-            name="authentication.openid.edit"),
-    # Clone view
-    re_path('^authentication/openid/clone/(?P<object_id>[A-Fa-f0-9]+)$',
-            views.clone,
-            name="authentication.openid.clone"),
-    # Delete view
-    re_path('^authentication/openid/delete/(?P<object_id>[A-Fa-f0-9]+)$',
-            DeleteOpenIDRepository.as_view(),
-            name="authentication.openid.delete"),
-    # Authentication test views
-    path('authentication/openid/test_provider/',
-         views.test_provider,
-         name="authentication.openid.test_provider"),
+        path('authentication/openid/', ListOpenIDRepository.as_view(), name="authentication.openid.list"),
+        # Edit view
+        re_path('^authentication/openid/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
+                views.edit,
+                name="authentication.openid.edit"),
+        # Clone view
+        re_path('^authentication/openid/clone/(?P<object_id>[A-Fa-f0-9]+)$',
+                views.clone,
+                name="authentication.openid.clone"),
+        # Delete view
+        re_path('^authentication/openid/delete/(?P<object_id>[A-Fa-f0-9]+)$',
+                DeleteOpenIDRepository.as_view(),
+                name="authentication.openid.delete"),
+        # Authentication test views
+        path('authentication/openid/test_provider/',
+                views.test_provider,
+                name="authentication.openid.test_provider"),
+
+        path('api/v1/authentication/openid/',
+        api.OPENIDApi.as_view(),
+        name="authentication.openid.api"
+    ),
+
+    path('api/v1/authentication/openid/<int:object_id>/',
+        api.OPENIDApi.as_view(),
+        name="authentication.openid.api"
+    )
 ]
