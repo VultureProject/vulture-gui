@@ -117,24 +117,14 @@ class NetworkAddressAPIv1(View):
     def get(self, request, object_id=None):
         try:
             name = request.GET.get('name')
+            ip = request.GET.get('ip')
+
             if object_id:
-                try:
-                    obj = NetworkAddress.objects.get(pk=object_id).to_dict()
-                except NetworkAddress.DoesNotExist:
-                    return JsonResponse({
-                        'status': False,
-                        'error': _('Object does not exist')
-                    }, status=404)
-
+                obj = NetworkAddress.objects.get(pk=object_id).to_dict()
+            elif name and ip:
+                obj = NetworkAddress.objects.get(name=name, ip=ip).to_dict()
             elif name:
-                try:
-                    obj = NetworkAddress.objects.get(name=name).to_dict()
-                except NetworkAddress.DoesNotExist:
-                    return JsonResponse({
-                        'status': False,
-                        'error': _('Object does not exist')
-                    }, status=404)
-
+                obj = [n.to_dict() for n in NetworkAddress.objects.filter(name=name)]
             else:
                 obj = [s.to_dict() for s in NetworkAddress.objects.all()]
 
@@ -142,6 +132,12 @@ class NetworkAddressAPIv1(View):
                 'status': True,
                 'data': obj
             })
+
+        except NetworkAddress.DoesNotExist:
+            return JsonResponse({
+                'status': False,
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             if settings.DEV_MODE:
