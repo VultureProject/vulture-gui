@@ -254,7 +254,7 @@ class LDAPClient(BaseAuth):
             if not controls[0].cookie:
                 break
             page_control.cookie = controls[0].cookie
-        logger.info("LDAP search_s result is: {}".format(result))
+        #logger.info("LDAP search_s result is: {}".format(result))
         return self._process_results(result)
 
     def _search_oauth2(self, username):
@@ -635,7 +635,10 @@ class LDAPClient(BaseAuth):
         res['dn'] = user_dn
         res['account_locked'] = self.is_user_account_locked(username)
         res['password_expired'] = self.is_password_expired(username)
-        res['user_groups'] = [*user_groups, *self.search_user_groups_by_dn(user_dn)]
+        user_groups = [*user_groups, *self.search_user_groups_by_dn(user_dn)]
+        res['user_groups'] = user_groups
+        if self.user_groups_attr:
+            res[self.user_groups_attr] = user_groups
         return res
 
     def _process_results(self, results):
