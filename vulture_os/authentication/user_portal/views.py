@@ -161,7 +161,7 @@ def user_authentication_edit(request, object_id=None, api=False):
         if form.is_valid():
             # Check changed attributes before form.save
             repo_changed = "repositories" in form.changed_data
-            external_listener_changed = "external_listener" in form.changed_data and profile.enable_external
+            external_listener_changed = "external_listener" in form.changed_data and profile and profile.enable_external
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
             for repo_attr in repo_attrs_objs:
