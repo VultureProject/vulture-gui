@@ -19,4 +19,18 @@ class Migration(migrations.Migration):
             name='oauth_client_secret',
             field=models.CharField(default=toolkit.system.hashes.random_sha256, help_text='Client_secret used to contact OAuth2 provider urls', max_length=64, verbose_name='Secret (client_secret)'),
         ),
+        migrations.AddField(
+            model_name='openidrepository',
+            name='use_proxy',
+            field=models.BooleanField(default=True,
+                                      help_text='Use system proxy (if configured) to contact OpenID provider endpoints',
+                                      verbose_name='Use system proxy'),
+        ),
+        migrations.AddField(
+            model_name='openidrepository',
+            name='verify_certificate',
+            field=models.BooleanField(default=True,
+                                      help_text='If the IDP uses auto-signed certificate - disable this option',
+                                      verbose_name='Verify certificate'),
+        )
     ]
