@@ -268,7 +268,7 @@ class REDISPortalSession(REDISSession):
     def get_auth_backend(self, workflow_id):
         return self.handler.hget(self.key, f'backend_{workflow_id}')
 
-    def get_user_info(self, backend_id):
+    def get_user_infos(self, backend_id):
         return json.loads(self.handler.hget(self.key, f'user_infos_{backend_id}') or "{}")
 
     def set_user_infos(self, backend_id, user_infos):

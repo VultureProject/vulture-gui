@@ -597,6 +597,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
         """ If SSOForward enabled : perform-it """
         if portal.enable_sso_forward:
+            # Retrieve user_infos
+            user_infos = authentication.get_user_infos(workflow.id)
             # Try to retrieve credentials from authentication object
             try:
                 if not authentication.credentials[0] or not authentication.credentials[1]:

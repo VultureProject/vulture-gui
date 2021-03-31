@@ -86,7 +86,7 @@ class SSOForward(object):
         self.application  = application
         self.credentials  = authentication.credentials
         self.backend_id   = authentication.backend_id
-        self.oauth2_token = authentication.redis_portal_session.get_oauth2_token(authentication.authenticated_on_backend())
+        self.oauth2_token = authentication.redis_portal_session.get_oauth2_token(self.backend_id)
         #self.user_infos = authentication.redis_portal_session.get_user_infos(self.backend_id)
         self.user_infos = user_infos
         logger.debug("SSOFORWARD::_init_: Object successfully created")
