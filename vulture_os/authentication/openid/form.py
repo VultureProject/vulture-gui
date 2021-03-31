@@ -45,14 +45,17 @@ class OpenIDRepositoryForm(ModelForm):
 
     class Meta:
         model = OpenIDRepository
-        fields = ('name', 'provider', 'provider_url', 'client_id', 'client_secret', 'scopes')
+        fields = ('name', 'provider', 'provider_url', 'client_id', 'client_secret', 'scopes', 'use_proxy',
+                  'verify_certificate')
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'provider': Select(choices=PROVIDERS_TYPE, attrs={'class': 'form-control select2'}),
             'provider_url': TextInput(attrs={'class': 'form-control'}),
             'client_id': TextInput(attrs={'class': 'form-control'}),
             'client_secret': TextInput(attrs={'class': 'form-control'}),
-            'scopes': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"})
+            'scopes': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+            'use_proxy': CheckboxInput(attrs={"class": " js-switch"}),
+            'verify_certificate': CheckboxInput(attrs={"class": " js-switch"}),
         }
 
     def __init__(self, *args, **kwargs):

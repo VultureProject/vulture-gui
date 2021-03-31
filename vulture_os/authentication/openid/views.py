@@ -83,6 +83,9 @@ def edit(request, object_id=None):
     if request.method == "POST" and form.is_valid():
         # Save the form to get an id if there is not already one
         repo = form.save(commit=False)
+        # If provider_url changed, force reload of configuration
+        if "provider_url" in form.changed_data:
+            repo.last_config_time = None
         repo.save()
 
         # If everything succeed, redirect to list view
