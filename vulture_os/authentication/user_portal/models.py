@@ -470,11 +470,9 @@ class UserAuthentication(models.Model):
 
     def to_template(self):
         """  returns the attributes of the class """
-        return {
-            'id': str(self.id),
-            'name': self.name,
-            'openid_repos': [repo.to_template() for repo in self.openid_repos]
-        }
+        data = model_to_dict(self)
+        data['openid_repos'] = self.openid_repos
+        return data
 
     def to_template_external(self):
         return {
@@ -527,6 +525,9 @@ class UserAuthentication(models.Model):
     def write_login_template(self):
         """ Write templates as static, to serve them without rendering """
         return self.portal_template.write_template("html_login", openid_repos=self.openid_repos, portal_id=self.id)
+
+    def render_template(self, tpl_name, **kwargs):
+        return self.portal_template.render_template(tpl_name, **{**kwargs, **self.to_template()})
 
     def get_user_scope(self, claims, repo_attrs):
         user_scope = {}

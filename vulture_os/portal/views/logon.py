@@ -122,7 +122,8 @@ def openid_start(request, workflow_id, repo_id):
         """ Retrieve token and cookies to instantiate Redis wrapper objects """
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
-        portal_cookie = request.COOKIES.get(portal_cookie_name, random_sha256())
+        portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
+        logger.info(portal_cookie)
         # We must stock the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         redis_portal_session[STATE_REDIS_KEY] = state
@@ -138,7 +139,7 @@ def openid_start(request, workflow_id, repo_id):
 
     except Exception as e:
         logger.exception(e)
-        return error_response(workflow.authentication.portal_template, "An error occurred")
+        return error_response(workflow.authentication, "An error occurred")
 
 
 def openid_callback(request, workflow_id, repo_id):
@@ -172,7 +173,7 @@ def openid_callback(request, workflow_id, repo_id):
         code = request.GET['code']
         state = request.GET['state']
         # Cookie can be empty, it will be created in Authentication class
-        portal_cookie = request.COOKIES.get(portal_cookie_name)
+        portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
 
         # Use POSTAuthentication to print errors with html templates
         authentication = Authentication(portal_cookie, workflow, scheme)
@@ -232,7 +233,7 @@ def openid_callback(request, workflow_id, repo_id):
 
     except Exception as e:
         logger.exception(e)
-        return error_response(workflow.authentication.portal_template, "An error occurred")
+        return error_response(workflow.authentication, "An error occurred")
 
     response = authenticate(request, workflow, portal_cookie, token_name, double_auth_only=True, sso_forward=True, openid=False) \
                or authentication.generate_response()
@@ -265,7 +266,7 @@ def openid_authorize(request, portal_id):
         response_type = request.GET['response_type']
     except KeyError as e:
         logger.exception(e)
-        return error_response(portal.portal_template, "Invalid parameter: {}.".format(e.args[0]))
+        return error_response(portal, "Invalid parameter: {}.".format(e.args[0]))
 
     # Check parameters validity
     try:
@@ -275,7 +276,7 @@ def openid_authorize(request, portal_id):
         assert response_type == "code", "The requested response_type is invalid."
     except AssertionError as e:
         logger.exception(e)
-        return error_response(portal.portal_template, str(e))
+        return error_response(portal, str(e))
 
     try:
         global_config = Cluster.get_global_config()
@@ -284,7 +285,7 @@ def openid_authorize(request, portal_id):
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
         token_name = global_config.public_token
-        portal_cookie = request.COOKIES.get(portal_cookie_name, None)
+        portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
     except Exception as e:
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
@@ -477,8 +478,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
                 # vltprtlsrnm is always empty during the initial redirection. Don't log that
-                logger.error("PORTAL::log_in: Error while trying to authentication user '{}' : {}"
-                             .format(authentication.credentials[0], e))
+                if str(e) != "vltprtlsrnm":
+                    logger.error("PORTAL::log_in: Error while trying to authentication user '{}' : {}"
+                                 .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request)
 
             except REDISWriteError as e:
@@ -673,6 +675,8 @@ def log_in(request, workflow_id=None):
     """
     """ First, try to retrieve concerned objects """
     try:
+        scheme = request.META["HTTP_X_FORWARDED_PROTO"]
+        host = request.META["HTTP_HOST"]
         workflow = Workflow.objects.get(pk=workflow_id)
     except Exception as e:
         logger.exception(e)
@@ -685,20 +689,22 @@ def log_in(request, workflow_id=None):
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
         token_name = global_config.public_token
-        portal_cookie = request.COOKIES.get(portal_cookie_name, None)
+        portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
     except Exception as e:
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
 
-    response = authenticate(request, workflow, portal_cookie, portal_cookie_name)
+    response = authenticate(request, workflow, portal_cookie, portal_cookie_name) or \
+               HttpResponseRedirect("#")
 
-    """ If no response has been returned yet : redirect to the asked-uri/default-uri with portal_cookie """
-    redirection_url = authentication.get_redirect_url()
-    logger.info("PORTAL::log_in: Redirecting user to '{}'".format(redirection_url))
     try:
         kerberos_token_resp = authentication_results['data']['token_resp']
+        response['WWW-Authenticate'] = 'Negotiate ' + str(kerberos_token_resp)
     except:
-        kerberos_token_resp = None
-    return response_redirect_with_portal_cookie(redirection_url, portal_cookie_name, portal_cookie,
-                                                redirection_url.startswith('https'), kerberos_token_resp)
+        pass
+
+    redirect_url = scheme + "://" + host + workflow.public_dir
+
+    logger.info("PORTAL::log_in: Return response {}".format(response))
+    return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
 

@@ -307,7 +307,7 @@ class POSTAuthentication(Authentication):
             captcha = False
 
         response = post_authentication_response(kwargs.get('request'),
-                                                self.workflow.authentication.portal_template,
+                                                self.workflow.authentication,
                                                 self.workflow.public_dir,
                                                 captcha=captcha,
                                                 error=kwargs.get('error', ""))
