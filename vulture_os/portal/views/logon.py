@@ -32,6 +32,7 @@ path.append("/home/vlt-os/vulture_os/portal")
 from django.conf                     import settings
 from django.http                     import (HttpResponseRedirect, HttpResponseServerError, HttpResponseForbidden,
                                              JsonResponse, HttpResponse)
+from django.utils import timezone
 
 # Django project imports
 from system.cluster.models           import Cluster
@@ -42,7 +43,7 @@ from portal.system.sso_forwards      import SSOForwardPOST, SSOForwardBASIC, SSO
 from workflow.models import Workflow
 from authentication.openid.models import OpenIDRepository
 from authentication.user_portal.models import UserAuthentication
-from portal.system.redis_sessions import REDISBase, REDISPortalSession
+from portal.system.redis_sessions import REDISBase, REDISPortalSession, RedisOpenIDSession, REDISOauth2Session
 from portal.views.responses import error_response
 
 # Required exceptions imports
@@ -52,7 +53,7 @@ from django.utils.datastructures     import MultiValueDictKeyError
 from ldap                            import LDAPError
 from OpenSSL.SSL                     import Error as OpenSSLError
 from pymongo.errors                  import PyMongoError
-from redis                           import ConnectionError as RedisConnectionError
+from redis                           import ConnectionError as RedisConnectionError, RedisError
 from requests.exceptions             import ConnectionError as RequestsConnectionError
 from sqlalchemy.exc                  import DBAPIError
 from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeededError, CredentialsMissingError,
@@ -61,9 +62,11 @@ from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.system.hashes import random_sha256
 from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
+from ast import literal_eval
 
 # Extern modules imports
 from requests_oauthlib import OAuth2Session
+from base64 import b64decode
 
 # Logger configuration imports
 import logging
@@ -293,6 +296,89 @@ def openid_authorize(request, portal_id):
     response = authenticate(request, workflow, portal_cookie, token_name, sso_forward=False, openid=True)
 
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, f"https://{portal.external_fqdn}")
+
+
+def openid_token(request, portal_id):
+    try:
+        scheme = request.META['HTTP_X_FORWARDED_PROTO']
+    except KeyError:
+        logger.error("PORTAL::openid_authorize: could not get scheme from request")
+        return HttpResponseServerError()
+
+    try:
+        portal = UserAuthentication.objects.get(pk=portal_id)
+    except UserAuthentication.DoesNotExist:
+        logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
+        return HttpResponseServerError()
+    except Exception as e:
+        logger.error("PORTAL::openid_authorize: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
+        return HttpResponseServerError()
+
+    try:
+        assert request.POST.get('grant_type') == "authorization_code", "The authorization grant type is not supported by the authorization server."
+        assert request.POST.get('redirect_uri'), "Missing required parameter: redirect_uri."
+        assert request.POST.get('code'), "Missing required parameter: code."
+    except AssertionError as e:
+        logger.exception(e)
+        return JsonResponse({'error':"invalid_request", "error_description": str(e)},
+                            status=400)
+
+    # Check mandatory URI parameters presence
+    try:
+        client_id, client_secret = b64decode(request.headers.get("Authorization").replace("Basic ", "")).decode('utf8').split(':')
+        assert client_id == portal.oauth_client_id
+        assert client_secret == portal.oauth_client_secret
+    except Exception as e:
+        logger.exception(e)
+        return JsonResponse({'error':"invalid_grant", "error_description": "Authorization error"},
+                            status=400)
+
+    try:
+        session = RedisOpenIDSession(REDISBase(), f"token_{request.POST.get('code')}")
+        assert session['client_id'] == client_id, "Invalid client_id."
+        assert session['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
+        return JsonResponse({
+            'access_token': session['access_token'],
+            'token_type': "Bearer",
+            'scope': ["openid"],
+            'created_at': int(timezone.now().timestamp()),
+        })
+    except RedisError as e:
+        return JsonResponse({"error": "internal_error", "error_description": "Session error"}, status=500)
+    except AssertionError as e:
+        logger.exception(e)
+        return JsonResponse({'error':"invalid_request", "error_description": str(e)},
+                            status=400)
+
+
+def openid_userinfo(request, portal_id):
+    try:
+        scheme = request.META['HTTP_X_FORWARDED_PROTO']
+    except KeyError:
+        logger.error("PORTAL::openid_authorize: could not get scheme from request")
+        return HttpResponseServerError()
+
+    try:
+        portal = UserAuthentication.objects.get(pk=portal_id)
+    except UserAuthentication.DoesNotExist:
+        logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
+        return HttpResponseServerError()
+    except Exception as e:
+        logger.error("PORTAL::openid_authorize: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
+        return HttpResponseServerError()
+
+    try:
+        assert request.headers.get('Authorization')
+        assert request.headers.get('Authorization').startswith("Bearer ")
+
+        oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
+        session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
+        assert session['scope']
+        logger.info(session['scope'])
+        return JsonResponse(literal_eval(session['scope']))
+    except Exception as e:
+        logger.exception(e)
+        return HttpResponse(status=401)
 
 
 

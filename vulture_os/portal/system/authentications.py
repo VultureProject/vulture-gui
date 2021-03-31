@@ -218,7 +218,7 @@ class Authentication(object):
 
     def register_openid(self, openid_token, **kwargs):
         # Generate a new OAuth2 token
-        self.oauth2_token = Uuid4().generate()
+        #self.oauth2_token = Uuid4().generate()
         # Register it into session
         self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
         # Create a new temporary token containing oauth2_token + kwargs
@@ -293,7 +293,6 @@ class POSTAuthentication(Authentication):
         username = request.POST['vltprtlsrnm']
         password = request.POST['vltprtlpsswrd']
         self.credentials = [username, password]
-        logger.info(self.credentials)
 
     def authenticate(self, request):
         if self.workflow.authentication.enable_captcha:
