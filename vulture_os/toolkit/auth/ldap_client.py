@@ -588,7 +588,7 @@ class LDAPClient(BaseAuth):
         if len(password) == 0:
             raise AuthenticationError("Empty password is not allowed")
         # Looking for user DN, if found we can try a bind
-        found = self.search_user(username, attr_list=["+"]+self.get_user_attributes_list())
+        found = self.search_user(username, attr_list=["+", "*"])
 
         if found is not None and len(found) > 0:
             dn = found[0][0]
@@ -620,7 +620,7 @@ class LDAPClient(BaseAuth):
         dn = self._get_user_dn()
         self.scope = self.user_scope
         # Search LDAP_ALL_USER_ATTRIBUTES & LDAP_ALL_OPERATIONAL_ATTRIBUTES
-        user_infos = self._search(dn, query_filter, value, attr_list=["+"]+self.get_user_attributes_list())
+        user_infos = self._search(dn, query_filter, value, attr_list=["+", "*"])
         if not user_infos:
             logger.error("Ldap_client::user_lookup:User with {} in {} not found in LDAP".format(query_filter, self.scope))
             raise UserNotFound("Unable to found user {}".format(value))
@@ -635,6 +635,8 @@ class LDAPClient(BaseAuth):
         user_groups = []
         # Standardize attributes
         for key, val in user_attrs.items():
+            if key == "userPassword":
+                continue
             if key == self.user_mobile_attr:
                 key = "user_phone"
             elif key == self.user_email_attr:
@@ -698,7 +700,7 @@ class LDAPClient(BaseAuth):
             'reason': None
         }
         try:
-            user_info = self.search_user(username, attr_list=["+"]+self.get_user_attributes_list())
+            user_info = self.search_user(username, attr_list=["+", "*"])
             response['account_locked'] = self.is_user_account_locked(username)
             response['password_expired'] = self.is_password_expired(username)
             response['user_groups'] = self.search_user_groups(username)
