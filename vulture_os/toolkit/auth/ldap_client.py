@@ -138,6 +138,27 @@ class LDAPClient(BaseAuth):
         self.ldap_uri = "{}://{}:{}".format(proto, self.host, self.port)
         self._ldap_connection = None
 
+    def get_user_attributes_list(self):
+        res = [self.user_attr]
+        if self.user_account_locked_attr:
+            res.append(self.user_account_locked_attr)
+        if self.user_change_password_attr:
+            res.append(self.user_change_password_attr)
+        if self.user_mobile_attr:
+            res.append(self.user_mobile_attr)
+        if self.user_email_attr:
+            res.append(self.user_email_attr)
+        if self.user_groups_attr:
+            res.append(self.user_groups_attr)
+        if self.user_smartcardid_attr:
+            res.append(self.user_smartcardid_attr)
+        if self.user_mobile_attr:
+            res.append(self.user_mobile_attr)
+        if self.user_email_attr:
+            res.append(self.user_email_attr)
+        return res
+
+
     def _get_connection(self):
         """ Internal method used to initialize/retrieve LDAP connection
 
@@ -567,7 +588,7 @@ class LDAPClient(BaseAuth):
         if len(password) == 0:
             raise AuthenticationError("Empty password is not allowed")
         # Looking for user DN, if found we can try a bind
-        found = self.search_user(username, attr_list=["+","*"])
+        found = self.search_user(username, attr_list=["+"]+self.get_user_attributes_list())
 
         if found is not None and len(found) > 0:
             dn = found[0][0]
@@ -583,7 +604,6 @@ class LDAPClient(BaseAuth):
                     return True
 
                 result = self._format_user_results(dn, found[0][1])
-
                 return result
         else:
             logger.error("Unable to found username {} in LDAP repository"
@@ -600,7 +620,7 @@ class LDAPClient(BaseAuth):
         dn = self._get_user_dn()
         self.scope = self.user_scope
         # Search LDAP_ALL_USER_ATTRIBUTES & LDAP_ALL_OPERATIONAL_ATTRIBUTES
-        user_infos = self._search(dn, query_filter, value, attr_list=["+","*"])
+        user_infos = self._search(dn, query_filter, value, attr_list=["+"]+self.get_user_attributes_list())
         if not user_infos:
             logger.error("Ldap_client::user_lookup:User with {} in {} not found in LDAP".format(query_filter, self.scope))
             raise UserNotFound("Unable to found user {}".format(value))
@@ -632,6 +652,7 @@ class LDAPClient(BaseAuth):
         username = res.get(self.user_attr)
         if not username:
             raise UserNotFound("Cannot retrieve {} for user {}".format(self.user_attr, user_dn))
+        res['name'] = username
         res['dn'] = user_dn
         res['account_locked'] = self.is_user_account_locked(username)
         res['password_expired'] = self.is_password_expired(username)
@@ -677,7 +698,7 @@ class LDAPClient(BaseAuth):
             'reason': None
         }
         try:
-            user_info = self.search_user(username, attr_list=["+","*"])
+            user_info = self.search_user(username, attr_list=["+"]+self.get_user_attributes_list())
             response['account_locked'] = self.is_user_account_locked(username)
             response['password_expired'] = self.is_password_expired(username)
             response['user_groups'] = self.search_user_groups(username)
