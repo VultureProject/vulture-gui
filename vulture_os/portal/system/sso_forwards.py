@@ -353,8 +353,8 @@ class SSOForwardPOST(SSOForward):
 
 
 class SSOForwardBASIC(SSOForward):
-    def __init__(self, request, application, authentication):
-        super(SSOForwardBASIC, self).__init__(request, application, authentication)
+    def __init__(self, request, application, authentication, user_infos):
+        super(SSOForwardBASIC, self).__init__(request, application, authentication, user_infos)
 
 
     def retrieve_credentials(self, request):
@@ -383,8 +383,8 @@ class SSOForwardBASIC(SSOForward):
 
 
 class SSOForwardKERBEROS(SSOForward):
-    def __init__(self, request, application, authentication):
-        super(SSOForwardKERBEROS, self).__init__(request, application, authentication)
+    def __init__(self, request, application, authentication, user_infos):
+        super(SSOForwardKERBEROS, self).__init__(request, application, authentication, user_infos)
 
 
     def retrieve_credentials(self, request):
