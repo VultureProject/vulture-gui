@@ -80,7 +80,7 @@ def edit(request, object_id=None):
 
     form = OpenIDRepositoryForm(request.POST or None, instance=repo, error_class=DivErrorList)
 
-    if request.method == "POST" and form.is_valid():
+    if request.method in ("POST", "PUT") and form.is_valid():
         # Save the form to get an id if there is not already one
         repo = form.save(commit=False)
         # If provider_url changed, force reload of configuration
