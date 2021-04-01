@@ -1553,6 +1553,7 @@ class Listener(models.Model):
             'port': self.port,
             'frontend': self.frontend,
             'whitelist_ips': self.whitelist_ips,
+            'tls_profiles': [tls.pk for tls in self.tls_profiles.all()],
             'max_src': self.max_src,
             'max_rate': self.max_rate,
             'addr_port': "{}:{}".format(self.network_address.ip, self.port),
