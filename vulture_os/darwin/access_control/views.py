@@ -24,6 +24,7 @@ __doc__ = 'Access Control views'
 
 
 from django.http import HttpResponseForbidden, JsonResponse
+from django.http.response import HttpResponseNotFound
 from django.utils.crypto import get_random_string
 from toolkit.mongodb.mongo_base import MongoBase
 from django.utils.translation import gettext as _
@@ -95,7 +96,7 @@ def access_control_edit(request, object_id=None, api=None):
                 if api:
                     return JsonResponse({'error': _("Object does not exist.")}, status=404)
                 else:
-                    return HttpResponseForbidden('Injection detected')
+                    return HttpResponseNotFound(_("Object not found"))
 
         if hasattr(request, "JSON") and api:
             form = AccessControlForm(request.JSON or None, instance=access_control)
@@ -128,7 +129,7 @@ def access_control_edit(request, object_id=None, api=None):
                             return JsonResponse({
                                 'status': False,
                                 'error': rule_form.errors
-                            })
+                            }, status=400)
 
                 ac.rules = rules
                 ac.acls = ac.generate_test_conf()
@@ -139,7 +140,7 @@ def access_control_edit(request, object_id=None, api=None):
                     return JsonResponse({
                         'status': False,
                         'error': str(e)
-                    })
+                    }, status=400)
 
                 ac.save()
 
