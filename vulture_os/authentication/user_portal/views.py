@@ -167,6 +167,19 @@ def user_authentication_edit(request, object_id=None, api=False):
             profile.repo_attributes = repo_attrs_objs
             profile.save()
 
+            # If standalone IDP portal (enable_external)
+            if profile.enable_external:
+                # Automatically create OpenID repo
+                openid_repo, created = OpenIDRepository.objects.get_or_create(
+                    client_id=profile.oauth_client_id,
+                    client_secret=profile.oauth_client_secret,
+                    provider="openid"
+                )
+
+                openid_repo.provider_url = "https" if profile.external_listener.has_tls else "http" + "://" + profile.external_fqdn
+                openid_repo.name = "Connector {}".format(profile.name)
+                openid_repo.save()
+
             try:
                 if repo_changed and profile.workflow_set.count() > 0:
                     for workflow in profile.workflow_set.all():
