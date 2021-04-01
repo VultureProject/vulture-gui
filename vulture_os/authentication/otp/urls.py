@@ -29,24 +29,34 @@ from django.urls import path, re_path
 from authentication.generic_list import ListOTPRepository
 from authentication.generic_delete import DeleteOTPRepository
 from authentication.otp import views
-
+from authentication.otp import api
 
 # Required exceptions imports
 
 
 urlpatterns = [
     # List view
-    path('authentication/otp/', ListOTPRepository.as_view(), name="authentication.otp.list"),
-    # Edit view
-    re_path('^authentication/otp/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
-            views.otp_edit,
-            name="authentication.otp.edit"),
-    # Clone view
-    re_path('^authentication/otp/clone/(?P<object_id>[A-Fa-f0-9]+)$',
-            views.otp_clone,
-            name="authentication.otp.clone"),
-    # Delete view
-    re_path('^authentication/otp/delete/(?P<object_id>[A-Fa-f0-9]+)$',
-            DeleteOTPRepository.as_view(),
-            name="authentication.otp.delete"),
+        path('authentication/otp/', ListOTPRepository.as_view(), name="authentication.otp.list"),
+        # Edit view
+        re_path('^authentication/otp/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
+                views.otp_edit,
+                name="authentication.otp.edit"),
+        # Clone view
+        re_path('^authentication/otp/clone/(?P<object_id>[A-Fa-f0-9]+)$',
+                views.otp_clone,
+                name="authentication.otp.clone"),
+        # Delete view
+        re_path('^authentication/otp/delete/(?P<object_id>[A-Fa-f0-9]+)$',
+                DeleteOTPRepository.as_view(),
+                name="authentication.otp.delete"),
+
+        path('api/v1/authentication/otp/',
+                api.OTPAPIv1.as_view(),
+                name="api.authentication.otp"
+        ),
+
+        path('api/v1/authentication/otp/<str:object_id>/',
+                api.OTPAPIv1.as_view(),
+                name="api.authentication.otp"
+        ),
 ]
