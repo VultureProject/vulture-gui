@@ -25,6 +25,7 @@ __doc__ = 'Darwin model'
 
 # Django system imports
 from django.conf import settings
+from django.forms import model_to_dict
 from djongo import models
 from darwin.log_viewer.models import DefenderRuleset
 from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
@@ -67,6 +68,9 @@ class DefenderPolicy(models.Model):
     request_body_limit = models.PositiveIntegerField(default=8388608)
     enable_libinjection_sql = models.BooleanField(default=True)
     enable_libinjection_xss = models.BooleanField(default=True)
+
+    def to_dict(self):
+        return model_to_dict(self)
 
     def to_template(self):
         """  returns the attributes of the class """
