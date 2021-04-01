@@ -178,6 +178,7 @@ class SymantecParser(ApiParser):
                                     
                                     if i > 1000:
                                         self.write_to_file(data)
+                                        self.update_lock()
                                         data = []
                                         i = 0
 
