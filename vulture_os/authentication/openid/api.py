@@ -95,7 +95,14 @@ class OPENIDApi(View):
     @api_need_key('cluster_api_key')
     def delete(self, request, object_id):
         try:
-            return OpenIDRepository().post(request, object_id=object_id, confirm=True, api=True)
+            openid = OpenIDRepository.objects.get(pk=object_id)
+            openid.delete()
+        
+        except OpenIDRepository.DoesNotExist:
+            return JsonResponse({
+                "status": False,
+                "error": _("Object not found")
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)
