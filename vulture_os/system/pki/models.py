@@ -24,6 +24,7 @@ __doc__ = 'PKI main models'
 
 
 from django.conf import settings
+from django.forms.models import model_to_dict
 from django.utils.translation import ugettext_lazy as _
 from M2Crypto import X509
 from djongo import models
@@ -180,6 +181,9 @@ class X509Certificate(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(X509Certificate, self).__init__(*args, **kwargs)
+
+    def to_dict(self):
+        return model_to_dict(self)
 
     def get_base_filename(self):
         return "{}/{}-{}".format(CERT_PATH, self.name, self.id)
@@ -581,6 +585,22 @@ class TLSProfile(models.Model):
             'cipher_suite': self.cipher_suite,
             'alpn': self.alpn
         }
+
+    def to_dict(self):
+        tmp = {
+            'id': str(self.id),
+            'name': self.name,
+            'x509_certificate': self.x509_certificate.to_dict(),
+            'protocols': self.protocols,
+            'cipher_suite': self.cipher_suite,
+            'alpn': self.alpn,
+            'verify_client': self.verify_client
+        }
+
+        if self.ca_cert:
+            tmp["ca_cert"] = self.ca_cert.to_dict()
+
+        return tmp
 
     @property
     def client_ca_cert_filename(self):
