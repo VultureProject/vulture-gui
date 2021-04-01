@@ -815,30 +815,32 @@ var workflow_vue = new Vue({
                             tmp.label = step.data.name
                         break;
                     case "authentication":
-                        for (let auth of self.authentication_choices) {
-                            if (auth.id === step.data.object_id.toString()) {
-                                for (let repo of auth.repositories) {
-                                    let image = icon_by_type.repo[repo.subtype]
-                                    if (!image)
-                                        image = vulture_logo
+                        if (step.data.object_id) {
+                            for (let auth of self.authentication_choices) {
+                                if (auth.id === step.data.object_id.toString()) {
+                                    for (let repo of auth.repositories) {
+                                        let image = icon_by_type.repo[repo.subtype]
+                                        if (!image)
+                                            image = vulture_logo
 
-                                    let node_tmp = {
-                                        id: `repo_node_${repo.id}`,
-                                        label: repo.name,
-                                        shape: "image",
-                                        image: image
+                                        let node_tmp = {
+                                            id: `repo_node_${repo.id}`,
+                                            label: repo.name,
+                                            shape: "image",
+                                            image: image
+                                        }
+
+                                        nodes.push(node_tmp)
+                                        edges.push({
+                                            from: step.id,
+                                            to: `repo_node_${repo.id}`,
+                                            dashes: true,
+                                            arrows: 'to',
+                                            length: 300,
+                                            label: gettext('Repository'),
+                                            font: { align: 'bottom' }
+                                        })
                                     }
-
-                                    nodes.push(node_tmp)
-                                    edges.push({
-                                        from: step.id,
-                                        to: `repo_node_${repo.id}`,
-                                        dashes: true,
-                                        arrows: 'to',
-                                        length: 300,
-                                        label: gettext('Repository'),
-                                        font: { align: 'bottom' }
-                                    })
                                 }
                             }
                         }
