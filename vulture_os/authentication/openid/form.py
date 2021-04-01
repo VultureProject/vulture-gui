@@ -75,10 +75,5 @@ class OpenIDRepositoryForm(ModelForm):
     def clean_scopes(self):
         scopes = self.cleaned_data.get('scopes')
         if scopes:
-            return [i.replace(" ", "") for i in self.cleaned_data['scopes'].split(',')]
+            return [i.replace(" ", "") for i in scopes.split(',')]
         return []
-
-    def clean(self, *args, **kwargs):
-        cleaned_data = super().clean()
-
-        return cleaned_data
