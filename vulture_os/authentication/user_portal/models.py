@@ -497,8 +497,10 @@ class UserAuthentication(models.Model):
         data['portal_template'] = self.portal_template.to_dict()
         data['portal_template_id'] = self.portal_template.pk
         data['repo_attributes'] = self.repo_attributes
-        data['external_listener'] = self.external_listener.to_dict()
-        data['external_listener_id'] = self.external_listener.pk
+        if self.external_listener:
+            data['external_listener'] = self.external_listener.to_dict()
+            data['external_listener_id'] = self.external_listener.pk
+
         return data
 
     @property
