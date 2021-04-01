@@ -97,7 +97,8 @@ class ACLAPIv1(View):
     @api_need_key('cluster_api_key')
     def post(self, request):
         try:
-            return access_control_edit(request, api=True)
+            response = access_control_edit(request, api=True)
+            return response
 
         except Exception as e:
             logger.critical(e, exc_info=1)
@@ -120,7 +121,6 @@ class ACLAPIv1(View):
                 "status": True
             }, status=204)
         except AccessControl.DoesNotExist:
-            raise
             return JsonResponse({
                 "status": False,
                 "error": _("Object does not exists")
