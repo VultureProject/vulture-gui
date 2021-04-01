@@ -72,7 +72,7 @@ class PortalTemplateAPIv1(View):
                 ret = [p.to_dict() for p in PortalTemplate.objects.all()]
             
             return JsonResponse({
-                "res": ret
+                "data": ret
             })
 
         except PortalTemplate.DoesNotExist:
