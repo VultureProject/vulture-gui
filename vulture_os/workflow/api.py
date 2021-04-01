@@ -247,6 +247,200 @@ def generate_workflow(workflow):
     return data
 
 
+def workflow_edit(request, object_id):
+    try:
+        # if not action:
+            # return workflow_edit(request, None, api=True)
+            # pass
+        defender_policy = False
+        authentication = False
+        fqdn = ""
+        public_dir = "/"
+
+        if hasattr(request, "JSON"):
+            enabled = request.JSON.get('enabled') is not False
+            form_data = request.JSON
+        else:
+            enabled = request.POST.get('enabled') is not False
+            form_data = request.POST
+
+        try:
+            frontend = Frontend.objects.get(pk=form_data['frontend'])
+
+            if frontend.mode == "http":
+                try:
+                    fqdn = form_data['fqdn']
+                    if not validators.domain(fqdn):
+                        return JsonResponse({
+                            'error': _('This FQDN is not valid')
+                        })
+
+                    public_dir = form_data['public_dir']
+                    if public_dir and len(public_dir):
+                        if public_dir[0] != '/':
+                            public_dir = '/' + public_dir
+                        if public_dir[-1] != '/':
+                            public_dir += '/'
+
+                except KeyError:
+                    return JsonResponse({
+                        'error': _('For a HTTP Frontend, you must define a FQDN & a public_dir')
+                    }, status=400)
+        except Frontend.DoesNotExist:
+            return JsonResponse({
+                'error': _('frontend with id {} does not exist'.format(form_data['frontend']))
+            }, status=404)
+        except KeyError:
+            return JsonResponse({
+                'error': _('You must define a frontend for a workflow')
+            }, status=400)
+
+        try:
+            backend = Backend.objects.get(pk=form_data['backend'])
+
+            if frontend.mode != backend.mode:
+                return JsonResponse({
+                    'error': _('Frontend and Backend must be in the same mode.')
+                }, status=400)
+        except Backend.DoesNotExist:
+            return JsonResponse({
+                'error': _('Backend with id {} does not exist'.format(form_data['backend']))
+            }, status=400)
+        except KeyError:
+            return JsonResponse({
+                'error': _('You must define a backend for a workflow')
+            }, status=400)
+
+        if form_data.get('defender_policy'):
+            try:
+                defender_policy = DefenderPolicy.objects.get(pk=form_data['defender_policy'])
+            except DefenderPolicy.DoesNotExist:
+                return JsonResponse({
+                    'error': _('Defender Policy with id {} does not exist'.format(form_data['defender_policy']))
+                }, status=400)
+
+        if form_data.get('authentication'):
+            try:
+                authentication = UserAuthentication.objects.get(pk=form_data['authentication'])
+            except UserAuthentication.DoesNotExist:
+                return JsonResponse({
+                    "error": _("User Authentication does not exist")
+                }, status=400)
+
+        try:
+            if object_id:
+                workflow = Workflow.objects.get(pk=object_id)
+            else:
+                workflow = Workflow()
+
+            workflow.enabled = enabled
+            try:
+                workflow.name = form_data['name']
+            except KeyError:
+                return JsonResponse({
+                    'error': _("Please provide a name for this workflow")
+                }, status=400)
+
+            workflow.fqdn = fqdn
+            workflow.public_dir = public_dir
+            workflow.frontend = frontend
+            workflow.backend = backend
+            workflow.save()
+
+            workflow_acls = []
+
+            if defender_policy:
+                workflow.defender_policy = defender_policy
+
+            if authentication:
+                workflow.authentication = authentication
+
+            workflow.workflowacl_set.all().delete()
+            for i, tmp_acl in enumerate(json.loads(form_data.get('acl_frontend', "[]"))):
+                status, acl = format_acl_from_api(tmp_acl, i, before_policy=True)
+                if not status:
+                    return acl
+
+                acl.workflow = workflow
+                workflow_acls.append(acl)
+                acl.save()
+
+            for i, tmp_acl in enumerate(json.loads(form_data.get('acl_backend', "[]"))):
+                status, acl = format_acl_from_api(tmp_acl, i, before_policy=False)
+                if not status:
+                    return acl
+
+                acl.workflow = workflow
+                workflow_acls.append(acl)
+                acl.save()
+
+            workflow.workflow_json = generate_workflow(workflow)
+            workflow.save()
+
+            nodes = workflow.frontend.reload_conf()
+            workflow.backend.reload_conf()
+
+            if workflow.defender_policy:
+                logger.info("Need to reload the Defender Policy SPOE configuration")
+                Cluster.api_request(
+                    "darwin.defender_policy.policy.write_defender_backend_conf",
+                    workflow.defender_policy.pk
+                )
+                Cluster.api_request(
+                    "darwin.defender_policy.policy.write_defender_spoe_conf",
+                    workflow.defender_policy.pk
+                )
+
+            # Reload HAProxy on concerned nodes
+            for node in nodes:
+                api_res = node.api_request("services.haproxy.haproxy.restart_service")
+                if not api_res.get('status'):
+                    logger.error("Workflow::edit: API error while trying to "
+                                    "restart HAProxy service : {}".format(api_res.get('message')))
+                    for workflow_acl in workflow.workflowacl_set.all():
+                        workflow_acl.delete()
+
+                    try:
+                        workflow.delete()
+                    except Exception:
+                        pass
+
+                    return JsonResponse({
+                        'error': api_res.get('message')
+                    }, status=500)
+
+            return JsonResponse({
+                'message': _('Workflow saved')
+            }, status=201)
+
+        except KeyError as err:
+            return JsonResponse({
+                'error': _('Partial data')
+            }, status=400)
+
+        if action and not object_id:
+            return JsonResponse({
+                'error': _('You must specify an ID')
+            }, status=400)
+
+        if action not in list(COMMAND_LIST.keys()):
+            return JsonResponse({
+                'error': _('Action not allowed')
+            }, status=403)
+
+        return COMMAND_LIST[action](request, object_id, api=True)
+
+    except Exception as e:
+        logger.critical(e, exc_info=1)
+        if settings.DEV_MODE:
+            error = str(e)
+        else:
+            error = _("An error has occurred")
+
+    return JsonResponse({
+        'error': error
+    }, status=500)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class WorkflowAPIv1(View):
     @api_need_key('cluster_api_key')
@@ -285,198 +479,11 @@ class WorkflowAPIv1(View):
 
     @api_need_key('cluster_api_key')
     def post(self, request, object_id=None, action=None):
-        try:
-            if not action:
-                # return workflow_edit(request, None, api=True)
-                pass
+        return workflow_edit(request, object_id, action)
 
-            enabled = request.POST.get('enabled') is not False
-            defender_policy = False
-            authentication = False
-            fqdn = ""
-            public_dir = "/"
-
-            if hasattr(request, "JSON"):
-                form_data = request.JSON
-            else:
-                form_data = request.POST
-
-            try:
-                frontend = Frontend.objects.get(pk=form_data['frontend'])
-
-                if frontend.mode == "http":
-                    try:
-                        fqdn = form_data['fqdn']
-                        if not validators.domain(fqdn):
-                            return JsonResponse({
-                                'error': _('This FQDN is not valid')
-                            })
-
-                        public_dir = form_data['public_dir']
-                        if public_dir and len(public_dir):
-                            if public_dir[0] != '/':
-                                public_dir = '/' + public_dir
-                            if public_dir[-1] != '/':
-                                public_dir += '/'
-
-                    except KeyError:
-                        return JsonResponse({
-                            'error': _('For a HTTP Frontend, you must define a FQDN & a public_dir')
-                        }, status=400)
-            except Frontend.DoesNotExist:
-                return JsonResponse({
-                    'error': _('frontend with id {} does not exist'.format(form_data['frontend']))
-                }, status=404)
-            except KeyError:
-                return JsonResponse({
-                    'error': _('You must define a frontend for a workflow')
-                }, status=400)
-
-            try:
-                backend = Backend.objects.get(pk=form_data['backend'])
-
-                if frontend.mode != backend.mode:
-                    return JsonResponse({
-                        'error': _('Frontend and Backend must be in the same mode.')
-                    }, status=400)
-            except Backend.DoesNotExist:
-                return JsonResponse({
-                    'error': _('Backend with id {} does not exist'.format(form_data['backend']))
-                }, status=400)
-            except KeyError:
-                return JsonResponse({
-                    'error': _('You must define a backend for a workflow')
-                }, status=400)
-
-            if form_data.get('defender_policy'):
-                try:
-                    defender_policy = DefenderPolicy.objects.get(pk=form_data['defender_policy'])
-                except DefenderPolicy.DoesNotExist:
-                    return JsonResponse({
-                        'error': _('Defender Policy with id {} does not exist'.format(form_data['defender_policy']))
-                    }, status=400)
-
-            if form_data.get('authentication'):
-                try:
-                    authentication = UserAuthentication.objects.get(pk=form_data['authentication'])
-                except UserAuthentication.DoesNotExist:
-                    return JsonResponse({
-                        "error": _("User Authentication does not exist")
-                    }, status=400)
-
-            try:
-                if object_id:
-                    workflow = Workflow.objects.get(pk=object_id)
-                else:
-                    workflow = Workflow()
-
-                workflow.enabled = enabled
-                try:
-                    workflow.name = form_data['name']
-                except KeyError:
-                    return JsonResponse({
-                        'error': _("Please provide a name for this workflow")
-                    }, status=400)
-
-                workflow.fqdn = fqdn
-                workflow.public_dir = public_dir
-                workflow.frontend = frontend
-                workflow.backend = backend
-                workflow.save()
-
-                workflow_acls = []
-
-                if defender_policy:
-                    workflow.defender_policy = defender_policy
-
-                if authentication:
-                    workflow.authentication = authentication
-
-                workflow.workflowacl_set.all().delete()
-                for i, tmp_acl in enumerate(json.loads(form_data.get('acl_frontend', "[]"))):
-                    status, acl = format_acl_from_api(tmp_acl, i, before_policy=True)
-                    if not status:
-                        return acl
-
-                    acl.workflow = workflow
-                    workflow_acls.append(acl)
-                    acl.save()
-
-                for i, tmp_acl in enumerate(json.loads(form_data.get('acl_backend', "[]"))):
-                    status, acl = format_acl_from_api(tmp_acl, i, before_policy=False)
-                    if not status:
-                        return acl
-
-                    acl.workflow = workflow
-                    workflow_acls.append(acl)
-                    acl.save()
-
-                workflow.workflow_json = generate_workflow(workflow)
-                workflow.save()
-
-                nodes = workflow.frontend.reload_conf()
-                workflow.backend.reload_conf()
-
-                if workflow.defender_policy:
-                    logger.info("Need to reload the Defender Policy SPOE configuration")
-                    Cluster.api_request(
-                        "darwin.defender_policy.policy.write_defender_backend_conf",
-                        workflow.defender_policy.pk
-                    )
-                    Cluster.api_request(
-                        "darwin.defender_policy.policy.write_defender_spoe_conf",
-                        workflow.defender_policy.pk
-                    )
-
-                # Reload HAProxy on concerned nodes
-                for node in nodes:
-                    api_res = node.api_request("services.haproxy.haproxy.restart_service")
-                    if not api_res.get('status'):
-                        logger.error("Workflow::edit: API error while trying to "
-                                     "restart HAProxy service : {}".format(api_res.get('message')))
-                        for workflow_acl in workflow.workflowacl_set.all():
-                            workflow_acl.delete()
-
-                        try:
-                            workflow.delete()
-                        except Exception:
-                            pass
-
-                        return JsonResponse({
-                            'error': api_res.get('message')
-                        }, status=500)
-
-                return JsonResponse({
-                    'message': _('Workflow saved')
-                }, status=201)
-
-            except KeyError as err:
-                return JsonResponse({
-                    'error': _('Partial data')
-                }, status=400)
-
-            if action and not object_id:
-                return JsonResponse({
-                    'error': _('You must specify an ID')
-                }, status=400)
-
-            if action not in list(COMMAND_LIST.keys()):
-                return JsonResponse({
-                    'error': _('Action not allowed')
-                }, status=403)
-
-            return COMMAND_LIST[action](request, object_id, api=True)
-
-        except Exception as e:
-            logger.critical(e, exc_info=1)
-            if settings.DEV_MODE:
-                error = str(e)
-            else:
-                error = _("An error has occurred")
-
-        return JsonResponse({
-            'error': error
-        }, status=500)
+    @api_need_key("cluster_api_key")
+    def put(self, request, object_id):
+        return workflow_edit(request, object_id)
 
     @api_need_key('cluster_api_key')
     def delete(self, request, object_id):
