@@ -89,10 +89,10 @@ var workflow_vue = new Vue({
         last_node_append: null
     },
 
-    mounted(){
+    mounted() {
         var self = this;
 
-        if (workflow_id === "None"){
+        if (workflow_id === "None") {
             self.get_dependencies();
         } else {
             $.get(
@@ -101,7 +101,7 @@ var workflow_vue = new Vue({
                     action: 'get_workflow'
                 },
 
-                function(response){
+                function (response) {
                     self.workflow_mode = response.data.frontend.mode;
                     self.workflow = JSON.parse(response.data.workflow_json);
                     self.frontend_choices = response.frontends;
@@ -120,7 +120,7 @@ var workflow_vue = new Vue({
     },
 
     watch: {
-        backend_set(val){
+        backend_set(val) {
             if (val)
                 $('#btn-save-workflow').show();
             else
@@ -129,7 +129,7 @@ var workflow_vue = new Vue({
     },
 
     methods: {
-        get_dependencies(){
+        async get_dependencies() {
             var self = this;
 
             var data = {
@@ -139,37 +139,28 @@ var workflow_vue = new Vue({
             if (self.workflow_mode)
                 data.mode = self.workflow_mode
 
-            $.get(
-                '',
-                data,
-
-                function(response){
-                    if (!check_json_error(response))
-                        return;
-
-                    if (!self.workflow_mode){
-                        self.frontend_choices = response.data.frontends;
-                        if (workflow_id === "None" && !self.workflow.length){
-                            self.workflow.push({
-                                id: "#",
-                                label: gettext('Start'),
-                                data: {type: 'start'}
-                            })
-                        }
-                        self.redraw_workflow();
-                    } else {
-                        self.backend_choices = response.data.backends;
-                        self.access_control_choices = response.data.acls;
-                        self.authentication_choices = response.data.authentications;
-                        self.waf_policy_choices = response.data.waf_policies;
-                    }
-
-                    self.init_toolbox_tree();
+            let response = await axios.get("", { params: data })
+            if (!self.workflow_mode) {
+                self.frontend_choices = response.data.frontends;
+                if (workflow_id === "None" && !self.workflow.length) {
+                    self.workflow.push({
+                        id: "#",
+                        label: gettext('Start'),
+                        data: { type: 'start' }
+                    })
                 }
-            )
+                self.redraw_workflow();
+            } else {
+                self.backend_choices = response.data.backends;
+                self.access_control_choices = response.data.acls;
+                self.authentication_choices = response.data.authentications;
+                self.waf_policy_choices = response.data.waf_policies;
+            }
+
+            self.init_toolbox_tree();
         },
 
-        workflow_save_form(){
+        workflow_save_form() {
             var self = this;
 
             var txt = $('#btn-save-workflow').html();
@@ -184,13 +175,13 @@ var workflow_vue = new Vue({
                     workflow: JSON.stringify(self.workflow)
                 },
 
-                function(response){
+                function (response) {
                     $('#btn-save-workflow').html(txt)
                     $('#btn-save-workflow').prop('disabled', "");
 
-                    if (check_json_error(response)){
+                    if (check_json_error(response)) {
                         notify('success', gettext('Success'), gettext('Workflow successfully created'));
-                        setTimeout(function(){
+                        setTimeout(function () {
                             window.location.href = worflow_list_uri;
                         }, 300);
                     }
@@ -198,18 +189,18 @@ var workflow_vue = new Vue({
             )
         },
 
-        generate_id: function(){
+        generate_id: function () {
             return Math.random().toString(36).substring(5);
         },
 
-        error(message){
+        error(message) {
             notify('error', gettext('Error'), message);
         },
 
-        init_folder_structure(choices, id, icon){
+        init_folder_structure(choices, id, icon) {
             var folder = [];
 
-            for (var i in choices){
+            for (var i in choices) {
                 var choice = choices[i];
 
                 var tmp = {
@@ -222,7 +213,7 @@ var workflow_vue = new Vue({
                     }
                 }
 
-                switch(id){
+                switch (id) {
                     case "backend":
                         tmp.data.servers = choice.servers;
                         break;
@@ -244,14 +235,14 @@ var workflow_vue = new Vue({
             return folder;
         },
 
-        init_toolbox_tree(){
+        init_toolbox_tree() {
             var self = this;
 
             var tree_data = [];
 
-            if (!self.frontend_set){
+            if (!self.frontend_set) {
                 var frontends = {}
-                for (var i in self.frontend_choices){
+                for (var i in self.frontend_choices) {
                     var frontend = self.frontend_choices[i];
                     frontend.type = "frontend";
 
@@ -259,7 +250,7 @@ var workflow_vue = new Vue({
                         frontends[frontend.mode] = []
 
                     frontends[frontend.mode].push({
-                        id: "frontend_"+frontend.id,
+                        id: "frontend_" + frontend.id,
                         text: frontend.name,
                         data: {
                             object_id: frontend.id,
@@ -271,16 +262,16 @@ var workflow_vue = new Vue({
                 }
 
                 tree_data.push({
-                    text: "<i class='fa fa-sitemap'>&nbsp;&nbsp;</i>"+gettext('Listeners'),
-                    state: {opened: true},
+                    text: "<i class='fa fa-sitemap'>&nbsp;&nbsp;</i>" + gettext('Listeners'),
+                    state: { opened: true },
                     children: []
                 })
 
-                $.each(frontends, function(key, value){
+                $.each(frontends, function (key, value) {
                     tree_data[0].children.push({
                         text: key.toUpperCase(),
                         children: value,
-                        state: {opened: true}
+                        state: { opened: true }
                     })
                 })
 
@@ -289,7 +280,7 @@ var workflow_vue = new Vue({
                     text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
                 })
             } else {
-                if (!self.backend_set){
+                if (!self.backend_set) {
                     var authentications = self.init_folder_structure(self.authentication_choices, "authentication", " ");
                     var access_controls = self.init_folder_structure(self.access_control_choices, "acl", " ");
 
@@ -299,13 +290,13 @@ var workflow_vue = new Vue({
                     })
 
                     tree_data.push({
-                        text: "<i class='fa fa-eye'>&nbsp;&nbsp;</i>"+gettext('ACLS'),
-                        state: {opened: true},
+                        text: "<i class='fa fa-eye'>&nbsp;&nbsp;</i>" + gettext('ACLS'),
+                        state: { opened: true },
                         children: access_controls,
                         icon: "fas fa-universal-access"
                     })
 
-                    if (!self.policy_set){
+                    if (!self.policy_set) {
                         var waf_policies = self.init_folder_structure(self.waf_policy_choices, 'waf', " ");
                         waf_policies.push({
                             id: "add_defender_policy",
@@ -323,18 +314,18 @@ var workflow_vue = new Vue({
                         })
 
                         tree_data.push({
-                            text: "<img src='"+favicon+"' class='icon-vulture'/>&nbsp;&nbsp;" + gettext('WAF Policies'),
-                            state: {opened: true},
+                            text: "<img src='" + favicon + "' class='icon-vulture'/>&nbsp;&nbsp;" + gettext('WAF Policies'),
+                            state: { opened: true },
                             children: waf_policies,
                             icon: "fas fa-eye"
                         })
                     } else {
-                        if (!self.authentication_set){
+                        if (!self.authentication_set) {
                             authentications.push({
                                 id: "add_authentication",
                                 text: `<i class='fa fa-plus'></i>&nbsp;${gettext('Add')}`
                             })
-    
+
                             authentications.unshift({
                                 id: 'no_authentication',
                                 text: gettext('No authentication'),
@@ -347,21 +338,21 @@ var workflow_vue = new Vue({
 
                             tree_data.push({
                                 text: `<i class="fa fa-user">&nbsp;&nbsp;</i>${gettext("Authentication")}`,
-                                state: {opened: true},
+                                state: { opened: true },
                                 children: authentications,
                                 icon: "fa fa-user"
                             })
                         } else {
 
                             var backends = self.init_folder_structure(self.backend_choices, "backend", " ");
-    
+
                             backends.push({
                                 id: "add_backend",
                                 text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
                             })
                             tree_data.push({
-                                text: "<i class='fa fa-server'>&nbsp;&nbsp;</i>"+gettext('Backends'),
-                                state: {opened: true},
+                                text: "<i class='fa fa-server'>&nbsp;&nbsp;</i>" + gettext('Backends'),
+                                state: { opened: true },
                                 children: backends,
                                 icon: 'fa fa-server'
                             })
@@ -370,22 +361,22 @@ var workflow_vue = new Vue({
                 }
             }
 
-            if (self.jstree){
+            if (self.jstree) {
                 $('#toolbox-jstree').jstree('destroy');
                 self.jstree = null;
             }
 
             self.jstree = $('#toolbox-jstree').jstree({
-                core : {
-                    data : tree_data,
-                    themes:{
-                        icons:false
+                core: {
+                    data: tree_data,
+                    themes: {
+                        icons: false
                     }
                 },
                 plugins: ["search"],
                 dnd: {
                     drop_target: "#workflow-visualisation",
-                    is_draggable: function(node){
+                    is_draggable: function (node) {
                         if (node[0].parent === "#")
                             return false;
                         return true;
@@ -411,7 +402,7 @@ var workflow_vue = new Vue({
                     var tree = $(this).jstree();
                     var node = tree.get_node(event.target);
 
-                    if ($.inArray(node.id, self.id_nodes) === -1){
+                    if ($.inArray(node.id, self.id_nodes) === -1) {
                         if (self.append_new_node(node))
                             self.id_nodes.push(node.id)
                     }
@@ -419,32 +410,32 @@ var workflow_vue = new Vue({
             });
         },
 
-        check_action(action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy){
-            if (!action_satisfy && !action_not_satisfy){
+        check_action(action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy) {
+            if (!action_satisfy && !action_not_satisfy) {
                 this.error(gettext('Please provide action for ACL'))
                 return false;
             }
 
-            if ($.inArray(action_satisfy, ["301", "302"]) > -1){
-                if (!redirect_url_satisfy){
+            if ($.inArray(action_satisfy, ["301", "302"]) > -1) {
+                if (!redirect_url_satisfy) {
                     this.error(gettext('Please provide an URL to redirect to'))
                     return false;
                 }
             }
 
-            if ($.inArray(action_not_satisfy, ["301", "302"]) > -1){
-                if (!redirect_url_not_satisfy){
+            if ($.inArray(action_not_satisfy, ["301", "302"]) > -1) {
+                if (!redirect_url_not_satisfy) {
                     this.error(gettext('Please provide an URL to redirect to'))
                     return false;
                 }
             }
 
-            if (action_satisfy === action_not_satisfy){
+            if (action_satisfy === action_not_satisfy) {
                 this.error(gettext("Please provide different action"))
                 return false;
             }
 
-            if ($.inArray("200", [action_satisfy, action_not_satisfy]) === -1){
+            if ($.inArray("200", [action_satisfy, action_not_satisfy]) === -1) {
                 this.error(gettext('At least one action must be continue'))
                 return false;
             }
@@ -452,9 +443,9 @@ var workflow_vue = new Vue({
             return true;
         },
 
-        get_actions(acl_node){
+        get_actions(acl_node) {
             var actions = {}
-            for (var i in this.workflow){
+            for (var i in this.workflow) {
                 var tmp_node = this.workflow[i];
                 if (tmp_node.parent === acl_node.id)
                     actions[i] = tmp_node;
@@ -463,14 +454,14 @@ var workflow_vue = new Vue({
             return actions;
         },
 
-        define_acl(node, acl_id, action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy){
+        define_acl(node, acl_id, action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy) {
             var self = this;
             node.data.object_id = acl_id;
 
             var actions = self.get_actions(node);
 
-            $.each(actions, function(index_action, action){
-                if (action.data.satisfy){
+            $.each(actions, function (index_action, action) {
+                if (action.data.satisfy) {
                     action.data.action = action_satisfy;
                     action.data.redirect_url = redirect_url_satisfy;
                 } else {
@@ -479,9 +470,9 @@ var workflow_vue = new Vue({
                 }
             })
 
-            for (var i in self.access_control_choices){
+            for (var i in self.access_control_choices) {
                 var acl = self.access_control_choices[i];
-                if (acl.id === acl_id){
+                if (acl.id === acl_id) {
                     node.data.name = acl.name;
                     node.label = acl.name;
                     break;
@@ -498,10 +489,10 @@ var workflow_vue = new Vue({
 
             var step_id_200;
             var step_id_not_200;
-            for (var i in self.workflow){
+            for (var i in self.workflow) {
                 var step = self.workflow[i];
-                if (step.data.type === "action"){
-                    if (step.data.action === "200"){
+                if (step.data.type === "action") {
+                    if (step.data.action === "200") {
                         step_id_200 = step.id;
                     } else {
                         step_id_not_200 = step.id;
@@ -509,10 +500,10 @@ var workflow_vue = new Vue({
                 }
             }
 
-            for (var i in self.workflow){
+            for (var i in self.workflow) {
                 var step = self.workflow[i];
 
-                if (step.parent === step_id_not_200){
+                if (step.parent === step_id_not_200) {
                     self.workflow[i].parent = step_id_200;
                 }
             }
@@ -520,10 +511,10 @@ var workflow_vue = new Vue({
             self.redraw_workflow();
         },
 
-        append_frontend(frontend_node){
+        append_frontend(frontend_node) {
             var self = this;
 
-            function append_frontend_to_workflow(node){
+            function append_frontend_to_workflow(node) {
                 self.workflow.push(frontend_node)
                 self.frontend_set = true;
 
@@ -532,7 +523,7 @@ var workflow_vue = new Vue({
                 self.redraw_workflow();
             }
 
-            if (frontend_node.data.mode === "http"){
+            if (frontend_node.data.mode === "http") {
                 $.confirm({
                     title: gettext('Define FQDN & Public Directory'),
                     columnClass: 'medium',
@@ -545,7 +536,7 @@ var workflow_vue = new Vue({
                                 var fqdn = this.$content.find('.fqdn').val();
                                 var public_dir = this.$content.find('.public_dir').val();
 
-                                if (!fqdn){
+                                if (!fqdn) {
                                     this.error(gettext("Please provide FQDN to reach your application"))
                                     return false;
                                 }
@@ -570,7 +561,7 @@ var workflow_vue = new Vue({
             }
         },
 
-        append_acl(acl_node){
+        append_acl(acl_node) {
             var self = this;
 
             $.confirm({
@@ -642,7 +633,7 @@ var workflow_vue = new Vue({
             });
         },
 
-        append_new_node(node){
+        append_new_node(node) {
             PNotify.removeAll();
 
             var self = this;
@@ -656,7 +647,7 @@ var workflow_vue = new Vue({
 
             tmp.data.type = node_type;
 
-            switch(node_type){
+            switch (node_type) {
                 case "frontend":
                     tmp.parent = "#";
                     self.workflow_mode = node.data.mode;
@@ -676,7 +667,7 @@ var workflow_vue = new Vue({
                     self.get_dependencies();
                     self.redraw_workflow();
                     break;
-                
+
                 case "authentication":
                     tmp.label = node.data.name;
                     self.workflow.push(tmp);
@@ -695,9 +686,9 @@ var workflow_vue = new Vue({
             }
         },
 
-        get_node(node_id, index){
-            for (var i in this.workflow){
-                if (this.workflow[i].id === node_id){
+        get_node(node_id, index) {
+            for (var i in this.workflow) {
+                if (this.workflow[i].id === node_id) {
                     if (index)
                         return i;
 
@@ -708,11 +699,11 @@ var workflow_vue = new Vue({
             return false;
         },
 
-        remove_children(parent_id){
+        remove_children(parent_id) {
             var indices_to_remove = [];
-            for (var i in this.workflow){
+            for (var i in this.workflow) {
                 var node = this.workflow[i];
-                if (node.parent === parent_id){
+                if (node.parent === parent_id) {
                     indices_to_remove.push(node.id);
                     var tmp_indice = this.remove_children(node.id);
                     for (var j in tmp_indice)
@@ -723,13 +714,13 @@ var workflow_vue = new Vue({
             return indices_to_remove;
         },
 
-        redraw_workflow(){
+        redraw_workflow() {
             var self = this;
 
             var nodes = [];
             var edges = [];
 
-            for (var i in self.workflow){
+            for (var i in self.workflow) {
                 var step = self.workflow[i];
 
                 var tmp = {
@@ -739,23 +730,23 @@ var workflow_vue = new Vue({
                     icon: icon_by_type[step.data.type]
                 }
 
-                switch(step.data.type){
+                switch (step.data.type) {
                     case "frontend":
-                        for (var i in self.frontend_choices){
+                        for (var i in self.frontend_choices) {
                             var f = self.frontend_choices[i];
-                            
-                            if (f.id === step.data.object_id){
+
+                            if (f.id === step.data.object_id) {
                                 var label = ["\n"];
-                                for (var j in f.listeners){
+                                for (var j in f.listeners) {
                                     var listener = f.listeners[j];
 
-                                    if (j > 1){
+                                    if (j > 1) {
                                         label.push("...");
                                         break;
                                     }
 
                                     var mode = f.mode;
-                                    if (mode === "http"){
+                                    if (mode === "http") {
                                         if (listener.is_tls)
                                             mode = "https://"
                                     }
@@ -765,7 +756,7 @@ var workflow_vue = new Vue({
 
                                 tmp.label = label.join('\n');
 
-                                if (f.enable_logging){
+                                if (f.enable_logging) {
                                     var node_tmp = {
                                         id: "logging_node",
                                         shape: 'icon',
@@ -773,8 +764,8 @@ var workflow_vue = new Vue({
                                     }
 
                                     var label = ["\n"];
-                                    for (var j in f.log_forwarders){
-                                        if (j > 1){
+                                    for (var j in f.log_forwarders) {
+                                        if (j > 1) {
                                             label.push('...');
                                             break;
                                         }
@@ -793,7 +784,7 @@ var workflow_vue = new Vue({
                                         arrows: 'to',
                                         length: 200,
                                         label: gettext('Logs'),
-                                        font: {align: 'bottom'}
+                                        font: { align: 'bottom' }
                                     })
                                 }
 
@@ -824,9 +815,9 @@ var workflow_vue = new Vue({
                             tmp.label = step.data.name
                         break;
                     case "authentication":
-                        for (let auth of self.authentication_choices){
-                            if (auth.id === step.data.object_id){
-                                for (let repo of auth.repositories){
+                        for (let auth of self.authentication_choices) {
+                            if (auth.id === step.data.object_id.toString()) {
+                                for (let repo of auth.repositories) {
                                     let image = icon_by_type.repo[repo.subtype]
                                     if (!image)
                                         image = vulture_logo
@@ -846,7 +837,7 @@ var workflow_vue = new Vue({
                                         arrows: 'to',
                                         length: 300,
                                         label: gettext('Repository'),
-                                        font: {align: 'bottom'}
+                                        font: { align: 'bottom' }
                                     })
                                 }
                             }
@@ -856,12 +847,12 @@ var workflow_vue = new Vue({
                             tmp.label = step.data.name
                         break;
                     case "backend":
-                        for (var i in self.backend_choices){
+                        for (var i in self.backend_choices) {
                             var b = self.backend_choices[i];
-                            if (b.id === step.data.object_id){
+                            if (b.id === step.data.object_id) {
                                 var label = ["\n"];
-                                for (var j in b.servers){
-                                    if (j > 1){
+                                for (var j in b.servers) {
+                                    if (j > 1) {
                                         label.push("...");
                                         break;
                                     }
@@ -879,7 +870,7 @@ var workflow_vue = new Vue({
 
                 nodes.push(tmp)
 
-                if (step.parent){
+                if (step.parent) {
                     var tmp = {
                         from: step.parent,
                         color: {
@@ -890,19 +881,19 @@ var workflow_vue = new Vue({
                         width: 1
                     }
 
-                    if (step.data.type === "action"){
-                        if (!step.data.satisfy){
+                    if (step.data.type === "action") {
+                        if (!step.data.satisfy) {
                             tmp.label = "NOK";
-                            tmp.font = {align: 'middle'},
-                            tmp.color = {
-                                color: "#F44336"
-                            };
-                        } else if (step.data.satisfy){
+                            tmp.font = { align: 'middle' },
+                                tmp.color = {
+                                    color: "#F44336"
+                                };
+                        } else if (step.data.satisfy) {
                             tmp.label = "OK";
-                            tmp.font = {align: 'middle'},
-                            tmp.color = {
-                                color: "#8BC34A"
-                            };
+                            tmp.font = { align: 'middle' },
+                                tmp.color = {
+                                    color: "#8BC34A"
+                                };
                         }
                     }
 
@@ -927,38 +918,38 @@ var workflow_vue = new Vue({
                     addNode: false,
                     initiallyActive: true,
                     addEdge: false,
-                    editNode: function(data, callback){
+                    editNode: function (data, callback) {
                         PNotify.removeAll();
 
                         var node = self.get_node(data.id);
 
-                        if (!node.data){
+                        if (!node.data) {
                             callback();
                             return;
                         }
 
                         var node_type = node.data.type;
-                        if (node_type === "start"){
+                        if (node_type === "start") {
                             node_type = "frontend";
-                            for (var i in self.workflow){
+                            for (var i in self.workflow) {
                                 var step = self.workflow[i];
-                                if (step.data.type === "frontend"){
+                                if (step.data.type === "frontend") {
                                     node = step;
                                     break;
                                 }
                             }
-                        } else if (node_type === "action"){
+                        } else if (node_type === "action") {
                             node_type = "acl";
-                            for (var i in self.workflow){
+                            for (var i in self.workflow) {
                                 var step = self.workflow[i];
-                                if (step.id === node.parent){
+                                if (step.id === node.parent) {
                                     node = step;
                                     break;
                                 }
                             }
                         }
 
-                        switch(node_type){
+                        switch (node_type) {
                             case "frontend":
                                 $.confirm({
                                     title: gettext('Listener'),
@@ -1027,7 +1018,7 @@ var workflow_vue = new Vue({
                                                 self.define_acl(node, acl_id, action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy)
                                             }
                                         },
-                                        cancel: function(){
+                                        cancel: function () {
                                             return true;
                                         },
                                     },
@@ -1043,18 +1034,18 @@ var workflow_vue = new Vue({
                                         formSubmit: {
                                             text: gettext('Save'),
                                             btnClass: 'btn-blue',
-                                            action: function(){
+                                            action: function () {
                                                 var waf_id = this.$content.find('.waf_policy').val();
 
-                                                if (waf_id === ""){
+                                                if (waf_id === "") {
                                                     node.data.object_id = null;
                                                     node.data.name = gettext('No policy');
                                                     node.label = gettext('No policy')
                                                 } else {
                                                     node.data.object_id = waf_id;
-                                                    for (var i in self.waf_policy_choices){
+                                                    for (var i in self.waf_policy_choices) {
                                                         var waf = self.waf_policy_choices[i];
-                                                        if (waf.id === waf_id){
+                                                        if (waf.id === waf_id) {
                                                             node.label = waf.name;
                                                             node.data.name = waf.name;
                                                         }
@@ -1067,7 +1058,7 @@ var workflow_vue = new Vue({
                                                 self.redraw_workflow();
                                             }
                                         },
-                                        cancel: function(){
+                                        cancel: function () {
                                             return true;
                                         }
                                     }
@@ -1082,7 +1073,7 @@ var workflow_vue = new Vue({
                                         formSubmit: {
                                             text: gettext('Save'),
                                             btnClass: 'btn-blue',
-                                            action: function(){
+                                            action: function () {
                                                 var backend_id = this.$content.find('.backend').val();
 
                                                 node.data.object_id = backend_id;
@@ -1092,7 +1083,7 @@ var workflow_vue = new Vue({
                                                 self.redraw_workflow();
                                             }
                                         },
-                                        cancel: function(){
+                                        cancel: function () {
                                             return true;
                                         }
                                     }
@@ -1103,9 +1094,9 @@ var workflow_vue = new Vue({
                     },
                     editEdge: false,
                     deleteEdge: false,
-                    deleteNode: function(data, callback){
+                    deleteNode: function (data, callback) {
                         PNotify.removeAll();
-                        if (data.nodes.length > 1){
+                        if (data.nodes.length > 1) {
                             self.error(gettext("You can't delete several nodes at once"))
                             callback();
                             return false;
@@ -1115,12 +1106,12 @@ var workflow_vue = new Vue({
                         var node_to_delete = self.get_node(node_id);
                         self.last_node_append = node_to_delete.parent;
 
-                        if (!node_to_delete.data){
+                        if (!node_to_delete.data) {
                             callback();
                             return;
                         }
 
-                        switch(node_to_delete.data.type){
+                        switch (node_to_delete.data.type) {
                             case "start":
                                 callback();
                                 return false;
@@ -1133,7 +1124,7 @@ var workflow_vue = new Vue({
                                 self.backend_set = false;
                                 break;
                             case "waf":
-                                self.policy_set= false;
+                                self.policy_set = false;
                                 self.authentication_set = false;
                                 self.backend_set = false;
                                 break;
@@ -1147,15 +1138,15 @@ var workflow_vue = new Vue({
                                 return false;
                         }
 
-                        for (var i in self.workflow){
+                        for (var i in self.workflow) {
                             var node = self.workflow[i];
-                            if (node.id === node_id){
+                            if (node.id === node_id) {
                                 indices_to_remove = self.remove_children(node.id);
                                 indices_to_remove.push(node.id)
                             }
                         }
 
-                        for (var i in indices_to_remove){
+                        for (var i in indices_to_remove) {
                             var id = indices_to_remove[i];
                             indice = self.get_node(id, true);
                             var node = self.get_node(id);
@@ -1177,7 +1168,7 @@ var workflow_vue = new Vue({
             }
 
             var network = new vis.Network(container, data, options);
-            setTimeout(function(){
+            setTimeout(function () {
                 self.init_toolbox_tree();
             }, 50)
         }
@@ -1185,17 +1176,17 @@ var workflow_vue = new Vue({
 })
 
 
-$(function(){
-    $('#search-toolbox-btn').on('click', function(){
+$(function () {
+    $('#search-toolbox-btn').on('click', function () {
         workflow_vue.search_toolbox($('#search-toolbox').val());
     })
 
-    $('#search-toolbox').on('keyup', function(e){
+    $('#search-toolbox').on('keyup', function (e) {
         if (e.keyCode == 13)
             workflow_vue.search_toolbox($('#search-toolbox').val());
     })
 
-    $('#workflow_save_form').on('submit', function(e){
+    $('#workflow_save_form').on('submit', function (e) {
         e.preventDefault();
         workflow_vue.workflow_save_form();
     })
