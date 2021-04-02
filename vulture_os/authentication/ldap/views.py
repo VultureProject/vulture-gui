@@ -115,7 +115,7 @@ def ldap_edit(request, object_id=None, api=False):
         ldap.save()
         # If everything succeed, redirect to list view
         if api:
-            return build_response(ldap.id, "authentication.ldap.api", [])
+            return build_response(ldap.id, "authentication.api.ldap", [])
 
         return HttpResponseRedirect('/authentication/ldap/')
 

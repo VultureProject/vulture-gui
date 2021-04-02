@@ -25,10 +25,10 @@ __doc__ = 'IDP API'
 import logging
 from django.views import View
 from django.conf import settings
-from authentication import ldap
 from authentication.ldap import tools
 from django.http import JsonResponse
 from gui.decorators.apicall import api_need_key
+from authentication.ldap.tools import NotUniqueError
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
@@ -156,6 +156,11 @@ class IDPApiUserView(View):
                 "error": _("Invalid call")
             }, status=400)
 
+        except NotUniqueError:
+            return JsonResponse({
+                "status": False,
+                "error": _("User already exist")
+            }, status=409)
         except UserAuthentication.DoesNotExist:
             return JsonResponse({
                 "status": False,
