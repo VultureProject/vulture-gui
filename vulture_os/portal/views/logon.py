@@ -190,7 +190,7 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Retrieve user's infos from provider
         claims = repo.get_userinfo(oauth2_session)
-        logger.info(claims)
+        logger.info(f"OpenID_callback::{portal}: Claims retrieved from {repo.userinfo_endpoint} for token {token} : {claims}")
         repo_attributes = {}
         # Make LDAP Lookup if configured
         if workflow.authentication.lookup_ldap_repo:
@@ -202,11 +202,12 @@ def openid_callback(request, workflow_id, repo_id):
                 ldap_connector = workflow.authentication.lookup_ldap_repo.get_client()
                 # Enrich user claims with LDAP infos - merge dictionnaries
                 repo_attributes = ldap_connector.user_lookup_enrichment(ldap_attr, claim)
-                logger.info(repo_attributes)
+                logger.info(f"OpenID_callback::{portal}: Repo attributes retrieved from "
+                            f"{workflow.authentication.lookup_ldap_repo} for {ldap_attr}={claim} : {repo_attributes}")
 
         # Create user scope depending on GUI configuration attributes
         user_scope = workflow.authentication.get_user_scope(claims, repo_attributes)
-        logger.info(user_scope)
+        logger.info(f"OpenID_callback::{portal}: User scope created from claims(/repo) : {user_scope}")
 
         # Set authentication attributes required
         authentication.backend_id = repo_id
@@ -435,8 +436,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
                     # Authenticate user with retrieved credentials
                     authentication_results = authentication.authenticate(request)
-                    logger.debug("PORTAL::log_in: Authentication succeed on backend {}".format(authentication.backend_id))
-                    logger.info(authentication_results)
+                    logger.debug("PORTAL::log_in: Authentication succeed on backend {}, "
+                                 "user infos : {}".format(authentication.backend_id, authentication_results))
                     # Register authentication results in Redis
                     portal_cookie, oauth2_token = authentication.register_user(authentication_results)
                     logger.debug("PORTAL::log_in: User {} successfully registered in Redis".format(authentication.credentials[0]))
@@ -449,8 +450,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # If the user is already authenticated (retrieven with RedisPortalSession ) => SSO
                 else:
                     portal_cookie, oauth2_token = authentication.register_sso(backend_id)
-                    logger.info(authentication.redis_oauth2_session.keys)
-                    logger.info("PORTAL::log_in: User {} successfully SSO-powered !".format(authentication.credentials[0]))
+                    logger.info("PORTAL::log_in: User {} successfully SSO-powered ! "
+                                "OAuth2 session = {}".format(authentication.credentials[0],
+                                                             authentication.redis_oauth2_session.keys))
 
             except AssertionError as e:
                 logger.error("PORTAL::log_in: Bad captcha taped for username '{}' : {}"
