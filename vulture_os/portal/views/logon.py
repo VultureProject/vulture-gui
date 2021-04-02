@@ -123,7 +123,6 @@ def openid_start(request, workflow_id, repo_id):
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
         portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
-        logger.info(portal_cookie)
         # We must stock the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         redis_portal_session[STATE_REDIS_KEY] = state
@@ -375,7 +374,6 @@ def openid_userinfo(request, portal_id):
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
         assert session['scope']
-        logger.info(session['scope'])
         return JsonResponse(literal_eval(session['scope']))
     except Exception as e:
         logger.exception(e)
