@@ -285,7 +285,7 @@ def tls_profile_edit(request, object_id=None, api=False):
 
         """ If all is OK, redirect to TLSProfile list view """
         if api:
-            return JsonResponse(build_response(tls_profile.pk, "api.system.tls_profile", []))
+            return build_response(tls_profile.pk, "api.system.tls_profile", [])
         return HttpResponseRedirect('/system/tls_profile/')
 
     if api:

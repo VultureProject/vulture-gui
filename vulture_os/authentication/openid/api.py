@@ -56,7 +56,7 @@ class OPENIDApi(View):
             })
         except OpenIDRepository.DoesNotExist:
             return JsonResponse({
-                "error": _("Object does not exists")
+                "error": _("Object does not exist")
             }, status=404)
 
 
