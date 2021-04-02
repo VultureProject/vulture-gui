@@ -57,7 +57,7 @@ class DefenderPolicyAPIv1(View):
         
         except DefenderPolicy.DoesNotExist:
             return JsonResponse({
-                'error': _('Object does not exist')
+                "error": _("Object does not exist")
             }, status=404)
 
         except Exception as e:
