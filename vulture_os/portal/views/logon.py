@@ -447,7 +447,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                     .format(authentication.credentials[0]))
                         app_url = workflow.get_redirect_uri()
                         return HttpResponseRedirect(str(token_name)+'/self/change')
-                # If the user is already authenticated (retrieven with RedisPortalSession ) => SSO
+                # If the user is already authenticated (retrieved with RedisPortalSession ) => SSO
                 else:
                     portal_cookie, oauth2_token = authentication.register_sso(backend_id)
                     logger.info("PORTAL::log_in: User {} successfully SSO-powered ! "
@@ -635,13 +635,13 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
                 return final_response
 
-            # If learning credentials cannot be retrieven : ask them
+            # If learning credentials cannot be retrieved : ask them
             except CredentialsMissingError as e:
                 logger.error("PORTAL::log_in: Learning credentials missing : asking-them")
                 return authentication.ask_learning_credentials(request=request,
                                                                fields=e.fields_missing)
 
-            # If KerberosBackend object cannot be retrieven from mongo with the backend_id that the user is authenticated on
+            # If KerberosBackend object cannot be retrieved from mongo with the backend_id that the user is authenticated on
             except InvalidId:
                 logger.error("PORTAL::log_in: The user is authenticated on a not Kerberos backend, cannot do SSOForward")
 
