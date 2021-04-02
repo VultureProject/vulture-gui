@@ -65,7 +65,7 @@ class UserPortalApi(View):
             })
         except UserAuthentication.DoesNotExist:
             return JsonResponse({
-                "error": _("Object does not exists")
+                "error": _("Object does not exist")
             }, status=404)
 
     @api_need_key('cluster_api_key')
