@@ -1098,7 +1098,8 @@ class Frontend(models.Model):
             'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
-            'tenants_config': self.tenants_config
+            'tenants_config': self.tenants_config,
+            'external_idps': self.userauthentication_set.filter(enable_external=True)
         }
 
         if self.mode == "impcap":
@@ -1477,6 +1478,13 @@ class Frontend(models.Model):
         """ Check if this frontend has only rsyslog configuration, not haproxy at all """
         return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka", "redis")))
 
+    @property
+    def has_tls(self):
+        for listener in self.listener_set.all():
+            if listener.is_tls:
+                return True
+        return False
+
 
 class Listener(models.Model):
     """ Link class between NetworkAddress and Frontend """
@@ -1544,8 +1552,12 @@ class Listener(models.Model):
             'max_src': self.max_src,
             'max_rate': self.max_rate,
             'addr_port': "{}:{}".format(self.network_address.ip, self.port),
-            'is_tls': self.tls_profiles.count() > 0
+            'is_tls': self.is_tls
         }
+
+    @property
+    def is_tls(self):
+        return self.tls_profiles.count() > 0
 
     def __str__(self):
         return "{}:{}".format(self.network_address.ip, self.port)
@@ -1588,6 +1600,9 @@ class Listener(models.Model):
                 # Let port 1000 if no listener defined yet
                 pass
         super().save(*args, **kwargs)
+
+    def get_nodes(self):
+        return [nic.node for nic in self.network_address.nic.all()]
 
 
 class FrontendReputationContext(models.Model):

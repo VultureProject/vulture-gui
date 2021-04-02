@@ -244,46 +244,12 @@
                     <label class="col-sm-4 control-label">{% trans "Redis expire" %}:</label>
                     <div class="col-sm-5">
                       <input type="number" v-model="filter.config.redis_expire" class="form-control" min="0">
-                      <small class="help-block">{% trans "Number of seconds to cache connection, after this delay the connection will be deemed new again" %}</small>
+                      <small class="help-block">{% trans "Number of seconds to cache connection, after this delay the connection will be considered new again" %}</small>
                     </div>
                   </div>
                 </template>
 
                 <template v-if="renderName(filter.filter_type) === 'content_inspection'">
-                  <div class="col-md-12 form-group">
-                    <label class="col-sm-4 control-label">{% trans "Max connections" %}:</label>
-                    <div class="col-sm-5">
-                      <input type="number" v-model="filter.config.max_connections" class="form-control" min="0">
-                      <small class="help-block">{% trans "The maximum number of connections to folow (is only relevant when yaraScantype is set to 'stream')" %}</small>
-                    </div>
-                  </div>
-
-                  <div class="col-md-12 form-group">
-                    <label class="col-sm-4 control-label">{% trans "Yara Scan Type" %}:</label>
-                    <div class="col-sm-5">
-                      <v-select :options="yara_scan_type_choices" v-model="filter.config.yara_scan_type" :reduce="elem => elem.id"/>
-                    </div>
-                    <div class="col-md-5 col-md-offset-4">
-                      <small class="help-block">{% trans "Either 'packet' (scan data in packet without stream recomposition), or 'stream' (recompose TCP stream, then scan the recomposition)" %}</small>
-                    </div>
-                  </div>
-
-                  <div class="col-md-12 form-group">
-                    <label class="col-sm-4 control-label">{% trans "Yara Scan Max Size" %}:</label>
-                    <div class="col-sm-5">
-                      <input type="number" v-model="filter.config.yara_scan_max_size" class="form-control" min="0">
-                      <small class="help-block">{% trans "The maximum number of bytes to scan, is especially usefull when yaraScanType is set to stream (will define the maximum size of the recomposed stream to scan)" %}</small>
-                    </div>
-                  </div>
-
-                  <div class="col-md-12 form-group">
-                    <label class="col-sm-4 control-label">{% trans "Max memory usage" %}:</label>
-                    <div class="col-sm-5">
-                      <input type="number" v-model="filter.config.max_memory_usage" class="form-control" min="0">
-                      <small class="help-block">{% trans "Rough upper limit for the memory usage (in MB) of the filter, could be usefull when dealing with high traffic to prevent RAM overflow. Be warry that this only takes into account the data kept from connections, and the filter might take a bit more RAM" %}</small>
-                    </div>
-                  </div>
-
                   <div class="col-md-12 form-group">
                     <label class="col-sm-4 control-label">{% trans "Yara Policy" %}:</label>
                     <div class="col-sm-5">
@@ -293,10 +259,57 @@
                       <small class="help-block">{% trans "Yara policy with rules to use when scanning data" %}</small>
                     </div>
                   </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Yara Scan Type" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="yara_scan_type_choices" v-model="filter.config.yara_scan_type" :reduce="elem => elem.id"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "Either 'packet' (scan data in packet without stream recomposition), or 'stream' (recompose TCP stream, then scan the recomposition)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-sm-4 pull-right">
+                    <div class="form-group">
+                      <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced-params">
+                        <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Max connections" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.max_connections" class="form-control" min="0">
+                      <small class="help-block">{% trans "The maximum number of connections to folow (is only relevant when yaraScantype is set to 'stream')" %}</small>
+                    </div>
+                  </div>
+
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Yara Scan Max Size" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.yara_scan_max_size" class="form-control" min="0">
+                      <small class="help-block">{% trans "The maximum number of bytes to scan, is especially usefull when yaraScanType is set to stream (will define the maximum size of the recomposed stream to scan)" %}</small>
+                    </div>
+                  </div>
+
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Max memory usage" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.max_memory_usage" class="form-control" min="0">
+                      <small class="help-block">{% trans "Rough upper limit for the memory usage (in MB) of the filter, could be usefull when dealing with high traffic to prevent RAM overflow. Be warry that this only takes into account the data kept from connections, and the filter might take a bit more RAM" %}</small>
+                    </div>
+                  </div>
+
                 </template>
 
                 <template v-if="renderName(filter.filter_type) === 'dgad'">
-                  <div class="col-md-12 form-group">
+                  <div class="col-sm-4 pull-right">
+                    <div class="form-group">
+                      <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced-params">
+                        <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
                     <label class="col-sm-4 control-label">{% trans "Max token" %}:</label>
                     <div class="col-sm-5">
                       <input type="number" v-model="filter.config.max_tokens" class="form-control" min="0">
@@ -319,6 +332,22 @@
                 
                 <template v-if="renderName(filter.filter_type) === 'yara'">
                   <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Rule file list" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="yara_policies_list" multiple v-model="filter.config.yara_policies_id" :reduce="elem => elem.id"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "List of yara policies to use during detection" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-sm-4 pull-right">
+                    <div class="form-group">
+                      <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced-params">
+                        <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
                     <label class="col-sm-4 control-label">{% trans "Fast mode" %}:</label>
                     <div class="col-sm-5">
                       <v-toggle-button v-model="filter.config.fastmode"/>
@@ -327,20 +356,108 @@
                       <small class="help-block">{% trans "Don't search for a rule once it has matched" %}</small>
                     </div>
                   </div>
-                  <div class="col-md-12 form-group">
+                  <div class="col-md-12 form-group collapse advanced-params">
                     <label class="col-sm-4 control-label">{% trans "Timeout" %}:</label>
                     <div class="col-sm-5">
                       <input type="number" v-model="filter.config.timeout" class="form-control" min="0">
                       <small class="help-block">{% trans "Maximum number of seconds to wait for the scan to finish (zero means wait until scan is finished)" %}</small>
                     </div>
                   </div>
+                </template>
+
+                <template v-if="renderName(filter.filter_type) === 'vast'">
                   <div class="col-md-12 form-group">
-                    <label class="col-sm-4 control-label">{% trans "Rule file list" %}:</label>
+                    <label class="col-sm-4 control-label">{% trans "Model" %}:</label>
                     <div class="col-sm-5">
-                      <v-select :options="yara_policies_list" multiple v-model="filter.config.yara_policies_id" :reduce="elem => elem.id"/>
+                      <v-select :options="vast_model_choices" v-model="filter.config.model" :reduce="elem => elem.label"/>
                     </div>
                     <div class="col-md-5 col-md-offset-4">
-                      <small class="help-block">{% trans "List of yara policies to use during detection" %}</small>
+                      <small class="help-block">{% trans "The model file to use with this filter" %}</small>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="renderName(filter.filter_type) === 'vaml'">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Model" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="vaml_model_choices" v-model="filter.config.model" :reduce="elem => elem.label"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "The model file to use with this filter" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Percent more before alert" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.percent_more_alert" class="form-control" min="0" step="0.1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "The percentage of upper variation admitted before raising an alert" %}</small>
+                      <small class="help-block">{% trans "Percentage is expressed as quotient (write 0.1 for 10%)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Percent less before alert" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.percent_less_alert" class="form-control" min="0" step="0.1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "The percentage of lower variation admitted before raising an alert" %}</small>
+                      <small class="help-block">{% trans "Percentage is expressed as quotient (write 0.1 for 10%)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-sm-4 pull-right">
+                    <div class="form-group">
+                      <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced-params">
+                        <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Percent more before warning" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.percent_more_warning" class="form-control" min="0" step="0.1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block"><b>{% trans "(optional, keep empty if unsure)" %}</b></small>
+                      <small class="help-block">{% trans "The percentage of upper variation admitted before raising a warning" %}</small>
+                      <small class="help-block">{% trans "Percentage is expressed as quotient (write 0.1 for 10%)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Percent less before warning" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.percent_less_warning" class="form-control" min="0" step="0.1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block"><b>{% trans "(optional, keep empty if unsure)" %}</b></small>
+                      <small class="help-block">{% trans "The percentage of lower variation admitted before raising a warning" %}</small>
+                      <small class="help-block">{% trans "Percentage is expressed as quotient (write 0.1 for 10%)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Minimal variation" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.minimal_variation" class="form-control" min="0" step="1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block"><b>{% trans "(optional, keep empty if unsure)" %}</b></small>
+                      <small class="help-block">{% trans "The minimal variation to require between the expected and real values before raising warnings or alerts" %}</small>
+                      <small class="help-block">{% trans "This is useful to avoid raising warnings/alerts too quickly when expected differences ought to be small" %}</small>
+                      <small class="help-block">{% trans "It takes precedence over calculated percentages if they result in smaller accepted variation" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Lower absolute" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.lower_absolute" class="form-control" step="1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block"><b>{% trans "(optional, keep empty if unsure)" %}</b></small>
+                      <small class="help-block">{% trans "The absolute lower value before raising alerts (percentages for lower warnings/alerts are ignored)" %}</small>
+                      <small class="help-block">{% trans "This is useful when alerts should be raised only when observed values drop below a certain threshold (upper warnings/alerts are still taken into account)" %}</small>
+                      <small class="help-block">{% trans "lower percentages are ignored" %}</small>
                     </div>
                   </div>
                 </template>
@@ -367,4 +484,5 @@ let darwin_policy_list_uri = "{% url 'darwin.policy.list' %}"
 let darwin_policy_api_uri = "{% url 'darwin.policy.api' %}"
 let darwin_inspection_policies_uri = "{% url 'darwin.inspection.api' %}"
 let application_reputation_ctx_uri = "{% url 'applications.reputation_ctx.api' %}"
+let darwin_filter_ressources_uri = "{% url 'darwin.filter.api' %}"
 {% endblock %}

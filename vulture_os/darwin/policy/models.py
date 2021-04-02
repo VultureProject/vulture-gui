@@ -50,6 +50,7 @@ JINJA_PATH = "/home/vlt-os/vulture_os/darwin/log_viewer/config/"
 SOCKETS_PATH = "/var/sockets/darwin"
 FILTERS_PATH = "/home/darwin/filters"
 CONF_PATH = "/home/darwin/conf"
+DATA_PATH = "/var/db/darwin"
 TEMPLATE_OWNER = "darwin:vlt-web"
 TEMPLATE_PERMS = "644"
 
@@ -59,6 +60,8 @@ ALERTS_REDIS_CHANNEL_NAME = "darwin.alerts"
 ALERTS_LOG_FILEPATH = "/var/log/darwin/alerts.log"
 
 DGA_MODELS_PATH = CONF_PATH + '/fdgad/'
+VAST_MODELS_PATH = CONF_PATH + '/fvast/'
+VAML_MODELS_PATH = CONF_PATH + '/fvaml/'
 
 DARWIN_LOGLEVEL_CHOICES = (
     ('CRITICAL', 'Critical'),
@@ -262,6 +265,86 @@ def validate_yara_config(config):
     return cleaned_config
 
 
+def validate_vast_config(config):
+    cleaned_config = {}
+
+    # model validation
+    model = config.get('model', None)
+    if model is None:
+        raise ValidationError({'model': _("configuration should contain a 'model' parameter")})
+    if not os_path.exists(VAST_MODELS_PATH + model + ".dat"):
+        raise ValidationError({'model': _("could not find model on system")})
+    cleaned_config['model'] = model
+
+    return cleaned_config
+
+
+def validate_vaml_config(config):
+    cleaned_config = {}
+
+    # model validation
+    model = config.get('model', None)
+    if model is None:
+        raise ValidationError({'model': _("configuration should contain a 'model' parameter")})
+    if not os_path.exists(VAML_MODELS_PATH + model + ".dat"):
+        raise ValidationError({'model': _("could not find model on system")})
+    cleaned_config['model'] = model
+
+    # holidays file validation
+    holidays_file = config.get('holidays_file', None)
+    if holidays_file is None:
+        raise ValidationError({'holidays_file': _("configuration should contain a 'holidays_file' parameter")})
+    if not os_path.exists(VAML_MODELS_PATH + holidays_file + ".holidays"):
+        raise ValidationError({'holidays_file': _("could not find holidays_file on system")})
+    cleaned_config['holidays_file'] = holidays_file
+
+    # percent_more_alert validation
+    percent_more_alert = config.get('percent_more_alert', None)
+    if percent_more_alert is None:
+        ValidationError({'percent_more_alert': _("configuration should contain a 'percent_more_alert' parameter")})
+    if not isinstance(percent_more_alert, float) or percent_more_alert < 0:
+        ValidationError({'percent_more_alert': _("'percent_more_alert' should be a positive float")})
+    cleaned_config['percent_more_alert'] = percent_more_alert
+
+    # percent_less_alert validation
+    percent_less_alert = config.get('percent_less_alert', None)
+    if percent_less_alert is None:
+        ValidationError({'percent_less_alert': _("configuration should contain a 'percent_less_alert' parameter")})
+    if not isinstance(percent_less_alert, float) or percent_less_alert < 0:
+        ValidationError({'percent_less_alert': _("'percent_less_alert' should be a positive float")})
+    cleaned_config['percent_less_alert'] = percent_less_alert
+
+    # percent_more_warning validation
+    percent_more_warning = config.get('percent_more_warning', None)
+    if percent_more_warning is not None:
+        if not isinstance(percent_more_warning, float) or percent_more_warning < 0:
+            ValidationError({'percent_more_warning': _("'percent_more_warning' should be a positive float")})
+        cleaned_config['percent_more_warning'] = percent_more_warning
+
+    # percent_less_warning validation
+    percent_less_warning = config.get('percent_less_warning', None)
+    if percent_less_warning is not None:
+        if not isinstance(percent_less_warning, float) or percent_less_warning < 0:
+            ValidationError({'percent_less_warning': _("'percent_less_warning' should be a positive float")})
+        cleaned_config['percent_less_warning'] = percent_less_warning
+
+    # minimal_variation validation
+    minimal_variation = config.get('minimal_variation', None)
+    if minimal_variation is not None:
+        if not isinstance(minimal_variation, float) or minimal_variation < 0:
+            ValidationError({'minimal_variation': _("'minimal_variation' should be a positive float")})
+        cleaned_config['minimal_variation'] = minimal_variation
+
+    # lower_absolute validation
+    lower_absolute = config.get('lower_absolute', None)
+    if lower_absolute is not None:
+        if not isinstance(lower_absolute, float):
+            ValidationError({'lower_absolute': _("'lower_absolute' should be a positive float")})
+        cleaned_config['lower_absolute'] = lower_absolute
+
+    return cleaned_config
+
+
 
 DARWIN_FILTER_CONFIG_VALIDATORS = {
     'unad': validate_anomaly_config,
@@ -272,6 +355,8 @@ DARWIN_FILTER_CONFIG_VALIDATORS = {
     'sofa': validate_sofa_config,
     'tanomaly': validate_tanomaly_config,
     'yara': validate_yara_config,
+    'vast': validate_vast_config,
+    'vaml': validate_vaml_config,
 }
 
 class DarwinFilter(models.Model):
@@ -733,22 +818,26 @@ class FilterPolicy(models.Model):
 
             if input_type == "unad":
                 # TODO remove when BUFR is updated with new name format
-                filter_type = "anomaly"
+                filter_type = "fanomaly"
                 json_conf['input_format'] = [
                     {"name": "net_src_ip", "type": "string"},
                     {"name": "net_dst_ip", "type": "string"},
                     {"name": "net_dst_port", "type": "string"},
                     {"name": "ip_proto", "type": "string"}
                 ]
-            if input_type == "sofa":
-                # TODO remove when BUFR is updated with new name format
-                filter_type = "sofa"
+            elif input_type == "sofa":
+                filter_type = "fsofa"
                 json_conf['input_format'] = [
                     {"name": "ip", "type": "string"},
                     {"name": "hostname", "type": "string"},
                     {"name": "os", "type": "string"},
                     {"name": "proto", "type": "string"},
                     {"name": "port", "type": "string"}
+                ]
+            elif input_type in ["vast", "vaml"]:
+                filter_type = "sum"
+                json_conf['input_format'] = [
+                    {"name": "decimal", "type": "string"}
                 ]
 
             for buffer in self.buffers.all():
@@ -766,12 +855,39 @@ class FilterPolicy(models.Model):
                 # Only create the output if there are sources
                 if redis_lists:
                     json_conf['outputs'].append({
-                        "filter_type": "f{}".format(filter_type),
+                        "filter_type": "{}".format(filter_type),
                         "filter_socket_path": buffer.destination_filter.socket_path,
                         "interval": buffer.interval,
                         "required_log_lines": buffer.required_log_lines,
                         "redis_lists": redis_lists
                     })
+
+        return json_conf
+
+
+    def _generate_vast_conf(self):
+        json_conf = {}
+
+        # generate vast model full path for fvast
+        model = self.config.get('model', None)
+        if model:
+            json_conf['model'] = VAST_MODELS_PATH + model + ".dat"
+
+        return json_conf
+
+
+    def _generate_vaml_conf(self):
+        json_conf = {}
+
+        # generate vaml model full path for fvaml
+        model = self.config.get('model', None)
+        if model:
+            json_conf['model'] = VAML_MODELS_PATH + model + ".dat"
+
+        # generate vaml holidyas_file full path for fvaml
+        holidays_file = self.config.get('holidays_file', None)
+        if holidays_file:
+            json_conf['holidays_file'] = VAML_MODELS_PATH + holidays_file + ".holidays"
 
         return json_conf
 
@@ -788,7 +904,10 @@ class FilterPolicy(models.Model):
         }
 
         # Those fields were already validated and don't need any modification, let them be in the resulting configuration as-is
-        PASS_THROUGH_FIELDS = ['redis_expire', 'max_tokens', 'fastmode', 'timeout', 'redis_socket_path', 'alert_redis_list_name', 'alert_redis_channel_name', 'log_file_path']
+        PASS_THROUGH_FIELDS = ['redis_expire', 'max_tokens', 'fastmode', 'timeout', 'redis_socket_path',
+                                'alert_redis_list_name', 'alert_redis_channel_name', 'log_file_path',
+                                'percent_more_alert', 'percent_less_alert', 'percent_more_warning',
+                                'percent_less_warning', 'minimal_variation', 'lower_absolute']
 
         if self.filter_type.name == "yara":
             json_conf.update(self._generate_yara_conf())
@@ -800,6 +919,10 @@ class FilterPolicy(models.Model):
             json_conf.update(self._generate_bufr_conf())
         if self.filter_type.name == "content_inspection":
             json_conf.update(self._generate_content_inspection_conf())
+        if self.filter_type.name == "vast":
+            json_conf.update(self._generate_vast_conf())
+        if self.filter_type.name == "vaml":
+            json_conf.update(self._generate_vaml_conf())
 
         # Add all listed fields without need for modification
         for key, value in self.config.items():

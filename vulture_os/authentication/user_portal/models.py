@@ -37,22 +37,31 @@ from authentication.ldap.models import LDAPRepository
 from authentication.kerberos.models import KerberosRepository
 from authentication.openid.models import OpenIDRepository
 from authentication.radius.models import RadiusRepository
-from services.frontend.models import Listener
+from services.frontend.models import Frontend
 from toolkit.http.utils import build_url
 from toolkit.system.hashes import random_sha256
 from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
 from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
                           SelectMultiple, TextInput, Textarea)
+from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 
 # Extern modules imports
 from bson import ObjectId
+from jinja2 import Environment, FileSystemLoader
 
 # Required exceptions imports
+from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
+                               TemplateSyntaxError, UndefinedError)
+from services.exceptions import (ServiceJinjaError, ServiceStartError, ServiceTestConfigError, ServiceError)
+from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
+
+JINJA_PATH = "/home/vlt-os/vulture_os/authentication/user_portal/config/"
+JINJA_TEMPLATE = "haproxy_portal.conf"
 
 
 AUTH_TYPE_CHOICES = (
@@ -199,7 +208,7 @@ class UserAuthentication(models.Model):
         help_text=_("Listen portal on dedicated host - required for ")
     )
     external_listener = models.ForeignKey(
-        to=Listener,
+        to=Frontend,
         null=True,
         verbose_name=_('Listen on'),
         help_text=_("Listener used for external portal"),
@@ -335,7 +344,7 @@ class UserAuthentication(models.Model):
     oauth_client_secret = models.CharField(
         max_length=64,
         default=random_sha256,
-        verbose_name=_("Secret (client_id)"),
+        verbose_name=_("Secret (client_secret)"),
         help_text=_("Client_secret used to contact OAuth2 provider urls")
     )
     oauth_redirect_uris = models.JSONField(
@@ -442,7 +451,7 @@ class UserAuthentication(models.Model):
         help_text=_('URL of additionnal request')
     )
 
-    #objects = models.DjongoManager()
+    objects = models.DjongoManager()
 
     def __str__(self):
         return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])
@@ -461,17 +470,23 @@ class UserAuthentication(models.Model):
 
     def to_template(self):
         """  returns the attributes of the class """
+        data = model_to_dict(self)
+        data['openid_repos'] = self.openid_repos
+        return data
+
+    def to_template_external(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'name': self.name,
-            'openid_repos': [repo.to_template() for repo in self.openid_repos]
+            'external_fqdn': self.external_fqdn,
+            'portal_template': self.portal_template.to_dict()
         }
 
     def get_repo_attributes(self):
         if not self.repo_attributes:
             return []
         else:
-            return [RepoAttributes(r) for r in self.repo_attributes]
+            return [RepoAttributes(**r) for r in self.repo_attributes]
 
     def to_dict(self):
         data = model_to_dict(self)
@@ -509,10 +524,81 @@ class UserAuthentication(models.Model):
 
     def write_login_template(self):
         """ Write templates as static, to serve them without rendering """
-        return self.portal_template.write_template("html_login", openid_repos=self.openid_repos)
+        return self.portal_template.write_template("html_login", openid_repos=self.openid_repos, portal_id=self.id)
+
+    def render_template(self, tpl_name, **kwargs):
+        return self.portal_template.render_template(tpl_name, **{**kwargs, **self.to_template()})
 
     def get_user_scope(self, claims, repo_attrs):
         user_scope = {}
         for u in self.get_repo_attributes():
             user_scope[u.key] = u.get_attribute(claims, repo_attrs)
         return user_scope
+
+
+    def generate_conf(self):
+        """ Render the conf with Jinja template and self.to_template() method
+        :return     The generated configuration as string, or raise
+        """
+        # The following var is only used by error, do not forget to adapt if needed
+        template_name = JINJA_PATH + JINJA_TEMPLATE
+        try:
+            jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
+            template = jinja2_env.get_template(JINJA_TEMPLATE)
+            return template.render({'conf': self.to_template_external()})
+        # In ALL exceptions, associate an error message
+        # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
+        except TemplateNotFound:
+            exception = ServiceJinjaError("The following file cannot be found : '{}'".format(template_name), "haproxy")
+        except TemplatesNotFound:
+            exception = ServiceJinjaError("The following files cannot be found : '{}'".format(template_name), "haproxy")
+        except (TemplateAssertionError, TemplateRuntimeError):
+            exception = ServiceJinjaError("Unknown error in template generation: {}".format(template_name), "haproxy")
+        except UndefinedError:
+            exception = ServiceJinjaError("A variable is undefined while trying to render the following template: "
+                                          "{}".format(template_name), "haproxy")
+        except TemplateSyntaxError:
+            exception = ServiceJinjaError("Syntax error in the template: '{}'".format(template_name), "haproxy")
+        # If there was an exception, raise a more general exception with the message and the traceback
+        raise exception
+
+    def get_base_filename(self):
+        """ Return the workflow filename, without directory """
+        return "portal_{}.cfg".format(self.id)
+
+    def get_filename(self):
+        """  """
+        return "{}/{}".format(HAPROXY_PATH, self.get_base_filename())
+
+    def save_conf(self):
+        """
+        :return   A message of what has been done
+        """
+        if not self.enable_external:
+            return "No standalone portal, no need to write conf."
+
+        params = [self.get_filename(), self.generate_conf(), HAPROXY_OWNER, HAPROXY_PERMS]
+        for node in self.external_listener.get_nodes():
+            try:
+                api_res = node.api_request("system.config.models.write_conf", config=params)
+                if not api_res.get('status'):
+                    raise VultureSystemConfigError(". API request failure ", traceback=api_res.get('message'))
+            except Exception:
+                raise VultureSystemConfigError("API request failure.")
+
+        return "Workflow configuration written."
+
+    def generate_openid_config(self, issuer):
+        return {
+            "issuer": issuer,
+            "authorization_endpoint": f"{issuer}/oauth2/authorize",
+            "token_endpoint": f"{issuer}/oauth2/token",
+            "userinfo_endpoint": f"{issuer}/oauth2/userinfo",
+            "revocation_endpoint": f"{issuer}/oauth2/revoke",
+            "scopes_supported": [
+                "openid"
+            ],
+            "response_types_supported": [
+                "code"
+            ]
+        }

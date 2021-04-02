@@ -321,7 +321,7 @@ class PortalTemplate(models.Model):
 
     def attrs_dict(self):
         """ Return all fields attributes """
-        return {
+        result = {
             'login_login_field': self.login_login_field,
             'login_password_field': self.login_password_field,
             'login_captcha_field': self.login_captcha_field,
@@ -347,19 +347,21 @@ class PortalTemplate(models.Model):
             'input_password': INPUT_PASSWORD,
             'style': self.css
         }
+        for image in TemplateImage.objects.all():
+            result[f"image_{image.id}"] = image.create_preview_html()
+        return result
 
     def render_template(self, tpl_name, **kwargs):
         tpl = Template(getattr(self, tpl_name))
-        logger.info({**self.attrs_dict(), **kwargs})
         return tpl.render(Context({**self.attrs_dict(), **kwargs}))
 
-    def tpl_filename(self, tpl_name):
-        return f"{HAPROXY_PATH}/templates/{tpl_name}_{self.id}.html"
+    def tpl_filename(self, tpl_name, portal_id=None):
+        return f"{HAPROXY_PATH}/templates/{tpl_name}_{portal_id or self.id}.html"
 
     def write_template(self, tpl_name, **kwargs):
         """ This method has to be called by api_request (Vultured) """
         filename = self.tpl_filename(tpl_name)
-        write_conf(logger, [self.tpl_filename(tpl_name), HAPROXY_HEADER+self.render_template(tpl_name, **kwargs), HAPROXY_OWNER, HAPROXY_PERMS])
+        write_conf(logger, [self.tpl_filename(tpl_name, kwargs.get('portal_id')), HAPROXY_HEADER+self.render_template(tpl_name, **kwargs), HAPROXY_OWNER, HAPROXY_PERMS])
         return "Template {} successfully written".format(filename)
 
 
@@ -367,14 +369,17 @@ class TemplateImage(models.Model):
     """
     Vulture's portal template image.
     """
-    name = models.TextField(help_text=_('The name of the image'))
-    # content = models.ImageField(help_text=_('Image you can use in the portal templates'))
-    uid = models.TextField(null=True, help_text=_('A unique identifier to get the image from portal'))
+    name = models.TextField(default="", help_text=_('The name of the image'))
+    image_type = models.TextField(default="")
+    content = models.TextField(default="", help_text=_('Image you can use in the portal templates'))
 
     def to_dict(self):
         return {
+            "id": str(self.pk),
             "name": self.name,
-            "uid": self.uid
+            "image_type": self.image_type,
+            "create_preview_html": self.create_preview_html(),
+            "get_image_uri": self.get_image_uri()
         }
 
     def get_image_uri(self):
@@ -395,7 +400,7 @@ class TemplateImage(models.Model):
         :return: A string with pre-formatted html for the image
         """
 
-        return "<img src='data:image/{};base64,{}'/>".format(self.content.format.lower(), base64.b64encode(self.content.read()))
+        return "<img src='data:image/{};base64,{}'/>".format(self.image_type, self.content)
 
     def create_preview_html(self):
         """
@@ -403,4 +408,4 @@ class TemplateImage(models.Model):
         :return: A string with pre-formatted html for the image
         """
 
-        return "data:image/{};base64,{}".format(self.content.format.lower(), base64.b64encode(self.content.read()))
+        return "data:image/{};base64,{}".format(self.image_type, self.content)

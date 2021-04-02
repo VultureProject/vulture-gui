@@ -88,6 +88,7 @@ HEADER_ACTION_CHOICES = (
 )
 
 HEADER_CONDITION_CHOICES = (
+    ('', "Always"),
     ('if', "If"),
     ('unless', "Unless"),
 )
@@ -176,7 +177,7 @@ class Header(models.Model):
         help_text=_("")
     )
     condition_action = models.TextField(
-        default="if",
+        default="",
         choices=HEADER_CONDITION_CHOICES,
         help_text=_("Facultative condition type of applying the rule")
     )
@@ -205,11 +206,11 @@ class Header(models.Model):
         # http-request or http-response
         result = "http-{} {} {} ".format(self.type, self.action, self.header_name)
         if self.action == "add-header" or self.action == "set-header":
-            result += "\"{}\" ".format(self.replace)
+            result += "{} ".format(self.replace)
         elif self.action == "replace-header" or self.action == "replace-value":
-            result += "\"{}\" \"{}\" ".format(self.match, self.replace)
+            result += "{} {} ".format(self.match, self.replace)
         if self.condition:
-            result += "{} \"{}\"".format(self.condition_action, self.condition)
+            result += "{} {}".format(self.condition_action, self.condition)
         return result
 
 
@@ -255,7 +256,7 @@ class HeaderForm(ModelForm):
 
     def as_table_headers(self):
         """ Format field names as table head """
-        result = "<tr><th style=\"visibility:hidden;\">{}</th>\n"
+        result = "<tr><th style=\"visibility:hidden;\">Id</th>\n"
         for field in self:
             result += "<th>{}</th>\n".format(field.label)
         result += "<th>Delete</th></tr>\n"

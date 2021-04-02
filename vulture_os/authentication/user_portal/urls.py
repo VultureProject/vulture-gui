@@ -28,7 +28,7 @@ from django.urls import path, re_path
 # Django project imports
 from authentication.generic_list import ListUserAuthentication
 from authentication.generic_delete import DeleteUserAuthentication
-from authentication.user_portal import views
+from authentication.user_portal import views, api
 
 
 
@@ -56,4 +56,14 @@ urlpatterns = [
     # path('authentication/ldap/group_search_test/',
     #      views.group_search_test,
     #      name="authentication.ldap.group_search_test"),
+
+    path('api/v1/portal/user_authentication/',
+        api.UserPortalApi.as_view(),
+        name="api.portal.user_authentication"
+    ),
+
+    path('api/v1/portal/user_authentication/<str:object_id>/',
+        api.UserPortalApi.as_view(),
+        name="api.portal.user_authentication"
+    ),
 ]

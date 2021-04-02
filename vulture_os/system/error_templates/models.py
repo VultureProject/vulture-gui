@@ -25,6 +25,7 @@ __doc__ = 'ErrorTemplate model classes'
 # Django system imports
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -72,7 +73,8 @@ class ErrorTemplate(models.Model):
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_400_html = models.TextField(
-        default="""<html><body><h1>400 Bad request</h1>
+        default="""HTTP/1.1 400 Bad Request\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>400 Bad request</h1>
 <p>Your browser sent an invalid request.</p>
 </body></html>""",
         help_text=_("HTML code to render if 400 (Bad Request) code is returned.")
@@ -88,7 +90,8 @@ class ErrorTemplate(models.Model):
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_403_html = models.TextField(
-        default="""<html><body><h1>403 Forbidden</h1>
+        default="""HTTP/1.1 403 Forbidden\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>403 Forbidden</h1>
 <p>You don't have permission to access this url on this server.<br/></p>
 </body></html>""",
         help_text=_("HTML code to render if 403 (Forbidden) code is returned.")
@@ -104,7 +107,8 @@ class ErrorTemplate(models.Model):
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_405_html = models.TextField(
-        default="""<html><body><h1>405 Method Not Allowed</h1>
+        default="""HTTP/1.1 405 Method Not Allowed\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>405 Method Not Allowed</h1>
 <p>The requested method is not allowed for that URL.</p>
 </body></html>""",
         help_text=_("HTML code to render if 405 (Method Not Allowed) code is returned.")
@@ -120,7 +124,8 @@ class ErrorTemplate(models.Model):
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_408_html = models.TextField(
-        default="""<html><body><h1>408 Request Timeout</h1>
+        default="""HTTP/1.1 408 Request Timeout\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>408 Request Timeout</h1>
 <p>Server timeout waiting for the HTTP request from the client.</p>
 </body></html>""",
         help_text=_("HTML code to render if 408 (Request Timeout) code is returned.")
@@ -136,7 +141,8 @@ class ErrorTemplate(models.Model):
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_425_html = models.TextField(
-        default="""<html><body><h1>425 Too Early</h1>
+        default="""HTTP/1.1 425 Too Early\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>425 Too Early</h1>
 <p>.</p>
 </body></html>""",
         help_text=_("HTML code to render if 425 (Too Early) code is returned.")
@@ -152,7 +158,8 @@ class ErrorTemplate(models.Model):
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_429_html = models.TextField(
-        default="""<html><body><h1>429 Too Many Requests</h1>
+        default="""HTTP/1.1 429 Too Many Requests\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>429 Too Many Requests</h1>
 <p>The user has sent too many requests in a given amount of time.</p>
 </body></html>""",
         help_text=_("HTML code to render if 429 (Too Many Requests) code is returned.")
@@ -168,7 +175,8 @@ class ErrorTemplate(models.Model):
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_500_html = models.TextField(
-        default="""<html><body><h1>500 Internal Server Error</h1>
+        default="""HTTP/1.1 500 Internal Server Error\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>500 Internal Server Error</h1>
 <p>The server encountered an internal error or
 misconfiguration and was unable to complete
 your request.</p>
@@ -191,7 +199,8 @@ in the server error log.</p>
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_502_html = models.TextField(
-        default="""<html><body><h1>502 Bad Gateway</h1>
+        default="""HTTP/1.1 502 Bad Gateway\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>502 Bad Gateway</h1>
 <p>The proxy server received an invalid response from an upstream server.<br/></p>
 </body></html>""",
         help_text=_("HTML code to render if 502 (Bad Gateway) code is returned.")
@@ -207,7 +216,8 @@ in the server error log.</p>
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_503_html = models.TextField(
-        default="""<html><body><h1>503 Service Unavailable</h1>
+        default="""HTTP/1.1 503 Service Unavailable\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>503 Service Unavailable</h1>
 <p>The server is temporarily unable to service your
 request due to maintenance downtime or capacity
 problems. Please try again later.</p>
@@ -225,7 +235,8 @@ problems. Please try again later.</p>
         help_text=_("Absolute or relative url to redirect to when the error code is encountered.")
     )
     error_504_html = models.TextField(
-        default="""<html><body><h1>504 Gateway Timeout</h1>
+        default="""HTTP/1.1 504 Gateway Timeout\r\nContent-type: text/html\r\nConnection: close\r\n\r\n
+<html><body><h1>504 Gateway Timeout</h1>
 <p>The gateway did not receive a timely response
 from the upstream server or application.</p>
 </body></html>""",
@@ -247,6 +258,9 @@ from the upstream server or application.</p>
             'name': self.name,
             'frontends': [str(frontend) for frontend in self.frontend_set.all()]
         }
+
+    def to_dict(self):
+        return model_to_dict(self)
 
     def get_base_filename(self, code):
         return "{}_{}.html".format(self.name, code)
@@ -273,7 +287,8 @@ from the upstream server or application.</p>
             mode = getattr(self, "error_{}_mode".format(error_code))
             if mode == "display":
                 api_res = Cluster.api_request("system.config.models.write_conf",
-                                    [self.get_filename(error_code), getattr(self, "error_{}_html".format(error_code)),
+                                    [self.get_filename(error_code),
+                                     getattr(self, "error_{}_html".format(error_code)),
                                      TEMPLATE_OWNER, TEMPLATE_PERMS])
         # Return the last API request result
         return api_res

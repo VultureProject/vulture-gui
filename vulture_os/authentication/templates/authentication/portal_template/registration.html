@@ -1,0 +1,134 @@
+
+
+{% load i18n %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="template_helper">
+            <p>{% trans "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="template_helper col-md-3">
+            <div class="panel  panel-bordered panel-dark">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{% trans "The following tags are available: "%}</h3>
+                </div>
+                <div class="panel-body">
+                    <ul>
+                        <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% trans "The beginning &lt;form action='...'&gt;"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% trans "The end &lt;/form&gt;"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_username&#125;&#125;</color></b>: {% trans "The username Input"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;captcha&#125;&#125;</color></b>: {% trans "The captcha"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_captcha&#125;&#125;</color></b>: {% trans "The captcha Input"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;ask_phone&#125;&#125;</color></b>: {% trans "Boolean: True if the phone number must be filled in"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_phone&#125;&#125;</color></b>: {% trans "The phone number Input"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_password_1&#125;&#125;</color></b>: {% trans "The password Input (#1)"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_password_2&#125;&#125;</color></b>: {% trans "The password Input confirmation (#2)"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% trans "The 'submit' button"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;step1&#125;&#125;</color></b>: {% trans "Boolean: True if registration step 1"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;step2&#125;&#125;</color></b>: {% trans "Boolean: True if registration step 2"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The message telling what happens"%}</li>
+                    </ul>
+                </div>
+            </div>
+
+            {% include "./images.html" %}
+        </div>
+
+        <div class="col-md-7">
+            {{form.html_registration}}
+            {{form.html_registration.errors}}
+            <p class="text-center">
+                <button type="button" @click="preview('html_registration')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+            </p>
+        </div>
+
+        <div class="col-md-2">
+            <div class="panel  panel-colorful panel-dark">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Captcha field name" %}</label>
+                        {{ form.register_captcha_field }}
+                        {{ form.register_captcha_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Username field name" %}</label>
+                        {{ form.register_username_field }}
+                        {{ form.register_username_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Phone field name" %}</label>
+                        {{ form.register_phone_field }}
+                        {{ form.register_phone_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Password field name" %}</label>
+                        {{ form.register_password1_field }}
+                        {{ form.register_password1_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Password confirmation field name" %}</label>
+                        {{ form.register_password2_field }}
+                        {{ form.register_password2_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Email field name" %}</label>
+                        {{ form.register_email_field }}
+                        {{ form.register_email_field.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Submit button name" %}</label>
+                        {{ form.register_submit_field }}
+                        {{ form.register_submit_field.errors }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="template_helper col-md-3">
+            <div class="panel  panel-bordered panel-dark">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{% trans "The following tags are available: "%}</h3>
+                </div>
+                <div class="panel-body">
+                    <ul>
+                        <li><b style="color:#39454C;">&#123;&#123;registerLink&#125;&#125;</color></b>: {% trans "The URI to confirm registration"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;app.name&#125;&#125;</color></b>: {% trans "The Name of the app for which we request an account registration"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;app.url&#125;&#125;</color></b>: {% trans "The URL of the app for which we request an account registrationt"%}</li>
+                    </ul>
+                </div>
+            </div>
+
+            {% include "./images.html" %}
+        </div>
+
+        <div class="col-md-7">
+            {{form.email_register_body}}
+            {{form.email_register_body.errors}}
+        </div>
+
+        <div class="col-md-2">
+            <div class="panel  panel-colorful panel-dark">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Captcha field name" %}</label>
+                        {{form.email_register_subject}}
+                        {{form.email_register_subject.errors}}
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">{%  trans "Captcha field name" %}</label>
+                        {{form.email_register_from}}
+                        {{form.email_register_from.errors}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

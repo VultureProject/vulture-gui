@@ -138,6 +138,27 @@ class LDAPClient(BaseAuth):
         self.ldap_uri = "{}://{}:{}".format(proto, self.host, self.port)
         self._ldap_connection = None
 
+    def get_user_attributes_list(self):
+        res = [self.user_attr]
+        if self.user_account_locked_attr:
+            res.append(self.user_account_locked_attr)
+        if self.user_change_password_attr:
+            res.append(self.user_change_password_attr)
+        if self.user_mobile_attr:
+            res.append(self.user_mobile_attr)
+        if self.user_email_attr:
+            res.append(self.user_email_attr)
+        if self.user_groups_attr:
+            res.append(self.user_groups_attr)
+        if self.user_smartcardid_attr:
+            res.append(self.user_smartcardid_attr)
+        if self.user_mobile_attr:
+            res.append(self.user_mobile_attr)
+        if self.user_email_attr:
+            res.append(self.user_email_attr)
+        return res
+
+
     def _get_connection(self):
         """ Internal method used to initialize/retrieve LDAP connection
 
@@ -254,7 +275,7 @@ class LDAPClient(BaseAuth):
             if not controls[0].cookie:
                 break
             page_control.cookie = controls[0].cookie
-        logger.info("LDAP search_s result is: {}".format(result))
+        logger.debug("LDAP search_s result is: {}".format(result))
         return self._process_results(result)
 
     def _search_oauth2(self, username):
@@ -287,8 +308,12 @@ class LDAPClient(BaseAuth):
 
     def search_by_dn(self, dn, attr_list=None):
         self._bind_connection(self.user, self.password)
-        result = self._get_connection().search_s(dn, ldap.SCOPE_SUBTREE, '(objectClass=*)', attr_list)
-        results = self._process_results(result)
+        try:
+            result = self._get_connection().search_s(dn, ldap.SCOPE_SUBTREE, '(objectClass=*)', attr_list)
+            results = self._process_results(result)
+        except ldap.NO_SUCH_OBJECT:
+            results = []
+
         self.unbind_connection()
         return results
 
@@ -419,8 +444,8 @@ class LDAPClient(BaseAuth):
 
         """ Search "memberOf style" groups inside the given user entry """
         self.attributes_list.append(user_groups_attr)
-
         user_info = self.search_user(username)
+        self.attributes_list.remove(user_groups_attr)
 
         if user_info:
             userdn=user_info[0][0]
@@ -428,7 +453,8 @@ class LDAPClient(BaseAuth):
             #This can return None
             if not group_list:
                 group_list=list()
-        self.attributes_list.remove(user_groups_attr)
+        else:
+            raise UserNotFound("User {} not found in {}".format(username, self.user_scope))
 
         logger.debug("{}'s groups are: {}".format(username.encode('utf-8'), group_list))
 
@@ -562,7 +588,7 @@ class LDAPClient(BaseAuth):
         if len(password) == 0:
             raise AuthenticationError("Empty password is not allowed")
         # Looking for user DN, if found we can try a bind
-        found = self.search_user(username, attr_list=["+","*"])
+        found = self.search_user(username, attr_list=["+", "*"])
 
         if found is not None and len(found) > 0:
             dn = found[0][0]
@@ -578,7 +604,6 @@ class LDAPClient(BaseAuth):
                     return True
 
                 result = self._format_user_results(dn, found[0][1])
-
                 return result
         else:
             logger.error("Unable to found username {} in LDAP repository"
@@ -595,7 +620,7 @@ class LDAPClient(BaseAuth):
         dn = self._get_user_dn()
         self.scope = self.user_scope
         # Search LDAP_ALL_USER_ATTRIBUTES & LDAP_ALL_OPERATIONAL_ATTRIBUTES
-        user_infos = self._search(dn, query_filter, value, attr_list=["+","*"])
+        user_infos = self._search(dn, query_filter, value, attr_list=["+", "*"])
         if not user_infos:
             logger.error("Ldap_client::user_lookup:User with {} in {} not found in LDAP".format(query_filter, self.scope))
             raise UserNotFound("Unable to found user {}".format(value))
@@ -610,6 +635,8 @@ class LDAPClient(BaseAuth):
         user_groups = []
         # Standardize attributes
         for key, val in user_attrs.items():
+            if key == "userPassword":
+                continue
             if key == self.user_mobile_attr:
                 key = "user_phone"
             elif key == self.user_email_attr:
@@ -627,10 +654,14 @@ class LDAPClient(BaseAuth):
         username = res.get(self.user_attr)
         if not username:
             raise UserNotFound("Cannot retrieve {} for user {}".format(self.user_attr, user_dn))
+        res['name'] = username
         res['dn'] = user_dn
         res['account_locked'] = self.is_user_account_locked(username)
         res['password_expired'] = self.is_password_expired(username)
-        res['user_groups'] = [*user_groups, *self.search_user_groups_by_dn(user_dn)]
+        user_groups = [*user_groups, *self.search_user_groups_by_dn(user_dn)]
+        res['user_groups'] = user_groups
+        if self.user_groups_attr:
+            res[self.user_groups_attr] = user_groups
         return res
 
     def _process_results(self, results):
@@ -669,7 +700,7 @@ class LDAPClient(BaseAuth):
             'reason': None
         }
         try:
-            user_info = self.search_user(username, attr_list=["+","*"])
+            user_info = self.search_user(username, attr_list=["+", "*"])
             response['account_locked'] = self.is_user_account_locked(username)
             response['password_expired'] = self.is_password_expired(username)
             response['user_groups'] = self.search_user_groups(username)
@@ -718,6 +749,7 @@ class LDAPClient(BaseAuth):
             response['status'] = False
             response['reason'] = "User doesn't exist"
         except (ldap.LDAPError, Exception) as e:
+            logger.exception(e)
             response['status'] = False
             response['reason'] = str(e)
 
@@ -791,6 +823,9 @@ class LDAPClient(BaseAuth):
         self._bind_connection(self.user, self.password)
 
         for k, v in attrs.items():
+            if not isinstance(v, list):
+                v = [v]
+
             attrs[k] = [bytes(d, 'utf-8') for d in v]
 
         ldif = modlist.addModlist(attrs)
@@ -801,14 +836,25 @@ class LDAPClient(BaseAuth):
         self._bind_connection(self.user, self.password)
 
         for k, v in attributes.items():
+            if not isinstance(v, list):
+                v = [v]
+
             attributes[k] = [bytes(d, "utf-8") for d in v]
 
         ldif = modlist.addModlist(attributes)
-        self._get_connection().add_s(dn, ldif)
+        try:
+            self._get_connection().add_s(dn, ldif)
+        except (ldap.ALREADY_EXISTS, ldap.TYPE_OR_VALUE_EXISTS):
+            # Nothing to do here
+            pass
 
-        attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
-        logger.debug("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
-        self._get_connection().modify_s(group_dn, attrs)
+        if group_dn:
+            attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
+            logger.info("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
+            try:
+                self._get_connection().modify_s(group_dn, attrs)
+            except ldap.TYPE_OR_VALUE_EXISTS:
+                pass
 
         if userPassword:
             self._get_connection().passwd_s(dn, None, userPassword)
@@ -833,7 +879,7 @@ class LDAPClient(BaseAuth):
 
         self.unbind_connection()
 
-    def delete_user(self, dn, groups):
+    def delete_user(self, dn, groups=[]):
         self._bind_connection(self.user, self.password)
 
         for group in groups:
@@ -846,8 +892,12 @@ class LDAPClient(BaseAuth):
             for k, v in group.items():
                 final_group[k] = [bytes(e, 'utf-8') for e in v]
 
-            ldif = modlist.modifyModlist(old_group, final_group)
-            self._get_connection().modify_s(group_dn, ldif)
+            if len(group[self.group_member_attr]) == 0:
+                # Group is empty, we can delete it
+                self._get_connection().delete_s(group_dn)
+            else:
+                ldif = modlist.modifyModlist(old_group, final_group)
+                self._get_connection().modify_s(group_dn, ldif)
 
         self._get_connection().delete_s(dn)
         self.unbind_connection()

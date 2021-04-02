@@ -55,7 +55,7 @@ def doc_update(filename=None):
         sha_uri = f"https://download.vultureproject.org/v4/doc/{filename}.sha"
         r = requests.get(sha_uri, proxies=proxy)
 
-        if r.status_code == 404:
+        if r.status_code == 404 and filename != "master":
             doc_update("master")
             return
 

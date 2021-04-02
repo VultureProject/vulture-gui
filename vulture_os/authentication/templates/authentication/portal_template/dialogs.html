@@ -1,0 +1,76 @@
+{% load i18n %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="template_helper">
+            <p>{% trans "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="template_helper col-md-3">
+            <div class="panel  panel-bordered panel-dark">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{% trans "The following tags are available: "%}</h3>
+                </div>
+                <div class="panel-body">
+                    <ul>
+                        <li><b style="color:#39454C;">&#123;&#123;resetLink&#125;&#125;</color></b>: {% trans "The URI to change password"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;app.name&#125;&#125;</color></b>: {% trans "The Name of the app for which we request a password reset"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;app.url&#125;&#125;</color></b>: {% trans "The URL of the app for which we request a password reset"%}</li>
+                    </ul>
+                </div>
+            </div>
+
+            {% include "./images.html" %}
+        </div>
+
+        <div class="col-md-9">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{% trans "Email From:" %}</label>
+                <div class="col-sm-10">
+                    {{form.email_from}}
+                    {{form.email_from.errors}}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{% trans "Email Subject:" %}</label>
+                <div class="col-sm-10">
+                    {{form.email_subject}}
+                    {{form.email_subject.errors}}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{% trans "Email Body:" %}</label>
+                <div class="col-sm-10">
+                    {{form.email_body}}
+                    {{form.email_body.errors}}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{% trans "Password has been changed" %}</label>
+                <div class="col-sm-10">
+                    {{form.error_password_change_ok}}
+                    {{form.error_password_change_ok.errors}}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{% trans "Password cannot be changed" %}</label>
+                <div class="col-sm-10">
+                    {{form.error_password_change_ko}}
+                    {{form.error_password_change_ko.errors}}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">{% trans "An email has been sent" %}</label>
+                <div class="col-sm-10">
+                    {{form.error_email_sent}}
+                    {{form.error_email_sent.errors}}
+                </div>
+            </div>
+            <p class="text-center">
+                <button type="button" @click="preview('html_dialogs')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+            </p>
+        </div>
+    </div>
+</div>

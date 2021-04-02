@@ -26,11 +26,13 @@ __doc__ = 'LDAP Repository views'
 # Django system imports
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http.response import HttpResponseNotFound
 from django.shortcuts import render
 from django.urls import reverse
 
 # Django project imports
 from gui.forms.form_utils import DivErrorList
+from toolkit.api.responses import build_response
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -42,13 +44,14 @@ from system.cluster.models  import Cluster
 from system.pki.models import X509Certificate, PROTOCOLS_TO_INT
 from portal.system.sso_clients import SSOClient
 from toolkit.http.utils import parse_html
+from authentication.openid.models import OpenIDRepository
 
 # Extern modules imports
 from json import loads as json_loads
 from traceback import format_exception
 from sys import exc_info
 import ssl
-import json
+from copy import deepcopy
 
 # Logger configuration imports
 import logging
@@ -72,7 +75,7 @@ def user_authentication_clone(request, object_id):
         profile = UserAuthentication.objects.get(pk=object_id)
     except Exception as e:
         logger.exception(e)
-        return HttpResponseForbidden("Injection detected")
+        return HttpResponseNotFound("Object not found")
 
     profile.pk = None
     profile.name = "Copy_of_" + str(profile.name)
@@ -84,22 +87,21 @@ def user_authentication_clone(request, object_id):
 
 def user_authentication_edit(request, object_id=None, api=False):
     profile = None
-    listener_obj = None
-    listener_f = None
     repo_attrs_form_list = []
     repo_attrs_objs = []
     if object_id:
         try:
             profile = UserAuthentication.objects.get(pk=object_id)
-            listener_obj = profile.external_listener if profile.enable_external else None
         except ObjectDoesNotExist:
-            return HttpResponseForbidden("Injection detected")
+            return HttpResponseNotFound("Object not found")
 
     """ Create form with object if exists, and request.POST (or JSON) if exists """
+    # Do NOT remove this line
+    empty = {} if api else None
     if hasattr(request, "JSON") and api:
-        form = UserAuthenticationForm(request.JSON or None, instance=profile, error_class=DivErrorList)
+        form = UserAuthenticationForm(request.JSON or {}, instance=profile, error_class=DivErrorList)
     else:
-        form = UserAuthenticationForm(request.POST or None, instance=profile, error_class=DivErrorList)
+        form = UserAuthenticationForm(request.POST or empty, instance=profile, error_class=DivErrorList)
 
     def render_form(profile, **kwargs):
         save_error = kwargs.get('save_error')
@@ -123,41 +125,18 @@ def user_authentication_edit(request, object_id=None, api=False):
     if request.method in ("POST", "PUT"):
         """ Handle repo attributes (user scope) """
         try:
-            if api:
+            if api and hasattr(request, "JSON"):
                 repo_attrs = request.JSON.get('repo_attributes', [])
-                assert isinstance(repo_attrs, list), "Repo attributes field must be a dict."
+                assert isinstance(repo_attrs, list), "Repo attributes field must be a list."
             else:
                 repo_attrs = json_loads(request.POST.get('repo_attributes', "[]"))
         except Exception as e:
+            if api:
+                return JsonResponse({
+                    "error": "".join(format_exception(*exc_info()))
+                }, status=400)
             return render_form(profile, save_error=["Error in Repo_Attributes field : {}".format(e),
                                                            str.join('', format_exception(*exc_info()))])
-
-        """ Handle JSON formatted listeners """
-        if form.data.get('enable_external'):
-            try:
-                if api:
-                    listener_json = request.JSON.get('external_listener_json', {})
-                    assert isinstance(listener_json, list), "Listeners field must be a dict."
-                else:
-                    listener_json = json_loads(request.POST.get('external_listener_json', "{}"))
-                assert listener_json, "Listener required if external enabled"
-            except Exception as e:
-                return render(request, 'authentication/user_authentication_edit.html', {'form': form,
-                                                                                    'save_error':["Error in external listener field : {}".format(e),
-                                                                                                  str.join('', format_exception(*exc_info()))]})
-            """ If id is given, retrieve object from mongo """
-            try:
-                instance_l = Listener.objects.get(pk=listener_json['id']) if listener_json.get('id') else None
-            except ObjectDoesNotExist:
-                form.add_error(None, "Listener with id {} not found.".format(listener_json['id']))
-            else:
-                """ And instantiate form with the object, or None """
-                listener_f = ListenerForm(listener_json, instance=instance_l)
-                if not listener_f.is_valid():
-                    if api:
-                        form.add_error("external_listener_json", listener_f.errors.as_json())
-                    else:
-                        form.add_error("external_listener_json", listener_f.errors.as_ul())
 
         """ For each Health check header in list """
         for repo_attr in repo_attrs:
@@ -172,15 +151,19 @@ def user_authentication_edit(request, object_id=None, api=False):
             repo_attrs_form_list.append(repoattrform)
             repo_attrs_objs.append(repoattrform.save(commit=False))
 
+        # External portal is not compatible with Workflow
+        # If enable_external has been enabled but a workflow uses this Portal, add error in form
+        if form.data.get('enable_external') and profile and profile.workflow_set.count() > 0:
+            form.add_error('enable_external', "This portal is used by a Workflow, you can't enable IDP. Please create another Portal or disable this one in Workflow.")
+
+        old_external_frontend = deepcopy(profile.external_listener) if profile and profile.enable_external else None
+
         if form.is_valid():
             # Check changed attributes before form.save
             repo_changed = "repositories" in form.changed_data
+            external_listener_changed = "external_listener" in form.changed_data and profile and profile.enable_external
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
-            if profile.enable_external:
-                listener_obj = listener_f.save(commit=False)
-                listener_obj.save()
-                profile.external_listener = listener_obj
             for repo_attr in repo_attrs_objs:
                 repo_attr.save()
             profile.repo_attributes = repo_attrs_objs
@@ -190,19 +173,36 @@ def user_authentication_edit(request, object_id=None, api=False):
                 if repo_changed and profile.workflow_set.count() > 0:
                     for workflow in profile.workflow_set.all():
                         workflow.frontend.reload_conf()
+                if profile.enable_external:
+                    # Automatically create OpenID repo
+                    openid_repo, created = OpenIDRepository.objects.get_or_create(client_id=profile.oauth_client_id,
+                                                                                  client_secret=profile.oauth_client_secret,
+                                                                                  provider="openid")
+                    openid_repo.provider_url = f"https://{profile.external_fqdn}"
+                    openid_repo.name = "Connector {}".format(profile.name)
+                    openid_repo.save()
+                    # Reload old external_listener conf if has changed
+                    if external_listener_changed:
+                        old_external_frontend.reload_conf()
+                    profile.external_listener.reload_conf()
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
+                profile.save_conf()
                 Cluster.api_request("services.haproxy.haproxy.reload_service")
             except Exception as e:
+                if api:
+                    return JsonResponse({
+                        "error": "".join(format_exception(*exc_info()))
+                    }, status=400)
+
                 return render_form(profile, save_error=["Cannot write configuration: {}".format(e),
                                                                                    str.join('', format_exception(*exc_info()))])
 
             # If everything succeed, redirect to list view
+            if api:
+                return build_response(profile.id, "api.portal.user_authentication", [])
             return HttpResponseRedirect(reverse("portal.user_authentication.list"))
 
-    if not listener_f:
-        listener_f = ListenerForm(instance=listener_obj, error_class=DivErrorList)
-
-    return render_form(profile, listener_form=listener_f)
+    return render_form(profile)
 
 
 # TODO @group_required('administrator', 'system_manager')

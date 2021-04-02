@@ -56,6 +56,8 @@ class ParserForm(ModelForm):
     def __init__(self, *args, **kwargs):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
+        # Convert list field from model to text input comma separated
+        self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
     def clean_tags(self):
         tags = self.cleaned_data.get('tags')

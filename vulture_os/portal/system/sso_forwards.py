@@ -86,7 +86,7 @@ class SSOForward(object):
         self.application  = application
         self.credentials  = authentication.credentials
         self.backend_id   = authentication.backend_id
-        self.oauth2_token = authentication.redis_portal_session.get_oauth2_token(authentication.authenticated_on_backend())
+        self.oauth2_token = authentication.redis_portal_session.get_oauth2_token(self.backend_id)
         #self.user_infos = authentication.redis_portal_session.get_user_infos(self.backend_id)
         self.user_infos = user_infos
         logger.debug("SSOFORWARD::_init_: Object successfully created")
@@ -353,8 +353,8 @@ class SSOForwardPOST(SSOForward):
 
 
 class SSOForwardBASIC(SSOForward):
-    def __init__(self, request, application, authentication):
-        super(SSOForwardBASIC, self).__init__(request, application, authentication)
+    def __init__(self, request, application, authentication, user_infos):
+        super(SSOForwardBASIC, self).__init__(request, application, authentication, user_infos)
 
 
     def retrieve_credentials(self, request):
@@ -383,8 +383,8 @@ class SSOForwardBASIC(SSOForward):
 
 
 class SSOForwardKERBEROS(SSOForward):
-    def __init__(self, request, application, authentication):
-        super(SSOForwardKERBEROS, self).__init__(request, application, authentication)
+    def __init__(self, request, application, authentication, user_infos):
+        super(SSOForwardKERBEROS, self).__init__(request, application, authentication, user_infos)
 
 
     def retrieve_credentials(self, request):

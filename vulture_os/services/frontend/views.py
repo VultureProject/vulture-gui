@@ -205,10 +205,11 @@ def frontend_edit(request, object_id=None, api=False):
             return HttpResponseForbidden("Injection detected")
 
     """ Create form with object if exists, and request.POST (or JSON) if exists """
+    empty = {} if api else None
     if hasattr(request, "JSON") and api:
-        form = FrontendForm(request.JSON or None, instance=frontend, error_class=DivErrorList)
+        form = FrontendForm(request.JSON or {}, instance=frontend, error_class=DivErrorList)
     else:
-        form = FrontendForm(request.POST or None, instance=frontend, error_class=DivErrorList)
+        form = FrontendForm(request.POST or empty, instance=frontend, error_class=DivErrorList)
 
     def render_form(front, **kwargs):
         save_error = kwargs.get('save_error')
@@ -251,7 +252,7 @@ def frontend_edit(request, object_id=None, api=False):
     if request.method in ("POST", "PUT"):
         """ Handle JSON formatted listeners """
         try:
-            if api:
+            if api and hasattr(request, "JSON"):
                 listener_ids = request.JSON.get('listeners', [])
                 assert isinstance(listener_ids, list), "Listeners field must be a list."
             else:
@@ -265,7 +266,7 @@ def frontend_edit(request, object_id=None, api=False):
         if form.data.get('mode') == "http":
             """ Handle JSON formatted headers """
             try:
-                if api:
+                if api and hasattr(request, "JSON"):
                     header_ids = request.JSON.get('headers', [])
                     assert isinstance(header_ids, list), "Headers field must be a list."
                 else:
@@ -295,7 +296,7 @@ def frontend_edit(request, object_id=None, api=False):
 
         """ Handle JSON formatted ReputationContext """
         try:
-            if api:
+            if api and hasattr(request, "JSON"):
                 reputationctx_ids = request.JSON.get('reputation_contexts', [])
             else:
                 reputationctx_ids = json_loads(request.POST.get('reputation_contexts', "[]"))

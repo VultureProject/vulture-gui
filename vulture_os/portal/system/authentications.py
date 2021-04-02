@@ -30,7 +30,8 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 
 # Django project imports
 # FIXME from gui.models.repository_settings  import KerberosRepository, LDAPRepository
-from portal.system.redis_sessions import REDISBase, REDISAppSession, REDISPortalSession, REDISOauth2Session
+from portal.system.redis_sessions import (REDISBase, REDISAppSession, REDISPortalSession, REDISOauth2Session,
+                                          RedisOpenIDSession)
 from portal.views.responses import (split_domain, basic_authentication_response, kerberos_authentication_response,
                                     post_authentication_response, otp_authentication_response,
                                     learning_authentication_response)
@@ -59,10 +60,11 @@ logger = logging.getLogger('portal_authentication')
 
 
 class Authentication(object):
-    def __init__(self, portal_cookie, workflow):
+    def __init__(self, portal_cookie, workflow, proto):
         self.redis_base = REDISBase()
         self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie)
         self.workflow = workflow
+        self.proto = proto
 
         self.backend_id = self.authenticated_on_backend()
 
@@ -74,9 +76,14 @@ class Authentication(object):
     def is_authenticated(self):
         if self.redis_portal_session.exists() and self.redis_portal_session.authenticated_app(self.workflow.id):
             # If user authenticated, retrieve its login
+            self.backend_id = self.redis_portal_session.get_auth_backend(self.workflow.id)
             self.credentials[0] = self.redis_portal_session.get_login(str(self.backend_id))
+            self.oauth2_token = self.redis_portal_session.get_oauth2_token(self.backend_id)
             return True
         return False
+
+    def get_user_infos(self, workflow_id):
+        return self.redis_portal_session.get_user_infos(self.redis_portal_session.get_auth_backend(workflow_id))
 
     def double_authentication_required(self):
         return self.workflow.authentication.otp_repository is not None and \
@@ -91,8 +98,7 @@ class Authentication(object):
 
     def authenticate_sso_acls(self):
         # FIXME : ACLs
-        backend_list = list(self.workflow.authentication.repositories_fallback.all())
-        backend_list.append(self.workflow.authentication.repository)
+        backend_list = list(self.workflow.authentication.repositories.all())
         e, login = None, ""
         for backend in backend_list:
             if self.redis_portal_session.authenticated_backend(backend.id):
@@ -155,65 +161,52 @@ class Authentication(object):
                                         logger=logger)
 
     def authenticate(self, request):
-        e = None
-        backend = self.workflow.authentication.repository
-        try:
-            authentication_results = self.authenticate_on_backend(backend)
-            logger.info("AUTH::authenticate: User '{}' successfully authenticated on backend '{}'"
-                        .format(self.credentials[0], backend))
-            self.backend_id = str(backend.id)
-            return authentication_results
+        error = None
+        for backend in self.workflow.authentication.repositories.exclude(subtype="openid"):
+            try:
+                authentication_results = self.authenticate_on_backend(backend)
+                self.backend_id = str(backend.id)
+                logger.info("AUTH::authenticate: User '{}' successfully authenticated on backend '{}'"
+                            .format(self.credentials[0], backend))
+                return authentication_results
 
-        except (AuthenticationError, ACLError, DBAPIError, PyMongoError, LDAPError) as e:
-            logger.error("AUTH::authenticate: Authentication failure for username '{}' on primary backend '{}' : '{}'"
-                         .format(self.credentials[0], str(backend), str(e)))
-            logger.exception(e)
-            for fallback_backend in self.workflow.authentication.repositories_fallback.all():
-                try:
-                    authentication_results = self.authenticate_on_backend(backend)
-                    self.backend_id = str(fallback_backend.id)
-                    logger.info("AUTH::authenticate: User '{}' successfully authenticated on fallback backend '{}'"
-                                .format(self.credentials[0], fallback_backend))
-                    return authentication_results
-
-                except (AuthenticationError, ACLError, DBAPIError, PyMongoError, LDAPError) as e:
-                    logger.error("AUTH::authenticate: Authentication failure for username '{}' on fallback backend '{}'"
-                                 " : '{}'".format(self.credentials[0], str(fallback_backend), str(e)))
-                    logger.exception(e)
-                    continue
-            raise e or AuthenticationError
+            except (AuthenticationError, ACLError, DBAPIError, PyMongoError, LDAPError) as e:
+                logger.error("AUTH::authenticate: Authentication failure for username '{}' on backend '{}'"
+                             " : '{}'".format(self.credentials[0], str(backend), str(e)))
+                logger.exception(e)
+                error = e
+                continue
+        raise error or AuthenticationError
 
     def register_user(self, authentication_results):
         # Always create oauth2 token, with oauth2_timeout or auth_timeout
         oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
-        oauth2_token = Uuid4().generate()
-        self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + oauth2_token)
+        self.oauth2_token = Uuid4().generate()
+        self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + self.oauth2_token)
         self.redis_oauth2_session.register_authentication(authentication_results, oauth_timeout)
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
-
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),
                                                                           str(self.backend_id),
                                                                           self.workflow.authentication.otp_repository,
                                                                           self.credentials[0], self.credentials[1],
-                                                                          oauth2_token,
+                                                                          self.oauth2_token,
                                                                           authentication_results,
                                                                           self.workflow.authentication.auth_timeout)
         logger.debug("AUTH::register_user: Authentication results successfully written in Redis portal session")
-
-        return portal_cookie, oauth2_token
+        return portal_cookie, self.oauth2_token
 
     def register_sso(self, backend_id):
         username = self.redis_portal_session.keys['login_' + backend_id]
-        oauth2_token = self.redis_portal_session.keys['oauth2_' + backend_id]
-        self.redis_oauth2_session = REDISOauth2Session(self.redis_portal_session.handler, "oauth2_" + oauth2_token)
+        self.oauth2_token = self.redis_portal_session.keys['oauth2_' + backend_id]
+        self.redis_oauth2_session = REDISOauth2Session(self.redis_portal_session.handler, "oauth2_" + self.oauth2_token)
         logger.debug("AUTH::register_sso: Redis oauth2 session successfully retrieven")
         password = self.redis_portal_session.getAutologonPassword(self.workflow.id, backend_id, username)
         logger.debug("AUTH::register_sso: Password successfully retrieven from Redis portal session")
         portal_cookie = self.redis_portal_session.register_sso(self.workflow.authentication.auth_timeout,
                                                                backend_id, str(self.workflow.id),
                                                                str(self.workflow.get_redirect_uri()), username,
-                                                               oauth2_token)
+                                                               self.oauth2_token)
         logger.debug("AUTH::register_sso: SSO informations successfully written in Redis for user {}".format(username))
         self.credentials = [username, password]
         if self.double_authentication_required():
@@ -221,7 +214,15 @@ class Authentication(object):
                                                                     self.workflow.authentication.otp_repository)
             logger.debug("AUTH::register_sso: DoubleAuthentication required : "
                          "successfully written in Redis for user '{}'".format(username))
-        return portal_cookie, oauth2_token
+        return portal_cookie, self.oauth2_token
+
+    def register_openid(self, openid_token, **kwargs):
+        # Generate a new OAuth2 token
+        #self.oauth2_token = Uuid4().generate()
+        # Register it into session
+        self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
+        # Create a new temporary token containing oauth2_token + kwargs
+        RedisOpenIDSession(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, **kwargs)
 
     def get_redirect_url(self):
         try:
@@ -274,8 +275,9 @@ class Authentication(object):
         portal_cookie_name = kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
             response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
-                                domain=self.get_redirect_url_domain(), httponly=True,
-                                secure=self.get_redirect_url().startswith('https'))
+                                domain=split_domain(self.workflow.fqdn),
+                                httponly=True,
+                                secure=self.proto == "https")
 
         return response
 
@@ -284,14 +286,13 @@ class Authentication(object):
 
 
 class POSTAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow):
-        super(POSTAuthentication, self).__init__(portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow, proto):
+        super(POSTAuthentication, self).__init__(portal_cookie, workflow, proto)
 
     def retrieve_credentials(self, request):
         username = request.POST['vltprtlsrnm']
         password = request.POST['vltprtlpsswrd']
         self.credentials = [username, password]
-        logger.info(self.credentials)
 
     def authenticate(self, request):
         if self.workflow.authentication.enable_captcha:
@@ -305,11 +306,10 @@ class POSTAuthentication(Authentication):
         else:
             captcha = False
 
-        response = post_authentication_response(kwargs.get('request'), self.workflow.authentication.portal_template,
-                                                # FIXME : auth_portal ?
-                                                # self.workflow.auth_portal or
-                                                self.workflow.get_redirect_uri(),
+        response = post_authentication_response(kwargs.get('request'),
+                                                self.workflow.authentication,
                                                 self.workflow.public_dir,
+                                                captcha=captcha,
                                                 error=kwargs.get('error', ""))
 
         portal_cookie_name = kwargs.get('portal_cookie_name', None)
@@ -322,8 +322,8 @@ class POSTAuthentication(Authentication):
 
 
 class BASICAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow):
-        super(BASICAuthentication, self).__init__(portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow, proto):
+        super(BASICAuthentication, self).__init__(portal_cookie, workflow, proto)
 
     def retrieve_credentials(self, request):
         authorization_header = request.META.get("HTTP_AUTHORIZATION").replace("Basic ", "")
@@ -344,8 +344,8 @@ class BASICAuthentication(Authentication):
 
 
 class KERBEROSAuthentication(Authentication):
-    def __init__(self, token_name, portal_cookie, workflow):
-        super(KERBEROSAuthentication, self).__init__(token_name, portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow, proto):
+        super().__init__(portal_cookie, workflow, proto)
 
     def retrieve_credentials(self, request):
         self.credentials = request.META["HTTP_AUTHORIZATION"].replace("Negotiate ", "")
@@ -403,8 +403,8 @@ class KERBEROSAuthentication(Authentication):
 
 
 class DOUBLEAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow):
-        super(DOUBLEAuthentication, self).__init__(portal_cookie, workflow)
+    def __init__(self, portal_cookie, workflow, proto):
+        super().__init__(portal_cookie, workflow, proto)
         assert (self.redis_portal_session.exists())
         assert self.backend_id
         self.credentials[0] = self.redis_portal_session.get_login(self.backend_id)
@@ -527,9 +527,7 @@ class DOUBLEAuthentication(Authentication):
 
 
 class OAUTH2Authentication(Authentication):
-    def __init__(self, workflow_id):
-        assert (workflow_id)
-        self.application = Workflow.objects.get(pk=workflow_id)
+    def __init__(self, portal_cookie, workflow, proto):
         self.redis_base = REDISBase()
 
     def retrieve_credentials(self, username, password, portal_cookie):
