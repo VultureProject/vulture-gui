@@ -247,7 +247,7 @@ def generate_workflow(workflow):
     return data
 
 
-def workflow_edit(request, object_id):
+def workflow_edit(request, object_id, action=None):
     try:
         # if not action:
             # return workflow_edit(request, None, api=True)

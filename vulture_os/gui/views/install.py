@@ -55,7 +55,7 @@ def cluster_create(admin_user=None, admin_password=None):
     """ We're comming from CLI: Abort if cluster already exists """
     try:
         Cluster.objects.get()
-        logger.error("Error: Cluster already exists")
+        logger.error("Error: Cluster already exist")
         return False
     except Exception:
         pass

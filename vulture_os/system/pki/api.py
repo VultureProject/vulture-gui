@@ -33,7 +33,6 @@ from gui.decorators.apicall import api_need_key
 from system.pki.views import tls_profile_edit
 from django.views.generic.base import View
 from django.conf import settings
-from bson import ObjectId
 import logging
 
 logger = logging.getLogger('system')
@@ -184,7 +183,7 @@ class TLSProfileApiView(View):
     @api_need_key("cluster_api_key")
     def delete(self, request, object_id):
         try:
-            obj = TLSProfile.objects.get(pk=ObjectId(object_id))
+            obj = TLSProfile.objects.get(pk=object_id)
             obj.delete()
 
             return JsonResponse({
@@ -193,5 +192,5 @@ class TLSProfileApiView(View):
         except TLSProfile.DoesNotExist:
             return JsonResponse({
                 "status": False,
-                "error": _("Object does not exists")
+                "error": _("Object does not exist")
             }, status=404)

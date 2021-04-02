@@ -123,5 +123,5 @@ class ACLAPIv1(View):
         except AccessControl.DoesNotExist:
             return JsonResponse({
                 "status": False,
-                "error": _("Object does not exists")
+                "error": _("Object does not exist")
             }, status=404)
