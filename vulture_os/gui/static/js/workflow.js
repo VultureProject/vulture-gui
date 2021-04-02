@@ -140,8 +140,10 @@ var workflow_vue = new Vue({
                 data.mode = self.workflow_mode
 
             let response = await axios.get("", { params: data })
+            response = response.data.data
+
             if (!self.workflow_mode) {
-                self.frontend_choices = response.data.frontends;
+                self.frontend_choices = response.frontends;
                 if (workflow_id === "None" && !self.workflow.length) {
                     self.workflow.push({
                         id: "#",
@@ -151,10 +153,11 @@ var workflow_vue = new Vue({
                 }
                 self.redraw_workflow();
             } else {
-                self.backend_choices = response.data.backends;
-                self.access_control_choices = response.data.acls;
-                self.authentication_choices = response.data.authentications;
-                self.waf_policy_choices = response.data.waf_policies;
+                self.frontend_choices = response.frontends;
+                self.backend_choices = response.backends;
+                self.access_control_choices = response.acls;
+                self.authentication_choices = response.authentications;
+                self.waf_policy_choices = response.waf_policies;
             }
 
             self.init_toolbox_tree();
