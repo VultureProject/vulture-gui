@@ -214,7 +214,7 @@ class OpenIDRepository(BaseRepository):
             logger.info(get_proxy() if self.use_proxy else None)
             r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url),
                              proxies=get_proxy() if self.use_proxy else None,
-                             verify=self.verify_certificate)
+                             verify=self.verify_certificate, timeout=10)
             r.raise_for_status()
             config = r.json()
             logger.info(config)
