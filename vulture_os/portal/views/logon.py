@@ -433,7 +433,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     authentication.retrieve_credentials(request)
                     logger.debug("PORTAL::log_in: Credentials successfully retrieved")
 
-                    # Authenticate user with credentials retrieven
+                    # Authenticate user with retrieved credentials
                     authentication_results = authentication.authenticate(request)
                     logger.debug("PORTAL::log_in: Authentication succeed on backend {}".format(authentication.backend_id))
                     logger.info(authentication_results)
@@ -704,4 +704,3 @@ def log_in(request, workflow_id=None):
 
     logger.info("PORTAL::log_in: Return response {}".format(response))
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
-
