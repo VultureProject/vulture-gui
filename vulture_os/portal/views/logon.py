@@ -446,7 +446,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                     .format(authentication.credentials[0]))
                         app_url = workflow.get_redirect_uri()
                         return HttpResponseRedirect(str(token_name)+'/self/change')
-                # If the user is already authenticated (retrieven with RedisPortalSession ) => SSO
+                # If the user is already authenticated (retrieved with RedisPortalSession ) => SSO
                 else:
                     portal_cookie, oauth2_token = authentication.register_sso(backend_id)
                     logger.info(authentication.redis_oauth2_session.keys)
