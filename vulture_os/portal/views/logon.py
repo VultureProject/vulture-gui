@@ -633,7 +633,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
                 return final_response
 
-            # If learning credentials cannot be retrieven : ask them
+            # If learning credentials cannot be retrieved : ask them
             except CredentialsMissingError as e:
                 logger.error("PORTAL::log_in: Learning credentials missing : asking-them")
                 return authentication.ask_learning_credentials(request=request,
