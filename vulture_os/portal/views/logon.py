@@ -639,7 +639,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 return authentication.ask_learning_credentials(request=request,
                                                                fields=e.fields_missing)
 
-            # If KerberosBackend object cannot be retrieven from mongo with the backend_id that the user is authenticated on
+            # If KerberosBackend object cannot be retrieved from mongo with the backend_id that the user is authenticated on
             except InvalidId:
                 logger.error("PORTAL::log_in: The user is authenticated on a not Kerberos backend, cannot do SSOForward")
 
