@@ -486,7 +486,6 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 return HttpResponseServerError()
 
             except Exception as e:
-                logger.error("ERROR !")
                 logger.exception(e)
                 return HttpResponseServerError()
     else:
