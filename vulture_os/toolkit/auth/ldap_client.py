@@ -275,7 +275,7 @@ class LDAPClient(BaseAuth):
             if not controls[0].cookie:
                 break
             page_control.cookie = controls[0].cookie
-        #logger.info("LDAP search_s result is: {}".format(result))
+        logger.debug("LDAP search_s result is: {}".format(result))
         return self._process_results(result)
 
     def _search_oauth2(self, username):
