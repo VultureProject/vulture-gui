@@ -33,6 +33,10 @@ AVAILABLE_GROUP_KEYS = ("group_attr",)
 AVAILABLE_USER_KEYS = ("user_attr", "user_account_locked_attr", "user_change_password_attr", "user_mobile_attr", "user_email_attr", "user_smartcardid_attr")
 
 
+class NotUniqueError(Exception):
+    pass
+
+
 def find_user(ldap_repo, user_dn, attr_list):
     client = ldap_repo.get_client()
     user = client.search_by_dn(user_dn, attr_list=attr_list)
@@ -134,6 +138,10 @@ def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
             group_dn = ldap_repository.create_group_dn(group_name)
 
     user_dn = ldap_repository.create_user_dn(user_name)
+
+    if find_user(ldap_repository, user_dn, attr_list=["*"]):
+        raise NotUniqueError()
+
     user = {
         "sn": [user_name],
         "cn": [user_name],
