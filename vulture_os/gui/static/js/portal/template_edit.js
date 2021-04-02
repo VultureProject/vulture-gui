@@ -48,10 +48,6 @@ let template_edit_vue = new Vue({
     },
 
     methods: {
-        image_render() {
-            console.log(images_list)
-        },
-
         preview(id) {
             let css = this.css_editor.getValue()
             let html = this.editors[id].getValue()
