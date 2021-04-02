@@ -195,9 +195,9 @@ class UserAuthenticationForm(ModelForm):
         """ If external enabled, external options required """
         if cleaned_data.get('enable_external'):
             if not cleaned_data.get('external_fqdn'):
-                self.add_error('external_fqdn', "This field is required if external enabled.")
+                self.add_error('external_fqdn', "This field is required if external is enabled.")
             if not cleaned_data.get('external_listener'):
-                self.add_error('external_listener', "This field is required if external enabled.")
+                self.add_error('external_listener', "This field is required if external is enabled.")
 
         """ Portal template is required if auth_type = HTTP """
         if cleaned_data.get('auth_type') == "http" and not cleaned_data.get('portal_template'):
