@@ -86,7 +86,6 @@ def openid_configuration(request, portal_id):
 
     # Build the callback url
     # Get scheme
-    logger.info(request.META)
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
     # Asked FQDN (with or without port)
     fqdn = request.META['HTTP_HOST']
