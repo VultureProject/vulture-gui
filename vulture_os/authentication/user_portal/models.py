@@ -577,8 +577,8 @@ class UserAuthentication(models.Model):
         if not self.enable_external:
             return "No standalone portal, no need to write conf."
 
+        params = [self.get_filename(), self.generate_conf(), HAPROXY_OWNER, HAPROXY_PERMS]
         for node in self.external_listener.get_nodes():
-            params = [self.get_filename(), self.generate_conf(), HAPROXY_OWNER, HAPROXY_PERMS]
             try:
                 api_res = node.api_request("system.config.models.write_conf", config=params)
                 if not api_res.get('status'):
