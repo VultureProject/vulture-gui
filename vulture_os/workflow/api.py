@@ -24,6 +24,7 @@ __doc__ = 'Workflow API'
 
 
 # Django system imports
+from bson.objectid import ObjectId
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
@@ -65,7 +66,7 @@ def write_portal_template(node_logger, workflow_id):
 
 def format_acl_from_api(tmp_acl, order, before_policy):
     try:
-        acl = AccessControl.objects.get(pk=tmp_acl['id'])
+        acl = AccessControl.objects.get(pk=ObjectId(tmp_acl['id']))
         action_satisfy = tmp_acl['action_satisfy']
         action_not_satisfy = tmp_acl['action_not_satisfy']
         redirect_url_satisfy = tmp_acl.get('redirect_url_satisfy')
@@ -114,9 +115,13 @@ def format_acl_from_api(tmp_acl, order, before_policy):
             'error': _('ACL with id {} does not exist'.format(tmp_acl['id']))
         }, status=404)
 
-    except KeyError:
+    except KeyError as err:
+        error = _("ACL is not valid")
+        if settings.DEV_MODE:
+            error = str(err)
+
         return False, JsonResponse({
-            'error': _('ACL is not valid')
+            'error': error
         }, status=400)
 
 
@@ -356,7 +361,17 @@ def workflow_edit(request, object_id, action=None):
                 workflow.authentication = authentication
 
             workflow.workflowacl_set.all().delete()
-            for i, tmp_acl in enumerate(json.loads(form_data.get('acl_frontend', "[]"))):
+
+            acl_frontend = form_data.get("acl_frontend", [])
+            if isinstance(form_data.get('acl_frontend'), str):
+                acl_frontend = json.loads(acl_frontend)
+            
+            acl_backend = form_data.get("acl_backend", [])
+            if isinstance(form_data.get('acl_backend'), str):
+                acl_backend = json.loads(acl_backend)
+
+            for i, tmp_acl in enumerate(acl_frontend):
+                print(tmp_acl)
                 status, acl = format_acl_from_api(tmp_acl, i, before_policy=True)
                 if not status:
                     return acl
@@ -365,7 +380,7 @@ def workflow_edit(request, object_id, action=None):
                 workflow_acls.append(acl)
                 acl.save()
 
-            for i, tmp_acl in enumerate(json.loads(form_data.get('acl_backend', "[]"))):
+            for i, tmp_acl in enumerate(acl_backend):
                 status, acl = format_acl_from_api(tmp_acl, i, before_policy=False)
                 if not status:
                     return acl
