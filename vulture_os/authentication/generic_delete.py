@@ -169,7 +169,7 @@ class DeleteUserAuthentication(DeleteView):
             except ObjectDoesNotExist:
                 return HttpResponseNotFound('Object not found.')
 
-            # Firstly estroy deferenced objects
+            # Destroy dereferenced objects first
             OpenIDRepository.objects.filter(client_id=obj_inst.oauth_client_id,
                                             client_secret=obj_inst.oauth_client_secret,
                                             provider="openid").delete()
