@@ -67,35 +67,35 @@ def write_portal_template(node_logger, workflow_id):
 def format_acl_from_api(tmp_acl, order, before_policy):
     try:
         acl = AccessControl.objects.get(pk=ObjectId(tmp_acl['id']))
-        action_satisfy = tmp_acl['action_satisfy']
-        action_not_satisfy = tmp_acl['action_not_satisfy']
+        action_satisfy = int(tmp_acl['action_satisfy'])
+        action_not_satisfy = int(tmp_acl['action_not_satisfy'])
         redirect_url_satisfy = tmp_acl.get('redirect_url_satisfy')
         redirect_url_not_satisfy = tmp_acl.get('redirect_url_not_satisfy')
 
-        if action_satisfy not in ("200", "403", "301", "302"):
-            return JsonResponse({
+        if action_satisfy not in (200, 403, 301, 302):
+            return False, JsonResponse({
                 'error': _('Actions must be one of 200, 301, 302 or 403')
-            })
+            }, status=400)
 
-        if action_not_satisfy not in ("200", "403", "301", "302"):
-            return JsonResponse({
+        if action_not_satisfy not in (200, 403, 301, 302):
+            return False, JsonResponse({
                 'error': _('Actions must be one of 200, 301, 302 or 403')
-            })
+            }, status=400)
 
-        if action_satisfy != "200" and action_not_satisfy != "200":
-            return JsonResponse({
+        if action_satisfy != 200 and action_not_satisfy != 200:
+            return False, JsonResponse({
                 'error': _('One of the actions must be 200')
-            })
+            }, status=400)
 
-        if action_satisfy in ("301", "302") and not redirect_url_satisfy:
-            return JsonResponse({
+        if action_satisfy in (301, 302) and not redirect_url_satisfy:
+            return False, JsonResponse({
                 'error': _('You must define a redirect url if the action satisfy')
-            })
+            }, status=400)
 
-        if action_not_satisfy in ("301", "302") and not redirect_url_not_satisfy:
-            return JsonResponse({
+        if action_not_satisfy in (301, 302) and not redirect_url_not_satisfy:
+            return False, JsonResponse({
                 'error': _('You must define a redirect url if the action does not satisfy')
-            })
+            }, status=400)
 
         workflow_acl = WorkflowACL(
             access_control=acl,
@@ -252,11 +252,8 @@ def generate_workflow(workflow):
     return data
 
 
-def workflow_edit(request, object_id, action=None):
+def workflow_edit(request, object_id):
     try:
-        # if not action:
-            # return workflow_edit(request, None, api=True)
-            # pass
         defender_policy = False
         authentication = False
         fqdn = ""
@@ -278,7 +275,7 @@ def workflow_edit(request, object_id, action=None):
                     if not validators.domain(fqdn):
                         return JsonResponse({
                             'error': _('This FQDN is not valid')
-                        })
+                        }, status=400)
 
                     public_dir = form_data['public_dir']
                     if public_dir and len(public_dir):
@@ -350,7 +347,6 @@ def workflow_edit(request, object_id, action=None):
             workflow.public_dir = public_dir
             workflow.frontend = frontend
             workflow.backend = backend
-            workflow.save()
 
             workflow_acls = []
 
@@ -370,15 +366,15 @@ def workflow_edit(request, object_id, action=None):
             if isinstance(form_data.get('acl_backend'), str):
                 acl_backend = json.loads(acl_backend)
 
+            acl_list = []
             for i, tmp_acl in enumerate(acl_frontend):
-                print(tmp_acl)
                 status, acl = format_acl_from_api(tmp_acl, i, before_policy=True)
                 if not status:
                     return acl
 
                 acl.workflow = workflow
                 workflow_acls.append(acl)
-                acl.save()
+                acl_list.append(acl)
 
             for i, tmp_acl in enumerate(acl_backend):
                 status, acl = format_acl_from_api(tmp_acl, i, before_policy=False)
@@ -387,10 +383,12 @@ def workflow_edit(request, object_id, action=None):
 
                 acl.workflow = workflow
                 workflow_acls.append(acl)
-                acl.save()
+                acl_list.append(acl)
 
             workflow.workflow_json = generate_workflow(workflow)
             workflow.save()
+            for acl in acl_list:
+                acl.save()
 
             nodes = workflow.frontend.reload_conf()
             workflow.backend.reload_conf()
@@ -432,18 +430,6 @@ def workflow_edit(request, object_id, action=None):
             return JsonResponse({
                 'error': _('Partial data')
             }, status=400)
-
-        if action and not object_id:
-            return JsonResponse({
-                'error': _('You must specify an ID')
-            }, status=400)
-
-        if action not in list(COMMAND_LIST.keys()):
-            return JsonResponse({
-                'error': _('Action not allowed')
-            }, status=403)
-
-        return COMMAND_LIST[action](request, object_id, api=True)
 
     except Exception as e:
         logger.critical(e, exc_info=1)
@@ -493,8 +479,8 @@ class WorkflowAPIv1(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def post(self, request, object_id=None, action=None):
-        return workflow_edit(request, object_id, action)
+    def post(self, request, object_id=None):
+        return workflow_edit(request, object_id)
 
     @api_need_key("cluster_api_key")
     def put(self, request, object_id):
