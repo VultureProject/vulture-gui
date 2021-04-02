@@ -166,12 +166,12 @@ class Authentication(object):
             try:
                 authentication_results = self.authenticate_on_backend(backend)
                 self.backend_id = str(backend.id)
-                logger.info("AUTH::authenticate: User '{}' successfully authenticated on fallback backend '{}'"
+                logger.info("AUTH::authenticate: User '{}' successfully authenticated on backend '{}'"
                             .format(self.credentials[0], backend))
                 return authentication_results
 
             except (AuthenticationError, ACLError, DBAPIError, PyMongoError, LDAPError) as e:
-                logger.error("AUTH::authenticate: Authentication failure for username '{}' on fallback backend '{}'"
+                logger.error("AUTH::authenticate: Authentication failure for username '{}' on backend '{}'"
                              " : '{}'".format(self.credentials[0], str(backend), str(e)))
                 logger.exception(e)
                 error = e
