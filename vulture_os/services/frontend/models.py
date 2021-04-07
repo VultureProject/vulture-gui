@@ -1153,7 +1153,7 @@ class Frontend(models.Model):
             'tenants_config': self.tenants_config,
             'filebeat_module': self.filebeat_module,
             'filebeat_config': self.filebeat_config,
-            'filebeat_listening_mode': self.filebeat_listening_mode
+            'filebeat_listening_mode': self.filebeat_listening_mode,
             'external_idps': self.userauthentication_set.filter(enable_external=True)
         }
 
