@@ -107,6 +107,28 @@
                   </div> <!-- /.row -->
                   <div class="row">
                     <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.use_proxy.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.use_proxy}}
+                          {{form.use_proxy.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.verify_certificate.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.verify_certificate}}
+                          {{form.verify_certificate.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
                       <div class="text-center mar-btm">
                         <button class="btn btn-warning" id="test_provider" type="button">
                           {% trans "Retrieve configuration" %}
@@ -193,6 +215,8 @@
       client_id: $('#id_client_id').val(),
       client_secret: $('#id_client_secret').val(),
       scopes: $('#id_scopes').val(),
+      use_proxy: $('#id_use_proxy').is(':checked'),
+      verify_certificate: $('#id_verify_certificate').is(':checked'),
     };
 
     var type_ = $('#id_provider').val();

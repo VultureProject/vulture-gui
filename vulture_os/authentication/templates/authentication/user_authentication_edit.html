@@ -845,7 +845,16 @@
   }
 
 
-  function toggle_external() {
+  function toggle_external(event) {
+    /* If enable_external, repositories != OpenID */
+    if( event ) {
+      if( $('#id_enable_external').is(':checked') ) {
+        $('#id_repositories').html($(`{{form.not_openid_repositories}}`).html()).trigger('change')
+      } else {
+        console.log($(`{{form.repositories}}`).html())
+        $('#id_repositories').html($(`{{form.repositories}}`).html()).trigger('change')
+      }
+    }
     /* If External selected, auto enable OAuth */
     if( $('#id_enable_external').is(":checked") && !$('#id_enable_oauth').is(":checked") ) {
       $('#id_enable_oauth').trigger('click');
@@ -858,30 +867,29 @@
 
 
   /* Show or hide registration fields depending on enable_registration */
-  function toggle_class(classe) {
+  function toggle_class(classe, event) {
     console.log(classe)
     if( $('#id_enable_'+classe).is(":checked") ) {
       $('.'+classe).show();
-      // Call function toggle_<classe> if exists
-      try {
-        eval('var myfunc = toggle_'+classe);
-        console.log(myfunc);
-        myfunc();
-      } catch(e) {console.error(e);}
     } else {
       $('.'+classe).hide();
     }
+    // Call function toggle_<classe> if exists
+    try {
+      eval('var myfunc = toggle_'+classe);
+      myfunc(event);
+    } catch(e) {console.error(e);}
   }
 
   /* Show attributes depending on chosen options */
   //for( classe of ['registration', 'oauth', 'external', 'sso_forward']) {
-    $('#id_enable_registration').on("change", function(e){ console.log("registration");toggle_class("registration"); });
+    $('#id_enable_registration').on("change", function(e){ console.log("registration");toggle_class("registration", event); });
   toggle_class("registration");
-  $('#id_enable_oauth').on("change", function(e){ console.log("oauth");toggle_class("oauth"); });
+  $('#id_enable_oauth').on("change", function(e){ console.log("oauth");toggle_class("oauth", event); });
   toggle_class("oauth");
-  $('#id_enable_external').on("change", function(e){ console.log("external");toggle_class("external"); });
+  $('#id_enable_external').on("change", function(e){ console.log("external");toggle_class("external", event); });
   toggle_class("external");
-  $('#id_enable_sso_forward').on("change", function(e){ console.log("sso_forward");toggle_class("sso_forward"); });
+  $('#id_enable_sso_forward').on("change", function(e){ console.log("sso_forward");toggle_class("sso_forward", event); });
   toggle_class("sso_forward");
   //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
   //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
