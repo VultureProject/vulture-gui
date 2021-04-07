@@ -861,6 +861,8 @@ class Frontend(models.Model):
             result['enable_logging_reputation'] = self.enable_logging_reputation
             result['enable_logging_geoip'] = self.enable_logging_geoip
 
+            result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
+
             if self.listening_mode == "api":
                 result['api_parser_type'] = self.api_parser_type
                 result['api_parser_use_proxy'] = self.api_parser_use_proxy
@@ -1753,6 +1755,15 @@ class FrontendReputationContext(models.Model):
         verbose_name=_("Destination field name"),
         help_text=_("Field name which will contains the searched value")
     )
+    
+    def to_dict(self):
+        return {
+            "frontend": str(self.frontend.pk),
+            "reputation_ctx": str(self.reputation_ctx.pk),
+            "enabled": self.enabled,
+            "arg_field": self.arg_field,
+            "dst_field": self.dst_field
+        }
 
 
 def ha_lt(criterion, key, value):
