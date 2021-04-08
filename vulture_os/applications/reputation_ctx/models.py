@@ -56,6 +56,7 @@ DBTYPE_CHOICES = (
     ('ipv4_netset', 'IPv4 Netset'),
     ('ipv6_netset', 'IPv6 Netset'),
     ('domain', 'Host/Domain names'),
+    ('lookup', 'Rsyslog lookup database'),
     ('GeoIP', 'GeoIP'),
 )
 
@@ -158,6 +159,7 @@ class ReputationContext(models.Model):
     nb_netset = models.IntegerField(default=0)
     nb_unique = models.IntegerField(default=0)
     internal = models.BooleanField(default=False)
+    enable_hour_download = models.BooleanField(default=True)
 
     """ Use DjongoManager to use mongo_find() & Co """
     objects = models.DjongoManager()

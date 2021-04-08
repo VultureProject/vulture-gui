@@ -26,6 +26,7 @@ __doc__ = 'Frontends API'
 # Django system imports
 from authentication.portal_template.models import PortalTemplate, TemplateImage
 from authentication.portal_template.form import PortalTemplateForm, TemplateImageForm
+from system.cluster.models import Cluster
 from django.views.decorators.http import require_http_methods
 from django.utils.translation import ugettext_lazy as _
 from django.utils.decorators import method_decorator
@@ -51,6 +52,9 @@ def save_portal_template(data, instance):
         }, status=400)
 
     obj = form.save()
+    # Reload template for all portals that uses this template
+    for portal in obj.userauthentication_set.all().only('pk'):
+        Cluster.api_request("authentication.user_portal.api.write_templates", portal.id)
     return JsonResponse({
         "message": _("Portal Template saved"),
         "object": obj.to_dict()

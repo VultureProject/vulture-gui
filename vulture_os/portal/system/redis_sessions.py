@@ -268,12 +268,19 @@ class REDISPortalSession(REDISSession):
     def get_auth_backend(self, workflow_id):
         return self.handler.hget(self.key, f'backend_{workflow_id}')
 
-    def get_user_info(self, backend_id):
+    def get_user_infos(self, backend_id):
         return json.loads(self.handler.hget(self.key, f'user_infos_{backend_id}') or "{}")
 
     def set_user_infos(self, backend_id, user_infos):
         self.keys[f'user_infos_{backend_id}'] = user_infos
         return self.handler.hset(self.key, f'user_infos_{backend_id}', json.dumps(user_infos or {}))
+
+    def delete_key(self, key):
+        # Remove key in keys attribute to prevent cache re-use
+        # Do not raise if key does not exist
+        self.keys.pop(key, None)
+        # And remove key in Redis
+        return self.handler.hdel(self.key, key)
 
     def retrieve_captcha(self, workflow_id):
         return self.handler.hget(self.key, f'captcha_{workflow_id}')
@@ -285,12 +292,9 @@ class REDISPortalSession(REDISSession):
         self.handler.hset(self.key, 'captcha_{}'.format(workflow_id), secret_key)
         return secret_key
 
-    def create_openid_token(self):
 
-
-    """ Retrieve encrypted password in REDIS, decrypt it and return it plain text """
     def getAutologonPassword(self, app_id, backend, username):
-
+        """ Retrieve encrypted password in REDIS, decrypt it and return it plain text """
         # Get the encrypted password's value for the current backend
         p = self.handler.hget(self.key, 'password_'+backend)
         if not p:
@@ -377,7 +381,6 @@ class REDISPortalSession(REDISSession):
                              'vlt_autologon_password', password)
             self.keys[f'password_{backend_id}'] = p
 
-        logger.info(self.keys)
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")

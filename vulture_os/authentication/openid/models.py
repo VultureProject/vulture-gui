@@ -143,6 +143,16 @@ class OpenIDRepository(BaseRepository):
     id_alea = models.TextField(
         default=random_sha1
     )
+    use_proxy = models.BooleanField(
+        default=True,
+        verbose_name=_("Use system proxy"),
+        help_text=_("Use system proxy (if configured) to contact OpenID provider endpoints")
+    )
+    verify_certificate = models.BooleanField(
+        default=True,
+        verbose_name=_("Verify certificate"),
+        help_text=_("If the IDP uses auto-signed certificate - disable this option")
+    )
 
     def __str__(self):
         return "{} ({})".format(self.name, self.str_provider())
@@ -177,7 +187,7 @@ class OpenIDRepository(BaseRepository):
             'id': str(self.id),
             'name': self.name,
             'provider': self.str_provider(),
-            'additional_infos': "URL : {}".format(self.provider_url)
+            'additional_infos': "URL : {} </br> Callback URL : /oauth2/callback/{}".format(self.provider_url, self.id_alea)
         }
 
     # Do NOT forget this on all BaseRepository subclasses
@@ -195,13 +205,16 @@ class OpenIDRepository(BaseRepository):
         else:
             raise NotImplemented("OTP client type not implemented yet")
 
-    def retrieve_config(self, test=False):
+    def retrieve_config(self, test=False, force=True):
         # TODO : Handle CA_BUNDLE
         # If loaded data is too old, reload it again
         refresh_time = timezone.now() - timedelta(hours=CONFIG_RELOAD_INTERVAL)
         if (self.last_config_time is None or self.last_config_time < refresh_time)\
                 or test:
-            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url), proxies=get_proxy())
+            logger.info(get_proxy() if self.use_proxy else None)
+            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url),
+                             proxies=get_proxy() if self.use_proxy else None,
+                             verify=self.verify_certificate, timeout=10)
             r.raise_for_status()
             config = r.json()
             logger.info(config)
@@ -217,8 +230,11 @@ class OpenIDRepository(BaseRepository):
                 return config
 
     def get_oauth2_session(self, redirect_uri):
-        session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=self.scope)
-        session.proxies=get_proxy()
+        session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=self.scopes)
+        if self.use_proxy:
+            session.proxies=get_proxy()
+        if not self.verify_certificate:
+            session.verify = False
         return session
 
     def get_authorization_url(self, oauth2_session):
@@ -231,11 +247,13 @@ class OpenIDRepository(BaseRepository):
 
     def fetch_token(self, oauth2_session, code):
         self.retrieve_config()
-        return oauth2_session.fetch_token(self.token_endpoint, code=code, client_secret=self.client_secret)
+        return oauth2_session.fetch_token(self.token_endpoint,
+                                          code=code,
+                                          client_secret=self.client_secret)
 
     def get_userinfo(self, oauth2_session):
         self.retrieve_config()
-        response = oauth2_session.get(self.userinfo_endpoint)
+        response = oauth2_session.get(self.userinfo_endpoint, verify=self.verify_certificate)
         response.raise_for_status()
         result = response.json()
         # Enrich user infos with "name" attribute if not present, it's used by caller

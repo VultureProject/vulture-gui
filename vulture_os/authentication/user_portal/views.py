@@ -50,7 +50,7 @@ from json import loads as json_loads
 from traceback import format_exception
 from sys import exc_info
 import ssl
-import json
+from copy import deepcopy
 
 # Logger configuration imports
 import logging
@@ -149,10 +149,17 @@ def user_authentication_edit(request, object_id=None, api=False):
             repo_attrs_form_list.append(repoattrform)
             repo_attrs_objs.append(repoattrform.save(commit=False))
 
+        # External portal is not compatible with Workflow
+        # If enable_external has been enabled but a workflow uses this Portal, add error in form
+        if form.data.get('enable_external') and profile and profile.workflow_set.count() > 0:
+            form.add_error('enable_external', "This portal is used by a Workflow, you can't enable IDP. Please create another Portal or disable this one in Workflow.")
+
+        old_external_frontend = deepcopy(profile.external_listener) if profile and profile.enable_external else None
+
         if form.is_valid():
             # Check changed attributes before form.save
             repo_changed = "repositories" in form.changed_data
-            external_fqdn_changed = "external_fqdn" in form.changed_data
+            external_listener_changed = "external_listener" in form.changed_data and profile and profile.enable_external
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
             for repo_attr in repo_attrs_objs:
@@ -160,24 +167,21 @@ def user_authentication_edit(request, object_id=None, api=False):
             profile.repo_attributes = repo_attrs_objs
             profile.save()
 
-            # If standalone IDP portal (enable_external)
-            if profile.enable_external:
-                # Automatically create OpenID repo
-                openid_repo, created = OpenIDRepository.objects.get_or_create(
-                    client_id=profile.oauth_client_id,
-                    client_secret=profile.oauth_client_secret,
-                    provider="openid"
-                )
-
-                openid_repo.provider_url = "https" if profile.external_listener.has_tls else "http" + "://" + profile.external_fqdn
-                openid_repo.name = "Connector {}".format(profile.name)
-                openid_repo.save()
-
             try:
                 if repo_changed and profile.workflow_set.count() > 0:
                     for workflow in profile.workflow_set.all():
                         workflow.frontend.reload_conf()
                 if profile.enable_external:
+                    # Automatically create OpenID repo
+                    openid_repo, created = OpenIDRepository.objects.get_or_create(client_id=profile.oauth_client_id,
+                                                                                  client_secret=profile.oauth_client_secret,
+                                                                                  provider="openid")
+                    openid_repo.provider_url = f"https://{profile.external_fqdn}"
+                    openid_repo.name = "Connector {}".format(profile.name)
+                    openid_repo.save()
+                    # Reload old external_listener conf if has changed
+                    if external_listener_changed:
+                        old_external_frontend.reload_conf()
                     profile.external_listener.reload_conf()
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
                 profile.save_conf()

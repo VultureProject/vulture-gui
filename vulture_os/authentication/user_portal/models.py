@@ -344,7 +344,7 @@ class UserAuthentication(models.Model):
     oauth_client_secret = models.CharField(
         max_length=64,
         default=random_sha256,
-        verbose_name=_("Secret (client_id)"),
+        verbose_name=_("Secret (client_secret)"),
         help_text=_("Client_secret used to contact OAuth2 provider urls")
     )
     oauth_redirect_uris = models.JSONField(
@@ -451,7 +451,7 @@ class UserAuthentication(models.Model):
         help_text=_('URL of additionnal request')
     )
 
-    #objects = models.DjongoManager()
+    objects = models.DjongoManager()
 
     def __str__(self):
         return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])
@@ -470,11 +470,9 @@ class UserAuthentication(models.Model):
 
     def to_template(self):
         """  returns the attributes of the class """
-        return {
-            'id': str(self.id),
-            'name': self.name,
-            'openid_repos': [repo.to_template() for repo in self.openid_repos]
-        }
+        data = model_to_dict(self)
+        data['openid_repos'] = self.openid_repos
+        return data
 
     def to_template_external(self):
         return {
@@ -488,7 +486,7 @@ class UserAuthentication(models.Model):
         if not self.repo_attributes:
             return []
         else:
-            return [RepoAttributes(r) for r in self.repo_attributes]
+            return [RepoAttributes(**r) for r in self.repo_attributes]
 
     def to_dict(self):
         data = model_to_dict(self)
@@ -531,7 +529,10 @@ class UserAuthentication(models.Model):
 
     def write_login_template(self):
         """ Write templates as static, to serve them without rendering """
-        return self.portal_template.write_template("html_login", openid_repos=self.openid_repos)
+        return self.portal_template.write_template("html_login", openid_repos=self.openid_repos, portal_id=self.id)
+
+    def render_template(self, tpl_name, **kwargs):
+        return self.portal_template.render_template(tpl_name, **{**kwargs, **self.to_template()})
 
     def get_user_scope(self, claims, repo_attrs):
         user_scope = {}
@@ -581,8 +582,8 @@ class UserAuthentication(models.Model):
         if not self.enable_external:
             return "No standalone portal, no need to write conf."
 
+        params = [self.get_filename(), self.generate_conf(), HAPROXY_OWNER, HAPROXY_PERMS]
         for node in self.external_listener.get_nodes():
-            params = [self.get_filename(), self.generate_conf(), HAPROXY_OWNER, HAPROXY_PERMS]
             try:
                 api_res = node.api_request("system.config.models.write_conf", config=params)
                 if not api_res.get('status'):
@@ -598,6 +599,7 @@ class UserAuthentication(models.Model):
             "authorization_endpoint": f"{issuer}/oauth2/authorize",
             "token_endpoint": f"{issuer}/oauth2/token",
             "userinfo_endpoint": f"{issuer}/oauth2/userinfo",
+            "revocation_endpoint": f"{issuer}/oauth2/revoke",
             "scopes_supported": [
                 "openid"
             ],
