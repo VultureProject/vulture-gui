@@ -385,10 +385,12 @@ def workflow_edit(request, object_id):
                 workflow_acls.append(acl)
                 acl_list.append(acl)
 
-            workflow.workflow_json = generate_workflow(workflow)
             workflow.save()
             for acl in acl_list:
                 acl.save()
+
+            workflow.workflow_json = generate_workflow(workflow)
+            workflow.save()
 
             nodes = workflow.frontend.reload_conf()
             workflow.backend.reload_conf()
