@@ -112,8 +112,9 @@ var workflow_vue = new Vue({
                     self.backend_set = true;
                     self.policy_set = true;
                     self.authentication_set = true;
-                    self.get_dependencies();
-                    self.redraw_workflow();
+                    self.get_dependencies().then(() => {
+                        self.redraw_workflow();
+                    })
                 }
             )
         }
@@ -732,7 +733,6 @@ var workflow_vue = new Vue({
                     label: step.label,
                     icon: icon_by_type[step.data.type]
                 }
-
                 switch (step.data.type) {
                     case "frontend":
                         for (var i in self.frontend_choices) {
