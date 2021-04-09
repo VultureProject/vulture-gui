@@ -214,11 +214,14 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     """ We are coming from the CLI interface """
     try:
-        cluster_infos = requests.get(
+        response = requests.get(
             "https://{}:8000/api/v1/system/cluster/info".format(master_ip),
             headers={'Cluster-api-key': secret_key},
             verify=False
-        ).json()
+        )
+
+        response.raise_for_status()
+        cluster_infos = response.json()
 
         if not cluster_infos['status']:
             raise Exception('Error at API Request Cluster Info: {}'.format(cluster_infos['data']))
@@ -232,7 +235,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             return False
 
     except Exception as e:
-        logger.error("Error at API Request Cluster Info: {} Invalid API KEY ?".format(e))
+        logger.error("Error at API Request Cluster Info: {} Invalid API KEY ?".format(e), exc_info=1)
         return False
 
     if not ca_cert:
