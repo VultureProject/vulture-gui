@@ -22,7 +22,7 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Network API'
 
-from system.cluster.models import Cluster, NetworkInterfaceCard, NetworkAddress
+from system.cluster.models import Cluster, NetworkInterfaceCard, NetworkAddress, Node
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -44,12 +44,14 @@ class NetworkInterfaceCardAPIv1(View):
         excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
 
         dev = request.GET.get('dev')
+        node_name = request.GET.get('node_name')
         try:
             if object_id:
                 res = NetworkInterfaceCard.objects.get(pk=object_id).to_template()
 
-            elif dev:
-                res = NetworkInterfaceCard.objects.get(dev=dev).to_template()
+            elif dev and node_name:
+                node = Node.objects.get(name=node_name)
+                res = NetworkInterfaceCard.objects.get(dev=dev, node=node).to_template()
 
             else:
                 res = []
