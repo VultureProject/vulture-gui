@@ -6,7 +6,7 @@ function makeid(length) {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   var charactersLength = characters.length;
-  for ( var i = 0; i < length; i++ ) {
+  for (var i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
@@ -50,11 +50,11 @@ let ldap_view = new Vue({
     autocomplete_users(elem) {
       this.autocomplete_members = []
       if (this.form_group.members.length < 2) return;
-      axios.get(ldap_view_api_uri, {params: {object_type: "users", search: elem}})
+      axios.get(ldap_view_api_uri, { params: { object_type: "users", search: elem } })
         .then((response) => {
           let data = []
           for (let tmp of response.data.users)
-            data.push({text: tmp})
+            data.push({ text: tmp })
 
           this.autocomplete_members = data
         })
@@ -70,7 +70,7 @@ let ldap_view = new Vue({
       for (let m of this.members)
         members.push(m.text)
 
-      if (members.length === 0){
+      if (members.length === 0) {
         notify('error', gettext('Error'), gettext("At least one member is required"))
         return
       }
@@ -93,10 +93,10 @@ let ldap_view = new Vue({
             notify('success', gettext("Success"), gettext("Group successfully created"))
             this.getGroups()
           }
-      })
-      .catch((error) => {
+        })
+        .catch((error) => {
           console.error(error.response.data)
-      })
+        })
     },
 
     initGroupTable() {
@@ -123,7 +123,7 @@ let ldap_view = new Vue({
         aaData: this.groups,
         fnCreatedRow: (nRow, aData, iDataIndex) => {
           $(nRow).on('click', () => {
-            if (this.group_table.fnIsOpen(nRow)){
+            if (this.group_table.fnIsOpen(nRow)) {
               this.group_table.fnClose(nRow)
               return
             }
@@ -141,13 +141,13 @@ let ldap_view = new Vue({
         }
       })
     },
-    getGroups(){
+    getGroups() {
       if (this.group_table) {
         this.group_table.fnDestroy()
         $('#groups_list').empty()
       }
 
-      axios.get(ldap_view_api_uri, {params: {'object_type': 'groups'}})
+      axios.get(ldap_view_api_uri, { params: { 'object_type': 'groups' } })
         .then((response) => {
           this.groups = response.data.groups
         })

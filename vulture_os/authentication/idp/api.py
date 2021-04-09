@@ -28,11 +28,11 @@ from django.conf import settings
 from authentication.ldap import tools
 from django.http import JsonResponse
 from gui.decorators.apicall import api_need_key
-from authentication.ldap.tools import NotUniqueError
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
 from authentication.user_portal.models import UserAuthentication
+from authentication.ldap.tools import NotUniqueError, UserNotExistError
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
@@ -60,22 +60,57 @@ class IDPApiView(View):
             ldap_repo = get_repo(portal)
 
             object_type = request.GET["object_type"].lower()
-            if object_type not in ("groups", "users", "search"):
+            if object_type not in ("users", "search"):
                 raise KeyError()
 
-            if object_type == "groups":
-                data = tools.get_groups(ldap_repo)
-                groups = [elem[ldap_repo.group_attr][0] for elem in data]
+            if object_type == "users":
+                data = []
+                tmp_data = tools.get_users(ldap_repo)
+
+                for tmp in tmp_data:
+                    tmp_user = {
+                        "username": tmp[ldap_repo.user_attr][0]
+                    }
+
+                    try:
+                        tmp_user["is_locked"] = ""
+                        if ldap_repo.user_account_locked_attr:
+                            tmp_user["is_locked"] = tmp[ldap_repo.user_account_locked_attr][0]
+                    except IndexError:
+                        pass
+ 
+                    try:
+                        tmp_user["need_change_password"] = ""
+                        if ldap_repo.user_change_password_attr:
+                            tmp_user["need_change_password"] = tmp[ldap_repo.user_change_password_attr][0]
+                    except IndexError:
+                        pass
+
+                    try:
+                        tmp_user["mobile"] = ""
+                        if ldap_repo.user_mobile_attr:
+                            tmp_user["mobile"] = tmp[ldap_repo.user_mobile_attr][0]
+                    except IndexError:
+                        pass
+
+                    try:
+                        tmp_user["smartcardid"] = ""
+                        if ldap_repo.user_smartcardid_attr:
+                            tmp_user["smartcardid"] = tmp[ldap_repo.user_smartcardid_attr][0]
+                    except IndexError:
+                        pass
+                    
+                    try:
+                        tmp_user["email"] = ""
+                        if ldap_repo.user_email_attr:
+                            tmp_user["email"] = tmp[ldap_repo.user_email_attr][0]
+                    except IndexError:
+                        pass
+
+                    data.append(tmp_user)
+
                 return JsonResponse({
-                    "data": groups
-                })
-            
-            elif object_type == "users":
-                group_name = request.GET['group_name']
-                data = tools.get_users(ldap_repo, group_name)
-                users = [elem[ldap_repo.user_attr][0] for elem in data]
-                return JsonResponse({
-                    "data": users
+                    "data": data
                 })
 
             elif object_type == "search":
@@ -116,34 +151,26 @@ class IDPApiUserView(View):
             ldap_repo = get_repo(portal)
 
             user = {
-                ldap_repo.user_attr: request.JSON['username'],
-                ldap_repo.user_email_attr: request.JSON['email'],
-                ldap_repo.user_groups_attr: request.JSON.get('group')
+                ldap_repo.user_attr: request.JSON['username']
             }
 
             attrs = {}
-            try:
-                attrs[ldap_repo.user_account_locked_attr] = request.JSON['is_locked']
-            except KeyError:
-                pass
+            if ldap_repo.user_account_locked_attr:
+                attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
                 
-            try:
-                attrs[ldap_repo.user_change_password_attr] = request.JSON['need_change_password']
-            except KeyError:
-                pass
+            if ldap_repo.user_change_password_attr:
+                attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
 
-            try:
-                attrs[ldap_repo.user_mobile_attr] = request.JSON['mobile']
-            except KeyError:
-                pass
+            if ldap_repo.user_mobile_attr:
+                attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
 
-            try:
-                attrs[ldap_repo.user_smartcardid_attr] = request.JSON['smartcardid']
-            except KeyError:
-                pass
+            if ldap_repo.user_smartcardid_attr:
+                attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
+            
+            if ldap_repo.user_email_attr:
+                attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
 
-            group_name = user[ldap_repo.user_groups_attr]
-            ldap_response, user_id = tools.create_user(ldap_repo, group_name, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
+            ldap_response, user_id = tools.create_user(ldap_repo, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
 
             return JsonResponse({
                 "status": True,
@@ -182,12 +209,10 @@ class IDPApiUserView(View):
             portal = UserAuthentication.objects.get(pk=object_id)
             ldap_repo = get_repo(portal)
 
-            dn = request.JSON['id']
-            user_name = request.JSON['username']
-            group_name = request.JSON.get('group')
+            username = request.JSON['username']
 
             attrs = {
-                ldap_repo.user_attr: [user_name]
+                ldap_repo.user_attr: [username]
             }
 
             if ldap_repo.user_email_attr:
@@ -205,7 +230,7 @@ class IDPApiUserView(View):
             if ldap_repo.user_smartcardid_attr:
                 attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
 
-            status, user_dn = tools.update_user(ldap_repo, group_name, dn, user_name, attrs, request.JSON.get('userPassword'))
+            status, user_dn = tools.update_user(ldap_repo, username, attrs, request.JSON.get('userPassword'))
             if status is False:
                 return JsonResponse({
                     "status": False,
@@ -244,10 +269,9 @@ class IDPApiUserView(View):
             portal = UserAuthentication.objects.get(pk=object_id)
             ldap_repo = get_repo(portal)
 
-            user_dn = request.JSON['id']
-            group_name = request.JSON.get('group')
+            username = request.JSON['username']
 
-            status = tools.delete_user(ldap_repo, group_name, user_dn)
+            status = tools.delete_user(ldap_repo, username)
             if status is False:
                 return JsonResponse({
                     "status": False,
@@ -257,49 +281,12 @@ class IDPApiUserView(View):
             return JsonResponse({
                 "status": True
             })
-        except KeyError as err:
-            logger.debug(err)
-            return JsonResponse({
-                "status": False,
-                "error": _("Invalid call")
-            }, status=400)
 
-        except UserAuthentication.DoesNotExist:
+        except UserNotExistError:
             return JsonResponse({
                 "status": False,
-                "error": _("Portal does not exist")
+                "error": _("User not found")
             }, status=404)
-        except Exception as err:
-            logger.critical(err, exc_info=1)
-            if settings.DEV_MODE:
-                raise
-
-            return JsonResponse({
-                "status": False,
-                "error": str(err)
-            }, status=500)
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class IDPApiGroupView(View):
-    @api_need_key("cluster_api_key")
-    def post(self, request, object_id):
-        try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
-
-            group_name = request.JSON['group_name']
-            members = request.JSON['member']
-            status, ldap_response = tools.create_group(ldap_repo, group_name, members)
-            if not status:
-                return JsonResponse({
-                    "status": False,
-                    "error": ldap_response
-                }, status=400)
-            
-            return JsonResponse({
-                "status": True
-            }, status=201)
 
         except KeyError as err:
             logger.debug(err)
