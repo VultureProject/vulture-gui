@@ -291,3 +291,8 @@ def sso_wizard(request):
         response = {'status': False, 'reason': str(error)}
 
     return JsonResponse(response)
+
+
+
+def idp_view(request, object_id):
+    return render(request, 'authentication/idp_view.html', {"object_id": object_id})
