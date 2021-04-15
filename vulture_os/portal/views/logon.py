@@ -211,7 +211,7 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Set authentication attributes required
         authentication.backend_id = repo_id
-        authentication.credentials = [claims.get('name'), ""]
+        authentication.credentials = [claims.get('name') or claims.get('sub'), ""]
         authentication.register_user(user_scope)
 
     except KeyError as e:
@@ -604,9 +604,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 if not authentication.credentials[0] or not authentication.credentials[1]:
                     authentication.get_credentials(request)
                 # If we cannot retrieve them, ask credentials
-                if not authentication.credentials[0]:  # or not authentication.credentials[1]:
-                    return authentication.ask_credentials_response(request=request,
-                                                                   error="Credentials not found")
+                assert authentication.credentials[0]  # or not authentication.credentials[1]:
+
                 logger.info("PORTAL::log_in: Credentials successfuly retrieven for SSO performing")
 
             except Exception as e:
