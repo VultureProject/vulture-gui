@@ -180,7 +180,7 @@ class Workflow(models.Model):
             defender_policy = self.defender_policy.to_template()
         
         if self.authentication:
-            authentication = self.authentication.to_template()
+            authentication = self.authentication.to_dict()
 
         result = {
             'id': str(self.id),
