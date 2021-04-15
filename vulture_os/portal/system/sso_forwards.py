@@ -179,14 +179,14 @@ class SSOForward(object):
             final_response['Content-Length'] = len(final_response.content)
             logger.debug("SSOForward::generate_response: sso_forward_return_post activated - final response generated")
 
-        # elif response.status_code not in (301,302,303) or not self.application.authentication.sso_forward_follow_redirect:
-        #     """ simply redirect to the default Application entry point """
-        #     final_response.status_code = 302
-        #     # redirect user to url redirected
-        #     final_response['Location'] = asked_url
-        #     del final_response['Content-Length']
-        #     del final_response['Content-Encoding']
-        #     logger.debug("SSOForward::generate_response: Generated response redirects to '{}'".format(asked_url))
+        elif response.status_code not in (301,302,303) or not self.application.authentication.sso_forward_follow_redirect:
+            """ simply redirect to the default Application entry point """
+            final_response.status_code = 302
+            # redirect user to url redirected
+            final_response['Location'] = redirect_url
+            del final_response['Content-Length']
+            del final_response['Content-Encoding']
+            logger.debug("SSOForward::generate_response: Generated response redirects to '{}'".format(redirect_url))
 
         return final_response
 
