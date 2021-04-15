@@ -102,15 +102,15 @@ DATABASES = {
     'default': {
         'ENGINE': 'djongo',
         'NAME': 'vulture',
-        'REPLICASET': 'Vulture',
         "CLIENT": {
             'host': get_hostname(),
             'port': 9091,
+            'REPLICASET': 'Vulture',
             'SSL': True,
             'SSL_CERTFILE': '/var/db/pki/node.pem',
             'SSL_CA_CERTS': '/var/db/pki/ca.pem',
+            'READPREFERENCE': "primaryPreferred"
         },
-        'READPREFERENCE': ReadPreference.PRIMARY_PREFERRED
     }
 }
 
