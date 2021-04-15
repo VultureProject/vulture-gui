@@ -260,7 +260,7 @@ def sso_wizard(request):
     try:
         # Directly use portal classes
         sso_client = SSOClient(user_agent, [], request.META.get('HTTP_REFERER'), ssl_client_certificate, ssl_context,
-                               verify_certificate=tls_check)
+                               verify_certificate=tls_check is not None)
         url, response = sso_client.get(url, redirect_before)
         forms = parse_html(response.content, url)
 
