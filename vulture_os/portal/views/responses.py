@@ -116,7 +116,7 @@ def render_button(b_class, text, type="submit", name="", value=""):
 
 #def post_authentication_response(request, template, action_url, public_dir, token_name, b64_generated_captcha, error=""):
 def post_authentication_response(request, portal, public_dir, catpcha=None, error="", **kwargs):
-	lostPassword   = '{}/self/lost'.format(public_dir)
+	lostPassword   = '{}/self/lost'.format(public_dir.rstrip("/"))
 	return HttpResponse(portal.render_template("html_login",
 												 lostPassword=lostPassword,
 												 catpcha=catpcha,

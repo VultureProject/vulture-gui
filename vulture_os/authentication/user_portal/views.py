@@ -216,7 +216,7 @@ def sso_wizard(request):
         try:
             tls_proto = request.POST.get('sso_forward_tls_proto')
             tls_cert = request.POST.get('sso_forward_tls_cert')
-            tls_check = request.POST.get('sso_forward_tls_check')
+            tls_check = request.POST.get('sso_forward_tls_check') == "on"
             url = request.POST['sso_forward_url']
             user_agent = request.POST.get('sso_forward_user_agent') or request.META.get('HTTP_USER_AGENT')
             redirect_before = request.POST.get('sso_forward_follow_redirect_before')
