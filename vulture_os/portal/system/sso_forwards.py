@@ -82,7 +82,8 @@ class SSOForward(object):
                                                        action__in=['add-header', 'set-header']),
                                     request.META.get('HTTP_REFERER', None),
                                     ssl_client_certificate,
-                                    self.ssl_context)
+                                    self.ssl_context,
+                                    verify_certificate=application.authentication.sso_forward_tls_check)
         self.application  = application
         self.credentials  = authentication.credentials
         self.backend_id   = authentication.backend_id
