@@ -98,6 +98,7 @@ SSO_CONTENT_TYPE_CHOICES = (
 #     )
 
 SOURCE_ATTRS_CHOICES = (
+    ('constant', "Constant value"),
     ('claim', "Claim attribute"),
     ('repo', "Repository attribute"),
     ('merge', "Merge attribute as list"),
@@ -105,84 +106,140 @@ SOURCE_ATTRS_CHOICES = (
     ('repo_pref', "Use repo attr, or claim if not present")
 )
 
+REPO_ATTR_SOURCE_CHOICES = (
+    ('claim', "Claim attribute"),
+    ('repo', "Repository attribute"),
+    ('constant', "Constant"),
+)
+
+REPO_ATTR_CRITERION_CHOICES = (
+    ('equals', "equals to"),
+    ('exists', "exists"),
+    ('not exists', "does not exists"),
+    ('contains', "contains"),
+    ('not contains', "does not contains"),
+    ('startswith', "starts with"),
+    ('endswith', "ends with"),
+)
+
+
+
+
 class RepoAttributes(models.Model):
     # Needed to patch Djongo ArrayField error
     _id = models.ObjectIdField(default=ObjectId)
-    key = models.TextField(
-        default="username",
-        verbose_name=_("Attribute key name"),
-        help_text=_("Attribute key to keep in scope")
+    condition_var_kind = models.TextField(
+        default=REPO_ATTR_SOURCE_CHOICES[0][0],
+        choices=REPO_ATTR_SOURCE_CHOICES,
     )
-    source_attr = models.TextField(
-        choices=SOURCE_ATTRS_CHOICES,
+    condition_var_name = models.TextField(
+        default="email"
+    )
+    condition_criterion = models.TextField(
+        default=REPO_ATTR_CRITERION_CHOICES[0][0],
+        choices=REPO_ATTR_CRITERION_CHOICES,
+    )
+    condition_match = models.TextField(
+        default="test@abcd.fr"
+    )
+    action_var_name = models.TextField(
+        default="admin"
+    )
+    action_var_kind = models.TextField(
         default=SOURCE_ATTRS_CHOICES[0][0],
-        verbose_name=_("Attribute name"),
-        help_text=_("Attribute key to keep in scope")
+        choices=SOURCE_ATTRS_CHOICES,
+    )
+    action_var = models.TextField(
+        default="true"
     )
 
-    def get_attribute(self, claims, repo_attrs):
-        if self.source_attr == "claim":
-            return claims.get(self.key, "")
-        elif self.source_attr == "repo":
-            return repo_attrs.get(self.key, "")
-        elif self.source_attr == "merge":
-            claim = claims.get(self.key, [])
+    def __str__(self):
+        return "IF {} {} {} THEN SET {} = {}({})".format(self.condition_var_kind, self.condition_var_name,
+                                                        self.condition_criterion, self.condition_match,
+                                                        self.action_var_name, self.action_var_kind, self.action_var)
+
+    def get_condition_var(self, claims, repo_attrs):
+        if self.condition_var_kind == "repo":
+            return repo_attrs.get(self.condition_var_name, "")
+        elif self.condition_var_kind == "claim":
+            return claims.get(self.condition_var_name, "")
+        elif self.condition_var_kind == "constant":
+            return self.condition_var_name
+        else:
+            raise NotImplementedError(f"{self.condition_var_kind} is not implemented yet.")
+
+    def get_action_var_value(self, claims, repo_attrs):
+        if self.action_var_kind == "claim":
+            return claims.get(self.action_var, "")
+        elif self.action_var_kind == "repo":
+            return repo_attrs.get(self.action_var, "")
+        elif self.action_var_kind == "merge":
+            claim = claims.get(self.action_var, [])
             if not isinstance(claim, list):
                 claim = [claim]
-            repo = repo_attrs.get(self.key, [])
+            repo = repo_attrs.get(self.action_var, [])
             if not isinstance(repo, list):
                 repo = [repo]
             return claim+repo
-        elif self.source_attr == "claim_pref":
-            return claims.get(self.key) or repo_attrs.get(self.key, "")
-        elif self.source_attr == "repo_pref":
-            return repo_attrs.get(self.key) or claims.get(self.key, "")
+        elif self.action_var_kind == "claim_pref":
+            return claims.get(self.action_var) or repo_attrs.get(self.action_var, "")
+        elif self.action_var_kind == "repo_pref":
+            return repo_attrs.get(self.action_var) or claims.get(self.action_var, "")
+        elif self.action_var_kind == "constant":
+            return self.action_var
+        else:
+            raise NotImplementedError(f"{self.action_var_kind} is not implemented yet.")
+
+    def validate_condition(self, value):
+        if self.condition_criterion == "equals":
+            return value == self.condition_match
+        elif self.condition_criterion == "exists":
+            return (len(value) != 0) if hasattr(value, "__len__") else bool(value)
+        elif self.condition_criterion == "not exists":
+            return (len(value) == 0) if hasattr(value, "__len__") else not bool(value)
+        elif self.condition_criterion == "contains":
+            return (self.condition_match in value) if hasattr(value, "__contains__") else False
+        elif self.condition_criterion == "not contains":
+            return (self.condition_match not in value) if hasattr(value, "__contains__") else False
+        elif self.condition_criterion == "startswith":
+            return (value.startswith(self.condition_match)) if hasattr(value, "startswith") else False
+        elif self.condition_criterion == "endswith":
+            return (value.endswith(self.condition_match)) if hasattr(value, "endswith") else False
+        else:
+            raise NotImplementedError(f"{self.condition_criterion} is not implemented yet.")
+
+    def get_scope(self, scope, claims, repo_attrs):
+        if self.validate_condition(self.get_condition_var(claims, repo_attrs)):
+            scope[self.action_var_name] = self.get_action_var_value(claims, repo_attrs)
+        return scope
 
     def __getitem__(self, item):
         """ PATCH FOR DJONGO ERROR (RepoAttributes is not subscriptable) """
-        if item == "_id":
-            return self._id
-        elif item == "key":
-            return self.key
-        elif item == "source_attr":
-            return self.source_attr
+        return getattr(self, item)
 
-    def __str__(self):
-        return "{} = {}".format(self.key, self.source_attr)
 
 
 class RepoAttributesForm(ModelForm):
 
     class Meta:
         model = RepoAttributes
-        fields = ('key', 'source_attr')
+        fields = ('condition_var_kind', 'condition_var_name', 'condition_criterion', 'condition_match',
+                  'action_var_name', 'action_var_kind', 'action_var')
         widgets = {
-            'key': TextInput(attrs={'class': 'form-control'}),
-            'source_attr': Select(choices=SOURCE_ATTRS_CHOICES, attrs={'class': 'form-control select2'}),
+            'condition_var_kind': Select(choices=REPO_ATTR_SOURCE_CHOICES, attrs={'class': 'form-control select2'}),
+            'condition_var_name': TextInput(attrs={'class': 'form-control'}),
+            'condition_criterion': Select(choices=REPO_ATTR_CRITERION_CHOICES, attrs={'class': 'form-control select2'}),
+            'condition_match': TextInput(attrs={'class': 'form-control'}),
+            'action_var_name': TextInput(attrs={'class': 'form-control'}),
+            'action_var_kind': Select(choices=SOURCE_ATTRS_CHOICES, attrs={'class': 'form-control select2'}),
+            'action_var': TextInput(attrs={'class': 'form-control select2'})
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Remove the blank input generated by django
-        for field_name in ['source_attr']:
+        for field_name in ['condition_var_kind', 'condition_criterion', 'action_var_kind']:
             self.fields[field_name].empty_label = None
-
-    def as_table_headers(self):
-        """ Format field names as table head """
-        result = "<tr>"
-        for field in self.fields:
-            result += "<th>{}</th>\n".format(field)
-        result += "<th>Delete</th></tr>\n"
-        return result
-
-    def as_table_td(self):
-        """ Format fields as a table with <td></td> """
-        result = "<tr>"
-        for field in self:
-            result += "<td>{}</td>\n".format(field)
-        result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
-                  "class='fas fa-trash-alt'></i></a></td></tr>\n"
-        return result
 
     def clean(self):
         """ Verify required field depending on other fields """
@@ -532,7 +589,7 @@ class UserAuthentication(models.Model):
     def get_user_scope(self, claims, repo_attrs):
         user_scope = {}
         for u in self.get_repo_attributes():
-            user_scope[u.key] = u.get_attribute(claims, repo_attrs)
+            user_scope = u.get_scope(user_scope, claims, repo_attrs)
         return user_scope
 
 
