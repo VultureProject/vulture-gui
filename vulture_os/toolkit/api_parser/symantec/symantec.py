@@ -49,6 +49,8 @@ class SymantecAPIError(Exception):
 
 
 class SymantecParser(ApiParser):
+    CHUNK_SIZE = 20000
+
     def __init__(self, data):
         super().__init__(data)
 
@@ -101,9 +103,13 @@ class SymantecParser(ApiParser):
     def execute(self, token="none"):
         self.update_lock()
 
-        # If it is time to retrieve last hour of logs
-        if self.last_api_call.replace(minute=0, second=0, microsecond=0) > timezone.now().replace(minute=0, second=0, microsecond=0)-datetime.timedelta(hours=1)\
-                or timezone.now().minute < 30:
+        last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
+        now = timezone.now().replace(minute=0, second=0, microsecond=0)
+        if last_api_call > now - datetime.timedelta(hours=1):
+            return
+
+        # If we have less than one hour
+        if (now - last_api_call).total_seconds() <= 60*60 and timezone.now().minute < 30:
             return
 
         try:
@@ -176,7 +182,7 @@ class SymantecParser(ApiParser):
                                     if not line[0] == "#":
                                         data.append(b"<15>"+line)
                                     
-                                    if i > 1000:
+                                    if i > self.CHUNK_SIZE:
                                         self.write_to_file(data)
                                         self.update_lock()
                                         data = []
