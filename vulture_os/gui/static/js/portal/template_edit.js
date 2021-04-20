@@ -5,7 +5,7 @@ let template_edit_vue = new Vue({
     data: {
         django_editors: [
             'html_login', 'html_logout', 'html_learning', 'html_self', 'html_password', 'email_body',
-            'html_otp', 'html_registration', 'email_register_body', 'html_message', 'html_error'
+            'html_otp', 'email_register_body', 'html_message', 'html_error'
         ],
         editors: {}
     },
@@ -237,6 +237,14 @@ let template_edit_vue = new Vue({
             }
         },
 
+        handleFormErrors(errors) {
+            let html = []
+            for (let [key, value] of Object.entries(errors))
+                html.push(`<b>${key}</b>: ${value}`)
+
+            return html.join('<br/>')
+        },
+
         save_form() {
             var txt = $('#save_form_btn').html();
             $('#save_form_btn').html('<i class="fa fa-spinner fa-spin"></i>');
@@ -278,7 +286,7 @@ let template_edit_vue = new Vue({
                         }, 1000)
                     })
                     .catch((error) => {
-                        notify('error', gettext('Error'), error.response.data.error)
+                        notify('error', gettext('Error'), this.handleFormErrors(error.response.data.error))
                     })
                     .then(() => {
                         $('#save_form_btn').html(txt)

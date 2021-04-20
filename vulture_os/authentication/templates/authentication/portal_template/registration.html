@@ -2,7 +2,7 @@
 
 {% load i18n %}
 
-<div class="row">
+<!--<div class="row">
     <div class="col-md-12">
         <div class="template_helper">
             <p>{% trans "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
@@ -88,7 +88,7 @@
             </div>
         </div>
     </div>
-</div>
+</div>-->
 
 <div class="row">
     <div class="col-md-12">
@@ -109,25 +109,24 @@
             {% include "./images.html" %}
         </div>
 
-        <div class="col-md-7">
-            {{form.email_register_body}}
-            {{form.email_register_body.errors}}
-        </div>
-
-        <div class="col-md-2">
-            <div class="panel  panel-colorful panel-dark">
+        <div class="col-md-9">
+            <div class="panel  panel-colorful panel-dark col-lg-4">
                 <div class="panel-body">
                     <div class="form-group">
-                        <label class="control-label">{%  trans "Captcha field name" %}</label>
+                        <label class="control-label">{%  trans "Email subject" %}</label>
                         {{form.email_register_subject}}
                         {{form.email_register_subject.errors}}
                     </div>
                     <div class="form-group">
-                        <label class="control-label">{%  trans "Captcha field name" %}</label>
+                        <label class="control-label">{%  trans "Email From" %}</label>
                         {{form.email_register_from}}
                         {{form.email_register_from.errors}}
                     </div>
                 </div>
+            </div>
+            <div class="col-lg-12">
+                {{form.email_register_body}}
+                {{form.email_register_body.errors}}
             </div>
         </div>
     </div>
