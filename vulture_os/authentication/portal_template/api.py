@@ -129,7 +129,6 @@ class PortalTemplateAPIv1(View):
             else:
                 data = request.POST
 
-            print(data)
             return save_portal_template(data, instance=PortalTemplate())
 
         except Exception as err:
