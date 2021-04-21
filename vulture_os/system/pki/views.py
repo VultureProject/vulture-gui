@@ -26,6 +26,7 @@ __doc__ = 'Network View'
 # Django system imports
 from django.conf import settings
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http.response import HttpResponseNotFound
 from django.shortcuts import render, HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse
@@ -35,6 +36,7 @@ from gui.forms.form_utils import DivErrorList
 from system.exceptions import VultureSystemConfigError
 from system.pki.form import TLSProfileForm, X509ExternalCertificateForm, X509InternalCertificateForm
 from system.pki.models import CIPHER_SUITES, PROTOCOLS_HANDLER, TLSProfile, X509Certificate
+from toolkit.api.responses import build_response, build_form_errors
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -45,6 +47,7 @@ from traceback import format_exception
 
 # Logger configuration imports
 import logging
+
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -101,7 +104,7 @@ def pki_revoke(request, object_id):
     try:
         x509_model = X509Certificate.objects.get(pk=object_id)
     except ObjectDoesNotExist:
-        return HttpResponseForbidden("Injection detected")
+        return HttpResponseNotFound(_("Object not found"))
 
     x509_model.revoke()
 
@@ -115,7 +118,7 @@ def pki_edit(request, object_id=None):
         try:
             x509_model = X509Certificate.objects.get(pk=object_id)
         except ObjectDoesNotExist:
-            return HttpResponseForbidden("Injection detected")
+            return HttpResponseNotFound(_("Object not found"))
 
     """ Default form is External Certificate """
     form = X509ExternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
@@ -221,22 +224,29 @@ def tls_profile_clone(request, object_id):
     return HttpResponseRedirect("/system/tls_profile/")
 
 
-def tls_profile_edit(request, object_id=None):
+def tls_profile_edit(request, object_id=None, api=False):
     """ Django view used to edit a TLSProfile object """
     tls_profile = None
     if object_id:
         try:
             tls_profile = TLSProfile.objects.get(pk=object_id)
         except ObjectDoesNotExist:
-            return HttpResponseForbidden("Injection detected")
+            if api:
+                return JsonResponse({
+                    "error": _("Object not found")
+                }, status=404)
+            return HttpResponseNotFound(_("Object not found"))
 
-    form = TLSProfileForm(request.POST or None, instance=tls_profile, error_class=DivErrorList)
+    if hasattr(request, "JSON"):
+        form = TLSProfileForm(request.JSON or None, instance=tls_profile, error_class=DivErrorList)
+    else:
+        form = TLSProfileForm(request.POST or None, instance=tls_profile, error_class=DivErrorList)
 
     def render_template(**kwargs):
         return render(request, 'system/tls_profile_edit.html', {'form': form, 'cipher_choices': CIPHER_SUITES,
                                                                 'protocols_handler': PROTOCOLS_HANDLER, **kwargs})
 
-    if request.method == "POST" and form.is_valid():
+    if request.method in ("POST", "PUT") and form.is_valid():
         tls_profile = form.save(commit=False)
 
         # Is that object already in Mongo
@@ -254,6 +264,10 @@ def tls_profile_edit(request, object_id=None):
             if first_save:
                 tls_profile.delete()
             logger.exception(e)
+            if api:
+                return JsonResponse({
+                    "error": str(e)
+                }, status=400)
             return render_template(save_error=[str(e), e.traceback])
 
         except Exception as e:
@@ -262,10 +276,18 @@ def tls_profile_edit(request, object_id=None):
             if first_save and tls_profile.id:
                 tls_profile.delete()
             logger.exception(e)
+            if api:
+                return JsonResponse({
+                    "error": str(e)
+                }, status=400)
             return render_template(save_error=["Unknown error while saving object in database.",
                                                str.join('', format_exception(*exc_info()))])
 
         """ If all is OK, redirect to TLSProfile list view """
+        if api:
+            return build_response(tls_profile.pk, "api.system.tls_profile", [])
         return HttpResponseRedirect('/system/tls_profile/')
 
+    if api:
+        return JsonResponse({"errors": build_form_errors(form.errors)}, status=400)
     return render_template()

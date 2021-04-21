@@ -1,0 +1,62 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+  <link rel="stylesheet" href="{% static 'plugins/vue/vue-select.min.css' %}"/>
+  <link rel="stylesheet" href="{% static 'plugins/jstree/themes/default/style.min.css' %}"/>
+{% endblock %}
+
+{% block js_include %}
+    <script src="{% static 'plugins/vue/vue-js-toggle-button.min.js' %}"></script>
+    <script src="{% static 'plugins/vue/vue-select.min.js' %}"></script>
+    <script src="{% static 'plugins/jstree/jstree.min.js' %}"></script>
+    <script src="{% static 'plugins/vue/vue-tags-input.min.js' %}"></script>
+    <script src="{% static 'js/components/idp_user_form.js' %}"></script>
+    <script src="{% static 'js/idp_view.js' %}"></script>
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content" id="idp_view">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                    <button class="btn" v-if="!users">
+                        <i class="fa fa-spinner fa-spin"></i>
+                    </button>
+                    <a class="btn btn-flat btn-default" href="#" @click="addUser()"><i class="fa fa-plus-circle"></i>&nbsp;&nbsp;Add an entry</a>
+                    </div>
+                    <h3 class="panel-title">
+                    <i class="fa fa-users"></i>
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                    <div class="col-md-12">
+                        <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="table_users"></table>
+                    </div>
+                    </div>
+                </div>
+                <div class="modal" id="modalAddUser" role="dialog" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content" id="modalAddUserContent">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+    let idp_object_id = "{{ object_id }}";
+    let idp_api_uri = "{% url 'authentication.idp' object_id %}";
+    let idp_api_users_uri = "{% url 'authentication.idp.users' object_id %}";
+    let portal_api_uri = "{% url 'api.portal.user_authentication' object_id %}";
+{% endblock %}

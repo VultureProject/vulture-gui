@@ -89,7 +89,7 @@ class Openvpn(models.Model):
             'status': self.status,
             'remote_server': self.remote_server,
             'remote_port': self.remote_port,
-            'tls_profile': self.tls_profile,
+            'tls_profile': self.tls_profile.to_dict(),
             'proto': self.proto
         }
 

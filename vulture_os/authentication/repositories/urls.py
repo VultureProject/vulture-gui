@@ -17,17 +17,24 @@ along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 __author__ = "Olivier de Régis"
 __credits__ = []
 __license__ = "GPLv3"
-__version__ = "3.0.0"
+__version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'IDP URLS'
+__doc__ = 'BASE Repository URLS'
 
+# Django system imports
 from django.urls import path, re_path
 
-from authentication.idp.api import IDPApiView
-from authentication.idp.api import IDPApiUserView
+# Django project imports
+from authentication.repositories import api
+
+# Required exceptions imports
+
 
 urlpatterns = [
-   re_path('^api/v1/authentication/idp/(?P<object_id>[A-Fa-f0-9]+)$', IDPApiView.as_view(), name="authentication.idp"),
-   re_path('^api/v1/authentication/idp/users/(?P<object_id>[A-Fa-f0-9]+)/$', IDPApiUserView.as_view(), name="authentication.idp.users")
+    # List view
+        path('api/v1/authentication/repositories/',
+                api.BaseRepositoryAPIv1.as_view(),
+                name="api.authentication.repositories"
+        )
 ]
