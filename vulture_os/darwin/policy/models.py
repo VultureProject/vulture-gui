@@ -734,6 +734,38 @@ class FilterPolicy(models.Model):
         return ret
 
 
+    def to_template(self):
+        ret = {
+            "id": self.id,
+            "name": self.name,
+            "filter_type_name": self.filter_type.name,
+            "policy": self.policy.id,
+            "threshold": self.threshold,
+            "enrichment_tags": [f"darwin.{self.filter_type.name}"],
+            "call_condition": self.call_condition,
+            "calls": []
+        }
+
+        if self.enrichment_tags:
+            ret['enrichment_tags'].extend(self.enrichment_tags)
+
+        if self.buffering.exists():
+            buffering = self.buffering.get()
+            ret['is_buffered'] = True
+            # ret['buffer_source'] = "{}_{}_{}".format(buffering.destination_filter.name, self.name, buffering.destination_filter.policy.id)
+            ret['filter_socket'] = buffering.buffer_filter.socket_path
+        else:
+            ret['filter_socket'] = self.socket_path
+
+        if self.mmdarwin_enabled and self.mmdarwin_parameters:
+            ret['calls'].append({
+                "inputs": self.mmdarwin_parameters,
+                "outputs": [p.replace('.', '!') for p in self.mmdarwin_parameters if p[0] in ['!', '.']]
+            })
+
+        return ret
+
+
     def _generate_yara_conf(self):
         json_conf = {}
 

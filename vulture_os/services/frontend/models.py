@@ -1648,37 +1648,7 @@ class Frontend(models.Model):
                 if not darwin_filter.filter_type.is_launchable:
                     continue
 
-                action = {
-                    "filter_type": darwin_filter.filter_type.name,
-                    "threshold": darwin_filter.threshold,
-                    "enrichment_tags": ["darwin.{}".format(darwin_filter.filter_type.name)],
-                    "calls": []
-                }
-
-                # if filter is buffered
-                # - enrichment should be disabled
-                # - socket should point to related buffer filter
-                # - inputs should include buffer source
-                if darwin_filter.buffering.exists():
-                    # shouldn't raise, but exceptions are handled at the end of the function anyway
-                    buffering = darwin_filter.buffering.get()
-                    action['disable_enrichment'] = True
-                    action['buffer_source'] = "{}_{}_{}".format(buffering.destination_filter.name, self.name, buffering.destination_filter.policy.id)
-                    action['filter_socket'] = buffering.buffer_filter.socket_path
-                else:
-                    action['filter_socket'] = darwin_filter.socket_path
-
-                if darwin_filter.mmdarwin_enabled and darwin_filter.mmdarwin_parameters:
-                    call = {
-                        "inputs": darwin_filter.mmdarwin_parameters,
-                        "outputs": [p.replace('.', '!') for p in darwin_filter.mmdarwin_parameters if p[0] in ['!', '.']]
-                    }
-                    action['calls'].append(call)
-
-                if darwin_filter.enrichment_tags:
-                    action['enrichment_tags'].extend(darwin_filter.enrichment_tags)
-
-                darwin_actions.append(action)
+                darwin_actions.append(darwin_filter.to_template())
 
             return template.render({'frontend': conf,
                                     'node': Cluster.get_current_node(),
