@@ -39,8 +39,6 @@ urlpatterns = [
     # List view
     path('authentication/ldap/', ListLDAPRepository.as_view(), name="authentication.ldap.list"),
 
-    re_path('^authentication/ldap/view/(?P<object_id>[A-Fa-f0-9]+)$', views.ldap_view, name="authentication.ldap.view"),
-
     # Edit view
     re_path('^authentication/ldap/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
             views.ldap_edit,
@@ -61,12 +59,6 @@ urlpatterns = [
     path('authentication/ldap/group_search_test/',
             views.group_search_test,
             name="authentication.ldap.group_search_test"),
-    
-    # API
-    path('api/v1/authentication/ldap/view/<int:object_id>/',
-        api.LDAPViewApi.as_view(),
-        name="authentication.api.ldap.view"
-    ),
 
     path('api/v1/authentication/ldap/',
         api.LDAPApi.as_view(),

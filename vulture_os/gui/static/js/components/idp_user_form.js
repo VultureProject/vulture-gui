@@ -31,15 +31,17 @@ let user_form_template = `
 let UserFormComponent = Vue.component("UserForm", {
     template: user_form_template,
     props: {
-        group_dn: String,
         user_bus: Object,
         user_data: Object,
-        user_edit_keys: Array
+        user_edit_keys: Array,
+        edit: {
+            type: Boolean,
+            default: false
+        }
     },
 
     data() {
         return {
-            form: {},
             userPassword: ""
         }
     },
@@ -63,10 +65,8 @@ let UserFormComponent = Vue.component("UserForm", {
         },
 
         saveUser() {
-            this.user_data.object_type = "user"
-            if (this.user_data.dn) {
-                this.user_data.userPassword = this.userPassword
-                axios.put(ldap_view_api_uri, this.user_data)
+            if (this.edit) {
+                axios.put(idp_api_users_uri, this.user_data)
                     .then((response) => {
                         if (response.status === 200) {
                             notify('success', gettext("Success"), gettext("User successfully updated"))
@@ -77,14 +77,7 @@ let UserFormComponent = Vue.component("UserForm", {
                         console.error(error.response.data)
                     })
             } else {
-                let tmp = {
-                    group_dn: this.group_dn,
-                    user: this.user_data,
-                    userPassword: this.userPassword,
-                    object_type: "user"
-                }
-
-                axios.post(ldap_view_api_uri, tmp)
+                axios.post(idp_api_users_uri, this.user_data)
                     .then((response) => {
                         if (response.status === 201) {
                             notify('success', gettext('Success'), gettext("User successfully added"))

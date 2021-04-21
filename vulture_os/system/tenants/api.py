@@ -45,18 +45,20 @@ class TenantsAPIv1(View):
     def get(self, request, object_id=None):
         try:
             if object_id:
-                try:
-                    obj = Tenants.objects.get(pk=object_id).to_dict()
-                except Tenants.DoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
+                obj = Tenants.objects.get(pk=object_id).to_dict()
+            elif request.GET.get('name'):
+                obj = Tenants.objects.get(name=request.GET.get('name')).to_dict()
             else:
                 obj = [s.to_dict() for s in Tenants.objects.all()]
 
             return JsonResponse({
                 'data': obj
             })
+        
+        except Tenants.DoesNotExist:
+            return JsonResponse({
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)

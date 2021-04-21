@@ -823,6 +823,7 @@ class Frontend(models.Model):
             'https_redirect': self.https_redirect,
             'listeners': [],
             'tenant_name': self.tenants_config.name,
+            "tenants_config": self.tenants_config.pk,
             'timeout_connect': self.timeout_connect,
             'timeout_client': self.timeout_client
         }
@@ -859,6 +860,8 @@ class Frontend(models.Model):
             result['listening_mode'] = self.listening_mode
             result['enable_logging_reputation'] = self.enable_logging_reputation
             result['enable_logging_geoip'] = self.enable_logging_geoip
+
+            result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
 
             if self.listening_mode == "api":
                 result['api_parser_type'] = self.api_parser_type
@@ -949,8 +952,11 @@ class Frontend(models.Model):
                     result['sentinel_one_apikey'] = self.sentinel_one_apikey
 
             if self.enable_logging_reputation:
-                result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
-                result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
+                if self.logging_reputation_database_v4:
+                    result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
+
+                if self.logging_reputation_database_v6:
+                    result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
 
             if self.enable_logging_geoip:
                 result['logging_geoip_database'] = self.logging_geoip_database.to_template()
@@ -1665,6 +1671,7 @@ class Listener(models.Model):
             'port': self.port,
             'frontend': self.frontend,
             'whitelist_ips': self.whitelist_ips,
+            'tls_profiles': [tls.pk for tls in self.tls_profiles.all()],
             'max_src': self.max_src,
             'max_rate': self.max_rate,
             'addr_port': "{}:{}".format(self.network_address.ip, self.port),
@@ -1748,6 +1755,15 @@ class FrontendReputationContext(models.Model):
         verbose_name=_("Destination field name"),
         help_text=_("Field name which will contains the searched value")
     )
+    
+    def to_dict(self):
+        return {
+            "frontend": str(self.frontend.pk),
+            "reputation_ctx": str(self.reputation_ctx.pk),
+            "enabled": self.enabled,
+            "arg_field": self.arg_field,
+            "dst_field": self.dst_field
+        }
 
 
 def ha_lt(criterion, key, value):

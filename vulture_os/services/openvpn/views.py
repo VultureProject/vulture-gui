@@ -124,7 +124,7 @@ def openvpn_delete(request, object_id, api=False):
     })
 
 
-def openvpn_edit(request, object_id, api=False, update=False):
+def openvpn_edit(request, object_id=None, api=False, update=False):
     openvpn = None
     if object_id:
         try:
@@ -135,7 +135,7 @@ def openvpn_edit(request, object_id, api=False, update=False):
                     'error': _("Object does not exist")
                 }, status=404)
 
-            return HttpResponseForbidden("Injection detected.")
+            return HttpResponseForbidden(_("Object does not exist"))
 
     """ Create form with object if exists, and request.POST (or request.JSON) if exists """
     if hasattr(request, "JSON") and api:

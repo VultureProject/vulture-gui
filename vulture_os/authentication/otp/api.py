@@ -14,13 +14,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Theo BERTIN"
+__author__ = "Olivier de Régis"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'ACL API'
+__doc__ = 'OTP API'
 
 # Django system imports
 from bson import ObjectId
@@ -33,8 +33,8 @@ from django.utils.decorators import method_decorator
 
 # Django project imports
 from gui.decorators.apicall import api_need_key
-from darwin.access_control.models import AccessControl
-from darwin.access_control.views import access_control_edit
+from authentication.otp.models import OTPRepository
+from authentication.otp import views
 
 # Logger configuration imports
 import logging
@@ -43,22 +43,22 @@ logger = logging.getLogger('api')
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class ACLAPIv1(View):
+class OTPAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
             if object_id:
-                acl = AccessControl.objects.get(pk=ObjectId(object_id)).to_template()
+                acl = OTPRepository.objects.get(pk=ObjectId(object_id)).to_dict()
             elif request.GET.get('name'):
-                acl = AccessControl.objects.get(name=request.GET['name']).to_template()
+                acl = OTPRepository.objects.get(name=request.GET['name']).to_dict()
             else:
-                acl = [a.to_template() for a in AccessControl.objects.all()]
+                acl = [a.to_dict() for a in OTPRepository.objects.all()]
 
             return JsonResponse({
                 'data': acl
             })
 
-        except AccessControl.DoesNotExist:
+        except OTPRepository.DoesNotExist:
             return JsonResponse({
                 'error': _('Object does not exist')
             }, status=404)
@@ -81,7 +81,7 @@ class ACLAPIv1(View):
                 return JsonResponse({
                     'error': _('you must specify an object ID')
                 }, status=401)
-            return access_control_edit(request, object_id, api=True)
+            return views.otp_edit(request, object_id, api=True)
 
         except Exception as e:
             logger.critical(e, exc_info=1)
@@ -97,7 +97,7 @@ class ACLAPIv1(View):
     @api_need_key('cluster_api_key')
     def post(self, request):
         try:
-            response = access_control_edit(request, api=True)
+            response = views.otp_edit(request, api=True)
             return response
 
         except Exception as e:
@@ -114,13 +114,13 @@ class ACLAPIv1(View):
     @api_need_key("cluster_api_key")
     def delete(self, request, object_id):
         try:
-            obj = AccessControl.objects.get(pk=ObjectId(object_id))
+            obj = OTPRepository.objects.get(pk=ObjectId(object_id))
             obj.delete()
 
             return JsonResponse({
                 "status": True
             }, status=204)
-        except AccessControl.DoesNotExist:
+        except OTPRepository.DoesNotExist:
             return JsonResponse({
                 "status": False,
                 "error": _("Object does not exist")

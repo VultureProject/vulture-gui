@@ -71,9 +71,6 @@ def ldap_clone(request, object_id):
 
     return render(request, 'authentication/ldap_edit.html', {'form': form})
 
-def ldap_view(request, object_id):
-    return render(request, 'authentication/ldap_view.html', {"object_id": object_id})
-
 
 def ldap_edit(request, object_id=None, api=False):
     ldap = None
@@ -115,7 +112,7 @@ def ldap_edit(request, object_id=None, api=False):
         ldap.save()
         # If everything succeed, redirect to list view
         if api:
-            return build_response(ldap.id, "services.frontend.api", [])
+            return build_response(ldap.id, "authentication.api.ldap", [])
 
         return HttpResponseRedirect('/authentication/ldap/')
 
