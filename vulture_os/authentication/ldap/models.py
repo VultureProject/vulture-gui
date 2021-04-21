@@ -22,6 +22,8 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'LDAP Repository model'
 
+import re
+
 # Django system imports
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -202,6 +204,34 @@ class LDAPRepository(BaseRepository):
         default="member",
         help_text=_("Attribute which contains  list of group members")
     )
+
+    @property
+    def get_user_account_locked_attr(self):
+        if self.user_account_locked_attr:
+            regex = r"\((.*)=.*"
+            return re.findall(regex, self.user_account_locked_attr)[0]
+        return False
+
+    @property
+    def get_user_account_locked_value(self):
+        if self.user_account_locked_attr:
+            regex = r"\(.*=(.*)\)"
+            return re.findall(regex, self.user_account_locked_attr)[0]
+        return False
+
+    @property
+    def get_user_change_password_attr(self):
+        if self.user_change_password_attr:
+            regex = r"\((.*)=.*"
+            return re.findall(regex, self.user_change_password_attr)[0]
+        return False
+    
+    @property
+    def get_user_change_password_value(self):
+        if self.user_change_password_attr:
+            regex = r"\(.*=(.*)\)"
+            return re.findall(regex, self.user_change_password_attr)[0]
+        return False
 
     def create_user_dn(self, user_name):
         return f"{self.user_attr}={user_name},{self.user_dn},{self.base_dn}"
