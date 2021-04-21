@@ -426,6 +426,9 @@ $(function() {
     }
     if( mode === "impcap" ) {
       load_impcap_filter_type();
+      $('#add_listener').hide();
+    } else {
+      $("#add_listener").show();
     }
     if( mode == "impcap" || old_mode == "impcap" ) {
       refresh_dashboard_forwarder(old_mode, mode);

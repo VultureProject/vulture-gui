@@ -202,7 +202,7 @@ class Service:
     def status(self, service_name=""):
         """
         Give status of service, and more if needed
-        :param service_name: Service name to use if different than self.service_name 
+        :param service_name: Service name to use if different than self.service_name
         :return: "DOWN"|"UP"|"UNKNOWN"|"ERROR", message information about status
         """
         service_name2 = service_name or self.service_name
