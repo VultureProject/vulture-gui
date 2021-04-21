@@ -673,6 +673,14 @@ class FilterPolicy(models.Model):
         help_text=_("A dictionary containing all specific parameters of this filter"),
     )
 
+    """ Custom Rsyslog condition(s) to check before calling filter """
+    call_condition = models.TextField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("Custom conditions to check before calling the filter")
+    )
+
     def clean(self):
         # get the validator associated to the filter (there should be one defined in the list, even when it has no configuration parameters)
         conf_validator = DARWIN_FILTER_CONFIG_VALIDATORS.get(self.filter_type.name)
@@ -715,7 +723,8 @@ class FilterPolicy(models.Model):
             "cache_size": self.cache_size,
             "output": self.output,
             "next_filter": self.next_filter,
-            "config": self.config
+            "config": self.config,
+            "call_condition": self.call_condition
         }
 
         buffering = DarwinBuffering.objects.filter(destination_filter=self).first()

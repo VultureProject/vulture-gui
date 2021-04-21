@@ -73,7 +73,8 @@ function init_vue(){
         buffering: {
           interval: 300,
           required_log_lines: 10
-        }
+        },
+        call_condition: null
       },
 
       buffer_outputs: [],
@@ -249,6 +250,10 @@ function init_vue(){
             tmp.push(`<label class='label label-primary'>${tag.text}</label>`)
 
           rsyslog_params += `<p><b>${gettext("Additional Rsyslog enrichment tags")}:</b> ${tmp.join(' ')}</p>`
+        }
+
+        if (filter.call_condition !== null && filter.call_condition !== ""){
+          rsyslog_params += `<p><b>${gettext("Custom call conditions")}:</b> ${filter.call_condition}</p>`
         }
 
         if (filter.continuous_analysis_enabled){
@@ -533,7 +538,8 @@ function init_vue(){
           buffering: {
             interval: 300,
             required_log_lines: 10
-          }
+          },
+          call_condition: null
         }
       },
 
@@ -625,7 +631,8 @@ function init_vue(){
             mmdarwin_parameters: mmdarwin_parameters,
             enrichment_tags: enrichment_tags,
             config: config,
-            buffering: buffering
+            buffering: buffering,
+            call_condition: tmp_filter.call_condition
           }
 
           filters.push(tmp)
