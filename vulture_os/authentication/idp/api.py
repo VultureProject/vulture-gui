@@ -33,9 +33,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
 from authentication.user_portal.models import UserAuthentication
 from authentication.ldap.tools import NotUniqueError, UserNotExistError
+from toolkit.portal.registration import perform_email_registration, perform_email_reset
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
+
 
 def get_repo(portal):
     ldap_repo = None
@@ -145,32 +148,60 @@ class IDPApiView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiUserView(View):
     @api_need_key('cluster_api_key')
-    def post(self, request, object_id):
+    def post(self, request, object_id, action=None):
         try:
             portal = UserAuthentication.objects.get(pk=object_id)
             ldap_repo = get_repo(portal)
 
-            user = {
-                ldap_repo.user_attr: request.JSON['username']
-            }
+            if action and action not in ["resend_registration", "reset_password"]:
+                return JsonResponse({
+                    "status": False,
+                    "error": _("Invalid action")
+                }, status=400)
 
-            attrs = {}
-            if ldap_repo.user_account_locked_attr:
-                attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
-                
-            if ldap_repo.user_change_password_attr:
-                attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
+            elif not action:
+                user = {
+                    ldap_repo.user_attr: request.JSON['username']
+                }
 
-            if ldap_repo.user_mobile_attr:
-                attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
+                attrs = {}
+                if ldap_repo.user_account_locked_attr:
+                    attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
 
-            if ldap_repo.user_smartcardid_attr:
-                attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
-            
-            if ldap_repo.user_email_attr:
-                attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
+                if ldap_repo.user_change_password_attr:
+                    attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
 
-            ldap_response, user_id = tools.create_user(ldap_repo, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
+                if ldap_repo.user_mobile_attr:
+                    attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
+
+                if ldap_repo.user_smartcardid_attr:
+                    attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
+
+                if ldap_repo.user_email_attr:
+                    attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
+
+                ldap_response, user_id = tools.create_user(ldap_repo, user[ldap_repo.user_attr],
+                                                           request.JSON.get('userPassword'), attrs)
+
+            if not action or action == "resend_registration":
+                if not perform_email_registration(logger,
+                                        f"https://{portal.external_fqdn}",
+                                        portal.name,
+                                        portal.template,
+                                        request.JSON['email'],
+                                        expire=72 * 3600):
+                    return JsonResponse({'status': False,
+                                         'error': _("Fail to send user's registration email")})
+
+            elif action == "reset_password":
+                perform_email_reset(logger,
+                                 f"https://{portal.external_fqdn}",
+                                 portal.name,
+                                 portal.template,
+                                 request.JSON['email'],
+                                 expire=3600)
+                return JsonResponse({'status': False,
+                                     'error': _("Fail to send user's reset password email")})
 
             return JsonResponse({
                 "status": True,
@@ -226,7 +257,7 @@ class IDPApiUserView(View):
             
             if ldap_repo.user_mobile_attr:
                 attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
-            
+
             if ldap_repo.user_smartcardid_attr:
                 attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
 
