@@ -551,7 +551,10 @@ class UserAuthentication(models.Model):
         data['repositories'] = [r.to_dict() for r in self.repositories.all()]
         data['portal_template'] = self.portal_template.to_dict()
         data['portal_template_id'] = self.portal_template.pk
-        data['repo_attributes'] = self.repo_attributes
+        data['repo_attributes'] = []
+        for repo_attr in self.repo_attributes:
+            repo_attr.pop('_id', None)
+            data['repo_attributes'].append(repo_attr)
         if self.external_listener:
             data['external_listener'] = self.external_listener.to_dict()
             data['external_listener_id'] = self.external_listener.pk
