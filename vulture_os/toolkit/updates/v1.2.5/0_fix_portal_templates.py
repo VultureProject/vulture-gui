@@ -54,10 +54,10 @@ if __name__ == "__main__":
                     if "{{style}}" in line and "<style>" not in line:
                         replace = True
                 if replace:
-                    logout_tpl = logout_tpl.replace("{{style}}", "<style>{{style}}</style>")
+                    template.html_logout = logout_tpl.replace("{{style}}", "<style>{{style}}</style>")
                 error_tpl = template.html_error
                 if "https://www.vultureproject.org/assets/images/logo_mini.png" in error_tpl:
-                    error_tpl = error_tpl.replace("src=\"https://www.vultureproject.org/assets/images/logo_mini.png\"", "src=\"{{image_1}}\"")
+                    template.html_error = error_tpl.replace("src=\"https://www.vultureproject.org/assets/images/logo_mini.png\"", "src=\"{{image_1}}\"")
                 template.save()
                 print("Portal template {} updated".format(template))
         except Exception as e:
