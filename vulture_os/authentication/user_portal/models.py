@@ -358,7 +358,7 @@ class UserAuthentication(models.Model):
         help_text=_("Maximum number of OTP retries until deauthentication")
     )
     disconnect_url = models.TextField(
-        default="/disconnect",
+        default="^{{workflow.public_dir}}/logout\?userid=[^&]+",
         verbose_name=_("Disconnect regex"),
         help_text=_("Regex for the application disconnect page (ex: 'logout\?sessid=.*'")
     )
