@@ -161,6 +161,7 @@ def user_authentication_edit(request, object_id=None, api=False):
         if form.is_valid():
             # Check changed attributes before form.save
             repo_changed = "repositories" in form.changed_data
+            disconnect_url_changed = "disconnect_url" in form.changed_data
             external_listener_changed = "external_listener" in form.changed_data and profile and profile.enable_external
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
@@ -170,7 +171,7 @@ def user_authentication_edit(request, object_id=None, api=False):
             profile.save()
 
             try:
-                if repo_changed and profile.workflow_set.count() > 0:
+                if (repo_changed or disconnect_url_changed) and profile.workflow_set.count() > 0:
                     for workflow in profile.workflow_set.all():
                         workflow.frontend.reload_conf()
                 if profile.enable_external:
