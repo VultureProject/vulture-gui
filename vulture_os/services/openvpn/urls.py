@@ -37,7 +37,7 @@ urlpatterns = [
         name="services.openvpn.api"
     ),
 
-    path('api/v1/services/openvpn/<int:object_id>',
+    path('api/v1/services/openvpn/<int:object_id>/',
         api.OpenvpnAPIv1.as_view(),
         name="services.openvpn.api"
     ),

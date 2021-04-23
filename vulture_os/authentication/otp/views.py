@@ -20,16 +20,19 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'LDAP Repository views'
+__doc__ = 'OTP Repository views'
 
 
 # Django system imports
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http.response import HttpResponseNotFound
+from django.utils.translation import gettext as _
 from django.shortcuts import render
 
 # Django project imports
 from gui.forms.form_utils import DivErrorList
+from toolkit.api.responses import build_response, build_form_errors
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -60,7 +63,7 @@ def otp_clone(request, object_id):
         otp = OTPRepository.objects.get(pk=object_id)
     except Exception as e:
         logger.exception(e)
-        return HttpResponseForbidden("Injection detected")
+        return HttpResponseNotFound(_("Object not found"))
 
     otp.pk = None
     otp.name = "Copy_of_" + str(otp.name)
@@ -70,22 +73,32 @@ def otp_clone(request, object_id):
     return render(request, 'authentication/otp_edit.html', {'form': form})
 
 
-def otp_edit(request, object_id=None):
+def otp_edit(request, object_id=None, api=False):
     otp = None
     if object_id:
         try:
             otp = OTPRepository.objects.get(pk=object_id)
         except ObjectDoesNotExist:
-            return HttpResponseForbidden("Injection detected")
+            if api:
+                    return JsonResponse({'error': _("Object does not exist.")}, status=404)
 
-    form = OTPRepositoryForm(request.POST or None, instance=otp, error_class=DivErrorList)
+            return HttpResponseNotFound(_("Object not found"))
 
-    if request.method == "POST" and form.is_valid():
+    if hasattr(request, "JSON") and api:
+        form = OTPRepositoryForm(request.JSON or None, instance=otp, error_class=DivErrorList)
+    else:
+        form = OTPRepositoryForm(request.POST or None, instance=otp, error_class=DivErrorList)
+
+    if request.method in ("POST", "PUT") and form.is_valid():
         # Save the form to get an id if there is not already one
-        ldap = form.save(commit=False)
-        ldap.save()
+        otp = form.save(commit=False)
+        otp.save()
 
         # If everything succeed, redirect to list view
+        if api:
+            return build_response(otp.id, "api.authentication.otp", [])
         return HttpResponseRedirect('/authentication/otp/')
 
+    if api:
+        return JsonResponse({"errors": build_form_errors(form.errors)}, status=400)
     return render(request, 'authentication/otp_edit.html', {'form': form})

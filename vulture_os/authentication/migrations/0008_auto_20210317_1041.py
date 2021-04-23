@@ -84,4 +84,46 @@ class Migration(migrations.Migration):
             name='condition_var_name',
             field=models.TextField(default='email'),
         ),
+        migrations.AlterField(
+            model_name='portaltemplate',
+            name='html_error',
+            field=models.TextField(
+                default='<!DOCTYPE html>\n<html>\n <head>\n    <meta charset="utf-8" />\n    <title>Vulture Error</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    <style>\n        {{style}}\n    </style>\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container">\n            <img id="vulture_img" src="{{image_1}}"/>\n            <p>{{message}}</p>\n        </div>\n    </div>\n </body>\n</html>',
+                help_text='HTML General content for error pages'),
+        ),
+        migrations.AlterField(
+            model_name='portaltemplate',
+            name='html_login',
+            field=models.TextField(
+                default='<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="utf-8"/>\n    <title>Vulture Login</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    <style>{{style}}</style>\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container">\n            <form action=\'\' method=\'POST\' autocomplete=\'off\' class=\'form-signin\'>\n                <img id="vulture_img" src="{{image_1}}"/>\n                {% if error_message != "" %}\n                  <div class="alert alert-danger" role="alert">{{error_message}}</div>\n                {% endif %}\n                <span id="reauth-email" class="reauth-email"></span>\n                <input type="text" name="{{input_login}}" class="form-control" placeholder="Login" required/>\n                <input type="password" name="{{input_password}}" class="form-control" placeholder="Password" required/>\n                {% if captcha %}\n                    {{captcha}}\n                    <input type="text" name="{{input_captcha}}" class="form-control" placeholder="Captcha" required/>\n\n                {% endif %}\n                <button class="btn btn-lg btn-warning btn-block btn-signin" type="submit">{{login_submit_field}}</button>\n                {% for repo in openid_repos %}\n                <a href="{{repo.start_url}}">Login with {{repo.provider}}</a>\n                {% endfor %}\n                <a href="{{lostPassword}}">Forgotten password ?</a>\n            </form>\n        </div>\n    </div>\n </body>\n</html>',
+                help_text='HTML Content for the login page'),
+        ),
+        migrations.AlterField(
+            model_name='portaltemplate',
+            name='html_message',
+            field=models.TextField(
+                default='<!DOCTYPE html>\n<html>\n <head>\n    <meta charset="utf-8" />\n    <title>Vulture Info</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    {{style}}\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container">\n            <img id="vulture_img" src="{{image_1}}"/>\n            <p>{{message}}</p>\n            {% if link_redirect %}<a href="{{link_redirect}}">Go back</a>{% endif %}\n        </div>\n    </div>\n </body>\n</html>',
+                help_text='HTML Content for the message page'),
+        ),
+        migrations.AlterField(
+            model_name='portaltemplate',
+            name='html_password',
+            field=models.TextField(
+                default='<!DOCTYPE html>\n<html>\n <head>\n    <meta charset="utf-8" />\n    <title>Vulture Change Password</title>\n    <link rel="stylesheet" href="..//templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    {{style}}\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container" style="text-align:center;">\n            {{form_begin}}\n                <img id="vulture_img" src="{{image_1}}"/>\n                {% if error_message %}\n                    <div class="alert alert-danger">{{error_message}}</div>\n                {% endif %}\n                {% if dialog_change %}\n                    <p>Please fill the form to change your current password :</p>\n                    {{input_password_old}}\n                    {{input_password_1}}\n                    {{input_password_2}}\n                    {{input_submit}}\n\n                {% elif dialog_lost %}\n                    <p>Please enter an email address to reset your password:</p>\n\n                    {{input_email}}\n                    {{input_submit}}\n\n                {% endif %}\n            {{form_end}}\n        </div>\n    </div>\n </body>\n</html>\n',
+                help_text='HTML Content for the password change page'),
+        ),
+        migrations.AlterField(
+            model_name='portaltemplate',
+            name='html_registration',
+            field=models.TextField(
+                default='<!DOCTYPE html>\n<html>\n <head>\n    <meta charset="utf-8" />\n    <title>Titre</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    {{style}}\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container" style="text-align:center;">\n            {{form_begin}}\n                <img id="vulture_img" src="{{image_1}}"/>\n                {% if error_message %}\n                    <div class="alert alert-danger">{{error_message}}</div>\n                {% endif %}\n                {{captcha}}\n                {{input_captcha}}\n                {% if step2 %}\n                    <p>Please fill the form to register your account :</p>\n                    {{input_username}}\n                    {% if ask_phone %}\n                    {{input_phone}}\n                    {% endif %}\n                    {{input_password_1}}\n                    {{input_password_2}}\n                    {{input_submit}}\n\n                {% elif step1 %}\n                    <p>Please enter your email address to receive the registration mail :</p>\n                    {{input_email}}\n                    {{input_submit}}\n                {% endif %}\n            {{form_end}}\n        </div>\n    </div>\n </body>\n</html>',
+                help_text='HTML Content for registration pages'),
+        ),
+        migrations.AlterField(
+            model_name='portaltemplate',
+            name='html_self',
+            field=models.TextField(
+                default='<!DOCTYPE html>\n<html>\n <head>\n    <meta charset="utf-8" />\n    <title>Vulture Self-Service</title>\n    <link rel="stylesheet" href="/templates/static/html/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">\n    {{style}}\n </head>\n <body>\n    <div class="container">\n        <div class="card card-container" style="text-align:center;" id="self_service">\n            <img id="vulture_img" src="{{image_1}}"/>\n            <br><br>\n            {% if error_message != "" %}\n                <div class="alert alert-danger">{{error_message}}</div>\n            {% endif %}\n            <p>Hello <b>{{username}}</b>!</p>\n            <p>You currently have access to the following apps:</p>\n            <ul class="list-group">\n                {% for app in application_list %}\n                  <li class="list-group-item"><b>{{app.name}}</b> - <a href="{{app.url}}">{{app.url}}</a>{% if app.status %}<span class="badge">Logged</span>{% endif %}</li>\n                {% endfor %}\n            </ul>\n            <a href="{{changePassword}}">Change password</a>\n            <br><a href="{{logout}}">Logout</a>\n        </div>\n    </div>\n </body>\n</html>',
+                help_text='HTML Content for the self-service page'),
+        )
     ]

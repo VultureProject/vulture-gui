@@ -58,6 +58,7 @@ urlpatterns = [
             name="system.pki.edit"),
 
     path('system/pki/', ListX509Certificate.as_view(), name="system.pki.list"),
+    path('api/v1/system/pki/', api.PKIView.as_view(), name="api.system.pki"),
 
     path('api/system/pki/get_ca', api.pki_get_ca, name="system.pki_get_ca"),
 
@@ -77,4 +78,7 @@ urlpatterns = [
             name="system.tls_profile.delete"),
 
     path('system/tls_profile/', ListTLSProfile.as_view(), name="system.tls_profile.list"),
+
+    path('api/v1/system/tls_profile/', api.TLSProfileApiView.as_view(), name="api.system.tls_profile"),
+    path('api/v1/system/tls_profile/<str:object_id>/', api.TLSProfileApiView.as_view(), name="api.system.tls_profile")
 ]

@@ -25,8 +25,9 @@ __doc__ = 'LDAP Repository views'
 
 # Django system imports
 from django.conf import settings
-from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.http.response import HttpResponseNotFound
+from django.utils.translation import gettext_lazy as _
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -37,9 +38,7 @@ from toolkit.api.responses import build_response
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 from authentication.user_portal.form import UserAuthenticationForm
-from authentication.user_portal.models import UserAuthentication, RepoAttributesForm, RepoAttributes
-from services.frontend.models import Listener
-from services.frontend.form import ListenerForm
+from authentication.user_portal.models import UserAuthentication, RepoAttributesForm
 from system.cluster.models  import Cluster
 from system.pki.models import X509Certificate, PROTOCOLS_TO_INT
 from portal.system.sso_clients import SSOClient
@@ -81,7 +80,6 @@ def user_authentication_clone(request, object_id):
     profile.name = "Copy_of_" + str(profile.name)
 
     form = UserAuthenticationForm(None, instance=profile, error_class=DivErrorList)
-
     return render(request, 'authentication/user_authentication_edit.html', {'form': form})
 
 
@@ -93,7 +91,7 @@ def user_authentication_edit(request, object_id=None, api=False):
         try:
             profile = UserAuthentication.objects.get(pk=object_id)
         except ObjectDoesNotExist:
-            return HttpResponseNotFound("Object not found")
+            return HttpResponseNotFound(_("Object not found"))
 
     """ Create form with object if exists, and request.POST (or JSON) if exists """
     # Do NOT remove this line
@@ -294,3 +292,8 @@ def sso_wizard(request):
         response = {'status': False, 'reason': str(error)}
 
     return JsonResponse(response)
+
+
+
+def idp_view(request, object_id):
+    return render(request, 'authentication/idp_view.html', {"object_id": object_id})

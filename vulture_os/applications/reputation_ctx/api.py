@@ -103,19 +103,20 @@ class ReputationContextAPIv1(View):
     def get(self, request, object_id=None):
         try:
             if object_id:
-                try:
-                    obj = ReputationContext.objects.get(pk=object_id).to_dict()
-                except ReputationContext.DoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
-
+                obj = ReputationContext.objects.get(pk=object_id).to_dict()
+            elif request.GET.get('name'):
+                obj = ReputationContext.objects.get(name=request.GET.get('name')).to_dict()
             else:
                 obj = [s.to_dict() for s in ReputationContext.objects.all()]
 
             return JsonResponse({
                 'data': obj
             })
+
+        except ReputationContext.DoesNotExist:
+            return JsonResponse({
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)
