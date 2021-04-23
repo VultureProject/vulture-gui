@@ -226,6 +226,8 @@ class Workflow(models.Model):
         }
 
     def get_disconnect_url(self):
+        if not self.authentication:
+            return ""
         tpl = Template(self.authentication.disconnect_url)
         return tpl.render(Context({'workflow': self})).replace("//", "/")
 
