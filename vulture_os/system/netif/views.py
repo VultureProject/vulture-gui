@@ -73,9 +73,7 @@ def netif_edit(request, object_id=None, api=False):
         else:
             form = NetIfForm(request.POST or None, instance=netif_model)
 
-
     if request.method in ("POST", "PUT") and form.is_valid():
-
         netif = form.save(commit=False)
         netif.save()
 
@@ -105,6 +103,7 @@ def netif_edit(request, object_id=None, api=False):
                 nic_list = request.JSON.get('nic')
             else:
                 nic_list = request.POST.getlist('nic')
+
             for nic in nic_list:
                 try:
                     NetworkAddressNIC.objects.get(network_address=netif, nic_id=nic)
@@ -123,7 +122,7 @@ def netif_edit(request, object_id=None, api=False):
 
                 """ If the current nic is not in the new config anymore:
                 Remove it from NetworkAddressNIC """
-                if str(current_networkadress_nic.nic.pk) not in request.POST.getlist("nic"):
+                if str(current_networkadress_nic.nic.pk) not in nic_list:
                     # NetworkAddressNIC().remove(nicid=current_networkadress_nic.nic.pk,
                     #                                 network_addressid=netif.id)
                     current_networkadress_nic.delete()

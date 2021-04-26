@@ -66,4 +66,6 @@ urlpatterns = [
         api.UserPortalApi.as_view(),
         name="api.portal.user_authentication"
     ),
+
+    re_path('^portal/user_authentication/view/(?P<object_id>[A-Fa-f0-9]+)$', views.idp_view, name="portal.user_authentication.view"),
 ]

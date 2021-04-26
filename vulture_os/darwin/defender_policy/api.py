@@ -17,72 +17,48 @@ along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 __author__ = "Olivier de Régis"
 __credits__ = []
 __license__ = "GPLv3"
-__version__ = "3.0.0"
+__version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'LDAP API'
+__doc__ = 'Defender Policy API'
 
-import logging
-from django.views import View
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
+from django.views import View
 from django.http import JsonResponse
-from authentication import ldap
-from gui.decorators.apicall import api_need_key
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from authentication.ldap.models import LDAPRepository
-from django.utils.translation import ugettext_lazy as _
-from authentication.ldap.views import ldap_edit
-from authentication.generic_delete import DeleteLDAPRepository
-from authentication.ldap import tools
 
+from gui.decorators.apicall import api_need_key
+from darwin.defender_policy.models import DefenderPolicy
+from darwin.defender_policy.views import defender_policy_edit
+
+# Logger configuration imports
+import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
+
 @method_decorator(csrf_exempt, name="dispatch")
-class LDAPApi(View):
+class DefenderPolicyAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
             if object_id:
-                ldap_repository = LDAPRepository.objects.get(pk=object_id)
+                obj = DefenderPolicy.objects.get(pk=object_id).to_dict()
             elif request.GET.get('name'):
-                ldap_repository = LDAPRepository.objects.get(name=request.GET['name'])
+                obj = DefenderPolicy.objects.get(name=request.GET.get('name')).to_dict()
             else:
-                ldap_repos = [ld.to_dict() for ld in LDAPRepository.objects.all()]
-                return JsonResponse({
-                    "data": ldap_repos
-                })
+                obj = [s.to_dict() for s in DefenderPolicy.objects.all()]
 
             return JsonResponse({
-                "data": ldap_repository.to_dict()
+                'data': obj
             })
-
-        except LDAPRepository.DoesNotExist:
+        
+        except DefenderPolicy.DoesNotExist:
             return JsonResponse({
-                "error": _("Object does not exist")
+                'error': _('Object does not exist')
             }, status=404)
-
-    @api_need_key('cluster_api_key')
-    def post(self, request):
-        try:
-            return ldap_edit(request, None, api=True)
-        
-        except Exception as e:
-            logger.critical(e, exc_info=1)
-            if settings.DEV_MODE:
-                error = str(e)
-            else:
-                error = _("An error has occurred")
-
-        return JsonResponse({
-            'error': error
-        }, status=500) 
-        
-    @api_need_key('cluster_api_key')
-    def put(self, request, object_id):
-        try:
-            return ldap_edit(request, object_id, api=True)
 
         except Exception as e:
             logger.critical(e, exc_info=1)
@@ -96,9 +72,47 @@ class LDAPApi(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
+    def post(self, request):
+        try:
+            return defender_policy_edit(request, None, api=True)
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+            return JsonResponse({
+                'error': error
+            }, status=500)
+
+    @api_need_key('cluster_api_key')
+    def put(self, request, object_id=None):
+        try:
+            return defender_policy_edit(request, object_id, api=True)
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            if settings.DEV_MODE:
+                error = str(e)
+            else:
+                error = _("An error has occurred")
+
+        return JsonResponse({
+            'error': error
+        }, status=500)
+
+    @api_need_key('cluster_api_key')
     def delete(self, request, object_id):
         try:
-            return DeleteLDAPRepository().post(request, object_id=object_id, confirm=True, api=True)
+            defender_policy = DefenderPolicy.objects.get(pk=object_id)
+            defender_policy.delete()
+
+        except DefenderPolicy.DoesNotExist:
+            return JsonResponse({
+                "status": False,
+                "error": _("Object not found")
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)

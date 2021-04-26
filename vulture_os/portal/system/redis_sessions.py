@@ -54,10 +54,14 @@ default_timeout = 900
 
 
 class REDISSession(object):
-    def __init__(self, redis_handler, key):
+    def __init__(self, redis_handler, key, *args, **kwargs):
         self.handler = redis_handler
         self.key     = key
         self.keys    = self.handler.hgetall(self.key)
+        # Force-update kwargs in keys
+        for k,v in kwargs.items():
+            if v is not None:
+                self.keys[k] = v
 
     def __setitem__(self, key, value):
         self.keys[key] = value
@@ -223,7 +227,7 @@ class REDISPortalSession(REDISSession):
     """
 
     def __init__(self, redis_handler, portal_cookie, *args, **kwargs):
-        super(REDISPortalSession, self).__init__(redis_handler, portal_cookie or get_random_string(64))
+        super().__init__(redis_handler, portal_cookie or get_random_string(64), *args, **kwargs)
 
     def destroy(self):
         """ Remove the current portal session from Redis """
@@ -347,6 +351,12 @@ class REDISPortalSession(REDISSession):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")
 
+    def deauthenticate_app(self, app_id, timeout):
+        self.keys[str(app_id)] = 0
+        self.keys.pop(f"backend_{app_id}", None)
+        self.keys.pop(f"url_{app_id}", None)
+        self.write_in_redis(timeout)
+
     def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
                                 oauth2_token, authentication_datas, timeout):
         if dbauthentication_required:
@@ -395,6 +405,7 @@ class REDISPortalSession(REDISSession):
         self.handler.hset(self.key, 'doubleauthenticated_{}'.format(str(otp_backend_id)), "1")
 
     def register_sso(self, timeout, backend_id, app_id, url, username, oauth2_token):
+        self.keys[str(app_id)] = 1
         self.keys[f"auth_backend_{backend_id}"] = 1
         self.keys['url_'+app_id]          = url
         self.keys['backend_'+app_id]      = backend_id

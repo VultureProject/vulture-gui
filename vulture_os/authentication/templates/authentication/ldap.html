@@ -83,8 +83,7 @@
       aTargets: [5],
       defaultContent: "",
       mRender: function(data, type, row) {
-        return '<a class="btn btn-flat btn-xs btn-info" data-toggle="tooltip" data-placement="top" title="View" href="/authentication/ldap/view/' + data + '"><span><i class="fa fa-eye"></i></span></a>' +
-        '&nbsp;<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/authentication/ldap/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
+        return '&nbsp;<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/authentication/ldap/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
         '&nbsp;<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/authentication/ldap/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
       }
     }

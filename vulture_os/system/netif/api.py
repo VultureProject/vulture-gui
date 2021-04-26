@@ -22,7 +22,7 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Network API'
 
-from system.cluster.models import Cluster, NetworkInterfaceCard, NetworkAddress
+from system.cluster.models import Cluster, NetworkInterfaceCard, NetworkAddress, Node
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -44,12 +44,14 @@ class NetworkInterfaceCardAPIv1(View):
         excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
 
         dev = request.GET.get('dev')
+        node_name = request.GET.get('node_name')
         try:
             if object_id:
                 res = NetworkInterfaceCard.objects.get(pk=object_id).to_template()
 
-            elif dev:
-                res = NetworkInterfaceCard.objects.get(dev=dev).to_template()
+            elif dev and node_name:
+                node = Node.objects.get(name=node_name)
+                res = NetworkInterfaceCard.objects.get(dev=dev, node=node).to_template()
 
             else:
                 res = []
@@ -117,24 +119,14 @@ class NetworkAddressAPIv1(View):
     def get(self, request, object_id=None):
         try:
             name = request.GET.get('name')
+            ip = request.GET.get('ip')
+
             if object_id:
-                try:
-                    obj = NetworkAddress.objects.get(pk=object_id).to_dict()
-                except NetworkAddress.DoesNotExist:
-                    return JsonResponse({
-                        'status': False,
-                        'error': _('Object does not exist')
-                    }, status=404)
-
+                obj = NetworkAddress.objects.get(pk=object_id).to_dict()
+            elif name and ip:
+                obj = NetworkAddress.objects.get(name=name, ip=ip).to_dict()
             elif name:
-                try:
-                    obj = NetworkAddress.objects.get(name=name).to_dict()
-                except NetworkAddress.DoesNotExist:
-                    return JsonResponse({
-                        'status': False,
-                        'error': _('Object does not exist')
-                    }, status=404)
-
+                obj = [n.to_dict() for n in NetworkAddress.objects.filter(name=name)]
             else:
                 obj = [s.to_dict() for s in NetworkAddress.objects.all()]
 
@@ -142,6 +134,12 @@ class NetworkAddressAPIv1(View):
                 'status': True,
                 'data': obj
             })
+
+        except NetworkAddress.DoesNotExist:
+            return JsonResponse({
+                'status': False,
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             if settings.DEV_MODE:

@@ -358,7 +358,7 @@ class UserAuthentication(models.Model):
         help_text=_("Maximum number of OTP retries until deauthentication")
     )
     disconnect_url = models.TextField(
-        default="/disconnect",
+        default="^{{workflow.public_dir}}/logout\?userid=[^&]+",
         verbose_name=_("Disconnect regex"),
         help_text=_("Regex for the application disconnect page (ex: 'logout\?sessid=.*'")
     )
@@ -550,7 +550,15 @@ class UserAuthentication(models.Model):
         data['id'] = str(self.pk)
         data['repositories'] = [r.to_dict() for r in self.repositories.all()]
         data['portal_template'] = self.portal_template.to_dict()
-        data['repo_attributes'] = self.repo_attributes
+        data['portal_template_id'] = self.portal_template.pk
+        data['repo_attributes'] = []
+        for repo_attr in self.repo_attributes:
+            repo_attr.pop('_id', None)
+            data['repo_attributes'].append(repo_attr)
+        if self.external_listener:
+            data['external_listener'] = self.external_listener.to_dict()
+            data['external_listener_id'] = self.external_listener.pk
+
         return data
 
     @property

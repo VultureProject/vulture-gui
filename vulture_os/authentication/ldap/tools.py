@@ -33,6 +33,14 @@ AVAILABLE_GROUP_KEYS = ("group_attr",)
 AVAILABLE_USER_KEYS = ("user_attr", "user_account_locked_attr", "user_change_password_attr", "user_mobile_attr", "user_email_attr", "user_smartcardid_attr")
 
 
+class NotUniqueError(Exception):
+    pass
+
+
+class UserNotExistError(Exception):
+    pass
+
+
 def find_user(ldap_repo, user_dn, attr_list):
     client = ldap_repo.get_client()
     user = client.search_by_dn(user_dn, attr_list=attr_list)
@@ -76,16 +84,12 @@ def search_users(ldap_repo, search, by_dn=False):
 
     return data
 
-def get_users(ldap_repository, group_name):
-    if ldap_repository.base_dn not in group_name:
-        group_dn = ldap_repository.create_group_dn(group_name)
-    else:
-        group_dn = group_name
-
+def get_users(ldap_repository):
+    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
     group = find_group(ldap_repository, group_dn, ['*'])
     members  = []
     for member_dn in group['member']:
-        members.append(find_user(ldap_repository, member_dn, ["*"]))    
+        members.append(find_user(ldap_repository, member_dn, ["+", "*"]))    
     return members
 
 
@@ -102,42 +106,21 @@ def get_groups(ldap_repository):
     return data
 
 
-def create_group(ldap_repository, group_name, members_username):
-    group_dn = ldap_repository.create_group_dn(group_name)
-    client = ldap_repository.get_client()
-
-    members = []
-    for member in members_username:
-        try:
-            user = search_users(ldap_repository, member, by_dn=True)[0]
-        except KeyError:
-            return False, f"User {member} does not exist"
-        
-        members.append(user)
-
-    attrs = {
-        ldap_repository.group_attr: [group_name],
-        "objectClass": ["groupOfNames", "top"],
-        "member": members
-    }
-    r = client.add_group(group_dn, attrs)
-    logger.info(f"Group {group_dn} created in LDAP {ldap_repository.name}")
-    return True, r
-
-
-def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
+def create_user(ldap_repository, username, userPassword, attrs):
     group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
-    if group_name:
-        group_dn = group_name
+    user_dn = ldap_repository.create_user_dn(username)
 
-        if ldap_repository.base_dn not in group_dn:
-            group_dn = ldap_repository.create_group_dn(group_name)
+    try:
+        if find_user(ldap_repository, user_dn, attr_list=["*"]):
+            raise NotUniqueError()
+    except IndexError:
+        # User does not exists
+        pass
 
-    user_dn = ldap_repository.create_user_dn(user_name)
     user = {
-        "sn": [user_name],
-        "cn": [user_name],
-        ldap_repository.user_attr: [user_name],
+        "sn": [username],
+        "cn": [username],
+        ldap_repository.user_attr: [username],
         "objectClass": ["inetOrgPerson", "top"],
         "description": ["User created by Vulture"]
     }
@@ -151,25 +134,18 @@ def create_user(ldap_repository, group_name, user_name, userPassword, attrs):
     user.update(attrs)
     client = ldap_repository.get_client()
     r = client.add_user(user_dn, user, group_dn, userPassword)
-    logger.info(f"User {user_name} created in LDAP {ldap_repository.name}")
+    logger.info(f"User {username} created in LDAP {ldap_repository.name}")
     return r, user_dn
 
 
-def update_user(ldap_repository, group_name, dn, user_name, attrs, userPassword):
-    old_user = None
-    group_dn = False
-    if group_name:
-        group_dn = group_name
-
-        if ldap_repository.base_dn not in group_dn:
-            group_dn = ldap_repository.create_group_dn(group_name)
-
+def update_user(ldap_repository, username, attrs, userPassword):
+    user_dn = ldap_repository.create_user_dn(username)
     try:
-        old_user = find_user(ldap_repository, dn, attr_list=["*"])
+        old_user = find_user(ldap_repository, user_dn, attr_list=["*"])
         if not old_user:
             raise IndexError()
     except IndexError:
-        return create_user(ldap_repository, group_name, user_name, userPassword, attrs)
+        return create_user(ldap_repository, username, userPassword, attrs)
 
     for k, v in attrs.items():
         if not v:
@@ -181,18 +157,17 @@ def update_user(ldap_repository, group_name, dn, user_name, attrs, userPassword)
     del(old_user['dn'])
     client = ldap_repository.get_client()
     r = client.update_user(dn, old_user, attrs, userPassword)
-    logger.info(f"User {user_name} updated in LDAP {ldap_repository.name}")
+    logger.info(f"User {username} updated in LDAP {ldap_repository.name}")
     return r, dn
 
-def delete_user(ldap_repository, group_name, user_dn):
-    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
-    if group_name:
-        group_dn = group_name
-
-        if ldap_repository.base_dn not in group_dn:
-            group_dn = ldap_repository.create_group_dn(group_name)
-   
+def delete_user(ldap_repository, username):
+    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"   
     client = ldap_repository.get_client()
+
+    try:
+        user_dn = search_users(ldap_repository, username, by_dn=True)[0]
+    except Exception:
+        raise UserNotExistError()
 
     groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(user_dn)]
     r = client.delete_user(user_dn, groups)

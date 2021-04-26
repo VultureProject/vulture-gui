@@ -43,20 +43,22 @@ class OpenvpnAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
+            remote_server = request.GET.get('remote_server')
             if object_id:
-                try:
-                    obj = Openvpn.objects.get(pk=object_id).to_dict()
-                except Openvpn.DoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
-
+                obj = Openvpn.objects.get(pk=object_id).to_dict()
+            elif remote_server:
+                obj = Openvpn.objects.get(remote_server=remote_server).to_dict()
             else:
                 obj = [s.to_dict() for s in Openvpn.objects.all()]
 
             return JsonResponse({
                 'data': obj
             })
+
+        except Openvpn.DoesNotExist:
+            return JsonResponse({
+                'error': _('Object does not exist')
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)
