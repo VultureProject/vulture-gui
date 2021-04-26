@@ -1,0 +1,144 @@
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture OS.
+
+Vulture OS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture OS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
+"""
+
+__author__ = "Jérémie JOURDIN"
+__credits__ = []
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture OS"
+__email__ = "contact@vultureproject.org"
+__doc__ = 'Filebeat model classes'
+
+# Django system imports
+from django.conf import settings
+
+# Django project imports
+from services.service import Service
+from services.frontend.models import Frontend
+from services.filebeat.models import FilebeatSettings
+from system.cluster.models import Cluster
+from system.config.models import write_conf
+from toolkit.mongodb.mongo_base import MongoBase
+
+# Required exceptions imports
+from django.core.exceptions import ObjectDoesNotExist
+from services.exceptions import ServiceError
+from subprocess import CalledProcessError
+from system.exceptions import VultureSystemError
+
+# Extern modules imports
+from jinja2 import Environment, FileSystemLoader
+from re import search as re_search
+from subprocess import check_output, PIPE
+
+# Logger configuration imports
+import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
+logger = logging.getLogger('services')
+
+JINJA_PATH = "/home/vlt-os/vulture_os/services/config/"
+FILEBEAT_PATH = "/usr/local/etc/filebeat"
+INPUTS_PATH = FILEBEAT_PATH + "/filebeat.yml"
+
+FILEBEAT_OWNER = "root:vlt-os"
+FILEBEAT_PERMS = "640"
+
+class FilebeatService(Service):
+    """ Filebeat service class wrapper """
+
+    def __init__(self):
+        super().__init__()
+        self.model = FilebeatSettings
+        self.service_name = "filebeat"
+        self.friendly_name = "F-Logging"
+
+        self.config_file = "filebeat_inputs.conf"
+        self.owners = FILEBEAT_OWNER
+        self.perms = FILEBEAT_PERMS
+        self.jinja_template = {
+            'tpl_name': self.config_file,
+            'tpl_path': INPUTS_PATH,
+        }
+
+    def __str__(self):
+        return "Filebeat Service"
+
+    # Status inherited from Service class
+
+
+
+def build_conf(node_logger, frontend_id=None):
+    """ Generate conf of filebeat inputs, based on all frontends LOG
+    config of frontend
+    outputs to internal REDIS
+    :param node_logger: Logger sent to all API requests
+    :param frontend_id: The name of the frontend in conf file
+    :return:
+    """
+    
+    """ Generate inputs configutation """
+    service = FilebeatService()
+    """ If frontend was given we cannot check if its conf has changed to restart service
+     and if reload_conf is True, conf has changed so restart service
+    """
+    result = ""
+    if service.reload_conf():
+        result += "Filebeat conf updated. Restarting service."
+        result += service.restart()
+    else:
+        result += "Filebeat conf hasn't changed."
+    return result
+
+
+def reload_service(node_logger):
+    # Do not handle exceptions here, they are handled by process_message
+    service = FilebeatService()
+
+    # Warning : can raise ServiceError
+    result = service.reload()
+    node_logger.info("Filebeat service reloaded : {}".format(result))
+
+    return result
+
+
+def restart_service(node_logger):
+    """ Only way (for the moment) to reload config """
+    # Do not handle exceptions here, they are handled by process_message
+    service = FilebeatService()
+
+    # Warning : can raise ServiceError
+    result = service.restart()
+    node_logger.info("Filebeat service restarted : {}".format(result))
+
+    return result
+
+
+def start_service(node_logger):
+    """ Only way (for the moment) to reload config """
+    # Do not handle exceptions here, they are handled by process_message
+    service = FilebeatService()
+
+    # Warning : can raise ServiceError
+    result = service.start()
+    node_logger.info("Filebeat service started : {}".format(result))
+
+    return result
+
+
+def delete_conf(node_logger, filename):
+    """ Useless for filebeat, but mandatory by the model """
+    
