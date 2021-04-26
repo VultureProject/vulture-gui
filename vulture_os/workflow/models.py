@@ -27,6 +27,8 @@ __doc__ = 'Workflow model classes'
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
+from django.template import Context
+from django.template import Template
 
 # Django project imports
 from applications.backend.models import Backend
@@ -209,7 +211,6 @@ class Workflow(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ Retrieve list/custom objects """
-
         """ And returns the attributes of the class """
         return {
             'id': str(self.id),
@@ -220,8 +221,15 @@ class Workflow(models.Model):
             'frontend': self.frontend,
             'backend': self.backend,
             'authentication': self.authentication,
-            'defender_policy': self.defender_policy
+            'defender_policy': self.defender_policy,
+            'disconnect_url': self.get_disconnect_url()
         }
+
+    def get_disconnect_url(self):
+        if not self.authentication:
+            return ""
+        tpl = Template(self.authentication.disconnect_url)
+        return tpl.render(Context({'workflow': self})).replace("//", "/")
 
     def generate_conf(self):
         """ Render the conf with Jinja template and self.to_template() method
