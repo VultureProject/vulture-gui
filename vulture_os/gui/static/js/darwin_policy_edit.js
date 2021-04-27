@@ -238,7 +238,7 @@ function init_vue(){
           rsyslog_params += `<p><b>${gettext("Overriden Rsyslog inputs")}:</b> ${tmp.join(' ')}</p>`
         }
 
-        if (filter.enrichment_tags.length > 0 && !filter.continuous_analysis_enabled){
+        if (filter.enrichment_tags.length > 0){
           let tmp = []
 
           for (let tag of filter.enrichment_tags)
@@ -602,7 +602,7 @@ function init_vue(){
             buffering.interval = tmp_filter.buffering.interval
             buffering.required_log_lines = tmp_filter.buffering.required_log_lines
           }
-          else {
+          if (tmp_filter.enrichment_tags.length > 0) {
               for (let tmp of tmp_filter.enrichment_tags)
                 enrichment_tags.push(tmp.text)
           }
