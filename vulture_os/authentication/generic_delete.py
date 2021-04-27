@@ -42,6 +42,7 @@ from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.portal_template.models import PortalTemplate, TemplateImage
+from authentication.totp_profiles.models import TOTPProfile
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -185,6 +186,15 @@ class DeleteLearningProfile(DeleteView):
     obj = LearningProfile
     redirect_url = "/authentication/learning_profiles/"
     delete_url = "/authentication/learning_profiles/delete/"
+
+    # get, post and used_by methods herited from mother class
+
+
+class DeleteTOTPProfile(DeleteView):
+    menu_name = _("Authentication -> TOTP Profiles -> Delete")
+    obj = TOTPProfile
+    redirect_url = "/authentication/totp_profiles/"
+    delete_url = "/authentication/totp_profiles/delete/"
 
     # get, post and used_by methods herited from mother class
 
