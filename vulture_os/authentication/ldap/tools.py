@@ -24,13 +24,15 @@ __doc__ = 'LDAP Tools'
 
 import logging
 from django.conf import settings
+from copy import deepcopy
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
 AVAILABLE_GROUP_KEYS = ("group_attr",)
-AVAILABLE_USER_KEYS = ("user_attr", "user_account_locked_attr", "user_change_password_attr", "user_mobile_attr", "user_email_attr", "user_smartcardid_attr")
+AVAILABLE_USER_KEYS = ("user_attr", "user_mobile_attr", "user_email_attr", "user_smartcardid_attr")
+AVAILABLE_USER_FILTERS = ("user_account_locked_attr", "user_change_password_attr")
 
 
 class NotUniqueError(Exception):
@@ -51,6 +53,14 @@ def find_user(ldap_repo, user_dn, attr_list):
         ldap_key = getattr(ldap_repo, key)
         if ldap_key:
             user[ldap_key] = attrs.get(ldap_key, "")
+
+    for key in AVAILABLE_USER_FILTERS:
+        ldap_key = getattr(ldap_repo, f"get_{key}")
+        if ldap_key:
+            try:
+                user[ldap_key] = attrs[ldap_key]
+            except KeyError:
+                pass
 
     return user
 
@@ -136,6 +146,21 @@ def create_user(ldap_repository, username, userPassword, attrs):
     r = client.add_user(user_dn, user, group_dn, userPassword)
     logger.info(f"User {username} created in LDAP {ldap_repository.name}")
     return r, user_dn
+
+def lock_unlock_user(ldap_repositiory, username, lock=True):
+    user_dn = ldap_repositiory.create_user_dn(username)
+    user = find_user(ldap_repositiory, user_dn, attr_list=["*"])
+    if not user:
+        raise UserNotExistError()
+
+    lock_value = ldap_repositiory.get_user_account_locked_value
+    if not lock:
+        lock_value = ""
+    
+    new_attrs = deepcopy(user)
+    new_attrs[ldap_repositiory.get_user_account_locked_attr] = lock_value
+    del(new_attrs["dn"])
+    return update_user(ldap_repositiory, username, new_attrs, False)
 
 
 def update_user(ldap_repository, username, attrs, userPassword):

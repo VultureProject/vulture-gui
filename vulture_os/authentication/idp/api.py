@@ -77,15 +77,15 @@ class IDPApiView(View):
 
                     try:
                         tmp_user["is_locked"] = ""
-                        if ldap_repo.user_account_locked_attr:
-                            tmp_user["is_locked"] = tmp[ldap_repo.user_account_locked_attr][0]
+                        if ldap_repo.user_account_locked_attr and tmp.get(ldap_repo.get_user_account_locked_attr):
+                            tmp_user["is_locked"] = tmp[ldap_repo.get_user_account_locked_attr][0]
                     except IndexError:
                         pass
  
                     try:
                         tmp_user["need_change_password"] = ""
-                        if ldap_repo.user_change_password_attr:
-                            tmp_user["need_change_password"] = tmp[ldap_repo.user_change_password_attr][0]
+                        if ldap_repo.user_change_password_attr and tmp.get(ldap_repo.get_user_change_password_attr):
+                            tmp_user["need_change_password"] = tmp[ldap_repo.get_user_change_password_attr][0]
                     except IndexError:
                         pass
 
@@ -153,7 +153,7 @@ class IDPApiUserView(View):
             portal = UserAuthentication.objects.get(pk=object_id)
             ldap_repo = get_repo(portal)
 
-            if action and action not in ["resend_registration", "reset_password"]:
+            if action and action not in ("resend_registration", "reset_password", "lock", "unlock"):
                 return JsonResponse({
                     "status": False,
                     "error": _("Invalid action")
@@ -166,10 +166,12 @@ class IDPApiUserView(View):
 
                 attrs = {}
                 if ldap_repo.user_account_locked_attr:
-                    attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
+                    attr = ldap_repo.get_user_account_locked_attr
+                    attrs[attr] = request.JSON.get('is_locked')
 
                 if ldap_repo.user_change_password_attr:
-                    attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
+                    attr = ldap_repo.get_user_change_password_attr
+                    attrs[attr] = request.JSON.get('need_change_password')
 
                 if ldap_repo.user_mobile_attr:
                     attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
@@ -187,21 +189,30 @@ class IDPApiUserView(View):
                 if not perform_email_registration(logger,
                                         f"https://{portal.external_fqdn}",
                                         portal.name,
-                                        portal.template,
+                                        portal.portal_template,
                                         request.JSON['email'],
                                         expire=72 * 3600):
                     return JsonResponse({'status': False,
-                                         'error': _("Fail to send user's registration email")})
+                                         'error': _("Fail to send user's registration email")}, status=500)
 
             elif action == "reset_password":
                 perform_email_reset(logger,
                                  f"https://{portal.external_fqdn}",
                                  portal.name,
-                                 portal.template,
+                                 portal.portal_template,
                                  request.JSON['email'],
                                  expire=3600)
                 return JsonResponse({'status': False,
-                                     'error': _("Fail to send user's reset password email")})
+                                     'error': _("Fail to send user's reset password email")}, status=500)
+
+            elif action in ("lock", "unlock"):
+                username = request.JSON["username"]
+                to_lock = action == "lock"
+                ldap_response, user_id = tools.lock_unlock_user(ldap_repo, username, lock=to_lock)
+                return JsonResponse({
+                    "status": True,
+                    "user_id": user_id
+                })
 
             return JsonResponse({
                 "status": True,
@@ -250,10 +261,12 @@ class IDPApiUserView(View):
                 attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
             
             if ldap_repo.user_account_locked_attr:
-                attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
+                attr = ldap_repo.get_user_account_locked_attr
+                attrs[attr] = request.JSON.get('is_locked')
             
             if ldap_repo.user_change_password_attr:
-                attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
+                attr = ldap_repo.get_user_change_password_attr
+                attrs[attr] = request.JSON.get('need_change_password')
             
             if ldap_repo.user_mobile_attr:
                 attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')

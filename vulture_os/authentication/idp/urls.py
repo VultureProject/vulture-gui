@@ -24,13 +24,12 @@ __doc__ = 'IDP URLS'
 
 from django.urls import path, re_path
 
-from authentication.idp.api import IDPApiView, IDPApiUserView, IDPApiGroupView
+from authentication.idp.api import IDPApiView, IDPApiUserView
 
 urlpatterns = [
    re_path('^api/v1/authentication/idp/(?P<object_id>[A-Fa-f0-9]+)$', IDPApiView.as_view(), name="authentication.idp"),
    re_path('^api/v1/authentication/idp/users/(?P<object_id>[A-Fa-f0-9]+)$', IDPApiUserView.as_view(), name="authentication.idp.users"),
    path('api/v1/authentication/idp/users/<int:object_id>/<str:action>/',
         IDPApiUserView.as_view(),
-        name="authentication.idp.users.action"),
-   re_path('^api/v1/authentication/idp/groups/(?P<object_id>[A-Fa-f0-9]+)$', IDPApiGroupView.as_view(), name="authentication.idp.groups")
+        name="authentication.idp.users.action")
 ]
