@@ -566,6 +566,7 @@
     });
     indexed_data['username'] = username;
     indexed_data['password'] = password;
+    {% if object_id %}indexed_data['id'] = "{{object_id}}"; {% endif %}
     $.post(url, indexed_data, function(data){
       status = data['status'];
       handle_form_errors(data);
@@ -611,6 +612,7 @@
           indexed_data[n['name']] = n['value'];
       });
       indexed_data['group_name'] = group_name;
+      {% if object_id %}indexed_data['id'] = "{{object_id}}"; {% endif %}
       $.post(url, indexed_data, function(data){
           status = data['status'];
           // handle_form_errors(data);
