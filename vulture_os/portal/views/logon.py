@@ -392,7 +392,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             # Instantiate authentication object to retrieve application auth_type
             authentication = Authentication(portal_cookie, workflow, scheme)
             # And then instantiate the right authentication class with auth_type ('form','basic','kerberos')
-            authentication = authentication_classes[workflow.authentication.auth_type](portal_cookie, workflow, scheme)
+            authentication = authentication_classes[workflow.authentication.auth_type](portal_cookie, workflow, scheme,
+                                                                                       redirect_url=request.GET.get(
+                                                                                           "redirect_url"))
             logger.debug("PORTAL::log_in: Authentication successfully created")
 
         # Application does not need authentication

@@ -62,9 +62,9 @@ logger = logging.getLogger('portal_authentication')
 
 
 class Authentication(object):
-    def __init__(self, portal_cookie, workflow, proto):
+    def __init__(self, portal_cookie, workflow, proto, redirect_url=None):
         self.redis_base = REDISBase()
-        self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie)
+        self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie, **{f"url_{workflow.id}":redirect_url})
         self.workflow = workflow
         self.proto = proto
 
@@ -286,8 +286,8 @@ class Authentication(object):
 
 
 class POSTAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow, proto):
-        super(POSTAuthentication, self).__init__(portal_cookie, workflow, proto)
+    def __init__(self, portal_cookie, workflow, proto, redirect_url=None):
+        super().__init__(portal_cookie, workflow, proto, redirect_url=redirect_url)
 
     def retrieve_credentials(self, request):
         username = request.POST['vltprtlsrnm']
@@ -322,8 +322,8 @@ class POSTAuthentication(Authentication):
 
 
 class BASICAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow, proto):
-        super(BASICAuthentication, self).__init__(portal_cookie, workflow, proto)
+    def __init__(self, portal_cookie, workflow, proto, redirect_url=None):
+        super().__init__(portal_cookie, workflow, proto, redirect_url=redirect_url)
 
     def retrieve_credentials(self, request):
         authorization_header = request.META.get("HTTP_AUTHORIZATION").replace("Basic ", "")
@@ -344,8 +344,8 @@ class BASICAuthentication(Authentication):
 
 
 class KERBEROSAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow, proto):
-        super().__init__(portal_cookie, workflow, proto)
+    def __init__(self, portal_cookie, workflow, proto, redirect_url=None):
+        super().__init__(portal_cookie, workflow, proto, redirect_url=redirect_url)
 
     def retrieve_credentials(self, request):
         self.credentials = request.META["HTTP_AUTHORIZATION"].replace("Negotiate ", "")
@@ -403,8 +403,8 @@ class KERBEROSAuthentication(Authentication):
 
 
 class DOUBLEAuthentication(Authentication):
-    def __init__(self, portal_cookie, workflow, proto):
-        super().__init__(portal_cookie, workflow, proto)
+    def __init__(self, portal_cookie, workflow, proto, redirect_url=None):
+        super().__init__(portal_cookie, workflow, proto, redirect_url=redirect_url)
         assert (self.redis_portal_session.exists())
         assert self.backend_id
         self.backend = BaseRepository.objects.get(pk=self.backend_id)
