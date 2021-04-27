@@ -68,7 +68,8 @@ class IDPApiView(View):
 
             if object_type == "users":
                 data = []
-                tmp_data = tools.get_users(ldap_repo)
+                group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
+                tmp_data = tools.get_users(ldap_repo, group_name)
 
                 for tmp in tmp_data:
                     tmp_user = {
@@ -182,8 +183,12 @@ class IDPApiUserView(View):
                 if ldap_repo.user_email_attr:
                     attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
 
+                group_name = None
+                if portal.update_group_registration:
+                    group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
+
                 ldap_response, user_id = tools.create_user(ldap_repo, user[ldap_repo.user_attr],
-                                                           request.JSON.get('userPassword'), attrs)
+                                                           request.JSON.get('userPassword'), attrs, group_name)
 
             if not action or action == "resend_registration":
                 if not perform_email_registration(logger,

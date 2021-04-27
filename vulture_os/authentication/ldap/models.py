@@ -206,6 +206,11 @@ class LDAPRepository(BaseRepository):
     )
 
     @property
+    def get_group_objectclass_value(self):
+        regex = r"\(.*=(.*)\)"
+        return re.findall(regex, self.group_filter)[0]
+
+    @property
     def get_user_account_locked_attr(self):
         if self.user_account_locked_attr:
             regex = r"\((.*)=.*"
