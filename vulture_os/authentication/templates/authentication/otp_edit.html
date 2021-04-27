@@ -61,7 +61,7 @@
                       </div>
                     </div>
                   </div> <!-- /.row -->
-                  <div class="row phone">
+                  <div class="row phone onetouch">
                     <div class="col-md-12">
                       <div class="form-group">
                         <label class="col-sm-4 control-label">{{ form.api_key.label }}</label>
@@ -72,7 +72,7 @@
                       </div>
                     </div>
                   </div> <!-- /.row -->
-                  <div class="row phone">
+                  <div class="row phone onetouch">
                     <div class="col-md-12">
                       <div class="form-group">
                         <label class="col-sm-4 control-label">{{ form.otp_phone_service.label }}</label>
@@ -101,6 +101,17 @@
                         <div class="col-sm-5">
                           {{form.key_length}}
                           {{form.key_length.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row totp">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.totp_label.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.totp_label}}
+                          {{form.totp_label.errors|safe}}
                         </div>
                       </div>
                     </div>
@@ -149,18 +160,10 @@
   /* Change fields showing according to chosen type */
   function otp_type_handle(e) {
     var otp_type = $('#id_otp_type').val();
-    if( otp_type === "email" ) {
-      $('.email').show();
-      $('.phone').hide();
+    for( mode of $('#id_otp_type')[0].options ) {
+      $('.'+mode.value).hide();
     }
-    else if( otp_type === "phone" || otp_type === "onetouch" ) {
-      $('.email').hide();
-      $('.phone').show();
-    }
-    else {
-      $('.email').hide();
-      $('.phone').hide();
-    }
+    $('.'+otp_type).show();
   }
   $('#id_otp_type').on("change", otp_type_handle);
   otp_type_handle();
