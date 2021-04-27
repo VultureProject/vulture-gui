@@ -544,6 +544,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                             .format(authentication.credentials[0]))
                 return authentication.ask_credentials_response(request=request,
                                                                error="<b> Error sending OTP Key </b> </br> "+str(e))
+            except Exception as e:
+                logger.exception(e)
 
         except AuthenticationError as e:
             """ Bad OTP key """

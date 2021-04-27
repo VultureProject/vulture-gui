@@ -46,7 +46,10 @@ logger = logging.getLogger('gui')
 
 INPUT_LOGIN = "vltprtlsrnm"
 INPUT_PASSWORD = "vltprtlpsswrd"
+INPUT_OTP_KEY = "vltprtlkey"
+INPUT_OTP_RESEND = "vltotpresend"
 HAPROXY_HEADER = "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nConnection: close\r\n\r\n"
+
 
 class PortalTemplate(models.Model):
     """ Vulture portal's template model representation
@@ -345,6 +348,8 @@ class PortalTemplate(models.Model):
             'register_submit_field': self.register_submit_field,
             'input_login': INPUT_LOGIN,
             'input_password': INPUT_PASSWORD,
+            'input_otp_key': INPUT_OTP_KEY,
+            'input_otp_resend': INPUT_OTP_RESEND,
             'style': self.css
         }
         for image in TemplateImage.objects.all():
@@ -353,7 +358,13 @@ class PortalTemplate(models.Model):
 
     def render_template(self, tpl_name, **kwargs):
         tpl = Template(getattr(self, tpl_name))
-        return tpl.render(Context({**self.attrs_dict(), **kwargs}))
+        # Routine to concatenate kwargs to attibutes, to prevent erase of kwargs
+        attrs = self.attrs_dict()
+        for key in attrs.keys():
+            if kwargs.get(key):
+                # Kwargs will win, so put concatenation into kwargs
+                kwargs[key] = attrs[key] + kwargs[key]
+        return tpl.render(Context({**attrs, **kwargs}))
 
     def tpl_filename(self, tpl_name, portal_id=None):
         return f"{HAPROXY_PATH}/templates/{tpl_name}_{portal_id or self.id}.html"

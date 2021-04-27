@@ -33,9 +33,10 @@ from django.views.decorators.gzip import gzip_page
 
 # Extern modules imports
 from base64 import b64encode
-from io import StringIO
+from io import BytesIO
 from os.path import dirname
 from qrcode import make as qrcode_make
+from authentication.portal_template.models import INPUT_OTP_KEY
 
 # Global variables
 BASE_DIR = dirname(dirname(__file__))
@@ -128,40 +129,48 @@ def error_response(portal, error):
 	return HttpResponse(portal.render_template("html_error", message=error))
 
 
-def otp_authentication_response(request, template_id, app_id, action_url, token_name, token, otp_type, qrcode, error=""):
-	style 		  = render_stylesheet('{}/{}/templates/portal_{}.css'.format(str(action_url), str(token_name), str(template_id)))
-	form_begin	  = render_form('{}{}/{}'.format(str(action_url), str(token_name), str(token)))
-	form_begin   += render_input('hidden', 'token', value='')
-	form_end      = '</form>'
-	input_submit  = render_button('btn btn-lg btn-warning btn-block btn-signin', 'Sign in')
-	input_submit += render_input('hidden', 'vulture_two_factors_authentication', value=str(app_id))
-	input_key     = render_input('text', 'vltprtlkey', i_class='form-control', placeholder='Key', required=True)
+def otp_authentication_response(request, portal, otp_type, qrcode, error="" ,**kwargs):
+
+	#form_begin   += render_input('hidden', 'token', value='')
+	#input_submit  = render_button('btn btn-lg btn-warning btn-block btn-signin', 'Sign in')
+	#input_submit += render_input('hidden', 'vulture_two_factors_authentication', value=str(app_id))
+	#input_key     = render_input('text', 'vltprtlkey', i_class='form-control', placeholder='Key', required=True)
 
 	otp_item_sent = {'onetouch': 'OneTouch request', 'phone': 'sms', 'email': 'mail'}
-	resend_button = render_button("btn btn-lg btn-warning btn-block btn-signin",
-								  'Resend ' + otp_item_sent[str(otp_type)], name="vltotpresend",
-								  value="yes") \
-					+ render_input('hidden', 'vulture_two_factors_authentication', value=str(app_id)) \
-					if otp_item_sent.get(str(otp_type)) else ""
+	#resend_button = render_button("btn btn-lg btn-warning btn-block btn-signin",
+	#							  'Resend ' + otp_item_sent[str(otp_type)], name="vltotpresend",
+	#							  value="yes") \
+	#				+ render_input('hidden', 'vulture_two_factors_authentication', value=str(app_id)) \
+	#				if otp_item_sent.get(str(otp_type)) else ""
 
-	if otp_type == 'onetouch':
-		input_key  = render_input('hidden', 'vltprtlkey', i_class='form-control', placeholder='Key', value="Key", required=True)
-		input_key += "<p>Please approve the OneTouch request on your phone, and click on 'Sign in'</p>"
+	#render_button(b_class, text, type="submit", name="", value=""):
+
+	#if otp_type == 'onetouch':
+	#	input_key  = render_input('hidden', 'vltprtlkey', i_class='form-control', placeholder='Key', value="Key", required=True)
+	#	input_key += "<p>Please approve the OneTouch request on your phone, and click on 'Sign in'</p>"
 
 	qrcode_img = ""
 	if qrcode:
 		qrcode_pil = qrcode_make(qrcode)
-		buf = StringIO()
+		buf = BytesIO()
 		qrcode_pil.save(buf, format="JPEG")
 		qrcode_base64 = b64encode(buf.getvalue())
-		qrcode_img = 'src="data:image/jpeg;base64, {}"'.format(qrcode_base64)
+		qrcode_img = "data:image/jpeg;base64,{}".format(qrcode_base64.decode('utf8'))
 
 	error_message = error or ""
-	return render_to_response("portal_%s_html_otp.conf" % (str(template_id)),
-	                          {'style':style, 'form_begin':form_begin, 'input_key':input_key,
-	                          'form_end':form_end, 'input_submit':input_submit, 'resend_button':resend_button,
-	                          'qrcode': qrcode_img,'error_message':error_message},
-	                          context_instance=RequestContext(request))
+	return HttpResponse(portal.render_template("html_otp",
+											   otp_type=otp_item_sent.get(otp_type, ""),
+											   resend_button=(otp_item_sent.get(otp_type) is not None),
+											   onetouch=(otp_type=="onetouch"),
+											   qrcode=qrcode_img,
+											   error_message=error_message,
+											   otp_onetouch_field=render_input('hidden', INPUT_OTP_KEY, i_class='form-control', placeholder='Key', value="Key", required=True),
+											   **kwargs))
+	# return render_to_response("portal_%s_html_otp.conf" % (str(template_id)),
+	#                           {'style':style, 'form_begin':form_begin, 'input_key':input_key,
+	#                           'form_end':form_end, 'input_submit':input_submit, 'resend_button':resend_button,
+	#                           'qrcode': qrcode_img,'error_message':error_message},
+	#                           context_instance=RequestContext(request))
 
 
 def learning_authentication_response(request, template_id, action_url, token, fields_to_learn, error=None):

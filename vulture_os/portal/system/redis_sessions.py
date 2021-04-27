@@ -388,19 +388,23 @@ class REDISPortalSession(REDISSession):
         return self.key
 
     def register_doubleauthentication(self, app_id, otp_backend_id):
-        backend_id = self.keys['backend_'+app_id]
+        self.keys[str(app_id)] = 1
+        self.handler.hset(self.key, str(app_id), 1)
+        backend_id = self.keys[f"backend_{app_id}"]
         self.keys[f"auth_backend_{backend_id}"] = 1
         self.handler.hset(self.key, f"auth_backend_{backend_id}", "1")
-        self.keys['doubleauthenticated_{}'.format(str(otp_backend_id))] = "1"
-        self.handler.hset(self.key, 'doubleauthenticated_{}'.format(str(otp_backend_id)), "1")
+        self.keys[f"doubleauthenticated_{otp_backend_id}"] = "1"
+        self.handler.hset(self.key, f"doubleauthenticated_{otp_backend_id}", "1")
 
-    def register_sso(self, timeout, backend_id, app_id, url, username, oauth2_token):
+    def register_sso(self, timeout, backend_id, app_id, url, otp_repo_id, username, oauth2_token):
+        if not otp_repo_id or (otp_repo_id and self.is_double_authenticated(otp_repo_id)):
+            self.keys[str(app_id)] = 1
         self.keys[f"auth_backend_{backend_id}"] = 1
-        self.keys['url_'+app_id]          = url
-        self.keys['backend_'+app_id]      = backend_id
-        self.keys['login_'+backend_id]    = username
+        self.keys[f"url_{app_id}"] = url
+        self.keys[f"backend_{app_id}"] = backend_id
+        self.keys[f"login_{backend_id}"] = username
         if oauth2_token:
-            self.keys['oauth2_'+backend_id] = oauth2_token
+            self.keys[f"oauth2_{backend_id}"] = oauth2_token
 
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_sso: Unable to write SSO infos in REDIS")
