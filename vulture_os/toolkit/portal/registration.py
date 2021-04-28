@@ -39,6 +39,7 @@ def perform_email_registration(logger, base_url, app_name, template, user_email,
     config = Cluster.get_global_config()
     portal_token = config.public_token
     smtp_server = config.smtp_server
+    assert smtp_server, "SMTP server is not configured in global configuration"
 
     """ Send the email with the link """
     reset_link = base_url + str(portal_token) + '/self/change?rdm=' + reset_key
@@ -49,8 +50,8 @@ def perform_email_registration(logger, base_url, app_name, template, user_email,
         send_email(smtp_server,
                    template.email_register_from,
                    user_email,
-                   template.render_template("email_subject", **obj),
-                   template.render_template("email_body", resetLink=reset_link, app=obj))
+                   template.render_template("email_register_subject", app=obj),
+                   template.render_template("email_register_body", registerLink=reset_link, app=obj))
         return True
     except Exception as e:
         logger.error("")
@@ -66,6 +67,7 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, expire
     config = Cluster.get_global_config()
     portal_token = config.public_token
     smtp_server = config.smtp_server
+    assert smtp_server, "SMTP server is not configured in global configuration"
 
     """ Send the email with the link """
     reset_link = base_url + str(portal_token) + '/self/change?rdm=' + reset_key
@@ -76,8 +78,8 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, expire
         send_email(smtp_server,
                    template.email_register_from,
                    user_email,
-                   template.render_template("email_register_subject", **obj),
-                   template.render_template("email_register_body", registerLink=reset_link, app=obj))
+                   template.render_template("email_subject", app=obj),
+                   template.render_template("email_body", resetLink=reset_link, app=obj))
         return True
     except Exception as e:
         logger.error("")
@@ -112,5 +114,6 @@ def send_email(smtp_server, email_from, email_to, subject, body):
     msg.attach(MIMEText(body, "html"))
 
     # Following lines can raise
-    smtp_obj = SMTP(smtp_server)
-    smtp_obj.sendmail(email_from, email_to, msg.as_string())
+    with SMTP(smtp_server, timeout=5) as smtp_obj:
+        smtp_obj.sendmail(email_from, email_to, msg.as_string())
+

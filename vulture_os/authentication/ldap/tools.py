@@ -95,7 +95,7 @@ def search_users(ldap_repo, search, by_dn=False):
     return data
 
 def get_users(ldap_repository):
-    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
+    group_dn = ldap_repository.get_client()._get_group_dn()
     group = find_group(ldap_repository, group_dn, ['*'])
     members  = []
     for member_dn in group['member']:
@@ -117,7 +117,7 @@ def get_groups(ldap_repository):
 
 
 def create_user(ldap_repository, username, userPassword, attrs):
-    group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"
+    group_dn = ldap_repository.get_client()._get_group_dn()
     user_dn = ldap_repository.create_user_dn(username)
 
     try:

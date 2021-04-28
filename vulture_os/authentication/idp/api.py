@@ -187,7 +187,7 @@ class IDPApiUserView(View):
 
             if not action or action == "resend_registration":
                 if not perform_email_registration(logger,
-                                        f"https://{portal.external_fqdn}",
+                                        f"https://{portal.external_fqdn}/",
                                         portal.name,
                                         portal.portal_template,
                                         request.JSON['email'],
