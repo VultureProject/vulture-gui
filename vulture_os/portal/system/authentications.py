@@ -207,7 +207,6 @@ class Authentication(object):
         logger.debug("AUTH::register_sso: Password successfully retrieven from Redis portal session")
         portal_cookie = self.redis_portal_session.register_sso(self.workflow.authentication.auth_timeout,
                                                                backend_id, str(self.workflow.id),
-                                                               str(self.workflow.get_redirect_uri()),
                                                                self.workflow.authentication.otp_repository.id if self.workflow.authentication.otp_repository else None,
                                                                username,
                                                                self.oauth2_token)
@@ -498,7 +497,7 @@ class DOUBLEAuthentication(Authentication):
             self.print_captcha = otp_info[0]
 
     def authentication_failure(self):
-        otp_retries = self.redis_portal_session.increment_otp_retries()
+        otp_retries = self.redis_portal_session.increment_otp_retries(self.workflow.authentication.otp_repository.id)
         logger.debug("DB-AUTH::authentication_failure: Number of retries successfully incremented in Redis session")
         if otp_retries >= int(self.workflow.authentication.otp_max_retry):
             logger.error("DB-AUTH::authentication_failure: Maximum number of retries reached : '{}'>='{}'"

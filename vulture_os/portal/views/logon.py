@@ -566,7 +566,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 db_authentication.deauthenticate_user()
                 logger.info("PORTAL::log_in: User '{}' successfully deauthenticated due to db-authentication error"
                             .format(authentication.credentials[0]))
-                return authentication.ask_credentials_response(request=request, error=e.message)
+                return authentication.ask_credentials_response(request=request, error=str(e))
 
             except (OTPError, REDISWriteError, RedisConnectionError) as e:
                 logger.error("PORTAL::log_in: Error while preparing double-authentication : {}".format(str(e)))

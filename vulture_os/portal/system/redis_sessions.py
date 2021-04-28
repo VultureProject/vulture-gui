@@ -205,13 +205,6 @@ class REDISAppSession(REDISSession):
         return self.key
 
 
-    def increment_otp_retries(self):
-        otp_retries              = int( self.handler.hget(self.key, 'otp_retries' ) or '0') + 1
-        self.keys['otp_retries'] = otp_retries
-        self.handler.hset(self.key, 'otp_retries', otp_retries)
-        return otp_retries
-
-
     def destroy(self):
         self.handler.delete(self.key)
 
@@ -336,6 +329,11 @@ class REDISPortalSession(REDISSession):
             return None
         return self.handler.hgetall(self.key)
 
+    def increment_otp_retries(self, otp_repo_id):
+        otp_retries = int( self.handler.hget(self.key, f"otp_retries_{otp_repo_id}" ) or '0') + 1
+        self.keys[f"otp_retries_{otp_repo_id}"] = otp_retries
+        self.handler.hset(self.key, f"otp_retries_{otp_repo_id}", otp_retries)
+        return otp_retries
 
     def deauthenticate(self, workflow_id, backend_id, timeout):
         # TODO : otp_retries_{otp_backend_id}
@@ -406,11 +404,11 @@ class REDISPortalSession(REDISSession):
         self.keys[f"doubleauthenticated_{otp_backend_id}"] = "1"
         self.handler.hset(self.key, f"doubleauthenticated_{otp_backend_id}", "1")
 
-    def register_sso(self, timeout, backend_id, app_id, url, otp_repo_id, username, oauth2_token):
+    def register_sso(self, timeout, backend_id, app_id, otp_repo_id, username, oauth2_token):
         if not otp_repo_id or (otp_repo_id and self.is_double_authenticated(otp_repo_id)):
             self.keys[str(app_id)] = 1
+
         self.keys[f"auth_backend_{backend_id}"] = 1
-        self.keys[f"url_{app_id}"] = url
         self.keys[f"backend_{app_id}"] = backend_id
         self.keys[f"login_{backend_id}"] = username
         if oauth2_token:
