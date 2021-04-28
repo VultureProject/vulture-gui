@@ -100,6 +100,8 @@ class LDAPClient(BaseAuth):
         if not self.group_scope:
             self.group_scope = 2  # Subtree by default
 
+        self.group_objectclass = settings.get_group_objectclass_value
+
         try:
             self.group_filter = settings.group_filter
         except:
@@ -189,8 +191,9 @@ class LDAPClient(BaseAuth):
 
 
     def unbind_connection(self):
-        self._ldap_connection.unbind_s()
-        self._ldap_connection = None
+        if self._ldap_connection:
+            self._ldap_connection.unbind_s()
+            self._ldap_connection = None
 
     # def _schema(self):
     #     self._bind_connection(self.user, self.password)
@@ -832,7 +835,21 @@ class LDAPClient(BaseAuth):
         self._get_connection().add_s(dn, ldif)
         self.unbind_connection()
 
-    def add_user(self, dn, attributes, group_dn, userPassword):
+    def add_user(self, dn, attributes, userPassword, group_dn):
+        def add_to_group():
+            attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
+            logger.info("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
+            try:
+                self._get_connection().modify_s(group_dn, attrs)
+            except ldap.TYPE_OR_VALUE_EXISTS:
+                pass
+            except ldap.UNDEFINED_TYPE:
+                # Group does not exist. Creating it
+                self.add_group(group_dn, {
+                    "member": [dn],
+                    "objectClass": [self.group_objectclass]
+                })
+
         self._bind_connection(self.user, self.password)
 
         for k, v in attributes.items():
@@ -849,12 +866,7 @@ class LDAPClient(BaseAuth):
             pass
 
         if group_dn:
-            attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
-            logger.info("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
-            try:
-                self._get_connection().modify_s(group_dn, attrs)
-            except ldap.TYPE_OR_VALUE_EXISTS:
-                pass
+            add_to_group()
 
         if userPassword:
             self._get_connection().passwd_s(dn, None, userPassword)

@@ -64,7 +64,7 @@
                       <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Main settings" %}</a></li>
                       <li><a href="#tab_otp" data-toggle="tab">{% trans "OTP" %}</a></li>
                       <li><a href="#tab_disconnect" data-toggle="tab">{% trans "Disconnect" %}</a></li>
-                      <li><a href="#tab_registration" data-toggle="tab">{% trans "Auto-registration" %}</a></li>
+                      <li id="idp-tab"><a href="#tab_idp" data-toggle="tab">{% trans "Identity Provider" %}</a></li>
                       <li><a href="#tab_oauth" data-toggle="tab">{% trans "OAuth2" %}</a></li>
                       <li><a href="#tab_sso_forward" data-toggle="tab">{% trans "SSO Forward" %}</a></li>
                     </ul>
@@ -322,19 +322,8 @@
                           </div>
                         </div> <!-- /.row -->
                       </div> <!-- /.tab-pane -->
-                      <div class="tab-pane" id="tab_registration">
-                        <div class="row">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.enable_registration.label}}</label>
-                                <div class="col-sm-5">
-                                  {{form.enable_registration}}
-                                  {{form.enable_registration.errors|safe}}
-                                </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row -->
-                        <div class="row registration">
+                      <div class="tab-pane" id="tab_idp">
+                        <div class="row tab_idp">
                           <div class="col-md-12">
                             <div class="form-group">
                               <label class="col-sm-4 control-label">{{form.group_registration.label}}</label>
@@ -345,7 +334,7 @@
                             </div>
                           </div>
                         </div> <!-- /.row -->
-                        <div class="row registration">
+                        <div class="row tab_idp">
                           <div class="col-md-12">
                             <div class="form-group">
                               <label class="col-sm-4 control-label">{{form.update_group_registration.label}}</label>
@@ -858,7 +847,11 @@
     if( event ) {
       if( $('#id_enable_external').is(':checked') ) {
         $('#id_repositories').html($(`{{form.not_openid_repositories}}`).html()).trigger('change')
+        $('.tab_idp').show();
+        $('#idp-tab').show();
       } else {
+        $('.tab_idp').hide();
+        $('#idp-tab').hide();
         console.log($(`{{form.repositories}}`).html())
         $('#id_repositories').html($(`{{form.repositories}}`).html()).trigger('change')
       }
@@ -867,9 +860,13 @@
     if( $('#id_enable_external').is(":checked") && !$('#id_enable_oauth').is(":checked") ) {
       $('#id_enable_oauth').trigger('click');
       $('#id_enable_oauth').prop("disabled", true);
+      $('.tab_idp').show();
+      $('#idp-tab').show();
     } else if( !$('#id_enable_external').is(":checked") ) {
       /* If enable External unselected, re-enable oauth button */
       $('#id_enable_oauth').prop("disabled", false);
+      $('.tab_idp').hide();
+      $('#idp-tab').hide();
     }
   }
 
@@ -891,8 +888,6 @@
 
   /* Show attributes depending on chosen options */
   //for( classe of ['registration', 'oauth', 'external', 'sso_forward']) {
-    $('#id_enable_registration').on("change", function(e){ console.log("registration");toggle_class("registration", event); });
-  toggle_class("registration");
   $('#id_enable_oauth').on("change", function(e){ console.log("oauth");toggle_class("oauth", event); });
   toggle_class("oauth");
   $('#id_enable_external').on("change", function(e){ console.log("external");toggle_class("external", event); });
@@ -985,7 +980,6 @@
         break;
     }
   }
-
 
   $('#id_test_wizard').on('click', function(e) {
     $('.test_user').html('');
