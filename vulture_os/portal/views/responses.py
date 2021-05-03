@@ -128,6 +128,10 @@ def error_response(portal, error):
 	return HttpResponse(portal.render_template("html_error", message=error))
 
 
+def disconnect_response(request, portal, app_url):
+	return HttpResponse(portal.render_template("html_logout", app_url=app_url))
+
+
 def otp_authentication_response(request, template_id, app_id, action_url, token_name, token, otp_type, qrcode, error=""):
 	style 		  = render_stylesheet('{}/{}/templates/portal_{}.css'.format(str(action_url), str(token_name), str(template_id)))
 	form_begin	  = render_form('{}{}/{}'.format(str(action_url), str(token_name), str(token)))

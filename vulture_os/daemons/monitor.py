@@ -41,6 +41,7 @@ from services.strongswan.models import Strongswan
 from services.openvpn.models import Openvpn
 from services.pf.pf import PFService
 from services.rsyslogd.rsyslog import RsyslogService
+from services.filebeat.filebeat import FilebeatService
 from services.darwin.darwin import DarwinService
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
@@ -87,7 +88,7 @@ def monitor():
     mon.services_id = set()
 
     for service in [HaproxyService, DarwinService, PFService, 
-                    StrongswanService, OpenvpnService, RsyslogService]:
+                    StrongswanService, OpenvpnService, RsyslogService, FilebeatService]:
 
         # Get some statuses outside for reusing variable later
         if service == StrongswanService:
@@ -96,6 +97,8 @@ def monitor():
             openvpn_status = get_service_status(OpenvpnService)
         elif service == RsyslogService:
             rsyslogd_status = get_service_status(RsyslogService)
+        elif service == FilebeatService:
+            filebeat_status = get_service_status(FilebeatService)
 
         mon.services.add(get_service_status(service))
 
@@ -132,6 +135,8 @@ def monitor():
                     status = "DISABLED"
                 elif frontend.rsyslog_only_conf:
                     status = {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
+                elif frontend.filebeat_only_conf:
+                    status = {'UP': "OPEN", 'DOWN': "STOP"}.get(filebeat_status.status, filebeat_status.status)
                 else:
                     status = statuses.get("FRONTEND", {}).get(frontend.name, "ERROR")
                 logger.debug("Status of frontend '{}': {}".format(frontend.name, status))

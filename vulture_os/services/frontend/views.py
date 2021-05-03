@@ -35,7 +35,7 @@ from applications.logfwd.models import LogOM
 from darwin.policy.models import DarwinBuffering, DarwinPolicy
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
-from services.frontend.models import Frontend, FrontendReputationContext, Listener
+from services.frontend.models import Frontend, FrontendReputationContext, Listener, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, FILEBEAT_MODULE_CONFIG
 from system.cluster.models import Cluster, Node
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
@@ -122,6 +122,10 @@ def frontend_delete(request, object_id, api=False):
         # Whatever the type, delete the file because its name is its id
         rsyslog_filename = frontend.get_rsyslog_base_filename()  # if frontend.mode != "tcp" else ""
 
+        # Save filebeat conf filename
+        # Whatever the type, delete the file because its name is its id
+        filebeat_filename = frontend.get_filebeat_base_filename()  # if frontend.mode != "tcp" else ""
+
         # Check if darwin buffering should be reloaded
         # that is, if the frontend is associated with a policy with at least one filter with buffering configured
         was_darwin_buffered = DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists()
@@ -140,9 +144,12 @@ def frontend_delete(request, object_id, api=False):
             # Delete frontend conf
             if rsyslog_filename:
                 Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', rsyslog_filename)
-
+            
             # Regenerate Rsyslog system conf and restart
             Cluster.api_request('services.rsyslogd.rsyslog.build_conf')
+
+            # Regenerate Filebeat system conf and restart
+            Cluster.api_request('services.filebeat.filebeat.build_conf')
 
             # Reload darwin buffering if necessary
             if was_darwin_buffered:
@@ -240,6 +247,10 @@ def frontend_edit(request, object_id=None, api=False):
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
         redis_fwd = LogOM.objects.filter(name="Internal_Dashboard").only('id').first()
+        
+        if front and front.filebeat_module and front.filebeat_config:
+            FILEBEAT_MODULE_CONFIG[front.filebeat_module]=front.filebeat_config
+
         return render(request, 'services/frontend_edit.html',
                       {'form': form, 'listeners': listener_form_list, 'listener_form': ListenerForm(),
                        'headers': header_form_list, 'header_form': HeaderForm(),
@@ -247,6 +258,7 @@ def frontend_edit(request, object_id=None, api=False):
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
                        'redis_forwarder': redis_fwd.id if redis_fwd else 0,
+                       'filebeat_module_config': FILEBEAT_MODULE_CONFIG,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 
     if request.method in ("POST", "PUT"):
@@ -319,7 +331,8 @@ def frontend_edit(request, object_id=None, api=False):
             reputationctx_objs.append(reputationctx_f.save(commit=False))
 
         listener_objs = []
-        if form.data.get('mode') != "impcap" and form.data.get('listening_mode') not in ("file", "api", "kafka", "redis"):
+        if form.data.get('mode') not in ["impcap", "filebeat"] and form.data.get('listening_mode') not in ("file", "api", "kafka", "redis"):
+
             # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap", and "API"
             if form.data.get('enabled') and not listener_ids:
                 form.add_error(None, "At least one listener is required if frontend is enabled.")
@@ -346,12 +359,48 @@ def frontend_edit(request, object_id=None, api=False):
 
                 """ For each listener, get node """
                 for nic in listener_obj.network_address.nic.all().only('node'):
-                    if not node_listeners.get(nic.node):
-                        node_listeners[nic.node] = list()
-                    node_listeners[nic.node].append(listener_obj)
+                    if nic.node:
+                        if not node_listeners.get(nic.node):
+                            node_listeners[nic.node] = list()
+                        node_listeners[nic.node].append(listener_obj)
+
+        elif form.data.get('mode') == "filebeat" and form.data.get('filebeat_listening_mode') not in ("file", "api"):
+            # At least one Listener is required if Frontend enabled, except for listener of type "File", and "API"
+            if form.data.get('enabled') and not listener_ids:
+                form.add_error(None, "At least one listener is required if frontend is enabled.")
+
+            """ For each listener in list """
+            for listener in listener_ids:
+                """ If id is given, retrieve object from mongo """
+                try:
+                    instance_l = Listener.objects.get(pk=listener['id']) if listener.get('id') else None
+                except ObjectDoesNotExist:
+                    form.add_error("listeners", "Listener with id {} not found.".format(listener['id']))
+                    continue
+
+                """ And instantiate form with the object, or None """
+                listener_f = ListenerForm(listener, instance=instance_l)
+                if not listener_f.is_valid():
+                    if api:
+                        form.add_error("listeners", listener_f.errors.as_json() if api else
+                                                    listener_f.errors.as_ul())
+                    continue
+                listener_form_list.append(listener_f)
+                listener_obj = listener_f.save(commit=False)
+                listener_objs.append(listener_obj)
+
+                """ For each listener, get node """
+                for nic in listener_obj.network_address.nic.all().only('node'):
+                    if nic.node:
+                        if not node_listeners.get(nic.node):
+                            node_listeners[nic.node] = list()
+                        node_listeners[nic.node].append(listener_obj)
 
         # Get current Rsyslog configuration filename
         old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.enable_logging else ""
+
+        # Get current Filebeat configuration filename
+        old_filebeat_filename = frontend.get_filebeat_base_filename() if frontend and frontend.enable_logging and frontend.mode=="filebeat" else ""
 
         # If errors has been added in form
         if not form.is_valid():
@@ -363,13 +412,21 @@ def frontend_edit(request, object_id=None, api=False):
         frontend.configuration = {}
 
         if frontend.mode == "impcap":
-            node_listeners[frontend.impcap_intf.node] = []
-        elif frontend.listening_mode in ("file", "kafka", "redis"):
-            node_listeners[frontend.node] = []
-        elif frontend.listening_mode == "api":
-            # Listen on all nodes in case of a master mongo change
+            if frontend.impcap_intf.node:
+                node_listeners[frontend.impcap_intf.node] = []
+        elif frontend.mode == "log" and frontend.listening_mode in ("file", "kafka", "redis"):
+            if frontend.node:
+                node_listeners[frontend.node] = []
+        elif frontend.mode == "filebeat" and frontend.filebeat_listening_mode in ("file", "api"):
+            # For now, with filebeat API, we have to select a dedicated node
+            # FIXME: Be able to automaticaly distribute API parsers among Vulture cluster
+            if frontend.node:
+                node_listeners[frontend.node] = []
+        elif frontend.mode == "log" and frontend.listening_mode == "api":
+            # Listen on all nodes in case of a master mongo change for Vulture's API Parsers
             for node in Node.objects.all():
                 node_listeners[node] = []
+        
 
         try:
             """ For each node, the conf differs if listener chosen """
@@ -379,9 +436,11 @@ def frontend_edit(request, object_id=None, api=False):
                 # HAProxy conf does not use reputationctx_list, Rsyslog conf does
                 frontend.configuration[node.name] = frontend.generate_conf(listener_list=listeners,
                                                                            header_list=header_objs)
+
             """ Save the conf on disk, and test-it with haproxy -c """
             logger.debug("Writing/Testing conf of frontend '{}'".format(frontend.name))
             frontend.test_conf()
+
         except ServiceError as e:
             logger.exception(e)
             return render_form(frontend, save_error=[str(e), e.traceback])
@@ -403,11 +462,34 @@ def frontend_edit(request, object_id=None, api=False):
                     Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
                     logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
 
-                """ If it is an Rsyslog only conf """
+
+                elif frontend.mode == "filebeat" and "filebeat_config" in changed_data and old_filebeat_filename:
+
+                    # API request deletion of rsyslog frontend filename
+                    Cluster.api_request('services.filebeat.filebeat.delete_conf', old_filebeat_filename)
+                    logger.info("Filebeat config '{}' deletion asked.".format(old_filebeat_filename))
+                
+
+                """ If it is a Rsyslog only config """
                 if frontend.rsyslog_only_conf:
 
                     """ And if it was not before saving """
-                    if "mode" in changed_data or "listening_mode" in changed_data:
+                    if "mode" in changed_data or "listening_mode" in changed_data or "filebeat_listening_mode" in changed_data:
+                        """ Delete old HAProxy conf """
+                        frontend_filename = frontend.get_base_filename()
+
+                        # API request deletion of frontend filename
+                        Cluster.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
+                        logger.info("HAProxy config '{}' deletion asked.".format(frontend_filename))
+
+                        # And reload of HAProxy service
+                        Cluster.api_request('services.haproxy.haproxy.reload_service')
+                
+                
+                elif frontend.filebeat_only_conf:
+
+                    """ And if it was not before saving """
+                    if "mode" in changed_data or "listening_mode" in changed_data or "filebeat_listening_mode" in changed_data:
                         """ Delete old HAProxy conf """
                         frontend_filename = frontend.get_base_filename()
 
@@ -419,7 +501,7 @@ def frontend_edit(request, object_id=None, api=False):
                         Cluster.api_request('services.haproxy.haproxy.reload_service')
 
                     """ If it is an HAProxy only conf """
-                elif frontend.mode not in ("log", "impcap") and not frontend.enable_logging:
+                elif frontend.mode not in ("log", "filebeat", "impcap") and not frontend.enable_logging:
                     """ And it was not """
                     if "mode" in changed_data or "enable_logging" in changed_data:
                         # API request deletion of rsyslog frontend filename
@@ -505,6 +587,7 @@ def frontend_edit(request, object_id=None, api=False):
                 frontend.configuration[node.name] = frontend.generate_conf(listener_list=listeners)
 
             for node in node_listeners.keys():
+
                 """ asynchronous API request to save conf on node """
                 # Save conf first, to raise if there is an error
                 frontend.save_conf(node)
@@ -513,14 +596,20 @@ def frontend_edit(request, object_id=None, api=False):
                 """ We need to configure Rsyslog, it will check if conf has changed & restart service if needed """
                 api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 if not api_res.get('status'):
-                    raise ServiceConfigError("on node {}\n API request error.".format(node.name), "rsyslog",
+                    raise ServiceConfigError("on node {}:  API request error.".format(node.name), "rsyslog",
                                              traceback=api_res.get('message'))
 
-                if not frontend.rsyslog_only_conf:
-                    """ Reload HAProxy service - After rsyslog to prevent logging crash """
+                """ We need to configure Filebeat, it will check if conf has changed """
+                api_res = node.api_request("services.filebeat.filebeat.build_conf", frontend.id)
+                if not api_res.get('status'):
+                    raise ServiceConfigError("on node {}: API request error.".format(node.name), "filebeat",
+                                             traceback=api_res.get('message'))
+
+                if not frontend.rsyslog_only_conf and not frontend.filebeat_only_conf:
+                    """ Reload HAProxy service - After rsyslog / filebeat to prevent logging crash """
                     api_res = node.api_request("services.haproxy.haproxy.reload_service")
                     if not api_res.get('status'):
-                        raise ServiceReloadError("on node {}\n API request error.".format(node.name), "haproxy",
+                        raise ServiceReloadError("on node {}: API request error.".format(node.name), "haproxy",
                                                  traceback=api_res.get('message'))
                     frontend.status[node.name] = "WAITING"
                     frontend.save()

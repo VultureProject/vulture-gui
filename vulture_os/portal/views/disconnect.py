@@ -28,8 +28,6 @@ import sys
 from django.conf import settings
 sys.path.append("/home/vlt-gui/vulture/portal")
 
-from django.shortcuts import render_to_response
-from django.template import RequestContext
 
 # Logger configuration
 import logging
@@ -39,9 +37,11 @@ logger = logging.getLogger('portal_authentication')
 from django.http import HttpResponseRedirect, HttpResponseServerError, HttpResponseForbidden
 from portal.system.redis_sessions import REDISBase, REDISPortalSession
 from system.cluster.models import Cluster
+from workflow.models import Workflow
+from portal.views.responses import disconnect_response
 
 
-def handle_disconnect (request, workflow_id=None):
+def handle_disconnect (request, workflow_id):
 
     """ Handle User Disconnection
     If we are here, mod_vulture has already delete the application session in redis
@@ -83,20 +83,16 @@ def handle_disconnect (request, workflow_id=None):
     if not portal_session.exists():
         return HttpResponseForbidden("Invalid session.")
 
-    # FIXME
     """ Destroy portal session if needed """
-    if workflow.app_disconnect_portal:
+    if workflow.authentication.enable_disconnect_portal:
         logger.info("DISCONNECT::handle_disconnect: portal session '{}' has been destroyed".format (portal_cookie))
         portal_session.destroy()
-
-    # FIXME
-    """ Display Logout message if needed (otherwise redirect to application) """
-    if workflow.app_display_logout_message:
-        template=workflow.template
-        style='<link rel="stylesheet" type="text/css" href="/'+str(global_config.public_token)+'/templates/portal_%s.css">' % (str(template.id))
-        logger.debug ("DISCONNECT::handle_disconnect: Display template '{}'".format (template.name))
-        return render_to_response ("portal_%s_html_logout.conf" % (str(template.id)),
-                               {'style':style, 'app_url':workflow.get_redirect_uri()}, context_instance=RequestContext(request))
     else:
-        logger.debug ("DISCONNECT::handle_disconnect: Redirecting to redirect_uri '{}'".format(workflow.get_redirect_uri()))
+        portal_session.deauthenticate_app(workflow.id, workflow.authentication.auth_timeout)
+
+    """ Display Logout message if needed (otherwise redirect to application) """
+    if workflow.authentication.enable_disconnect_message:
+        return disconnect_response(request, workflow.authentication, workflow.get_redirect_uri())
+    else:
+        logger.info ("DISCONNECT::handle_disconnect: Redirecting to redirect_uri '{}'".format(workflow.get_redirect_uri()))
         return HttpResponseRedirect(workflow.get_redirect_uri())
