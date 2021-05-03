@@ -212,7 +212,9 @@ def openid_callback(request, workflow_id, repo_id):
         # Set authentication attributes required
         authentication.backend_id = repo_id
         authentication.credentials = [claims.get('name') or claims.get('sub'), ""]
-        authentication.register_user(user_scope)
+        if not user_scope.get('name'):
+            user_scope['name'] = claims.get('name') or claims.get('sub')
+        authentication.register_user(user_scope, user_scope)
 
     except KeyError as e:
         logger.exception(e)
@@ -440,8 +442,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     authentication_results = authentication.authenticate(request)
                     logger.debug("PORTAL::log_in: Authentication succeed on backend {}, "
                                  "user infos : {}".format(authentication.backend_id, authentication_results))
+                    user_scope = workflow.authentication.get_user_scope({}, authentication_results)
                     # Register authentication results in Redis
-                    portal_cookie, oauth2_token = authentication.register_user(authentication_results)
+                    portal_cookie, oauth2_token = authentication.register_user(authentication_results, user_scope)
                     logger.debug("PORTAL::log_in: User {} successfully registered in Redis".format(authentication.credentials[0]))
 
                     if authentication_results.get('password_expired', None):
