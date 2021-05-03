@@ -1176,6 +1176,30 @@
                         </div>
                       </div>
 
+                      <div class="col-md-12 api_clients_row" id="api_carbon_black_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.carbon_black_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.carbon_black_host }}
+                            {{ form.carbon_black_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.carbon_black_orgkey.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.carbon_black_orgkey }}
+                            {{ form.carbon_black_orgkey.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.carbon_black_apikey.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.carbon_black_apikey }}
+                            {{ form.carbon_black_apikey.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
                       <div class="col-md-12">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
