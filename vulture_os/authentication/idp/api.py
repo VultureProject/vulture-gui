@@ -183,32 +183,47 @@ class IDPApiUserView(View):
                 if ldap_repo.user_email_attr:
                     attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
 
+                # Variable needed to send user's registration
+                user_mail = request.JSON.get('email')
+
                 group_name = None
                 if portal.update_group_registration:
                     group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
 
                 ldap_response, user_id = tools.create_user(ldap_repo, user[ldap_repo.user_attr],
                                                            request.JSON.get('userPassword'), attrs, group_name)
+            else:
+                # We get an action
+                # If we get a DN, extract username to search in LDAP configured scope (for segregation regards)
+                username = request.JSON['username']
+                if "," in username:
+                    username = username.split(",")[0]
+                if "=" in username:
+                    username = username.split('=')[1]
+                # We will need user' email for registration and reset
+                if action in ["resend_registration", "reset_password"]:
+                    user_id, user_mail = tools.find_user_email(ldap_repo, username)
+                    logger.info(f"User's email found : {user_mail}")
 
             if not action or action == "resend_registration":
                 if not perform_email_registration(logger,
                                         f"https://{portal.external_fqdn}/",
                                         portal.name,
                                         portal.portal_template,
-                                        request.JSON['email'],
+                                        user_mail,
                                         expire=72 * 3600):
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's registration email")}, status=500)
 
             elif action == "reset_password":
-                perform_email_reset(logger,
-                                 f"https://{portal.external_fqdn}",
+                if not perform_email_reset(logger,
+                                 f"https://{portal.external_fqdn}/",
                                  portal.name,
                                  portal.portal_template,
-                                 request.JSON['email'],
-                                 expire=3600)
-                return JsonResponse({'status': False,
-                                     'error': _("Fail to send user's reset password email")}, status=500)
+                                 user_mail,
+                                 expire=3600):
+                    return JsonResponse({'status': False,
+                                         'error': _("Fail to send user's reset password email")}, status=500)
 
             elif action in ("lock", "unlock"):
                 username = request.JSON["username"]
