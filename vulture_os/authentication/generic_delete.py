@@ -43,6 +43,7 @@ from authentication.user_portal.models import UserAuthentication
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.portal_template.models import PortalTemplate, TemplateImage
 from authentication.totp_profiles.models import TOTPProfile
+from workflow.models import Workflow
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -155,8 +156,8 @@ class DeleteUserAuthentication(DeleteView):
     delete_url = "/portal/user_authentication/delete/"
 
     # FIXME : Add verif when Workflow will use this object
-    def used_by(self, objet):
-        return []
+    def used_by(self, object):
+        return [str(w) for w in Workflow.objects.filter(authentication=object)]
 
     def post(self, request, object_id, **kwargs):
         if hasattr(request, "JSON"):
