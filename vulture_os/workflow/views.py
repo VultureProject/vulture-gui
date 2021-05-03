@@ -113,7 +113,9 @@ def workflow_delete(request, object_id, api=False):
 
     # If GET request or POST request and API/Delete failure
     return render(request, 'generic_delete.html', {
-        'workflow': workflow,
+        'redirect_url': reverse("workflow.list"),
+        'delete_url': reverse("workflow.delete", kwargs={'object_id': object_id}),
+        'obj_inst': workflow,
         'error': error
     })
 
