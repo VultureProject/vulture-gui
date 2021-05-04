@@ -78,10 +78,13 @@ def workflow_delete(request, object_id, api=False):
             frontend = workflow.frontend
             backend = workflow.backend
             authentication = workflow.authentication
+            filename = workflow.get_base_filename()
             workflow.delete()
 
             nodes = frontend.reload_conf()
             backend.reload_conf()
+
+            Cluster.api_request('services.haproxy.haproxy.delete_conf', filename)
 
             for node in nodes:
                 # We need to rebuild configuration and reload Haproxy in case authentication is involved
