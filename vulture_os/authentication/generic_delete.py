@@ -171,6 +171,11 @@ class DeleteUserAuthentication(DeleteView):
             except ObjectDoesNotExist:
                 return HttpResponseNotFound('Object not found.')
 
+            # Delete haproxy portal_*.cfg file if necessary
+            if obj_inst.enable_external:
+                for node in obj_inst.external_listener.get_nodes():
+                    node.api_request("services.haproxy.haproxy.delete_conf", obj_inst.get_base_filename())
+
             # Destroy dereferenced objects first
             obj_inst.delete()
             OpenIDRepository.objects.filter(client_id=obj_inst.oauth_client_id,
