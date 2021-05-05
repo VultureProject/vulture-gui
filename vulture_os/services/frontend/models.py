@@ -773,6 +773,22 @@ class Frontend(models.Model):
         help_text = _("API key used to retrieve logs - as configured in SentinelOne settings"),
         default = "",
     )
+    # CarbonBlack attributes
+    carbon_black_host = models.TextField(
+        verbose_name = _("CarbonBlack Host"),
+        help_text = _("Hostname (without scheme or path) of the CarbonBlack server"),
+        default = "defense.conferdeploy.net",
+    )
+    carbon_black_orgkey = models.TextField(
+        verbose_name = _("CarbonBlack organisation name"),
+        help_text = _("Organisation name"),
+        default = "",
+    )
+    carbon_black_apikey = models.TextField(
+        verbose_name = _("CarbonBlack API key"),
+        help_text = _("API key used to retrieve logs"),
+        default = "",
+    )
 
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -950,6 +966,10 @@ class Frontend(models.Model):
                 elif self.api_parser_type == "sentinel_one":
                     result['sentinel_one_host'] = self.sentinel_one_host
                     result['sentinel_one_apikey'] = self.sentinel_one_apikey
+                elif self.api_parser_type == "carbon_black":
+                    result['carbon_black_host'] = self.carbon_black_host
+                    result['carbon_black_orgkey'] = self.carbon_black_orgkey
+                    result['carbon_black_apikey'] = self.carbon_black_apikey
 
             if self.enable_logging_reputation:
                 if self.logging_reputation_database_v4:
@@ -1183,7 +1203,8 @@ class Frontend(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
             return template.render({'conf': self.to_template(listener_list=listener_list,
-                                                             header_list=header_list)})
+                                                             header_list=header_list),
+                                    'global_config': Cluster.get_global_config().to_dict()})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound:

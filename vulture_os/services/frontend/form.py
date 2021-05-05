@@ -215,6 +215,7 @@ class FrontendForm(ModelForm):
                            "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                            "cybereason_host", "cybereason_username", "cybereason_password",
                            "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
+                           "carbon_black_host", 'carbon_black_orgkey', 'carbon_black_apikey',
                            'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode']:
             self.fields[field_name].required = False
 
@@ -277,6 +278,7 @@ class FrontendForm(ModelForm):
                   "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
                   "proofpoint_tap_secret",
                   "sentinel_one_host", "sentinel_one_apikey",
+                  "carbon_black_host", "carbon_black_orgkey", "carbon_black_apikey",
                   'darwin_mode')
 
         widgets = {
@@ -374,6 +376,9 @@ class FrontendForm(ModelForm):
             'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
             'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
+            'carbon_black_host': TextInput(attrs={'class': 'form-control'}),
+            'carbon_black_orgkey': TextInput(attrs={'class': 'form-control'}),
+            'carbon_black_apikey': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
