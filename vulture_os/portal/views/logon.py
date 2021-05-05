@@ -62,6 +62,8 @@ from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.system.hashes import random_sha256
 from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
+from django.core.exceptions import ObjectDoesNotExist
+
 from ast import literal_eval
 
 # Extern modules imports
@@ -353,20 +355,25 @@ def openid_token(request, portal_id):
                             status=400)
 
 
-def openid_userinfo(request, portal_id):
+def openid_userinfo(request, portal_id=None, workflow_id=None):
     try:
         scheme = request.META['HTTP_X_FORWARDED_PROTO']
     except KeyError:
-        logger.error("PORTAL::openid_authorize: could not get scheme from request")
+        logger.error("PORTAL::openid_userinfo: could not get scheme from request")
         return HttpResponseServerError()
 
     try:
-        portal = UserAuthentication.objects.get(pk=portal_id)
-    except UserAuthentication.DoesNotExist:
-        logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
+        if portal_id:
+            assert UserAuthentication.objects.filter(pk=portal_id).exists()
+            workflow_id = f"portal_{portal_id}"
+        elif workflow_id:
+            assert Workflow.objects.filter(pk=workflow_id).exists()
+        assert workflow_id
+    except (ObjectDoesNotExist, AssertionError):
+        logger.error("PORTAL::openid_userinfo: could not find a portal with id {} or workflow with id {}".format(portal_id, workflow_id))
         return HttpResponseServerError()
     except Exception as e:
-        logger.error("PORTAL::openid_authorize: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
+        logger.error("PORTAL::openid_userinfo: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
         return HttpResponseServerError()
 
     try:
@@ -375,6 +382,8 @@ def openid_userinfo(request, portal_id):
 
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
+
+        assert session['workflow'] == workflow_id
         assert session['scope']
         return JsonResponse(literal_eval(session['scope']))
     except Exception as e:

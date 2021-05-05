@@ -33,10 +33,10 @@ from django.urls import path, re_path
 from portal.views.logon import (log_in, openid_start, openid_callback, openid_configuration, openid_authorize,
                                 openid_token, openid_userinfo)
 from portal.views.disconnect import handle_disconnect
+from portal.views.self import self
 # from portal.views.oauth2_portal import log_in as oauth2_log_in, is_valid_token
 # from portal.views.portal_statics import template_image
 # from portal.views.register import registration
-# from portal.views.self import self as portal_self
 
 
 urlpatterns = [
@@ -51,11 +51,18 @@ urlpatterns = [
     # re_path('/(?P<token_name>[A-Za-z0-9]+)/register/(?P<proxy_app_id>[A-Za-z0-9]+)$', registration, name="Registration"),
     re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/oauth2/start/(?P<repo_id>[A-Za-z0-9]+)', openid_start, name="OpenID start"),
     re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/oauth2/callback/(?P<repo_id>[A-Za-z0-9]+)', openid_callback, name="OpenID callback"),
-    re_path('^portal/(?P<portal_id>[A-Za-z0-9]+)/oauth2/authorize', openid_authorize, name="OpenID authorize"),
-    re_path('^portal/(?P<portal_id>[A-Za-z0-9]+)/oauth2/token', openid_token, name="OpenID token"),
-    re_path('^portal/(?P<portal_id>[A-Za-z0-9]+)/oauth2/userinfo', openid_userinfo, name="OpenID user_infos"),
-    re_path('^portal/(?P<portal_id>[A-Za-z0-9]+)/.well-known/openid-configuration', openid_configuration, name="OpenID configuration"),
+
+    re_path('^portal/portal_(?P<portal_id>[A-Za-z0-9]+)/oauth2/authorize', openid_authorize, name="OpenID authorize"),
+    re_path('^portal/portal_(?P<portal_id>[A-Za-z0-9]+)/oauth2/token', openid_token, name="OpenID token"),
+    re_path('^portal/portal_(?P<portal_id>[A-Za-z0-9]+)/oauth2/userinfo', openid_userinfo, name="OpenID user_infos"),
+    re_path('^portal/portal_(?P<portal_id>[A-Za-z0-9]+)/.well-known/openid-configuration', openid_configuration,
+            name="OpenID configuration"),
+
+    re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/oauth2/userinfo', openid_userinfo, name="OpenID user_infos"),
+
     re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/vulture_disconnect$', handle_disconnect, name="Disconnect"),
+    #re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/self$', self, name="Log in"),
+    #re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/self/(?P<action>[a-z+)$', self, name="Log in"),
     re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/.*$', log_in, name="Log in"),
     # re_path('/2fa/otp', log_in),
     #
