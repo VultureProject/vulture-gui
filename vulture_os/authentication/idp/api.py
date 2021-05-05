@@ -33,25 +33,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
 from authentication.user_portal.models import UserAuthentication
 from authentication.ldap.tools import NotUniqueError, UserNotExistError
+from authentication.idp.attr_tools import get_repo, MAPPING_ATTRIBUTES
 from toolkit.portal.registration import perform_email_registration, perform_email_reset
-
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
-
-
-def get_repo(portal):
-    ldap_repo = None
-    for repo in portal.repositories.all():
-        if repo.subtype == "LDAP":
-            ldap_repo = repo.get_daughter()
-            break
-
-    if not ldap_repo:
-        # The portal does not have a LDAP repository
-        raise UserAuthentication.DoesNotExist()
-
-    return ldap_repo
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -96,13 +82,6 @@ class IDPApiView(View):
                             tmp_user["mobile"] = tmp[ldap_repo.user_mobile_attr][0]
                     except IndexError:
                         pass
-
-                    try:
-                        tmp_user["smartcardid"] = ""
-                        if ldap_repo.user_smartcardid_attr:
-                            tmp_user["smartcardid"] = tmp[ldap_repo.user_smartcardid_attr][0]
-                    except IndexError:
-                        pass
                     
                     try:
                         tmp_user["email"] = ""
@@ -110,6 +89,16 @@ class IDPApiView(View):
                             tmp_user["email"] = tmp[ldap_repo.user_email_attr][0]
                     except IndexError:
                         pass
+
+                    for key, value in MAPPING_ATTRIBUTES.items():
+                        if value["type"] == str:
+                            try:
+                                tmp_user[key] = tmp.get(value["internal_key"], [])[0]
+                            except (IndexError, TypeError):
+                                tmp_user[key] = ""
+                        
+                        elif value["type"] == list:
+                            tmp_user[key] = tmp.get(value["internal_key"], [])
 
                     data.append(tmp_user)
 
@@ -125,7 +114,7 @@ class IDPApiView(View):
                 })
 
         except KeyError as err:
-            logger.debug(err)
+            logger.error(err)
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")
@@ -151,7 +140,7 @@ class IDPApiUserView(View):
     @api_need_key('cluster_api_key')
     def post(self, request, object_id, action=None):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
+            portal = UserAuthentication.objects.get(pk=object_id, enable_external=True)
             ldap_repo = get_repo(portal)
 
             if action and action not in ("resend_registration", "reset_password", "lock", "unlock"):
@@ -177,21 +166,23 @@ class IDPApiUserView(View):
                 if ldap_repo.user_mobile_attr:
                     attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
 
-                if ldap_repo.user_smartcardid_attr:
-                    attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
-
                 if ldap_repo.user_email_attr:
                     attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
 
                 # Variable needed to send user's registration
                 user_mail = request.JSON.get('email')
 
+                for key, value in MAPPING_ATTRIBUTES.items():
+                    attrs[value["internal_key"]] = request.JSON.get(key)
+
                 group_name = None
                 if portal.update_group_registration:
                     group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
 
-                ldap_response, user_id = tools.create_user(ldap_repo, user[ldap_repo.user_attr],
-                                                           request.JSON.get('userPassword'), attrs, group_name)
+                ldap_response, user_id = tools.create_user(
+                    ldap_repo, user[ldap_repo.user_attr], request.JSON.get('userPassword'),
+                    attrs, group_name
+                )
             else:
                 # We get an action
                 # If we get a DN, extract username to search in LDAP configured scope (for segregation regards)
@@ -268,7 +259,7 @@ class IDPApiUserView(View):
     @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
+            portal = UserAuthentication.objects.get(pk=object_id, enable_external=True)
             ldap_repo = get_repo(portal)
 
             username = request.JSON['username']
@@ -290,9 +281,9 @@ class IDPApiUserView(View):
             
             if ldap_repo.user_mobile_attr:
                 attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
-
-            if ldap_repo.user_smartcardid_attr:
-                attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
+            
+            for key, value in MAPPING_ATTRIBUTES.items():
+                attrs[value["internal_key"]] = request.JSON.get(key)
 
             status, user_dn = tools.update_user(ldap_repo, username, attrs, request.JSON.get('userPassword'))
             if status is False:
@@ -330,7 +321,7 @@ class IDPApiUserView(View):
     @api_need_key('cluster_api_key')
     def delete(self, request, object_id):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
+            portal = UserAuthentication.objects.get(pk=object_id, enable_external=True)
             ldap_repo = get_repo(portal)
 
             username = request.JSON['username']
