@@ -211,7 +211,7 @@
                                       <tr>
                                         <td>THEN SET</td>
                                         <td>{{r.action_var_name}}</td>
-                                        <td> = </td>
+                                        <td>{{r.assignator}}</td>
                                         <td>{{r.action_var_kind}}</td>
                                         <td>{{r.action_var}}</td>
                                         <td style='text-align:center'><a class='btnDelete_scope'><i style='color:grey' class='fas fa-trash-alt'></i></a></td>
@@ -1057,9 +1057,7 @@
         // Loop over select and inputs or the current td
         $(tr).find('select,input').each(function(i, td) {
           name = td.name;
-  console.log(name)
           value = td.value;
-  console.log(value)
           if( index%2 == 0 && i == 0 )
             repo_attrs.push({});
           repo_attrs[(index-(index%2))/2][name] = value;
@@ -1096,7 +1094,7 @@
 
   /* Add default RepoAttributeForm to repo_attributes_table */
   $("#add_repo_attribute").on("click", function(e) {
-    $('#repo_attributes_table_body').append(`<tr><td>IF</td><td>{{repo_attribute_form.condition_var_kind}}</td><td>{{repo_attribute_form.condition_var_name}}</td><td>{{repo_attribute_form.condition_criterion}}</td><td colspan=2>{{repo_attribute_form.condition_match}}</td></tr><tr><td>THEN SET</td><td>{{repo_attribute_form.action_var_name}}</td><td> = </td><td>{{repo_attribute_form.action_var_kind}}</td><td>{{repo_attribute_form.action_var}}</td><td style='text-align:center'><a class='btnDelete_scope'><i style='color:grey' class='fas fa-trash-alt'></i></a></td></tr>`);
+    $('#repo_attributes_table_body').append(`<tr><td>IF</td><td>{{repo_attribute_form.condition_var_kind}}</td><td>{{repo_attribute_form.condition_var_name}}</td><td>{{repo_attribute_form.condition_criterion}}</td><td colspan=2>{{repo_attribute_form.condition_match}}</td></tr><tr><td>THEN SET</td><td>{{repo_attribute_form.action_var_name}}</td><td>{{repo_attribute_form.assignator}}</td><td>{{repo_attribute_form.action_var_kind}}</td><td>{{repo_attribute_form.action_var}}</td><td style='text-align:center'><a class='btnDelete_scope'><i style='color:grey' class='fas fa-trash-alt'></i></a></td></tr>`);
     refresh_table_events();
   });
 
