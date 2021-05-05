@@ -123,9 +123,9 @@ FILEBEAT_MODULE_CONFIG = {'_custom': '# Be sure to select the appropriate "Fileb
 # - %ip% : The IP to listen on\n\
 # - %port% : The PORT to listen on\n\n\
 \
-enabled: true \n \
-host: "%ip%:%port%" \n \
-max_message_size: 10MiB \n\n \
+enabled: true \n\
+host: "%ip%:%port%" \n\
+max_message_size: 10MiB \n\n\
 '}
 done = []
 def _getKey(item):
@@ -1338,6 +1338,8 @@ class Frontend(models.Model):
         """
 
         if module_type == "input" and self.filebeat_module != "_custom":
+            return ""
+        if module_type == "module" and self.filebeat_module == "_custom":
             return ""
 
         conf = self.to_template()
