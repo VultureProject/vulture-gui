@@ -3,7 +3,7 @@
            name="{{output_name}}"
            server={{ servers }}
            searchIndex="{{ template_id }}"
-           template="{{ out_template }}"
+           template="{{ out_template }}_elastic"
            dynSearchIndex="on"
            {% if uid and pwd %}
            uid="{{ uid }}"
