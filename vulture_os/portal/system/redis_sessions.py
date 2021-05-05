@@ -447,16 +447,23 @@ class REDISOauth2Session(REDISSession):
         super(REDISOauth2Session, self).__init__(redis_handler, oauth2_token)
 
 
-    def register_authentication(self, oauth2_data, timeout):
+    def register_authentication(self, workflow_id, oauth2_data, timeout):
         data = {
             'token_ttl': timeout,
-            'scope': str(oauth2_data)
+            'scope': str(oauth2_data),
+            'workflow': str(workflow_id)
         }
         if not self.keys:
             self.keys = data
         else:
+            if not self.keys.get('scope'):
+                self.keys['scope'] = {}
+            if not self.keys.get('token_ttl'):
+                self.keys['token_ttl'] = timeout
+            if not self.keys.get('workflow'):
+                self.keys['workflow'] = workflow_id
             for key,item in oauth2_data.items():
-                self.keys[key] = item
+                self.keys['scope'][key] = item
 
         if not self.write_in_redis(timeout):
             logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")

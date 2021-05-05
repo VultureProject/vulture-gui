@@ -185,7 +185,9 @@ class Authentication(object):
         oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
         self.oauth2_token = Uuid4().generate()
         self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + self.oauth2_token)
-        self.redis_oauth2_session.register_authentication(oauth2_scope, oauth_timeout)
+        if not oauth2_scope.get('name'):
+            oauth2_scope['name'] = self.credentials[0]
+        self.redis_oauth2_session.register_authentication(str(self.workflow.id), oauth2_scope, oauth_timeout)
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),
@@ -570,7 +572,9 @@ class OAUTH2Authentication(Authentication):
 
     def register_authentication(self, authentication_results):
         self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + self.oauth2_token)
-        self.redis_oauth2_session.register_authentication(authentication_results, authentication_results['token_ttl'])
+        self.redis_oauth2_session.register_authentication(str(self.workflow.id),
+                                                          authentication_results,
+                                                          authentication_results['token_ttl'])
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
 
     def generate_response(self, authentication_results):
