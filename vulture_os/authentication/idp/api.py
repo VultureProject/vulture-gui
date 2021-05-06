@@ -43,10 +43,10 @@ logger = logging.getLogger('api')
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiView(View):
     @api_need_key("cluster_api_key")
-    def get(self, request, object_id):
+    def get(self, request, object_id, repo_id):
         try:
             portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            ldap_repo = get_repo(portal, repo_id)
 
             object_type = request.GET["object_type"].lower()
             if object_type not in ("users", "search"):
@@ -138,10 +138,10 @@ class IDPApiView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiUserView(View):
     @api_need_key('cluster_api_key')
-    def post(self, request, object_id, action=None):
+    def post(self, request, object_id, repo_id, action=None):
         try:
             portal = UserAuthentication.objects.get(pk=object_id, enable_external=True)
-            ldap_repo = get_repo(portal)
+            ldap_repo = get_repo(portal, repo_id)
 
             if action and action not in ("resend_registration", "reset_password", "lock", "unlock"):
                 return JsonResponse({
@@ -186,22 +186,17 @@ class IDPApiUserView(View):
             else:
                 # We get an action
                 # If we get a DN, extract username to search in LDAP configured scope (for segregation regards)
-                username = request.JSON['username']
-                if "," in username:
-                    username = username.split(",")[0]
-                if "=" in username:
-                    username = username.split('=')[1]
-                # We will need user' email for registration and reset
+                user_dn = request.JSON['id']
                 if action in ["resend_registration", "reset_password"]:
-                    user_id, user_mail = tools.find_user_email(ldap_repo, username)
-                    logger.info(f"User's email found : {user_mail}")
+                    user = tools.find_user(ldap_repo, user_dn, ["*"])
+                    logger.info(f"User's email found : {user['mail'][0]}")
 
             if not action or action == "resend_registration":
                 if not perform_email_registration(logger,
                                         f"https://{portal.external_fqdn}/",
                                         portal.name,
                                         portal.portal_template,
-                                        user_mail,
+                                        user['mail'][0],
                                         expire=72 * 3600):
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's registration email")}, status=500)
@@ -211,15 +206,15 @@ class IDPApiUserView(View):
                                  f"https://{portal.external_fqdn}/",
                                  portal.name,
                                  portal.portal_template,
-                                 user_mail,
+                                 user['mail'][0],
                                  expire=3600):
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's reset password email")}, status=500)
 
             elif action in ("lock", "unlock"):
-                username = request.JSON["username"]
+                user_dn = request.JSON["id"]
                 to_lock = action == "lock"
-                ldap_response, user_id = tools.lock_unlock_user(ldap_repo, username, lock=to_lock)
+                ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
                 return JsonResponse({
                     "status": True,
                     "user_id": user_id
@@ -257,15 +252,15 @@ class IDPApiUserView(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def put(self, request, object_id):
+    def put(self, request, object_id, repo_id):
         try:
             portal = UserAuthentication.objects.get(pk=object_id, enable_external=True)
-            ldap_repo = get_repo(portal)
+            ldap_repo = get_repo(portal, repo_id)
 
-            username = request.JSON['username']
+            user_dn = request.JSON['id']
 
             attrs = {
-                ldap_repo.user_attr: [username]
+                ldap_repo.user_attr: request.JSON["username"]
             }
 
             if ldap_repo.user_email_attr:
@@ -285,7 +280,7 @@ class IDPApiUserView(View):
             for key, value in MAPPING_ATTRIBUTES.items():
                 attrs[value["internal_key"]] = request.JSON.get(key)
 
-            status, user_dn = tools.update_user(ldap_repo, username, attrs, request.JSON.get('userPassword'))
+            status, user_dn = tools.update_user(ldap_repo, user_dn, attrs, request.JSON.get('userPassword'))
             if status is False:
                 return JsonResponse({
                     "status": False,
@@ -319,14 +314,14 @@ class IDPApiUserView(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def delete(self, request, object_id):
+    def delete(self, request, object_id, repo_id):
         try:
             portal = UserAuthentication.objects.get(pk=object_id, enable_external=True)
-            ldap_repo = get_repo(portal)
+            ldap_repo = get_repo(portal, repo_id)
 
-            username = request.JSON['username']
+            user_dn = request.JSON['id']
 
-            status = tools.delete_user(ldap_repo, username)
+            status = tools.delete_user(ldap_repo, user_dn)
             if status is False:
                 return JsonResponse({
                     "status": False,
