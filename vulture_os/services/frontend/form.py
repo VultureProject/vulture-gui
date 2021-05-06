@@ -499,7 +499,7 @@ class FrontendForm(ModelForm):
                 self.add_error('listening_mode', "This field is required.")
         if mode == "filebeat":
             # Filebeat always send JSON logs on internal redis
-            cleaned_data['ruleset'] = "generic_json"
+            #  cleaned_data['ruleset'] = "generic_json"
             cleaned_data['listening_mode'] = "redis"
             if not cleaned_data.get('filebeat_listening_mode'):
                 self.add_error('filebeat_listening_mode', "This field is required.")
