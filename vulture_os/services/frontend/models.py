@@ -120,8 +120,8 @@ FILEBEAT_MODULE_PATH = "/usr/local/etc/filebeat/modules.d"
 FILEBEAT_MODULE_LIST = [('_custom', 'Custom Filebeat config')]
 FILEBEAT_MODULE_CONFIG = {'_custom': '# Be sure to select the appropriate "Filebeat listening mode"\n\
 # Use the following variables when needed: \n\n\
-# - %ip% : This keyword will be replaced by your Listener's IP automatically\n\
-# - %port% : This keyword will be replaced by your Listener's port automatically\n\n\
+# - %ip% : This keyword will be replaced by your Listener\'s IP automatically\n\
+# - %port% : This keyword will be replaced by your Listener\'s port automatically\n\n\
 \
 enabled: true \n\
 host: "%ip%:%port%" \n\
