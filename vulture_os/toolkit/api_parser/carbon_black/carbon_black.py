@@ -20,7 +20,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Sentinel One EDR API Parser'
+__doc__ = 'Carbon Black EDR API Parser'
 
 
 import logging
