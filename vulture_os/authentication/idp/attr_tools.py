@@ -25,10 +25,10 @@ __doc__ = 'IDP Tools'
 from authentication.user_portal.models import UserAuthentication
 
 
-def get_repo(portal):
+def get_repo(portal, repo_id):
     ldap_repo = None
     for repo in portal.repositories.all():
-        if repo.subtype == "LDAP":
+        if str(repo.pk) == str(repo_id):
             ldap_repo = repo.get_daughter()
             break
 
