@@ -59,13 +59,13 @@ RSYSLOG_OWNER = "vlt-os:wheel"
 
 
 class RsyslogService(Service):
-    """ HAProxy service class wrapper """
+    """ Rsyslog service class wrapper """
 
     def __init__(self):
         super().__init__()
         self.model = RsyslogSettings
         self.service_name = "rsyslogd"
-        self.friendly_name = "Logging"
+        self.friendly_name = "R-Logging"
 
         self.config_file = "rsyslog_inputs.conf"
         self.owners = RSYSLOG_OWNER

@@ -435,7 +435,7 @@ class LogOMFWD(LogOM):
 
 
 class LogOMElasticSearch(LogOM):
-    index_pattern = models.TextField(unique=True, null=False, default='MyLog-YYYY.MM.DD')
+    index_pattern = models.TextField(unique=True, null=False, default='MyLog-%$!timestamp:1:10%')
     servers = models.TextField(null=False, default='["https://els-1:9200", "https://els-2:9200"]')
     uid = models.TextField(null=True, blank=True, default=None)
     pwd = models.TextField(null=True, blank=True, default=None)

@@ -41,6 +41,7 @@ from toolkit.api_parser.cybereason.cybereason import CybereasonParser
 from toolkit.api_parser.cisco_meraki.cisco_meraki import CiscoMerakiParser
 from toolkit.api_parser.proofpoint_tap.proofpoint_tap import ProofpointTAPParser
 from toolkit.api_parser.sentinel_one.sentinel_one import SentinelOneParser
+from toolkit.api_parser.carbon_black.carbon_black import CarbonBlackParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -63,6 +64,7 @@ PARSER_LIST = {
     "cybereason": CybereasonParser,
     "proofpoint_tap": ProofpointTAPParser,
     "sentinel_one": SentinelOneParser,
+    "carbon_black": CarbonBlackParser,
 }
 
 

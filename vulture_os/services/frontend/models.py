@@ -49,6 +49,7 @@ from system.tenants.models import Tenants
 from jinja2 import Environment, FileSystemLoader
 from re import search as re_search
 from requests import post
+import glob
 
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
@@ -67,8 +68,9 @@ logger = logging.getLogger('gui')
 MODE_CHOICES = (
     ('tcp', 'TCP'),
     ('http', 'HTTP'),
-    ('log', 'LOG'),
-    ('impcap', 'IMPCAP')
+    ('log', 'LOG (Rsyslog)'),
+    ('filebeat', 'LOG (Filebeat)'),
+    ('impcap', 'PCAP')
 )
 
 LOG_LEVEL_CHOICES = (
@@ -89,7 +91,7 @@ LISTENING_MODE_CHOICES = (
     ('tcp,udp', "TCP & UDP"),
     ('relp', "RELP (TCP)"),
     ('file', "FILE"),
-    ('api', 'API CLIENT'),
+    ('api', 'Vendor specific API'),
     ('kafka', 'KAFKA'),
     ('redis', 'REDIS'),
 )
@@ -112,6 +114,40 @@ DARWIN_MODE_CHOICES = (
     ('both', "enrich logs and generate alerts")
 )
 
+
+# Filebeat module list
+FILEBEAT_MODULE_PATH = "/usr/local/etc/filebeat/modules.d"
+FILEBEAT_MODULE_LIST = [('_custom', 'Custom Filebeat config')]
+FILEBEAT_MODULE_CONFIG = {'_custom': '# Be sure to select the appropriate "Filebeat listening mode"\n\
+# Use the following variables when needed: \n\n\
+# - %ip% : This keyword will be replaced by your Listener's IP automatically\n\
+# - %port% : This keyword will be replaced by your Listener's port automatically\n\n\
+\
+enabled: true \n\
+host: "%ip%:%port%" \n\
+max_message_size: 10MiB \n\n\
+'}
+done = []
+def _getKey(item):
+    return item[0]
+for module in glob.glob(FILEBEAT_MODULE_PATH+'/*.yml*', recursive=True):
+    name = module.split("/")[-1].replace(".yml.disabled","")
+    if name not in done:
+        FILEBEAT_MODULE_LIST.append ((name, name.replace('/',' ').capitalize()))
+        with open (module, "r") as config:
+            FILEBEAT_MODULE_CONFIG[name] = config.read()
+    done.append(name)
+    FILEBEAT_MODULE_LIST=sorted(FILEBEAT_MODULE_LIST, key=_getKey)
+
+
+FILEBEAT_LISTENING_MODE = (    
+    ('tcp', "TCP"),
+    ('udp', "UDP"),
+    ('file', "File"),
+    ('api', 'Vendor specific API')
+)
+
+
 # Jinja template for frontends rendering
 JINJA_PATH = "/home/vlt-os/vulture_os/services/frontend/config/"
 JINJA_TEMPLATE = "haproxy_frontend.conf"
@@ -121,7 +157,6 @@ FRONTEND_PERMS = HAPROXY_PERMS
 
 UNIX_SOCKET_PATH = "/var/sockets/rsyslog"
 LOG_API_PATH = "/var/log/api_parser"
-
 
 class Frontend(models.Model):
     """ Model used to generate fontends configuration of HAProxy """
@@ -308,6 +343,23 @@ class Frontend(models.Model):
         choices=LISTENING_MODE_CHOICES,
         help_text=_("TCP mode = HAProxy, UDP mode = Rsyslog")
     )
+    """ Mode of listening for filebeat - tcp is handled by HAProxy, udp by Filebeat """
+    filebeat_listening_mode = models.TextField(
+        default="tcp",
+        choices=FILEBEAT_LISTENING_MODE,
+        help_text=_("TCP mode = HAProxy, UDP mode = Filebeat")
+    )
+    filebeat_module= models.TextField(
+        default="tcp",
+        choices=FILEBEAT_MODULE_LIST,
+        help_text=_("Filebeat built-in module")
+    )
+    """ Filebeat settings """
+    filebeat_config = models.TextField (
+        default="",
+        help_text=_("Filebeat Input configuration. No output allowed here, as it is handled by Vulture")
+    )
+
     disable_octet_counting_framing = models.BooleanField(
         default=False,
         help_text=_("Enable option 'SupportOctetCountedFraming' in rsyslog (advanced).")
@@ -426,7 +478,7 @@ class Frontend(models.Model):
         verbose_name=_("Redis password")
     )
 
-
+    """ Node is mandatory for KAFKA and FILE modes """
     node = models.ForeignKey(
         to=Node,
         null=True,
@@ -721,6 +773,22 @@ class Frontend(models.Model):
         help_text = _("API key used to retrieve logs - as configured in SentinelOne settings"),
         default = "",
     )
+    # CarbonBlack attributes
+    carbon_black_host = models.TextField(
+        verbose_name = _("CarbonBlack Host"),
+        help_text = _("Hostname (without scheme or path) of the CarbonBlack server"),
+        default = "defense.conferdeploy.net",
+    )
+    carbon_black_orgkey = models.TextField(
+        verbose_name = _("CarbonBlack organisation name"),
+        help_text = _("Organisation name"),
+        default = "",
+    )
+    carbon_black_apikey = models.TextField(
+        verbose_name = _("CarbonBlack API key"),
+        help_text = _("API key used to retrieve logs"),
+        default = "",
+    )
 
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -898,6 +966,10 @@ class Frontend(models.Model):
                 elif self.api_parser_type == "sentinel_one":
                     result['sentinel_one_host'] = self.sentinel_one_host
                     result['sentinel_one_apikey'] = self.sentinel_one_apikey
+                elif self.api_parser_type == "carbon_black":
+                    result['carbon_black_host'] = self.carbon_black_host
+                    result['carbon_black_orgkey'] = self.carbon_black_orgkey
+                    result['carbon_black_apikey'] = self.carbon_black_apikey
 
             if self.enable_logging_reputation:
                 if self.logging_reputation_database_v4:
@@ -918,7 +990,7 @@ class Frontend(models.Model):
 
             result['log_condition'] = self.log_condition
 
-        if not self.rsyslog_only_conf:
+        if not self.rsyslog_only_conf and not self.filebeat_only_conf :
             result['custom_haproxy_conf'] = self.custom_haproxy_conf
 
         return result
@@ -1105,6 +1177,9 @@ class Frontend(models.Model):
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
             'tenants_config': self.tenants_config,
+            'filebeat_module': self.filebeat_module,
+            'filebeat_config': self.filebeat_config,
+            'filebeat_listening_mode': self.filebeat_listening_mode,
             'external_idps': self.userauthentication_set.filter(enable_external=True)
         }
 
@@ -1120,7 +1195,7 @@ class Frontend(models.Model):
         :return     The generated configuration as string, or raise
         """
         """ If no HAProxy conf - Rsyslog only conf """
-        if self.rsyslog_only_conf:
+        if self.rsyslog_only_conf or self.filebeat_only_conf:
             return ""
         # The following var is only used by error, do not forget to adapt if needed
         template_name = JINJA_PATH + JINJA_TEMPLATE
@@ -1128,7 +1203,8 @@ class Frontend(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
             return template.render({'conf': self.to_template(listener_list=listener_list,
-                                                             header_list=header_list)})
+                                                             header_list=header_list),
+                                    'global_config': Cluster.get_global_config().to_dict()})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound:
@@ -1198,6 +1274,13 @@ class Frontend(models.Model):
 
     def get_rsyslog_base_filename(self):
         return "10-{}-{}.conf".format(self.ruleset, self.id)
+
+    def get_filebeat_filename(self):
+        from services.filebeat.filebeat import FILEBEAT_PATH
+        return "{}/filebeat.yml".format(FILEBEAT_PATH)
+
+    def get_filebeat_base_filename(self):
+        return "filebeat.yml"
 
     def get_test_filename(self):
         """ Return test filename for test conf with haproxy
@@ -1270,11 +1353,52 @@ class Frontend(models.Model):
         """
         return "Address=\"{}\" Port=\"{}\"".format(JAIL_ADDRESSES['rsyslog']['inet'],
                                                    self.api_rsyslog_port)
+    
+    def generate_filebeat_conf(self, module_type):
+        """ Generate filebeat configuration of this frontend
+        """
+
+        if module_type == "input" and self.filebeat_module != "_custom":
+            return ""
+        if module_type == "module" and self.filebeat_module == "_custom":
+            return ""
+
+        conf = self.to_template()
+        if self.filebeat_listening_mode in ["udp", "tcp"]:
+            conf['filebeat_config'] = conf['filebeat_config'].replace ("%ip%", JAIL_ADDRESSES['rsyslog'][conf['listeners'][0].network_address.family])
+            conf['filebeat_config'] = conf['filebeat_config'].replace ("%port%", str(conf['listeners'][0].rsyslog_port))
+        elif self.filebeat_listening_mode == "file":
+            conf['filebeat_listening_mode'] = "log"
+
+        from services.filebeat.filebeat import JINJA_PATH as JINJA_FILEBEAT_PATH
+        try:
+            jinja2_env = Environment(loader=FileSystemLoader(JINJA_FILEBEAT_PATH))
+            template = jinja2_env.get_template("filebeat_input.conf")
+            
+            return template.render({'frontend': conf})
+
+
+        # In ALL exceptions, associate an error message
+        # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
+        except TemplateNotFound as e:
+            exception = ServiceJinjaError("The following file cannot be found : '{}'".format(e.message), "filebeat")
+        except TemplatesNotFound as e:
+            exception = ServiceJinjaError("The following files cannot be found : '{}'".format(e.message), "filebeat")
+        except (TemplateAssertionError, TemplateRuntimeError) as e:
+            exception = ServiceJinjaError("Unknown error in template generation: {}".format(e.message), "filebeat")
+        except UndefinedError as e:
+            exception = ServiceJinjaError("A variable is undefined while trying to render the following template: "
+                                          "{}".format(e.message), "filebeat")
+        except TemplateSyntaxError as e:
+            exception = ServiceJinjaError("Syntax error in the template: '{}'".format(e.message), "filebeat")
+        
+        # If there was an exception, raise a more general exception with the message and the traceback
+        raise exception
 
     def generate_rsyslog_conf(self):
         """ Generate rsyslog configuration of this frontend
         """
-        # Import here to prevent
+        # Import here to prevent populate reetrant issues
         from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
         # The following var is only used by error, do not forget to adapt if needed
         template_name = "rsyslog_ruleset_{}/ruleset.conf".format(self.ruleset)
@@ -1413,7 +1537,7 @@ class Frontend(models.Model):
         """
         :return: Return the node where the frontend has been declared
         """
-        if self.listening_mode == "file":
+        if self.listening_mode == "file" or self.listening_mode == "kafka" or self.filebeat_listening_mode == "file" :
             return {self.node}
         elif self.mode != "impcap":
             return set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.id))
@@ -1451,8 +1575,16 @@ class Frontend(models.Model):
                     raise ServiceStartError("API request failure on node '{}'".format(node.name), "rsyslog",
                                             traceback=api_res.get('message'))
             return "Start rsyslog service asked on nodes {}".format(",".join([n.name for n in nodes]))
-            # raise ServiceError("Cannot hot enable an Rsyslog only frontend.", "rsyslog", "enable frontend",
-            #                   traceback="Please edit, enable and save the frontend.")
+
+        elif self.filebeat_only_conf:
+            nodes = self.get_nodes()
+            for node in nodes:
+                api_res = node.api_request("services.filebeat.filebeat.start_service")
+                if not api_res.get('status'):
+                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "filebeat",
+                                            traceback=api_res.get('message'))
+            return "Start filebeat service asked on nodes {}".format(",".join([n.name for n in nodes]))
+
         else:
             nodes = self.get_nodes()
             for node in nodes:
@@ -1466,9 +1598,12 @@ class Frontend(models.Model):
         """ Disable frontend in HAProxy, by management socket """
         if not self.enabled:
             return "This frontend is already disabled."
-        """ If it is an Rsyslog only conf, try to start service """
+        """ If it is an Rsyslog / Filebeat only conf, try to start service """
         if self.rsyslog_only_conf:
             raise ServiceError("Cannot hot disable an Rsyslog only frontend.", "rsyslog", "disable frontend",
+                               traceback="Please edit, disable and save the frontend.")
+        elif self.filebeat_only_conf:
+            raise ServiceError("Cannot hot disable a Filebeat only frontend.", "filebeat", "disable frontend",
                                traceback="Please edit, disable and save the frontend.")
         else:
             nodes = self.get_nodes()
@@ -1485,6 +1620,10 @@ class Frontend(models.Model):
         return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka", "redis")))
 
     @property
+    def filebeat_only_conf(self):
+        """ Check if this frontend has only filebeat configuration, not haproxy at all """
+        return self.mode == "filebeat" and self.filebeat_listening_mode in ("udp", "file", "api")
+
     def has_tls(self):
         for listener in self.listener_set.all():
             if listener.is_tls:
