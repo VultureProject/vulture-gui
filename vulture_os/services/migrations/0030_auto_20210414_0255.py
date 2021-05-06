@@ -50,4 +50,10 @@ class Migration(migrations.Migration):
             name='mode',
             field=models.TextField(choices=[('tcp', 'TCP'), ('http', 'HTTP'), ('log', 'LOG (Rsyslog)'), ('filebeat', 'LOG (Filebeat)'), ('impcap', 'PCAP')], default='tcp', help_text='Listening mode'),
         ),
+        migrations.CreateModel(
+            name='FilebeatSettings',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+            ],
+        ),
     ]
