@@ -156,16 +156,16 @@ class CarbonBlackParser(ApiParser):
 
         available = 0
         found = 0
-        while found <= available:
+        while available <= found:
 
-            response = self.get_logs(found, since)
+            response = self.get_logs(available, since)
 
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
 
             logs = response['results']
-            found = int(response['num_found']) + 1
-            available = int(response['num_found'])
+            found = int(response['num_found'])
+            available = int(response['num_available']) + 1
 
             self.write_to_file([self.format_log(l) for l in logs])
 
