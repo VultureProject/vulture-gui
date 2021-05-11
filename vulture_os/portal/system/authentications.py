@@ -185,8 +185,14 @@ class Authentication(object):
         oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
         self.oauth2_token = Uuid4().generate()
         self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + self.oauth2_token)
-        if not oauth2_scope.get('name'):
-            oauth2_scope['name'] = self.credentials[0]
+        # Mandatory claims for SSO-F, OTP, change password, etc
+        if self.workflow.authentication.enable_external:
+            if not oauth2_scope.get('name'):
+                oauth2_scope['name'] = self.credentials[0]
+            if not oauth2_scope.get('user_email'):
+                oauth2_scope['user_email'] = authentication_results.get('user_email', "")
+            if not oauth2_scope.get('user_phone'):
+                oauth2_scope['user_phone'] = authentication_results.get('user_phone', "")
         self.redis_oauth2_session.register_authentication(str(self.workflow.id), oauth2_scope, oauth_timeout)
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),

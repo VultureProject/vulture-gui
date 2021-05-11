@@ -216,7 +216,7 @@ def openid_callback(request, workflow_id, repo_id):
         authentication.credentials = [claims.get('name') or claims.get('sub'), ""]
         if not user_scope.get('name'):
             user_scope['name'] = claims.get('name') or claims.get('sub')
-        authentication.register_user(user_scope, user_scope)
+        authentication.register_user({**claims, **repo_attributes}, user_scope)
 
     except KeyError as e:
         logger.exception(e)
