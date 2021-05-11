@@ -44,6 +44,7 @@ from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Cert
 from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
                           SelectMultiple, TextInput, Textarea)
 from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
+from system.cluster.models import Cluster
 
 # Extern modules imports
 from bson import ObjectId
@@ -640,7 +641,7 @@ class UserAuthentication(models.Model):
         try:
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
-            return template.render({'conf': self.to_template_external()})
+            return template.render({'conf': self.to_template_external(), 'global_config': Cluster.get_global_config()})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound:
