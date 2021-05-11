@@ -40,27 +40,17 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
-def get_repo(portal):
-    ldap_repo = None
-    for repo in portal.repositories.all():
-        if repo.subtype == "LDAP":
-            ldap_repo = repo.get_daughter()
-            break
-
-    if not ldap_repo:
-        # The portal does not have a LDAP repository
-        raise UserAuthentication.DoesNotExist()
-
-    return ldap_repo
+def get_repo(portal, repo_id):
+    return portal.repositories.get(subtype="LDAP", pk=repo_id).get_daughter()
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiView(View):
     @api_need_key("cluster_api_key")
-    def get(self, request, object_id):
+    def get(self, request, portal_id, repo_id):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            ldap_repo = get_repo(portal, repo_id)
 
             object_type = request.GET["object_type"].lower()
             if object_type not in ("users", "search"):
@@ -149,10 +139,10 @@ class IDPApiView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiUserView(View):
     @api_need_key('cluster_api_key')
-    def post(self, request, object_id, action=None):
+    def post(self, request, portal_id, repo_id, action=None):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            ldap_repo = get_repo(portal, repo_id)
 
             if action and action not in ("resend_registration", "reset_password", "lock", "unlock"):
                 return JsonResponse({
@@ -211,6 +201,7 @@ class IDPApiUserView(View):
                                         portal.name,
                                         portal.portal_template,
                                         user_mail,
+                                        repo_id=repo_id,
                                         expire=72 * 3600):
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's registration email")}, status=500)
@@ -221,6 +212,7 @@ class IDPApiUserView(View):
                                  portal.name,
                                  portal.portal_template,
                                  user_mail,
+                                 repo_id=repo_id,
                                  expire=3600):
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's reset password email")}, status=500)
@@ -266,10 +258,10 @@ class IDPApiUserView(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def put(self, request, object_id):
+    def put(self, request, portal_id, repo_id):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            ldap_repo = get_repo(portal, repo_id)
 
             username = request.JSON['username']
 
@@ -328,10 +320,10 @@ class IDPApiUserView(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def delete(self, request, object_id):
+    def delete(self, request, portal_id, repo_id):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            ldap_repo = get_repo(portal, repo_id)
 
             username = request.JSON['username']
 

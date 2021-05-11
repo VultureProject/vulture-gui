@@ -31,9 +31,9 @@ from smtplib import SMTP
 from smtplib import SMTPException
 
 
-def perform_email_registration(logger, base_url, app_name, template, user_email, expire=72*3600):
+def perform_email_registration(logger, base_url, app_name, template, user_email, expire=72*3600, repo_id=None):
     # """ Generate an UUID64 and store it in redis """
-    reset_key = create_redis_reset(user_email, expire)
+    reset_key = create_redis_reset(user_email, expire, repo_id)
 
     """ Get Cluster configuration """
     config = Cluster.get_global_config()
@@ -59,9 +59,9 @@ def perform_email_registration(logger, base_url, app_name, template, user_email,
         return False
 
 
-def perform_email_reset(logger, base_url, app_name, template, user_email, expire=3600):
+def perform_email_reset(logger, base_url, app_name, template, user_email, expire=3600, repo_id=None):
     # """ Generate an UUID64 and store it in redis """
-    reset_key = create_redis_reset(user_email, expire)
+    reset_key = create_redis_reset(user_email, expire, repo_id)
 
     """ Get Cluster configuration """
     config = Cluster.get_global_config()
@@ -88,7 +88,7 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, expire
 
 
 
-def create_redis_reset(user_email, expire):
+def create_redis_reset(user_email, expire, repo_id=None):
     reset_key = Uuid4().generate()
 
     redis_key = 'password_reset_' + reset_key
@@ -97,11 +97,15 @@ def create_redis_reset(user_email, expire):
 
     """ Store the reset-key in Redis """
     # The 'a' is for Redis stats, to make a distinction with Token entries
-    redis_base.hmset(redis_key, {'email': user_email, 'a': 1})
+    redis_key_content = {'email': user_email, 'a': 1}
+    if repo_id:
+        redis_key_content['repo'] = repo_id
+
+    redis_base.hmset(redis_key, redis_key_content)
     """ The key will expire in 10 minutes """
     redis_base.expire(redis_key, expire)
 
-    return redis_key
+    return reset_key
 
 
 def send_email(smtp_server, email_from, email_to, subject, body):
