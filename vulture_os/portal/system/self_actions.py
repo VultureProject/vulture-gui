@@ -31,12 +31,17 @@ __doc__ = 'System utils classes for SELF Service'
 # Django system imports
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
+from django.core.validators import validate_email
 
 # Django project imports
 from system.cluster.models import Cluster
 from system.users.models import User
 from portal.system.redis_sessions import REDISBase, REDISAppSession, REDISPortalSession
 from portal.views.responses import self_message_response, self_ask_passwords, self_message_main
+from authentication.base_repository import BaseRepository
+from toolkit.portal.registration import perform_email_registration, perform_email_reset
+from authentication.portal_template.models import (RESET_PASSWORD_NAME, INPUT_PASSWORD_OLD, INPUT_PASSWORD_1,
+                                               INPUT_PASSWORD_2, INPUT_EMAIL)
 
 # Required exceptions imports
 from portal.system.exceptions import RedirectionNeededError, PasswordMatchError
@@ -60,62 +65,41 @@ logger = logging.getLogger('portal_authentication')
 
 
 class SELFService(object):
-    def __init__(self, app_id, token_name):
+    def __init__(self, workflow, token_name, global_config, main_url):
         # DoesNotExists
-        self.workflow = Workflow.objects.with_id(ObjectId(app_id))
+        self.workflow = workflow
         self.redis_base = REDISBase()
         self.token_name = token_name
-        self.cluster = Cluster.objects.get()
+        self.config = global_config
+        self.main_url = main_url
 
         if not self.workflow.authentication:
             raise RedirectionNeededError("Application '{}' does not need authentication".format(self.workflow.name),
                                          self.workflow.get_redirect_uri())
 
-    def get_username_by_email(self, backend, fallback_backends, email):
+    def get_username_by_email(self, repositories, email):
         e = None
-        try:
-            if backend.subtype == "internal":
-                user = User.objects.get(email=email)
-                result = {
-                    'user': user,
-                    'backend': backend
-                }
-            else:
-                result = backend.get_backend().search_user_by_email(email)
-            logger.info("SELF::get_user_by_email: User '{}' successfully found on backend '{}'".format(result['user'],
-                                                                                                       result[
-                                                                                                           'backend']))
-            self.backend_id = str(backend.id)
-            return result
+        for repo in repositories:
+            try:
+                if repo.subtype == "internal":
+                    user = User.objects.get(email=email)
+                    result = {
+                        'name': user,
+                        'backend': repo
+                    }
+                else:
+                    result = repo.get_client().search_user_by_email(email)
+                    result['backend'] = repo
+                logger.info("SELF::get_user_by_email: User '{}' successfully found on backend '{}'".format(
+                            result['name'],
+                            result['backend']))
+                return result
 
-        except Exception as e:
-            logger.error(
-                "SELF::get_user_by_email: Failed to find email '{}' on primary backend '{}' : '{}'".format(email,
-                                                                                                           str(backend),
-                                                                                                           str(e)))
-            logger.exception(e)
-            for fallback_backend in fallback_backends:
-                try:
-                    if backend.subtype == "internal":
-                        user = User.objects.get(email=email)
-                        result = {
-                            'user': user,
-                            'backend': backend
-                        }
-                    else:
-                        result = fallback_backend.get_backend().search_user_by_email(email)
-                    logger.info(
-                        "SELF::get_user_by_email: User '{}' successfully found on backend '{}'".format(result['user'],
-                                                                                                       result[
-                                                                                                           'backend']))
-                    self.backend_id = str(fallback_backend.id)
-                    return result
-
-                except Exception as e:
-                    logger.error(
-                        "SELF::get_user_by_email: Failed to find email '{}' on primary backend '{}' : '{}'".format(
-                            email, str(backend), str(e)))
-                    logger.exception(e)
+            except Exception as e:
+                logger.error(
+                    "SELF::get_user_by_email: Failed to find email '{}' on backend '{}' : '{}'".format(
+                        email, repo, str(e)))
+                logger.exception(e)
 
         raise e or AuthenticationError
 
@@ -147,9 +131,9 @@ class SELFService(object):
                                                                                                        password),
                                                                     username)
         else:
-            authentication_results = backend.get_backend().authenticate(username, password,
-                                                                        acls=self.application.access_mode,
-                                                                        logger=logger)
+            authentication_results = backend.get_client().authenticate(username, password,
+                                                                       #acls=self.application.access_mode, # TODO
+                                                                       )
 
         logger.info(
             "AUTH::authenticate: User '{}' successfully authenticated on backend '{}'".format(username, backend))
@@ -159,7 +143,7 @@ class SELFService(object):
 
     def retrieve_credentials(self, request):
         """ Get portal_cookie name and application_cookie name from cluster """
-        portal_cookie_name = self.cluster.getPortalCookie()
+        portal_cookie_name = self.config.portal_cookie_name
         """ Get portal cookie value (if exists) """
         portal_cookie = request.COOKIES.get(portal_cookie_name, None)
         assert portal_cookie, "SELF:: Portal cookie not found"
@@ -168,20 +152,9 @@ class SELFService(object):
         assert self.redis_portal_session.exists(), "SELF:: Invalid portal session"
 
         # And get username from redis_portal_session
-        self.username = self.redis_portal_session.keys.get('login_' + str(self.application.getAuthBackend().id)) or (([
-                                                                                                                          self.redis_portal_session.keys.get(
-                                                                                                                              'login_' + str(
-                                                                                                                                  backend_fallback.id))
-                                                                                                                          for
-                                                                                                                          backend_fallback
-                                                                                                                          in
-                                                                                                                          self.application.getAuthBackendFallback()
-                                                                                                                          if
-                                                                                                                          self.redis_portal_session.keys.get(
-                                                                                                                              'login_' + str(
-                                                                                                                                  backend_fallback.id))] or [
-                                                                                                                          None])[
-                                                                                                                         0])
+        self.backend_id = self.redis_portal_session.get_auth_backend(self.workflow.id)
+        self.username = self.redis_portal_session.get_login(str(self.backend_id))
+
         assert self.username, "Unable to find username in portal session !"
 
     def perform_action(self):
@@ -225,110 +198,86 @@ class SELFService(object):
         return self_message_main(request, self.application, self.token_name, app_list, self.username, error)
 
     def message_response(self, message):
-        return self_message_response(self.application, self.token_name, message)
+        return self_message_response(self.workflow.authentication, message, self.main_url)
 
-    def ask_credentials_response(self, request, action, error_msg):
-        return self_ask_passwords(request, self.application, self.token_name,
-                                  request.GET.get("rdm", None) or request.POST.get('rdm', None), action, error_msg)
+    def ask_credentials_response(self, request, action, error_msg, **kwargs):
+        return self_ask_passwords(request,
+                                  self.workflow.authentication,
+                                  action,
+                                  request.GET.get(RESET_PASSWORD_NAME) or request.POST.get(RESET_PASSWORD_NAME),
+                                  error_msg,
+                                  **kwargs)
 
 
 class SELFServiceChange(SELFService):
-    def __init__(self, app_id, token_name):
-        super(SELFServiceChange, self).__init__(app_id, token_name)
+    def __init__(self, workflow, token_name, global_config, main_url):
+        super().__init__(workflow, token_name, global_config, main_url)
         self.backend = None
-
-    def authenticated_on_backend(self):
-        backend_list = list(self.application.getAuthBackendFallback())
-        backend_list.append(self.application.getAuthBackend())
-        for backend in backend_list:
-            if self.redis_portal_session.authenticated_backend(backend.id):
-                return str(backend.id)
-        return ""
 
     def retrieve_credentials(self, request):
 
         """ We may have a password reset token in URI """
-        rdm = request.GET.get("rdm", None) or request.POST.get('rdm', None)
+        rdm = request.GET.get(RESET_PASSWORD_NAME, None) or request.POST.get(RESET_PASSWORD_NAME, None)
 
+        # If not reset key, old password is required
         if not rdm:
-            super(SELFServiceChange, self).retrieve_credentials(request)
+            super().retrieve_credentials(request)
+        else:
+            # Chec rdm key format
+            assert re_match("^[0-9a-f-]+$", rdm), "PORTAL::self: Injection attempt on 'rdm'"
 
+        # Check if passwords are correct
         old_password = None  # None if rdm
-        new_passwd = request.POST['password_1']
-        new_passwd_cfrm = request.POST['password_2']
+        new_passwd = request.POST[INPUT_PASSWORD_1]
+        new_passwd_cfrm = request.POST[INPUT_PASSWORD_2]
         if new_passwd != new_passwd_cfrm:
             raise PasswordMatchError("Password and confirmation mismatches")
 
-        auth_backend = self.application.getAuthBackend()
-        auth_backend_fallbacks = self.application.getAuthBackendFallback()
-
+        # If reset key, search username by email in repositories
         if rdm:
-            assert re_match("^[0-9a-f-]+$", rdm), "PORTAL::self: Injection attempt on 'rdm'"
-
             email = self.redis_base.hget('password_reset_' + rdm, 'email')
             assert email, "SELF::Change: Invalid Random Key provided: '{}'".format(rdm)
+            repo_id = self.redis_base.hget('password_reset_' + rdm, 'repo_id')
+            if repo_id:
+                # Only one backend if given in Redis session
+                backends = [BaseRepository.objects.get(pk=repo_id).get_daughter()]
+            else:
+                backends = [repo.get_daughter() for repo in self.workflow.authentication.repositories.filter(subtype="LDAP")]
 
-            user_infos = self.get_username_by_email(auth_backend, auth_backend_fallbacks, email)
-            self.username = user_infos['user']
+            user_infos = self.get_username_by_email(backends, email)
+            self.username = user_infos['name']
             self.backend = user_infos['backend']
 
         else:
             # Get old_password
-            old_password = request.POST['password_old']  # If raise -> ask credentials
+            old_password = request.POST[INPUT_PASSWORD_OLD]  # If raise -> ask credentials
 
-            # Get redis_portal_session
-            portal_cookie = request.COOKIES.get(self.cluster.getPortalCookie())
-            self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie)
-            # If not present -> 403
-            assert self.redis_portal_session.exists(), "PORTAL::self: portal session is not valid !"
+            # Use repository on which user authenticated to access this app (in redis session)
+            repo = BaseRepository.objects.get(pk=self.backend_id).get_daughter()
 
-            # And get username & backend from redis_portal_session
+            # Try to authenticate user with given old password
             user_infos = dict()
-            auth_backend = self.application.getAuthBackend()
-            if self.redis_portal_session.keys.get('login_' + str(self.application.getAuthBackend().id)):
-                try:
-                    user_infos = self.authenticate_on_backend(auth_backend, self.username, old_password)
-                    self.username = self.redis_portal_session.keys.get('login_' + str(auth_backend.id))
-                    self.backend = auth_backend
-                except Exception as e:
-                    logger.error(
-                        "Seems to have wrong old password on backend : '{}', exception details : " + self.application.getAuthBackend().repo_name)
-                    logger.exception(e)
-            if not user_infos:
-                for backend_fallback in self.application.getAuthBackendFallback():
-                    if self.redis_portal_session.keys.get('login_' + str(backend_fallback.id)):
-                        try:
-                            user_infos = self.authenticate_on_backend(backend_fallback, self.username, old_password)
-                            self.username = self.redis_portal_session.keys.get('login_' + str(backend_fallback.id))
-                            self.backend = backend_fallback
-                            break
-                        except:
-                            logger.error("Seems to have wrong old password on backend : " + backend_fallback.repo_name)
-
-            if not self.backend:
+            try:
+                user_infos = self.authenticate_on_backend(repo, self.username, old_password)
+                self.backend = user_infos['backend']
+                self.username = user_infos['name']
+            except Exception as e:
+                logger.error(f"Seems to have wrong old password on backend : '{repo.name}', exception details : {e}")
+                logger.exception(e)
                 raise AuthenticationError("Wrong old password")
+
             logger.debug("PORTAL::self: Found username from portal session: {}".format(self.username))
 
         return old_password
 
     # Change password
     def perform_action(self, request, old_password):
-        new_passwd = request.POST['password_1']
-        new_passwd_cfrm = request.POST['password_2']
 
-        rdm = (request.GET.get("rdm", None) or request.POST.get('rdm', None))
+        # If we are here, password1 == password2 and old_password is correct if not reset
+        # If reset, reset_key has been verified + repo has been found
+        new_passwd = request.POST[INPUT_PASSWORD_1]
 
-        # If not rdm : Verify password
-        if not rdm:
-            saved_app_id = self.redis_portal_session.keys['app_id_' + str(self.backend.id)]
-            saved_app = Application.objects(id=ObjectId(saved_app_id)).only('id', 'name', 'pw_min_len',
-                                                                            'pw_min_upper', 'pw_min_lower',
-                                                                            'pw_min_number', 'pw_min_symbol').first()
-            if not self.redis_portal_session.getAutologonPassword(str(saved_app.id), str(self.backend.id),
-                                                                  self.username):
-                raise AuthenticationError("Wrong old password")
-        else:
-            saved_app = self.application
+        rdm = (request.GET.get(RESET_PASSWORD_NAME, None) or request.POST.get(RESET_PASSWORD_NAME, None))
 
         # Check if password meets required complexity
         upper_case = 0
@@ -336,26 +285,26 @@ class SELFServiceChange(SELFService):
         number = 0
         symbol = 0
 
-        min_len = int(saved_app.pw_min_len)
-        min_upper = int(saved_app.pw_min_upper)
-        min_lower = int(saved_app.pw_min_lower)
-        min_number = int(saved_app.pw_min_number)
-        min_symbol = int(saved_app.pw_min_symbol)
-
-        for i in new_passwd:
-            if i.isupper():
-                upper_case += 1
-            elif i.islower():
-                lower_case += 1
-            elif i.isdigit():
-                number += 1
-            else:
-                symbol += 1
-
-        if not (len(
-                new_passwd) >= min_len and upper_case >= min_upper and lower_case >= min_lower and number >= min_number and symbol >= min_symbol):
-            logger.info("SELF::change_password: Password is too weak")
-            raise AuthenticationError("Password do not meet complexity requirements")
+        # min_len = int(self.workflow.pw_min_len)
+        # min_upper = int(self.workflow.pw_min_upper)
+        # min_lower = int(self.workflow.pw_min_lower)
+        # min_number = int(self.workflow.pw_min_number)
+        # min_symbol = int(self.workflow.pw_min_symbol)
+        #
+        # for i in new_passwd:
+        #     if i.isupper():
+        #         upper_case += 1
+        #     elif i.islower():
+        #         lower_case += 1
+        #     elif i.isdigit():
+        #         number += 1
+        #     else:
+        #         symbol += 1
+        #
+        # if not (len(
+        #         new_passwd) >= min_len and upper_case >= min_upper and lower_case >= min_lower and number >= min_number and symbol >= min_symbol):
+        #     logger.info("SELF::change_password: Password is too weak")
+        #     raise AuthenticationError("Password do not meet complexity requirements")
 
         if self.backend.subtype == "internal":
             user = User.objects.get(username=str(self.username))
@@ -363,82 +312,39 @@ class SELFServiceChange(SELFService):
             user.password = new_password_hash
             user.save()
         else:
-            self.backend.change_password(self.username, old_password, new_passwd,
-                                         krb5_service=self.application.app_krb_service)
+            self.backend.get_client().update_password(self.username, old_password, new_passwd)
+                                                      #krb5_service=self.application.app_krb_service)
         logger.info("SELF::change_password: Password successfully changed in backend")
 
         # If not rdm : set new password in Redis portal session
         if not rdm:
-            if self.redis_portal_session.setAutologonPassword(str(saved_app.id), str(saved_app.name),
-                                                              str(self.backend.id), self.username, old_password,
-                                                              new_passwd) is None:
-                # If setAutologonPasswd return None : the old_password was incorrect
-                raise AuthenticationError("Wrong old password")
-            logger.info("SELF::change_password: Password successfully changed in Redis")
+            self.redis_portal_session.setAutologonPassword(self.workflow.id, self.workflow.name,
+                                                           self.backend_id, self.username, new_passwd)
 
         return "Password successfully changed"
 
 
 class SELFServiceLost(SELFService):
-    def __init__(self, app_id, token_name):
-        super(SELFServiceLost, self).__init__(app_id, token_name)
+    def __init__(self, workflow, token_name, global_config, main_url):
+        super().__init__(workflow, token_name, global_config, main_url)
 
     def retrieve_credentials(self, request):
         """ We may have a password reset token in URI """
-        email = request.POST['email']  # -> ask email if raise KeyError
+        email = request.POST[INPUT_EMAIL]  # -> ask email if raise KeyError
 
-        # TODO : Verify email format : if wrong format => ask credentials + error msg || 403
+        # raise django.core.exceptions.ValidationError: ['Enter a valid email address.']
+        validate_email(email)
 
-        user_infos = self.get_username_by_email(self.application.getAuthBackend(),
-                                                self.application.getAuthBackendFallback(), email)
-        self.username = user_infos['user']
+        user_infos = self.get_username_by_email(self.workflow.authentication.repositories, email)
+        self.username = user_infos['name']
+        self.backend = user_infos['backend']
 
         return email
 
     def send_lost_mail(self, request, email):
 
-        # """ Generate an UUID64 and store it in redis """
-        reset_key = Uuid4().generate()
-
-        redis_key = 'password_reset_' + reset_key
-
-        """ Store the reset-key in Redis """
-        # The 'a' is for Redis stats, to make a distinction with Token entries
-        self.redis_base.hmset(redis_key, {'email': email, 'a': 1})
-        """ The key will expire in 10 minutes """
-        self.redis_base.expire(redis_key, 600)
-
-        """ Send the email with the link """
-        reset_link = self.application.get_redirect_uri() + str(self.token_name) + '/self/change?rdm=' + reset_key
-
-        msg = MIMEMultipart('alternative')
-        email_from = self.application.template.email_from
-        msg['From'] = email_from
-        msg['To'] = email
-        obj = {'name': self.application.name, 'url': self.application.get_redirect_uri()}
-        env = Environment(loader=FileSystemLoader("/home/vlt-gui/vulture/portal/templates/"))
-        msg['subject'] = env.get_template("portal_%s_email_subject.conf" % (str(self.application.template.id))).render(
-            {'app': obj})
-        email_body = env.get_template("portal_%s_email_body.conf" % (str(self.application.template.id))).render(
-            {'resetLink': reset_link, 'app': obj})
-        msg.attach(MIMEText(email_body, "html"))
-
-        node = self.cluster.get_current_node()
-        if hasattr(node.system_settings, 'smtp_settings') and getattr(node.system_settings, 'smtp_settings'):
-            settings = getattr(node.system_settings, 'smtp_settings')
-        else:
-            """ Not found, use cluster settings for configuration """
-            settings = getattr(self.cluster.system_settings, 'smtp_settings')
-
-        try:
-            logger.debug("Sending link '{}' to '{}'".format(reset_link, email))
-            smtpObj = SMTP(settings.smtp_server)
-            # message = "Subject: " + unicode (email_subject) + "\n\n" + unicode (email_body)
-            smtpObj.sendmail(email_from, email, msg.as_string())
-        except Exception as e:
-            logger.error("SELF::Lost: Failed to send email to '{}' : ".format(email))
-            logger.exception(e)
-            raise SMTPException("<b>Send mail failure</b> <br> Please contact your administrator")
+        perform_email_reset(logger, self.main_url, self.workflow.name, self.workflow.authentication.portal_template,
+                            email, expire=60, repo_id=self.backend.id)
 
         return "Mail successfully sent to '{}'".format(email)
 
@@ -450,11 +356,11 @@ class SELFServiceLost(SELFService):
 
 
 class SELFServiceLogout(SELFService):
-    def __init__(self, app_id, token_name):
-        super(SELFServiceLogout, self).__init__(app_id, token_name)
+    def __init__(workflow, token_name, global_config, main_url):
+        super().__init__(workflow, token_name, global_config, main_url)
 
     def retrieve_credentials(self, request):
-        super(SELFServiceLogout, self).retrieve_credentials(request)
+        super().retrieve_credentials(request)
 
         return literal_eval(self.redis_portal_session.keys['app_list'])
 

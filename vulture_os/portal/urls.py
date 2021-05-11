@@ -61,8 +61,13 @@ urlpatterns = [
     re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/oauth2/userinfo', openid_userinfo, name="OpenID user_infos"),
 
     re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/vulture_disconnect$', handle_disconnect, name="Disconnect"),
-    #re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/self$', self, name="Log in"),
-    #re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/self/(?P<action>[a-z+)$', self, name="Log in"),
+
+    re_path('^portal/portal_(?P<portal_id>[A-Za-z0-9]+)/self$', self, name="Self main"),
+    re_path('^portal/portal_(?P<portal_id>[A-Za-z0-9]+)/self/(?P<action>[a-z]+)$', self, name="Self action"),
+
+    re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/self$', self, name="Self main"),
+    re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/self/(?P<action>[a-z]+)$', self, name="Self action"),
+
     re_path('^portal/(?P<workflow_id>[A-Za-z0-9]+)/.*$', log_in, name="Log in"),
     # re_path('/2fa/otp', log_in),
     #

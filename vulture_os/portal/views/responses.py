@@ -194,62 +194,48 @@ def learning_authentication_response(request, template_id, action_url, token, fi
 	                                'form_end':form_end, 'input_submit':input_submit, 'error_message':error_message},
 	                               context_instance=RequestContext(request))
 
+#def otp_authentication_response(request, portal, otp_type, qrcode, error="" ,**kwargs):
+def self_ask_passwords(request, portal, action, rdm=None, error="", **kwargs):
 
-def self_ask_passwords(request, application, token_name, rdm, action, error_msg):
-	if rdm:
-		input_password_old = render_input('text', 'rdm', value=rdm, i_class='form-control')
-	else:
-		input_password_old = render_input('password', 'password_old', placeholder='Old password', i_class='form-control', required=True)
+	error_msg = error or ""
+	dialog_change = action == "change"
+	dialog_lost = action == "lost"
 
-	input_password_1 = render_input('password', 'password_1', placeholder='New password', i_class='form-control', required=True)
-	input_password_2 = render_input('password', 'password_2', placeholder='Confirmation', i_class='form-control', required=True)
-	input_email      = render_input('email', 'email', placeholder='Email', i_class='form-control', required=True)
+	reset_password_key = rdm
 
-	input_submit = render_button('btn btn-lg btn-warning btn-block btn-signin', text="Ok")
-	style 		 = render_stylesheet('/{}/templates/portal_{}.css'.format(str(token_name), str(application.template.id)))
-	form_begin   = render_form('{}{}/self/{}'.format(str(application.public_dir), str(token_name), action))
-	form_end     = '</form>'
-	error_mess   = error_msg or ""
+	return HttpResponse(portal.render_template("html_password",
+											   dialog_change=dialog_change,
+											   dialog_lost=dialog_lost,
+											   reset_password_key=reset_password_key,
+											   error_message=error_msg,
+											   **kwargs))
 
-	return render_to_response("portal_%s_html_password.conf" % (str(application.template.id)),
-							  {'style': style, 'dialog_change': action=="change", 'dialog_lost': action=="lost",
-							   'dialog_lost_sent': False, 'form_begin': form_begin, 'form_end': form_end, # dialog_lost_sent ???
-							   'input_password_old': input_password_old, 'input_password_1': input_password_1,
-							   'input_password_2': input_password_2, 'input_submit': input_submit,
-							   'input_email': input_email, 'error_message': error_mess},
-							  context_instance=RequestContext(request))
-
-
-def self_message_response(application, token_name, message):
-	style = render_stylesheet('/{}/templates/portal_{}.css'.format(str(token_name), str(application.template.id)))
-	link_redirect = application.get_redirect_uri()
-	return render_to_response("portal_%s_html_message.conf" % str(application.template.id),
-							  {'style': style, 'link_redirect': link_redirect, 'message': message})
+	# return render_to_response("portal_%s_html_password.conf" % (str(application.template.id)),
+	# 						  {'style': style, 'dialog_change': action=="change", 'dialog_lost': action=="lost",
+	# 						   'dialog_lost_sent': False, 'form_begin': form_begin, 'form_end': form_end, # dialog_lost_sent ???
+	# 						   'input_password_old': input_password_old, 'input_password_1': input_password_1,
+	# 						   'input_password_2': input_password_2, 'input_submit': input_submit,
+	# 						   'input_email': input_email, 'error_message': error_mess},
+	# 						  context_instance=RequestContext(request))
 
 
-def self_message_main(request, application, token_name, app_list, username, error=None):
-	"""  """
-	""" Build the URL to change password """
-	changePassword = str(application.get_redirect_uri()) + str(token_name) + '/self/change'
-	""" Build the URL to general logout """
-	general_logout = str(application.get_redirect_uri()) + str(token_name) + '/self/logout'
-	style = '<link rel="stylesheet" type="text/css" href="/' + str(token_name) + '/templates/portal_%s.css">' % (str(application.template.id))
-	form_begin = '<form action="' + str(application.public_dir) + str(token_name) + '/self' + '/' + str(application.id) + '" method="post" autocomplete="off">'
-	form_end = '</form>'
+def self_message_response(portal, message, app_url=None, **kwargs):
+	return HttpResponse(portal.render_template("html_message", message=message, link_redirect=app_url, **kwargs))
+	#return render_to_response("portal_%s_html_message.conf" % str(application.template.id),
+	#						  {'style': style, 'link_redirect': link_redirect, 'message': message})
 
-	error_messages = {
-		"change_ok"  : application.template.error_password_change_ok,
-		"change_ko"  : application.template.error_password_change_ko,
-		"email_sent" : application.template.error_email_sent
-	}
 
-	error_msg = error_messages.get(error, "")
+def self_message_main(request, portal, main_url, token_name, app_list, username, error=None):
+	# Build the URL to change password
+	change_password_url = main_url + str(token_name) + '/self/change'
+	# Build the URL to general logout
+	logout_url = main_url + str(token_name) + '/self/logout'
 
-	return render_to_response("portal_%s_html_self.conf" % (str(application.template.id)),
-							  {'style': style, 'form_begin': form_begin, 'application_list': app_list,
-							   'form_end': form_end, 'changePassword': changePassword, 'error_message': error_msg,
-							   'logout': general_logout, 'username': username},
-							  context_instance=RequestContext(request))
+	error_msg = error or ""
+
+	return HttpResponse(portal.render_template("html_self", error_message=error,
+											   username=username, application_list=app_list,
+											   changePassword=change_password_url, logout=logout_url))
 
 
 def register_ask1(request, application, token_name, captcha_key, captcha, error=None):

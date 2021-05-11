@@ -304,24 +304,11 @@ class REDISPortalSession(REDISSession):
 
 
     """ Update encrypted password in REDIS """
-    def setAutologonPassword(self, app_id, app_name, backend_id, username, old_password, new_password):
-        result = None
-        # SECURITY : Verify if the old password is correct !
-        if self.getAutologonPassword(app_id, backend_id, username) == old_password:
-            # Update password
-            pwd = LearningProfile()
-            p = pwd.set_data(str(app_id), app_name, str(backend_id),
-                             BaseRepository.objects.get(pk=backend_id).name,
-                             username, 'vlt_autologon_password', new_password)
-            if p:
-                self.keys['password_' + str(backend_id)] = p
-                result = self.handler.hset(self.key, 'password_'+str(backend_id), p)
-            else:
-                logger.info("REDISPortalSession::setAutologonPassword: Unable to encrypt password ")
-        else:
-            logger.info("REDISPortalSession::setAutologonPassword: Wrong old_password : cannot set the new one")
-        return result
-
+    def setAutologonPassword(self, app_id, app_name, backend_id, username, password):
+        pwd = LearningProfile()
+        p = pwd.set_data(app_id, app_name, backend_id, BaseRepository.objects.get(pk=backend_id).name, username,
+                         'vlt_autologon_password', password)
+        self.keys[f'password_{backend_id}'] = p
 
     def getData(self):
         """ Return portal_session or None if portal session does not exist """
@@ -384,10 +371,7 @@ class REDISPortalSession(REDISSession):
 
         if password:
             # Encrypt the password with the application id and user login and store it in portal session
-            pwd = LearningProfile()
-            p = pwd.set_data(app_id, app_name, backend_id, BaseRepository.objects.get(pk=backend_id).name, username,
-                             'vlt_autologon_password', password)
-            self.keys[f'password_{backend_id}'] = p
+            self.setAutologonPassword(app_id, app_name, backend_id, username, password)
 
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "

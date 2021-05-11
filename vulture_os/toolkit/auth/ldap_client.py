@@ -111,7 +111,7 @@ class LDAPClient(BaseAuth):
         if not self.group_member_attr:
             self.group_member_attr = "member"
 
-        self.attributes_list = list()
+        self.attributes_list = [self.user_attr]
         if self.user_mobile_attr:
             self.attributes_list.append(str(self.user_mobile_attr))
         if self.user_email_attr:
@@ -369,29 +369,26 @@ class LDAPClient(BaseAuth):
         self.scope = self.user_scope
 
         brut_result = self._search(dn, query_filter, email)
-
         if not brut_result:
             raise UserNotFound("User not found in database for email '{}'".format(email))
 
-        return brut_result[0][0].split(",")[0].split('=')[1]
+        return self._format_user_results(brut_result[0][0], brut_result[0][1])
 
 
-    def update_password (self, username, old_password, cleartext_password):
+    def update_password (self, username, old_password, cleartext_password, **kwargs):
         """ Update a user password inside LDAP Repo
 
         :param username: String with username
         :param cleartext_password: String with cleartext password
         :return: True if Success, False otherwise
         """
-        username = username.encode('utf-8')
-        cleartext_password = cleartext_password.encode('utf-8')
 
         logger.info("Updating password for username {}".format(username))
 
         """ First search for user """
         found = self.search_user(username)
         if found:
-            cn = found[0][0].encode('utf-8')
+            cn = found[0][0]
             self._bind_connection(self.user, self.password)
             try:
                 old_password=None
