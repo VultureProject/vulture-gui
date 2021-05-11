@@ -136,9 +136,6 @@
       defaultContent: "",
       mRender: function(data, type, row) {
         let btns = []
-        if (row.enable_external)
-          btns.push('<a class="btn btn-flat btn-xs btn-info" data-toggle="tooltip" data-placement="top" title="View" href="/portal/user_authentication/view/' + data + '"><span><i class="fa fa-eye"></i></span></a>' )
-
         btns.push('<a class="btn btn-flat btn-xs btn-primary" href="/portal/user_authentication/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' )
         btns.push('<a class="btn btn-flat btn-xs btn-danger" href="/portal/user_authentication/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>')
         return btns.join("&nbsp;")
