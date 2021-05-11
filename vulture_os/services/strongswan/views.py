@@ -119,7 +119,7 @@ def strongswan_delete(request, object_id, api=False):
     })
 
 
-def strongswan_edit(request, object_id, api=False, update=False):
+def strongswan_edit(request, object_id=None, api=False, update=False):
     strongswan = None
     if object_id:
         try:
