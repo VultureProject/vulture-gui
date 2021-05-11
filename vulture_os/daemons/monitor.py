@@ -174,6 +174,7 @@ def monitor():
             default = ("ERROR", str(e))
             statusall, tunnel_statuses, ups, connectings = "ERROR", {}, 0, 0
 
+        strongswan.tunnels_status = {}
         for network in strongswan.ipsec_rightsubnet.split(','):
             strongswan.tunnels_status[network] = tunnel_statuses.get(network, default)
             logger.debug("Status of IPSEC Tunnel '{}' : {}".format(network, strongswan.tunnels_status[network]))
