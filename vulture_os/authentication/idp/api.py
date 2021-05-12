@@ -208,8 +208,11 @@ class IDPApiUserView(View):
                                         user_mail,
                                         repo_id=repo_id,
                                         expire=72 * 3600):
+                    logger.error(f"Failed to send registration email to '{user_mail}'")
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's registration email")}, status=500)
+                else:
+                    logger.info(f"Registration email re-sent to '{user_mail}'")
 
             elif action == "reset_password":
                 if not perform_email_reset(logger,
@@ -219,8 +222,11 @@ class IDPApiUserView(View):
                                  user_mail,
                                  repo_id=repo_id,
                                  expire=3600):
+                    logger.error(f"Failed to send reset password email to '{user_mail}'")
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's reset password email")}, status=500)
+                else:
+                    logger.info(f"Reset password email sent to '{user_mail}'")
 
             elif action in ("lock", "unlock"):
                 user_dn = request.JSON["id"]
