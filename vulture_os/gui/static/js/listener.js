@@ -58,17 +58,6 @@ function refresh_api_parser_type(type_){
     }
   }
 
-  /*$('#id_api_parser_type').unbind('change');
-  $('#id_api_parser_type').on('change', function(){
-    var parser_type = $(this).val();
-
-    if ($.inArray(parser_type, ['forcepoint']) === -1){
-      $('#id_ruleset').val('forcepoint').trigger('change');
-    } else {
-      $('#id_ruleset').val('generic_json').trigger('change');
-    }
-  });*/
-
   $('.fetch_data_api_parser').unbind('click');
   $('.fetch_data_api_parser').on('click', function(){
     PNotify.removeAll();
@@ -222,16 +211,23 @@ $(function() {
   }
 
   /* Show network only fields, or hide them */
-  function show_network_conf(mode, listening_mode) {
+  function show_network_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an rsyslog / File only conf */
-    if(mode === "log" && listening_mode === "file") {
+    if ((mode === "log" && listening_mode === "file") || (mode === "filebeat" && filebeat_listening_mode === "file" )) {
       $('.network-mode').hide();
       $('.api-mode').hide();
       $('.kafka-mode').hide();
       $('.redis-mode').hide();
       // ALWAYS put show at last
       $('.file-mode').show();
-    } else if (mode === "log" && listening_mode === "api"){
+    } else if (mode === "filebeat" && filebeat_listening_mode === "api") {
+      $('.network-mode').hide();
+      $('.file-mode').hide();
+      $('.kafka-mode').hide();
+      $('.redis-mode').hide();
+      $('.api-mode').hide();
+      $('.filebeat-api-mode').show();
+    }else if (mode === "log" && listening_mode === "api") {
       $('.network-mode').hide();
       $('.file-mode').hide();
       $('.kafka-mode').hide();
@@ -263,9 +259,9 @@ $(function() {
   }
 
   /* Show rsyslog only fields, or hide them */
-  function show_custom_conf(mode, listening_mode) {
-    /* If it is an Rsyslog only conf */
-    if( (mode === "log" && (listening_mode === "udp" || listening_mode === "file" || listening_mode === "api" || listening_mode === "kafka" || listening_mode === "redis")) || mode === "impcap") {
+  function show_custom_conf(mode, listening_mode, filebeat_listening_mode) {
+    /* If it is an UDP mode only => HAProxy is useless */
+    if( (mode === "log" && (listening_mode === "udp" || listening_mode === "file" || listening_mode === "api" || listening_mode === "kafka" || listening_mode === "redis")) || (mode === "filebeat" && (filebeat_listening_mode === "udp" || filebeat_listening_mode === "file" || filebeat_listening_mode === "api")) || mode === "impcap") {
       $('.haproxy-conf').hide();
     } else {
       $('.haproxy-conf').show();
@@ -274,25 +270,25 @@ $(function() {
 
 
   /* Show fields, or hide them, depending on chosen listening mode */
-  function show_listening_mode(mode, listening_mode) {
+  function show_listening_mode(mode, listening_mode, filebeat_listening_mode) {
     /* If listening mode is TCP, show according options */
-    if( mode == "log" && listening_mode === "tcp" ) {
+    if (mode === "log" && listening_mode === "tcp") {
       $('.listening-tcp').show();
     } else {
       $('.listening-tcp').hide();
     }
   }
 
-  function refresh_input_logs_type(mode, listening_mode){
+  function refresh_input_logs_type(mode, listening_mode, filebeat_listening_mode){
     var first = true;
-    if(mode === "log" && listening_mode !== "api") {
+    if((mode === "log" && listening_mode !== "api") || (mode === "filebeat" && filebeat_listening_mode !== "api") ){
       $('#ruleset-div').show();
       $('#id_node').show();
     }
     else {
       $('#ruleset-div').hide();
       $('#id_node').hide();
-      if(mode === "log" && listening_mode === "api") {
+      if((mode === "log" && listening_mode === "api") || (mode === "filebeat" && filebeat_listening_mode === "api") ){
         // Bind API inputs
         $("#tab_api_client input").each(function(){
           $(this).unbind('click');
@@ -388,36 +384,45 @@ $(function() {
   }
 
   /* Show fields depending on chosen mode */
-  var last_enable_log = ($('#id_mode').val()!=="log") ? ($('#id_enable_logging').is(":checked")) : (false);
+  var last_enable_log = ($('#id_mode').val()!=="log" && $('#id_mode').val()!=="filebeat") ? ($('#id_enable_logging').is(":checked")) : (false);
   $('#id_mode').on('change', function(event) {
     var mode = $(this).val();
     $('.http-mode').hide();
     $('.tcp-mode').hide();
     $('.log-mode').hide();
+    $('.filebeat-mode').hide();
     $('.impcap-mode').hide();
     $('.'+mode+'-mode').show();
 
-    /* If mode = LOG => Activate logging automatically */
+    if (mode === "filebeat") {
+      $('.log-mode').show();
+      $('.no-filebeat-mode').hide();
+    }
+    else {
+      $('.filebeat-mode').hide();
+    }
+
+    /* If mode = LOG / Filebeat => Activate logging automatically */
     var log_enabled = $('#id_enable_logging').is(":checked");
-    if( (mode === "log" || mode === "impcap") && !log_enabled ) {
+    if( (mode === "log" || mode === "filebeat" || mode === "impcap") && !log_enabled ) {
       $('#id_enable_logging').trigger('click');
       $('#id_enable_logging').prop("disabled", true);
       last_enable_log = log_enabled;
-    } else if( mode !== "log" && mode !== "impcap" ) {
+    } else if ( mode !== "log" && mode !== "filebeat" && mode !== "impcap" ) {
       if( mode === "http" ) {
         refresh_http();
         $('#id_enable_logging').prop("disabled", false);
         if( last_enable_log != log_enabled )
           $('#id_enable_logging').trigger('click');
       }
-    } else if ( mode === "log" ) {
+    } else if ( mode === "log" || mode === "impcap") {
       last_enable_log = log_enabled;
       $('#id_enable_logging').prop("disabled", true);
       if( $('#stock_logs_locally').is(':checked') ) {
         $('#stock_logs_locally').click();
       }
 
-      refresh_input_logs_type(mode, $('#id_listening_mode').val());
+      refresh_input_logs_type(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     }
     if( mode === "impcap" ) {
       load_impcap_filter_type();
@@ -428,9 +433,9 @@ $(function() {
     $('#id_enable_logging').trigger("change");
     refresh_ruleset($('#id_ruleset').val());
 
-    show_custom_conf(mode, $('#id_listening_mode').val());
-    show_listening_mode(mode, $('#id_listening_mode').val());
-    show_network_conf(mode, $('#id_listening_mode').val());
+    show_custom_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+    show_listening_mode(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+    show_network_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_log_condition_failure();
     old_mode = mode;
   }).trigger('change');
@@ -454,6 +459,11 @@ $(function() {
   $('#id_darwin_policies').on("change", function(e) {
     var policy = $(this).val();
     show_darwin_mode(policy);
+  }).trigger('change');
+
+  $('#id_filebeat_module').on("change", function(e) {
+    var module = $(this).val();
+    $('#id_filebeat_config').text(filebeat_config[module]);
   }).trigger('change');
 
 
@@ -490,12 +500,19 @@ $(function() {
 
   /* Listening_mode bind */
   $('#id_listening_mode').on("change", function(e) {
-    show_custom_conf($('#id_mode').val(), $(this).val());
-    show_listening_mode($('#id_mode').val(), $(this).val());
-    show_network_conf($('#id_mode').val(), $(this).val());
-    refresh_input_logs_type($('#id_mode').val(), $(this).val());
+    show_custom_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
+    show_listening_mode($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
+    show_network_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
+    refresh_input_logs_type($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
   }).trigger('change');
 
+  /* Filebeat listening_mode bind */
+  $('#id_filebeat_listening_mode').on("change", function(e) {
+    show_custom_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
+    show_listening_mode($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
+    show_network_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
+    refresh_input_logs_type($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
+  }).trigger('change');
 
   /* Listeners code */
   var id = 0;
