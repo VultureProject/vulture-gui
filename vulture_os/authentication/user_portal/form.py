@@ -82,7 +82,7 @@ class UserAuthenticationForm(ModelForm):
     # OAuth2 MUST uses httpS !
     external_listener = ModelChoiceField(
         label=_("Listen IDP on"),
-        queryset=Frontend.objects.filter(enabled=True, mode="http", listener__tls_profiles__name__isnull=False).only(*Frontend.str_attrs()),
+        queryset=Frontend.objects.filter(enabled=True, mode="http", listener__tls_profiles__name__isnull=False).only(*Frontend.str_attrs()).distinct(),
         widget=Select(attrs={'class': 'form-control select2'}),
         required=False,
         empty_label=None
