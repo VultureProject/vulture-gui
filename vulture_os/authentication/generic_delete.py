@@ -171,10 +171,10 @@ class DeleteUserAuthentication(DeleteView):
                 return HttpResponseNotFound('Object not found.')
 
             # Destroy dereferenced objects first
+            obj_inst.delete()
             OpenIDRepository.objects.filter(client_id=obj_inst.oauth_client_id,
                                             client_secret=obj_inst.oauth_client_secret,
                                             provider="openid").delete()
-            obj_inst.delete()
 
         if kwargs.get('api'):
             return JsonResponse({"status": True})
