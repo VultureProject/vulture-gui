@@ -48,10 +48,8 @@ class HAProxySettings(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ First, use to_mongo() internal django function """
-        from workflow.models import Workflow
         return {
-            'global_config': Cluster.get_global_config(),
-            'workflows': [w.to_template() for w in Workflow.objects.all()]
+            'global_config': Cluster.get_global_config()
         }
 
     def __str__(self):
