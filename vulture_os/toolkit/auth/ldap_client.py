@@ -634,10 +634,6 @@ class LDAPClient(BaseAuth):
         for key, val in user_attrs.items():
             if key == "userPassword":
                 continue
-            if key == self.user_mobile_attr:
-                key = "user_phone"
-            elif key == self.user_email_attr:
-                key = "user_email"
             elif key == self.user_groups_attr:
                 user_groups = val
                 # Groups MUST be a list - do not convert to str if len == 1
@@ -645,6 +641,11 @@ class LDAPClient(BaseAuth):
             if isinstance(val, list) and len(val) == 1:
                 val = val[0]
             res[key] = val
+            # Add user_email and user_phone keys for OTP + SSO compatibility
+            if key == self.user_mobile_attr:
+                res['user_phone'] = val
+            elif key == self.user_email_attr:
+                res['user_email'] = val
         # Retrieve username with user_attr
         username = res.get(self.user_attr)
         if not username:
