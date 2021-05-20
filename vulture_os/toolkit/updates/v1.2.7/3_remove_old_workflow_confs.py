@@ -38,7 +38,7 @@ import django
 from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Cluster
 from workflow.models import Workflow
 
 if __name__ == "__main__":
@@ -53,12 +53,8 @@ if __name__ == "__main__":
             files_to_remove = [file for file in file_glob(f"/usr/local/etc/haproxy.d/workflow_*.cfg") if file not in active_workflow_files]
 
             for remove_file in files_to_remove:
-                try:
-                    os.remove(remove_file)
-                    print(f"removed {remove_file}")
-                except Exception as e:
-                    print(f"could not remove file {remove_file}: {e}")
-                    pass
+                print(f"removing obsolete {remove_file}")
+                node.api_request("services.haproxy.haproxy.delete_conf", os.path.basename(remove_file))
 
         except Exception as e:
             print("Failed to remove all obsolete workflow files: {}".format(e))
