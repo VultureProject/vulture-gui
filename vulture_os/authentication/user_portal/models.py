@@ -115,10 +115,11 @@ REPO_ATTR_SOURCE_CHOICES = (
 
 REPO_ATTR_CRITERION_CHOICES = (
     ('equals', "equals to"),
+    ('not equals', "does not equal to"),
     ('exists', "exists"),
-    ('not exists', "does not exists"),
+    ('not exists', "does not exist"),
     ('contains', "contains"),
-    ('not contains', "does not contains"),
+    ('not contains', "does not contain"),
     ('startswith', "starts with"),
     ('endswith', "ends with"),
 )
@@ -202,6 +203,8 @@ class RepoAttributes(models.Model):
     def validate_condition(self, value):
         if self.condition_criterion == "equals":
             return value == self.condition_match
+        if self.condition_criterion == "not equals":
+            return value != self.condition_match
         elif self.condition_criterion == "exists":
             return (len(value) != 0) if hasattr(value, "__len__") else bool(value)
         elif self.condition_criterion == "not exists":
