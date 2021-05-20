@@ -9,10 +9,15 @@ import djongo.models.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('authentication', '0010_auto_20210423_0940'),
+        ('authentication', '0010_auto_20210414_0255'),
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='otprepository',
+            name='totp_label',
+            field=models.TextField(default='Vulture App', help_text='Label to show in phone application', verbose_name='Time-based OTP label'),
+        ),
         migrations.AddField(
             model_name='repoattributes',
             name='assignator',
@@ -22,5 +27,15 @@ class Migration(migrations.Migration):
             model_name='userauthentication',
             name='repo_attributes',
             field=djongo.models.fields.ArrayField(default=None, help_text='Repo attributes whitelist, for re-use in SSO and ACLs', model_container=authentication.user_portal.models.RepoAttributes, model_form_class=authentication.user_portal.models.RepoAttributesForm, null=True, verbose_name='Create user scope'),
-        )
+        ),
+        migrations.CreateModel(
+            name='TOTPProfile',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('login', models.TextField(default='', verbose_name="User's login")),
+                ('encrypted_value', models.TextField(default='')),
+                ('auth_repository', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, to='authentication.BaseRepository', verbose_name='Authentication repository')),
+                ('totp_repository', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, related_name='totp_profiles_of', to='authentication.OTPRepository', verbose_name='TOTP authentication repository')),
+            ],
+        ),
     ]
