@@ -32,6 +32,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
 from authentication.user_portal.models import UserAuthentication
+from authentication.totp_profiles.models import TOTPProfile
 from authentication.ldap.tools import NotUniqueError, UserNotExistError
 from authentication.idp.attr_tools import MAPPING_ATTRIBUTES
 from toolkit.portal.registration import perform_email_registration, perform_email_reset
@@ -147,7 +148,7 @@ class IDPApiUserView(View):
             portal = UserAuthentication.objects.get(pk=portal_id)
             ldap_repo = get_repo(portal, repo_id)
 
-            if action and action not in ("resend_registration", "reset_password", "lock", "unlock"):
+            if action and action not in ("resend_registration", "reset_password", "lock", "unlock", "reset_otp"):
                 return JsonResponse({
                     "status": False,
                     "error": _("Invalid action")
@@ -196,9 +197,8 @@ class IDPApiUserView(View):
                 if "=" in user:
                     user = user.split('=')[1]
                 # We will need user' email for registration and reset
-                if action in ["resend_registration", "reset_password"]:
-                    user_id, user_mail = tools.find_user_email(ldap_repo, user)
-                    logger.info(f"User's email found : {user_mail}")
+                user_id, user_mail = tools.find_user_email(ldap_repo, user)
+                logger.info(f"User's email found : {user_mail}")
 
             if not action or action == "resend_registration":
                 if not perform_email_registration(logger,
@@ -228,14 +228,32 @@ class IDPApiUserView(View):
                 else:
                     logger.info(f"Reset password email sent to '{user_mail}'")
 
+            elif action == "reset_otp":
+                try:
+                    if not portal.otp_repository:
+                        logger.error(f"IDP::Reset_otp: TOTP not configured for portal {portal}")
+                        return JsonResponse({'status': False, 'error': _("TOTP not configured on portal")})
+                    otp_profile = TOTPProfile.objects.get(auth_repository=ldap_repo,
+                                                          totp_repository=portal.otp_repository,
+                                                          login=user)
+                    otp_profile.delete()
+                except TOTPProfile.DoesNotExist:
+                    logger.error(f"TOTP Profile not found for repo='{ldap_repo}', "
+                                 f"otp_repo='{portal.otp_repository}', user='{user}'")
+                    return JsonResponse({'status': False,'error': _("TOTP Profile not found")}, status=404)
+                except Exception as e:
+                    logger.exception(e)
+                    logger.error(f"Failed to reset otp for user '{user}'")
+                    return JsonResponse({'status': False,
+                                         'error': _("Fail to reset otp")}, status=500)
+                else:
+                    logger.info(f"Reset otp done for '{user}'")
+
             elif action in ("lock", "unlock"):
                 user_dn = request.JSON["id"]
                 to_lock = action == "lock"
                 ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
-                return JsonResponse({
-                    "status": True,
-                    "user_id": user_id
-                })
+
 
             return JsonResponse({
                 "status": True,
