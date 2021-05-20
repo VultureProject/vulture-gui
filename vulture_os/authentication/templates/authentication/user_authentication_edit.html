@@ -996,7 +996,6 @@
       result = "";
       if(status == 'true') {
         for(form of data['forms']) {
-          console.log(form)
           result += '<p><p>';
           result += '<legend>Form "'+form['name']+'" (id='+form['id']+')</legend>';
           for(field of form['controls']) {
