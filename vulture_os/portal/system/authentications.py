@@ -178,7 +178,7 @@ class Authentication(object):
                 logger.exception(e)
                 error = e
                 continue
-        raise error or AuthenticationError
+        raise error or AuthenticationError("No valid repository to authenticate user")
 
     def register_user(self, authentication_results, oauth2_scope):
         # Always create oauth2 token, with oauth2_timeout or auth_timeout

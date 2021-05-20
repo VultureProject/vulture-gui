@@ -77,10 +77,13 @@ def workflow_delete(request, object_id, api=False):
             # If POST request and no error: detete frontend
             frontend = workflow.frontend
             backend = workflow.backend
+            filename = workflow.get_base_filename()
             workflow.delete()
 
             nodes = frontend.reload_conf()
             backend.reload_conf()
+
+            Cluster.api_request('services.haproxy.haproxy.delete_conf', filename)
 
             for node in nodes:
                 api_res = node.api_request("services.haproxy.haproxy.restart_service")
@@ -113,7 +116,9 @@ def workflow_delete(request, object_id, api=False):
 
     # If GET request or POST request and API/Delete failure
     return render(request, 'generic_delete.html', {
-        'workflow': workflow,
+        'redirect_url': reverse("workflow.list"),
+        'delete_url': reverse("workflow.delete", kwargs={'object_id': object_id}),
+        'obj_inst': workflow,
         'error': error
     })
 
