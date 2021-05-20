@@ -47,21 +47,23 @@
       aTargets: [0],
       defaultContent: "",
       mData: "id",
-      bVisible: false,
+      bVisible: false
     },
     {
       sTitle: '{% trans "Name" %}',
       name: "name",
       aTargets: [1],
       defaultContent: "",
-      mData: "name"
+      mData: "name",
+      sClass: "edit"
     },
     {
       sTitle: '{% trans "Provider" %}',
       name: "provider",
       aTargets: [2],
       defaultContent: "",
-      mData: "provider"
+      mData: "provider",
+      sClass: "edit"
     },
     {
       sTitle: '{% trans "Additional infos" %}',
@@ -132,7 +134,7 @@
     fnCreatedRow: function(nRow, aData, iDataIndex){
 
       /* Events binding to edit a template */
-      $(nRow).on('click', function(e){
+      $(nRow).find(".edit").on('click', function(e){
           var id = aData['id'];
           window.location.href = "{% url 'authentication.openid.edit' %}" + id;
       });
@@ -140,10 +142,10 @@
   }); // var openid_table = $("#openid_list").dataTable
 
 
-  /* Reload table data every 5 seconds */
+  /* Reload table data every 5 seconds
   setInterval( function() {
     openid_table.fnDraw();
   }, 5000);
-
+  */
 
 {% endblock %}
