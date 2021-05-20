@@ -303,7 +303,7 @@ class UserAuthentication(models.Model):
         null=True,
         verbose_name=_('Listen on'),
         help_text=_("Listener used for external portal"),
-        on_delete=models.SET_NULL
+        on_delete=models.PROTECT
     )
     external_fqdn = models.CharField(
         max_length=40,
