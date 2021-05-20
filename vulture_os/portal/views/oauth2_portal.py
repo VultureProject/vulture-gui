@@ -97,13 +97,13 @@ def log_in(request):
         logger.error("OAUTH2::log_in: ACLError while trying to authenticate user '{}' : {}".format(request.POST.get('username',None), e))
 
     except (DBAPIError, PyMongoError, LDAPError) as e:
-        logger.error("OAUTH2::log_in: Repository driver Error while trying to authentication user '{}' : {}".format(request.POST.get('username',None), e))
+        logger.error("OAUTH2::log_in: Repository driver Error while trying to authenticate user '{}' : {}".format(request.POST.get('username',None), e))
 
     except (MultiValueDictKeyError, AttributeError, KeyError) as e:
-        logger.error("OAUTH2::log_in: Error while trying to authentication user '{}' : {}".format(request.POST.get('username',None), e))
+        logger.error("OAUTH2::log_in: Error while trying to authenticate user '{}' : {}".format(request.POST.get('username',None), e))
 
     except Exception as e:
-        logger.error("OAUTH2::log_in: Error while trying to authentication user '{}' : ".format(request.POST.get('username',None)))
+        logger.error("OAUTH2::log_in: Error while trying to authenticate user '{}' : ".format(request.POST.get('username',None)))
         logger.exception(e)
 
     return HttpResponseForbidden()

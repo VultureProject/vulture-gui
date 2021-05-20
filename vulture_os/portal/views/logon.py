@@ -502,7 +502,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 return authentication.ask_credentials_response(request=request, error="Bad credentials")
 
             except (DBAPIError, PyMongoError, LDAPError) as e:
-                logger.error("PORTAL::log_in: Repository driver Error while trying to authentication user '{}' : {}"
+                logger.error("PORTAL::log_in: Repository driver Error while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request,
                                                                error="Bad credentials")
@@ -510,7 +510,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
                 # vltprtlsrnm is always empty during the initial redirection. Don't log that
                 if str(e) != "vltprtlsrnm":
-                    logger.error("PORTAL::log_in: Error while trying to authentication user '{}' : {}"
+                    logger.error("PORTAL::log_in: Error while trying to authenticate user '{}' : {}"
                                  .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request)
 
