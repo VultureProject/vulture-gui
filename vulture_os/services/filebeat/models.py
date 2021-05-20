@@ -51,7 +51,7 @@ class FilebeatSettings(models.Model):
         """
         """ Variables used by template rendering """
         return {
-            'frontends': Frontend.objects.filter(enabled=True),
+            'frontends': Frontend.objects.filter(enabled=True, mode="filebeat"),
             'tenants_name': Config.objects.get().internal_tenants.name,
             'nodes': Node.objects.exclude(name=get_hostname()),
             'jail_addresses': JAIL_ADDRESSES,

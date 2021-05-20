@@ -44,6 +44,7 @@ from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Cert
 from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
                           SelectMultiple, TextInput, Textarea)
 from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
+from system.cluster.models import Cluster
 
 # Extern modules imports
 from bson import ObjectId
@@ -114,15 +115,19 @@ REPO_ATTR_SOURCE_CHOICES = (
 
 REPO_ATTR_CRITERION_CHOICES = (
     ('equals', "equals to"),
+    ('not equals', "does not equal to"),
     ('exists', "exists"),
-    ('not exists', "does not exists"),
+    ('not exists', "does not exist"),
     ('contains', "contains"),
-    ('not contains', "does not contains"),
+    ('not contains', "does not contain"),
     ('startswith', "starts with"),
     ('endswith', "ends with"),
 )
 
-
+REPO_ATTR_ASSIGNATOR_CHOICES = (
+    ('=', "set"),
+    ('+=', "append"),
+)
 
 
 class RepoAttributes(models.Model):
@@ -142,6 +147,10 @@ class RepoAttributes(models.Model):
     condition_match = models.TextField(
         default="test@abcd.fr"
     )
+    assignator = models.TextField(
+        default=REPO_ATTR_ASSIGNATOR_CHOICES[0][0],
+        choices=REPO_ATTR_ASSIGNATOR_CHOICES
+    )
     action_var_name = models.TextField(
         default="admin"
     )
@@ -154,9 +163,10 @@ class RepoAttributes(models.Model):
     )
 
     def __str__(self):
-        return "IF {} {} {} THEN SET {} = {}({})".format(self.condition_var_kind, self.condition_var_name,
+        return "IF {} {} {} THEN SET {} {} {}({})".format(self.condition_var_kind, self.condition_var_name,
                                                         self.condition_criterion, self.condition_match,
-                                                        self.action_var_name, self.action_var_kind, self.action_var)
+                                                        self.action_var_name, self.assignator,
+                                                        self.action_var_kind, self.action_var)
 
     def get_condition_var(self, claims, repo_attrs):
         if self.condition_var_kind == "repo":
@@ -193,6 +203,8 @@ class RepoAttributes(models.Model):
     def validate_condition(self, value):
         if self.condition_criterion == "equals":
             return value == self.condition_match
+        if self.condition_criterion == "not equals":
+            return value != self.condition_match
         elif self.condition_criterion == "exists":
             return (len(value) != 0) if hasattr(value, "__len__") else bool(value)
         elif self.condition_criterion == "not exists":
@@ -208,9 +220,26 @@ class RepoAttributes(models.Model):
         else:
             raise NotImplementedError(f"{self.condition_criterion} is not implemented yet.")
 
+    def convert_to_list(self, value):
+        if not isinstance(value, list):
+            if value is None:
+                return []
+            else:
+                return [value]
+        else:
+            return value
+
+    def assign(self, scope, value):
+        if self.assignator == "=":
+            scope[self.action_var_name] = value
+        elif self.assignator == "+=":
+            scope[self.action_var_name] = self.convert_to_list(scope.get(self.action_var_name)) + self.convert_to_list(value)
+        return scope
+
     def get_scope(self, scope, claims, repo_attrs):
         if self.validate_condition(self.get_condition_var(claims, repo_attrs)):
-            scope[self.action_var_name] = self.get_action_var_value(claims, repo_attrs)
+            #scope[self.action_var_name] = self.get_action_var_value(claims, repo_attrs)
+            scope = self.assign(scope, self.get_action_var_value(claims, repo_attrs))
         return scope
 
     def __getitem__(self, item):
@@ -224,13 +253,14 @@ class RepoAttributesForm(ModelForm):
     class Meta:
         model = RepoAttributes
         fields = ('condition_var_kind', 'condition_var_name', 'condition_criterion', 'condition_match',
-                  'action_var_name', 'action_var_kind', 'action_var')
+                  'assignator', 'action_var_name', 'action_var_kind', 'action_var')
         widgets = {
             'condition_var_kind': Select(choices=REPO_ATTR_SOURCE_CHOICES, attrs={'class': 'form-control select2'}),
             'condition_var_name': TextInput(attrs={'class': 'form-control'}),
             'condition_criterion': Select(choices=REPO_ATTR_CRITERION_CHOICES, attrs={'class': 'form-control select2'}),
             'condition_match': TextInput(attrs={'class': 'form-control'}),
             'action_var_name': TextInput(attrs={'class': 'form-control'}),
+            'assignator': Select(choices=REPO_ATTR_ASSIGNATOR_CHOICES, attrs={'class': 'form-control select2'}),
             'action_var_kind': Select(choices=SOURCE_ATTRS_CHOICES, attrs={'class': 'form-control select2'}),
             'action_var': TextInput(attrs={'class': 'form-control select2'})
         }
@@ -238,12 +268,16 @@ class RepoAttributesForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Remove the blank input generated by django
-        for field_name in ['condition_var_kind', 'condition_criterion', 'action_var_kind']:
+        for field_name in ['condition_var_kind', 'condition_criterion', 'action_var_kind', 'assignator']:
             self.fields[field_name].empty_label = None
+        self.fields['condition_match'].required = False
 
     def clean(self):
         """ Verify required field depending on other fields """
         cleaned_data = super().clean()
+
+        if cleaned_data.get('condition_criterion') not in ["exists", "not exists"] and not cleaned_data.get('condition_match'):
+            self.add_error('condition_match', "This field is required, except for (not)exists criterion.")
 
         return cleaned_data
 
@@ -269,7 +303,7 @@ class UserAuthentication(models.Model):
         null=True,
         verbose_name=_('Listen on'),
         help_text=_("Listener used for external portal"),
-        on_delete=models.SET_NULL
+        on_delete=models.PROTECT
     )
     external_fqdn = models.CharField(
         max_length=40,
@@ -610,7 +644,7 @@ class UserAuthentication(models.Model):
         try:
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
-            return template.render({'conf': self.to_template_external()})
+            return template.render({'conf': self.to_template_external(), 'global_config': Cluster.get_global_config()})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound:

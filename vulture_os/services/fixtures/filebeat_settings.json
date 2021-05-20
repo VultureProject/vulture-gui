@@ -1,0 +1,8 @@
+[
+  {
+    "model": "services.FilebeatSettings",
+    "pk": 1,
+    "fields": {
+    }
+  }
+]

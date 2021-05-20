@@ -37,6 +37,8 @@ from portal.views.responses import (split_domain, basic_authentication_response,
                                     learning_authentication_response)
 from system.users.models import User
 from workflow.models import Workflow
+from authentication.base_repository import BaseRepository
+from authentication.portal_template.models import INPUT_OTP_KEY, INPUT_OTP_RESEND
 
 # Required exceptions imports
 from portal.system.exceptions import RedirectionNeededError, CredentialsError, ACLError, TwoManyOTPAuthFailure
@@ -114,10 +116,10 @@ class Authentication(object):
                         backend.authenticate(login, password,  # acls=self.workflow.access_control_list,  # FIXME : Implement LDAP ACL in AccessControl model
                                              logger=logger)
                         logger.info("User '{}' successfully re-authenticated on {} for SSO needs"
-                                    .format(login, backend.repo_name))
+                                    .format(login, backend.name))
                     except Exception as e:
                         logger.error("Error while trying to re-authenticate user '{}' on '{}' for SSO needs : {}"
-                                     .format(login, backend.repo_name, e))
+                                     .format(login, backend.name, e))
                         continue
                 return str(backend.id)
         if login and e:
@@ -178,12 +180,20 @@ class Authentication(object):
                 continue
         raise error or AuthenticationError
 
-    def register_user(self, authentication_results):
+    def register_user(self, authentication_results, oauth2_scope):
         # Always create oauth2 token, with oauth2_timeout or auth_timeout
         oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
         self.oauth2_token = Uuid4().generate()
         self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + self.oauth2_token)
-        self.redis_oauth2_session.register_authentication(authentication_results, oauth_timeout)
+        # Mandatory claims for SSO-F, OTP, change password, etc
+        if self.workflow.authentication.enable_external:
+            if not oauth2_scope.get('name'):
+                oauth2_scope['name'] = self.credentials[0]
+            if not oauth2_scope.get('user_email'):
+                oauth2_scope['user_email'] = authentication_results.get('user_email', "")
+            if not oauth2_scope.get('user_phone'):
+                oauth2_scope['user_phone'] = authentication_results.get('user_phone', "")
+        self.redis_oauth2_session.register_authentication(str(self.workflow.id), oauth2_scope, oauth_timeout)
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),
@@ -205,15 +215,11 @@ class Authentication(object):
         logger.debug("AUTH::register_sso: Password successfully retrieven from Redis portal session")
         portal_cookie = self.redis_portal_session.register_sso(self.workflow.authentication.auth_timeout,
                                                                backend_id, str(self.workflow.id),
-                                                               str(self.workflow.get_redirect_uri()), username,
+                                                               self.workflow.authentication.otp_repository.id if self.workflow.authentication.otp_repository else None,
+                                                               username,
                                                                self.oauth2_token)
         logger.debug("AUTH::register_sso: SSO informations successfully written in Redis for user {}".format(username))
         self.credentials = [username, password]
-        if self.double_authentication_required():
-            self.redis_portal_session.register_doubleauthentication(self.workflow.id,
-                                                                    self.workflow.authentication.otp_repository)
-            logger.debug("AUTH::register_sso: DoubleAuthentication required : "
-                         "successfully written in Redis for user '{}'".format(username))
         return portal_cookie, self.oauth2_token
 
     def register_openid(self, openid_token, **kwargs):
@@ -265,7 +271,8 @@ class Authentication(object):
 
     def ask_learning_credentials(self, **kwargs):
         # FIXME : workflow.auth_portal ?
-        response = learning_authentication_response(kwargs.get('request'), self.workflow.template.id,
+        response = learning_authentication_response(kwargs.get('request'),
+                                                    self.workflow.authentication.portal_template.id,
                                                     # FIXME : auth_portal ?
                                                     # self.workflow.auth_portal or
                                                     self.workflow.get_redirect_uri(),
@@ -407,18 +414,17 @@ class DOUBLEAuthentication(Authentication):
         super().__init__(portal_cookie, workflow, proto, redirect_url=redirect_url)
         assert (self.redis_portal_session.exists())
         assert self.backend_id
+        self.backend = BaseRepository.objects.get(pk=self.backend_id)
         self.credentials[0] = self.redis_portal_session.get_login(self.backend_id)
         self.resend = False
         self.print_captcha = False
 
     def retrieve_credentials(self, request):
         try:
-            self.resend = request.POST.get('vltotpresend', False)
-            workflow_id = request.POST['vulture_two_factors_authentication']
-            self.workflow = Workflow.objects.get(pk=workflow_id)
+            self.resend = request.POST.get(INPUT_OTP_RESEND, False)
 
             if not self.resend:
-                key = request.POST['vltprtlkey']
+                key = request.POST[INPUT_OTP_KEY]
             user = self.redis_portal_session.get_otp_key()
             assert (user)
             # If self.resend this line will raise, it's wanted
@@ -436,19 +442,23 @@ class DOUBLEAuthentication(Authentication):
 
         else:
             # The function raise itself AuthenticationError, or return True
-            repository.authenticate(self.credentials[0], self.credentials[1])
+            repository.authenticate(self.credentials[0], self.credentials[1],
+                                    app=self.workflow,
+                                    backend=self.backend,
+                                    login=self.redis_portal_session.get_login(self.backend_id))
 
         logger.info("DB-AUTH::authenticate: User successfully double-authenticated "
                     "on OTP backend '{}'".format(repository))
-        self.redis_portal_session.register_doubleauthentication(str(self.workflow.id, repository.id))
+        self.redis_portal_session.register_doubleauthentication(self.workflow.id, repository.id)
         logger.debug("DB-AUTH::authenticate: Double-authentication results successfully written in Redis portal session")
 
     def create_authentication(self):
         if self.resend or not self.redis_portal_session.get_otp_key():
             """ If the user ask for resend otp key or if the otp key has not yet been sent """
             otp_repo = self.workflow.authentication.otp_repository
-            user_phone = self.redis_portal_session.keys.get('user_phone', None)
-            user_mail = self.redis_portal_session.keys.get('user_email', None)
+            user_infos = self.redis_portal_session.get_user_infos(self.backend_id)
+            user_phone = user_infos.get('user_phone', None)
+            user_mail = user_infos.get('user_email', None)
 
             if otp_repo.otp_type == 'phone' and user_phone in ('', 'None', None, False, 'N/A'):
                 logger.error("DB-AUTH::create_authentication: User phone is not valid : '{}'".format(user_phone))
@@ -459,11 +469,10 @@ class DOUBLEAuthentication(Authentication):
                 raise OTPError("Cannot find mail in repository <br> <b> Contact your administrator </b>")
 
             try:
-                otp_info = otp_repo.register_authentication(user_mail=user_mail, user_phone=user_phone,
-                                                            sender=self.workflow.template.email_from,
-                                                            app=str(self.workflow.id),
-                                                            app_name=self.workflow.name,
-                                                            backend=self.backend_id,
+                otp_info = otp_repo.get_client().register_authentication(user_mail=user_mail, user_phone=user_phone,
+                                                            sender=self.workflow.authentication.portal_template.email_from,
+                                                            app=self.workflow,
+                                                            backend=self.backend,
                                                             login=self.redis_portal_session.get_login(self.backend_id))
 
                 # TOTPClient.register_authent returns 2 values instead of only one
@@ -487,11 +496,16 @@ class DOUBLEAuthentication(Authentication):
             self.redis_portal_session.set_otp_info(otp_info)
             logger.debug("DB-AUTH::create_authentication: OTP key successfully written in Redis session")
 
-        if self.workflow.authentication.otp_repository.otp_type == "totp":
+        elif self.workflow.authentication.otp_repository.otp_type == "totp":
             self.credentials[0] = self.redis_portal_session.get_otp_key()
+            # Show QRCode if not in MongoDB
+            otp_info = self.workflow.authentication.otp_repository.get_client().register_authentication(
+                backend=self.backend,
+                login=self.redis_portal_session.get_login(self.backend_id))
+            self.print_captcha = otp_info[0]
 
     def authentication_failure(self):
-        otp_retries = self.redis_portal_session.increment_otp_retries()
+        otp_retries = self.redis_portal_session.increment_otp_retries(self.workflow.authentication.otp_repository.id)
         logger.debug("DB-AUTH::authentication_failure: Number of retries successfully incremented in Redis session")
         if otp_retries >= int(self.workflow.authentication.otp_max_retry):
             logger.error("DB-AUTH::authentication_failure: Maximum number of retries reached : '{}'>='{}'"
@@ -507,21 +521,20 @@ class DOUBLEAuthentication(Authentication):
         captcha_url = ""
         if self.workflow.authentication.otp_repository.otp_type == "totp" and self.print_captcha:
             user_mail = self.redis_portal_session.keys.get('user_email', "")
-            captcha_url = self.workflow.otp_repository.get_captcha(self.credentials[0], user_mail)
+            captcha_url = self.workflow.authentication.otp_repository.get_client().generate_captcha(self.credentials[0], user_mail)
             logger.debug("DB-AUTH::ask_credentials_response: Captcha generated")
 
-        response = otp_authentication_response(kwargs.get('request'), self.workflow.template.id, self.workflow.id,
-                                               # FIXME : auth_portal ?
-                                               # self.workflow.authentication.auth_portal or
-                                               self.workflow.get_redirect_uri(),
+        response = otp_authentication_response(kwargs.get('request'),
+                                               self.workflow.authentication,
                                                self.workflow.authentication.otp_repository.otp_type,
-                                               captcha_url, kwargs.get('error', None))
+                                               captcha_url,
+                                               kwargs.get('error', None))
 
-        portal_cookie_name = kwargs.get('portal_cookie_name', None)
-        if portal_cookie_name:
-            response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
-                                domain=self.get_redirect_url_domain(), httponly=True,
-                                secure=self.get_redirect_url().startswith('https'))
+        #portal_cookie_name = kwargs.get('portal_cookie_name', None)
+        #if portal_cookie_name:
+        #    response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
+        #                        domain=self.get_redirect_url_domain(), httponly=True,
+        #                        secure=self.get_redirect_url().startswith('https'))
 
         return response
 
@@ -565,7 +578,9 @@ class OAUTH2Authentication(Authentication):
 
     def register_authentication(self, authentication_results):
         self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + self.oauth2_token)
-        self.redis_oauth2_session.register_authentication(authentication_results, authentication_results['token_ttl'])
+        self.redis_oauth2_session.register_authentication(str(self.workflow.id),
+                                                          authentication_results,
+                                                          authentication_results['token_ttl'])
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
 
     def generate_response(self, authentication_results):

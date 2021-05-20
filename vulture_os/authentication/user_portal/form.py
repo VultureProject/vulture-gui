@@ -82,7 +82,7 @@ class UserAuthenticationForm(ModelForm):
     # OAuth2 MUST uses httpS !
     external_listener = ModelChoiceField(
         label=_("Listen IDP on"),
-        queryset=Frontend.objects.filter(enabled=True, mode="http", listener__tls_profiles__name__isnull=False).only(*Frontend.str_attrs()),
+        queryset=Frontend.objects.filter(enabled=True, mode="http", listener__tls_profiles__name__isnull=False).only(*Frontend.str_attrs()).distinct(),
         widget=Select(attrs={'class': 'form-control select2'}),
         required=False,
         empty_label=None
@@ -182,6 +182,7 @@ class UserAuthenticationForm(ModelForm):
         """ Split values with \n """
         res = []
         for url in self.cleaned_data.get('oauth_redirect_uris', "").split("\n"):
+            url = url.rstrip()
             validate = URLValidator(schemes=("http", "https"))
             validate(url)
             res.append(url)

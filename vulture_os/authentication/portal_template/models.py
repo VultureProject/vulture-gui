@@ -46,7 +46,16 @@ logger = logging.getLogger('gui')
 
 INPUT_LOGIN = "vltprtlsrnm"
 INPUT_PASSWORD = "vltprtlpsswrd"
+INPUT_OTP_KEY = "vltprtlkey"
+INPUT_OTP_RESEND = "vltotpresend"
+RESET_PASSWORD_NAME = "rdm"
+INPUT_PASSWORD_OLD = "password_old"
+INPUT_PASSWORD_1 = "password_1"
+INPUT_PASSWORD_2 = "password_2"
+INPUT_EMAIL = "email"
+
 HAPROXY_HEADER = "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nConnection: close\r\n\r\n"
+
 
 class PortalTemplate(models.Model):
     """ Vulture portal's template model representation
@@ -79,11 +88,11 @@ class PortalTemplate(models.Model):
         help_text=_('HTML Content for the self-service page')
     )
     html_password = models.TextField(
-        default="<!DOCTYPE html>\n<html>\n <head>\n    <meta charset=\"utf-8\" />\n    <title>Vulture Change Password</title>\n    <link rel=\"stylesheet\" href=\"..//templates/static/html/bootstrap.min.css\" integrity=\"sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7\" crossorigin=\"anonymous\">\n    <style>{{style}}</style>\n </head>\n <body>\n    <div class=\"container\">\n        <div class=\"card card-container\" style=\"text-align:center;\">\n            {{form_begin}}\n                <img id=\"vulture_img\" src=\"{{image_1}}\"/>\n                {% if error_message %}\n                    <div class=\"alert alert-danger\">{{error_message}}</div>\n                {% endif %}\n                {% if dialog_change %}\n                    <p>Please fill the form to change your current password :</p>\n                    {{input_password_old}}\n                    {{input_password_1}}\n                    {{input_password_2}}\n                    {{input_submit}}\n\n                {% elif dialog_lost %}\n                    <p>Please enter an email address to reset your password:</p>\n\n                    {{input_email}}\n                    {{input_submit}}\n\n                {% endif %}\n            {{form_end}}\n        </div>\n    </div>\n </body>\n</html>\n",
+        default="<!DOCTYPE html>\n<html>\n <head>\n    <meta charset=\"utf-8\" />\n    <title>Vulture Change Password</title>\n    <link rel=\"stylesheet\" href=\"/templates/static/html/bootstrap.min.css\" integrity=\"sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7\" crossorigin=\"anonymous\">\n    <style>{{style}}</style>\n </head>\n <body>\n    <div class=\"container\">\n        <div class=\"card card-container\" style=\"text-align:center;\">\n            <form action='' method='POST' autocomplete='off' class='form-signin'>\n                <img id=\"vulture_img\" src=\"{{image_1}}\"/>\n                {% if error_message %}\n                    <div class=\"alert alert-danger\">{{error_message}}</div>\n                {% endif %}\n                {% if dialog_change %}\n                    <p>Please fill the form to change your current password :</p>\n                    {% if reset_password_key %}\n                    <input type=\"text\" class=\"form-control\" name=\"{{reset_password_name}}\" value=\"{{reset_password_key}}\"/>\n                    {% else %}\n                    <input type=\"password\" class=\"form-control\" placeholder=\"Old password\" name=\"{{input_password_old}}\"/>\n                    {% endif %}\n                    <input type=\"password\" class=\"form-control\" placeholder=\"New password\" name=\"{{input_password_1}}\"/>\n                    <input type=\"password\" class=\"form-control\" placeholder=\"Confirmation\" name=\"{{input_password_2}}\"/>\n                    <button class=\"btn btn-lg btn-warning btn-block btn-signin\" type=\"submit\">Ok</button>\n\n                {% elif dialog_lost %}\n                    <p>Please enter an email address to reset your password:</p>\n                    <input type=\"email\" class=\"form-control\" placeholder=\"Email\" name=\"{{input_email}}\"/>\n                    <button class=\"btn btn-lg btn-warning btn-block btn-signin\" type=\"submit\">Ok</button>\n                    \n                {% endif %}\n            </form>\n        </div>\n    </div>\n </body>\n</html>",
         help_text=_('HTML Content for the password change page')
     )
     html_otp = models.TextField(
-        default="<!DOCTYPE html>\n<html>\n <head>\n    <meta charset=\"utf-8\" />\n    <title>Vulture OTP Authentication</title>\n    <link rel=\"stylesheet\" href=\"/templates/static/html/bootstrap.min.css\" integrity=\"sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7\" crossorigin=\"anonymous\">\n    <style>{{style}}</style>\n </head>\n <body> \n    <div class=\"container\">\n        <div class=\"card card-container\" style=\"text-align:center;\">\n            {% if error_message != \"\" %}\n                  <div class=\"alert alert-danger\" role=\"alert\">{{error_message}}</div>\n            {% endif %}\n            <p>OTP Form</p>\n            {{form_begin}}\n                {{input_key}}\n                {{input_submit}}\n            {{form_end}}\n            {{form_begin}}\n                {% if resend_button %}\n                    {{resend_button}}\n                {% endif %}\n                {% if qrcode %}\n                    <p>Register the following QRcode on your phone :\n                    <img {{qrcode}} alt=\"Failed to display QRcode\" height=\"270\" width=\"270\" />\n                    </p>\n                {% endif %}\n            {{form_end}}\n        </div>\n    </div>\n </body>\n</html>\n",
+        default="<!DOCTYPE html>\n<html>\n <head>\n    <meta charset=\"utf-8\" />\n    <title>Vulture OTP Authentication</title>\n    <link rel=\"stylesheet\" href=\"/templates/static/html/bootstrap.min.css\" integrity=\"sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7\" crossorigin=\"anonymous\">\n    <style>{{style}}</style>\n </head>\n <body> \n    <div class=\"container\">\n        <div class=\"card card-container\" style=\"text-align:center;\">\n            {% if error_message != \"\" %}\n                  <div class=\"alert alert-danger\" role=\"alert\">{{error_message}}</div>\n            {% endif %}\n            <p>OTP Form</p>\n            <form class=\"form-signin\" autocomplete=\"off\" action=\"\" method=\"POST\">\n                {% if onetouch %}\n                  {{otp_onetouch_field}}\n                {% else %}\n                <input type=\"text\" name=\"vltprtlkey\" class=\"form-control\" placeholder=\"Key\" required/>\n                <button class=\"btn btn-lg btn-warning btn-block btn-signin\" type=\"submit\">{{otp_submit_field}}</button>\n                {% endif %}\n            </form>\n            <form class=\"form-signin\" autocomplete=\"off\" action=\"\" method=\"POST\">\n                {% if resend_button %}\n                    <button class=\"btn btn-lg btn-warning btn-block btn-signin\" name=\"{{input_otp_resend}}\" value=\"yes\">{{otp_resend_field}} {{otp_type}}</button>\n                {% endif %}\n                {% if qrcode %}\n                    <p>Register the following QRcode on your phone :\n                    <img src=\"{{qrcode}}\" alt=\"Failed to display QRcode\" height=\"270\" width=\"270\" />\n                    </p>\n                {% endif %}\n            </form>\n        </div>\n    </div>\n </body>\n</html>",
         help_text=_('HTML Content for the otp page')
     )
     html_message = models.TextField(
@@ -345,6 +354,13 @@ class PortalTemplate(models.Model):
             'register_submit_field': self.register_submit_field,
             'input_login': INPUT_LOGIN,
             'input_password': INPUT_PASSWORD,
+            'input_otp_key': INPUT_OTP_KEY,
+            'input_otp_resend': INPUT_OTP_RESEND,
+            'reset_password_name': RESET_PASSWORD_NAME,
+            'input_password_old': INPUT_PASSWORD_OLD,
+            'input_password_1': INPUT_PASSWORD_1,
+            'input_password_2': INPUT_PASSWORD_2,
+            'INPUT_EMAIL': INPUT_EMAIL,
             'style': self.css
         }
         for image in TemplateImage.objects.all():
@@ -353,7 +369,13 @@ class PortalTemplate(models.Model):
 
     def render_template(self, tpl_name, **kwargs):
         tpl = Template(getattr(self, tpl_name))
-        return tpl.render(Context({**self.attrs_dict(), **kwargs}))
+        # Routine to concatenate kwargs to attibutes, to prevent erase of kwargs
+        attrs = self.attrs_dict()
+        for key in attrs.keys():
+            if kwargs.get(key):
+                # Kwargs will win, so put concatenation into kwargs
+                kwargs[key] = attrs[key] + kwargs[key]
+        return tpl.render(Context({**attrs, **kwargs}))
 
     def tpl_filename(self, tpl_name, portal_id=None):
         return f"{HAPROXY_PATH}/templates/{tpl_name}_{portal_id or self.id}.html"

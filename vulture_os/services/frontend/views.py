@@ -462,14 +462,6 @@ def frontend_edit(request, object_id=None, api=False):
                     Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
                     logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
 
-
-                elif frontend.mode == "filebeat" and "filebeat_config" in changed_data and old_filebeat_filename:
-
-                    # API request deletion of rsyslog frontend filename
-                    Cluster.api_request('services.filebeat.filebeat.delete_conf', old_filebeat_filename)
-                    logger.info("Filebeat config '{}' deletion asked.".format(old_filebeat_filename))
-                
-
                 """ If it is a Rsyslog only config """
                 if frontend.rsyslog_only_conf:
 
