@@ -32,6 +32,8 @@
 
   </section>
 
+  <textarea id="toCopy" style="display:none;"></textarea>
+
 {% endblock %}
 
 {% block jquery_code %}
@@ -68,7 +70,11 @@
       name: "additional_infos",
       aTargets: [3],
       defaultContent: "",
-      mData: "additional_infos"
+      mData: "additional_infos",
+      mRender: (data, type, row) => {
+        let btn_copy = "&nbsp;&nbsp;<a class='btn btn-flat btn-xs btn-default btn-copy-callback-url' data-callback='" + row.callback_url + "' data-toggle='tooltip' data-placement='top' title='Copy callback URL'><img class='clippy' src='/static/img/clippy.svg' alt='Copy to clipboard' width='13'></a>"
+        return data + btn_copy
+      }
     },
     {
       sTitle: '{% trans "Action" %}',
@@ -76,8 +82,9 @@
       aTargets: [4],
       defaultContent: "",
       mRender: function(data, type, row) {
-        return '<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/authentication/openid/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>' +
-        '&nbsp;<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/authentication/openid/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+        let btn_clone = "<a class='btn btn-flat btn-xs btn-warning' data-toggle='tooltip' data-placement='top' title='Clone' href='/authentication/openid/clone/" + data + "'><i class='fa fa-copy'></i></a>"
+        let btn_delete = "<a class='btn btn-flat btn-xs btn-danger' data-toggle='tooltip' data-placement='top' title='Delete' href='/authentication/openid/delete/" + data + "'><i class='fas fa-trash-alt'></i></a>"
+        return btn_clone + "&nbsp;" + btn_delete;
       }
     }
   ];
@@ -136,6 +143,19 @@
           var id = aData['id'];
           window.location.href = "{% url 'authentication.openid.edit' %}" + id;
       });
+
+      $(nRow).find('.btn-copy-callback-url').on('click', function(e) {
+        e.stopPropagation();
+        let html = $(this).html();
+        $(this).html("<i class='fa fa-spinner fa-spin'></i>")
+        $('#toCopy').val(aData.callback_url);
+        $('#toCopy').show();
+        toCopy.select();
+        document.execCommand('copy');
+        $('#toCopy').hide();
+        $(this).html(html)
+        notify("success", gettext("Success"), gettext("Callback url copied"))
+      })
     } // fnCreatedRow: function
   }); // var openid_table = $("#openid_list").dataTable
 
