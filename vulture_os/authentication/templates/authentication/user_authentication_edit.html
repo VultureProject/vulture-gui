@@ -996,13 +996,14 @@
       result = "";
       if(status == 'true') {
         for(form of data['forms']) {
+          console.log(form)
           result += '<p><p>';
           result += '<legend>Form "'+form['name']+'" (id='+form['id']+')</legend>';
           for(field of form['controls']) {
             field_val = field['value'];
             field_type = field['type'];
             if( $('#id_sso_forward_content').val() != "" ) {
-              for( sso_profile of JSON.parse() ) {
+              for( sso_profile of JSON.parse($('#id_sso_forward_content').val()) ) {
                 if( sso_profile['send_type'] != "form" ) {
                   continue;
                 }
