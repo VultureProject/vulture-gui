@@ -77,6 +77,7 @@ logger = logging.getLogger('portal_authentication')
 
 
 STATE_REDIS_KEY = "oauth_state"
+RETURN_OAUTH_TOKEN = "return_oauth_token"
 
 
 def openid_configuration(request, portal_id):
@@ -127,6 +128,7 @@ def openid_start(request, workflow_id, repo_id):
         # We must stock the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         redis_portal_session[STATE_REDIS_KEY] = state
+        redis_portal_session[RETURN_OAUTH_TOKEN] = str(request.GET.get('get_token') in (True, "true", "True", "1", 1, "yes"))
         redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
 
         # Finally we redirect the user to authorization_url
@@ -183,6 +185,8 @@ def openid_callback(request, workflow_id, repo_id):
         # Get user session with cookie
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         assert state == redis_portal_session[STATE_REDIS_KEY]
+        # Return oauth2_token or make sso forward
+        return_oauth_token = redis_portal_session[RETURN_OAUTH_TOKEN] == "True"
         # If state is correct, remove-it in Redis to prevent re-use
         redis_portal_session.delete_key(STATE_REDIS_KEY)
         oauth2_session = repo.get_oauth2_session(callback_url)
@@ -216,7 +220,7 @@ def openid_callback(request, workflow_id, repo_id):
         authentication.credentials = [claims.get('name') or claims.get('sub'), ""]
         if not user_scope.get('name'):
             user_scope['name'] = claims.get('name') or claims.get('sub')
-        authentication.register_user({**claims, **repo_attributes}, user_scope)
+        portal_cookie, oauth2_token = authentication.register_user({**claims, **repo_attributes}, user_scope)
 
     except KeyError as e:
         logger.exception(e)
@@ -238,8 +242,22 @@ def openid_callback(request, workflow_id, repo_id):
         logger.exception(e)
         return error_response(workflow.authentication, "An error occurred")
 
-    response = authenticate(request, workflow, portal_cookie, token_name, double_auth_only=True, sso_forward=True, openid=False) \
-               or authentication.generate_response()
+    if not return_oauth_token:
+        response = authenticate(request,
+                                workflow,
+                                portal_cookie,
+                                token_name,
+                                double_auth_only=True,
+                                sso_forward=True,
+                                openid=False) \
+                   or authentication.generate_response()
+    else:
+        return JsonResponse({
+            'access_token': oauth2_token,
+            'token_type': "Bearer",
+            'scope': ["openid"],
+            'created_at': int(timezone.now().timestamp()),
+        })
 
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
 
