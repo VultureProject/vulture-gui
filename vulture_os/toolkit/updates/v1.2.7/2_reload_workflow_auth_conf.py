@@ -56,6 +56,9 @@ if __name__ == "__main__":
                 workflow.save_conf()
                 print("Workflow {} conf reload asked".format(workflow))
             for portal in UserAuthentication.objects.filter(enable_external=True):
+                # Ensure portals with IDP activated have oauth enabled
+                portal.enable_oauth = True
+                portal.save()
                 portal.external_listener.reload_conf()
                 print("Frontend {} conf reload asked".format(portal.external_listener))
                 portal.save_conf()
