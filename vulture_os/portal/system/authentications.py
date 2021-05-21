@@ -210,9 +210,9 @@ class Authentication(object):
         username = self.redis_portal_session.keys['login_' + backend_id]
         self.oauth2_token = self.redis_portal_session.keys['oauth2_' + backend_id]
         self.redis_oauth2_session = REDISOauth2Session(self.redis_portal_session.handler, "oauth2_" + self.oauth2_token)
-        logger.debug("AUTH::register_sso: Redis oauth2 session successfully retrieven")
+        logger.debug("AUTH::register_sso: Redis oauth2 session successfully retrieved")
         password = self.redis_portal_session.getAutologonPassword(self.workflow.id, backend_id, username)
-        logger.debug("AUTH::register_sso: Password successfully retrieven from Redis portal session")
+        logger.debug("AUTH::register_sso: Password successfully retrieved from Redis portal session")
         portal_cookie = self.redis_portal_session.register_sso(self.workflow.authentication.auth_timeout,
                                                                backend_id, str(self.workflow.id),
                                                                self.workflow.authentication.otp_repository.id if self.workflow.authentication.otp_repository else None,
@@ -256,7 +256,7 @@ class Authentication(object):
                 self.retrieve_credentials(request)
             except:
                 self.credentials[0] = self.redis_portal_session.get_login(self.backend_id)
-        logger.debug("AUTH::get_credentials: User's login successfully retrieven from Redis session : '{}'".format(
+        logger.debug("AUTH::get_credentials: User's login successfully retrieved from Redis session : '{}'".format(
             self.credentials[0]))
         if not self.credentials[1]:
             try:
@@ -267,7 +267,7 @@ class Authentication(object):
                 self.credentials[1] = self.redis_portal_session.getAutologonPassword(str(self.workflow.id),
                                                                                      self.backend_id,
                                                                                      self.credentials[0])
-        logger.debug("AUTH::get_credentials: User's password successfully retrieven/decrypted from Redis session")
+        logger.debug("AUTH::get_credentials: User's password successfully retrieved/decrypted from Redis session")
 
     def ask_learning_credentials(self, **kwargs):
         # FIXME : workflow.auth_portal ?

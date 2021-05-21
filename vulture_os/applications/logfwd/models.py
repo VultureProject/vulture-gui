@@ -491,9 +491,10 @@ class LogOMElasticSearch(LogOM):
             'output': self.servers + ' (index = {})'.format(self.index_pattern)
         }
         if self.x509_certificate:
-            result['ssl_ca'] = self.x509_certificate.get_base_filename() + ".chain"
-            result['ssl_cert'] = self.x509_certificate.get_base_filename() + ".crt"
-            result['ssl_key'] = self.x509_certificate.get_base_filename() + ".key"
+            result['ssl_ca'] = self.x509_certificate.ca_filename()
+            if not self.x509_certificate.is_ca_cert():
+                result['ssl_cert'] = self.x509_certificate.get_base_filename() + ".crt"
+                result['ssl_key'] = self.x509_certificate.get_base_filename() + ".key"
         return result
 
     def get_rsyslog_template(self):

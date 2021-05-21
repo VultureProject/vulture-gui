@@ -15,16 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture 4.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Kevin Guillemot"
+__author__ = "Theo Bertin"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
-__doc__ = "Update portal template(s) content with initial image"
+__doc__ = "Remove old workflow_*.cfg files, not used anymore by vulture"
 
 import sys
 import os
+from glob import glob as file_glob
 
 if not os.path.exists("/home/vlt-os/vulture_os/.node_ok"):
     sys.exit(0)
@@ -38,9 +39,7 @@ from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster, Node
-from workflow.models import Workflow
 from authentication.user_portal.models import UserAuthentication
-
 
 if __name__ == "__main__":
 
@@ -49,19 +48,16 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
         try:
-            # If authentication, reload frontend and portal Haproxy configs
-            for workflow in Workflow.objects.filter(authentication__isnull=False):
-                workflow.frontend.reload_conf()
-                print("Frontend {} conf reload asked".format(workflow.frontend))
-                workflow.save_conf()
-                print("Workflow {} conf reload asked".format(workflow))
-            for portal in UserAuthentication.objects.filter(enable_external=True):
-                portal.external_listener.reload_conf()
-                print("Frontend {} conf reload asked".format(portal.external_listener))
-                portal.save_conf()
-                print("IDP portal {} conf reload asked".format(portal))
+            active_portal_files = [portal.get_filename() for portal in UserAuthentication.objects.filter(enable_external=True)]
+            # Using hardcoded filepath as script is dependent on current version and path
+            files_to_remove = [file for file in file_glob(f"/usr/local/etc/haproxy.d/portal_*.cfg") if file not in active_portal_files]
+
+            for remove_file in files_to_remove:
+                print(f"removing obsolete {remove_file}")
+                node.api_request("services.haproxy.haproxy.delete_conf", os.path.basename(remove_file))
+
         except Exception as e:
-            print("Failed to update authentication related configurations: {}".format(e))
+            print("Failed to remove all obsolete portal files: {}".format(e))
             print("Please relaunch this script after solving the issue.")
 
         print("Done.")

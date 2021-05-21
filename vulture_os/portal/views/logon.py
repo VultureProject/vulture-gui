@@ -640,7 +640,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # If we cannot retrieve them, ask credentials
                 assert authentication.credentials[0]  # or not authentication.credentials[1]:
 
-                logger.info("PORTAL::log_in: Credentials successfuly retrieven for SSO performing")
+                logger.info("PORTAL::log_in: Credentials successfuly retrieved to perform SSO")
 
             except Exception as e:
                 logger.error("PORTAL::log_in: Error while retrieving credentials for SSO : ")
@@ -654,8 +654,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 logger.info("PORTAL::log_in: SSOForward successfully created")
                 # Get credentials needed for sso forward : AutoLogon or Learning
                 sso_data, profiles_to_stock, url = sso_forward.retrieve_credentials(request)
-                logger.info("PORTAL::log_in: SSOForward credentials successfully retrieven")
-                # If credentials retrieven needs to be stocked
+                logger.info("PORTAL::log_in: SSOForward credentials successfully retrieved")
+                # If retrieved credentials need to be stored
                 for profile_name,profile_value in profiles_to_stock.items():
                     sso_forward.stock_sso_field(authentication.credentials[0], profile_name, profile_value)
 

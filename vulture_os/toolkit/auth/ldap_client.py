@@ -534,7 +534,7 @@ class LDAPClient(BaseAuth):
         self.scope = self.user_scope
         logger.debug(query_filter)
         result = self._search(dn, query_filter, username)
-        if result is not None:
+        if result:
             logger.info("{} account is locked".format(username))
             return True
         else:
@@ -561,7 +561,7 @@ class LDAPClient(BaseAuth):
         dn = self._get_user_dn()
         self.scope = self.user_scope
         result = self._search(dn, query_filter, username)
-        if result is not None:
+        if result:
             logger.info("{} account need to change its password"
                         "".format(username))
             return True
