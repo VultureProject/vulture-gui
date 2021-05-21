@@ -375,7 +375,7 @@
                 </div> <!-- /.box-body -->
                 <div class="panel-footer">
                   <a type="button" href="{% url 'authentication.ldap.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                  <button type="submit" class="btn btn-info btn-flat pull-right" {% if not object_id %}disabled style="display:none;"{% endif %}>{% trans "Save" %}</button>
+                  <button type="submit" class="btn btn-info btn-flat pull-right" {% if not object_id and not success %}disabled style="display:none;"{% endif %}>{% trans "Save" %}</button>
                 </div> <!-- /.box-footer -->
               </div> <!-- /.box -->
             </div>
