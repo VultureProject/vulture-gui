@@ -63,6 +63,9 @@ if __name__ == "__main__":
                 print("Frontend {} conf reload asked".format(portal.external_listener))
                 portal.save_conf()
                 print("IDP portal {} conf reload asked".format(portal))
+
+            node.api_request("services.haproxy.haproxy.restart_service")
+
         except Exception as e:
             print("Failed to update authentication related configurations: {}".format(e))
             print("Please relaunch this script after solving the issue.")
