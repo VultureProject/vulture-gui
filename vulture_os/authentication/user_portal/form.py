@@ -128,7 +128,7 @@ class UserAuthenticationForm(ModelForm):
             'enable_registration': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'group_registration': TextInput(attrs={'class': 'form-control'}),
             'update_group_registration': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'enable_oauth': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'enable_oauth': CheckboxInput(attrs={'class': 'form-control'}),
             'oauth_client_id': TextInput(attrs={'readonly': ''}),
             'oauth_client_secret': TextInput(attrs={'readonly': ''}),
             'oauth_redirect_uris': Textarea(attrs={'class': 'form-control'}),

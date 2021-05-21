@@ -724,6 +724,8 @@
     });
   });
 
+  let enable_oauth_switch = new Switchery(document.querySelector("#id_enable_oauth"));
+
 
   /* Show openid class if openid repo is chosen */
   function toggle_repos() {
@@ -857,14 +859,16 @@
       }
     }
     /* If External selected, auto enable OAuth */
-    if( $('#id_enable_external').is(":checked") && !$('#id_enable_oauth').is(":checked") ) {
-      $('#id_enable_oauth').trigger('click');
-      $('#id_enable_oauth').prop("disabled", true);
+    if( $('#id_enable_external').is(":checked")) {
+      if (!$('#id_enable_oauth').is(":checked")) {
+        $('#id_enable_oauth').trigger('click');
+      }
+      enable_oauth_switch.disable();
       $('.tab_idp').show();
       $('#idp-tab').show();
     } else if( !$('#id_enable_external').is(":checked") ) {
       /* If enable External unselected, re-enable oauth button */
-      $('#id_enable_oauth').prop("disabled", false);
+      enable_oauth_switch.enable();
       $('.tab_idp').hide();
       $('#idp-tab').hide();
     }
@@ -888,11 +892,11 @@
 
   /* Show attributes depending on chosen options */
   //for( classe of ['registration', 'oauth', 'external', 'sso_forward']) {
-  $('#id_enable_oauth').on("change", function(e){ console.log("oauth");toggle_class("oauth", event); });
+  $('#id_enable_oauth').on("change", function(e){ toggle_class("oauth", event); });
   toggle_class("oauth");
-  $('#id_enable_external').on("change", function(e){ console.log("external");toggle_class("external", event); });
+  $('#id_enable_external').on("change", function(e){ toggle_class("external", event); });
   toggle_class("external");
-  $('#id_enable_sso_forward').on("change", function(e){ console.log("sso_forward");toggle_class("sso_forward", event); });
+  $('#id_enable_sso_forward').on("change", function(e){ toggle_class("sso_forward", event); });
   toggle_class("sso_forward");
   //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
   //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
@@ -1101,6 +1105,9 @@
 
   /*  */
   $('#user_authentication_edit_form').submit(function(event) {
+
+    /* Enable button before posting, it wouldn't be in post data otherwise... */
+    enable_oauth_switch.enable();
 
     $('#repo_attributes').val(JSON.stringify(get_repo_attrs()));
 
