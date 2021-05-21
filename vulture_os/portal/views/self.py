@@ -122,7 +122,7 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         credential = Action.retrieve_credentials(request)
         if not action:
             result = Action.perform_action()
-            logger.info("SELF::main: List of apps successfully retrieven")
+            logger.info("SELF::main: List of apps successfully retrieved")
             return Action.main_response(request, result)
         else:
             return Action.message_response(Action.perform_action(request, credential))

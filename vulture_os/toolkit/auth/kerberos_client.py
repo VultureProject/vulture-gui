@@ -78,7 +78,7 @@ class KerberosClient(BaseAuth):
             logger.error("KerberosClient::authenticate: Kerberos authentication for {} failed".format(username))
             raise AuthenticationError("Credentials not valid or invalid configuration")
         else:
-            logger.debug("KerberosClient::authenticate: TGT successfully retrieven/created with credentials")
+            logger.debug("KerberosClient::authenticate: TGT successfully retrieved/created with credentials")
             logger.info("KerberosClient::authenticate: Successfull authentication for username {}".format(username))
             return {
                 'dn' : username,
@@ -175,7 +175,7 @@ class KerberosClient(BaseAuth):
 
         if not error:
             tgt = self.retrieve_tgt_from_cache(ccname, service)
-            logger.debug("KerberosClient::create_tgt_from_creds: TGT successfully retrieven in cache for service '{}'".format(service))
+            logger.debug("KerberosClient::create_tgt_from_creds: TGT successfully retrieved from cache for service '{}'".format(service))
             try:
                 system("/usr/bin/chgrp daemon " + ccname)
                 system("/bin/chmod 640 " + ccname)

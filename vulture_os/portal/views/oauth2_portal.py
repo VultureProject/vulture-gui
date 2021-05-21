@@ -72,7 +72,7 @@ def log_in(request):
         authentication         = OAUTH2Authentication(request.POST.get('app_id', None))
         logger.info("OAUTH2::log_in: OAUTH2Authentication successfully created")
         authentication.retrieve_credentials(request.POST.get('username', None), request.POST.get('password', None), request.COOKIES.get(portal_cookie_name, None))
-        logger.info("OAUTH2::log_in: Credentials successfully retrieven for user '{}'".format(authentication.credentials[0]))
+        logger.info("OAUTH2::log_in: Credentials successfully retrieved for user '{}'".format(authentication.credentials[0]))
         authentication_results = authentication.authenticate()
         logger.info("OAUTH2::log_in: Authentication succeed for user '{}'".format(authentication.credentials[0]))
         response               = authentication.generate_response(authentication_results)
@@ -118,7 +118,7 @@ def is_valid_token(request):
     if request.POST:
         try:
             token = request.POST['token']
-            logger.debug("OAuth2Portal::is_valid_token: Token retrieven in POST data")
+            logger.debug("OAuth2Portal::is_valid_token: Token retrieved from POST data")
 
         except Exception as e:
             logger.error("OAuth2Portal::is_valid_token: Error while trying to retrieve 'token' from POST : {}".format(e))
@@ -134,10 +134,10 @@ def is_valid_token(request):
         try:
             data = r.hgetall("oauth2_"+str(token))
             if data in ("", "None", None, {}):
-                logger.error("OAuth2Portal:is_valid_token: None value was retrieven from Redis")
+                logger.error("OAuth2Portal:is_valid_token: None value was retrieved from Redis")
                 raise TokenNotFoundError("Token '{}' not found in Redis".format("oauth2_"+str(token)))
 
-            logger.debug("OAuth2Portal::is_valid_token: Oauth2 data successfully retrieven in Redis : {}".format(data))
+            logger.debug("OAuth2Portal::is_valid_token: Oauth2 data successfully retrieved from Redis : {}".format(data))
             scope = data.get('scope', '{}')
             if scope != '{}':
                 body = {
