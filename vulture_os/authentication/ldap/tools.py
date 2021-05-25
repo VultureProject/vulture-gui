@@ -165,19 +165,19 @@ def create_user(ldap_repository, username, userPassword, attrs, group_dn=False):
     logger.info(f"User {username} created in LDAP {ldap_repository.name}")
     return r, user_dn
 
-def lock_unlock_user(ldap_repositiory, user_dn, lock=True):
-    user = find_user(ldap_repositiory, user_dn, ["*"])
+def lock_unlock_user(ldap_repository, user_dn, lock=True):
+    user = find_user(ldap_repository, user_dn, ["*"])
     if not user:
         raise UserNotExistError()
 
-    lock_value = ldap_repositiory.get_user_account_locked_value
+    lock_value = ldap_repository.get_user_account_locked_value
     if not lock:
         lock_value = ""
     
     new_attrs = deepcopy(user)
-    new_attrs[ldap_repositiory.get_user_account_locked_attr] = lock_value
+    new_attrs[ldap_repository.get_user_account_locked_attr] = lock_value
     del(new_attrs["dn"])
-    return update_user(ldap_repositiory, user_dn, new_attrs, False)
+    return update_user(ldap_repository, user_dn, new_attrs, False)
 
 
 def update_user(ldap_repository, user_dn, attrs, userPassword):

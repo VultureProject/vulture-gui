@@ -102,7 +102,7 @@ def ldap_edit(request, object_id=None, api=False):
                 if not result.get('status'):
                     return render_form(connection_error=result.get('reason'))
                 else:
-                    return render_form(success="Successfull connection")
+                    return render_form(success="Successful connection")
             else:
                 return render_form(ldap.id if ldap else None)
 

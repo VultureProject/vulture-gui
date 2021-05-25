@@ -79,7 +79,7 @@ class KerberosClient(BaseAuth):
             raise AuthenticationError("Credentials not valid or invalid configuration")
         else:
             logger.debug("KerberosClient::authenticate: TGT successfully retrieved/created with credentials")
-            logger.info("KerberosClient::authenticate: Successfull authentication for username {}".format(username))
+            logger.info("KerberosClient::authenticate: Successful authentication for username {}".format(username))
             return {
                 'dn' : username,
                 'user_phone' : 'N/A',
@@ -144,7 +144,7 @@ class KerberosClient(BaseAuth):
             logger.error("KerberosClient::verify_token: Verify token against KDC failed : {}".format(str(e)))
             return res
 
-        logger.info("KerberosClient::verify_token: Successfull authentication for username {}".format(username))
+        logger.info("KerberosClient::verify_token: Successful authentication for username {}".format(username))
         return {
                 'dn'              : username,
                 'user_phone'      : 'N/A',
