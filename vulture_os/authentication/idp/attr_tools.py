@@ -34,17 +34,9 @@ MAPPING_ATTRIBUTES = {
         "type": str,
         "internal_key": "sn"
     },
-    "claim_list": {
-        "type": list,
-        "internal_key": "initials"
-    },
     "user_type": {
         "type": str,
         "internal_key": "employeeType"
-    },
-    "internal": {
-        "type": str,
-        "internal_key": "businessCategory"
     },
     "smartcardid": {
         "type": str,
