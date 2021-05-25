@@ -874,10 +874,7 @@ class Frontend(models.Model):
 
         if self.mode == "log":
             result['listening_mode'] = self.listening_mode
-            result['enable_logging_reputation'] = self.enable_logging_reputation
             result['enable_logging_geoip'] = self.enable_logging_geoip
-
-            result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
 
             if self.listening_mode == "api":
                 result['api_parser_type'] = self.api_parser_type
@@ -971,18 +968,19 @@ class Frontend(models.Model):
                     result['carbon_black_orgkey'] = self.carbon_black_orgkey
                     result['carbon_black_apikey'] = self.carbon_black_apikey
 
-            if self.enable_logging_reputation:
-                if self.logging_reputation_database_v4:
-                    result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
+        if self.enable_logging_reputation:
+            result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
+            result['enable_logging_reputation'] = self.enable_logging_reputation
+            if self.logging_reputation_database_v4:
+                result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
 
-                if self.logging_reputation_database_v6:
-                    result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
+            if self.logging_reputation_database_v6:
+                result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
 
-            if self.enable_logging_geoip:
-                result['logging_geoip_database'] = self.logging_geoip_database.to_template()
-
-            result['log_forwarders_parse_failure'] = [LogOM().select_log_om(log_fwd.id).to_template()
-                                                      for log_fwd in self.log_forwarders_parse_failure.all().only('id')]
+        if self.enable_logging_geoip:
+            result['logging_geoip_database'] = self.logging_geoip_database.to_template()
+        result['log_forwarders_parse_failure'] = [LogOM().select_log_om(log_fwd.id).to_template()
+                                                    for log_fwd in self.log_forwarders_parse_failure.all().only('id')]
 
         if self.mode in ("http", "log", 'tcp'):
             result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()

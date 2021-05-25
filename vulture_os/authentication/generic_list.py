@@ -41,6 +41,7 @@ from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
 from authentication.portal_template.models import PortalTemplate
 from authentication.auth_access_control.models import AuthAccessControl
+from authentication.totp_profiles.models import TOTPProfile
 
 # Extern modules imports
 from json import loads as json_loads
@@ -180,6 +181,14 @@ class ListLearningProfile(ListView):
     """ Custom class - use as_table() to render an objects """
     template_name = "authentication/learning_profiles.html"
     obj = LearningProfile
+
+    # Get and POST inherited from ListView
+
+
+class ListTOTPProfile(ListView):
+    """ Custom class - use as_table() to render an objects """
+    template_name = "authentication/totp_profiles.html"
+    obj = TOTPProfile
 
     # Get and POST inherited from ListView
 

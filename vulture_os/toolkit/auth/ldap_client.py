@@ -89,7 +89,6 @@ class LDAPClient(BaseAuth):
         self.user_mobile_attr = settings.user_mobile_attr
         self.user_email_attr = settings.user_email_attr
         self.user_groups_attr = settings.user_groups_attr
-        self.user_smartcardid_attr = settings.user_smartcardid_attr
         # Group related settings
         try:
             self.group_dn = settings.group_dn
@@ -100,6 +99,8 @@ class LDAPClient(BaseAuth):
         if not self.group_scope:
             self.group_scope = 2  # Subtree by default
 
+        self.group_objectclass = settings.get_group_objectclass_value
+
         try:
             self.group_filter = settings.group_filter
         except:
@@ -109,7 +110,7 @@ class LDAPClient(BaseAuth):
         if not self.group_member_attr:
             self.group_member_attr = "member"
 
-        self.attributes_list = list()
+        self.attributes_list = [self.user_attr]
         if self.user_mobile_attr:
             self.attributes_list.append(str(self.user_mobile_attr))
         if self.user_email_attr:
@@ -150,8 +151,6 @@ class LDAPClient(BaseAuth):
             res.append(self.user_email_attr)
         if self.user_groups_attr:
             res.append(self.user_groups_attr)
-        if self.user_smartcardid_attr:
-            res.append(self.user_smartcardid_attr)
         if self.user_mobile_attr:
             res.append(self.user_mobile_attr)
         if self.user_email_attr:
@@ -189,8 +188,9 @@ class LDAPClient(BaseAuth):
 
 
     def unbind_connection(self):
-        self._ldap_connection.unbind_s()
-        self._ldap_connection = None
+        if self._ldap_connection:
+            self._ldap_connection.unbind_s()
+            self._ldap_connection = None
 
     # def _schema(self):
     #     self._bind_connection(self.user, self.password)
@@ -366,29 +366,26 @@ class LDAPClient(BaseAuth):
         self.scope = self.user_scope
 
         brut_result = self._search(dn, query_filter, email)
-
         if not brut_result:
             raise UserNotFound("User not found in database for email '{}'".format(email))
 
-        return brut_result[0][0].split(",")[0].split('=')[1]
+        return self._format_user_results(brut_result[0][0], brut_result[0][1])
 
 
-    def update_password (self, username, old_password, cleartext_password):
+    def update_password (self, username, old_password, cleartext_password, **kwargs):
         """ Update a user password inside LDAP Repo
 
         :param username: String with username
         :param cleartext_password: String with cleartext password
         :return: True if Success, False otherwise
         """
-        username = username.encode('utf-8')
-        cleartext_password = cleartext_password.encode('utf-8')
 
         logger.info("Updating password for username {}".format(username))
 
         """ First search for user """
         found = self.search_user(username)
         if found:
-            cn = found[0][0].encode('utf-8')
+            cn = found[0][0]
             self._bind_connection(self.user, self.password)
             try:
                 old_password=None
@@ -537,7 +534,7 @@ class LDAPClient(BaseAuth):
         self.scope = self.user_scope
         logger.debug(query_filter)
         result = self._search(dn, query_filter, username)
-        if result is not None:
+        if result:
             logger.info("{} account is locked".format(username))
             return True
         else:
@@ -564,7 +561,7 @@ class LDAPClient(BaseAuth):
         dn = self._get_user_dn()
         self.scope = self.user_scope
         result = self._search(dn, query_filter, username)
-        if result is not None:
+        if result:
             logger.info("{} account need to change its password"
                         "".format(username))
             return True
@@ -637,12 +634,6 @@ class LDAPClient(BaseAuth):
         for key, val in user_attrs.items():
             if key == "userPassword":
                 continue
-            if key == self.user_mobile_attr:
-                key = "user_phone"
-            elif key == self.user_email_attr:
-                key = "user_email"
-            elif key == self.user_smartcardid_attr:
-                key = "user_smartcardid"
             elif key == self.user_groups_attr:
                 user_groups = val
                 # Groups MUST be a list - do not convert to str if len == 1
@@ -650,6 +641,11 @@ class LDAPClient(BaseAuth):
             if isinstance(val, list) and len(val) == 1:
                 val = val[0]
             res[key] = val
+            # Add user_email and user_phone keys for OTP + SSO compatibility
+            if key == self.user_mobile_attr:
+                res['user_phone'] = val
+            elif key == self.user_email_attr:
+                res['user_email'] = val
         # Retrieve username with user_attr
         username = res.get(self.user_attr)
         if not username:
@@ -725,16 +721,6 @@ class LDAPClient(BaseAuth):
                 response['user_email'] = email_info
             else:
                 response['user_email'] = 'N/A'
-
-            if user_info and self.user_smartcardid_attr is not None:
-                smartcardid_info = user_info[0][1].get(self.user_smartcardid_attr.lower())
-                if isinstance(smartcardid_info, list):
-                    smartcardid_info = smartcardid_info[0]
-                if isinstance(smartcardid_info, bytes):
-                    smartcardid_info = smartcardid_info.decode('utf-8')
-                response["smartcardid"] = smartcardid_info
-            else:
-                response["smartcardid"] = "N/A"
 
         except ldap.INVALID_CREDENTIALS:
             logger.error("Invalid credentials : '{}' '{}'".format(self.user, self.password))
@@ -832,7 +818,21 @@ class LDAPClient(BaseAuth):
         self._get_connection().add_s(dn, ldif)
         self.unbind_connection()
 
-    def add_user(self, dn, attributes, group_dn, userPassword):
+    def add_user(self, dn, attributes, userPassword, group_dn):
+        def add_to_group():
+            attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
+            logger.info("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
+            try:
+                self._get_connection().modify_s(group_dn, attrs)
+            except ldap.TYPE_OR_VALUE_EXISTS:
+                pass
+            except ldap.UNDEFINED_TYPE:
+                # Group does not exist. Creating it
+                self.add_group(group_dn, {
+                    "member": [dn],
+                    "objectClass": [self.group_objectclass]
+                })
+
         self._bind_connection(self.user, self.password)
 
         for k, v in attributes.items():
@@ -848,13 +848,9 @@ class LDAPClient(BaseAuth):
             # Nothing to do here
             pass
 
+        logger.info(f"Adding user {dn} in group {group_dn}")
         if group_dn:
-            attrs = [(ldap.MOD_ADD, self.group_member_attr, bytes(dn, "utf-8"))]
-            logger.info("LDAP::add_new_user: Adding user '{}' to group '{}'".format(dn, group_dn))
-            try:
-                self._get_connection().modify_s(group_dn, attrs)
-            except ldap.TYPE_OR_VALUE_EXISTS:
-                pass
+            add_to_group()
 
         if userPassword:
             self._get_connection().passwd_s(dn, None, userPassword)

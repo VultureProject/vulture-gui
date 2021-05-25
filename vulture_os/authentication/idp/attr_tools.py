@@ -20,16 +20,40 @@ __license__ = "GPLv3"
 __version__ = "3.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'IDP URLS'
+__doc__ = 'IDP Tools'
 
-from django.urls import path, re_path
+from authentication.user_portal.models import UserAuthentication
 
-from authentication.idp.api import IDPApiView, IDPApiUserView
 
-urlpatterns = [
-   re_path('^api/v1/authentication/idp/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)$', IDPApiView.as_view(), name="authentication.idp"),
-   re_path('^api/v1/authentication/idp/users/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)$', IDPApiUserView.as_view(), name="authentication.idp.users"),
-   path('api/v1/authentication/idp/users/<int:portal_id>/<int:repo_id>/<str:action>/',
-        IDPApiUserView.as_view(),
-        name="authentication.idp.users.action")
-]
+MAPPING_ATTRIBUTES = {
+    "first_name": {
+        "type": str,
+        "internal_key": "givenName"
+    },
+    "last_name": {
+        "type": str,
+        "internal_key": "sn"
+    },
+    "claim_list": {
+        "type": list,
+        "internal_key": "initials"
+    },
+    "user_type": {
+        "type": str,
+        "internal_key": "employeeType"
+    },
+    "internal": {
+        "type": str,
+        "internal_key": "businessCategory"
+    },
+    "smartcardid": {
+        "type": str,
+        "internal_key": "employeeNumber"
+    }
+}
+
+
+def get_internal_attributes():
+    # Internal
+    repo_attributes = [value["internal_key"] for value in MAPPING_ATTRIBUTES.values()]
+    return repo_attributes

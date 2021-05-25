@@ -79,6 +79,8 @@ class ConfigForm(ModelForm):
         super().__init__(*args, **kwargs)
         self = bootstrap_tooltips(self)
         self.fields['internal_tenants'].empty_label = None
+        self.fields['ldap_repository'].empty_label = "No ldap authentication"
+        self.fields['ldap_repository'].required = False
 
     @staticmethod
     def validate_ip_list(field_value):

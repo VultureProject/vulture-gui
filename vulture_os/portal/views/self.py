@@ -32,13 +32,18 @@ __doc__ = 'Django views to display Self-service portal'
 # Django system imports
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponseServerError, HttpResponseForbidden
+from django.core.exceptions import ValidationError
 
 # Django project imports
 from portal.system.self_actions import SELFService, SELFServiceChange, SELFServiceLogout, SELFServiceLost
 from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError
+from workflow.models import Workflow
+from system.cluster.models import Cluster
+from authentication.user_portal.models import UserAuthentication
 
 # Required exceptions imports
 from django.utils.datastructures     import MultiValueDictKeyError
+from django.core.exceptions          import ObjectDoesNotExist
 from ldap                            import LDAPError
 from portal.system.exceptions        import PasswordMatchError, RedirectionNeededError
 from pymongo.errors                  import PyMongoError
@@ -57,7 +62,7 @@ logger = logging.getLogger('portal_authentication')
 
 
 
-def self(request, token_name=None, proxy_app_id=None, action=None):
+def self(request, workflow_id=None, portal_id=None, action=None):
 
     """ Handle Vulture Self-Service portal
     :param request: Django request object
@@ -71,9 +76,24 @@ def self(request, token_name=None, proxy_app_id=None, action=None):
         None     : SELFService
     }
 
-
     try:
-        Action = action_classes[action](proxy_app_id, token_name)
+        if workflow_id:
+            workflow = Workflow.objects.get(pk=workflow_id)
+        elif portal_id:
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            # Prefix ID to prevent conflicts between portal.id and workflow.id
+            workflow = Workflow(authentication=portal, fqdn=portal.external_fqdn, id=f"portal_{portal.id}",
+                                name=portal.name)
+
+        scheme = request.META['HTTP_X_FORWARDED_PROTO']
+        fqdn = request.META['HTTP_HOST']
+        w_path = workflow.public_dir
+        redirect_url = scheme + "://" + fqdn + w_path
+
+        config = Cluster.get_global_config()
+        token_name = config.public_token
+
+        Action = action_classes[action](workflow, token_name, config, redirect_url)
 
     except RedirectionNeededError as e:
         return HttpResponseRedirect(e.redirect_url)
@@ -88,6 +108,10 @@ def self(request, token_name=None, proxy_app_id=None, action=None):
         logger.error("PORTAL::log_in: AssertionError while trying to create Authentication : ".format(e))
         return HttpResponseForbidden()
 
+    except ObjectDoesNotExist:
+        logger.error("SELF::Workflow with id '{}' not found".format(workflow_id))
+        return HttpResponseForbidden()
+
     except Exception as e:
         logger.error("Unknown error occurred while retrieving user informations :")
         logger.exception(e)
@@ -98,7 +122,7 @@ def self(request, token_name=None, proxy_app_id=None, action=None):
         credential = Action.retrieve_credentials(request)
         if not action:
             result = Action.perform_action()
-            logger.info("SELF::main: List of apps successfully retrieven")
+            logger.info("SELF::main: List of apps successfully retrieved")
             return Action.main_response(request, result)
         else:
             return Action.message_response(Action.perform_action(request, credential))
@@ -111,7 +135,7 @@ def self(request, token_name=None, proxy_app_id=None, action=None):
     # If assertionError : Forbidden
     except AssertionError as e:
         logger.error("PORTAL::log_in: AssertionError while trying to create Authentication : '{}'".format(e))
-        return HttpResponseForbidden(e)
+        return HttpResponseForbidden()
 
     except (DBAPIError, LDAPError, PyMongoError) as e:
         logger.error("SELF::self: Failed to update password :")
@@ -129,7 +153,7 @@ def self(request, token_name=None, proxy_app_id=None, action=None):
             logger.error("SELF::self: Field missing : '{}'".format(e))
             return Action.ask_credentials_response(request, action, "Field missing : "+str(e))
 
-    except SMTPException as e:
+    except (SMTPException, ValidationError) as e:
         return Action.ask_credentials_response(request, action, str(e))
 
     except KeyError as e:
@@ -137,6 +161,5 @@ def self(request, token_name=None, proxy_app_id=None, action=None):
         return HttpResponseForbidden()
 
     except Exception as e:
-        logger.error(type(e))
         logger.exception(e)
-        return Action.message_response("An unknown error occurred <br><b> Please contact your admninistrator</b>")
+        return Action.message_response("An unknown error occurred <br><b> Please contact your administrator</b>")

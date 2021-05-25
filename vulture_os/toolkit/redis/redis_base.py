@@ -96,3 +96,50 @@ class RedisBase:
             return False
 
         return self.redis.sentinel_monitor('mymaster', self.node, 6379, 1)
+
+
+    # Write function : need master Redis
+    def hmset(self, hash, mapping):
+        result = None
+        # Get role of current cluster
+        cluster_info = self.redis.info()
+        # If current cluster isn't master: get the master
+        if "master" not in cluster_info['role']:
+            # backup current cluster
+            r_backup = self.redis
+            # And connect to master
+            try:
+                self.redis = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], db=0)
+                result = self.redis.hmset(hash, mapping)
+            except Exception as e:
+                self.logger.info("REDISSession: Redis connexion issue")
+                self.logger.exception(e)
+                result = None
+            # Finally restore the backuped cluster
+            self.redis = r_backup
+        else:  # If current cluster is Master
+            result = self.redis.hmset(hash, mapping)
+        return result
+
+    # Write function : need master Redis
+    def expire(self, key, ttl):
+        result = None
+        # Get role of current cluster
+        cluster_info = self.redis.info()
+        # If current cluster isn't master: get the master
+        if "master" not in cluster_info['role']:
+            # backup current cluster
+            r_backup = self.redis
+            # And connect to master
+            try:
+                self.redis = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], db=0)
+                result = self.redis.expire(key, ttl)
+            except Exception as e:
+                self.logger.info("REDISSession: Redis connexion issue")
+                self.logger.exception(e)
+                result = None
+            # Finally restore the backuped cluster
+            self.redis = r_backup
+        else:  # If current cluster is Master
+            result = self.redis.expire(key, ttl)
+        return result

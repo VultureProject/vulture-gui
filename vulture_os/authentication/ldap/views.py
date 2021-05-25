@@ -102,7 +102,7 @@ def ldap_edit(request, object_id=None, api=False):
                 if not result.get('status'):
                     return render_form(connection_error=result.get('reason'))
                 else:
-                    return render_form("test", success="Successfull connection")
+                    return render_form(success="Successful connection")
             else:
                 return render_form(ldap.id if ldap else None)
 
@@ -124,7 +124,10 @@ def user_search_test(request):
     # TODO SECURITY CLEAN FOR USERNAME AND PASSWORD, to prevent LDAP Injection
     username = request.POST.get('username')
     password = request.POST.get('password')
-    form = LDAPRepositoryForm(request.POST)
+    instance = None
+    if request.POST.get('id'):
+        instance = LDAPRepository.objects.get(pk=request.POST.get('id'))
+    form = LDAPRepositoryForm(request.POST, instance=instance)
     if form.user_search_is_valid():
         conf = form.save(commit=False)
         ldap_client = conf.get_client()
@@ -141,7 +144,10 @@ def user_search_test(request):
 # TODO @group_required('administrator', 'system_manager')
 def group_search_test(request):
     group_name = request.POST.get('group_name')
-    form = LDAPRepositoryForm(request.POST)
+    instance = None
+    if request.POST.get('id'):
+        instance = LDAPRepository.objects.get(pk=request.POST.get('id'))
+    form = LDAPRepositoryForm(request.POST, instance=instance)
     if form.group_search_is_valid():
         conf = form.save(commit=False)
         ldap_client = conf.get_client()

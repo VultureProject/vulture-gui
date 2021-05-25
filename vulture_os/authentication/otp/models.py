@@ -99,6 +99,11 @@ class OTPRepository(BaseRepository):
         validators=[MinValueValidator(8), MaxValueValidator(20)],
         help_text=_('Key length for email authentication')
     )
+    totp_label = models.TextField(
+        default="Vulture App",
+        help_text=_("Label to show in phone application"),
+        verbose_name=_("Time-based OTP label")
+    )
 
     def __str__(self):
         return "{} ({})".format(self.name, self.str_otp_type())
@@ -149,6 +154,9 @@ class OTPRepository(BaseRepository):
         if self.otp_type == "mail":
             result['otp_service'] = self.str_mail_service()
             result['additional_infos'] = "Key length = {}".format(self.key_length)
+        elif self.otp_type == "totp":
+            result['otp_service'] = "Time-based OTP"
+            result['additional_infos'] = "TOTP label = {}".format(self.totp_label)
         else:
             result['otp_service'] = self.str_phone_service()
             result['additional_infos'] = "API key = {}".format(self.api_key)

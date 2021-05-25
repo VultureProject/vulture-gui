@@ -1,0 +1,137 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "TOTP Profiles" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="totp_profiles_list">
+                  </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<i class="fa fa-fw fa-fighter-jet"></i>-->
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false,
+    },
+    {
+      sTitle: '{% trans "Repository" %}',
+      name: "auth_repository",
+      aTargets: [1],
+      defaultContent: "",
+      mData: "auth_repository"
+    },
+    {
+      sTitle: '{% trans "TOTP repository" %}',
+      name: "totp_repository",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "totp_repository"
+    },
+    {
+      sTitle: '{% trans "User" %}',
+      name: "login",
+      aTargets: [3],
+      defaultContent: "",
+      mData: "login"
+    },
+    {
+      sTitle: '{% trans "Action" %}',
+      name: "action",
+      mData:"id",
+      aTargets: [4],
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        return '&nbsp;<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/authentication/totp_profiles/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+      }
+    }
+  ];
+
+  var otp_table = $("#totp_profiles_list").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+          columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      });
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (!data.status){
+            notify('error', "{% trans 'Error' %}", data.error);
+          } else {
+            fnCallback(data);
+          }
+        }
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+      }) // /$.fail
+      .done( function( data ) {
+        if (!data.status){
+          notify('error', "{% trans 'Error' %}", data.error);
+        } else {
+          fnCallback(data);
+        }
+      }); // /$.done
+    }, // /fnServerData
+  }); // var otp_table = $("#otp_list").dataTable
+
+
+  /* Reload table data every 5 seconds */
+  setInterval( function() {
+    otp_table.fnDraw(false);
+  }, 5000);
+
+
+{% endblock %}

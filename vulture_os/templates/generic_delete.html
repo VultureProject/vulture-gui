@@ -43,7 +43,7 @@
                   <div class="form-group">
                     <label class="col-sm-12 text-center">
                       {% if not used_by %}
-                      {% trans "Are you sure you want to delete " %}{{ obj_inst }} ? <br />
+                      {% trans "Are you sure you want to delete " %}<strong>{{ obj_inst }}</strong> ? <br />
                       {% if related_objs %}
                             {% trans "All related objects will be destroyed : " %}
                             <ul>{% for related in related_objs %}

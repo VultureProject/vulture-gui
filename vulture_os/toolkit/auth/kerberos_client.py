@@ -78,8 +78,8 @@ class KerberosClient(BaseAuth):
             logger.error("KerberosClient::authenticate: Kerberos authentication for {} failed".format(username))
             raise AuthenticationError("Credentials not valid or invalid configuration")
         else:
-            logger.debug("KerberosClient::authenticate: TGT successfully retrieven/created with credentials")
-            logger.info("KerberosClient::authenticate: Successfull authentication for username {}".format(username))
+            logger.debug("KerberosClient::authenticate: TGT successfully retrieved/created with credentials")
+            logger.info("KerberosClient::authenticate: Successful authentication for username {}".format(username))
             return {
                 'dn' : username,
                 'user_phone' : 'N/A',
@@ -144,7 +144,7 @@ class KerberosClient(BaseAuth):
             logger.error("KerberosClient::verify_token: Verify token against KDC failed : {}".format(str(e)))
             return res
 
-        logger.info("KerberosClient::verify_token: Successfull authentication for username {}".format(username))
+        logger.info("KerberosClient::verify_token: Successful authentication for username {}".format(username))
         return {
                 'dn'              : username,
                 'user_phone'      : 'N/A',
@@ -175,7 +175,7 @@ class KerberosClient(BaseAuth):
 
         if not error:
             tgt = self.retrieve_tgt_from_cache(ccname, service)
-            logger.debug("KerberosClient::create_tgt_from_creds: TGT successfully retrieven in cache for service '{}'".format(service))
+            logger.debug("KerberosClient::create_tgt_from_creds: TGT successfully retrieved from cache for service '{}'".format(service))
             try:
                 system("/usr/bin/chgrp daemon " + ccname)
                 system("/bin/chmod 640 " + ccname)

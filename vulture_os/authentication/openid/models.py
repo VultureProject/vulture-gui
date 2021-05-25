@@ -187,7 +187,8 @@ class OpenIDRepository(BaseRepository):
             'id': str(self.id),
             'name': self.name,
             'provider': self.str_provider(),
-            'additional_infos': "URL : {} </br> Callback URL : /oauth2/callback/{}".format(self.provider_url, self.id_alea)
+            'additional_infos': "URL : {} </br> Callback URL : /oauth2/callback/{}".format(self.provider_url, self.id_alea),
+            'callback_url': f"/oauth2/callback/{self.id_alea}"
         }
 
     # Do NOT forget this on all BaseRepository subclasses

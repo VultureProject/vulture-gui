@@ -62,6 +62,8 @@ from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.system.hashes import random_sha256
 from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
+from django.core.exceptions import ObjectDoesNotExist
+
 from ast import literal_eval
 
 # Extern modules imports
@@ -75,6 +77,7 @@ logger = logging.getLogger('portal_authentication')
 
 
 STATE_REDIS_KEY = "oauth_state"
+RETURN_OAUTH_TOKEN = "return_oauth_token"
 
 
 def openid_configuration(request, portal_id):
@@ -125,6 +128,7 @@ def openid_start(request, workflow_id, repo_id):
         # We must stock the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         redis_portal_session[STATE_REDIS_KEY] = state
+        redis_portal_session[RETURN_OAUTH_TOKEN] = str(request.GET.get('get_token') in (True, "true", "True", "1", 1, "yes"))
         redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
 
         # Finally we redirect the user to authorization_url
@@ -181,6 +185,8 @@ def openid_callback(request, workflow_id, repo_id):
         # Get user session with cookie
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         assert state == redis_portal_session[STATE_REDIS_KEY]
+        # Return oauth2_token or make sso forward
+        return_oauth_token = redis_portal_session[RETURN_OAUTH_TOKEN] == "True"
         # If state is correct, remove-it in Redis to prevent re-use
         redis_portal_session.delete_key(STATE_REDIS_KEY)
         oauth2_session = repo.get_oauth2_session(callback_url)
@@ -212,7 +218,9 @@ def openid_callback(request, workflow_id, repo_id):
         # Set authentication attributes required
         authentication.backend_id = repo_id
         authentication.credentials = [claims.get('name') or claims.get('sub'), ""]
-        authentication.register_user(user_scope)
+        if not user_scope.get('name'):
+            user_scope['name'] = claims.get('name') or claims.get('sub')
+        portal_cookie, oauth2_token = authentication.register_user({**claims, **repo_attributes}, user_scope)
 
     except KeyError as e:
         logger.exception(e)
@@ -234,8 +242,22 @@ def openid_callback(request, workflow_id, repo_id):
         logger.exception(e)
         return error_response(workflow.authentication, "An error occurred")
 
-    response = authenticate(request, workflow, portal_cookie, token_name, double_auth_only=True, sso_forward=True, openid=False) \
-               or authentication.generate_response()
+    if not return_oauth_token:
+        response = authenticate(request,
+                                workflow,
+                                portal_cookie,
+                                token_name,
+                                double_auth_only=True,
+                                sso_forward=True,
+                                openid=False) \
+                   or authentication.generate_response()
+    else:
+        return JsonResponse({
+            'access_token': oauth2_token,
+            'token_type': "Bearer",
+            'scope': ["openid"],
+            'created_at': int(timezone.now().timestamp()),
+        })
 
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
 
@@ -351,20 +373,25 @@ def openid_token(request, portal_id):
                             status=400)
 
 
-def openid_userinfo(request, portal_id):
+def openid_userinfo(request, portal_id=None, workflow_id=None):
     try:
         scheme = request.META['HTTP_X_FORWARDED_PROTO']
     except KeyError:
-        logger.error("PORTAL::openid_authorize: could not get scheme from request")
+        logger.error("PORTAL::openid_userinfo: could not get scheme from request")
         return HttpResponseServerError()
 
     try:
-        portal = UserAuthentication.objects.get(pk=portal_id)
-    except UserAuthentication.DoesNotExist:
-        logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
+        if portal_id:
+            assert UserAuthentication.objects.filter(pk=portal_id).exists()
+            workflow_id = f"portal_{portal_id}"
+        elif workflow_id:
+            assert Workflow.objects.filter(pk=workflow_id).exists()
+        assert workflow_id
+    except (ObjectDoesNotExist, AssertionError):
+        logger.error("PORTAL::openid_userinfo: could not find a portal with id {} or workflow with id {}".format(portal_id, workflow_id))
         return HttpResponseServerError()
     except Exception as e:
-        logger.error("PORTAL::openid_authorize: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
+        logger.error("PORTAL::openid_userinfo: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
         return HttpResponseServerError()
 
     try:
@@ -373,6 +400,8 @@ def openid_userinfo(request, portal_id):
 
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
+
+        assert session['workflow'] == workflow_id
         assert session['scope']
         return JsonResponse(literal_eval(session['scope']))
     except Exception as e:
@@ -440,8 +469,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     authentication_results = authentication.authenticate(request)
                     logger.debug("PORTAL::log_in: Authentication succeed on backend {}, "
                                  "user infos : {}".format(authentication.backend_id, authentication_results))
+                    user_scope = workflow.authentication.get_user_scope({}, authentication_results)
                     # Register authentication results in Redis
-                    portal_cookie, oauth2_token = authentication.register_user(authentication_results)
+                    portal_cookie, oauth2_token = authentication.register_user(authentication_results, user_scope)
                     logger.debug("PORTAL::log_in: User {} successfully registered in Redis".format(authentication.credentials[0]))
 
                     if authentication_results.get('password_expired', None):
@@ -472,7 +502,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 return authentication.ask_credentials_response(request=request, error="Bad credentials")
 
             except (DBAPIError, PyMongoError, LDAPError) as e:
-                logger.error("PORTAL::log_in: Repository driver Error while trying to authentication user '{}' : {}"
+                logger.error("PORTAL::log_in: Repository driver Error while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request,
                                                                error="Bad credentials")
@@ -480,7 +510,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
                 # vltprtlsrnm is always empty during the initial redirection. Don't log that
                 if str(e) != "vltprtlsrnm":
-                    logger.error("PORTAL::log_in: Error while trying to authentication user '{}' : {}"
+                    logger.error("PORTAL::log_in: Error while trying to authenticate user '{}' : {}"
                                  .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request)
 
@@ -546,6 +576,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                             .format(authentication.credentials[0]))
                 return authentication.ask_credentials_response(request=request,
                                                                error="<b> Error sending OTP Key </b> </br> "+str(e))
+            except Exception as e:
+                logger.exception(e)
 
         except AuthenticationError as e:
             """ Bad OTP key """
@@ -564,7 +596,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 db_authentication.deauthenticate_user()
                 logger.info("PORTAL::log_in: User '{}' successfully deauthenticated due to db-authentication error"
                             .format(authentication.credentials[0]))
-                return authentication.ask_credentials_response(request=request, error=e.message)
+                return authentication.ask_credentials_response(request=request, error=str(e))
 
             except (OTPError, REDISWriteError, RedisConnectionError) as e:
                 logger.error("PORTAL::log_in: Error while preparing double-authentication : {}".format(str(e)))
@@ -608,7 +640,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # If we cannot retrieve them, ask credentials
                 assert authentication.credentials[0]  # or not authentication.credentials[1]:
 
-                logger.info("PORTAL::log_in: Credentials successfuly retrieven for SSO performing")
+                logger.info("PORTAL::log_in: Credentials successfuly retrieved to perform SSO")
 
             except Exception as e:
                 logger.error("PORTAL::log_in: Error while retrieving credentials for SSO : ")
@@ -622,8 +654,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 logger.info("PORTAL::log_in: SSOForward successfully created")
                 # Get credentials needed for sso forward : AutoLogon or Learning
                 sso_data, profiles_to_stock, url = sso_forward.retrieve_credentials(request)
-                logger.info("PORTAL::log_in: SSOForward credentials successfully retrieven")
-                # If credentials retrieven needs to be stocked
+                logger.info("PORTAL::log_in: SSOForward credentials successfully retrieved")
+                # If retrieved credentials need to be stored
                 for profile_name,profile_value in profiles_to_stock.items():
                     sso_forward.stock_sso_field(authentication.credentials[0], profile_name, profile_value)
 

@@ -27,10 +27,8 @@ __doc__ = 'PyOTP wrapper (for TOTP authentication)'
 from django.conf import settings
 
 # Django project imports
-from authentication.learning_profiles.models import LearningProfile
-from authentication.base_repository import BaseRepository
+from authentication.totp_profiles.models import TOTPProfile
 from toolkit.auth.base_auth import BaseAuth
-from toolkit.system.aes_utils import AESCipher
 
 # Required exceptions imports
 from toolkit.auth.exceptions  import AuthenticationError, OTPError, RegisterAuthenticationError
@@ -40,7 +38,7 @@ from pyotp import random_base32 as pyotp_random_base32, TOTP
 
 # Logger configuration imports
 import logging
-logger = logging.getLogger('authentication')
+logger = logging.getLogger('portal_authentication')
 
 
 class TOTPClient(BaseAuth):
@@ -52,32 +50,59 @@ class TOTPClient(BaseAuth):
         """
         # Connection settings
         self.type = settings.otp_type
+        self.label = settings.totp_label
+        self.otp_repo = settings
 
     def generate_captcha(self, user_id, email):
-        return TOTP(user_id).provisioning_uri(email, issuer_name="Vulture App")
+        return TOTP(user_id).provisioning_uri(email, issuer_name=self.label)
 
     # WARNING : Do not touch this method, Big consequences !
-    def authenticate(self, user_id, key):
-        logger.debug("")
+    def authenticate(self, user_id, key, **kwargs):
         totp = TOTP(user_id)
         if not totp.verify(key):
-            raise AuthenticationError("TOTP taped token is not valid.")
-        return True
+            raise AuthenticationError("TOTP taped token is not valid for user {}.".format(user_id))
 
-    def register_authentication(self, app_id, app_name, backend_id, login):
+        logger.info("TOTP Token for user {} successfully verified.".format(user_id))
+
+        # If the SSOProfile is not yet in MongoDB, set-it
+        workflow = kwargs['app']
+        auth_backend = kwargs['backend']
+        login = kwargs['login']
+
+        try:
+            # Save in Mongo
+            totp_profile, created = TOTPProfile.objects.get_or_create(auth_repository=auth_backend,
+                                                             totp_repository=self.otp_repo,
+                                                             login=login)
+            if created:
+                totp_profile.set_data(user_id)
+                totp_profile.store()
+                logger.info("TOTP token for user {} stored in database.".format(login))
+
+            return True
+
+        except Exception as e:
+            logger.exception(e)
+            raise e
+
+    def register_authentication(self, **kwargs):
+        auth_backend = kwargs['backend']
+        login = kwargs['login']
+
         """ This method interract with SSOProfile objects in Mongo """
         """ Try to retrieve the SSOProfile in internal database """
         try:
             logger.debug("TOTP::Register_authentication: Trying to retrieve encrypted key in Mongo")
-            aes = AESCipher("{}{}{}{}{}".format(settings.SECRET_KEY, app_id, backend_id, login, "totp"))
-            encrypted_field = aes.key.encode('hex')
-            sso_profile = LearningProfile.objects.filter(encrypted_name=encrypted_field, login=login).first()
-            if sso_profile:
-                logger.info("TOTP::Register_authentication: Encrypted key successfully retrieved from Mongo")
-                decrypted_value = sso_profile.get_data(sso_profile.encrypted_value, app_id, backend_id, login, "totp")
-                if decrypted_value:
-                    logger.info("TOTP:Register_authentication: Encrypted key successfully decrypted")
-                    return False, decrypted_value
+            totp_profile = TOTPProfile.objects.get(auth_repository=auth_backend,
+                                                   totp_repository=self.otp_repo,
+                                                   login=login)
+            logger.info("TOTP::Register_authentication: Encrypted key successfully retrieved from Mongo")
+            decrypted_value = totp_profile.decrypt()
+            if decrypted_value:
+                logger.info("TOTP:Register_authentication: Encrypted key successfully decrypted")
+                return False, decrypted_value
+        except TOTPProfile.DoesNotExist:
+            pass
         except Exception as e:
             logger.exception(e)
             raise e
@@ -89,11 +114,6 @@ class TOTPClient(BaseAuth):
             # returns a 16 character base32 secret.
             # Compatible with Google Authenticator and other OTP apps
             new_key = pyotp_random_base32()
-            # Save in Mongo
-            sso_profile = LearningProfile()
-            sso_profile.set_data(app_id, app_name, backend_id, BaseRepository.objects.get(pk=backend_id).name,
-                                 login, "totp", new_key)
-            sso_profile.store()
             return True, new_key
         except Exception as e:
             logger.exception(e)

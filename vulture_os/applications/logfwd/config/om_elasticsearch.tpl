@@ -5,6 +5,7 @@
            searchIndex="{{ template_id }}"
            template="{{ out_template }}_elastic"
            dynSearchIndex="on"
+           searchType="_doc" # compatibility with Elasticsearch >= 7
            {% if uid and pwd %}
            uid="{{ uid }}"
            pwd="{{ pwd }}"

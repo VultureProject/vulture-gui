@@ -71,6 +71,11 @@ class Authentication:
                     'url': '/authentication/otp/'
                 },
                 {
+                    'link': 'totp_profiles',
+                    'text': _('Time-based OTP profiles'),
+                    'url': '/authentication/totp_profiles/'
+                },
+                {
                     'link': 'openid',
                     'text': _('OpenID federation'),
                     'url': '/authentication/openid/'

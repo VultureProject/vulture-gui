@@ -97,6 +97,10 @@ class OPENIDApi(View):
         try:
             openid = OpenIDRepository.objects.get(pk=object_id)
             openid.delete()
+
+            return JsonResponse({
+                "status": True
+            })
         
         except OpenIDRepository.DoesNotExist:
             return JsonResponse({
