@@ -144,10 +144,10 @@ class Workflow(models.Model):
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
-        return ['frontend', 'backend']
+        return ['name', 'frontend', 'backend']
 
     def __str__(self):
-        return "'{}' ==> '{}'".format(str(self.frontend), str(self.backend))
+        return "{}: '{}' ==> '{}'".format(self.name, str(self.frontend), str(self.backend))
 
     def to_html_template(self):
         """ Dictionary used to render object as html

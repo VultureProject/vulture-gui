@@ -22,6 +22,8 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'LDAP Repository model'
 
+import re
+
 # Django system imports
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -170,12 +172,6 @@ class LDAPRepository(BaseRepository):
         verbose_name=_("Email attribute"),
         help_text=_("Attribute which contains user's email address")
     )
-
-    user_smartcardid_attr = models.TextField(
-        verbose_name=_("Smart Card ID attribute"),
-        default="",
-        help_text=_("Attribute which contains user's SmartCard ID")
-    )
     """ * Group search related attributes * """
     group_scope = models.PositiveIntegerField(
         verbose_name=_("Group search scope"),
@@ -202,6 +198,39 @@ class LDAPRepository(BaseRepository):
         default="member",
         help_text=_("Attribute which contains  list of group members")
     )
+
+    @property
+    def get_group_objectclass_value(self):
+        regex = r"\(.*=(.*)\)"
+        return re.findall(regex, self.group_filter)[0]
+
+    @property
+    def get_user_account_locked_attr(self):
+        if self.user_account_locked_attr:
+            regex = r"\((.*)=.*"
+            return re.findall(regex, self.user_account_locked_attr)[0]
+        return False
+
+    @property
+    def get_user_account_locked_value(self):
+        if self.user_account_locked_attr:
+            regex = r"\(.*=(.*)\)"
+            return re.findall(regex, self.user_account_locked_attr)[0]
+        return False
+
+    @property
+    def get_user_change_password_attr(self):
+        if self.user_change_password_attr:
+            regex = r"\((.*)=.*"
+            return re.findall(regex, self.user_change_password_attr)[0]
+        return False
+    
+    @property
+    def get_user_change_password_value(self):
+        if self.user_change_password_attr:
+            regex = r"\(.*=(.*)\)"
+            return re.findall(regex, self.user_change_password_attr)[0]
+        return False
 
     def create_user_dn(self, user_name):
         return f"{self.user_attr}={user_name},{self.user_dn},{self.base_dn}"

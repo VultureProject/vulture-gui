@@ -456,6 +456,13 @@ class X509Certificate(models.Model):
 
         return extensions
 
+    def ca_filename(self):
+        if self.is_ca_cert():
+            return self.get_base_filename() + ".crt"
+        else:
+            return self.get_base_filename() + ".chain"
+
+
     def save_conf(self):
         """ Write cert as all formats currently supported
         This function raise VultureSystemConfigError if failure """

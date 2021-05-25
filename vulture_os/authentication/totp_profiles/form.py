@@ -14,22 +14,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Olivier de Régis"
+__author__ = "Kevin GUILLEMOT"
 __credits__ = []
 __license__ = "GPLv3"
-__version__ = "3.0.0"
+__version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'IDP URLS'
+__doc__ = 'TOTPProfile dedicated form class'
 
-from django.urls import path, re_path
-
-from authentication.idp.api import IDPApiView, IDPApiUserView
-
-urlpatterns = [
-   re_path('^api/v1/authentication/idp/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)$', IDPApiView.as_view(), name="authentication.idp"),
-   re_path('^api/v1/authentication/idp/users/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)$', IDPApiUserView.as_view(), name="authentication.idp.users"),
-   path('api/v1/authentication/idp/users/<int:portal_id>/<int:repo_id>/<str:action>/',
-        IDPApiUserView.as_view(),
-        name="authentication.idp.users.action")
-]

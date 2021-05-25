@@ -45,14 +45,15 @@ class OTPRepositoryForm(ModelForm):
 
     class Meta:
         model = OTPRepository
-        fields = ('name', 'api_key', 'key_length', 'otp_type', 'otp_phone_service', 'otp_mail_service')
+        fields = ('name', 'api_key', 'key_length', 'otp_type', 'otp_phone_service', 'otp_mail_service', 'totp_label')
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'api_key': TextInput(attrs={'class': 'form-control', 'placeholder': "tApk5hmAQWNs5qNh7gVEy9OD9pbaEEji"}),
             'key_length': NumberInput(attrs={'class': 'form-control'}),
             'otp_type': Select(choices=OTP_TYPE, attrs={'class': 'form-control select2'}),
             'otp_phone_service': Select(choices=OTP_PHONE_SERVICE, attrs={'class': 'form-control select2'}),
-            'otp_mail_service': Select(choices=OTP_MAIL_SERVICE, attrs={'class': 'form-control select2'})
+            'otp_mail_service': Select(choices=OTP_MAIL_SERVICE, attrs={'class': 'form-control select2'}),
+            'totp_label': TextInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -61,7 +62,7 @@ class OTPRepositoryForm(ModelForm):
         for field_name in ['otp_type', 'otp_phone_service', 'otp_mail_service']:
             self.fields[field_name].empty_label = None
         # Set all fields as non required
-        for field in ['api_key', 'key_length', 'otp_phone_service', 'otp_mail_service']:
+        for field in ['api_key', 'key_length', 'otp_phone_service', 'otp_mail_service', 'totp_label']:
             self.fields[field].required = False
         if not self.initial.get('name'):
             self.fields['name'].initial = "OTP Repository"
@@ -81,13 +82,20 @@ class OTPRepositoryForm(ModelForm):
         cleaned_data = super().clean()
         otp_type = cleaned_data.get('otp_type')
 
-        if otp_type == "email" and not cleaned_data.get('otp_mail_service'):
-            self.add_error('otp_mail_service', "This field is required with email type.")
-        if otp_type in ["phone", "onetouch"] and not cleaned_data.get('otp_phone_service'):
-            self.add_error('otp_phone_service', "This field is required with phone type.")
-        if otp_type == "email" and not cleaned_data.get('key_length'):
-            self.add_error('key_length', "This field is required with email type.")
-        if otp_type != "email" and not cleaned_data.get('api_key'):
-            self.add_error('api_key', "This field is required with {} type.".format(otp_type))
+        if otp_type == "email":
+            if not cleaned_data.get('otp_mail_service'):
+                self.add_error('otp_mail_service', "This field is required with {} type.".format(otp_type))
+            if not cleaned_data.get('key_length'):
+                self.add_error('key_length', "This field is required with {} type.".format(otp_type))
+
+        if otp_type in ["phone", "onetouch"]:
+            if not cleaned_data.get('otp_phone_service'):
+                self.add_error('otp_phone_service', "This field is required with {} type.".format(otp_type))
+            if not cleaned_data.get('api_key'):
+                self.add_error('api_key', "This field is required with {} type.".format(otp_type))
+
+        if otp_type == "totp":
+            if not cleaned_data.get('totp_label'):
+                self.add_error('totp_label', "This field is required with {} type.".format(otp_type))
 
         return cleaned_data

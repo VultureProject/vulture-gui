@@ -32,32 +32,26 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
 from authentication.user_portal.models import UserAuthentication
+from authentication.totp_profiles.models import TOTPProfile
 from authentication.ldap.tools import NotUniqueError, UserNotExistError
+from authentication.idp.attr_tools import MAPPING_ATTRIBUTES
+from toolkit.portal.registration import perform_email_registration, perform_email_reset
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
-def get_repo(portal):
-    ldap_repo = None
-    for repo in portal.repositories.all():
-        if repo.subtype == "LDAP":
-            ldap_repo = repo.get_daughter()
-            break
 
-    if not ldap_repo:
-        # The portal does not have a LDAP repository
-        raise UserAuthentication.DoesNotExist()
-
-    return ldap_repo
+def get_repo(portal, repo_id):
+    return portal.repositories.get(subtype="LDAP", pk=repo_id).get_daughter()
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiView(View):
     @api_need_key("cluster_api_key")
-    def get(self, request, object_id):
+    def get(self, request, portal_id, repo_id):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            ldap_repo = get_repo(portal, repo_id)
 
             object_type = request.GET["object_type"].lower()
             if object_type not in ("users", "search"):
@@ -65,7 +59,8 @@ class IDPApiView(View):
 
             if object_type == "users":
                 data = []
-                tmp_data = tools.get_users(ldap_repo)
+                group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
+                tmp_data = tools.get_users(ldap_repo, group_name)
 
                 for tmp in tmp_data:
                     tmp_user = {
@@ -74,15 +69,15 @@ class IDPApiView(View):
 
                     try:
                         tmp_user["is_locked"] = ""
-                        if ldap_repo.user_account_locked_attr:
-                            tmp_user["is_locked"] = tmp[ldap_repo.user_account_locked_attr][0]
+                        if ldap_repo.user_account_locked_attr and tmp.get(ldap_repo.get_user_account_locked_attr):
+                            tmp_user["is_locked"] = tmp[ldap_repo.get_user_account_locked_attr][0]
                     except IndexError:
                         pass
  
                     try:
                         tmp_user["need_change_password"] = ""
-                        if ldap_repo.user_change_password_attr:
-                            tmp_user["need_change_password"] = tmp[ldap_repo.user_change_password_attr][0]
+                        if ldap_repo.user_change_password_attr and tmp.get(ldap_repo.get_user_change_password_attr):
+                            tmp_user["need_change_password"] = tmp[ldap_repo.get_user_change_password_attr][0]
                     except IndexError:
                         pass
 
@@ -92,13 +87,6 @@ class IDPApiView(View):
                             tmp_user["mobile"] = tmp[ldap_repo.user_mobile_attr][0]
                     except IndexError:
                         pass
-
-                    try:
-                        tmp_user["smartcardid"] = ""
-                        if ldap_repo.user_smartcardid_attr:
-                            tmp_user["smartcardid"] = tmp[ldap_repo.user_smartcardid_attr][0]
-                    except IndexError:
-                        pass
                     
                     try:
                         tmp_user["email"] = ""
@@ -106,6 +94,16 @@ class IDPApiView(View):
                             tmp_user["email"] = tmp[ldap_repo.user_email_attr][0]
                     except IndexError:
                         pass
+
+                    for key, value in MAPPING_ATTRIBUTES.items():
+                        if value["type"] == str:
+                            try:
+                                tmp_user[key] = tmp.get(value["internal_key"], [])[0]
+                            except (IndexError, TypeError):
+                                tmp_user[key] = ""
+                        
+                        elif value["type"] == list:
+                            tmp_user[key] = tmp.get(value["internal_key"], [])
 
                     data.append(tmp_user)
 
@@ -121,7 +119,7 @@ class IDPApiView(View):
                 })
 
         except KeyError as err:
-            logger.debug(err)
+            logger.error(err)
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")
@@ -145,32 +143,117 @@ class IDPApiView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiUserView(View):
     @api_need_key('cluster_api_key')
-    def post(self, request, object_id):
+    def post(self, request, portal_id, repo_id, action=None):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            ldap_repo = get_repo(portal, repo_id)
 
-            user = {
-                ldap_repo.user_attr: request.JSON['username']
-            }
+            if action and action not in ("resend_registration", "reset_password", "lock", "unlock", "reset_otp"):
+                return JsonResponse({
+                    "status": False,
+                    "error": _("Invalid action")
+                }, status=400)
 
-            attrs = {}
-            if ldap_repo.user_account_locked_attr:
-                attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
-                
-            if ldap_repo.user_change_password_attr:
-                attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
+            elif not action:
+                user = {
+                    ldap_repo.user_attr: request.JSON['username']
+                }
 
-            if ldap_repo.user_mobile_attr:
-                attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
+                attrs = {}
+                if ldap_repo.user_account_locked_attr:
+                    attr = ldap_repo.get_user_account_locked_attr
+                    attrs[attr] = request.JSON.get('is_locked')
 
-            if ldap_repo.user_smartcardid_attr:
-                attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
-            
-            if ldap_repo.user_email_attr:
-                attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
+                if ldap_repo.user_change_password_attr:
+                    attr = ldap_repo.get_user_change_password_attr
+                    attrs[attr] = request.JSON.get('need_change_password')
 
-            ldap_response, user_id = tools.create_user(ldap_repo, user[ldap_repo.user_attr], request.JSON.get('userPassword'), attrs)
+                if ldap_repo.user_mobile_attr:
+                    attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
+
+                if ldap_repo.user_email_attr:
+                    attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
+
+                # Variable needed to send user's registration
+                user_mail = request.JSON.get('email')
+
+                for key, value in MAPPING_ATTRIBUTES.items():
+                    attrs[value["internal_key"]] = request.JSON.get(key)
+
+                group_name = None
+                if portal.update_group_registration:
+                    group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
+
+                ldap_response, user_id = tools.create_user(
+                    ldap_repo, user[ldap_repo.user_attr], request.JSON.get('userPassword'),
+                    attrs, group_name
+                )
+            else:
+                # We get an action
+                # !! If we get a DN, extract username to search in LDAP configured scope (for segregation regards) !!
+                user = request.JSON['id']
+                if "," in user:
+                    user = user.split(",")[0]
+                if "=" in user:
+                    user = user.split('=')[1]
+                # We will need user' email for registration and reset
+                user_id, user_mail = tools.find_user_email(ldap_repo, user)
+                logger.info(f"User's email found : {user_mail}")
+
+            if not action or action == "resend_registration":
+                if not perform_email_registration(logger,
+                                        f"https://{portal.external_fqdn}/",
+                                        portal.name,
+                                        portal.portal_template,
+                                        user_mail,
+                                        repo_id=repo_id,
+                                        expire=72 * 3600):
+                    logger.error(f"Failed to send registration email to '{user_mail}'")
+                    return JsonResponse({'status': False,
+                                         'error': _("Fail to send user's registration email")}, status=500)
+                else:
+                    logger.info(f"Registration email re-sent to '{user_mail}'")
+
+            elif action == "reset_password":
+                if not perform_email_reset(logger,
+                                 f"https://{portal.external_fqdn}/",
+                                 portal.name,
+                                 portal.portal_template,
+                                 user_mail,
+                                 repo_id=repo_id,
+                                 expire=3600):
+                    logger.error(f"Failed to send reset password email to '{user_mail}'")
+                    return JsonResponse({'status': False,
+                                         'error': _("Fail to send user's reset password email")}, status=500)
+                else:
+                    logger.info(f"Reset password email sent to '{user_mail}'")
+
+            elif action == "reset_otp":
+                try:
+                    if not portal.otp_repository:
+                        logger.error(f"IDP::Reset_otp: TOTP not configured for portal {portal}")
+                        return JsonResponse({'status': False, 'error': _("TOTP not configured on portal")})
+                    otp_profile = TOTPProfile.objects.get(auth_repository=ldap_repo,
+                                                          totp_repository=portal.otp_repository,
+                                                          login=user)
+                    otp_profile.delete()
+                except TOTPProfile.DoesNotExist:
+                    logger.error(f"TOTP Profile not found for repo='{ldap_repo}', "
+                                 f"otp_repo='{portal.otp_repository}', user='{user}'")
+                    return JsonResponse({'status': False,'error': _("TOTP Profile not found")}, status=404)
+                except Exception as e:
+                    logger.exception(e)
+                    logger.error(f"Failed to reset otp for user '{user}'")
+                    return JsonResponse({'status': False,
+                                         'error': _("Fail to reset otp")}, status=500)
+                else:
+                    logger.info(f"Reset otp done for '{user}'")
+
+            elif action in ("lock", "unlock"):
+                user_dn = request.JSON["id"]
+                to_lock = action == "lock"
+                ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
+
 
             return JsonResponse({
                 "status": True,
@@ -204,33 +287,35 @@ class IDPApiUserView(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def put(self, request, object_id):
+    def put(self, request, portal_id, repo_id):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            ldap_repo = get_repo(portal, repo_id)
 
-            username = request.JSON['username']
+            user_dn = request.JSON['id']
 
             attrs = {
-                ldap_repo.user_attr: [username]
+                ldap_repo.user_attr: request.JSON["username"]
             }
 
             if ldap_repo.user_email_attr:
                 attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
             
             if ldap_repo.user_account_locked_attr:
-                attrs[ldap_repo.user_account_locked_attr] = request.JSON.get('is_locked')
+                attr = ldap_repo.get_user_account_locked_attr
+                attrs[attr] = request.JSON.get('is_locked')
             
             if ldap_repo.user_change_password_attr:
-                attrs[ldap_repo.user_change_password_attr] = request.JSON.get('need_change_password')
+                attr = ldap_repo.get_user_change_password_attr
+                attrs[attr] = request.JSON.get('need_change_password')
             
             if ldap_repo.user_mobile_attr:
                 attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
             
-            if ldap_repo.user_smartcardid_attr:
-                attrs[ldap_repo.user_smartcardid_attr] = request.JSON.get('smartcardid')
+            for key, value in MAPPING_ATTRIBUTES.items():
+                attrs[value["internal_key"]] = request.JSON.get(key)
 
-            status, user_dn = tools.update_user(ldap_repo, username, attrs, request.JSON.get('userPassword'))
+            status, user_dn = tools.update_user(ldap_repo, user_dn, attrs, request.JSON.get('userPassword'))
             if status is False:
                 return JsonResponse({
                     "status": False,
@@ -264,14 +349,14 @@ class IDPApiUserView(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def delete(self, request, object_id):
+    def delete(self, request, portal_id, repo_id):
         try:
-            portal = UserAuthentication.objects.get(pk=object_id)
-            ldap_repo = get_repo(portal)
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            ldap_repo = get_repo(portal, repo_id)
 
-            username = request.JSON['username']
+            user_dn = request.JSON['id']
 
-            status = tools.delete_user(ldap_repo, username)
+            status = tools.delete_user(ldap_repo, user_dn)
             if status is False:
                 return JsonResponse({
                     "status": False,

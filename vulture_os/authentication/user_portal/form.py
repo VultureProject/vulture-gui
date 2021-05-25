@@ -82,7 +82,7 @@ class UserAuthenticationForm(ModelForm):
     # OAuth2 MUST uses httpS !
     external_listener = ModelChoiceField(
         label=_("Listen IDP on"),
-        queryset=Frontend.objects.filter(enabled=True, mode="http", listener__tls_profiles__name__isnull=False).only(*Frontend.str_attrs()),
+        queryset=Frontend.objects.filter(enabled=True, mode="http", listener__tls_profiles__name__isnull=False).only(*Frontend.str_attrs()).distinct(),
         widget=Select(attrs={'class': 'form-control select2'}),
         required=False,
         empty_label=None
@@ -128,7 +128,7 @@ class UserAuthenticationForm(ModelForm):
             'enable_registration': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'group_registration': TextInput(attrs={'class': 'form-control'}),
             'update_group_registration': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'enable_oauth': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'enable_oauth': CheckboxInput(attrs={'class': 'form-control'}),
             'oauth_client_id': TextInput(attrs={'readonly': ''}),
             'oauth_client_secret': TextInput(attrs={'readonly': ''}),
             'oauth_redirect_uris': Textarea(attrs={'class': 'form-control'}),
@@ -182,6 +182,7 @@ class UserAuthenticationForm(ModelForm):
         """ Split values with \n """
         res = []
         for url in self.cleaned_data.get('oauth_redirect_uris', "").split("\n"):
+            url = url.rstrip()
             validate = URLValidator(schemes=("http", "https"))
             validate(url)
             res.append(url)

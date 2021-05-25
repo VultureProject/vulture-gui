@@ -14,22 +14,33 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Olivier de Régis"
+__author__ = "Kevin GUILLEMOT"
 __credits__ = []
 __license__ = "GPLv3"
-__version__ = "3.0.0"
+__version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'IDP URLS'
+__doc__ = 'LDAP Repository URLS'
 
+# Django system imports
 from django.urls import path, re_path
 
-from authentication.idp.api import IDPApiView, IDPApiUserView
+# Django project imports
+from authentication.generic_list import ListTOTPProfile
+from authentication.generic_delete import DeleteTOTPProfile
+
+
+# Required exceptions imports
+
 
 urlpatterns = [
-   re_path('^api/v1/authentication/idp/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)$', IDPApiView.as_view(), name="authentication.idp"),
-   re_path('^api/v1/authentication/idp/users/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)$', IDPApiUserView.as_view(), name="authentication.idp.users"),
-   path('api/v1/authentication/idp/users/<int:portal_id>/<int:repo_id>/<str:action>/',
-        IDPApiUserView.as_view(),
-        name="authentication.idp.users.action")
+    # List view
+    path('authentication/totp_profiles/',
+         ListTOTPProfile.as_view(),
+         name="authentication.totp_profiles.list"),
+
+    # Delete view
+    re_path('^authentication/totp_profiles/delete/(?P<object_id>[A-Fa-f0-9]+)$',
+            DeleteTOTPProfile.as_view(),
+            name="authentication.totp_profiles.delete"),
 ]

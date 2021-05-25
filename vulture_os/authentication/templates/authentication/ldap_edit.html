@@ -290,17 +290,6 @@
                           </div>
                         </div> <!-- /.row -->
                         <div class="row">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.user_smartcardid_attr.label}}</label>
-                                <div class="col-sm-5">
-                                  {{form.user_smartcardid_attr}}
-                                  {{form.user_smartcardid_attr.errors|safe}}
-                                </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row -->
-                        <div class="row">
                           <div class="col-sm-12" style="text-align:center;">
                             <button name="user_search_test" id="user_search_test" class="btn btn-success btn-flat"><span>{% trans "Test User authentication settings" %}</span></button>
                           </div>
@@ -386,7 +375,7 @@
                 </div> <!-- /.box-body -->
                 <div class="panel-footer">
                   <a type="button" href="{% url 'authentication.ldap.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                  <button type="submit" class="btn btn-info btn-flat pull-right" {% if not object_id %}disabled style="display:none;"{% endif %}>{% trans "Save" %}</button>
+                  <button type="submit" class="btn btn-info btn-flat pull-right" {% if not object_id and not success %}disabled style="display:none;"{% endif %}>{% trans "Save" %}</button>
                 </div> <!-- /.box-footer -->
               </div> <!-- /.box -->
             </div>
@@ -424,7 +413,6 @@
                 <div id="user_email" class="test_user"></div>
                 <div id="account_locked" class="test_user"></div>
                 <div id="password_expired" class="test_user"></div>
-                <div id="smartcardid" class="test_user"></div>
                 <div id="user_groups" class="test_user"></div>
               </div>
             </div>
@@ -566,6 +554,7 @@
     });
     indexed_data['username'] = username;
     indexed_data['password'] = password;
+    {% if object_id %}indexed_data['id'] = "{{object_id}}"; {% endif %}
     $.post(url, indexed_data, function(data){
       status = data['status'];
       handle_form_errors(data);
@@ -580,7 +569,6 @@
       $('#user_email').html('{% trans "Email address" %}: '+ data['user_email']);
       $('#account_locked').html('{% trans "Account locked" %}: '+ data['account_locked']);
       $('#password_expired').html('{% trans "Need change pass" %}: '+ data['password_expired']);
-      $('#smartcardid').html('{% trans "Smart Card ID" %}: '+ data['smartcardid']);
       $('#user_groups').html('{% trans "User groups" %}:');
       group_list = $('#user_groups');
       var ul = $('<ul/>').appendTo(group_list);
@@ -611,6 +599,7 @@
           indexed_data[n['name']] = n['value'];
       });
       indexed_data['group_name'] = group_name;
+      {% if object_id %}indexed_data['id'] = "{{object_id}}"; {% endif %}
       $.post(url, indexed_data, function(data){
           status = data['status'];
           // handle_form_errors(data);

@@ -42,6 +42,8 @@ from authentication.radius.models import RadiusRepository
 from authentication.user_portal.models import UserAuthentication
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.portal_template.models import PortalTemplate, TemplateImage
+from authentication.totp_profiles.models import TOTPProfile
+from workflow.models import Workflow
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -154,8 +156,8 @@ class DeleteUserAuthentication(DeleteView):
     delete_url = "/portal/user_authentication/delete/"
 
     # FIXME : Add verif when Workflow will use this object
-    def used_by(self, objet):
-        return []
+    def used_by(self, object):
+        return [str(w) for w in Workflow.objects.filter(authentication=object)]
 
     def post(self, request, object_id, **kwargs):
         if hasattr(request, "JSON"):
@@ -169,11 +171,16 @@ class DeleteUserAuthentication(DeleteView):
             except ObjectDoesNotExist:
                 return HttpResponseNotFound('Object not found.')
 
+            # Delete haproxy portal_*.cfg file if necessary
+            if obj_inst.enable_external:
+                for node in obj_inst.external_listener.get_nodes():
+                    node.api_request("services.haproxy.haproxy.delete_conf", obj_inst.get_base_filename())
+
             # Destroy dereferenced objects first
+            obj_inst.delete()
             OpenIDRepository.objects.filter(client_id=obj_inst.oauth_client_id,
                                             client_secret=obj_inst.oauth_client_secret,
                                             provider="openid").delete()
-            obj_inst.delete()
 
         if kwargs.get('api'):
             return JsonResponse({"status": True})
@@ -185,6 +192,15 @@ class DeleteLearningProfile(DeleteView):
     obj = LearningProfile
     redirect_url = "/authentication/learning_profiles/"
     delete_url = "/authentication/learning_profiles/delete/"
+
+    # get, post and used_by methods herited from mother class
+
+
+class DeleteTOTPProfile(DeleteView):
+    menu_name = _("Authentication -> TOTP Profiles -> Delete")
+    obj = TOTPProfile
+    redirect_url = "/authentication/totp_profiles/"
+    delete_url = "/authentication/totp_profiles/delete/"
 
     # get, post and used_by methods herited from mother class
 
