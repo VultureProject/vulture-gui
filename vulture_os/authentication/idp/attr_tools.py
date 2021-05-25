@@ -28,11 +28,11 @@ from authentication.user_portal.models import UserAuthentication
 MAPPING_ATTRIBUTES = {
     "first_name": {
         "type": str,
-        "internal_key": "displayName"
+        "internal_key": "givenName"
     },
     "last_name": {
         "type": str,
-        "internal_key": "givenName"
+        "internal_key": "sn"
     },
     "claim_list": {
         "type": list,
