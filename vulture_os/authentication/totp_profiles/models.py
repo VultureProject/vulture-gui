@@ -44,12 +44,7 @@ logger = logging.getLogger('gui')
 class TOTPProfile(models.Model):
     """ Class for Learning Profiles
 
-    encrypted_name: The encrypted name of the stored value
-    encrypted_value: The encrypted value
-
-    Encryption Key is derived from the main user login, the application id, the backend_id  and the value name
-        encryption_key=sha256('app_id' + 'backend_id' + 'login' + 'name')
-        Encryption is done via AES256
+    Encryption is done via AES256
     """
     auth_repository = models.ForeignKey(
         to="authentication.BaseRepository",
