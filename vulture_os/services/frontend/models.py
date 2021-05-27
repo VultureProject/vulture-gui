@@ -1015,16 +1015,16 @@ class Frontend(models.Model):
                 mode = m[1]
 
         additional_infos = []
-        if mode == "LOG":
+        if self.mode == "log":
             listening_mode = "UNKNOWN"
             for m in LISTENING_MODE_CHOICES:
                 if self.listening_mode == m[0]:
                     listening_mode = m[1]
             additional_infos.append("Listening mode : {}".format(listening_mode))
             additional_infos.append("Data type : {}".format(self.ruleset))
-        elif mode == "IMPCAP":
+        elif self.mode == "impcap":
             additional_infos.append("Data type : Impcap")
-        elif mode == "HTTP":
+        elif self.mode == "http":
             if self.enable_cache:
                 additional_infos.append("Option cache")
             if self.enable_compression:
