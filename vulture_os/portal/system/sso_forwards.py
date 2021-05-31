@@ -219,12 +219,12 @@ class SSOForwardPOST(SSOForward):
         learning_name = kwargs['learning_name']
         for key, item in kwargs['request'].POST.items():
             if learning_name in key.split(';vlt;'):
-                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully retrieven in POST")
+                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully retrieved in POST")
                 return True, item
         try:
             profile_value = self.retrieve_sso_field(self.credentials[0], learning_name)
             if profile_value:
-                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully  retrieven in Mongo".format(profile_value))
+                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully  retrieved in Mongo".format(profile_value))
                 return False, profile_value
         except Exception as e:
             logger.info("SSOCLIENT::process_form: Cannot retrieve field '{}' from LearningProfile : asking-it with learning. Exception : {}".format(learning_name, str(e)))
@@ -248,7 +248,7 @@ class SSOForwardPOST(SSOForward):
 
         if not self.application.authentication.sso_forward_direct_post:
             url, response = self.sso_client.get(self.application.authentication.sso_forward_url, True)
-            logger.info("SSOForwardPOST::authenticate: Url '{}' successfully retrieven".format(self.application.authentication.sso_forward_url))
+            logger.info("SSOForwardPOST::authenticate: Url '{}' successfully retrieved".format(self.application.authentication.sso_forward_url))
             # convert-it to robobrowser.forms.Form list
             forms = [i for i in parse_html(response.content, self.application.authentication.sso_forward_url) if str(i.method).upper() != 'GET']
             # retrieve id of form
