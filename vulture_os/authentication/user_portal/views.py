@@ -178,7 +178,7 @@ def user_authentication_edit(request, object_id=None, api=False):
                                                                                   client_secret=profile.oauth_client_secret,
                                                                                   provider="openid")
                     openid_repo.provider_url = f"https://{profile.external_fqdn}"
-                    openid_repo.name = "Connector {}".format(profile.name)
+                    openid_repo.name = "Connector_{}".format(profile.name)
                     openid_repo.save()
                     # Reload old external_listener conf if has changed
                     if external_listener_changed:
