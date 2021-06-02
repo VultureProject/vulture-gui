@@ -135,7 +135,7 @@ class LogOMFWDForm(ModelForm):
 
     class Meta:
         model = LogOMFWD
-        fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level')
+        fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level', 'send_as_raw')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -143,7 +143,8 @@ class LogOMFWDForm(ModelForm):
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
             'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'form-control select2'}),
-            'zip_level': NumberInput(attrs={'class': 'form-control'})
+            'zip_level': NumberInput(attrs={'class': 'form-control'}),
+            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
         }
 
     def __init__(self, *args, **kwargs):
