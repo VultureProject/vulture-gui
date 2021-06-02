@@ -85,13 +85,13 @@ def ldap_edit(request, object_id=None, api=False):
     else:
         form = LDAPRepositoryForm(request.POST or None, instance=ldap, error_class=DivErrorList)
 
-    def render_form(objectid=None, **kwargs):
+    def render_form(**kwargs):
         if api:
             logger.error("Frontend api form error : {}".format(form.errors.get_json_data()))
             return JsonResponse({"errors": build_form_errors(form.errors)}, status=400)
 
         return render(request, 'authentication/ldap_edit.html',
-                      {'form': form, 'object_id': objectid, **kwargs})
+                      {'form': form, 'object_id': object_id, **kwargs})
 
     if request.method == "POST":
         if request.POST.get('connection_test'):
@@ -104,7 +104,7 @@ def ldap_edit(request, object_id=None, api=False):
                 else:
                     return render_form(success="Successful connection")
             else:
-                return render_form(ldap.id if ldap else None)
+                return render_form()
 
     if request.method in ("POST", "PUT") and form.is_valid():
         # Save the form to get an id if there is not already one
@@ -116,7 +116,7 @@ def ldap_edit(request, object_id=None, api=False):
 
         return HttpResponseRedirect('/authentication/ldap/')
 
-    return render_form(ldap.id if ldap else None)
+    return render_form()
 
 
 # TODO @group_required('administrator', 'system_manager')
