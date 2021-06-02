@@ -302,6 +302,7 @@ def backend_edit(request, object_id=None, api=False):
 
             """ And instantiate form with the object, or None """
             server_f = ServerForm(server, instance=instance_s)
+            server_form_list.append(server_f)
             if not server_f.is_valid():
                 if api:
                     api_errors.append({'server': server_f.errors.get_json_data()})
@@ -310,7 +311,6 @@ def backend_edit(request, object_id=None, api=False):
 
                 continue
 
-            server_form_list.append(server_f)
             server_obj = server_f.save(commit=False)
             server_objs.append(server_obj)
 
