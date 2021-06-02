@@ -445,6 +445,11 @@ class Frontend(models.Model):
         help_text=_("Kafka consumer group to use to poll logs"),
         verbose_name=_("Kafka consumer group")
     )
+    kafka_options = models.JSONField(
+        default=[],
+        help_text=_("Rsyslog imkafka 'confParams' options (See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)"),
+        verbose_name=_("Kafka client options")
+    )
     """ Redis attributes """
     redis_mode = models.TextField(
         default="queue",
