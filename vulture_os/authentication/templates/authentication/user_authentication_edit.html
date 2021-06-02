@@ -203,16 +203,19 @@
                                     {% for r in repo_attributes %}
                                       <tr>
                                         <td>IF</td>
-                                        <td>{{r.condition_var_kind}}</td>
-                                        <td>{{r.condition_var_name}}</td>
-                                        <td>{{r.condition_criterion}}</td>
+                                        <td colspan=2>{{r.condition_var_kind}}</td>
+                                        <td colspan=2>{{r.condition_var_name}}</td>
+                                        <td colspan=2>{{r.condition_criterion}}</td>
                                         <td colspan=2>{{r.condition_match}}</td>
                                       </tr>
                                       <tr>
-                                        <td>THEN SET</td>
-                                        <td>{{r.action_var_name}}</td>
+                                        <td>THEN </td>
                                         <td>{{r.assignator}}</td>
+                                        <td>KEY</td>
+                                        <td>{{r.action_var_name}}</td>
+                                        <td>WITH VALUE FROM</td>
                                         <td>{{r.action_var_kind}}</td>
+                                        <td>NAMED</td>
                                         <td>{{r.action_var}}</td>
                                         <td style='text-align:center'><a class='btnDelete_scope'><i style='color:grey' class='fas fa-trash-alt'></i></a></td>
                                       </tr>
@@ -234,17 +237,6 @@
                                 {{form.auth_timeout}}
                                 {{form.auth_timeout.errors|safe}}
                               </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row -->
-                        <div class="row">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.enable_timeout_restart.label}}</label>
-                                <div class="col-sm-5">
-                                  {{form.enable_timeout_restart}}
-                                  {{form.enable_timeout_restart.errors|safe}}
-                                </div>
                             </div>
                           </div>
                         </div> <!-- /.row -->
@@ -892,11 +884,11 @@
 
   /* Show attributes depending on chosen options */
   //for( classe of ['registration', 'oauth', 'external', 'sso_forward']) {
-  $('#id_enable_oauth').on("change", function(e){ toggle_class("oauth", event); });
+  $('#id_enable_oauth').on("change", function(e){ toggle_class("oauth", e); });
   toggle_class("oauth");
-  $('#id_enable_external').on("change", function(e){ toggle_class("external", event); });
+  $('#id_enable_external').on("change", function(e){ toggle_class("external", e); });
   toggle_class("external");
-  $('#id_enable_sso_forward').on("change", function(e){ toggle_class("sso_forward", event); });
+  $('#id_enable_sso_forward').on("change", function(e){ toggle_class("sso_forward", e); });
   toggle_class("sso_forward");
   //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
   //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
