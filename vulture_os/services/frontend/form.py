@@ -24,6 +24,7 @@ __doc__ = 'Frontends & Listeners dedicated form classes'
 
 # Django system imports
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
                           ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
 from django.utils.translation import ugettext_lazy as _
@@ -383,7 +384,12 @@ class FrontendForm(ModelForm):
 
     def clean_name(self):
         """ HAProxy does not support space in frontend/listen name directive, replace them by _ """
-        return self.cleaned_data['name'].replace(' ', '_')
+        value = self.cleaned_data['name'].replace(' ', '_')
+        try:
+            RegexValidator('^[A-Za-z0-9-.:_]+$')(value)
+        except Exception:
+            raise ValidationError("Only letters, digits, '-' (dash), '_' (underscore) , '.' (dot) and ':' (colon) are allowed.")
+        return value
 
     def clean_tags(self):
         tags = self.cleaned_data.get('tags')
