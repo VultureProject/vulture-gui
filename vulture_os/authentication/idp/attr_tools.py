@@ -28,23 +28,15 @@ from authentication.user_portal.models import UserAuthentication
 MAPPING_ATTRIBUTES = {
     "first_name": {
         "type": str,
-        "internal_key": "displayName"
+        "internal_key": "givenName"
     },
     "last_name": {
         "type": str,
-        "internal_key": "givenName"
-    },
-    "claim_list": {
-        "type": list,
-        "internal_key": "initials"
+        "internal_key": "sn"
     },
     "user_type": {
         "type": str,
         "internal_key": "employeeType"
-    },
-    "internal": {
-        "type": str,
-        "internal_key": "businessCategory"
     },
     "smartcardid": {
         "type": str,
