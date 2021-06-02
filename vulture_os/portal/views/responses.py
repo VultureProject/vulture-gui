@@ -177,22 +177,19 @@ def otp_authentication_response(request, portal, otp_type, qrcode, error="" ,**k
 	#                           context_instance=RequestContext(request))
 
 
-def learning_authentication_response(request, template_id, action_url, token, fields_to_learn, error=None):
-	style      = render_stylesheet('{}/{}/templates/portal_{}.css'.format(str(action_url), str(token_name), str(template_id)))
-	form_begin = render_form('{}{}/{}'.format(str(action_url), str(token_name), str(token)))
-	form_end   = '</form>'
+#def learning_authentication_response(request, template_id, action_url, token, fields_to_learn, error=None):
+def learning_authentication_response(request, portal, fields_to_learn, error="", **kwargs):
 
-	input_submit = ""
-	for field_name, field_type in fields_to_learn.items():
-		input_submit += render_input(field_type, field_name, i_class='form-control', placeholder=field_name)
-
-	input_submit  += render_button('btn btn-lg btn-warning btn-block btn-signin', 'Sign in')
 	error_message = error or ""
 
-	return render_to_response ("portal_%s_html_learning.conf" % (str(template_id)),
-	                               {'style':style, 'form_begin':form_begin,
-	                                'form_end':form_end, 'input_submit':input_submit, 'error_message':error_message},
-	                               context_instance=RequestContext(request))
+	return HttpResponse(portal.render_template("html_learning",
+											   fields_to_prompt=fields_to_learn,
+											   error_message=error_message,
+											   **kwargs))
+	# return render_to_response ("portal_%s_html_learning.conf" % (str(template_id)),
+	#                                {'style':style, 'form_begin':form_begin,
+	#                                 'form_end':form_end, 'input_submit':input_submit, 'error_message':error_message},
+	#                                context_instance=RequestContext(request))
 
 #def otp_authentication_response(request, portal, otp_type, qrcode, error="" ,**kwargs):
 def self_ask_passwords(request, portal, action, rdm=None, error="", **kwargs):

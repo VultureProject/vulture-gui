@@ -95,7 +95,7 @@ class SSOForward(object):
 
     def retrieve_sso_profile(self, username, field):
         aes             = AESCipher(str(settings.SECRET_KEY)+str(self.application.id)+str(self.backend_id)+str(username)+str(field))
-        encrypted_field = aes.key.encode('hex')
+        encrypted_field = aes.key.hex()
         sso             = LearningProfile.objects.filter(encrypted_name=encrypted_field, login=username).first()
         return sso
 
@@ -303,7 +303,7 @@ class SSOForwardPOST(SSOForward):
                     self.sso_client.add_cookies({profile_name: profile_value})
                     self.sso_client.banned_cookies.append(profile_name)
                 except CredentialsMissingError as e:
-                    fields_to_learn[e.fields_missing.keys()[0]] = e.fields_missing.values()[0]
+                    fields_to_learn[list(e.fields_missing.keys())[0]] = list(e.fields_missing.values())[0]
             #elif sso_profile['type'] != 'auto':
             else:
                 # Get the name & id of this profile
@@ -329,8 +329,8 @@ class SSOForwardPOST(SSOForward):
 
                 except CredentialsMissingError as e:
 
-                    logger.info("SSOForwardPOST::authenticate: Field missing for SSO : '{}' , it will be asked with learning".format(e.fields_missing.keys()[0]))
-                    fields_to_learn[e.fields_missing.keys()[0]] = e.fields_missing.values()[0]
+                    logger.info("SSOForwardPOST::authenticate: Field missing for SSO : '{}' , it will be asked with learning".format(list(e.fields_missing.keys())[0]))
+                    fields_to_learn[list(e.fields_missing.keys())[0]] = list(e.fields_missing.values())[0]
 
                 except KeyError as e:
                     logger.exception(e)
