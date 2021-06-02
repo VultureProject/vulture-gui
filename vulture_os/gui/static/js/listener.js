@@ -721,4 +721,24 @@ $(function(){
     elems.forEach(function(html) {
       var switchery = new Switchery(html);
     });
+    $("#id_kafka_options").tagsinput({
+                    freeInput: true,
+                    typeaheadjs: {
+                        minLength: 0,
+                        freeInput: true,
+                        name: "choices",
+                        source: function(query, syncResults) {
+                            syncResults([
+                                "sasl.mechanism=SCRAM-SHA-512",
+                                "sasl.mechanism=SCRAM-SHA-256",
+                                "security.protocol=SASL_PLAINTEXT",
+                                "security.protocol=PLAINTEXT",
+                                "security.protocol=SASL_SSL",
+                                "security.protocol=SSL",
+                                "sasl.username=xxx",
+                                "sasl.password=xxx",
+                            ]);
+                        }
+                    }
+                });
 })
