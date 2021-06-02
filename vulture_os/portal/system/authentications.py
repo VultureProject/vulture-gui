@@ -34,7 +34,7 @@ from portal.system.redis_sessions import (REDISBase, REDISAppSession, REDISPorta
                                           RedisOpenIDSession)
 from portal.views.responses import (split_domain, basic_authentication_response, kerberos_authentication_response,
                                     post_authentication_response, otp_authentication_response,
-                                    learning_authentication_response)
+                                    learning_authentication_response, error_response)
 from system.users.models import User
 from workflow.models import Workflow
 from authentication.base_repository import BaseRepository
@@ -193,7 +193,7 @@ class Authentication(object):
                 oauth2_scope['user_email'] = authentication_results.get('user_email', "")
             if not oauth2_scope.get('user_phone'):
                 oauth2_scope['user_phone'] = authentication_results.get('user_phone', "")
-        self.redis_oauth2_session.register_authentication(str(self.workflow.id), oauth2_scope, oauth_timeout)
+        self.redis_oauth2_session.register_authentication(str(self.backend_id), oauth2_scope, oauth_timeout)
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),
@@ -270,23 +270,16 @@ class Authentication(object):
         logger.debug("AUTH::get_credentials: User's password successfully retrieved/decrypted from Redis session")
 
     def ask_learning_credentials(self, **kwargs):
-        # FIXME : workflow.auth_portal ?
-        response = learning_authentication_response(kwargs.get('request'),
-                                                    self.workflow.authentication.portal_template.id,
-                                                    # FIXME : auth_portal ?
-                                                    # self.workflow.auth_portal or
-                                                    self.workflow.get_redirect_uri(),
-                                                    "None", kwargs.get('fields'),
-                                                    error=kwargs.get('error', None))
+        try:
+            return learning_authentication_response(kwargs.get('request'),
+                                                        self.workflow.authentication,
+                                                        kwargs.get('fields'),
+                                                        error=kwargs.get('error'))
+        except Exception as e:
+            logger.error("Failed to render learning fields response : ")
+            logger.exception(e)
+            return error_response(self.workflow.authentication, "An error occured")
 
-        portal_cookie_name = kwargs.get('portal_cookie_name', None)
-        if portal_cookie_name:
-            response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
-                                domain=split_domain(self.workflow.fqdn),
-                                httponly=True,
-                                secure=self.proto == "https")
-
-        return response
 
     def generate_response(self):
         return HttpResponseRedirect(self.get_redirect_url())
@@ -578,7 +571,7 @@ class OAUTH2Authentication(Authentication):
 
     def register_authentication(self, authentication_results):
         self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + self.oauth2_token)
-        self.redis_oauth2_session.register_authentication(str(self.workflow.id),
+        self.redis_oauth2_session.register_authentication(str(self.backend_id),
                                                           authentication_results,
                                                           authentication_results['token_ttl'])
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
