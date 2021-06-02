@@ -167,6 +167,14 @@
                   </div>
                 </div>
 
+                <div class="col-md-12 form-group">
+                  <label class="col-sm-4 control-label">{% trans "Custom call conditions" %}:</label>
+                  <div class="col-sm-5">
+                    <input type="text" v-model="filter.call_condition" class="form-control">
+                    <small class="help-block">{% trans "(Advanced) check custom Rsyslog conditions before calling the filter" %}</small>
+                  </div>
+                </div>
+
                 <template v-if="can_be_buffered(filter.filter_type)">
                   <div class="col-md-12 form-group">
                     <label class="col-sm-4 control-label">{% trans "Enable continuous analysis" %}:</label>

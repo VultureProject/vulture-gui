@@ -673,6 +673,14 @@ class FilterPolicy(models.Model):
         help_text=_("A dictionary containing all specific parameters of this filter"),
     )
 
+    """ Custom Rsyslog condition(s) to check before calling filter """
+    call_condition = models.TextField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("Custom conditions to check before calling the filter")
+    )
+
     def clean(self):
         # get the validator associated to the filter (there should be one defined in the list, even when it has no configuration parameters)
         conf_validator = DARWIN_FILTER_CONFIG_VALIDATORS.get(self.filter_type.name)
@@ -715,12 +723,45 @@ class FilterPolicy(models.Model):
             "cache_size": self.cache_size,
             "output": self.output,
             "next_filter": self.next_filter,
-            "config": self.config
+            "config": self.config,
+            "call_condition": self.call_condition
         }
 
         buffering = DarwinBuffering.objects.filter(destination_filter=self).first()
         if buffering:
             ret['buffering'] = buffering.to_dict()
+
+        return ret
+
+
+    def to_template(self):
+        ret = {
+            "id": self.id,
+            "name": self.name,
+            "filter_type_name": self.filter_type.name,
+            "policy": self.policy.id,
+            "threshold": self.threshold,
+            "enrichment_tags": [f"darwin.{self.filter_type.name}"],
+            "call_condition": self.call_condition,
+            "calls": []
+        }
+
+        if self.enrichment_tags:
+            ret['enrichment_tags'].extend(self.enrichment_tags)
+
+        if self.buffering.exists():
+            buffering = self.buffering.get()
+            ret['is_buffered'] = True
+            # ret['buffer_source'] = "{}_{}_{}".format(buffering.destination_filter.name, self.name, buffering.destination_filter.policy.id)
+            ret['filter_socket'] = buffering.buffer_filter.socket_path
+        else:
+            ret['filter_socket'] = self.socket_path
+
+        if self.mmdarwin_enabled and self.mmdarwin_parameters:
+            ret['calls'].append({
+                "inputs": self.mmdarwin_parameters,
+                "outputs": [p.replace('.', '!') for p in self.mmdarwin_parameters if p[0] in ['!', '.']]
+            })
 
         return ret
 
