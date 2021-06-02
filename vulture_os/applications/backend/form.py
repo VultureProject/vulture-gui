@@ -25,7 +25,7 @@ __doc__ = 'Backends & Servers dedicated form classes'
 # Django system imports
 from django.conf import settings
 from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInput, Textarea, Form, \
-    ChoiceField, CharField, HiddenInput
+    ChoiceField, CharField, HiddenInput, ValidationError
 from django.utils.translation import ugettext as _
 
 # Django project imports
@@ -273,3 +273,15 @@ class ServerForm(ModelForm):
         result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
                   "class='fas fa-trash-alt'></i></a></td></tr>\n"
         return result
+
+    def clean(self):
+        cleaned_data = self.cleaned_data
+        target = cleaned_data.get('target')
+        mode = cleaned_data.get('mode')
+        if mode == "net":
+            if "[" in target or "]" in target:
+                self.add_error('target', "No need to put brackets for IPv6 addresses")
+        else:
+            if target[0] != "/":
+                self.add_error('target', "Please enter a valid absolute path.")
+        return cleaned_data
