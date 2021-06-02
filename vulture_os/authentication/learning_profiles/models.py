@@ -66,6 +66,10 @@ class LearningProfile(models.Model):
     encrypted_name = models.TextField(default="")
     encrypted_value = models.TextField(default="")
 
+    def __str__(self):
+        return f"Workflow='{self.app_name}' Repo='{self.repo_name}' User='{self.login}'"
+
+
     def get_data(self, to_decrypt, app_id, backend_id, login, name):
         """
         :return: Return the password in cleartext
@@ -86,7 +90,7 @@ class LearningProfile(models.Model):
         self.app_name = str(app_name)
         self.repo_name = str(repo_name)
         self.login = str(login)
-        self.encrypted_value = aes.encrypt(str(value))
+        self.encrypted_value = aes.encrypt(str(value)).decode('utf8')
         self.encrypted_name = aes.key.hex()
         return self.encrypted_value
 
