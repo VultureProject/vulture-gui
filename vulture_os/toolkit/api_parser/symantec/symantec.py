@@ -87,7 +87,7 @@ class SymantecParser(ApiParser):
                 }
 
             status = True
-            if r.status_code == 200:
+            if r.status_code != 200:
                 status = False
 
             return {
