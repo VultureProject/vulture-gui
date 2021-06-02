@@ -111,6 +111,7 @@ REPO_ATTR_SOURCE_CHOICES = (
     ('claim', "Claim attribute"),
     ('repo', "Repository attribute"),
     ('constant', "Constant"),
+    ('always', "Always"),
 )
 
 REPO_ATTR_CRITERION_CHOICES = (
