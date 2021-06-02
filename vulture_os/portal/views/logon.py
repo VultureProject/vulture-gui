@@ -382,11 +382,13 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
     try:
         if portal_id:
-            assert UserAuthentication.objects.filter(pk=portal_id).exists()
-            workflow_id = f"portal_{portal_id}"
+            portal = UserAuthentication.objects.get(pk=portal_id)
+            repositories = portal.repositories.all()
         elif workflow_id:
-            assert Workflow.objects.filter(pk=workflow_id).exists()
-        assert workflow_id
+            workflow = Workflow.objects.get(pk=workflow_id)
+            repositories = workflow.authentication.repositories.all()
+        else:
+            return HttpResponseForbidden()
     except (ObjectDoesNotExist, AssertionError):
         logger.error("PORTAL::openid_userinfo: could not find a portal with id {} or workflow with id {}".format(portal_id, workflow_id))
         return HttpResponseServerError()
@@ -400,8 +402,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
-
-        assert session['workflow'] == workflow_id
+        assert session['repo'] in [str(repo.id) for repo in repositories]
         assert session['scope']
         return JsonResponse(literal_eval(session['scope']))
     except Exception as e:
