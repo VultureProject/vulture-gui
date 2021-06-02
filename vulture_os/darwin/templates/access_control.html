@@ -50,24 +50,18 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Enabled" %}',
-      name: "enabled",
-      aTargets: [1],
-      defaultContent: "",
-      sWidth: "5%",
-      mData: "enabled",
-      mRender: function(data, type, row){
-        if (data)
-          return "<i class='fa fa-check'></i>";
-        return "<i class='fa fa-times'></i>";
-      }
-    },
-    {
       sTitle: '{% trans "Name" %}',
       name: "name",
-      aTargets: [2],
+      aTargets: [1],
       defaultContent: "",
       mData: "name"
+    },
+    {
+      sTitle: '{% trans "Used by" %}',
+      name: "used_by",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "used_by"
     },
     {
       sTitle: '{% trans "NB Rules" %}',

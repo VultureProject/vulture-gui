@@ -37,11 +37,10 @@ class AccessControlForm(forms.ModelForm):
 
     class Meta:
         model = AccessControl
-        fields = ('name', 'enabled', 'acls', 'rules')
+        fields = ('name', 'acls', 'rules')
 
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'enabled': forms.CheckboxInput(attrs={'class': "form-control js-switch"})
         }
 
     def __init__(self, *args, **kwargs):
