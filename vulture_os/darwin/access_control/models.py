@@ -129,8 +129,6 @@ class AccessControl(models.Model):
         unique=True
     )
 
-    enabled = models.BooleanField(default=True)
-
     acls = models.TextField(default="")
     rules = models.JSONField(default=[])
 
@@ -148,7 +146,7 @@ class AccessControl(models.Model):
             'id': str(self.pk),
             'name': self.name,
             'acls': self.acls,
-            'enabled': self.enabled,
+            'used_by': [str(w) for w in self.workflowacl_set.all()],
             'rules': json.dumps(self.rules)
         }
 
@@ -157,7 +155,6 @@ class AccessControl(models.Model):
             'id': str(self.pk),
             'name': self.name,
             'acls': self.acls,
-            'enabled': self.enabled,
             'rules': json.dumps(self.rules)
         }
 
