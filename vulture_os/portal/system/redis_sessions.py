@@ -431,11 +431,11 @@ class REDISOauth2Session(REDISSession):
         super(REDISOauth2Session, self).__init__(redis_handler, oauth2_token)
 
 
-    def register_authentication(self, workflow_id, oauth2_data, timeout):
+    def register_authentication(self, repo_id, oauth2_data, timeout):
         data = {
             'token_ttl': timeout,
             'scope': str(oauth2_data),
-            'workflow': str(workflow_id)
+            'repo': str(repo_id)
         }
         if not self.keys:
             self.keys = data
@@ -444,8 +444,8 @@ class REDISOauth2Session(REDISSession):
                 self.keys['scope'] = {}
             if not self.keys.get('token_ttl'):
                 self.keys['token_ttl'] = timeout
-            if not self.keys.get('workflow'):
-                self.keys['workflow'] = workflow_id
+            if not self.keys.get('repo'):
+                self.keys['repo'] = repo_id
             for key,item in oauth2_data.items():
                 self.keys['scope'][key] = item
 

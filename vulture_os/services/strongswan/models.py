@@ -96,6 +96,9 @@ class Strongswan(models.Model):
     tunnels_up = models.PositiveIntegerField(default=0)
     tunnels_connecting = models.PositiveIntegerField(default=0)
 
+    def __str__(self):
+        return f"Ipsec configuration"
+
     def to_template(self):
         """ Dictionary used to create configuration file.
 
@@ -108,6 +111,7 @@ class Strongswan(models.Model):
         return {
             'id': str(self.id),
             'node': self.node.to_dict(),
+            'enabled': self.enabled,
             'status': self.status,
             'statusall': self.statusall,
             'ipsec_type': self.ipsec_type,

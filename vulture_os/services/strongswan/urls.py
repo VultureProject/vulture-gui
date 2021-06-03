@@ -42,6 +42,11 @@ urlpatterns = [
         name="services.strongswan.api"
     ),
 
+    path('api/v1/services/strongswan/<int:object_id>/',
+        api.StrongswanAPIv1.as_view(),
+        name="services.strongswan.api"
+    ),
+
     path('api/v1/services/strongswan/<int:object_id>/<str:action>/',
         api.StrongswanAPIv1.as_view(),
         name="services.strongswan.api"

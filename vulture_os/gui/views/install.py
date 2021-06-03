@@ -318,7 +318,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     """ Join our redis server to the redis master """
     c = RedisBase()
-    redis_master_node = c.get_master(master_ip)
+    redis_master_node = c.get_master(master_hostname)
     c.slave_of(redis_master_node, 6379)
 
     """ Tell local sentinel to monitor local redis server """

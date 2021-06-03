@@ -95,7 +95,7 @@ class SSOForward(object):
 
     def retrieve_sso_profile(self, username, field):
         aes             = AESCipher(str(settings.SECRET_KEY)+str(self.application.id)+str(self.backend_id)+str(username)+str(field))
-        encrypted_field = aes.key.encode('hex')
+        encrypted_field = aes.key.hex()
         sso             = LearningProfile.objects.filter(encrypted_name=encrypted_field, login=username).first()
         return sso
 
@@ -219,12 +219,12 @@ class SSOForwardPOST(SSOForward):
         learning_name = kwargs['learning_name']
         for key, item in kwargs['request'].POST.items():
             if learning_name in key.split(';vlt;'):
-                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully retrieven in POST")
+                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully retrieved in POST")
                 return True, item
         try:
             profile_value = self.retrieve_sso_field(self.credentials[0], learning_name)
             if profile_value:
-                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully  retrieven in Mongo".format(profile_value))
+                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully  retrieved in Mongo".format(profile_value))
                 return False, profile_value
         except Exception as e:
             logger.info("SSOCLIENT::process_form: Cannot retrieve field '{}' from LearningProfile : asking-it with learning. Exception : {}".format(learning_name, str(e)))
@@ -248,7 +248,7 @@ class SSOForwardPOST(SSOForward):
 
         if not self.application.authentication.sso_forward_direct_post:
             url, response = self.sso_client.get(self.application.authentication.sso_forward_url, True)
-            logger.info("SSOForwardPOST::authenticate: Url '{}' successfully retrieven".format(self.application.authentication.sso_forward_url))
+            logger.info("SSOForwardPOST::authenticate: Url '{}' successfully retrieved".format(self.application.authentication.sso_forward_url))
             # convert-it to robobrowser.forms.Form list
             forms = [i for i in parse_html(response.content, self.application.authentication.sso_forward_url) if str(i.method).upper() != 'GET']
             # retrieve id of form
@@ -303,7 +303,7 @@ class SSOForwardPOST(SSOForward):
                     self.sso_client.add_cookies({profile_name: profile_value})
                     self.sso_client.banned_cookies.append(profile_name)
                 except CredentialsMissingError as e:
-                    fields_to_learn[e.fields_missing.keys()[0]] = e.fields_missing.values()[0]
+                    fields_to_learn[list(e.fields_missing.keys())[0]] = list(e.fields_missing.values())[0]
             #elif sso_profile['type'] != 'auto':
             else:
                 # Get the name & id of this profile
@@ -329,8 +329,8 @@ class SSOForwardPOST(SSOForward):
 
                 except CredentialsMissingError as e:
 
-                    logger.info("SSOForwardPOST::authenticate: Field missing for SSO : '{}' , it will be asked with learning".format(e.fields_missing.keys()[0]))
-                    fields_to_learn[e.fields_missing.keys()[0]] = e.fields_missing.values()[0]
+                    logger.info("SSOForwardPOST::authenticate: Field missing for SSO : '{}' , it will be asked with learning".format(list(e.fields_missing.keys())[0]))
+                    fields_to_learn[list(e.fields_missing.keys())[0]] = list(e.fields_missing.values())[0]
 
                 except KeyError as e:
                     logger.exception(e)

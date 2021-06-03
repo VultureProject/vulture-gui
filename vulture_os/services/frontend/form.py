@@ -24,6 +24,7 @@ __doc__ = 'Frontends & Listeners dedicated form classes'
 
 # Django system imports
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
                           ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
 from django.utils.translation import ugettext_lazy as _
@@ -199,7 +200,7 @@ class FrontendForm(ModelForm):
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'impcap_filter', 'impcap_filter_type',
                            'impcap_intf', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
-                           'parser_tag', 'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group',
+                           'parser_tag', 'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'api_parser_type', 'api_parser_use_proxy',
                            'elasticsearch_host', 'elasticsearch_auth', 'elasticsearch_verify_ssl',
@@ -246,6 +247,7 @@ class FrontendForm(ModelForm):
         # Convert list field from model to text input comma separated
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
         self.initial['kafka_brokers'] = ",".join(self.initial.get('kafka_brokers', []) or self.fields['kafka_brokers'].initial)
+        self.initial['kafka_options'] = ",".join(self.initial.get('kafka_options', []) or self.fields['kafka_options'].initial)
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
@@ -260,7 +262,7 @@ class FrontendForm(ModelForm):
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'impcap_intf', 'impcap_filter', 'impcap_filter_type',
                   'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
-                  'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group',
+                  'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                   'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                   'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
                   'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
@@ -319,6 +321,7 @@ class FrontendForm(ModelForm):
             'kafka_brokers': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'kafka_topic': TextInput(attrs={'class': 'form-control'}),
             'kafka_consumer_group': TextInput(attrs={'class': 'form-control'}),
+            'kafka_options': TextInput(attrs={'class': 'form-control'}),
             'redis_mode': Select(choices=REDIS_MODE_CHOICES, attrs={'class': 'form-control select2'}),
             'redis_use_lpop': CheckboxInput(attrs={'class': 'js-switch'}),
             'redis_server': TextInput(attrs={'class': 'form-control'}),
@@ -383,7 +386,12 @@ class FrontendForm(ModelForm):
 
     def clean_name(self):
         """ HAProxy does not support space in frontend/listen name directive, replace them by _ """
-        return self.cleaned_data['name'].replace(' ', '_')
+        value = self.cleaned_data['name'].replace(' ', '_')
+        try:
+            RegexValidator('^[A-Za-z0-9-.:_]+$')(value)
+        except Exception:
+            raise ValidationError("Only letters, digits, '-' (dash), '_' (underscore) , '.' (dot) and ':' (colon) are allowed.")
+        return value
 
     def clean_tags(self):
         tags = self.cleaned_data.get('tags')
@@ -469,6 +477,12 @@ class FrontendForm(ModelForm):
 
     def clean_kafka_brokers(self):
         data = self.cleaned_data.get('kafka_brokers')
+        if not data:
+            return []
+        return data.split(',')
+
+    def clean_kafka_options(self):
+        data = self.cleaned_data.get('kafka_options')
         if not data:
             return []
         return data.split(',')

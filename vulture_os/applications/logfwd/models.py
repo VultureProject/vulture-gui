@@ -388,6 +388,7 @@ class LogOMFWD(LogOM):
         validators=[MinValueValidator(0), MaxValueValidator(9)],
         help_text=_("Compression level for messages.")
     )
+    send_as_raw = models.BooleanField(default=False)
 
     def to_dict(self):
         return {
@@ -399,7 +400,8 @@ class LogOMFWD(LogOM):
             'port': self.port,
             'protocol': self.protocol,
             'enabled': self.enabled,
-            'zip_level': self.zip_level
+            'zip_level': self.zip_level,
+            'send_as_raw': self.send_as_raw
         }
 
     def to_html_template(self):
@@ -427,6 +429,7 @@ class LogOMFWD(LogOM):
             'protocol': self.protocol,
             'type': 'Syslog',
             'zip_level': self.zip_level,
+            'send_as_raw': self.send_as_raw,
             'output': self.target + ':' + str(self.port) + ' ({})'.format(self.protocol)
         }
 

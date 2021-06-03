@@ -483,7 +483,6 @@
   });
 
 
-{% if not object_id %}
   /* Change port value according to chosen encryption scheme */
   $('#id_encryption_scheme').on("change", function(e) {
     var port = 0;
@@ -498,8 +497,6 @@
         $(id_port).val(389);
     }
   });
-  $('#id_encryption_scheme').trigger("change");
-{% endif %}
 
   /* Show OAuth2 options if oauth2 enabled */
   $('#id_enable_oauth2').on("change", function(e) {

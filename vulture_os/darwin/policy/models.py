@@ -903,6 +903,9 @@ class FilterPolicy(models.Model):
             'log_file_path': ALERTS_LOG_FILEPATH
         }
 
+        if self.enrichment_tags:
+            json_conf['alert_tags'] = self.enrichment_tags
+
         # Those fields were already validated and don't need any modification, let them be in the resulting configuration as-is
         PASS_THROUGH_FIELDS = ['redis_expire', 'max_tokens', 'fastmode', 'timeout', 'redis_socket_path',
                                 'alert_redis_list_name', 'alert_redis_channel_name', 'log_file_path',

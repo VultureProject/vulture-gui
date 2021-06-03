@@ -307,7 +307,7 @@ def workflow_edit(request, object_id=None, api=False):
                 }
             else:
                 data = {
-                    'acls': [a.to_template() for a in AccessControl.objects.filter(enabled=True)],
+                    'acls': [a.to_template() for a in AccessControl.objects.all()],
                     'backends': [b.to_dict() for b in Backend.objects.filter(enabled=True, mode=mode)],
                     'waf_policies': [w.to_template() for w in DefenderPolicy.objects.all()],
                     'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)],

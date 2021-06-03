@@ -42,6 +42,7 @@ logger = logging.getLogger('api')
 class StrongswanAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
+        node_id = request.GET.get("node")
         try:
             if object_id:
                 try:
@@ -50,13 +51,19 @@ class StrongswanAPIv1(View):
                     return JsonResponse({
                         'error': _('Object does not exist')
                     }, status=404)
-
+            elif node_id:
+                obj = Strongswan.objects.get(node__pk=node_id).to_dict()
             else:
                 obj = [s.to_dict() for s in Strongswan.objects.all()]
 
             return JsonResponse({
                 'data': obj
             })
+
+        except (Strongswan.DoesNotExist, Node.DoesNotExist):
+            return JsonResponse({
+                "error": _("Object not found")
+            }, status=404)
 
         except Exception as e:
             logger.critical(e, exc_info=1)

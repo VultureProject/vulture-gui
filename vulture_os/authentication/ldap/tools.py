@@ -188,14 +188,16 @@ def update_user(ldap_repository, user_dn, attrs, userPassword):
     except IndexError:
         return create_user(ldap_repository, user_dn, userPassword, attrs)
 
+    dn = old_user['dn']
+    del(old_user['dn'])
+
+    attrs.update(old_user)
     for k, v in attrs.items():
         if not v:
             attrs[k] = []
         elif not isinstance(v, list):
             attrs[k] = [v]
     
-    dn = old_user['dn']
-    del(old_user['dn'])
     client = ldap_repository.get_client()
     r = client.update_user(dn, old_user, attrs, userPassword)
     logger.info(f"User {user_dn} updated in LDAP {ldap_repository.name}")

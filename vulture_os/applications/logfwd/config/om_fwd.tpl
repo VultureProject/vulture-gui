@@ -3,6 +3,6 @@
            Target="{{target}}"
            Port="{{port}}"
            Protocol="{{protocol}}"
-           Template="{{ out_template }}"
+           Template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}{% endif %}"
            ZipLevel="{{zip_level}}"
           )
