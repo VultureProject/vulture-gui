@@ -128,6 +128,9 @@ class DeleteLDAPRepository(DeleteView):
     redirect_url = "/authentication/ldap/"
     delete_url = "/authentication/ldap/delete/"
 
+    def used_by(self, object):
+        return ["Workflow " + w.name for w in UserAuthentication.objects.filter(repositories=object)]
+
     # get, post and used_by methods herited from mother class
 
 
@@ -155,9 +158,14 @@ class DeleteUserAuthentication(DeleteView):
     redirect_url = "/portal/user_authentication/"
     delete_url = "/portal/user_authentication/delete/"
 
-    # FIXME : Add verif when Workflow will use this object
     def used_by(self, object):
-        return [str(w) for w in Workflow.objects.filter(authentication=object)]
+        linked_objects = ["Workflow " + w.name for w in Workflow.objects.filter(authentication=object)]
+        if object.enable_external:
+            linked_connector = OpenIDRepository.objects.get(client_id=object.oauth_client_id,
+                                                            client_secret=object.oauth_client_secret,
+                                                            provider="openid")
+            linked_objects += ["Portal " + portal.name for portal in UserAuthentication.objects.filter(repositories=linked_connector)]
+        return linked_objects
 
     def post(self, request, object_id, **kwargs):
         if hasattr(request, "JSON"):
@@ -210,6 +218,9 @@ class DeleteOpenIDRepository(DeleteView):
     obj = OpenIDRepository
     redirect_url = "/authentication/openid/"
     delete_url = "/authentication/openid/delete/"
+
+    def used_by(self, object):
+        return ["Portal " + portal.name for portal in UserAuthentication.objects.filter(repositories=object)]
 
     # get, post and used_by methods herited from mother class
 
