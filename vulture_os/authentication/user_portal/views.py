@@ -43,6 +43,7 @@ from system.cluster.models  import Cluster
 from system.pki.models import X509Certificate, PROTOCOLS_TO_INT
 from portal.system.sso_clients import SSOClient
 from toolkit.http.utils import parse_html
+from toolkit.system.hashes import random_sha256
 from authentication.openid.models import OpenIDRepository
 
 # Extern modules imports
@@ -77,10 +78,20 @@ def user_authentication_clone(request, object_id):
         return HttpResponseNotFound("Object not found")
 
     profile.pk = None
+    profile.oauth_client_id = random_sha256
+    profile.oauth_client_secret = random_sha256
     profile.name = "Copy_of_" + str(profile.name)
 
+    repo_attrs_form_list = []
+    for p in profile.get_repo_attributes():
+        repo_attrs_form_list.append(RepoAttributesForm(instance=p))
+
     form = UserAuthenticationForm(None, instance=profile, error_class=DivErrorList)
-    return render(request, 'authentication/user_authentication_edit.html', {'form': form})
+    return render(request, 'authentication/user_authentication_edit.html', {
+        'form': form,
+        'repo_attributes': repo_attrs_form_list,
+        'repo_attribute_form': RepoAttributesForm()
+        })
 
 
 def user_authentication_edit(request, object_id=None, api=False):
