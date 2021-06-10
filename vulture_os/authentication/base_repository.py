@@ -34,6 +34,7 @@ from djongo import models
 # Extern modules imports
 
 # Required exceptions imports
+from toolkit.auth.exceptions import AuthenticationError
 
 # Logger configuration imports
 import logging
@@ -73,12 +74,15 @@ class BaseRepository(models.Model):
         """ List of attributes required by __str__ method """
         return ['name', 'subtype']
 
-    def authenticate(self, *args, **kwargs):
+    def authenticate(self, username, password, **kwargs):
         subclass = self.get_daughter()
         if isinstance(subclass, InternalRepository):
-            return self.internalrepository.authenticate(*args, **kwargs)
+            return self.internalrepository.authenticate(username, password, **kwargs)
         else:
-            return subclass.get_client().authenticate(*args, **kwargs)
+            result = subclass.get_client().authenticate(username, password, **kwargs)
+            if result['account_locked']:
+                raise AuthenticationError("Account '{}' locked".format(username))
+            return result
 
 
 class InternalRepository(BaseRepository):
