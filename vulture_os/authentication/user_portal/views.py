@@ -185,11 +185,14 @@ def user_authentication_edit(request, object_id=None, api=False):
                         workflow.frontend.reload_conf()
                 if profile.enable_external:
                     # Automatically create OpenID repo
-                    openid_repo, created = OpenIDRepository.objects.get_or_create(client_id=profile.oauth_client_id,
-                                                                                  client_secret=profile.oauth_client_secret,
-                                                                                  provider="openid")
+                    openid_repo, _ = OpenIDRepository.objects.get_or_create( client_id=profile.oauth_client_id,
+                                                            client_secret=profile.oauth_client_secret,
+                                                            provider="openid",
+                                                            defaults={
+                                                                'provider_url': f"https://{profile.external_fqdn}",
+                                                                'name': "Connector_{}".format(profile.name)
+                                                            })
                     openid_repo.provider_url = f"https://{profile.external_fqdn}"
-                    openid_repo.name = "Connector_{}".format(profile.name)
                     openid_repo.save()
                     # Reload old external_listener conf if has changed
                     if external_listener_changed:
