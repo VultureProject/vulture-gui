@@ -1065,7 +1065,7 @@ class Frontend(models.Model):
             'additional_infos': additional_infos
         }
 
-    def to_template(self, listener_list=None, header_list=None):
+    def to_template(self, listener_list=None, header_list=None, node=None):
         """ Dictionary used to create configuration file
 
         :return     Dictionnary of configuration parameters
@@ -1073,9 +1073,13 @@ class Frontend(models.Model):
         """ Retrieve list/custom objects """
         # If facultative arg listener_list is not given
         if not listener_list:
-            # Retrieve all the objects used by the current frontend
-            # No .only ! Used to generated conf, neither str cause we need the object
-            listener_list = self.listener_set.all()  # No .only() ! Used to generated conf
+            # Retrieve listeners into database
+            # No .only ! Used to generated conf, neither str, we need the whole object
+            if node:
+                listener_list = self.listener_set.filter(network_address__nic__node=node)
+            else:
+                listener_list = self.listener_set.all()
+
         # Same for headers
         if not header_list:
             header_list = self.headers.all()
@@ -1207,7 +1211,7 @@ class Frontend(models.Model):
         """ And returns the attributes of the class """
         return result
 
-    def generate_conf(self, listener_list=None, header_list=None):
+    def generate_conf(self, listener_list=None, header_list=None, node=None):
         """ Render the conf with Jinja template and self.to_template() method
         :return     The generated configuration as string, or raise
         """
@@ -1220,7 +1224,8 @@ class Frontend(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
             return template.render({'conf': self.to_template(listener_list=listener_list,
-                                                             header_list=header_list),
+                                                             header_list=header_list,
+                                                             node=node),
                                     'global_config': Cluster.get_global_config().to_dict()})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
@@ -1568,7 +1573,7 @@ class Frontend(models.Model):
         nodes = set()
         for node in self.get_nodes():
             # Generate frontend conf with no error_template
-            self.configuration[node.name] = self.generate_conf()
+            self.configuration[node.name] = self.generate_conf(node=node)
             # And write conf on disk
             self.save_conf(node)
             # Add node to nodes, it's a set (unicity implicitly handled)
