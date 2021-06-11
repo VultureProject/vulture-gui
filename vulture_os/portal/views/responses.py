@@ -37,6 +37,7 @@ from io import BytesIO
 from os.path import dirname
 from qrcode import make as qrcode_make
 from authentication.portal_template.models import INPUT_OTP_KEY
+from urllib.parse import quote_plus
 
 # Global variables
 BASE_DIR = dirname(dirname(__file__))
@@ -199,6 +200,11 @@ def self_ask_passwords(request, portal, action, rdm=None, error="", **kwargs):
 	dialog_lost = action == "lost"
 
 	reset_password_key = rdm
+
+	redirect_url = request.GET.get('redirect_url') or request.META.get('HTTP_REFERER')
+	print(redirect_url)
+	if redirect_url:
+		kwargs['form_action'] = f"?redirect_url={quote_plus(redirect_url)}"
 
 	return HttpResponse(portal.render_template("html_password",
 											   dialog_change=dialog_change,

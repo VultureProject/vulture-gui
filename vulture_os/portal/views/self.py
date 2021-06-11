@@ -125,7 +125,7 @@ def self(request, workflow_id=None, portal_id=None, action=None):
             logger.info("SELF::main: List of apps successfully retrieved")
             return Action.main_response(request, result)
         else:
-            return Action.message_response(Action.perform_action(request, credential))
+            return Action.message_response(request, Action.perform_action(request, credential))
 
     # Redis connection error
     except RedisConnectionError as e:
@@ -162,4 +162,4 @@ def self(request, workflow_id=None, portal_id=None, action=None):
 
     except Exception as e:
         logger.exception(e)
-        return Action.message_response("An unknown error occurred <br><b> Please contact your administrator</b>")
+        return Action.message_response(request, "An unknown error occurred <br><b> Please contact your administrator</b>")

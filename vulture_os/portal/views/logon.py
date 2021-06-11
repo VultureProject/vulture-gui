@@ -312,7 +312,11 @@ def openid_authorize(request, portal_id):
         return HttpResponseServerError()
 
     # Prefix ID to prevent conflicts between portal.id and workflow.id
-    workflow = Workflow(authentication=portal, fqdn=portal.external_fqdn, id=f"portal_{portal.id}", name=portal.name)
+    workflow = Workflow(id=f"portal_{portal.id}", name=portal.name,
+                        frontend=portal.external_listener,
+                        authentication=portal,
+                        fqdn=portal.external_fqdn,
+                        public_dir="/")
 
     # OpenID=True returns a response redirect with token
     response = authenticate(request, workflow, portal_cookie, token_name, sso_forward=False, openid=True)
@@ -470,6 +474,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     authentication_results = authentication.authenticate(request)
                     logger.debug("PORTAL::log_in: Authentication succeed on backend {}, "
                                  "user infos : {}".format(authentication.backend_id, authentication_results))
+
                     user_scope = workflow.authentication.get_user_scope({}, authentication_results)
                     # Register authentication results in Redis
                     portal_cookie, oauth2_token = authentication.register_user(authentication_results, user_scope)
@@ -478,8 +483,11 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     if authentication_results.get('password_expired', None):
                         logger.info("PORTAL::log_in: User '{}' must change its password, redirect to self-service portal"
                                     .format(authentication.credentials[0]))
+                        # Do NOT authenticate user on app, to continue authent when he comes back
+                        authentication.redis_portal_session.delete_key(str(workflow.id))
                         app_url = workflow.get_redirect_uri()
-                        return HttpResponseRedirect(str(token_name)+'/self/change')
+                        return HttpResponseRedirect(app_url + str(token_name) + '/self/change')
+
                 # If the user is already authenticated (retrieved with RedisPortalSession ) => SSO
                 else:
                     portal_cookie, oauth2_token = authentication.register_sso(backend_id)
