@@ -217,6 +217,7 @@ class FrontendForm(ModelForm):
                            "cybereason_host", "cybereason_username", "cybereason_password",
                            "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
                            "carbon_black_host", 'carbon_black_orgkey', 'carbon_black_apikey',
+                           "netskope_host", 'netskope_apikey',
                            'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode']:
             self.fields[field_name].required = False
 
@@ -280,6 +281,7 @@ class FrontendForm(ModelForm):
                   "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
                   "proofpoint_tap_secret",
                   "sentinel_one_host", "sentinel_one_apikey",
+                  "netskope_host", "netskope_apikey",
                   "carbon_black_host", "carbon_black_orgkey", "carbon_black_apikey",
                   'darwin_mode')
 
@@ -379,6 +381,8 @@ class FrontendForm(ModelForm):
             'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
             'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
+            'netskope_host': TextInput(attrs={'class': 'form-control'}),
+            'netskope_apikey': TextInput(attrs={'class': 'form-control'}),
             'carbon_black_host': TextInput(attrs={'class': 'form-control'}),
             'carbon_black_orgkey': TextInput(attrs={'class': 'form-control'}),
             'carbon_black_apikey': TextInput(attrs={'class': 'form-control'}),

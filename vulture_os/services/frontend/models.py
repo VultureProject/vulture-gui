@@ -802,6 +802,17 @@ class Frontend(models.Model):
     keep_source_fields = models.JSONField(
         default={}
     )
+    # Netskope attributes
+    netskope_host = models.TextField(
+        verbose_name = _("Netskope Host"),
+        help_text = _("Hostname (without scheme or path) of the Netskope server"),
+        default = "example.goskope.com",
+    )
+    netskope_apikey = models.TextField(
+        verbose_name = _("Netskope API token used to retrieve events"),
+        help_text = _("Netskope API token"),
+        default = "",
+    )
 
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
@@ -972,6 +983,9 @@ class Frontend(models.Model):
                     result['carbon_black_host'] = self.carbon_black_host
                     result['carbon_black_orgkey'] = self.carbon_black_orgkey
                     result['carbon_black_apikey'] = self.carbon_black_apikey
+                elif self.api_parser_type == "netskope":
+                    result['netskope_host'] = self.netskope_host
+                    result['netskope_apikey'] = self.netskope_apikey
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
