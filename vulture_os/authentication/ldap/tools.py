@@ -207,9 +207,12 @@ def delete_user(ldap_repository, user_dn):
     group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"   
     client = ldap_repository.get_client()
 
-    old_user = find_user(ldap_repository, user_dn, ["*"])
-    if not old_user:
-        raise UserNotExistError()
+    try:
+        old_user = find_user(ldap_repository, user_dn, ["*"])
+        if not old_user:
+            raise UserNotExistError()
+    except IndexError:
+            raise UserNotExistError()
 
     groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(user_dn)]
     r = client.delete_user(user_dn, groups)
