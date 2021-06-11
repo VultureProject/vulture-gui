@@ -129,7 +129,7 @@ class DeleteLDAPRepository(DeleteView):
     delete_url = "/authentication/ldap/delete/"
 
     def used_by(self, object):
-        return ["Workflow " + w.name for w in UserAuthentication.objects.filter(repositories=object)]
+        return ["Portal " + w.name for w in UserAuthentication.objects.filter(repositories=object)]
 
     # get, post and used_by methods herited from mother class
 
