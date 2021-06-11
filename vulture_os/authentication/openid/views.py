@@ -81,11 +81,7 @@ def edit(request, object_id=None, api=False):
             return HttpResponseForbidden("Injection detected")
 
     if hasattr(request, "JSON") and api:
-        data = request.JSON
-        # Format scopes correctly for form
-        if data:
-            data['scopes'] = ','.join(data.get('scopes', ''))
-        form = OpenIDRepositoryForm(data, instance=repo, error_class=DivErrorList)
+        form = OpenIDRepositoryForm(request.JSON or None, instance=repo, error_class=DivErrorList)
     else:
         form = OpenIDRepositoryForm(request.POST or None, instance=repo, error_class=DivErrorList)
 
