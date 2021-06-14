@@ -514,60 +514,56 @@ class LDAPClient(BaseAuth):
             dn = self.group_dn
         return dn
 
-    def is_user_account_locked(self, username):
+    def is_user_account_locked(self, user_dn):
         """Method used to check if a user account is locked
 
-        :param username: String with username
+        :param user_dn: String with username
         :return:True if account is locked, False otherwise
         """
 
-        username=username.encode('utf-8')
-
         if not self.user_account_locked_attr:
             return False
-        logger.debug("Looking if {} account is locked".format(username))
-        query_filter = "({}={})".format(self.user_attr, username)
-        if self.user_filter:
-            query_filter = "(&{}{}{})".format(query_filter, self.user_filter,
-                                              self.user_account_locked_attr)
-        dn = self._get_user_dn()
-        self.scope = self.user_scope
-        logger.debug(query_filter)
-        result = self._search(dn, query_filter, username)
+        logger.debug("Looking if {} account is locked".format(user_dn))
+        # query_filter = "(dn={})".format(username)
+        # if self.user_filter:
+        #     query_filter = "(&{}{}{})".format(query_filter, self.user_filter,
+        #                                       self.user_account_locked_attr)
+        # dn = self._get_user_dn()
+        # self.scope = self.user_scope
+        # logger.info(query_filter)
+        result = self._search(user_dn, self.user_account_locked_attr, user_dn)
         if result:
-            logger.info("{} account is locked".format(username))
+            logger.info("{} account is locked".format(user_dn))
             return True
         else:
-            logger.info("{} account is not locked".format(username))
+            logger.info("{} account is not locked".format(user_dn))
             return False
 
-    def is_password_expired(self, username):
+    def is_password_expired(self, user_dn):
         """ Method used to search if a user account need to change its password
 
         :param username: String with username
         :return: True if user account need to change its password, False otherwise
         """
 
-        username=username.encode('utf-8')
-
         if not self.user_change_password_attr:
             return False
         logger.debug("Looking if {} account needs to change its password"
-                    .format(username))
-        query_filter = "({}={})".format(self.user_attr, username)
-        if self.user_filter:
-            query_filter = "(&{}{}{})".format(query_filter, self.user_filter,
-                                              self.user_change_password_attr)
-        dn = self._get_user_dn()
-        self.scope = self.user_scope
-        result = self._search(dn, query_filter, username)
+                    .format(user_dn))
+        # query_filter = "({}={})".format(self.user_attr, username)
+        # if self.user_filter:
+        #     query_filter = "(&{}{}{})".format(query_filter, self.user_filter,
+        #                                       self.user_change_password_attr)
+        # dn = self._get_user_dn()
+        # self.scope = self.user_scope
+        result = self._search(user_dn, self.user_change_password_attr, user_dn)
         if result:
             logger.info("{} account need to change its password"
-                        "".format(username))
+                        "".format(user_dn))
             return True
         else:
             logger.info("{} account doesn't need to change its password"
-                        "".format(username))
+                        "".format(user_dn))
             return False
 
 
@@ -652,8 +648,8 @@ class LDAPClient(BaseAuth):
             raise UserNotFound("Cannot retrieve {} for user {}".format(self.user_attr, user_dn))
         res['name'] = username
         res['dn'] = user_dn
-        res['account_locked'] = self.is_user_account_locked(username)
-        res['password_expired'] = self.is_password_expired(username)
+        res['account_locked'] = self.is_user_account_locked(user_dn)
+        res['password_expired'] = self.is_password_expired(user_dn)
         user_groups = [*user_groups, *self.search_user_groups_by_dn(user_dn)]
         res['user_groups'] = user_groups
         if self.user_groups_attr:
@@ -691,46 +687,14 @@ class LDAPClient(BaseAuth):
         :param username: String with username
         :param password: String with password
         """
-        response = {
-            'status': None,
-            'reason': None
-        }
         try:
-            user_info = self.search_user(username, attr_list=["+", "*"])
-            response['account_locked'] = self.is_user_account_locked(username)
-            response['password_expired'] = self.is_password_expired(username)
-            response['user_groups'] = self.search_user_groups(username)
-            password = password.encode('utf-8')
-            response['status'] = self.authenticate(username, password, return_status=True)
-            if user_info and self.user_mobile_attr is not None:
-                phone_info = user_info[0][1].get(self.user_mobile_attr.lower())
-                if isinstance(phone_info, list):
-                    phone_info = phone_info[0]
-                if isinstance(phone_info, bytes):
-                    phone_info = phone_info.decode('utf-8')
-                response['user_phone'] = phone_info
-            else:
-                response['user_phone'] = 'N/A'
-
-            if user_info and self.user_email_attr is not None:
-                email_info = user_info[0][1].get(self.user_email_attr.lower())
-                if isinstance(email_info, list):
-                    email_info = email_info[0]
-                if isinstance(email_info, bytes):
-                    email_info = email_info.decode('utf-8')
-                response['user_email'] = email_info
-            else:
-                response['user_email'] = 'N/A'
+            response = self.authenticate(username, password)
+            response['status'] = True
 
         except ldap.INVALID_CREDENTIALS:
             logger.error("Invalid credentials : '{}' '{}'".format(self.user, self.password))
             response['status'] = False
-            if response.get('account_locked') == True:
-                response['reason'] = "Account locked"
-            elif response.get('password_expired') == True:
-                response['reason'] = "Password expired"
-            else:
-                response['reason'] = "Invalid credentials"
+            response['reason'] = "Invalid credentials"
         except UserNotFound as e:
             response['status'] = False
             response['reason'] = "User doesn't exist"

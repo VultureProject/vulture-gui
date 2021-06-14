@@ -101,7 +101,7 @@ class Authentication(object):
     def authenticate_sso_acls(self):
         # FIXME : ACLs
         backend_list = list(self.workflow.authentication.repositories.all())
-        e, login = None, ""
+        #error, login = None, ""
         for backend in backend_list:
             if self.redis_portal_session.authenticated_backend(backend.id):
                 # The user is authenticated on backend, but he's not necessarily authorized on the app
@@ -122,8 +122,8 @@ class Authentication(object):
                                      .format(login, backend.name, e))
                         continue
                 return str(backend.id)
-        if login and e:
-            raise e
+        #if login and error:
+        #    raise error
         return ""
 
     def set_authentication_params(self, repo, authentication_results):

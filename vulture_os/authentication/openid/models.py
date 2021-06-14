@@ -170,7 +170,11 @@ class OpenIDRepository(BaseRepository):
         return provider_type
 
     def to_dict(self):
-        return model_to_dict(self)
+        ret = model_to_dict(self)
+        # model_to_dict will not return a list if the field only contains 1 value
+        if not isinstance(ret['scopes'], list):
+            ret['scopes'] = [ret['scopes']]
+        return ret
 
     def to_template(self):
         """ Returns the attributes of the class """
