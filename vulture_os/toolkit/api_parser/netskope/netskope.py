@@ -59,9 +59,6 @@ class NetskopeParser(ApiParser):
         self.netskope_host = data["netskope_host"]
         self.netskope_apikey = data["netskope_apikey"]
 
-        self.upper_timestamp = int(self.frontend.last_api_call.timestamp()) if self.frontend.last_api_call \
-                                                                                        else 0
-
         self.session = None
 
     def _connect(self):
@@ -105,7 +102,7 @@ class NetskopeParser(ApiParser):
             'limit': 1000,
             'offset': cursor
         }
-        result = self.session.get(alert_url, params=query).json()
+        result = self.session.get(alert_url, params=query, proxies=self.proxies).json()
         assert result['ok'] == 1, result['message']
         return result
 
@@ -116,6 +113,9 @@ class NetskopeParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
+
+        self.upper_timestamp = int(self.frontend.last_api_call.timestamp()) if self.frontend.last_api_call \
+                                                                                        else 0
 
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
         offset = 0
