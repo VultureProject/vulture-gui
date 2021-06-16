@@ -127,6 +127,9 @@ function init_vue(){
             self.policy.buffer_outputs = []
 
             for (let filter of data.filters){
+              if (clone) {
+                filter.id = 0;
+              }
               filter_type = available_filter_types[filter.filter_type]
               if (filter_type) {
                 if (filter_type.name === "content_inspection")
