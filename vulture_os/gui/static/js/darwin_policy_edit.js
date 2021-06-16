@@ -38,6 +38,7 @@ function init_vue(){
       tagRsyslog: "",
       enrichmentTagsRsyslog: "",
       filter: {
+        id: 0,
         filter_type: null,
         enabled: true,
         nb_thread: 5,
@@ -126,6 +127,9 @@ function init_vue(){
             self.policy.buffer_outputs = []
 
             for (let filter of data.filters){
+              if (clone) {
+                filter.id = 0;
+              }
               filter_type = available_filter_types[filter.filter_type]
               if (filter_type) {
                 if (filter_type.name === "content_inspection")
@@ -494,6 +498,7 @@ function init_vue(){
         this.policy.filters.push(data)
 
         this.filter = {
+          id: 0,
           filter_type: null,
           enabled: true,
           nb_thread: 5,
@@ -608,6 +613,7 @@ function init_vue(){
           }
 
           let tmp = {
+            id: tmp_filter.id,
             filter_type: tmp_filter.filter_type,
             enabled: tmp_filter.enabled,
             threshold: parseInt(tmp_filter.threshold, 10),

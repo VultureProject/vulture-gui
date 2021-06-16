@@ -148,27 +148,31 @@ class DarwinPolicyAPIv1(View):
             }, status=500)
 
     @staticmethod
-    def _create_filters(policy, filters_list):
+    def _create_or_update_filters(policy, filters_list):
         new_filters = []
         bufferings =[]
 
+        current_filters = FilterPolicy.objects.filter(policy_id=policy.pk)
+
         for filt in filters_list:
             try:
-                filt.pop('policy', '')
-                filter_type_id = filt.pop('filter_type', 0)
-                darwin_filter = DarwinFilter.objects.get(id=filter_type_id)
+                filt['policy'] = policy
+                filt['filter_type'] = DarwinFilter.objects.get(id=filt.get('filter_type', 0))
             except DarwinFilter.DoesNotExist:
-                logger.error("Error while creating filters for darwin policy : DarwinFilter id '{}' does not exist".format(filter_type_id))
-                return "unknown filter type {}".format(filter_type_id)
+                logger.error(f"Error while creating/updating filter for darwin policy : DarwinFilter id '{filt.get('filter_type', 0)}' does not exist")
+                return f"unknown filter type {filt.get('filter_type', 0)}"
 
             buffering_opts = filt.pop('buffering', None)
             try:
-                filter_instance = FilterPolicy(
-                    **filt,
-                    policy=policy,
-                    filter_type=darwin_filter,
-                    status={node.name: "STARTING" for node in Node.objects.all().only('name')}
-                )
+                filt_id = filt.pop('id', 0)
+                if filt_id != 0:
+                    filter_instance, _ = FilterPolicy.objects.update_or_create(
+                        id=filt_id,
+                        defaults=filt)
+                else:
+                    filter_instance = FilterPolicy(**filt)
+
+                filter_instance.status = {node.name: "STARTING" for node in Node.objects.all().only('name')}
 
                 filter_instance.full_clean()
                 new_filters.append(filter_instance)
@@ -177,25 +181,25 @@ class DarwinPolicyAPIv1(View):
                     bufferings.append((filter_instance, buffering_opts))
 
             except (ValidationError, ValueError, TypeError) as e:
-                logger.error(e, exc_info=1)
+                logger.error(str(e), exc_info=1)
                 return str(e)
 
-        # At this point everything has been validated
-        # So the old filters can be deleted safely
-        filters_delete = FilterPolicy.objects.filter(policy_id=policy.pk)
-        for filter_delete in filters_delete:
-            Cluster.api_request("services.darwin.darwin.delete_filter_conf", filter_delete.conf_path)
-            filter_delete.delete()
-        # And the new ones can be inserted in their place
         for filter_instance in new_filters:
             filter_instance.save()
 
+        filters_delete = set(current_filters) - set(new_filters)
+        for filter_delete in filters_delete:
+            Cluster.api_request("services.darwin.darwin.delete_filter_conf", filter_delete.conf_path)
+            filter_delete.delete()
+
         try:
             for filter_instance, buffering_opts in bufferings:
-                buffering = DarwinBuffering.objects.create(
-                    interval=buffering_opts.get('interval'),
-                    required_log_lines=buffering_opts.get('required_log_lines'),
-                    destination_filter=filter_instance
+                DarwinBuffering.objects.update_or_create(
+                    destination_filter=filter_instance,
+                    defaults={
+                        'interval': buffering_opts.get('interval'),
+                        'required_log_lines': buffering_opts.get('required_log_lines'),
+                    }
                 )
         except Exception as e:
             logger.error(e, exc_info=1)
@@ -206,7 +210,6 @@ class DarwinPolicyAPIv1(View):
 
     @api_need_key('cluster_api_key')
     def post(self, request, object_id=None, action=None):
-        new_filters = []
         policy = None
 
         try:
@@ -251,7 +254,7 @@ class DarwinPolicyAPIv1(View):
                         'error': str(e),
                     }, status=400)
 
-                error = DarwinPolicyAPIv1._create_filters(policy, filters_list)
+                error = DarwinPolicyAPIv1._create_or_update_filters(policy, filters_list)
                 if error:
                     try:
                         policy.delete()
@@ -276,12 +279,12 @@ class DarwinPolicyAPIv1(View):
                 'error': error
             }, status=500)
 
+        if DarwinBuffering.objects.filter(destination_filter__policy=policy).exists():
+            DarwinPolicy.update_buffering()
+
         for frontend in policy.frontend_set.all():
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
-
-        if DarwinBuffering.objects.filter(destination_filter__policy=policy).exists():
-            DarwinPolicy.update_buffering()
 
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.reload_conf")
@@ -307,8 +310,6 @@ class DarwinPolicyAPIv1(View):
                             'error': str(e)
                         }, status=400)
 
-                logger.info("filters type: {}".format(type(filters)))
-
                 policy, created = DarwinPolicy.objects.get_or_create(pk=object_id)
 
                 policy.name = name
@@ -322,7 +323,7 @@ class DarwinPolicyAPIv1(View):
                         'error': str(e),
                     }, status=400)
 
-                error = DarwinPolicyAPIv1._create_filters(policy, filters)
+                error = DarwinPolicyAPIv1._create_or_update_filters(policy, filters)
                 if error:
                     if created:
                         try:
