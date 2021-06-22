@@ -58,7 +58,3 @@ class UserScopeForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    def clean_name(self):
-        """ Replace all spaces by underscores to prevent bugs later """
-        return self.cleaned_data['name'].replace(' ', '_')
