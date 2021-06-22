@@ -42,6 +42,7 @@ from authentication.user_portal.models import UserAuthentication
 from authentication.portal_template.models import PortalTemplate
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.totp_profiles.models import TOTPProfile
+from authentication.user_scope.models import UserScope
 
 # Extern modules imports
 from json import loads as json_loads
@@ -210,6 +211,13 @@ class ListAuthenticationAccessControl(ListView):
 class ListPortalTemplate(ListView):
     template_name = "authentication/portal_template/list.html"
     obj = PortalTemplate
+
+    # Get and Post methods inherithed from ListBackend
+
+
+class ListUserScope(ListLDAPRepository):
+    template_name = "authentication/user_scope.html"
+    obj = UserScope
 
     # Get and Post methods inherithed from ListBackend
 
