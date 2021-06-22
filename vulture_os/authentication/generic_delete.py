@@ -43,6 +43,7 @@ from authentication.user_portal.models import UserAuthentication
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.portal_template.models import PortalTemplate, TemplateImage
 from authentication.totp_profiles.models import TOTPProfile
+from authentication.user_scope.models import UserScope
 from workflow.models import Workflow
 
 # Required exceptions imports
@@ -248,3 +249,14 @@ class DeletePortalImage(DeleteView):
     obj = TemplateImage
     redirect_url = "/portal/template/"
     delete_url = "/portal/images/delete/"
+
+
+class DeleteUserScope(DeleteView):
+    menu_name = _("Authentication -> User's Scope -> Delete")
+    obj = UserScope
+    redirect_url = "/authentication/user_scope/"
+    delete_url = "/authentication/user_scope/delete/"
+
+    def used_by(self, object):
+        return [str(p) for p in object.userauthentication_set.all()]+[str(c) for c in object.openidrepository_set.all()]
+

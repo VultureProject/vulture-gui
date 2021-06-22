@@ -108,6 +108,17 @@
                   <div class="row">
                     <div class="col-md-12">
                       <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.user_scope.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.user_scope}}
+                          {{form.user_scope.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
                         <label class="col-sm-4 control-label">{{form.use_proxy.label}}</label>
                         <div class="col-sm-5">
                           {{form.use_proxy}}

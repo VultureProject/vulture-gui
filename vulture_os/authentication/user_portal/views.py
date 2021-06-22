@@ -38,7 +38,7 @@ from toolkit.api.responses import build_response
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 from authentication.user_portal.form import UserAuthenticationForm
-from authentication.user_portal.models import UserAuthentication, RepoAttributesForm
+from authentication.user_portal.models import UserAuthentication
 from system.cluster.models  import Cluster
 from system.pki.models import X509Certificate, PROTOCOLS_TO_INT
 from portal.system.sso_clients import SSOClient
@@ -82,22 +82,14 @@ def user_authentication_clone(request, object_id):
     profile.oauth_client_secret = random_sha256
     profile.name = "Copy_of_" + str(profile.name)
 
-    repo_attrs_form_list = []
-    for p in profile.get_repo_attributes():
-        repo_attrs_form_list.append(RepoAttributesForm(instance=p))
-
     form = UserAuthenticationForm(None, instance=profile, error_class=DivErrorList)
     return render(request, 'authentication/user_authentication_edit.html', {
-        'form': form,
-        'repo_attributes': repo_attrs_form_list,
-        'repo_attribute_form': RepoAttributesForm()
-        })
+                      'form': form
+                  })
 
 
 def user_authentication_edit(request, object_id=None, api=False):
     profile = None
-    repo_attrs_form_list = []
-    repo_attrs_objs = []
     if object_id:
         try:
             profile = UserAuthentication.objects.get(pk=object_id)
@@ -120,46 +112,12 @@ def user_authentication_edit(request, object_id=None, api=False):
             if save_error:
                 return JsonResponse({'error': save_error[0]}, status=500)
 
-        if not repo_attrs_form_list and profile:
-            for p in profile.get_repo_attributes():
-                repo_attrs_form_list.append(RepoAttributesForm(instance=p))
-
         return render(request, 'authentication/user_authentication_edit.html',
                       {'form': form,
-                       'repo_attributes': repo_attrs_form_list,
-                       'repo_attribute_form': RepoAttributesForm(),
                        **kwargs})
 
 
     if request.method in ("POST", "PUT"):
-        """ Handle repo attributes (user scope) """
-        try:
-            if api and hasattr(request, "JSON"):
-                repo_attrs = request.JSON.get('repo_attributes', [])
-                assert isinstance(repo_attrs, list), "Repo attributes field must be a list."
-            else:
-                repo_attrs = json_loads(request.POST.get('repo_attributes', "[]"))
-        except Exception as e:
-            if api:
-                return JsonResponse({
-                    "error": "".join(format_exception(*exc_info()))
-                }, status=400)
-            return render_form(profile, save_error=["Error in Repo_Attributes field : {}".format(e),
-                                                           str.join('', format_exception(*exc_info()))])
-
-        """ For each Health check header in list """
-        for repo_attr in repo_attrs:
-            repoattrform = RepoAttributesForm(repo_attr, error_class=DivErrorList)
-            if not repoattrform.is_valid():
-                if api:
-                    form.add_error(None, repoattrform.errors.get_json_data())
-                else:
-                    form.add_error('repo_attributes', repoattrform.errors.as_ul())
-                continue
-            # Save forms in case we re-print the page
-            repo_attrs_form_list.append(repoattrform)
-            repo_attrs_objs.append(repoattrform.save(commit=False))
-
         # External portal is not compatible with Workflow
         # If enable_external has been enabled but a workflow uses this Portal, add error in form
         if form.data.get('enable_external') and profile and profile.workflow_set.count() > 0:
@@ -174,9 +132,6 @@ def user_authentication_edit(request, object_id=None, api=False):
             external_listener_changed = "external_listener" in form.changed_data and profile and profile.enable_external
             # Save the form to get an id if there is not already one
             profile = form.save(commit=False)
-            for repo_attr in repo_attrs_objs:
-                repo_attr.save()
-            profile.repo_attributes = repo_attrs_objs
             profile.save()
 
             try:

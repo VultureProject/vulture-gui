@@ -37,6 +37,7 @@ from authentication.ldap.models import LDAPRepository
 from authentication.kerberos.models import KerberosRepository
 from authentication.openid.models import OpenIDRepository
 from authentication.radius.models import RadiusRepository
+from authentication.user_scope.models import UserScope
 from services.frontend.models import Frontend
 from toolkit.http.utils import build_url
 from toolkit.system.hashes import random_sha256
@@ -356,13 +357,12 @@ class UserAuthentication(models.Model):
         verbose_name=_('Lookup claim key name'),
         help_text=_("Claim name used to map user to ldap attribute")
     )
-    repo_attributes = models.ArrayField(
-        model_container=RepoAttributes,
-        model_form_class=RepoAttributesForm,
-        verbose_name=_('Create user scope'),
+    user_scope = models.ForeignKey(
+        to=UserScope,
+        on_delete=models.PROTECT,
         null=True,
-        default=None,
-        help_text=_("Repo attributes whitelist, for re-use in SSO and ACLs")
+        verbose_name=_("User's scope"),
+        help_text=_("Scope of user to construct")
     )
     auth_timeout = models.PositiveIntegerField(
         default=900,
@@ -574,22 +574,17 @@ class UserAuthentication(models.Model):
             'portal_template': self.portal_template.to_dict()
         }
 
-    def get_repo_attributes(self):
-        if not self.repo_attributes:
-            return []
-        else:
-            return [RepoAttributes(**r) for r in self.repo_attributes]
-
     def to_dict(self):
         data = model_to_dict(self)
         data['id'] = str(self.pk)
         data['repositories'] = [r.to_dict() for r in self.repositories.all()]
         data['portal_template'] = self.portal_template.to_dict()
         data['portal_template_id'] = self.portal_template.pk
-        data['repo_attributes'] = []
-        for repo_attr in self.repo_attributes:
-            repo_attr.pop('_id', None)
-            data['repo_attributes'].append(repo_attr)
+        data['user_scope'] = []
+        if self.user_scope:
+            for repo_attr in self.user_scope.repo_attributes:
+                repo_attr.pop('_id', None)
+                data['repo_attributes'].append(repo_attr)
         if self.external_listener:
             data['external_listener'] = self.external_listener.to_dict()
             data['external_listener_id'] = self.external_listener.pk
@@ -631,10 +626,12 @@ class UserAuthentication(models.Model):
 
     def get_user_scope(self, claims, repo_attrs):
         user_scope = {}
-        for u in self.get_repo_attributes():
-            user_scope = u.get_scope(user_scope, claims, repo_attrs)
-        return user_scope
-
+        if self.user_scope:
+            for u in self.user_scope.get_repo_attributes():
+                user_scope = u.get_scope(user_scope, claims, repo_attrs)
+            return user_scope
+        else:
+            return claims
 
     def generate_conf(self):
         """ Render the conf with Jinja template and self.to_template() method
