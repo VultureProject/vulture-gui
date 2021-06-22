@@ -217,9 +217,9 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Set authentication attributes required
         authentication.backend_id = repo_id
-        authentication.credentials = [claims.get('name') or claims.get('sub'), ""]
+        authentication.credentials = [str(claims.get('name') or claims.get('sub')), ""]
         if not user_scope.get('name'):
-            user_scope['name'] = claims.get('name') or claims.get('sub')
+            user_scope['name'] = str(claims.get('name') or claims.get('sub'))
         portal_cookie, oauth2_token = authentication.register_user({**claims, **repo_attributes}, user_scope)
 
     except KeyError as e:
