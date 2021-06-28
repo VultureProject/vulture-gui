@@ -62,7 +62,6 @@ from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.system.hashes import random_sha256
 from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
-from django.core.exceptions import ObjectDoesNotExist
 
 from ast import literal_eval
 
@@ -386,14 +385,12 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
     try:
         if portal_id:
-            portal = UserAuthentication.objects.get(pk=portal_id)
-            repositories = portal.repositories.all()
+            assert UserAuthentication.objects.filter(pk=portal_id).exists()
         elif workflow_id:
-            workflow = Workflow.objects.get(pk=workflow_id)
-            repositories = workflow.authentication.repositories.all()
+            assert Workflow.objects.filter(pk=workflow_id).exists()
         else:
             return HttpResponseForbidden()
-    except (ObjectDoesNotExist, AssertionError):
+    except AssertionError:
         logger.error("PORTAL::openid_userinfo: could not find a portal with id {} or workflow with id {}".format(portal_id, workflow_id))
         return HttpResponseServerError()
     except Exception as e:
@@ -406,7 +403,6 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
-        assert session['repo'] in [str(repo.id) for repo in repositories]
         assert session['scope']
         return JsonResponse(literal_eval(session['scope']))
     except Exception as e:
