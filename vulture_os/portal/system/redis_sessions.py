@@ -38,7 +38,6 @@ from redis                          import Redis, ConnectionError as RedisConnec
 
 # Extern modules imports
 from hashlib                        import sha1
-from ast                            import literal_eval
 import json
 
 # Logger configuration
@@ -456,20 +455,20 @@ class REDISOauth2Session(REDISSession):
     def register_authentication(self, repo_id, oauth2_data, timeout):
         data = {
             'token_ttl': timeout,
-            'scope': str(oauth2_data),
-            'repo': str(repo_id)
+            'scope': json.dumps(oauth2_data),
+            'repo': repo_id
         }
         if not self.keys:
             self.keys = data
         else:
-            if not self.keys.get('scope'):
-                self.keys['scope'] = {}
+            scopes = {}
             if not self.keys.get('token_ttl'):
                 self.keys['token_ttl'] = timeout
             if not self.keys.get('repo'):
                 self.keys['repo'] = repo_id
             for key,item in oauth2_data.items():
-                self.keys['scope'][key] = item
+                scopes[key] = item
+            self.keys['scope'] = json.dumps(scopes)
 
         if not self.write_in_redis(timeout):
             logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")

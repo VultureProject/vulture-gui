@@ -63,11 +63,10 @@ from toolkit.system.hashes import random_sha256
 from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
 
-from ast import literal_eval
-
 # Extern modules imports
 from requests_oauthlib import OAuth2Session
 from base64 import b64decode
+import json
 
 # Logger configuration imports
 import logging
@@ -404,7 +403,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
         assert session['scope']
-        return JsonResponse(literal_eval(session['scope']))
+        return JsonResponse(json.loads(session['scope']))
     except Exception as e:
         logger.exception(e)
         return HttpResponse(status=401)
