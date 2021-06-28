@@ -687,6 +687,7 @@ class LDAPClient(BaseAuth):
         :param username: String with username
         :param password: String with password
         """
+        response = dict()
         try:
             response = self.authenticate(username, password)
             response['status'] = True
