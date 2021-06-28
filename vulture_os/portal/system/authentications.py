@@ -207,24 +207,36 @@ class Authentication(object):
         return portal_cookie, self.oauth2_token
 
     def register_sso(self, backend_id):
+        oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
+
         username = self.redis_portal_session.keys['login_' + backend_id]
         self.oauth2_token = self.redis_portal_session.keys['oauth2_' + backend_id]
+        # Get current user_infos for this backend
+        oauth2_scope = self.redis_portal_session.get_user_infos(backend_id)
+
         self.redis_oauth2_session = REDISOauth2Session(self.redis_portal_session.handler, "oauth2_" + self.oauth2_token)
         logger.debug("AUTH::register_sso: Redis oauth2 session successfully retrieved")
+
         password = self.redis_portal_session.getAutologonPassword(self.workflow.id, backend_id, username)
         logger.debug("AUTH::register_sso: Password successfully retrieved from Redis portal session")
+
         portal_cookie = self.redis_portal_session.register_sso(self.workflow.authentication.auth_timeout,
                                                                backend_id, str(self.workflow.id),
                                                                self.workflow.authentication.otp_repository.id if self.workflow.authentication.otp_repository else None,
                                                                username,
                                                                self.oauth2_token)
+
+        # Rewrite a new oauth2 token with current user_infos
+        logger.debug(f"AUTH::register_sso: Registering a new token with scope '{oauth2_scope}'")
+        self.redis_oauth2_session.register_authentication(str(self.backend_id), oauth2_scope, oauth_timeout)
         logger.debug("AUTH::register_sso: SSO informations successfully written in Redis for user {}".format(username))
         self.credentials = [username, password]
         return portal_cookie, self.oauth2_token
 
     def register_openid(self, openid_token, **kwargs):
         # Generate a new OAuth2 token
-        #self.oauth2_token = Uuid4().generate()
+        if not self.oauth2_token:
+            self.oauth2_token = Uuid4().generate()
         # Register it into session
         self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
         # Create a new temporary token containing oauth2_token + kwargs
