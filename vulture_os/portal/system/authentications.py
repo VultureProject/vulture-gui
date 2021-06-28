@@ -574,7 +574,7 @@ class OAUTH2Authentication(Authentication):
         self.redis_oauth2_session.register_authentication(str(self.backend_id),
                                                           authentication_results,
                                                           authentication_results['token_ttl'])
-        logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
+        logger.debug("AUTH::register_authentication: Redis oauth2 session successfully written in Redis")
 
     def generate_response(self, authentication_results):
         body = {
