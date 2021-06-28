@@ -77,6 +77,16 @@ class REDISSession(object):
         else:
             return False
 
+    def set_in_redis(self, key, value, timeout=0):
+        self.handler.set(key, value)
+        if timeout:
+            self.handler.expire(key, timeout)
+
+    def del_with_pattern(self, pattern):
+        ret = 0
+        keys = self.handler.keys(pattern)
+        for key in keys:
+            ret += self.handler.delete(key)
 
 
 class REDISAppSession(REDISSession):
@@ -225,6 +235,8 @@ class REDISPortalSession(REDISSession):
     def destroy(self):
         """ Remove the current portal session from Redis """
         try:
+            # Remove all potential related keys in the form <key>_*
+            self.del_with_pattern(self.key + "_*")
             return self.handler.delete(self.key)
         except:
             logger.info("REDISPortalSession: portal_session '{}' cannot be destroyed".format(self.key))
@@ -247,7 +259,7 @@ class REDISPortalSession(REDISSession):
         return self.handler.hget(self.key, f'login_{backend_id}')
 
     def authenticated_app(self, workflow_id):
-        return self.handler.hget(self.key, str(workflow_id)) == "1"
+        return self.handler.get(f"{self.key}_{workflow_id}") == "1"
 
     def authenticated_backend(self, backend_id):
         return str(self.handler.hget(self.key, f"auth_backend_{backend_id}")) == "1"
@@ -332,6 +344,9 @@ class REDISPortalSession(REDISSession):
         self.keys.pop(f'oauth2_{backend_id}', None)
         self.keys.pop(f'app_id_{backend_id}', None)
 
+        # Remove 
+        self.del_with_pattern(f"{self.key}_{workflow_id}")
+
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")
@@ -340,6 +355,7 @@ class REDISPortalSession(REDISSession):
         self.keys[str(app_id)] = 0
         self.keys.pop(f"backend_{app_id}", None)
         self.keys.pop(f"url_{app_id}", None)
+        self.del_with_pattern(f"{self.key}_{app_id}")
         self.write_in_redis(timeout)
 
     def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
@@ -369,6 +385,9 @@ class REDISPortalSession(REDISSession):
         # Save all user infos
         self.set_user_infos(backend_id, authentication_datas)
 
+        # Save additional related key for Darwin Session quick verification
+        self.set_in_redis(f"{self.key}_{app_id}", "1", timeout or self.default_timeout)
+
         if password:
             # Encrypt the password with the application id and user login and store it in portal session
             self.setAutologonPassword(app_id, app_name, backend_id, username, password)
@@ -397,6 +416,9 @@ class REDISPortalSession(REDISSession):
         self.keys[f"login_{backend_id}"] = username
         if oauth2_token:
             self.keys[f"oauth2_{backend_id}"] = oauth2_token
+
+        # Save additional related key for Darwin Session quick verification
+        self.set_in_redis(f"{self.key}_{app_id}", "1", timeout or self.default_timeout)
 
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_sso: Unable to write SSO infos in REDIS")
