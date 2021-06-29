@@ -66,7 +66,6 @@ from oauthlib.oauth2 import OAuth2Error
 # Extern modules imports
 from requests_oauthlib import OAuth2Session
 from base64 import b64decode
-import json
 
 # Logger configuration imports
 import logging
@@ -403,7 +402,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
         assert session['scope']
-        return JsonResponse(json.loads(session['scope']))
+        return JsonResponse(session['scope'])
     except Exception as e:
         logger.exception(e)
         return HttpResponse(status=401)
