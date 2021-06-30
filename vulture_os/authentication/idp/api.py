@@ -266,10 +266,11 @@ class IDPApiUserView(View):
                 "error": _("Invalid call")
             }, status=400)
 
-        except NotUniqueError:
+        except NotUniqueError as e:
             return JsonResponse({
                 "status": False,
-                "error": _("User already exist")
+                "error": _("User already exist"),
+                "user_id": str(e)
             }, status=409)
         except UserAuthentication.DoesNotExist:
             return JsonResponse({

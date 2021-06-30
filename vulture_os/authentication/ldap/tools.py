@@ -140,7 +140,7 @@ def create_user(ldap_repository, username, userPassword, attrs, group_dn=False):
 
     try:
         if find_user(ldap_repository, user_dn, ["*"]):
-            raise NotUniqueError()
+            raise NotUniqueError(user_dn)
     except IndexError:
         # User does not exists
         pass
@@ -191,7 +191,8 @@ def update_user(ldap_repository, user_dn, attrs, userPassword):
     dn = old_user['dn']
     del(old_user['dn'])
 
-    attrs.update(old_user)
+    # Add new attributes to old user
+    attrs = dict(old_user, **attrs)
     for k, v in attrs.items():
         if not v:
             attrs[k] = []
