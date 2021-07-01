@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Authentication Access Control views'
 
 from authentication.auth_access_control.form import AuthAccessControlForm
-from authentication.auth_access_control.models import AuthAccessControl
+from authentication.auth_access_control.models import AuthAccessControl, OPERATOR_CHOICES
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponseNotFound
 from django.http import JsonResponse
@@ -33,7 +33,6 @@ import logging
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
-
 
 @require_http_methods(["GET"])
 def auth_access_control_edit(request, object_id=None):
@@ -48,5 +47,6 @@ def auth_access_control_edit(request, object_id=None):
     form = AuthAccessControlForm(None, instance=access_control)
     return render(request, "authentication/access_control/edit.html", {
         "object_id": object_id,
+        "operators": OPERATOR_CHOICES,
         "form": form
     })

@@ -218,18 +218,31 @@ def generate_workflow(workflow):
 
     parent = workflow_policy_id
 
-    user_authentication_id = str(uuid.uuid4())
-    data.append({
-        'id': user_authentication_id,
-        'parent': parent,
-        'data': {
-            'type': 'authentication',
-            'object_id': workflow.authentication.pk if workflow.authentication else None,
-            'name': workflow.authentication.name if workflow.authentication else "No authentication"
-        }
-    })
-
-    parent = user_authentication_id
+    if workflow.authentication != None:
+        user_authentication_id = str(uuid.uuid4())
+        data.append({
+            'id': user_authentication_id,
+            'parent': parent,
+            'data': {
+                'type': 'authentication',
+                'object_id': workflow.authentication.pk,
+                'name': workflow.authentication.name
+            }
+        })
+        parent = user_authentication_id
+    
+    if workflow.authentication_filter != None:
+        user_authentication_filter_id = str(uuid.uuid4())
+        data.append({
+            'id': user_authentication_filter_id,
+            'parent': parent,
+            'data': {
+                'type': 'authentication_filter',
+                'object_id': workflow.authentication_filter.pk,
+                'name': workflow.authentication_filter.name
+            }
+        })
+        parent = user_authentication_filter_id
 
     for acl in workflow.workflowacl_set.filter(before_policy=False):
         parent, tmp, actions = format_acl(acl, parent)

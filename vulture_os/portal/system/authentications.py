@@ -98,29 +98,12 @@ class Authentication(object):
                 return str(backend.id)
         return ""
 
-    def authenticate_sso_acls(self):
+    def authenticate_sso(self):
         # FIXME : ACLs
         backend_list = list(self.workflow.authentication.repositories.all())
         #error, login = None, ""
         for backend in backend_list:
             if self.redis_portal_session.authenticated_backend(backend.id):
-                # The user is authenticated on backend, but he's not necessarily authorized on the app
-                # The ACL is only supported by LDAP
-                if backend.subtype == "LDAP":
-                    # Retrieve needed infos in redis
-                    login = self.redis_portal_session.keys['login_' + str(backend.id)]
-                    app_id = self.redis_portal_session.keys['app_id_' + str(backend.id)]
-                    password = self.redis_portal_session.getAutologonPassword(app_id, str(backend.id), login)
-                    # And try to re-authenticate user to verify credentials and ACLs
-                    try:
-                        backend.authenticate(login, password,  # acls=self.workflow.access_control_list,  # FIXME : Implement LDAP ACL in AccessControl model
-                                             logger=logger)
-                        logger.info("User '{}' successfully re-authenticated on {} for SSO needs"
-                                    .format(login, backend.name))
-                    except Exception as e:
-                        logger.error("Error while trying to re-authenticate user '{}' on '{}' for SSO needs : {}"
-                                     .format(login, backend.name, e))
-                        continue
                 return str(backend.id)
         #if login and error:
         #    raise error

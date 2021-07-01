@@ -15,6 +15,10 @@ var icon_by_type = {
         code: "\uf007",
         color: "#3A444E"
     },
+    authentication_filter: {
+        code: "\uf132",
+        color: "#3A444E"
+    },
     acl: {
         code: "\uf023",
         color: "#3A444E"
@@ -73,6 +77,7 @@ var workflow_vue = new Vue({
         backend_choices: [],
         access_control_choices: [],
         authentication_choices: [],
+        authentication_filter_choices: [],
         waf_policy_choices: [],
 
         workflow: [],
@@ -80,11 +85,14 @@ var workflow_vue = new Vue({
         id_nodes: [],
         jstree: null,
 
+        network: null,
+
         workflow_mode: null,
         frontend_set: false,
         backend_set: false,
         policy_set: false,
         authentication_set: false,
+        authentication_filter_set: false,
 
         last_node_append: null
     },
@@ -107,11 +115,22 @@ var workflow_vue = new Vue({
                     self.frontend_choices = response.frontends;
                     self.backend_choices = response.backends;
                     self.authentication_choices = response.authentications;
+                    self.authentication_filter_choices = response.authentication_filters;
+
+                    for(node of self.workflow) {
+                        switch(node.data.type) {
+                            case "authentication":
+                                self.authentication_set = true
+                                break;
+                            case "authentication_filter":
+                                self.authentication_filter_set = true
+                                break;
+                        }
+                    }
 
                     self.frontend_set = true;
                     self.backend_set = true;
                     self.policy_set = true;
-                    self.authentication_set = true;
                     self.get_dependencies();
                     self.redraw_workflow();
                 }
@@ -161,6 +180,7 @@ var workflow_vue = new Vue({
                         self.backend_choices = response.data.backends;
                         self.access_control_choices = response.data.acls;
                         self.authentication_choices = response.data.authentications;
+                        self.authentication_filter_choices = response.data.authentication_filters;
                         self.waf_policy_choices = response.data.waf_policies;
                     }
 
@@ -244,131 +264,8 @@ var workflow_vue = new Vue({
             return folder;
         },
 
-        init_toolbox_tree(){
+        refresh_jstree(tree_data){
             var self = this;
-
-            var tree_data = [];
-
-            if (!self.frontend_set){
-                var frontends = {}
-                for (var i in self.frontend_choices){
-                    var frontend = self.frontend_choices[i];
-                    frontend.type = "frontend";
-
-                    if (!frontends[frontend.mode])
-                        frontends[frontend.mode] = []
-
-                    frontends[frontend.mode].push({
-                        id: "frontend_"+frontend.id,
-                        text: frontend.name,
-                        data: {
-                            object_id: frontend.id,
-                            listeners: frontend.listeners,
-                            type: 'frontend',
-                            mode: frontend.mode
-                        }
-                    })
-                }
-
-                tree_data.push({
-                    text: "<i class='fa fa-sitemap'>&nbsp;&nbsp;</i>"+gettext('Listeners'),
-                    state: {opened: true},
-                    children: []
-                })
-
-                $.each(frontends, function(key, value){
-                    tree_data[0].children.push({
-                        text: key.toUpperCase(),
-                        children: value,
-                        state: {opened: true}
-                    })
-                })
-
-                tree_data[0].children.push({
-                    id: "add_frontend",
-                    text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
-                })
-            } else {
-                if (!self.backend_set){
-                    var authentications = self.init_folder_structure(self.authentication_choices, "authentication", " ");
-                    var access_controls = self.init_folder_structure(self.access_control_choices, "acl", " ");
-
-                    access_controls.push({
-                        id: "add_access_control",
-                        text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
-                    })
-
-                    tree_data.push({
-                        text: "<i class='fa fa-eye'>&nbsp;&nbsp;</i>"+gettext('ACLS'),
-                        state: {opened: true},
-                        children: access_controls,
-                        icon: "fas fa-universal-access"
-                    })
-
-                    if (!self.policy_set){
-                        var waf_policies = self.init_folder_structure(self.waf_policy_choices, 'waf', " ");
-                        waf_policies.push({
-                            id: "add_defender_policy",
-                            text: "<i class='fa fa-plus'></i>&nbsp;" + gettext('Add')
-                        })
-
-                        waf_policies.unshift({
-                            id: 'no_policy',
-                            text: gettext("No policy"),
-                            data: {
-                                type: 'waf',
-                                object_id: null,
-                                name: gettext('No policy')
-                            }
-                        })
-
-                        tree_data.push({
-                            text: "<img src='"+favicon+"' class='icon-vulture'/>&nbsp;&nbsp;" + gettext('WAF Policies'),
-                            state: {opened: true},
-                            children: waf_policies,
-                            icon: "fas fa-eye"
-                        })
-                    } else {
-                        if (!self.authentication_set){
-                            authentications.push({
-                                id: "add_authentication",
-                                text: `<i class='fa fa-plus'></i>&nbsp;${gettext('Add')}`
-                            })
-    
-                            authentications.unshift({
-                                id: 'no_authentication',
-                                text: gettext('No authentication'),
-                                data: {
-                                    type: "authentication",
-                                    object_id: null,
-                                    name: gettext('No authentication')
-                                }
-                            })
-
-                            tree_data.push({
-                                text: `<i class="fa fa-user">&nbsp;&nbsp;</i>${gettext("Authentication")}`,
-                                state: {opened: true},
-                                children: authentications,
-                                icon: "fa fa-user"
-                            })
-                        } else {
-
-                            var backends = self.init_folder_structure(self.backend_choices, "backend", " ");
-    
-                            backends.push({
-                                id: "add_backend",
-                                text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
-                            })
-                            tree_data.push({
-                                text: "<i class='fa fa-server'>&nbsp;&nbsp;</i>"+gettext('Backends'),
-                                state: {opened: true},
-                                children: backends,
-                                icon: 'fa fa-server'
-                            })
-                        }
-                    }
-                }
-            }
 
             if (self.jstree){
                 $('#toolbox-jstree').jstree('destroy');
@@ -406,7 +303,9 @@ var workflow_vue = new Vue({
                 } else if (item === "add_backend") {
                     window.open(backend_add_uri, '_blank');
                 } else if (item === "add_authentication") {
-                    // TODO: OPEN NEW AUTHENTICATION PANEL
+                    window.open(authentication_add_uri, '_blank');
+                } else if (item === "add_authentication_filter") {
+                    window.open(authentication_filter_add_uri, '_blank');
                 } else {
                     var tree = $(this).jstree();
                     var node = tree.get_node(event.target);
@@ -417,6 +316,184 @@ var workflow_vue = new Vue({
                     }
                 }
             });
+        },
+
+        generate_frontend_tree(){
+            var self = this;
+
+            var frontends = {}
+            for (var i in self.frontend_choices){
+                var frontend = self.frontend_choices[i];
+                frontend.type = "frontend";
+
+                if (!frontends[frontend.mode])
+                    frontends[frontend.mode] = []
+
+                frontends[frontend.mode].push({
+                    id: "frontend_"+frontend.id,
+                    text: frontend.name,
+                    data: {
+                        object_id: frontend.id,
+                        listeners: frontend.listeners,
+                        type: 'frontend',
+                        mode: frontend.mode
+                    }
+                })
+            }
+
+            var data = {
+                text: "<i class='fa fa-sitemap'>&nbsp;&nbsp;</i>"+gettext('Listeners'),
+                state: {opened: true},
+                children: []
+            }
+
+            $.each(frontends, function(key, value){
+                data.children.push({
+                    text: key.toUpperCase(),
+                    children: value,
+                    state: {opened: true}
+                })
+            })
+
+            data.children.push({
+                id: "add_frontend",
+                text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
+            })
+
+            return data;
+        },
+
+        generate_acl_tree(){
+            var self = this;
+
+            var access_controls = self.init_folder_structure(self.access_control_choices, "acl", " ");
+
+            access_controls.push({
+                id: "add_access_control",
+                text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
+            })
+
+            return {
+                text: "<i class='fa fa-eye'>&nbsp;&nbsp;</i>"+gettext('ACLS'),
+                state: {opened: true},
+                children: access_controls,
+                icon: "fas fa-universal-access"
+            }
+        },
+
+        generate_waf_policies_tree(){
+            var self = this;
+
+            var waf_policies = self.init_folder_structure(self.waf_policy_choices, 'waf', " ");
+
+            waf_policies.push({
+                id: "add_defender_policy",
+                text: "<i class='fa fa-plus'></i>&nbsp;" + gettext('Add')
+            })
+
+            waf_policies.unshift({
+                id: 'no_policy',
+                text: gettext("No policy"),
+                data: {
+                    type: 'waf',
+                    object_id: null,
+                    name: gettext('No policy')
+                }
+            })
+
+            return {
+                text: "<img src='"+favicon+"' class='icon-vulture'/>&nbsp;&nbsp;" + gettext('WAF Policies'),
+                state: {opened: true},
+                children: waf_policies,
+                icon: "fas fa-eye"
+            }
+        },
+
+        generate_authentication_tree(){
+            var self = this;
+
+            var authentications = self.init_folder_structure(self.authentication_choices, "authentication", " ");
+            authentications.push({
+                id: "add_authentication",
+                text: `<i class='fa fa-plus'></i>&nbsp;${gettext('Add')}`
+            })
+
+            return {
+                text: `<i class="fa fa-user">&nbsp;&nbsp;</i>${gettext("Authentication")}`,
+                state: {opened: true},
+                children: authentications,
+                icon: "fa fa-user"
+            }
+        },
+
+        generate_authentication_filter_tree(){
+            var self = this;
+
+            var authentication_filters = self.init_folder_structure(self.authentication_filter_choices, "authentication_filter", " ");
+            authentication_filters.push({
+                id: "add_authentication_filter",
+                text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
+            })
+            return {
+                text: "<i class='fa fa-shield'>&nbsp;&nbsp;</i>"+gettext('Authentication Scope Filters'),
+                state: {opened: true},
+                children: authentication_filters,
+                icon: 'fa fa-shield'
+            }
+        },
+
+        generate_backend_tree(){
+            var self = this;
+
+            var backends = self.init_folder_structure(self.backend_choices, "backend", " ");
+            backends.push({
+                id: "add_backend",
+                text: "<i class='fa fa-plus'></i>&nbsp;" + gettext("Add")
+            })
+            return {
+                text: "<i class='fa fa-server'>&nbsp;&nbsp;</i>"+gettext('Backends'),
+                state: {opened: true},
+                children: backends,
+                icon: 'fa fa-server'
+            }
+        },
+
+        init_toolbox_tree(){
+            var self = this;
+
+            var tree_data = [];
+
+            if (!self.frontend_set){
+                
+                tree_data.push(this.generate_frontend_tree());
+            
+            } else if (!self.backend_set){
+
+                tree_data.push(this.generate_acl_tree());
+
+                if (!self.policy_set){
+                    
+                    tree_data.push(this.generate_waf_policies_tree());
+                    
+                } else {
+                    if (!self.authentication_set){
+                        
+                        tree_data.push(this.generate_authentication_tree());
+                    
+                    } else {
+                        if(!self.authentication_filter_set) {
+                            
+                            tree_data.push(this.generate_authentication_filter_tree());
+                        
+                        }
+                    }
+
+                    tree_data.push(this.generate_backend_tree());
+
+                }
+            }
+
+            this.refresh_jstree(tree_data);
         },
 
         check_action(action_satisfy, action_not_satisfy, redirect_url_satisfy, redirect_url_not_satisfy){
@@ -676,12 +753,21 @@ var workflow_vue = new Vue({
                     self.get_dependencies();
                     self.redraw_workflow();
                     break;
-                
+
                 case "authentication":
                     tmp.label = node.data.name;
                     self.workflow.push(tmp);
                     self.last_node_append = tmp.id;
                     self.authentication_set = true;
+                    self.get_dependencies();
+                    self.redraw_workflow();
+                    break;
+
+                case "authentication_filter":
+                    tmp.label = node.data.name;
+                    self.workflow.push(tmp);
+                    self.last_node_append = tmp.id;
+                    self.authentication_filter_set = true;
                     self.get_dependencies();
                     self.redraw_workflow();
                     break;
@@ -743,7 +829,7 @@ var workflow_vue = new Vue({
                     case "frontend":
                         for (var i in self.frontend_choices){
                             var f = self.frontend_choices[i];
-                            
+
                             if (f.id === step.data.object_id){
                                 var label = ["\n"];
                                 for (var j in f.listeners){
@@ -826,6 +912,7 @@ var workflow_vue = new Vue({
                     case "authentication":
                         for (let auth of self.authentication_choices){
                             if (auth.id === step.data.object_id){
+                                step.data.name = auth.name;
                                 for (let repo of auth.repositories){
                                     let image = icon_by_type.repo[repo.subtype]
                                     if (!image)
@@ -852,6 +939,10 @@ var workflow_vue = new Vue({
                             }
                         }
 
+                        if (!tmp.label)
+                            tmp.label = step.data.name
+                        break;
+                    case "authentication_filter":
                         if (!tmp.label)
                             tmp.label = step.data.name
                         break;
@@ -1073,6 +1164,81 @@ var workflow_vue = new Vue({
                                     }
                                 })
                                 break;
+                            case "authentication":
+                                $.confirm({
+                                    title: gettext('Authentication Portal'),
+                                    columnClass: "medium",
+                                    content: form_authentication(self.authentication_choices, node.data.object_id),
+                                    buttons: {
+                                        formSubmit: {
+                                            text: gettext('Save'),
+                                            btnClass: 'btn-blue',
+                                            action: function(){
+                                                var authentication_id = this.$content.find('.authentication').val();
+                                                if(authentication_id !== '') {
+                                                    node.data.object_id = authentication_id;
+                                                    for (choice of self.authentication_choices){
+                                                        if (choice.id === authentication_id){
+                                                            node.label = choice.name;
+                                                            node.data.name = choice.name;
+                                                        }
+                                                    }
+                                                }
+                                                else {
+                                                    node.data.object_id = null;
+                                                    node.label = "No authentication";
+                                                    node.data.name = "No authentication";
+                                                }
+
+                                                var index_authentication = self.get_node(data.id, true);
+                                                self.workflow[index_authentication] = node;
+                                                self.redraw_workflow();
+                                            }
+                                        },
+                                        cancel: function(){
+                                            return true;
+                                        }
+                                    }
+                                })
+                                break;
+                            case "authentication_filter":
+                                $.confirm({
+                                    title: gettext('Authentication Filter Scopes'),
+                                    columnClass: "medium",
+                                    content: form_authentication_filter(self.authentication_filter_choices, node.data.object_id),
+                                    buttons: {
+                                        formSubmit: {
+                                            text: gettext('Save'),
+                                            btnClass: 'btn-blue',
+                                            action: function(){
+                                                var authentication_filter_id = this.$content.find('.authentication_filter').val();
+                                                if(authentication_filter_id !== '') {
+                                                    node.data.object_id = authentication_filter_id;
+                                                    for (choice of self.authentication_choices){
+                                                        if (choice.id === authentication_filter_id){
+                                                            node.label = choice.name;
+                                                            node.data.name = choice.name;
+                                                        }
+                                                    }
+                                                }
+                                                else {
+                                                    node.data.object_id = null;
+                                                    node.label = "No authentication";
+                                                    node.data.name = "No authentication";
+                                                }
+
+
+                                                var index_authentication_filter = self.get_node(data.id, true);
+                                                self.workflow[index_authentication_filter] = node;
+                                                self.redraw_workflow();
+                                            }
+                                        },
+                                        cancel: function(){
+                                            return true;
+                                        }
+                                    }
+                                })
+                                break;
                             case "backend":
                                 $.confirm({
                                     title: gettext('Applications'),
@@ -1139,7 +1305,11 @@ var workflow_vue = new Vue({
                                 break;
                             case "authentication":
                                 self.backend_set = false;
-                                self.authentication_set = false;
+                                self.authentication_filter_set = false;
+                                break;
+                            case "authentication_filter":
+                                self.backend_set = false;
+                                self.authentication_filter_set = false;
                                 break;
                             case "action":
                                 self.error(gettext("An action can not be deleted. Delete the Access Control instead."))
@@ -1165,6 +1335,11 @@ var workflow_vue = new Vue({
                                 self.backend_set = false;
                             else if (node.data.type === "waf")
                                 self.policy_set = false;
+                            else if (node.data.type === "authentication"){
+                                self.authentication_set = false;
+                            }
+                            else if (node.data.type === "authentication_filter")
+                                self.authentication_filter_set = false;
 
                             self.workflow.splice(indice, 1);
                         }
@@ -1176,7 +1351,7 @@ var workflow_vue = new Vue({
                 }
             }
 
-            var network = new vis.Network(container, data, options);
+            self.network = new vis.Network(container, data, options);
             setTimeout(function(){
                 self.init_toolbox_tree();
             }, 50)

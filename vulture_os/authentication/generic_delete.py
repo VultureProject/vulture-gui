@@ -237,6 +237,9 @@ class DeleteAuthAccessControl(DeleteView):
     redirect_url = "/portal/authentication/acl/"
     delete_url = "/portal/authentication/acl/delete/"
 
+    def used_by(self, obj):
+        return [str(w) for w in Workflow.objects.filter(authentication_filter=obj)]
+
 
 class DeletePortalTemplate(DeleteView):
     menu_name = _("Authentication -> Portal Template -> Delete")
