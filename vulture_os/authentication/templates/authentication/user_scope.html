@@ -17,9 +17,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                      <a class="btn btn-flat btn-primary" href="{% url 'portal.user_scope.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                      <a class="btn btn-flat btn-primary" href="{% url 'authentication.user_scope.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Authentication Portal" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "User's scope" %}</h1>
                 </div>
                 <div class="panel-body">
                   <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="user_scope_list">
@@ -129,7 +129,7 @@
       /* Events binding to edit a template */
       $(nRow).on('click', function(e){
           var id = aData['id'];
-          window.location.href = "{% url 'portal.user_scope.edit' %}" + id;
+          window.location.href = "{% url 'authentication.user_scope.edit' %}" + id;
       });
     } // fnCreatedRow: function
   }); // var user_scope_table = $("#user_scope_list").dataTable

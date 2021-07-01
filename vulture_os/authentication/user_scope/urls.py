@@ -36,28 +36,28 @@ urlpatterns = [
     # List view
     path('authentication/user_scope/',
          ListUserScope.as_view(),
-         name="portal.user_scope.list"),
+         name="authentication.user_scope.list"),
     # Edit view
     re_path('^authentication/user_scope/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
             views.user_scope_edit,
-            name="portal.user_scope.edit"),
+            name="authentication.user_scope.edit"),
     # Clone view
     re_path('^authentication/user_scope/clone/(?P<object_id>[A-Fa-f0-9]+)$',
             views.user_scope_clone,
-            name="portal.user_scope.clone"),
+            name="authentication.user_scope.clone"),
     # Delete view
     re_path('^authentication/user_scope/delete/(?P<object_id>[A-Fa-f0-9]+)$',
             DeleteUserScope.as_view(),
-            name="portal.user_scope.delete"),
+            name="authentication.user_scope.delete"),
 
 
     path('api/v1/authentication/user_scope/',
         api.UserScopeApi.as_view(),
-        name="api.portal.user_scope"
+        name="api.authentication.user_scope"
     ),
 
     path('api/v1/authentication/user_scope/<str:object_id>/',
         api.UserScopeApi.as_view(),
-        name="api.portal.user_scope"
+        name="api.authentication.user_scope"
     )
 ]
