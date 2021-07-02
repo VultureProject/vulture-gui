@@ -113,9 +113,12 @@ class SELFService(object):
                         'password_expired': False,
                         'account_locked': (not authentication_results.is_active),
                         'user_email': authentication_results.email
-                    },
-                    'backend': repo
+                    }
                 }
+            else:
+                result = authentication_results
+
+            result['backend'] = repo
 
             logger.debug("AUTH::set_authentication_params: Authentication results : {}".format(authentication_results))
             return result
@@ -125,15 +128,11 @@ class SELFService(object):
 
     def authenticate_on_backend(self, backend, username, password):
 
-        if backend.subtype == "internal":
-            authentication_results = self.set_authentication_params(backend,
-                                                                    backend.get_backend().authenticate(username,
-                                                                                                       password),
-                                                                    username)
-        else:
-            authentication_results = backend.get_client().authenticate(username, password,
-                                                                       #acls=self.application.access_mode, # TODO
-                                                                       )
+        authentication_results = self.set_authentication_params(backend,
+                                                                backend.authenticate(username, password,
+                                                                   #acls=self.application.access_mode, # TODO
+                                                                ),
+                                                                username)
 
         logger.info(
             "AUTH::authenticate: User '{}' successfully authenticated on backend '{}'".format(username, backend))
@@ -197,8 +196,14 @@ class SELFService(object):
     def main_response(self, request, app_list, error=None):
         return self_message_main(request, self.application, self.token_name, app_list, self.username, error)
 
-    def message_response(self, message):
-        return self_message_response(self.workflow.authentication, message, self.main_url)
+    def message_response(self, request, message):
+        # If IDP => user can come from /authorize, so get redirect_url
+        redirect_url = request.GET.get('redirect_url')
+        if not self.workflow.authentication.enable_external and not redirect_url:
+            redirect_url = self.main_url
+        # No go-back for IDP portal
+        return self_message_response(self.workflow.authentication, message,
+                                     redirect_url)
 
     def ask_credentials_response(self, request, action, error_msg, **kwargs):
         return self_ask_passwords(request,

@@ -43,6 +43,7 @@ from authentication.user_portal.models import UserAuthentication
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.portal_template.models import PortalTemplate, TemplateImage
 from authentication.totp_profiles.models import TOTPProfile
+from authentication.user_scope.models import UserScope
 from workflow.models import Workflow
 
 # Required exceptions imports
@@ -128,6 +129,9 @@ class DeleteLDAPRepository(DeleteView):
     redirect_url = "/authentication/ldap/"
     delete_url = "/authentication/ldap/delete/"
 
+    def used_by(self, object):
+        return ["Portal " + w.name for w in UserAuthentication.objects.filter(repositories=object)]
+
     # get, post and used_by methods herited from mother class
 
 
@@ -155,11 +159,17 @@ class DeleteUserAuthentication(DeleteView):
     redirect_url = "/portal/user_authentication/"
     delete_url = "/portal/user_authentication/delete/"
 
-    # FIXME : Add verif when Workflow will use this object
     def used_by(self, object):
-        return [str(w) for w in Workflow.objects.filter(authentication=object)]
+        linked_objects = ["Workflow " + w.name for w in Workflow.objects.filter(authentication=object)]
+        if object.enable_external:
+            linked_connector = OpenIDRepository.objects.get(client_id=object.oauth_client_id,
+                                                            client_secret=object.oauth_client_secret,
+                                                            provider="openid")
+            linked_objects += ["Portal " + portal.name for portal in UserAuthentication.objects.filter(repositories=linked_connector)]
+        return linked_objects
 
     def post(self, request, object_id, **kwargs):
+        external_listener = None
         if hasattr(request, "JSON"):
             confirm = request.JSON.get('confirm')
         else:
@@ -175,12 +185,16 @@ class DeleteUserAuthentication(DeleteView):
             if obj_inst.enable_external:
                 for node in obj_inst.external_listener.get_nodes():
                     node.api_request("services.haproxy.haproxy.delete_conf", obj_inst.get_base_filename())
+                external_listener = obj_inst.external_listener
 
             # Destroy dereferenced objects first
             obj_inst.delete()
             OpenIDRepository.objects.filter(client_id=obj_inst.oauth_client_id,
                                             client_secret=obj_inst.oauth_client_secret,
                                             provider="openid").delete()
+
+            if external_listener:
+                external_listener.reload_conf()
 
         if kwargs.get('api'):
             return JsonResponse({"status": True})
@@ -211,6 +225,9 @@ class DeleteOpenIDRepository(DeleteView):
     redirect_url = "/authentication/openid/"
     delete_url = "/authentication/openid/delete/"
 
+    def used_by(self, object):
+        return ["Portal " + portal.name for portal in UserAuthentication.objects.filter(repositories=object)]
+
     # get, post and used_by methods herited from mother class
 
 
@@ -219,6 +236,9 @@ class DeleteAuthAccessControl(DeleteView):
     obj = AuthAccessControl
     redirect_url = "/portal/authentication/acl/"
     delete_url = "/portal/authentication/acl/delete/"
+
+    def used_by(self, obj):
+        return [str(w) for w in Workflow.objects.filter(authentication_filter=obj)]
 
 
 class DeletePortalTemplate(DeleteView):
@@ -232,3 +252,14 @@ class DeletePortalImage(DeleteView):
     obj = TemplateImage
     redirect_url = "/portal/template/"
     delete_url = "/portal/images/delete/"
+
+
+class DeleteUserScope(DeleteView):
+    menu_name = _("Authentication -> User's Scope -> Delete")
+    obj = UserScope
+    redirect_url = "/authentication/user_scope/"
+    delete_url = "/authentication/user_scope/delete/"
+
+    def used_by(self, object):
+        return [str(p) for p in object.userauthentication_set.all()]+[str(c) for c in object.openidrepository_set.all()]
+

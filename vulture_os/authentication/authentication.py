@@ -81,6 +81,11 @@ class Authentication:
                     'url': '/authentication/openid/'
                 },
                 {
+                    'link': 'user_scope',
+                    'text': _("User's Scope"),
+                    'url': '/authentication/user_scope/'
+                },
+                {
                     'link': 'learning_profiles',
                     'text': _('SSO Profiles'),
                     'url': '/authentication/learning_profiles/'

@@ -32,6 +32,7 @@ from djongo import models
 
 # Django project imports
 from authentication.base_repository import BaseRepository
+from authentication.user_scope.models import UserScope
 from toolkit.auth.authy_client import AuthyClient
 from toolkit.auth.vulturemail_client import VultureMailClient
 from toolkit.auth.totp_client import TOTPClient
@@ -153,6 +154,13 @@ class OpenIDRepository(BaseRepository):
         verbose_name=_("Verify certificate"),
         help_text=_("If the IDP uses auto-signed certificate - disable this option")
     )
+    user_scope = models.ForeignKey(
+        to=UserScope,
+        on_delete=models.PROTECT,
+        null=True,
+        verbose_name=_("User's scope"),
+        help_text=_("Scope of user to construct")
+    )
 
     def __str__(self):
         return "{} ({})".format(self.name, self.str_provider())
@@ -170,7 +178,11 @@ class OpenIDRepository(BaseRepository):
         return provider_type
 
     def to_dict(self):
-        return model_to_dict(self)
+        ret = model_to_dict(self)
+        # model_to_dict will not return a list if the field only contains 1 value
+        if not isinstance(ret['scopes'], list):
+            ret['scopes'] = [ret['scopes']]
+        return ret
 
     def to_template(self):
         """ Returns the attributes of the class """
@@ -257,13 +269,8 @@ class OpenIDRepository(BaseRepository):
         response = oauth2_session.get(self.userinfo_endpoint, verify=self.verify_certificate)
         response.raise_for_status()
         result = response.json()
-        # Enrich user infos with "name" attribute if not present, it's used by caller
-        # TODO
-        # Not needed for gitlab
-        #if not result.get('name'):
-            ## EXAMPLE
-            ##if self.provider == "google":
-            ##    result['name'] = result['user']
+        if self.user_scope:
+            return self.user_scope.get_user_scope(result, {})
         return result
 
     @property

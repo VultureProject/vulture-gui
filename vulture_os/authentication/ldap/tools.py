@@ -140,7 +140,7 @@ def create_user(ldap_repository, username, userPassword, attrs, group_dn=False):
 
     try:
         if find_user(ldap_repository, user_dn, ["*"]):
-            raise NotUniqueError()
+            raise NotUniqueError(user_dn)
     except IndexError:
         # User does not exists
         pass
@@ -191,7 +191,8 @@ def update_user(ldap_repository, user_dn, attrs, userPassword):
     dn = old_user['dn']
     del(old_user['dn'])
 
-    attrs.update(old_user)
+    # Add new attributes to old user
+    attrs = dict(old_user, **attrs)
     for k, v in attrs.items():
         if not v:
             attrs[k] = []
@@ -207,9 +208,12 @@ def delete_user(ldap_repository, user_dn):
     group_dn = f"{ldap_repository.group_dn},{ldap_repository.base_dn}"   
     client = ldap_repository.get_client()
 
-    old_user = find_user(ldap_repository, user_dn, ["*"])
-    if not old_user:
-        raise UserNotExistError()
+    try:
+        old_user = find_user(ldap_repository, user_dn, ["*"])
+        if not old_user:
+            raise UserNotExistError()
+    except IndexError:
+            raise UserNotExistError()
 
     groups = [find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(user_dn)]
     r = client.delete_user(user_dn, groups)

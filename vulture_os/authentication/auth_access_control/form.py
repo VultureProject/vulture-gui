@@ -54,8 +54,8 @@ class AuthAccessControlForm(forms.ModelForm):
 
 class AuthAccessControlRuleForm(forms.Form):
 
-    variable_name = forms.SlugField(
-        required=True
+    variable_name = forms.CharField(
+        required=True,
     )
 
     operator = forms.ChoiceField(
@@ -63,6 +63,18 @@ class AuthAccessControlRuleForm(forms.Form):
         required=True
     )
 
-    value = forms.SlugField(
-        required=True
+    value = forms.CharField(
+        required=False,
     )
+
+    def clean(self):
+        """ Replace all spaces by underscores to prevent bugs later """
+        cleaned_data = super().clean()
+        logger.debug(f"cleaned data is {cleaned_data}")
+        operator = self.cleaned_data.get('operator')
+        value = self.cleaned_data.get('value')
+
+        if operator not in ["exists", "not_exists"]:
+            if not value:
+                self.add_error("value", "a value is mandatory for this kind of operator")
+

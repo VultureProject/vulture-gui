@@ -270,7 +270,9 @@ class PortalTemplate(models.Model):
         return str(self.name)
 
     def to_dict(self):
-        return model_to_dict(self)
+        data = model_to_dict(self)
+        data['id'] = str(self.pk)
+        return data
 
     def to_template(self):
         return self.to_dict()

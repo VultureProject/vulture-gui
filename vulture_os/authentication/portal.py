@@ -56,7 +56,7 @@ class Portal:
                 },
                 {
                     "link": "authentication_access_control",
-                    "text": _("Access Control"),
+                    "text": _("Authentication Filters"),
                     "url": "/portal/authentication/acl/"
                 },
                 {

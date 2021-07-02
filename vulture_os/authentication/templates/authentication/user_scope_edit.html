@@ -1,0 +1,264 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="user_scope_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-12">
+              {% if form.non_field_errors or save_error %}
+              <div class="panel">
+                <div class="panel-body">
+                  {# Print form errors correctly #}
+                  {% if form.non_field_errors %}
+                    <div class="alert alert-danger alert-dismissible">
+                      <h4><i class="icon fa fa-ban"></i> Form errors </h4>
+                      <div class="tab-content no-padding">
+                        {{ form.non_field_errors|safe }}
+                      </div>
+                    </div>
+                  {% endif %}
+                  {# If there is save/configuration errors #}
+                  {% if save_error %}
+                    <div class="alert alert-danger alert-dismissible">
+                      <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                        <li class="nav-item"><a href="#tab_2" data-toggle="tab">Advanced informations</a></li>
+                        <li class="nav-item active"><a href="#tab_1" data-toggle="tab">Message</a></li>
+                        <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
+                      </ul>
+                      <div class="tab-content no-padding">
+                        <div class="tab-pane active" id="tab_1">
+                          <pre class="console-type">{{ save_error.0 }}</pre>
+                        </div>
+                        <div class="tab-pane" id="tab_2">
+                          <pre class="console-type">{{ save_error.1 }}</pre>
+                        </div>
+                      </div>
+                    </div> <!-- /.alert -->
+                  {% endif %}
+                </div> <!-- /.box-body -->
+              </div> <!-- /.box -->
+              {% endif %}
+              <div class="panel">
+                <div class="panel-header with-border">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "User's Scope edition" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <div class="nav-tabs-custom nav-tabs-no-margin">
+                    <ul class="nav nav-tabs">
+                      <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Main settings" %}</a></li>
+                    </ul>
+                    <div class="tab-content">
+                      </br>
+                      <div class="tab-pane active" id="tab_general">
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.name.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.name}}
+                                {{form.name.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.repo_attributes.label}}</label><br>
+                              <div class="col-sm-12">
+                                <table id="repo_attributes_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
+                                  <tbody id="repo_attributes_table_body">
+                                    {% for r in repo_attributes %}
+                                      <tr>
+                                        <td>IF</td>
+                                        <td colspan=2>{{r.condition_var_kind}}</td>
+                                        <td colspan=2>{{r.condition_var_name}}</td>
+                                        <td colspan=2>{{r.condition_criterion}}</td>
+                                        <td colspan=2>{{r.condition_match}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>THEN </td>
+                                        <td>{{r.assignator}}</td>
+                                        <td>KEY</td>
+                                        <td>{{r.action_var_name}}</td>
+                                        <td>WITH VALUE FROM</td>
+                                        <td>{{r.action_var_kind}}</td>
+                                        <td>NAMED</td>
+                                        <td>{{r.action_var}}</td>
+                                        <td style='text-align:center'><a class='btnDelete_scope'><i style='color:grey' class='fas fa-trash-alt'></i></a></td>
+                                      </tr>
+                                    {% endfor %}
+                                  </tbody>
+                                </table>
+                                <button class="addlink addplus" id="add_repo_attribute" type="button">{% trans "Add an Entry" %}</button>
+                                {{ form.repo_attributes.errors|safe }}
+                                <input id="repo_attributes" name="repo_attributes" value="" type="hidden">
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                      </div> <!-- /.tab-pane -->
+                    </div> <!-- /.tab-content -->
+                  </div> <!-- /.nav-tabs-custom -->
+                </div> <!-- /.box-body -->
+                <div class="panel-footer">
+                  <a type="button" href="{% url 'authentication.user_scope.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
+                  <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Save" %}</button>
+                </div> <!-- /.box-footer -->
+              </div> <!-- /.box -->
+            </div>
+          </div>
+        </form>
+      </div> <!-- /.col-md-12 -->
+    </div> <!-- /.row -->
+</section> <!-- /.content -->
+
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  /* Initialize ClipboardJS */
+  var clipboard = new ClipboardJS('.btn');
+  clipboard.on('success', function(e) {
+      showTooltip(e.trigger,'Copied!');
+      console.log(e);
+  });
+  clipboard.on('error', function(e) {
+      console.error(e);
+  });
+
+  /* Switchery mandatory code */
+  var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+    elems.forEach(function(html) {
+    var switchery = new Switchery(html, {
+      'color': '#FA9834',
+    });
+  });
+
+  function handle_form_errors(data){
+    if (typeof(data['form_errors']) !== 'undefined'){
+      $('.errorlist').remove();
+      $.each(data['form_errors'], function(field_name, error_list){
+        field_selector = $('#id_'+field_name);
+        var ul = $('<ul/>').insertAfter(field_selector);
+        $.each(error_list, function(idx, err_msg){
+          console.log(err_msg);
+          var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
+          var group = $('<span/>').text(err_msg).appendTo(li);
+        });
+      });
+    }
+  }
+
+  function get_repo_attrs() {
+    let repo_attrs = new Array();
+    $('#repo_attributes_table tbody tr').each(function(index, tr) {
+        // Loop over select and inputs or the current td
+        $(tr).find('select,input').each(function(i, td) {
+          name = td.name;
+          value = td.value;
+          if( index%2 == 0 && i == 0 )
+            repo_attrs.push({});
+          repo_attrs[(index-(index%2))/2][name] = value;
+        });
+    });
+    return repo_attrs;
+  }
+
+
+  function toggle_condition_var_kind() {
+    var condition_var_kind = $(this).val();
+    var tr = $(this).parent().parent();
+    var condition_var_name = tr.find("#id_condition_var_name:first");
+    var condition_criterion = tr.find("#id_condition_criterion:first");
+    var condition_match = tr.find("#id_condition_match:first");
+    if ( condition_var_kind == "always" ) {
+      condition_var_name.prop("disabled", true);
+      condition_criterion.prop("disabled", true);
+      condition_match.prop("disabled", true);
+      condition_var_name.val("1");
+      condition_criterion.val("equals");
+      condition_match.val("1");
+    } else {
+      condition_var_name.prop("disabled", false);
+      condition_criterion.prop("disabled", false);
+      condition_match.prop("disabled", false);
+    }
+  }
+
+  /* All events to refresh (re-apply) after a table is modified */
+  function refresh_table_events() {
+
+    /* Function used to delete an object .btnDelete */
+    $('.btnDelete').on('click', function(e) {
+      $(this).parent().parent().remove();
+    });
+    /* Function used to delete a double ligne scope entry table */
+    $('.btnDelete_scope').on('click', function(e) {
+      // Firstly remove previous line
+      $(this).parent().parent().prev().remove();
+      // Then current line
+      $(this).parent().parent().remove();
+    });
+    /* Re-initialize select2 objects */
+    /* Does not works with same elements ID ... */
+    Array.prototype.slice.call(document.querySelectorAll('.select2')).forEach(function(html) {
+      try {
+        $(html).select2();
+      } catch(e) { ; }
+    });
+
+    /* If chosen choice is Always, disable first line options */
+    $('.condition-var-kind').on("change", toggle_condition_var_kind);
+  }
+
+  /* Initialize all custom fields */
+  refresh_table_events();
+
+  /* Add default RepoAttributeForm to repo_attributes_table */
+  $("#add_repo_attribute").on("click", function(e) {
+    $('#repo_attributes_table_body').append(`<tr><td>IF</td><td colspan=2>{{repo_attribute_form.condition_var_kind}}</td><td colspan=2>{{repo_attribute_form.condition_var_name}}</td><td colspan=2>{{repo_attribute_form.condition_criterion}}</td><td colspan=2>{{repo_attribute_form.condition_match}}</td></tr><tr><td>THEN </td><td>{{repo_attribute_form.assignator}}</td><td>KEY</td><td>{{repo_attribute_form.action_var_name}}</td><td>WITH VALUE FROM</td><td>{{repo_attribute_form.action_var_kind}}</td><td>NAMED</td><td>{{repo_attribute_form.action_var}}</td><td style='text-align:center'><a class='btnDelete_scope'><i style='color:grey' class='fas fa-trash-alt'></i></a></td></tr>`);
+    refresh_table_events();
+  });
+
+  /* Convert repo_attributes table to json */
+  $('#user_scope_edit_form').submit(function(event) {
+    $('#repo_attributes').val(JSON.stringify(get_repo_attrs()));
+  });
+
+
+  /* Initialize select2 objects */
+  $('.select2').select2();
+
+//}); // end of function()
+
+{% endblock %}

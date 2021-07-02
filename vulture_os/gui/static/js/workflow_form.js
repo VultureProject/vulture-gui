@@ -211,3 +211,49 @@ function form_acl(mode, edit, acls_list, acl_id, action_satisfy, redirect_url_sa
 
     return form;
 }
+
+function form_authentication(authentication_choices, authentication_id){
+    var form = `<form action="" class="authentication-edit">
+        <div class="row">
+            <div class="col-md-12 form-group">
+                <label>${gettext('Authentication Portal')}</label>
+                <select class="form-control authentication">`;
+
+    var authentication_choice = {}
+    for (var i in authentication_choices)
+        authentication_choice[authentication_choices[i].id] = authentication_choices[i].name
+
+    $.each(authentication_choice, function(key, val){
+        var selected = "";
+        if (parseInt(key) === authentication_id)
+            selected = "selected='selected'";
+
+        form += `<option ${selected} value='${key}'>${val}</option>`
+    })
+    form += "</select></div></div></div></form>";
+
+    return form;
+}
+
+function form_authentication_filter(authentication_filter_choices, authentication_filter_id){
+    form = `<form action="" class="authentication_filter-edit">
+    <div class="row">
+    <div class="col-md-12 form-group">
+    <label>${gettext('Authentication Scope Filter')}</label>
+    <select class="form-control authentication_filter">`;
+    
+    var authentication_filter_choice = {}
+    for (var i in authentication_filter_choices)
+    authentication_filter_choice[authentication_filter_choices[i].id] = authentication_filter_choices[i].name
+
+    $.each(authentication_filter_choice, function(key, val){
+        var selected = "";
+        if (parseInt(key) === authentication_filter_id)
+        selected = "selected='selected'";
+        
+        form += `<option ${selected} value='${key}'>${val}</option>`
+    })
+    form += "</select></div></div></div></form>";
+    
+    return form;
+}

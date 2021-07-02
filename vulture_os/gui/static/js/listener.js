@@ -461,11 +461,25 @@ $(function() {
     show_darwin_mode(policy);
   }).trigger('change');
 
-  $('#id_filebeat_module').on("change", function(e) {
-    var module = $(this).val();
+  function refresh_filebeat_module() {
+    var module = $("#id_filebeat_module").val();
     $('#id_filebeat_config').text(filebeat_config[module]);
-  }).trigger('change');
+  }
 
+  function refresh_filebeat_ruleset(module) {
+    if ($("#id_ruleset option[value='beat_" + module + "']").length > 0) {
+      $('#id_ruleset').val("beat_" + module).trigger('change');
+    } else {
+      $('#id_ruleset').val('generic_json').trigger('change');
+    }
+  }
+
+  $('#id_filebeat_module').on("change", function(e) {
+    refresh_filebeat_module();
+    // Automatically select parser if present
+    refresh_filebeat_ruleset($(this).val());
+  });
+  refresh_filebeat_module();
 
   /* Show log_condition_failure depending on mode and ruleset */
   function show_log_condition_failure() {
