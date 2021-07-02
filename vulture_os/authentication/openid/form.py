@@ -32,6 +32,7 @@ from authentication.user_scope.models import UserScope
 
 # Extern modules imports
 from re import match as re_match
+import json
 
 # Required exceptions imports
 from django.forms import ValidationError
@@ -80,10 +81,10 @@ class OpenIDRepositoryForm(ModelForm):
         return self.cleaned_data['name'].replace(' ', '_')
 
     def clean_scopes(self):
-        scopes = self.cleaned_data.get('scopes')
+        scopes = self.cleaned_data.get('scopes') or []
         if scopes:
-            if isinstance(scopes, list):
-                return [i.replace(" ", "") for i in scopes]
-            else:
-                return [i.replace(" ", "") for i in scopes.split(',')]
-        return []
+            try:
+                scopes = json.loads(scopes.replace("'",'"'))
+            except json.JSONDecodeError:
+                scopes = [i.replace(" ", "") for i in scopes.split(',')]
+        return scopes

@@ -98,29 +98,12 @@ class Authentication(object):
                 return str(backend.id)
         return ""
 
-    def authenticate_sso_acls(self):
+    def authenticate_sso(self):
         # FIXME : ACLs
         backend_list = list(self.workflow.authentication.repositories.all())
         #error, login = None, ""
         for backend in backend_list:
             if self.redis_portal_session.authenticated_backend(backend.id):
-                # The user is authenticated on backend, but he's not necessarily authorized on the app
-                # The ACL is only supported by LDAP
-                if backend.subtype == "LDAP":
-                    # Retrieve needed infos in redis
-                    login = self.redis_portal_session.keys['login_' + str(backend.id)]
-                    app_id = self.redis_portal_session.keys['app_id_' + str(backend.id)]
-                    password = self.redis_portal_session.getAutologonPassword(app_id, str(backend.id), login)
-                    # And try to re-authenticate user to verify credentials and ACLs
-                    try:
-                        backend.authenticate(login, password,  # acls=self.workflow.access_control_list,  # FIXME : Implement LDAP ACL in AccessControl model
-                                             logger=logger)
-                        logger.info("User '{}' successfully re-authenticated on {} for SSO needs"
-                                    .format(login, backend.name))
-                    except Exception as e:
-                        logger.error("Error while trying to re-authenticate user '{}' on '{}' for SSO needs : {}"
-                                     .format(login, backend.name, e))
-                        continue
                 return str(backend.id)
         #if login and error:
         #    raise error
@@ -207,24 +190,36 @@ class Authentication(object):
         return portal_cookie, self.oauth2_token
 
     def register_sso(self, backend_id):
+        oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
+
         username = self.redis_portal_session.keys['login_' + backend_id]
         self.oauth2_token = self.redis_portal_session.keys['oauth2_' + backend_id]
+        # Get current user_infos for this backend
+        oauth2_scope = self.redis_portal_session.get_user_infos(backend_id)
+
         self.redis_oauth2_session = REDISOauth2Session(self.redis_portal_session.handler, "oauth2_" + self.oauth2_token)
         logger.debug("AUTH::register_sso: Redis oauth2 session successfully retrieved")
+
         password = self.redis_portal_session.getAutologonPassword(self.workflow.id, backend_id, username)
         logger.debug("AUTH::register_sso: Password successfully retrieved from Redis portal session")
+
         portal_cookie = self.redis_portal_session.register_sso(self.workflow.authentication.auth_timeout,
                                                                backend_id, str(self.workflow.id),
                                                                self.workflow.authentication.otp_repository.id if self.workflow.authentication.otp_repository else None,
                                                                username,
                                                                self.oauth2_token)
+
+        # Rewrite a new oauth2 token with current user_infos
+        logger.debug(f"AUTH::register_sso: Registering a new token with scope '{oauth2_scope}'")
+        self.redis_oauth2_session.register_authentication(str(self.backend_id), oauth2_scope, oauth_timeout)
         logger.debug("AUTH::register_sso: SSO informations successfully written in Redis for user {}".format(username))
         self.credentials = [username, password]
         return portal_cookie, self.oauth2_token
 
     def register_openid(self, openid_token, **kwargs):
         # Generate a new OAuth2 token
-        #self.oauth2_token = Uuid4().generate()
+        if not self.oauth2_token:
+            self.oauth2_token = Uuid4().generate()
         # Register it into session
         self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
         # Create a new temporary token containing oauth2_token + kwargs
@@ -574,7 +569,7 @@ class OAUTH2Authentication(Authentication):
         self.redis_oauth2_session.register_authentication(str(self.backend_id),
                                                           authentication_results,
                                                           authentication_results['token_ttl'])
-        logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
+        logger.debug("AUTH::register_authentication: Redis oauth2 session successfully written in Redis")
 
     def generate_response(self, authentication_results):
         body = {

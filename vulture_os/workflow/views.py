@@ -35,6 +35,7 @@ from darwin.defender_policy.models import DefenderPolicy
 from darwin.access_control.models import AccessControl
 from system.cluster.models import Cluster
 from workflow.models import Workflow, WorkflowACL
+from authentication.auth_access_control.models import AuthAccessControl
 from authentication.user_portal.models import UserAuthentication
 
 # Required exceptions imports
@@ -140,16 +141,15 @@ def save_workflow(request, workflow_obj, object_id=None):
         workflow_name = request.POST['workflow_name']
         workflow_enabled = request.POST['workflow_enabled'] == "true"
 
-        if (workflow_name == ""):
-            raise InvalidWorkflowError(_("A name is required"))
-
         workflow_obj.enabled = workflow_enabled
         workflow_obj.name = workflow_name
         workflow_obj.workflow_json = workflow
-        workflow_obj.save()
 
-        old_workflow_acls = WorkflowACL.objects.filter(workflow=workflow_obj)
-        old_workflow_acls.delete()
+        # Get all current ACLs assigned to this Workflow (in_bulk allows to execute the queryset)
+        old_workflow_acls = WorkflowACL.objects.filter(workflow=workflow_obj).in_bulk()
+
+        workflow_obj.authentication = None
+        workflow_obj.authentication_filter = None
 
         for step in workflow:
             if step['data']['type'] == "frontend":
@@ -169,12 +169,10 @@ def save_workflow(request, workflow_obj, object_id=None):
                         if workflow_obj.public_dir[-1] != '/':
                             workflow_obj.public_dir += '/'
 
-                workflow_obj.save()
 
             elif step['data']['type'] == 'backend':
                 backend = Backend.objects.get(pk=step['data']['object_id'])
                 workflow_obj.backend = backend
-                workflow_obj.save()
 
             elif step['data']['type'] == "acl":
                 access_control = AccessControl.objects.get(pk=ObjectId(step['data']['object_id']))
@@ -193,7 +191,6 @@ def save_workflow(request, workflow_obj, object_id=None):
                 order += 1
 
                 workflow_acls.append(workflow_acl)
-                workflow_acl.save()
             
             elif step['data']['type'] == "waf":
                 if step['data']['object_id']:
@@ -202,7 +199,6 @@ def save_workflow(request, workflow_obj, object_id=None):
                 else:
                     workflow_obj.defender_policy = None
 
-                workflow_obj.save()
 
                 before_policy = False
                 order = 1
@@ -213,11 +209,26 @@ def save_workflow(request, workflow_obj, object_id=None):
                     workflow_obj.authentication = authentication
                 else:
                     workflow_obj.authentication = None
-                
-                workflow_obj.save()
 
+            elif step['data']['type'] == "authentication_filter":
+                if step['data']['object_id']:
+                    authentication_filter = AuthAccessControl.objects.get(pk=step['data']['object_id'])
+                    workflow_obj.authentication_filter = authentication_filter
+                else:
+                    workflow_obj.authentication_filter = None
+                
+        if (workflow_obj.name == ""):
+            raise InvalidWorkflowError(_("A name is required"))
         if not workflow_obj.backend:
             raise InvalidWorkflowError(_("You need to select a backend"))
+        if workflow_obj.authentication_filter and not workflow_obj.authentication:
+            raise InvalidWorkflowError(_("If you set an 'authentication_filter', you need an 'authentication' object"))
+
+        workflow_obj.save()
+        for acl in old_workflow_acls.values():
+            acl.delete()
+        for workflow_acl in workflow_acls:
+            workflow_acl.save()
 
         # Reloading configuration
         nodes = workflow_obj.frontend.reload_conf()
@@ -260,15 +271,6 @@ def save_workflow(request, workflow_obj, object_id=None):
         return JsonResponse({'status': True})
 
     except InvalidWorkflowError as e:
-        if not object_id:
-            for workflow_acl in workflow_acls:
-                workflow_acl.delete()
-
-            try:
-                workflow_obj.delete()
-            except Exception:
-                pass
-
         return JsonResponse({
             'status': False,
             'error': str(e)
@@ -311,6 +313,7 @@ def workflow_edit(request, object_id=None, api=False):
                     'backends': [b.to_dict() for b in Backend.objects.filter(enabled=True, mode=mode)],
                     'waf_policies': [w.to_template() for w in DefenderPolicy.objects.all()],
                     'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)],
+                    'authentication_filters': [a.to_dict() for a in AuthAccessControl.objects.all()],
                 }
 
             return JsonResponse({
@@ -327,7 +330,8 @@ def workflow_edit(request, object_id=None, api=False):
                     enabled=True,
                     mode=workflow_obj.frontend.mode
                 )],
-                'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)]
+                'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)],
+                'authentication_filters': [a.to_dict() for a in AuthAccessControl.objects.all()],
             })
 
         return render(request, "main/workflow_edit.html", {

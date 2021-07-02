@@ -44,7 +44,7 @@ logger = logging.getLogger('api')
 def save_access_control(data, instance):
     form = AuthAccessControlForm(data, instance=instance)
     rules = data.get('or_lines', [])
-    
+
     if form.is_valid():
         ac = form.save(commit=False)
 
@@ -52,10 +52,11 @@ def save_access_control(data, instance):
             for line in rule['lines']:
                 rule_form = AuthAccessControlRuleForm(line)
                 if not rule_form.is_valid():
+                    logger.error(f"errors in AuthAccessControl validation : {rule_form.errors}")
                     return JsonResponse({
                         "error": rule_form.errors
-                    }, status=401)
-        
+                    }, status=400)
+
         ac.rules = rules
         ac.save()
 
@@ -82,23 +83,23 @@ class AuthenticationAccessControlAPIv1(View):
                 res = AuthAccessControl.objects.get(name=name).to_dict()
             else:
                 res = [a.to_dict() for a in AuthAccessControl.objects.all()]
-            
+
             return JsonResponse({
                 "res": res
             })
-        
+
         except AuthAccessControl.DoesNotExist:
             return JsonResponse({
                 "error": _("Object does not exist")
             }, status=404)
-        
+
         except Exception as e:
             logger.critical(e, exc_info=1)
             error = _("An error has occurred")
 
             if settings.DEV_MODE:
                 error = str(e)
-            
+
             return JsonResponse({
                 "error": error
             }, status=500)
@@ -125,7 +126,7 @@ class AuthenticationAccessControlAPIv1(View):
             error = _("An error has occurred")
             if settings.DEV_MODE:
                 error = str(err)
-            
+
             return JsonResponse({
                 "error": error
             }, status=500)
