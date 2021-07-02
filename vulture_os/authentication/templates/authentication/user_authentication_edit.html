@@ -424,6 +424,17 @@
                         <div class="row sso_forward">
                           <div class="col-md-12">
                             <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.sso_forward_timeout.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.sso_forward_timeout}}
+                                  {{form.sso_forward_timeout.errors|safe}}
+                                </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div class="row sso_forward">
+                          <div class="col-md-12">
+                            <div class="form-group">
                               <label class="col-sm-4 control-label">{{ form.sso_forward_url.label }}</label>
                                 <div class="col-sm-5">
                                   {{form.sso_forward_url}}
