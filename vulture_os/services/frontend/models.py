@@ -1401,21 +1401,22 @@ class Frontend(models.Model):
             module_config = template.render({'frontend': conf})
 
             modules = yaml.load(module_config)
-            if self.filebeat_module != "_custom":
-                module = modules[0]
-                module_keys = list(module.keys())
+            if self.filebeat_module == "_custom":
+                for module in modules:
+                    if module.get('enabled'):
+                        if not module.get('fields'):
+                            module['fields'] = {}
+                        module['fields']['filebeat_queue'] = f"filebeat_{self.tenants_config.id}_{self.id}"
             else:
-                module = modules
-                module_keys = range(len(modules))
-
-            for sub_module in module_keys:
-                if sub_module == "module" or not module[sub_module]['enabled']:
-                    continue
-                if not module[sub_module].get('input'):
-                    module[sub_module]['input'] = {}
-                if not module[sub_module]['input'].get('fields'):
-                    module[sub_module]['input']['fields'] = {}
-                module[sub_module]['input']['fields']['filebeat_queue'] = f"filebeat_{self.tenants_config.id}_{self.id}"
+                module = modules[0]
+                for sub_module in list(module.keys()):
+                    if sub_module == "module" or not module[sub_module]['enabled']:
+                        continue
+                    if not module[sub_module].get('input'):
+                        module[sub_module]['input'] = {}
+                    if not module[sub_module]['input'].get('fields'):
+                        module[sub_module]['input']['fields'] = {}
+                    module[sub_module]['input']['fields']['filebeat_queue'] = f"filebeat_{self.tenants_config.id}_{self.id}"
 
             return yaml.dump(modules)
 
