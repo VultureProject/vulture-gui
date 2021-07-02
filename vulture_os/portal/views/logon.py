@@ -63,8 +63,6 @@ from toolkit.system.hashes import random_sha256
 from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
 
-from ast import literal_eval
-
 # Extern modules imports
 from requests_oauthlib import OAuth2Session
 from base64 import b64decode
@@ -327,16 +325,16 @@ def openid_token(request, portal_id):
     try:
         scheme = request.META['HTTP_X_FORWARDED_PROTO']
     except KeyError:
-        logger.error("PORTAL::openid_authorize: could not get scheme from request")
+        logger.error("PORTAL::openid_token: could not get scheme from request")
         return HttpResponseServerError()
 
     try:
         portal = UserAuthentication.objects.get(pk=portal_id)
     except UserAuthentication.DoesNotExist:
-        logger.error("PORTAL::openid_authorize: could not find a portal with id {}".format(portal_id))
+        logger.error("PORTAL::openid_token: could not find a portal with id {}".format(portal_id))
         return HttpResponseServerError()
     except Exception as e:
-        logger.error("PORTAL::openid_authorize: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
+        logger.error("PORTAL::openid_token: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
         return HttpResponseServerError()
 
     try:
@@ -404,7 +402,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
         assert session['scope']
-        return JsonResponse(literal_eval(session['scope']))
+        return JsonResponse(session['scope'])
     except Exception as e:
         logger.exception(e)
         return HttpResponse(status=401)
@@ -457,7 +455,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
 
         """ If user is not authenticated : try to retrieve credentials and authenticate him on backend/fallback-backends """
-        # If the user is not authenticated and application need authentication
+        # If the user is not authenticated and application needs authentication
         if not authentication.is_authenticated():
             try:
                 backend_id = authentication.authenticate_sso_acls()

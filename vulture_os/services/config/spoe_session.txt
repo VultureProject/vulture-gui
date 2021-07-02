@@ -20,6 +20,5 @@ spoe-agent session-agent
 
 
 spoe-message check-session
-        args req.cook({{ global_config.portal_cookie_name }}) var(proc.app_id)
+        args req.cook({{ global_config.portal_cookie_name }}) var(proc.app_id) var(proc.timeout)
         event on-frontend-http-request
-
