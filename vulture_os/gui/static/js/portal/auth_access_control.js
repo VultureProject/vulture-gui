@@ -1,3 +1,5 @@
+Vue.component('v-select', VueSelect.VueSelect)
+
 const name_choices = {
     'variable': [
         "users", "group", "memberof"
@@ -12,14 +14,19 @@ auth_access_control_vue = new Vue({
     delimiters: ['${', '}'],
     data: {
         or_lines: [],
-        rule: ""
+        available_operators: []
     },
 
     mounted: function(){
+        for (let [_, operator] of Object.entries(operator_choices)) {
+            this.available_operators.push({id: operator[0], label: operator[1]})
+        }
+
         if (object_id !== "None"){
             axios.get(auth_access_control_api_uri, {params: {object_id: object_id}})
                 .then((response) => {
                     this.or_lines = response.data.res.rules;
+                    this.refresh_errors();
                 })
                 .catch((error) => {
                     throw error
@@ -31,7 +38,7 @@ auth_access_control_vue = new Vue({
 
     watch: {
         or_lines() {
-            this.change()
+            this.refresh_errors()
         }
     },
 
@@ -43,27 +50,8 @@ auth_access_control_vue = new Vue({
             }
         })
     },
-    
+
     methods: {
-        change() {
-            setTimeout(() => {
-                for (or_index in this.or_lines){
-                    for (and_index in this.or_lines[or_index].lines){
-                        let id = `#variable_name_${or_index}_${and_index}`
-                        $(id).tagsinput({
-                            maxTags: 1,
-                            freeInput: true
-                        })
-                    }
-                }
-            }, 100)
-        },
-
-        is_selected(type, line, value){
-            if (line[type] === value)
-                return "selected";
-        },
-
         generate_id(){
             return Math.random().toString(36).substring(5);
         },
@@ -82,36 +70,41 @@ auth_access_control_vue = new Vue({
 
         check_acl(acl){
             PNotify.removeAll();
+            errors = {}
 
             if (!acl.variable_name)
-                return 'variable';
+                errors['variable_name'] = 'variable name is mandatory'
 
             if (!acl.operator)
-                return 'operator'
+                errors['operator'] = 'operator is mandatory'
+            // if operator is not in the list of valid choices
+            else if(Array.from(auth_access_control_vue.available_operators, x => x.id).indexOf(acl.operator) == -1)
+                errors['operator'] =  'operator is not valid'
 
-            if (!acl.value)
-                return 'value'
+            if (acl.operator !== "exists" && acl.operator !== "not_exists" && !acl.value)
+                errors['value'] =  'value is mandatory'
 
-            return null;
+            return errors;
         },
 
-        render_error(error, input){
+        render_errors(errors, input){
+            // Generic error
             if (!input){
-                if (error)
-                    return "<i class='fas fa-exclamation-triangle fa-2x'></i>";
-                return "";
+                return "<i class='fas fa-exclamation-triangle fa-2x'></i>";
             }
-
-            if (input === error)
-                return "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + gettext('This input is mandatory');
+            // Field error
+            else if (errors !== undefined && Object.keys(errors).length !== 0 && input in errors){
+                return "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + gettext(errors[input]);
+            }
+            return "";
         },
 
-        render_class_end_line(error){
-            var classe = "and_line";
-            if (error)
-                classe += " and_line_error";
+        render_class_end_line(errors){
+            var classes = "and_line";
+            if (errors !== undefined && Object.keys(errors).length !== 0)
+                classes += " and_line_error";
 
-            return classe;
+            return classes;
         },
 
         add_or(){
@@ -137,40 +130,26 @@ auth_access_control_vue = new Vue({
             return `variable_name_${or_index}_${and_index}`
         },
 
-        reconstruct_rules(){
+        refresh_errors(){
             var self = this;
-            $('.condition_block').each(function(){
-                var or_index = $(this).data('index');
-                $(this).find('.and_line').each(function(){
-                    var and_index = $(this).data('index');
-                    var and_line = self.or_lines[or_index].lines[and_index];
-
-                    let tr = $(`#and_line_${or_index}_${and_index}`);
-
-                    and_line.variable_name = $(tr).find('.variable_name').val();
-                    and_line.operator = $(tr).find('.operator').val();
-                    and_line.value = $(tr).find('.value').val();
-
-                    and_line.error = self.check_acl(and_line)
-
-                    self.or_lines[or_index].lines[and_index] = and_line;
-                })
-            })
+            for(or_line of this.or_lines) {
+                for(and_line of or_line.lines) {
+                    and_line.errors = self.check_acl(and_line)
+                }
+            }
         },
 
         add_and(or_id){
             let index = this.get_or_index(or_id);
 
-            this.reconstruct_rules();
+            this.refresh_errors();
 
             this.or_lines[index].lines.push({
                 variable_name: "",
                 operator: "",
                 value: "",
-                error: null
+                errors: {}
             });
-
-            this.change()
         },
 
         remove_and(or_id, and_index){
@@ -179,16 +158,23 @@ auth_access_control_vue = new Vue({
         },
 
         save_form(){
-            this.reconstruct_rules();
-            
+            this.refresh_errors();
+
             for (var or_line of this.or_lines){
                 for (var and_line of or_line.lines){
-                    if (this.check_acl(and_line) !== null){
+                    if (and_line.errors !== undefined && Object.keys(and_line.errors).length !== 0){
                         return false;
                     }
                 }
             }
-            
+
+            // lines validated, Remove 'errors' value from dict after making sure we don't have any
+            for (var or_line of this.or_lines){
+                for (var and_line of or_line.lines){
+                    delete(and_line.errors)
+                }
+            }
+
             var txt = $('#save_form_btn').html();
             $('#save_form_btn').html('<i class="fa fa-spinner fa-spin"></i>');
             $('#save_form_btn').prop('disabled', 'disabled');

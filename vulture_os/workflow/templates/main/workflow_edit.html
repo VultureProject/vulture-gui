@@ -75,6 +75,7 @@
                                     <label><i class="fa fa-lock fa-2x"></i>&nbsp;&nbsp;{% trans "ACL" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><i class="fa fa-server fa-2x"></i>&nbsp;&nbsp;{% trans "Backend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><i class="fa fa-user fa-2x"></i>&nbsp;&nbsp;{% trans "Authentication" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-shield fa-2x"></i>&nbsp;&nbsp;{% trans "Authentication Filter" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><i class="fa fa-database fa-2x"></i>&nbsp;&nbsp;{% trans "Database" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><img id="favicon-legend" src="{% static 'img/favicon.ico' %}"/>&nbsp;&nbsp;{% trans "Defender Policy" %}</label>
                                 </div>
@@ -110,5 +111,7 @@
     var frontend_add_uri = "{% url 'services.frontend.edit' %}";
     var backend_add_uri = "{% url 'applications.backend.edit' %}";
     var worflow_list_uri = "{% url 'workflow.list' %}";
+    var authentication_add_uri = "{% url 'portal.user_authentication.edit' %}";
+    var authentication_filter_add_uri = "{% url 'portal.authentication_access_control.edit' %}";
 
 {% endblock %}

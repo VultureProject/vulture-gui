@@ -175,7 +175,7 @@ def openid_callback(request, workflow_id, repo_id):
         portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
 
         # Use POSTAuthentication to print errors with html templates
-        authentication = Authentication(portal_cookie, workflow, scheme)
+        authentication = POSTAuthentication(portal_cookie, workflow, scheme)
         # Set redirect url in redis
         authentication.set_redirect_url(redirect_url)
 
@@ -208,8 +208,8 @@ def openid_callback(request, workflow_id, repo_id):
                 logger.info(f"OpenID_callback::{portal}: Repo attributes retrieved from "
                             f"{workflow.authentication.lookup_ldap_repo} for {ldap_attr}={claim} : {repo_attributes}")
 
-        # Create user scope depending on GUI configuration attributes
-        user_scope = workflow.authentication.get_user_scope(claims, repo_attributes)
+        # Create user scope depending on GUI configuration attributes, raises an AssertionError if scope is not validated for filtering
+        user_scope = workflow.get_and_validate_scope(claims, repo_attributes)
         logger.info(f"OpenID_callback::{portal}: User scope created from claims(/repo) : {user_scope}")
 
         # Set authentication attributes required
@@ -230,6 +230,11 @@ def openid_callback(request, workflow_id, repo_id):
     except AssertionError as e:
         logger.exception(e)
         return HttpResponseRedirect(redirect_url)
+
+    except ACLError as e:
+        logger.error("PORTAL::openid_callback: ACLError while trying to authenticate user '{}' : {}"
+                        .format(authentication.credentials[0], e))
+        return authentication.ask_credentials_response(request=request, error="Bad credentials")
 
     except OAuth2Error as e:
         logger.exception(e)
@@ -458,7 +463,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
         # If the user is not authenticated and application needs authentication
         if not authentication.is_authenticated():
             try:
-                backend_id = authentication.authenticate_sso_acls()
+                backend_id = authentication.authenticate_sso()
                 if not backend_id:
                     # Retrieve credentials
                     authentication.retrieve_credentials(request)
@@ -469,7 +474,10 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     logger.debug("PORTAL::log_in: Authentication succeed on backend {}, "
                                  "user infos : {}".format(authentication.backend_id, authentication_results))
 
-                    user_scope = workflow.authentication.get_user_scope({}, authentication_results)
+                    # Create user scope depending on GUI configuration attributes
+                    # raises an AssertionError if scope is not validated for filtering
+                    user_scope = workflow.get_and_validate_scope({}, authentication_results)
+
                     # Register authentication results in Redis
                     portal_cookie, oauth2_token = authentication.register_user(authentication_results, user_scope)
                     logger.debug("PORTAL::log_in: User {} successfully registered in Redis".format(authentication.credentials[0]))
