@@ -167,8 +167,8 @@ def user_scope_edit(request, object_id=None, api=False):
 
             # If everything succeed, redirect to list view
             if api:
-                return build_response(profile.id, "api.portal.user_scope", [])
-            return HttpResponseRedirect(reverse("portal.user_scope.list"))
+                return build_response(profile.id, "api.authentication.user_scope", [])
+            return HttpResponseRedirect(reverse("authentication.user_scope.list"))
 
     return render_form(profile)
 

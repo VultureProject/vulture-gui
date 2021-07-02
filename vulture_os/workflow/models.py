@@ -33,6 +33,7 @@ from django.template import Template
 # Django project imports
 from applications.backend.models import Backend
 from darwin.access_control.models import AccessControl
+from authentication.auth_access_control.models import AuthAccessControl
 from authentication.user_portal.models import UserAuthentication
 from darwin.defender_policy.models import DefenderPolicy
 from services.frontend.models import Frontend
@@ -44,6 +45,7 @@ from toolkit.network.network import get_hostname
 from jinja2 import Environment, FileSystemLoader
 
 # Required exceptions imports
+from portal.system.exceptions import ACLError
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
                                TemplateSyntaxError, UndefinedError)
 from services.exceptions import ServiceJinjaError
@@ -119,7 +121,12 @@ class Workflow(models.Model):
     """ Authentication """
     authentication = models.ForeignKey(
         UserAuthentication,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
+        null=True
+    )
+    authentication_filter = models.ForeignKey(
+        AuthAccessControl,
+        on_delete=models.PROTECT,
         null=True
     )
     """ FQDN """
@@ -314,3 +321,14 @@ class Workflow(models.Model):
             else:
                 url = "http://" + str(self.fqdn) + ":" + str(port) + str(self.public_dir)
         return url
+
+    def get_and_validate_scope(self, claims, repo_attributes):
+        user_scope = {}
+        if self.authentication:
+            user_scope = self.authentication.get_user_scope(claims, repo_attributes)
+            if self.authentication_filter:
+                if not self.authentication_filter.apply_rules_on_scope(user_scope):
+                    logger.warning(f"scope '{user_scope}' could not be validated with filtering rules '{self.authentication_filter.name}'")
+                    raise ACLError(f"Could not validate user scope against filtering rules '{self.authentication_filter.name}'")
+
+        return user_scope

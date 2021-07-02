@@ -38,8 +38,8 @@ from redis                          import Redis, ConnectionError as RedisConnec
 
 # Extern modules imports
 from hashlib                        import sha1
-from ast                            import literal_eval
 import json
+from copy import deepcopy
 
 # Logger configuration
 import logging
@@ -73,16 +73,26 @@ class REDISSession(object):
     def write_in_redis(self, timeout):
         # Do NOT write user_infos in Redis, it has already be done  in set_user_infos
         if self.handler.hmset(self.key, {k:v for k,v in self.keys.items() if not k.startswith("user_infos_") and v is not None}):
-            return self.handler.expire(self.key, timeout)
+            if self.handler.ttl(self.key) < timeout:
+                return self.handler.expire(self.key, timeout)
+            return True
         else:
             return False
 
+    def set_in_redis(self, key, value, timeout=0):
+        self.handler.set(key, value)
+        if timeout:
+            self.handler.expire(key, timeout)
+
+    def delete_in_redis(self, key):
+        logger.error(f"deleting {key} in redis")
+        return self.handler.delete(key)
 
 
 class REDISAppSession(REDISSession):
     """ This class is in charge of managing Redis Session for anonymous & authenticated users
     """
- 
+
     def __init__(self, redis_handler, **kwargs):
         """ Retrieve info from redis, with the given token
 
@@ -225,6 +235,13 @@ class REDISPortalSession(REDISSession):
     def destroy(self):
         """ Remove the current portal session from Redis """
         try:
+            # Remove all potential related keys in the form <key>_*
+            for key, value in self.keys.items():
+                if "_" not in key and value == "1":
+                    self.delete_in_redis(f"{self.key}_{key}")
+            for key, value in self.keys.items():
+                if key.startswith("portal_") and value == "1":
+                    self.delete_in_redis(f"{self.key}_{key}")
             return self.handler.delete(self.key)
         except:
             logger.info("REDISPortalSession: portal_session '{}' cannot be destroyed".format(self.key))
@@ -247,7 +264,7 @@ class REDISPortalSession(REDISSession):
         return self.handler.hget(self.key, f'login_{backend_id}')
 
     def authenticated_app(self, workflow_id):
-        return self.handler.hget(self.key, str(workflow_id)) == "1"
+        return self.handler.get(f"{self.key}_{workflow_id}") == "1"
 
     def authenticated_backend(self, backend_id):
         return str(self.handler.hget(self.key, f"auth_backend_{backend_id}")) == "1"
@@ -332,6 +349,9 @@ class REDISPortalSession(REDISSession):
         self.keys.pop(f'oauth2_{backend_id}', None)
         self.keys.pop(f'app_id_{backend_id}', None)
 
+        # Remove
+        self.delete_in_redis(f"{self.key}_{workflow_id}")
+
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
                                   "in REDIS")
@@ -340,6 +360,7 @@ class REDISPortalSession(REDISSession):
         self.keys[str(app_id)] = 0
         self.keys.pop(f"backend_{app_id}", None)
         self.keys.pop(f"url_{app_id}", None)
+        self.delete_in_redis(f"{self.key}_{app_id}")
         self.write_in_redis(timeout)
 
     def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
@@ -369,6 +390,9 @@ class REDISPortalSession(REDISSession):
         # Save all user infos
         self.set_user_infos(backend_id, authentication_datas)
 
+        # Save additional related key for Darwin Session quick verification
+        self.set_in_redis(f"{self.key}_{app_id}", "1", timeout or self.default_timeout)
+
         if password:
             # Encrypt the password with the application id and user login and store it in portal session
             self.setAutologonPassword(app_id, app_name, backend_id, username, password)
@@ -397,6 +421,9 @@ class REDISPortalSession(REDISSession):
         self.keys[f"login_{backend_id}"] = username
         if oauth2_token:
             self.keys[f"oauth2_{backend_id}"] = oauth2_token
+
+        # Save additional related key for Darwin Session quick verification
+        self.set_in_redis(f"{self.key}_{app_id}", "1", timeout or self.default_timeout)
 
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_sso: Unable to write SSO infos in REDIS")
@@ -428,13 +455,27 @@ class REDISPortalSession(REDISSession):
 
 class REDISOauth2Session(REDISSession):
     def __init__(self, redis_handler, oauth2_token):
-        super(REDISOauth2Session, self).__init__(redis_handler, oauth2_token)
+        super().__init__(redis_handler, oauth2_token)
+        # Interpret
+        if "scope" in self.keys:
+            self.keys['scope'] = json.loads(self.keys['scope'])
+        else:
+            self.keys['scope'] = {}
 
+    def write_in_redis(self, timeout):
+        backup_scope = deepcopy(self.keys['scope'])
+        # Do not insert json into Redis
+        self.keys['scope'] = json.dumps(self.keys['scope'])
+        ret = super().write_in_redis(timeout)
+        # Restore dict in case of re-use
+        self.keys['scope'] = backup_scope
+
+        return ret
 
     def register_authentication(self, repo_id, oauth2_data, timeout):
         data = {
             'token_ttl': timeout,
-            'scope': str(oauth2_data),
+            'scope': oauth2_data,
             'repo': str(repo_id)
         }
         if not self.keys:
@@ -448,12 +489,11 @@ class REDISOauth2Session(REDISSession):
                 self.keys['repo'] = repo_id
             for key,item in oauth2_data.items():
                 self.keys['scope'][key] = item
-
         if not self.write_in_redis(timeout):
             logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")
             raise REDISWriteError("REDISOauth2Session::register_authentication: Unable to write Oauth2 infos in REDIS")
-
         return self.key
+
 
 class RedisOpenIDSession(REDISSession):
     def __init__(self, redis_handler, openid_token):
@@ -491,6 +531,7 @@ class REDISBase(object):
             self.logger.info("REDISBase: REDIS connexion issue")
             self.logger.exception(e)
             raise RedisConnectionError(e)
+
 
     # Write function : need master Redis
     def delete(self, key):
@@ -575,6 +616,7 @@ class REDISBase(object):
             return None
         return v
 
+
     # Retrieve function : no need master
     def hget(self, hash, key):
         try:
@@ -607,6 +649,18 @@ class REDISBase(object):
         else:  # If current cluster is Master
             result = self.r.expire(key, ttl)
         return result
+
+
+    # Retrieve ttl function : no need master
+    def ttl(self, key):
+        try:
+            v = self.r.ttl(key)
+        except RedisResponseError as e:
+            return None
+        except Exception as e:
+            self.logger.exception(e)
+            return None
+        return v
 
 
     # Write function : need master Redis

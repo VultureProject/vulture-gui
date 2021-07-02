@@ -50,6 +50,7 @@ from jinja2 import Environment, FileSystemLoader
 from re import search as re_search
 from requests import post
 import glob
+import yaml
 
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
@@ -1396,9 +1397,28 @@ class Frontend(models.Model):
         try:
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_FILEBEAT_PATH))
             template = jinja2_env.get_template("filebeat_input.conf")
-            
-            return template.render({'frontend': conf})
 
+            module_config = template.render({'frontend': conf})
+
+            modules = yaml.load(module_config)
+            if self.filebeat_module == "_custom":
+                for module in modules:
+                    if module.get('enabled'):
+                        if not module.get('fields'):
+                            module['fields'] = {}
+                        module['fields']['filebeat_queue'] = f"filebeat_{self.tenants_config.id}_{self.id}"
+            else:
+                module = modules[0]
+                for sub_module in list(module.keys()):
+                    if sub_module == "module" or not module[sub_module]['enabled']:
+                        continue
+                    if not module[sub_module].get('input'):
+                        module[sub_module]['input'] = {}
+                    if not module[sub_module]['input'].get('fields'):
+                        module[sub_module]['input']['fields'] = {}
+                    module[sub_module]['input']['fields']['filebeat_queue'] = f"filebeat_{self.tenants_config.id}_{self.id}"
+
+            return yaml.dump(modules)
 
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
