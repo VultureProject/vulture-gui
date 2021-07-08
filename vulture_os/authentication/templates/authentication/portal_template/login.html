@@ -32,17 +32,8 @@
             {% include "./images.html" %}
         </div>
 
-        <div class="col-md-7">
-            {{form.html_login}}
-            {{form.html_login.errors}}
-
-            <p class="text-center">
-                <button type="button" @click="preview('html_login')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
-            </p>
-        </div>
-
-        <div class="col-md-2">
-            <div class="panel  panel-colorful panel-dark">
+        <div class="col-md-9">
+            <div class="panel  panel-colorful panel-dark col-lg-4">
                 <div class="panel-body">
                     <div class="form-group">
                         <label class="control-label">{%  trans "Login field name" %}</label>
@@ -65,6 +56,14 @@
                         {{ form.login_submit_field.errors }}
                     </div>
                 </div>
+            </div>
+
+            <div class="col-md-12">
+                {{form.html_login}}
+                {{form.html_login.errors}}
+                <p class="text-center">
+                    <button type="button" @click="preview('html_login')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                </p>
             </div>
         </div>
     </div>

@@ -226,7 +226,6 @@
 axios.get("/api/v1/portal/images/")
   .then((response) => {
     for (let image of response.data.res) {
-      console.log(image)
       let data = {
         id: image.id,
         preview: image.create_preview_html,

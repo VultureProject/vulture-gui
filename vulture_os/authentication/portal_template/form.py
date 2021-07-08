@@ -49,14 +49,15 @@ class PortalTemplateForm(ModelForm):
     class Meta:
         model = PortalTemplate
         fields = ("name", "css",
-                  "html_login", "html_learning", "html_logout", "html_self", "html_password", "html_otp", "html_message", "html_error", "html_registration",
+                  "html_login", "html_learning", "html_logout", "html_self", "html_password", "html_otp", "html_message", "html_error", 
                   "html_error_403", "html_error_404", "html_error_405", "html_error_406", "html_error_500", "html_error_501", "html_error_502", "html_error_503", "html_error_504",
                   "email_subject", "email_body", "email_from", "error_email_sent", "email_register_subject", "email_register_from", "email_register_body",
                   "login_login_field", "login_password_field", "login_captcha_field", "login_submit_field",
                   "learning_submit_field", "password_old_field", "password_new1_field", "password_new2_field", "password_email_field", "password_submit_field",
                   "otp_key_field", "otp_submit_field", "otp_resend_field", "otp_onetouch_field",
-                  "register_captcha_field", "register_username_field", "register_phone_field", "register_password1_field", "register_password2_field", "register_email_field", "register_submit_field",
-                  "error_password_change_ok", "error_password_change_ko")
+                  "error_password_change_ok", "error_password_change_ko",
+                #   "html_registration", "register_captcha_field", "register_username_field", "register_phone_field", "register_password1_field", "register_password2_field", "register_email_field", "register_submit_field",
+                  )
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'css': Textarea(attrs={'class': 'form-control', 'data-placement':"right"}),
@@ -68,7 +69,7 @@ class PortalTemplateForm(ModelForm):
             'html_otp': Textarea(attrs={'class': 'form-control', 'data-placement':"right"}),
             'html_message': Textarea(attrs={'class': 'form-control', 'data-placement':"right"}),
             'html_error': Textarea(attrs={'class': 'form-control', 'data-placement':"right"}),
-            'html_registration': Textarea(attrs={'class': 'form-control', 'data-placement':"right"}),
+            # 'html_registration': Textarea(attrs={'class': 'form-control', 'data-placement':"right"}),
 
             'html_error_403': Textarea(attrs={'class': 'form-control', 'data-placement':"right"}),
             'html_error_404': Textarea(attrs={'class': 'form-control', 'data-placement':"right"}),
@@ -102,13 +103,13 @@ class PortalTemplateForm(ModelForm):
             'otp_submit_field': TextInput(attrs={'class': 'form-control'}),
             'otp_resend_field': TextInput(attrs={'class': 'form-control'}),
             'otp_onetouch_field': TextInput(attrs={'class': 'form-control'}),
-            'register_captcha_field': TextInput(attrs={'class': 'form-control'}),
-            'register_username_field': TextInput(attrs={'class': 'form-control'}),
-            'register_phone_field': TextInput(attrs={'class': 'form-control'}),
-            'register_password1_field': TextInput(attrs={'class': 'form-control'}),
-            'register_password2_field': TextInput(attrs={'class': 'form-control'}),
-            'register_email_field': TextInput(attrs={'class': 'form-control'}),
-            'register_submit_field': TextInput(attrs={'class': 'form-control'}),
+            # 'register_captcha_field': TextInput(attrs={'class': 'form-control'}),
+            # 'register_username_field': TextInput(attrs={'class': 'form-control'}),
+            # 'register_phone_field': TextInput(attrs={'class': 'form-control'}),
+            # 'register_password1_field': TextInput(attrs={'class': 'form-control'}),
+            # 'register_password2_field': TextInput(attrs={'class': 'form-control'}),
+            # 'register_email_field': TextInput(attrs={'class': 'form-control'}),
+            # 'register_submit_field': TextInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
