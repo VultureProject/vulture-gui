@@ -308,7 +308,6 @@ class UserAuthentication(models.Model):
         on_delete=models.PROTECT
     )
     external_fqdn = models.CharField(
-        max_length=40,
         default="auth.testing.tr",
         verbose_name=_("FQDN"),
         help_text=_("Listening FQDN for external portal")
