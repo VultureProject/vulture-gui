@@ -307,8 +307,7 @@ class UserAuthentication(models.Model):
         help_text=_("Listener used for external portal"),
         on_delete=models.PROTECT
     )
-    external_fqdn = models.CharField(
-        max_length=40,
+    external_fqdn = models.TextField(
         default="auth.testing.tr",
         verbose_name=_("FQDN"),
         help_text=_("Listening FQDN for external portal")

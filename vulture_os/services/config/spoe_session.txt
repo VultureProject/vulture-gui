@@ -14,7 +14,9 @@ spoe-agent session-agent
 
         timeout hello      100ms
         timeout idle       30s
-        timeout processing 15ms
+        timeout processing 100ms
+
+        option set-on-error error
 
         use-backend backend_spoa_session
 
