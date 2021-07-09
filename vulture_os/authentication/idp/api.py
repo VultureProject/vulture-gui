@@ -36,6 +36,10 @@ from authentication.totp_profiles.models import TOTPProfile
 from authentication.ldap.tools import NotUniqueError, UserNotExistError
 from authentication.idp.attr_tools import MAPPING_ATTRIBUTES
 from toolkit.portal.registration import perform_email_registration, perform_email_reset
+from toolkit.network.smtp import test_smtp_server
+
+from system.cluster.models import Cluster
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
@@ -155,6 +159,14 @@ class IDPApiUserView(View):
                 }, status=400)
 
             elif not action:
+                config = Cluster.get_global_config()
+                assert config.smtp_server, "SMTP server is not properly configured."
+                try:
+                    # This method simply raises if an error occur
+                    test_smtp_server(config.smtp_server), "SMTP server seems to be unavailable."
+                except Exception as e:
+                    raise Exception("SMTP server is not properly configured: {}".format(str(e)))
+
                 user = {
                     ldap_repo.user_attr: request.JSON['username']
                 }
@@ -199,6 +211,7 @@ class IDPApiUserView(View):
                 # We will need user' email for registration and reset
                 user_id, user_mail = tools.find_user_email(ldap_repo, user)
                 logger.info(f"User's email found : {user_mail}")
+
 
             if not action or action == "resend_registration":
                 if not perform_email_registration(logger,
