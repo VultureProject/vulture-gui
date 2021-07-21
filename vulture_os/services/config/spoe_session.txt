@@ -8,7 +8,7 @@
 [session]
 
 spoe-agent session-agent
-        messages check-session
+        messages {% for w in workflows %}{% if w.authentication -%}check-session_{{w.id}} {% endif %}{% endfor%}
 
         option var-prefix session
 
@@ -20,7 +20,13 @@ spoe-agent session-agent
 
         use-backend backend_spoa_session
 
-
-spoe-message check-session
-        args req.cook({{ global_config.portal_cookie_name }}) var(proc.app_id) var(proc.timeout)
-        event on-frontend-http-request
+{% for w in workflows %}
+{% if w.authentication -%}
+spoe-message check-session_{{w.id}}
+    acl workflow_{{w.id}}_host hdr(host) {{w.fqdn}}
+    acl workflow_{{w.id}}_host hdr(host) -m beg {{w.fqdn}}:
+    acl workflow_{{w.id}}_dir path -i -m beg {{ w.public_dir }}
+    args req.cook({{ global_config.portal_cookie_name }}) str("{{w.id}}") str("{% if w.authentication.enable_timeout_restart %}{{w.authentication.auth_timeout}}{% else %}0{% endif %}")
+    event on-frontend-http-request if workflow_{{w.id}}_host workflow_{{w.id}}_dir
+{% endif %}
+{% endfor%}
