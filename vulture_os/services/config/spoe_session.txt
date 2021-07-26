@@ -30,3 +30,5 @@ spoe-message check-session_{{w.id}}
     event on-frontend-http-request if workflow_{{w.id}}_host workflow_{{w.id}}_dir
 {% endif %}
 {% endfor%}
+
+
