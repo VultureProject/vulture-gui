@@ -11,6 +11,12 @@ secadm {
 		prefer_acl: true
 	},
 	pax {
+		path: "/home/vlt-os/env/bin/python3.8",
+		mprotect: false,
+		pageexec: false,
+		prefer_acl: true
+	},
+	pax {
 		path: "/usr/local/sbin/httpd",
 		mprotect: false,
 		pageexec: false
