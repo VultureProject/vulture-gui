@@ -138,7 +138,10 @@ def user_authentication_edit(request, object_id=None, api=False):
             try:
                 if (repo_changed or disconnect_url_changed or timeout_changed) and profile.workflow_set.count() > 0:
                     for workflow in profile.workflow_set.all():
-                        workflow.frontend.reload_conf()
+                        nodes = workflow.frontend.reload_conf()
+                        if timeout_changed:
+                            for node in nodes:
+                                node.api_request("services.haproxy.haproxy.configure_node")
                 if profile.enable_external:
                     # Automatically create OpenID repo
                     openid_repo, _ = OpenIDRepository.objects.get_or_create( client_id=profile.oauth_client_id,
