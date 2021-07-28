@@ -1569,7 +1569,8 @@ class Frontend(models.Model):
                           "\\\"defender_score\\\": \\\"%[var(sess.defender.status)]\\\"" \
                           ", \\\"http_request_cookies\\\": \\\"%[capture.req.hdr(1),json(ascii)]\\\"" \
                           ", \\\"http_request_body\\\": \\\"%[var(sess.body),json(ascii)]\\\"" \
-                          ", \\\"http_request_content_type\\\": \\\"%[capture.req.hdr(3),json(ascii)]\\\""
+                          ", \\\"http_request_content_type\\\": \\\"%[capture.req.hdr(3),json(ascii)]\\\"" \
+                          ", \\\"http_request_host\\\": \\\"%[capture.req.hdr(4),json(ascii)]\\\""
         log_format += "}"
         # TODO: Verify                          minimum one listener uses https
         # If yes : Add \\\"ssl_ciphers\\\": \\\"%sslc\\\", \\\"ssl_version\\\": \\\"%sslv\\\"
