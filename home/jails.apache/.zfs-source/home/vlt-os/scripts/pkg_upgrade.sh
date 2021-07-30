@@ -1,11 +1,11 @@
 #!/bin/sh
 
+#Relocate Python
+/usr/local/bin/virtualenv-3.8 /home/jails.apache/.zfs-source/home/vlt-os/env
+
 if [ -f /etc/host-hostname ] ; then
     /usr/sbin/service vultured status && /bin/kill -9 $(/bin/cat /var/run/vulture/vultured.pid)
     echo "[38;5;196m! WARNING ! - Please start vultured at the end of the upgrade[0m"
-
-    #Relocate Python
-    /usr/local/bin/virtualenv-3.8 /home/vlt-os/env/
 
     sleep 5
     /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vulture_os/manage.py migrate
