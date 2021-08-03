@@ -99,7 +99,11 @@ class CybereasonParser(ApiParser):
         self.host = data["cybereason_host"]
         self.username = data["cybereason_username"]
         self.password = data["cybereason_password"]
-        self.observer_name = self.host.split("://")[1].split("/")[0]
+        if not "://" in self.host:
+            self.observer_name = self.host
+            self.host = f"https://{self.host}"
+        else:
+            self.observer_name = self.host.split("://")[1]
         self.cyber_tool = CybereasonToolkit(self.host, self.username, self.password, self.proxies)
 
     def execute_query(self, kind, since, test=False, requestedType=None):
@@ -177,6 +181,17 @@ class CybereasonParser(ApiParser):
 
             if test:
                 break
+
+    def __get_affected_machines(self, devices, test=False):
+        status, tmp_devices = self.cyber_tool.get_machines(devices)
+        if not status:
+            raise Exception(tmp_devices)
+        devices = []
+        for device_k,device_v in tmp_devices['data']['resultIdToElementDataMap'].items():
+            devices.append({key:value['values'][0] for key, value in device_v['simpleValues'].items()})
+            if test:
+                break
+        return devices
 
     def __get_evidence(self, malop_id):
         status, evidences = self.cyber_tool.get_evidence(malop_id)
@@ -317,6 +332,8 @@ class CybereasonParser(ApiParser):
                 tmp_malop['affected_devices'].append(device)
                 if test:
                     break
+
+            tmp_malop['affected_machines'] = self.__get_affected_machines(devices, test)
 
             yield tmp_malop
 
