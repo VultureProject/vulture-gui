@@ -5,12 +5,6 @@ secadm {
 		prefer_acl: true
 	},
 	pax {
-		path: "/home/vlt-os/env/bin/python3.7",
-		mprotect: false,
-		pageexec: false,
-		prefer_acl: true
-	},
-	pax {
 		path: "/home/vlt-os/env/bin/python3.8",
 		mprotect: false,
 		pageexec: false,
