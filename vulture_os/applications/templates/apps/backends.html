@@ -278,12 +278,6 @@
   }); // var backends_table = $("#backend_list").dataTable
 
 
-  /* Reload table data every 5 seconds */
-  setInterval( function() {
-    backends_table.fnDraw(false);
-  }, 5000);
-
-
   /* Listener to reload haproxy service on all nodes */
   $('#reload_all').on('click', function(event) {
     $.ajax({

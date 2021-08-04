@@ -409,20 +409,4 @@ $(window).on("popstate", function() {
     }
   });
 
-  var interval_queries;
-
-  window.addEventListener('focus', reload_queries);
-  window.addEventListener('blur', stop_queries);
-
-  function reload_queries() {
-    interval_queries = setInterval( function() {
-      inspection_policies_table.fnDraw(false);
-      inspection_rules_table.fnDraw(false);
-    }, 5000);
-  }
-
-  function stop_queries() {
-    window.clearInterval(interval_queries);
-  }
-
 {% endblock %}
