@@ -227,7 +227,7 @@ def frontend_edit(request, object_id=None, api=False):
 
             if save_error:
                 logger.error("Frontend api save error : {}".format(save_error))
-                return JsonResponse({'error': save_error[0]}, status=500)
+                return JsonResponse({'error': save_error[0], 'details': save_error[1]}, status=500)
 
         if not listener_form_list and front:
             for l_tmp in front.listener_set.all():

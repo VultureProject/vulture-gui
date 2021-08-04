@@ -191,7 +191,7 @@ def backend_edit(request, object_id=None, api=False):
                 return JsonResponse({"errors": api_errors}, status=400)
 
             if save_error:
-                return JsonResponse({'error': save_error[0]}, status=500)
+                return JsonResponse({'error': save_error[0], 'details': save_error[1]}, status=500)
 
         available_sockets = get_darwin_sockets()
 
