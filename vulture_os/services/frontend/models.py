@@ -796,6 +796,18 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # Rapid7 IDR attributes
+    rapid7_idr_host = models.TextField(
+        verbose_name = _("rapid7 IDR Host"),
+        help_text = _("Hostname (without scheme or path) of the Rapid7 server"),
+        default = "eu.api.insight.rapid7.com",
+    )
+    rapid7_idr_apikey = models.TextField(
+        verbose_name = _("Rapid7 IDR API key"),
+        help_text = _("API key used to retrieve logs"),
+        default = "",
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -984,6 +996,9 @@ class Frontend(models.Model):
                     result['carbon_black_host'] = self.carbon_black_host
                     result['carbon_black_orgkey'] = self.carbon_black_orgkey
                     result['carbon_black_apikey'] = self.carbon_black_apikey
+                elif self.api_parser_type == "rapid7_idr":
+                    result['rapid7_idr_host'] = self.rapid7_idr_host
+                    result['rapid7_idr_apikey'] = self.rapid7_idr_apikey
                 elif self.api_parser_type == "netskope":
                     result['netskope_host'] = self.netskope_host
                     result['netskope_apikey'] = self.netskope_apikey

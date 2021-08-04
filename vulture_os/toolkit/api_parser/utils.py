@@ -43,6 +43,7 @@ from toolkit.api_parser.proofpoint_tap.proofpoint_tap import ProofpointTAPParser
 from toolkit.api_parser.sentinel_one.sentinel_one import SentinelOneParser
 from toolkit.api_parser.carbon_black.carbon_black import CarbonBlackParser
 from toolkit.api_parser.netskope.netskope import NetskopeParser
+from toolkit.api_parser.rapid7_idr.rapid7_idr import Rapid7IDRParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -66,7 +67,8 @@ PARSER_LIST = {
     "proofpoint_tap": ProofpointTAPParser,
     "sentinel_one": SentinelOneParser,
     "carbon_black": CarbonBlackParser,
-    "netskope": NetskopeParser
+    "netskope": NetskopeParser,
+    "rapid7_idr": Rapid7IDRParser,
 }
 
 
