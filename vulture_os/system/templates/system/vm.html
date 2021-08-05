@@ -156,5 +156,9 @@
       },
   });
 
+  /* Reload table data every 5 seconds */
+  setInterval( function() {
+    vm_table.fnDraw(false);
+  }, 5000);
 
 {% endblock %}

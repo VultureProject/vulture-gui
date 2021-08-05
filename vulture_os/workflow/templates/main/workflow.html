@@ -251,5 +251,9 @@
     });
   });
 
+  setInterval(function(){
+    $("#workflow_table").DataTable().fnDraw(false)
+  }, 5000)
+
 
 {% endblock %}

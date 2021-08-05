@@ -210,5 +210,10 @@
   }); // var reputation_ctx_table = $("#backend_list").dataTable
 
 
+  /* Reload table data every 5 seconds */
+  setInterval( function() {
+    reputation_ctx_table.fnDraw(false);
+  }, 5000);
+
 
 {% endblock %}

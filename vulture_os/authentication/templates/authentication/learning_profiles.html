@@ -127,6 +127,10 @@
   }); // var learning_profiles_table = $("#learning_profiles_list").dataTable
 
 
+  /* Reload table data every 5 seconds */
+  setInterval( function() {
+    learning_profiles_table.fnDraw(false);
+  }, 5000);
 
 
 {% endblock %}
