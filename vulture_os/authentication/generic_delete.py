@@ -162,10 +162,13 @@ class DeleteUserAuthentication(DeleteView):
     def used_by(self, object):
         linked_objects = ["Workflow " + w.name for w in Workflow.objects.filter(authentication=object)]
         if object.enable_external:
-            linked_connector = OpenIDRepository.objects.get(client_id=object.oauth_client_id,
+            try:
+                linked_connector = OpenIDRepository.objects.get(client_id=object.oauth_client_id,
                                                             client_secret=object.oauth_client_secret,
                                                             provider="openid")
-            linked_objects += ["Portal " + portal.name for portal in UserAuthentication.objects.filter(repositories=linked_connector)]
+                linked_objects += ["Portal " + portal.name for portal in UserAuthentication.objects.filter(repositories=linked_connector)]
+            except OpenIDRepository.DoesNotExist:
+                logger.warning(f"Did not find linked connector while deleting IDP portal {object.name}")
         return linked_objects
 
     def post(self, request, object_id, **kwargs):

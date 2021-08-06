@@ -45,7 +45,7 @@ class CybereasonToolkit:
     MALWARE_URI = "rest/malware/query"
     VERSION_URI = "rest/monitor/global/server/version/all"
 
-    PROCESSES_URI = "rest/visualsearch/query/simple"
+    QUERY_SIMPLE_URI = "rest/visualsearch/query/simple"
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -108,6 +108,19 @@ class CybereasonToolkit:
 
         return json.loads(response.content)
 
+    def get_machines(self, machines):
+        if not self.session:
+            status, self.session = self.login_to_cybereason()
+            if not status:
+                return False, self.session
+
+        query = {"queryPath":[{"requestedType":"Machine","guidList":machines,"result":True}],"totalResultLimit":1000,"perGroupLimit":1000,"perFeatureLimit":100,"templateContext":"DETAILS","customFields":["self","domainFqdn","adDisplayName","adSid","adCanonicalName","adDepartment","adOrganization","adOU"]}
+
+        url = f"{self.api_host}/{self.QUERY_SIMPLE_URI}"
+        data = self.execute_query("POST", url, query)
+        return True, data
+
+
     def get_devices(self, devices, fieldName):
         if not self.session:
             status, self.session = self.login_to_cybereason()
@@ -152,6 +165,7 @@ class CybereasonToolkit:
         url = f"{self.api_host}/rest/visualsearch/query/simple"
         data = self.execute_query("POST", url, query)
         return True, data
+
 
     def get_evidence_network(self, malopId):
         query = {
@@ -222,7 +236,7 @@ class CybereasonToolkit:
             if not status:
                 return False, self.session
 
-        processes_url = f"{self.api_host}/{self.PROCESSES_URI}"
+        processes_url = f"{self.api_host}/{self.QUERY_SIMPLE_URI}"
         processes = self.execute_query("POST", processes_url, query)
         return True, processes
 

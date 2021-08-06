@@ -178,6 +178,7 @@ class Authentication(object):
                 oauth2_scope['user_phone'] = authentication_results.get('user_phone', "")
         self.redis_oauth2_session.register_authentication(str(self.backend_id), oauth2_scope, oauth_timeout)
         logger.debug("AUTH::register_user: Redis oauth2 session successfully written in Redis")
+        logger.debug(f"AUTH::register_user: Redis oauth2 session scope is {oauth2_scope}")
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
                                                                           str(self.workflow.name),
                                                                           str(self.backend_id),
