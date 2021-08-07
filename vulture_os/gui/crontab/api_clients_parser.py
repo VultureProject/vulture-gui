@@ -53,6 +53,7 @@ def execute_parser(frontend):
         logger.info("API Parser {} (tenant={}): starting".format(frontend['name'], frontend['tenant_name']))
         parser.execute()
     except Exception as e:
+        logger.error(f"API Parser {frontend['name']} (tenant={frontend['tenant_name']}) failure : ")
         logger.exception(e)
     finally:
         # Delete running key in redis
