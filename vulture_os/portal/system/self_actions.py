@@ -366,6 +366,27 @@ class SELFServiceChange(SELFService):
 
         return "Password successfully changed"
 
+    def ask_credentials_response(self, request, action, error_msg, **kwargs):
+        rdm = request.GET.get(RESET_PASSWORD_NAME, None) or request.POST.get(RESET_PASSWORD_NAME, None)
+        username = ""
+
+        # If not reset key, try to retrieve username from current session
+        if not rdm:
+            try:
+                super().retrieve_credentials(request)
+                username = self.username if self.username else ""
+            except Exception as e:
+                logger.warning(f"SELFServiceChange::ask_credentials_response: could not retrieve credentials from session : {e}")
+        else:
+            # Check rdm key format
+            if re_match("^[0-9a-f-]+$", rdm):
+                # And then get username from reset information
+                result = self.redis_base.hget('password_reset_' + rdm, 'username')
+                username = result if result else ""
+
+        kwargs.update({"username": username})
+        return super().ask_credentials_response(request, action, error_msg, **kwargs)
+
 
 class SELFServiceLost(SELFService):
     def __init__(self, workflow, token_name, global_config, main_url):

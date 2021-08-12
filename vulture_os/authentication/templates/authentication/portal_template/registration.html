@@ -100,6 +100,7 @@
                 <div class="panel-body">
                     <ul>
                         <li><b style="color:#39454C;">&#123;&#123;registerLink&#125;&#125;</color></b>: {% trans "The URI to confirm registration"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;username&#125;&#125;</color></b>: {% trans "The username of the created account"%}</li>
                         <li><b style="color:#39454C;">&#123;&#123;app.name&#125;&#125;</color></b>: {% trans "The Name of the app for which we request an account registration"%}</li>
                         <li><b style="color:#39454C;">&#123;&#123;app.url&#125;&#125;</color></b>: {% trans "The URL of the app for which we request an account registrationt"%}</li>
                     </ul>
@@ -118,12 +119,12 @@
             <div class="panel  panel-colorful panel-dark">
                 <div class="panel-body">
                     <div class="form-group">
-                        <label class="control-label">{%  trans "Captcha field name" %}</label>
+                        <label class="control-label">{%  trans "Registration email subject" %}</label>
                         {{form.email_register_subject}}
                         {{form.email_register_subject.errors}}
                     </div>
                     <div class="form-group">
-                        <label class="control-label">{%  trans "Captcha field name" %}</label>
+                        <label class="control-label">{%  trans "Registration email sender (from)" %}</label>
                         {{form.email_register_from}}
                         {{form.email_register_from.errors}}
                     </div>
