@@ -103,6 +103,34 @@ class SELFService(object):
 
         raise e or AuthenticationError
 
+
+    def get_user_by_username(self, repositories, username):
+        e = None
+        for repo in repositories:
+            try:
+                if repo.subtype == "internal":
+                    user = User.objects.get(username=username)
+                    result = {
+                        'name': user,
+                        'backend': repo
+                    }
+                else:
+                    result = repo.get_client().search_user_by_username(username)
+                    result['backend'] = repo
+                logger.info("SELF::get_user_by_username: User '{}' successfully found on backend '{}'".format(
+                            result['name'],
+                            result['backend']))
+                return result
+
+            except Exception as e:
+                logger.error(
+                    "SELF::get_user_by_username: Failed to find username '{}' on backend '{}' : '{}'".format(
+                        username, repo, str(e)))
+                logger.exception(e)
+
+        raise e or AuthenticationError
+
+
     def set_authentication_params(self, repo, authentication_results, username):
         if authentication_results:
             self.backend_id = str(repo.id)
@@ -240,8 +268,12 @@ class SELFServiceChange(SELFService):
 
         # If reset key, search username by email in repositories
         if rdm:
+            # TODO might remove email in the future
             email = self.redis_base.hget('password_reset_' + rdm, 'email')
-            assert email, "SELF::Change: Invalid Random Key provided: '{}'".format(rdm)
+            username = self.redis_base.hget('password_reset_' + rdm, 'username')
+            # Need at least one (keeping email for compatibility)
+            assert email or username, "SELF::Change: Invalid Random Key provided: '{}'".format(rdm)
+            # assert username, "SELF::Change: Invalid Random Key provided: '{}'".format(rdm)
             repo_id = self.redis_base.hget('password_reset_' + rdm, 'repo_id')
             if repo_id:
                 # Only one backend if given in Redis session
@@ -249,7 +281,10 @@ class SELFServiceChange(SELFService):
             else:
                 backends = [repo.get_daughter() for repo in self.workflow.authentication.repositories.filter(subtype="LDAP")]
 
-            user_infos = self.get_username_by_email(backends, email)
+            if username:
+                user_infos = self.get_user_by_username(backends, username)
+            else:
+                user_infos = self.get_username_by_email(backends, email)
             self.username = user_infos['name']
             self.backend = user_infos['backend']
 
@@ -352,7 +387,7 @@ class SELFServiceLost(SELFService):
     def send_lost_mail(self, request, email):
 
         perform_email_reset(logger, self.main_url, self.workflow.name, self.workflow.authentication.portal_template,
-                            email, expire=60, repo_id=self.backend.id)
+                            email, self.username, expire=60, repo_id=self.backend.id)
 
         return "Mail successfully sent to '{}'".format(email)
 

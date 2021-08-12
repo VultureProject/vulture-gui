@@ -31,9 +31,9 @@ from smtplib import SMTP
 from smtplib import SMTPException
 
 
-def perform_email_registration(logger, base_url, app_name, template, user_email, expire=72*3600, repo_id=None):
+def perform_email_registration(logger, base_url, app_name, template, user_email, user_name, expire=72*3600, repo_id=None):
     # """ Generate an UUID64 and store it in redis """
-    reset_key = create_redis_reset(user_email, expire, repo_id)
+    reset_key = create_redis_reset(user_email, user_name, expire, repo_id)
 
     """ Get Cluster configuration """
     config = Cluster.get_global_config()
@@ -51,7 +51,7 @@ def perform_email_registration(logger, base_url, app_name, template, user_email,
                    template.email_register_from,
                    user_email,
                    template.render_template("email_register_subject", app=obj),
-                   template.render_template("email_register_body", registerLink=reset_link, app=obj))
+                   template.render_template("email_register_body", registerLink=reset_link, app=obj, username=user_name))
         return True
     except Exception as e:
         logger.error("")
@@ -59,9 +59,9 @@ def perform_email_registration(logger, base_url, app_name, template, user_email,
         return False
 
 
-def perform_email_reset(logger, base_url, app_name, template, user_email, expire=3600, repo_id=None):
+def perform_email_reset(logger, base_url, app_name, template, user_email, user_name, expire=3600, repo_id=None):
     # """ Generate an UUID64 and store it in redis """
-    reset_key = create_redis_reset(user_email, expire, repo_id)
+    reset_key = create_redis_reset(user_email, user_name, expire, repo_id)
 
     """ Get Cluster configuration """
     config = Cluster.get_global_config()
@@ -79,7 +79,7 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, expire
                    template.email_register_from,
                    user_email,
                    template.render_template("email_subject", app=obj),
-                   template.render_template("email_body", resetLink=reset_link, app=obj))
+                   template.render_template("email_body", resetLink=reset_link, app=obj, username=user_name))
         return True
     except Exception as e:
         logger.error("")
@@ -88,7 +88,7 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, expire
 
 
 
-def create_redis_reset(user_email, expire, repo_id=None):
+def create_redis_reset(user_email, user_name, expire, repo_id=None):
     reset_key = Uuid4().generate()
 
     redis_key = 'password_reset_' + reset_key
@@ -97,7 +97,11 @@ def create_redis_reset(user_email, expire, repo_id=None):
 
     """ Store the reset-key in Redis """
     # The 'a' is for Redis stats, to make a distinction with Token entries
-    redis_key_content = {'email': user_email, 'a': 1}
+    redis_key_content = {
+        'email': user_email,
+        'a': 1,
+        'username': user_name
+    }
     if repo_id:
         redis_key_content['repo'] = repo_id
 

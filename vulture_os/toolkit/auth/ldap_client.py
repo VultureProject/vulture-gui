@@ -372,6 +372,18 @@ class LDAPClient(BaseAuth):
         return self._format_user_results(brut_result[0][0], brut_result[0][1])
 
 
+    def search_user_by_username(self, username):
+        """ Method used to search for a user inside LDAP repository
+
+        :param email: String with username
+        :return: The first user matching query if at least one is found, None otherwise
+        """
+        found_users = self.search_user(username)
+        if not found_users:
+            raise UserNotFound(f"User not found in database for username '{username}'")
+        return self._format_user_results(found_users[0][0], found_users[0][1])
+
+
     def update_password (self, username, old_password, cleartext_password, **kwargs):
         """ Update a user password inside LDAP Repo
 

@@ -167,9 +167,7 @@ class IDPApiUserView(View):
                 except Exception as e:
                     raise Exception("SMTP server is not properly configured: {}".format(str(e)))
 
-                user = {
-                    ldap_repo.user_attr: request.JSON['username']
-                }
+                user = request.JSON['username']
 
                 attrs = {}
                 if ldap_repo.user_account_locked_attr:
@@ -197,7 +195,7 @@ class IDPApiUserView(View):
                     group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
 
                 ldap_response, user_id = tools.create_user(
-                    ldap_repo, user[ldap_repo.user_attr], request.JSON.get('userPassword'),
+                    ldap_repo, user, request.JSON.get('userPassword'),
                     attrs, group_name
                 )
             else:
@@ -219,6 +217,7 @@ class IDPApiUserView(View):
                                         portal.name,
                                         portal.portal_template,
                                         user_mail,
+                                        user,
                                         repo_id=repo_id,
                                         expire=72 * 3600):
                     logger.error(f"Failed to send registration email to '{user_mail}'")
@@ -233,6 +232,7 @@ class IDPApiUserView(View):
                                  portal.name,
                                  portal.portal_template,
                                  user_mail,
+                                 user,
                                  repo_id=repo_id,
                                  expire=3600):
                     logger.error(f"Failed to send reset password email to '{user_mail}'")
