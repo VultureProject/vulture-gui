@@ -53,7 +53,7 @@ if __name__ == "__main__":
             for workflow in Workflow.objects.filter(authentication__isnull=False):
                 workflow.frontend.reload_conf()
                 print("Frontend {} conf reload asked".format(workflow.frontend))
-                workflow.save_conf()
+                node.api_request("workflow.workflow.build_conf", workflow.pk)
                 print("Workflow {} conf reload asked".format(workflow))
             for portal in UserAuthentication.objects.filter(enable_external=True):
                 # Ensure portals with IDP activated have oauth enabled

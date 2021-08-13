@@ -407,7 +407,8 @@ def workflow_edit(request, object_id, action=None):
 
             nodes = workflow.frontend.reload_conf()
             workflow.backend.reload_conf()
-            workflow.save_conf()
+            for node in nodes:
+                node.api_request("workflow.workflow.build_conf", workflow.pk)
 
             if workflow.defender_policy:
                 logger.info("Need to reload the Defender Policy SPOE configuration")
