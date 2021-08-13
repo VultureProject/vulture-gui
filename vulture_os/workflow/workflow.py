@@ -25,6 +25,11 @@ __doc__ = 'LogForwarder main models'
 
 from django.utils.translation import ugettext as _
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+
+# Local imports
+from system.config.models import write_conf
+from system.exceptions import VultureSystemError
 
 import logging
 import logging.config
@@ -47,3 +52,26 @@ class Workflows:
         }
 
         return MENU
+
+def build_conf(node_logger, workflow_id):
+    """ Generate and save conf of workflow on node
+    :param node_logger: Logger sent to all API requests
+    :param workflow_id: The id of the workflow
+    :return:
+    """
+    result = ""
+    reload = False
+    """ Firstly, try to retrieve Frontend with given id """
+    from workflow.models import Workflow, WORKFLOW_OWNER, WORKFLOW_PERMS  # avoid circular imports
+
+    try:
+        workflow = Workflow.objects.get(pk=workflow_id)
+        """ Generate and save workflow conf on current node only """
+        write_conf(node_logger, [workflow.get_filename(), workflow.generate_conf(),
+                                 WORKFLOW_OWNER, WORKFLOW_PERMS])
+
+    except ObjectDoesNotExist:
+        raise VultureSystemError("Workflow with id {} not found, failed to generate conf.".format(workflow_id),
+                                 "build HAProxy conf", traceback=" ")
+
+    return result

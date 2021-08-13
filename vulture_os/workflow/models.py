@@ -273,6 +273,9 @@ class Workflow(models.Model):
         """  """
         return "{}/{}".format(HAPROXY_PATH, self.get_base_filename())
 
+    # DEPRECATED DO NOT USE ANYMORE
+    # use workflow.workflow.build_conf instead to generate/build conf on each node separately
+    @DeprecationWarning
     def save_conf(self):
         """
         :return   A message of what has been done

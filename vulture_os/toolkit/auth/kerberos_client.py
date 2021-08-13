@@ -233,6 +233,11 @@ class KerberosClient(BaseAuth):
         raise UserNotFound("Bad domain for email '{}'".format(email))
 
 
+    # TODO might need a better way to check user
+    def search_user_by_username(self, username):
+        return self.get_user_by_email(username)
+
+
 def test_keytab(keytab):
     """ Method used to check keytab content
     :param keytab: String base64 encoded keytab

@@ -307,16 +307,16 @@ class REDISPortalSession(REDISSession):
         return secret_key
 
 
-    def getAutologonPassword(self, app_id, backend, username):
+    def getAutologonPassword(self, app_id, backend_id, username):
         """ Retrieve encrypted password in REDIS, decrypt it and return it plain text """
         # Get the encrypted password's value for the current backend
-        p = self.handler.hget(self.key, 'password_'+backend)
+        p = self.handler.hget(self.key, 'password_'+backend_id)
         if not p:
             return None
 
         # And decrypt it with the app_id and username given
         pwd = LearningProfile()
-        decrypted_pass = pwd.get_data(p, app_id, backend, username, 'vlt_autologon_password')
+        decrypted_pass = pwd.get_data(p, app_id, backend_id, username, 'vlt_autologon_password')
         return decrypted_pass
 
 
@@ -353,7 +353,7 @@ class REDISPortalSession(REDISSession):
         self.delete_in_redis(f"{self.key}_{workflow_id}")
 
         if not self.write_in_redis(timeout or self.default_timeout):
-            raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
+            raise REDISWriteError("REDISPortalSession::deauthenticate: Unable to write authentication infos "
                                   "in REDIS")
 
     def deauthenticate_app(self, app_id, timeout):
@@ -505,8 +505,8 @@ class RedisOpenIDSession(REDISSession):
 
         # This is a temporary token, used for redirection and access_token retrieve
         if not self.write_in_redis(30):
-            logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")
-            raise REDISWriteError("REDISOauth2Session::register_authentication: Unable to write Oauth2 infos in REDIS")
+            logger.error("REDIS::register: Error while writing portal_session in Redis")
+            raise REDISWriteError("REDISOauth2Session::register: Unable to write Oauth2 infos in REDIS")
 
         return self.key
 
