@@ -36,6 +36,7 @@ from authentication.base_repository import BaseRepository
 from toolkit.auth.ldap_client import LDAPClient
 
 # Extern modules imports
+from ldap.dn import escape_dn_chars
 
 # Required exceptions imports
 
@@ -233,10 +234,10 @@ class LDAPRepository(BaseRepository):
         return False
 
     def create_user_dn(self, user_name):
-        return f"{self.user_attr}={user_name},{self.user_dn},{self.base_dn}"
+        return f"{self.user_attr}={escape_dn_chars(user_name)},{self.user_dn},{self.base_dn}"
 
     def create_group_dn(self, group_name):
-        return f"{self.group_attr}={group_name},{self.group_dn},{self.base_dn}"
+        return f"{self.group_attr}={escape_dn_chars(group_name)},{self.group_dn},{self.base_dn}"
 
     def to_dict(self):
         return model_to_dict(self)
