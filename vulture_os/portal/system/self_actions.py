@@ -274,7 +274,7 @@ class SELFServiceChange(SELFService):
             # Need at least one (keeping email for compatibility)
             assert email or username, "SELF::Change: Invalid Random Key provided: '{}'".format(rdm)
             # assert username, "SELF::Change: Invalid Random Key provided: '{}'".format(rdm)
-            repo_id = self.redis_base.hget('password_reset_' + rdm, 'repo_id')
+            repo_id = self.redis_base.hget('password_reset_' + rdm, 'repo')
             if repo_id:
                 # Only one backend if given in Redis session
                 backends = [BaseRepository.objects.get(pk=repo_id).get_daughter()]
