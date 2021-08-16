@@ -26,9 +26,11 @@ __doc__ = 'System Utils SSL Toolkit'
 import base64
 import hashlib
 
-from Crypto import Random
-from Crypto.Cipher import AES
+import os
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+# Static AES block size (block size is given in bits, but must be used as bytes)
+AES_BLOCK_SIZE = int(algorithms.AES.block_size/8)
 
 class AESCipher(object):
 
@@ -37,25 +39,19 @@ class AESCipher(object):
         self.key = hashlib.sha256(key.encode()).digest()
 
     def encrypt(self, raw):
-        try:
-            raw = self._pad(raw)
-            iv = Random.new().read(AES.block_size)
-            cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        except Exception:
-            return None
-        return base64.b64encode(iv + cipher.encrypt(raw))
+        raw = self._pad(raw)
+        iv = os.urandom(AES_BLOCK_SIZE)
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv))
+        encryptor = cipher.encryptor()
+        enc = iv + encryptor.update(raw.encode('utf-8')) + encryptor.finalize()
+        return base64.b64encode(enc)
 
     def decrypt(self, enc):
-        try:
-            enc = base64.b64decode(enc)
-            iv = enc[:AES.block_size]
-            cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        except Exception:
-            return None
-        try:
-            data = self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
-        except Exception:
-            return None
+        enc = base64.b64decode(enc)
+        iv = enc[:AES_BLOCK_SIZE]
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv))
+        decryptor = cipher.decryptor()
+        data = self._unpad(decryptor.update(enc[AES_BLOCK_SIZE:]) + decryptor.finalize()).decode('utf-8')
         return data
 
     def _pad(self, s):

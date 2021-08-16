@@ -31,6 +31,8 @@ from toolkit.auth.base_auth import BaseAuth
 import copy
 import ldap
 import ldap.modlist as modlist
+from ldap.filter import escape_filter_chars
+
 
 # Required exceptions imports
 from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, UserNotFound, LDAPSizeLimitExceeded
@@ -285,6 +287,8 @@ class LDAPClient(BaseAuth):
         :param username: String with username
         :return: An list with results if query match, None otherwise
         """
+        # input sanitation
+        username = escape_filter_chars(username)
         base_dn = self._get_user_dn()
         # Defining user search filter
         query_filter = "({}={})".format(self.user_attr, username)
@@ -323,6 +327,8 @@ class LDAPClient(BaseAuth):
         :param username: String with username
         :return: An list with results if query match, None otherwise
         """
+        # input sanitation
+        username = escape_filter_chars(username)
         # Defining user search filter
         query_filter = "({}={})".format(self.user_attr, username)
         if self.user_filter:
@@ -358,6 +364,8 @@ class LDAPClient(BaseAuth):
         :param email: String with email address
         :return: An list with results if query match, None otherwise
         """
+        # input sanitation
+        email = escape_filter_chars(email)
         # Defining user search filter
         query_filter = "({}={})".format(self.user_email_attr, email)
         if self.user_filter:
@@ -370,6 +378,18 @@ class LDAPClient(BaseAuth):
             raise UserNotFound("User not found in database for email '{}'".format(email))
 
         return self._format_user_results(brut_result[0][0], brut_result[0][1])
+
+
+    def search_user_by_username(self, username):
+        """ Method used to search for a user inside LDAP repository
+
+        :param email: String with username
+        :return: The first user matching query if at least one is found, None otherwise
+        """
+        found_users = self.search_user(username)
+        if not found_users:
+            raise UserNotFound(f"User not found in database for username '{username}'")
+        return self._format_user_results(found_users[0][0], found_users[0][1])
 
 
     def update_password (self, username, old_password, cleartext_password, **kwargs):
@@ -412,6 +432,8 @@ class LDAPClient(BaseAuth):
         :param groupname: String with groupname
         :return: An list with results if query match, None otherwise
         """
+        # input sanitation
+        groupname = escape_filter_chars(groupname)
         # Defining group search filter
         query_filter = "({}={})".format(self.group_attr, groupname)
         if self.group_filter:
@@ -606,6 +628,8 @@ class LDAPClient(BaseAuth):
 
     def user_lookup_enrichment(self, ldap_attr, value):
         """  """
+        # input sanitation
+        value = escape_filter_chars(value)
         # Defining user search filter
         query_filter = "({}={})".format(ldap_attr, value)
         if self.user_filter:
@@ -834,7 +858,7 @@ class LDAPClient(BaseAuth):
 
         ldif = modlist.modifyModlist(old_attributes, new_attributes)
         self._get_connection().modify_s(dn, ldif)
-        
+
         if userPassword:
             self._get_connection().passwd_s(dn, None, userPassword)
 

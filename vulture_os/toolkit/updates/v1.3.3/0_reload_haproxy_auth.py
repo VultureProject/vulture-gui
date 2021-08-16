@@ -51,7 +51,7 @@ if __name__ == "__main__":
         try:
             # If authentication, reload workflow Haproxy configs
             for workflow in Workflow.objects.filter(authentication__isnull=False):
-                workflow.save_conf()
+                node.api_request("workflow.workflow.build_conf", workflow.pk)
                 print("Workflow {} conf reload asked".format(workflow))
 
             for idp_portal in UserAuthentication.objects.filter(enable_external=True):
