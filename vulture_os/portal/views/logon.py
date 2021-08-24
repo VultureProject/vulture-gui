@@ -406,11 +406,15 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
-        assert session['scope']
+        assert session, "Session not found"
+        assert session['scope'], "Session does not contain any scope"
         return JsonResponse(session['scope'])
+    except AssertionError as e:
+        logger.info(e)
+        return HttpResponse(status=401)
     except Exception as e:
         logger.exception(e)
-        return HttpResponse(status=401)
+        return HttpResponse(status=500)
 
 
 
