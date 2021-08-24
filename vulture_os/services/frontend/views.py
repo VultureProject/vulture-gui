@@ -456,7 +456,7 @@ def frontend_edit(request, object_id=None, api=False):
                 changed_data = form.changed_data
 
                 """ If the ruleset has changed, we need to delete the old-named file """
-                if frontend.mode == "log" and "ruleset" in changed_data and old_rsyslog_filename:
+                if frontend.mode in ["log", "filebeat"] and "ruleset" in changed_data and old_rsyslog_filename:
 
                     # API request deletion of rsyslog frontend filename
                     Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
