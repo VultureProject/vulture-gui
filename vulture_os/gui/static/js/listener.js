@@ -281,7 +281,7 @@ $(function() {
 
   function refresh_input_logs_type(mode, listening_mode, filebeat_listening_mode){
     var first = true;
-    if((mode === "log" && listening_mode !== "api") || (mode === "filebeat" && filebeat_listening_mode !== "api") ){
+    if((mode === "log" && listening_mode !== "api") || (mode === "filebeat") ){
       $('#ruleset-div').show();
       $('#id_node').show();
     }

@@ -167,6 +167,7 @@ class CortexXDRParser(ApiParser):
                 if len(logs) > 0:
                     # Replace "Z" by "+00:00" for datetime parsing
                     # No need to make_aware, date already contains timezone
-                    setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp(logs[-1][KIND_TIME_FIELDS[kind]]/1000, tz=timezone.utc))
+                    # add 1 (ms) to timestamp to avoid getting last alert again
+                    setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][KIND_TIME_FIELDS[kind]]+1)/1000, tz=timezone.utc))
 
         logger.info("CortexXDR parser ending.")

@@ -135,6 +135,7 @@ class ReachFiveParser(ApiParser):
         cpt = 0
         page = 1
         total = 1
+        last_datetime = self.frontend.last_api_call.isoformat(timespec="milliseconds").replace("+00:00", "Z")
         while cpt < total:
             status, tmp_logs = self.get_logs(page=page, since=self.last_api_call)
 
@@ -155,8 +156,17 @@ class ReachFiveParser(ApiParser):
             cpt += len(logs)
 
             if len(logs) > 0:
-                # Replace "Z" by "+00:00" for datetime parsing
-                # No need to make_aware, date already contains timezone
-                self.frontend.last_api_call = datetime.fromisoformat(logs[-1]['date'].replace("Z", "+00:00"))
+                # Get latest date returned from API (logs are often not properly ordered, even with a 'sort'ed query...)
+                assert logs[0]['date'], "logs don't have a 'date' field!"
+                assert logs[0]['date'][-1] == "Z", f"unexpected date format '{logs[0]['date']}', are they UTC?"
+                last_datetime = [last_datetime]
+                last_datetime.extend([x['date'] for x in logs])
+                # ISO8601 timestamps are sortable as strings
+                last_datetime = max(last_datetime)
+                logger.debug(f"most recent log is from {last_datetime}")
+
+        # Replace "Z" by "+00:00" for datetime parsing
+        # No need to make_aware, date already contains timezone
+        self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
 
         logger.info("ReachFive parser ending.")
