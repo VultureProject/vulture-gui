@@ -385,7 +385,7 @@ class Node(models.Model):
         from applications.backend.models import Backend
         # !!! REQUIRED BY listener_set !
         from services.frontend.models import Listener
-        result = list()
+        result = set()
         """ Retrieve Backends used in enabled Frontends """
         addresses = self.addresses()
         """ For each address, retrieve the associated listeners having frontend enabled """
@@ -396,11 +396,11 @@ class Node(models.Model):
             except KeyError:
                 listener_addr[a] = [l.id for l in a.listener_set.filter(frontend__enabled=True)]
 
-        """ Loop on each NetworkAddress to retrieve LogForwarder used by the frontend using listeners """
+        """ Loop on each NetworkAddress to retrieve Backends associated with (enabled) Frontends """
         for network_address, listener_ids in listener_addr.items():
             for backend in Backend.objects.filter(enabled=True, frontend__listener__in=listener_ids):
                 for server in backend.server_set.filter(mode="net"):
-                    result.append((network_address.family, "tcp", server.target, server.port))  # TCP
+                    result.add((network_address.family, "tcp", server.target, server.port))  # TCP
 
         return result
 
