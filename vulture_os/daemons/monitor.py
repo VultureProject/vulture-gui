@@ -145,7 +145,7 @@ def monitor():
                     frontend.status[node.name] = status
                     frontend.save()
 
-            elif frontend.status.get(node.name):
+            elif not (frontend.mode=="log" and frontend.listening_mode=="api") and frontend.status.get(node.name):
                 frontend.status.pop(node.name, None)
                 frontend.save()
 

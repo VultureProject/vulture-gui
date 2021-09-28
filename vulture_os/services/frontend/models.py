@@ -1315,10 +1315,10 @@ class Frontend(models.Model):
 
     def get_filebeat_filename(self):
         from services.filebeat.filebeat import FILEBEAT_PATH
-        return "{}/filebeat.yml".format(FILEBEAT_PATH)
+        return f"{FILEBEAT_PATH}/{self.get_filebeat_base_filename()}"
 
     def get_filebeat_base_filename(self):
-        return "filebeat.yml"
+        return f"filebeat_{self.id}.yml"
 
     def get_test_filename(self):
         """ Return test filename for test conf with haproxy
@@ -1392,65 +1392,15 @@ class Frontend(models.Model):
         return "Address=\"{}\" Port=\"{}\"".format(JAIL_ADDRESSES['rsyslog']['inet'],
                                                    self.api_rsyslog_port)
     
-    def generate_filebeat_conf(self, module_type):
+    def generate_filebeat_conf(self):
         """ Generate filebeat configuration of this frontend
         """
-
-        if module_type == "input" and self.filebeat_module != "_custom":
-            return ""
-        if module_type == "module" and self.filebeat_module == "_custom":
-            return ""
-
         conf = self.to_template()
         if self.filebeat_listening_mode in ["udp", "tcp"]:
             conf['filebeat_config'] = conf['filebeat_config'].replace ("%ip%", JAIL_ADDRESSES['rsyslog'][conf['listeners'][0].network_address.family])
             conf['filebeat_config'] = conf['filebeat_config'].replace ("%port%", str(conf['listeners'][0].rsyslog_port))
-        elif self.filebeat_listening_mode == "file":
-            conf['filebeat_listening_mode'] = "log"
 
-        from services.filebeat.filebeat import JINJA_PATH as JINJA_FILEBEAT_PATH
-        try:
-            jinja2_env = Environment(loader=FileSystemLoader(JINJA_FILEBEAT_PATH))
-            template = jinja2_env.get_template("filebeat_input.conf")
-
-            module_config = template.render({'frontend': conf})
-
-            modules = yaml.load(module_config)
-            if self.filebeat_module == "_custom":
-                for module in modules:
-                    if module.get('enabled'):
-                        if not module.get('fields'):
-                            module['fields'] = {}
-                        module['fields']['filebeat_queue'] = f"filebeat_{self.tenants_config.id}_{self.id}"
-            else:
-                module = modules[0]
-                for sub_module in list(module.keys()):
-                    if sub_module == "module" or not module[sub_module]['enabled']:
-                        continue
-                    if not module[sub_module].get('input'):
-                        module[sub_module]['input'] = {}
-                    if not module[sub_module]['input'].get('fields'):
-                        module[sub_module]['input']['fields'] = {}
-                    module[sub_module]['input']['fields']['filebeat_queue'] = f"filebeat_{self.tenants_config.id}_{self.id}"
-
-            return yaml.dump(modules)
-
-        # In ALL exceptions, associate an error message
-        # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
-        except TemplateNotFound as e:
-            exception = ServiceJinjaError("The following file cannot be found : '{}'".format(e.message), "filebeat")
-        except TemplatesNotFound as e:
-            exception = ServiceJinjaError("The following files cannot be found : '{}'".format(e.message), "filebeat")
-        except (TemplateAssertionError, TemplateRuntimeError) as e:
-            exception = ServiceJinjaError("Unknown error in template generation: {}".format(e.message), "filebeat")
-        except UndefinedError as e:
-            exception = ServiceJinjaError("A variable is undefined while trying to render the following template: "
-                                          "{}".format(e.message), "filebeat")
-        except TemplateSyntaxError as e:
-            exception = ServiceJinjaError("Syntax error in the template: '{}'".format(e.message), "filebeat")
-        
-        # If there was an exception, raise a more general exception with the message and the traceback
-        raise exception
+        return conf['filebeat_config']
 
     def generate_rsyslog_conf(self):
         """ Generate rsyslog configuration of this frontend

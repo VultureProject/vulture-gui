@@ -81,6 +81,9 @@ class Service:
             'tpl_path': ""
         }
 
+    def get_conf_path(self, **kwargs):
+        return self.jinja_template['tpl_path']
+
     @property
     def menu(self):
         MENU = {
@@ -109,22 +112,22 @@ class Service:
 
         return MENU
 
-    def _exec_cmd(self, cmd, service_name=""):
+    def _exec_cmd(self, cmd, service_name="", *args):
         if not service_name:
             service_name = self.service_name
 
         jail_name = JAIL_SERVICES.get(service_name)
 
         if jail_name:
-            command = ['/usr/local/bin/sudo', '/usr/sbin/jexec', jail_name, '/usr/sbin/service', service_name, cmd]
+            command = ['/usr/local/bin/sudo', '/usr/sbin/jexec', jail_name, '/usr/sbin/service', service_name, cmd, *args]
         else:
-            command = ['/usr/local/bin/sudo', '/usr/sbin/service', service_name, cmd]
+            command = ['/usr/local/bin/sudo', '/usr/sbin/service', service_name, cmd, *args]
 
         proc = Popen(command, stdout=PIPE, stderr=PIPE)
         success, error = proc.communicate()
         return success.decode('utf8'), error.decode('utf8'), proc.returncode
 
-    def start(self):
+    def start(self, *args):
         stdout, stderr, code = self._exec_cmd('start')
 
         """ Haproxy returns stderr even if no failure - but return code = 0 """
@@ -139,11 +142,11 @@ class Service:
         logger.info("Service {} started: {}".format(self.service_name, stdout or stderr))
         return stdout or stderr
 
-    def stop(self):
+    def stop(self, *args):
         response = self._exec_cmd('stop')
         return response
 
-    def restart(self):
+    def restart(self, *args):
         stdout, stderr, code = self._exec_cmd('restart')
 
         """ Haproxy returns stderr even if no failure - but return code = 0 """
@@ -161,7 +164,7 @@ class Service:
         logger.info("Service {} restarted: {}".format(self.service_name, stdout or stderr))
         return stdout or stderr
 
-    def reload(self):
+    def reload(self, *args):
         stdout, stderr, code = self._exec_cmd('reload')
 
         if ("not running" in stdout) or ("not running" in stderr):
@@ -228,20 +231,20 @@ class Service:
             if "sudo: no tty present and no askpass program specified" in errors:
                 infos = "User vlt-os don't have permissions to do \"service {} status\". " \
                         "Check sudoers file.".format(service_name2.upper())
-            elif "does not exist in /etc/rc.d or the local startup":
+            elif "does not exist in /etc/rc.d or the local startup" in errors:
                 infos = "It seems that the service {} is not installed (or script not executable)".format(
                     service_name2)
-            else:
-                infos = "{}".format(str(errors))
-            logger.error("[{}] - Error getting status: '{}'".format(service_name2.upper(), str(infos)))
-
-        else:  # If no stdout nor sterr
-
-            if service_name2 == "strongswan" and code == 1:
+            elif service_name2 == "strongswan" and code == 1:
                 status = "DOWN"
             else:
-                """ Service status is unknown"""
-                logger.error("[{}] Status unknown, STDOUT and STDERR are empty.".format(service_name2.upper(), ))
+                infos = "{}".format(str(errors))
+
+            if infos:
+                logger.error("[{}] - Error getting status: '{}'".format(service_name2.upper(), str(infos)))
+
+        else:  # If no stdout nor sterr
+            """ Service status is unknown"""
+            logger.error("[{}] Status unknown, STDOUT and STDERR are empty.".format(service_name2.upper(), ))
         logger.debug("[{}] Status of service: {}".format(service_name2.upper(), status))
         return status, infos
 
@@ -267,14 +270,14 @@ class Service:
             return True
         return False
 
-    def write_conf(self, content, owners=None, perms=None):
-        write_conf(logger, [self.jinja_template['tpl_path'], content, owners or "root:wheel", perms or "644"])
+    def write_conf(self, content, owners=None, perms=None, **kwargs):
+        write_conf(logger, [self.get_conf_path(**kwargs), content, owners or "root:wheel", perms or "644"])
 
-    def read_current_conf(self):
-        with open(self.jinja_template['tpl_path'], 'r') as f:
+    def read_current_conf(self, **kwargs):
+        with open(self.get_conf_path(**kwargs), 'r') as f:
             return f.read()
 
-    def conf_has_changed(self, new_conf):
+    def conf_has_changed(self, new_conf, **kwargs):
         """
         Check if configuration has changed
         :param new_conf: Conf as text to compare with disk content
@@ -282,7 +285,7 @@ class Service:
                 raise ServiceConfigError if error
         """
         try:
-            current_conf = self.read_current_conf()
+            current_conf = self.read_current_conf(**kwargs)
 
             if current_conf != new_conf:
                 return new_conf
@@ -295,7 +298,7 @@ class Service:
             #logger.exception(e)
             if "No such file" in str(e):
                 raise ServiceNoConfigError(str(e), self.service_name)
-            raise ServiceConfigError("Cannot open '{}' : {}".format(self.jinja_template['tpl_path'], str(e)),
+            raise ServiceConfigError("Cannot open '{}' : {}".format(self.get_conf_path(**kwargs), str(e)),
                                      self.service_name)
 
     def get_dict_conf(self):
@@ -305,7 +308,7 @@ class Service:
         model_object = self.model.objects.get()
         return model_object.to_template()
 
-    def get_conf(self):
+    def get_conf(self, **kwargs):
         """ Generate conf from mongo object and Jinja template
         :return     Generated configuration, to write into file
                     If error, raise ServiceConfigError
@@ -318,7 +321,8 @@ class Service:
 
             return template.render({
                 'node': Cluster.get_current_node(),
-                **self.get_dict_conf()
+                **self.get_dict_conf(),
+                **kwargs
             })
         except ServiceExit:
             raise
@@ -327,17 +331,17 @@ class Service:
             logger.error(e)
             raise ServiceConfigError("Failed to generate jinja template: {}".format(str(e)), self.service_name)
 
-    def reload_conf(self):
+    def reload_conf(self, **kwargs):
         """ Check if generated conf (self.get_conf) has changed and write-it if yes
              If cannot check, write anyway
         :return   False if conf has not changed, True otherwise
         """
         """ Get new conf depending on MongoDB """
-        new_conf = self.get_conf()
+        new_conf = self.get_conf(**kwargs)
 
         """ Try to check if conf has changed compared to disk """
         try:
-            if not self.conf_has_changed(new_conf):
+            if not self.conf_has_changed(new_conf, **kwargs):
                 logger.debug("Conf of service {} has not changed.".format(self.service_name))
                 return False
             logger.info("Conf of service {} has changed.".format(self.service_name))
@@ -349,7 +353,7 @@ class Service:
 
         """ If conf has changed or cannot check, write conf """
         logger.debug("Configuration file for service {} need to be updated".format(str(self)))
-        self.write_conf(new_conf, owners=self.owners, perms=self.perms)
+        self.write_conf(new_conf, owners=self.owners, perms=self.perms, **kwargs)
         logger.info("Configuration of service {} written on disk.".format(self.service_name))
 
         return True
