@@ -808,6 +808,18 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # HarfangLab attributes
+    harfanglab_host = models.TextField(
+        verbose_name = _("HarfangLab Host"),
+        help_text = _("Hostname (without scheme or path) of the HarfangLab server"),
+        default = "",
+    )
+    harfanglab_apikey = models.TextField(
+        verbose_name = _("HarfangLab API key"),
+        help_text = _("API key to use to contact HarfangLab api"),
+        default = "",
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -1002,6 +1014,9 @@ class Frontend(models.Model):
                 elif self.api_parser_type == "netskope":
                     result['netskope_host'] = self.netskope_host
                     result['netskope_apikey'] = self.netskope_apikey
+                elif self.api_parser_type == "harfanglab":
+                    result['harfanglab_host'] = self.harfanglab_host
+                    result['harfanglab_apikey'] = self.harfanglab_apikey
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
