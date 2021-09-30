@@ -62,7 +62,7 @@
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
                   <li><a href="#tab_network" data-toggle="tab" class="network-mode">{% trans "Listeners" %}</a></li>
-                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode">{% trans "Vendor API" %}</a></li>
+                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode filebeat-api-mode">{% trans "Vendor API" %}</a></li>
                   <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% trans "HTTP Options" %}</a></li>
                   <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% trans "HTTP Headers" %}</a></li>
                   <li><a href="#tab_enrichment" data-toggle="tab" class="logging">{% trans "Logs Enrichment" %}</a></li>
@@ -810,7 +810,7 @@
 
                   <div class="tab-pane" id="tab_api_client">
                     <div class="row">
-                      <div class="col-md-12">
+                      <div class="col-md-12 api-mode">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{% trans "API Parser Type" %}</label>
                           <div class="col-sm-5">
@@ -820,7 +820,7 @@
                         </div>
                       </div>
 
-                      <div class="col-md-12">
+                      <div class="col-md-12 api-mode filebeat-api-mode">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{% trans "Use proxy" %}</label>
                           <div class="col-sm-5">
@@ -1260,6 +1260,23 @@
                         </div>
                       </div>
 
+                      <div class="col-md-12 api_clients_row" id="api_harfanglab_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.harfanglab_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.harfanglab_host }}
+                            {{ form.harfanglab_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.harfanglab_apikey.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.harfanglab_apikey }}
+                            {{ form.harfanglab_apikey.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
                       <div class="col-md-12 api_clients_row" id="api_netskope_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.netskope_host.label }}</label>
@@ -1277,7 +1294,7 @@
                         </div>
                       </div>
 
-                      <div class="col-md-12">
+                      <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
                             {% trans "Test Configuration" %}

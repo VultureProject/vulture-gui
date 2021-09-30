@@ -79,9 +79,11 @@ class FilebeatService(Service):
 
     # Status inherited from Service class
 
+    def get_conf_path(self, frontend=None):
+        return frontend.get_filebeat_filename()
 
 
-def build_conf(node_logger, frontend_id=None):
+def build_conf(node_logger, frontend_id):
     """ Generate conf of filebeat inputs, based on all frontends LOG
     config of frontend
     outputs to internal REDIS
@@ -89,18 +91,20 @@ def build_conf(node_logger, frontend_id=None):
     :param frontend_id: The name of the frontend in conf file
     :return:
     """
-    
-    """ Generate inputs configutation """
-    service = FilebeatService()
-    """ If frontend was given we cannot check if its conf has changed to restart service
-     and if reload_conf is True, conf has changed so restart service
-    """
     result = ""
-    if service.reload_conf():
-        result += "Filebeat conf updated. Restarting service."
-        result += service.restart()
-    else:
-        result += "Filebeat conf hasn't changed."
+    service = FilebeatService()
+    try:
+        frontend = Frontend.objects.get(pk=frontend_id)
+        """ Generate filebeat conf for frontend + write-it if changed """
+        if service.reload_conf(frontend=frontend):
+            result += "Frontend '{}' filebeat conf written.\n".format(frontend_id)
+            result += service.restart(frontend_id)
+        else:
+            result += f"Filebeat conf of frontend {frontend} hasn't changed."
+    except ObjectDoesNotExist:
+        raise VultureSystemError("Frontend with id {} not found, failed to generate conf.".format(frontend_id),
+                                 "build rsyslog conf", traceback=" ")
+
     return result
 
 
