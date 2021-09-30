@@ -153,7 +153,6 @@ class HarfangLabParser(ApiParser):
     def execute(self):
 
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
-        since = (timezone.now() - timedelta(days=7))
         to = timezone.now()
         logger.info(f"HarfangLab API parser starting from {since} to {to}.")
 
