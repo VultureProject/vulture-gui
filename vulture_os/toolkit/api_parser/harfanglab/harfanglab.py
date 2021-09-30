@@ -84,7 +84,8 @@ class HarfangLabParser(ApiParser):
 
                 response = self.session.get(
                     f'{self.harfanglab_host}/{self.VERSION}',
-                    timeout=10
+                    timeout=10,
+                    proxies=self.proxies
                 )
                 assert response.status_code == 200
 
@@ -101,9 +102,9 @@ class HarfangLabParser(ApiParser):
         self._connect()
 
         if (method == "GET"):
-            response = self.session.get(url, params=query, headers=self.HEADERS, timeout=timeout)
+            response = self.session.get(url, params=query, headers=self.HEADERS, timeout=timeout, proxies=self.proxies)
         elif (method == "POST"):
-            response = self.session.post(url, data=json.dumps(query), headers=self.HEADERS, timeout=timeout)
+            response = self.session.post(url, data=json.dumps(query), headers=self.HEADERS, timeout=timeout, proxies=self.proxies)
         else:
             raise HarfangLabAPIError(f"Error at HarfangLab request, unknown method : {method}")
 
