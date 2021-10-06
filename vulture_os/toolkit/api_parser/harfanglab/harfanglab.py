@@ -84,7 +84,8 @@ class HarfangLabParser(ApiParser):
 
                 response = self.session.get(
                     f'{self.harfanglab_host}/{self.VERSION}',
-                    timeout=10
+                    timeout=10,
+                    proxies=self.proxies
                 )
                 assert response.status_code == 200
 
@@ -101,9 +102,9 @@ class HarfangLabParser(ApiParser):
         self._connect()
 
         if (method == "GET"):
-            response = self.session.get(url, params=query, headers=self.HEADERS, timeout=timeout)
+            response = self.session.get(url, params=query, headers=self.HEADERS, timeout=timeout, proxies=self.proxies)
         elif (method == "POST"):
-            response = self.session.post(url, data=json.dumps(query), headers=self.HEADERS, timeout=timeout)
+            response = self.session.post(url, data=json.dumps(query), headers=self.HEADERS, timeout=timeout, proxies=self.proxies)
         else:
             raise HarfangLabAPIError(f"Error at HarfangLab request, unknown method : {method}")
 
@@ -166,9 +167,17 @@ class HarfangLabParser(ApiParser):
             self.update_lock()
 
             logs = response['results']
-            
+
             total = int(response['count'])
             logger.debug(f"HarfangLab API parser: got {total} lines available")
+
+            if total == 0:
+                # Means that there are no logs available. It may be for two
+                # reasons: no log during this period or logs not available at
+                # request time.
+                # If there are no logs, no need to write them and we should not
+                # set the last_api_call.
+                break
 
             index += len(logs)
             logger.debug(f"HarfangLab API parser: retrieved {index} lines")
@@ -179,7 +188,7 @@ class HarfangLabParser(ApiParser):
             self.update_lock()
 
             # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
-            self.frontend.last_api_call = to + timedelta(microseconds=1000)
+            self.frontend.last_api_call = datetime.fromtimestamp(logs[0]['last_seen']) + timedelta(microseconds=1000)
             self.frontend.save()
 
         logger.info("HarfangLab API parser ending.")
