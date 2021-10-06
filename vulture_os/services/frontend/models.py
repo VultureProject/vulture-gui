@@ -1484,7 +1484,7 @@ class Frontend(models.Model):
     def get_log_format(self):
         """ Return log format depending on frontend conf """
         log_format = "{ " \
-                     "\\\"time-utc\\\": \\\"%[date,utime(%Y-%m-%dT%H:%M:%S:%Z)]\\\", " \
+                     "\\\"time-utc\\\": \\\"%[date,utime(%Y-%m-%dT%H:%M:%S%Z)]\\\", " \
                      "\\\"bytes_read\\\": \\\"%B\\\", " \
                      "\\\"hostname\\\": \\\"%{+E}H\\\", " \
                      "\\\"status_code\\\": %ST, " \
