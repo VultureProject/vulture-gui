@@ -254,11 +254,13 @@ def openid_callback(request, workflow_id, repo_id):
                                 openid=False) \
                    or authentication.generate_response()
     else:
+        session = RedisOpenIDSession(REDISBase(), f"oauth2_{oauth2_token}")
         return JsonResponse({
             'access_token': oauth2_token,
             'token_type': "Bearer",
             'scope': ["openid"],
-            'created_at': int(timezone.now().timestamp()),
+            'created_at': session['iat'],
+            'exp': session['exp'],
         })
 
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
@@ -369,7 +371,8 @@ def openid_token(request, portal_id):
             'access_token': session['access_token'],
             'token_type': "Bearer",
             'scope': ["openid"],
-            'created_at': int(timezone.now().timestamp()),
+            'created_at': session['iat'],
+            'exp': session['exp'],
         })
     except RedisError as e:
         return JsonResponse({"error": "internal_error", "error_description": "Session error"}, status=500)
@@ -408,6 +411,8 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
         assert session, "Session not found"
         assert session['scope'], "Session does not contain any scope"
+        # Add internal Oauth2 attributes
+        session['scope'].update({'exp': session['exp']})
         return JsonResponse(session['scope'])
     except AssertionError as e:
         logger.info(e)

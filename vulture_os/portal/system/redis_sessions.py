@@ -39,6 +39,7 @@ from redis                          import Redis, ConnectionError as RedisConnec
 # Extern modules imports
 from hashlib                        import sha1
 import json
+import time
 from copy import deepcopy
 
 # Logger configuration
@@ -475,6 +476,8 @@ class REDISOauth2Session(REDISSession):
     def register_authentication(self, repo_id, oauth2_data, timeout):
         data = {
             'token_ttl': timeout,
+            'iat': int(time.time()),
+            'exp': int(time.time()) + timeout,
             'scope': oauth2_data,
             'repo': str(repo_id)
         }
@@ -485,6 +488,7 @@ class REDISOauth2Session(REDISSession):
                 self.keys['scope'] = {}
             if not self.keys.get('token_ttl'):
                 self.keys['token_ttl'] = timeout
+                self.keys['exp'] = int(time.time()) + timeout
             if not self.keys.get('repo'):
                 self.keys['repo'] = repo_id
             for key,item in oauth2_data.items():
