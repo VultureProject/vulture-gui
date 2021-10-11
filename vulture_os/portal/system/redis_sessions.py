@@ -721,7 +721,7 @@ class REDISBase(object):
             v = self.r.hgetall(hash)
         except Exception as e:
             self.logger.exception(e)
-            return None
+            return {}
         return v
 
 
