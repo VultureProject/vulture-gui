@@ -176,8 +176,6 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Use POSTAuthentication to print errors with html templates
         authentication = POSTAuthentication(portal_cookie, workflow, scheme)
-        # Set redirect url in redis
-        authentication.set_redirect_url(redirect_url)
 
         # Get user session with cookie
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
@@ -685,6 +683,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # Generate response depending on application.sso_forward options
                 final_response = sso_forward.generate_response(request, response, authentication.get_redirect_url())
                 logger.info("PORTAL::log_in: SSOForward response successfuly generated")
+                # Remove potential custom redirect url once response has been generated
+                authentication.del_redirect_url()
 
                 return final_response
 
@@ -728,6 +728,7 @@ def log_in(request, workflow_id=None):
     try:
         scheme = request.META["HTTP_X_FORWARDED_PROTO"]
         host = request.META["HTTP_HOST"]
+        connection_url = scheme + "://" + host
         workflow = Workflow.objects.get(pk=workflow_id)
     except Exception as e:
         logger.exception(e)
@@ -741,6 +742,13 @@ def log_in(request, workflow_id=None):
         portal_cookie_name = global_config.portal_cookie_name
         token_name = global_config.public_token
         portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
+        redirect_url = request.GET.get('redirect_url')
+        if redirect_url:
+            redirect_url = scheme + "://" + host + redirect_url
+            logger.debug(f"redirect_url is {redirect_url}")
+            redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
+            redis_portal_session.set_redirect_url(workflow.id, redirect_url)
+            redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
     except Exception as e:
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
@@ -754,7 +762,5 @@ def log_in(request, workflow_id=None):
     except:
         pass
 
-    redirect_url = scheme + "://" + host + workflow.public_dir
-
     logger.info("PORTAL::log_in: Return response {}".format(response))
-    return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
+    return set_portal_cookie(response, portal_cookie_name, portal_cookie, connection_url)

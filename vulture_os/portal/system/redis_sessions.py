@@ -280,6 +280,13 @@ class REDISPortalSession(REDISSession):
         self.keys[f'oauth2_{backend_id}'] = oauth2_token
         return self.handler.hset(self.key, f'oauth2_{backend_id}', oauth2_token)
 
+    def get_redirect_url(self, workflow_id):
+        return self.handler.hget(self.key, f'url_{workflow_id}')
+
+    def set_redirect_url(self, workflow_id, url):
+        self.keys[f'url_{workflow_id}'] = url
+        return self.handler.hset(self.key, f'url_{workflow_id}', url)
+
     def get_auth_backend(self, workflow_id):
         return self.handler.hget(self.key, f'backend_{workflow_id}')
 
