@@ -122,7 +122,7 @@ def openid_start(request, workflow_id, repo_id):
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
         portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
-        # We must stock the state into Redis
+        # We must store the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         redis_portal_session[STATE_REDIS_KEY] = state
         redis_portal_session[RETURN_OAUTH_TOKEN] = str(request.GET.get('get_token') in (True, "true", "True", "1", 1, "yes"))
@@ -451,7 +451,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
         except TokenNotFoundError as e:
             logger.error("PORTAL::log_in: {}".format(str(e)))
 
-            # Redirect to the same uri, to stock token in Redis via session filter
+            # Redirect to the same uri, to store token in Redis via session filter
             return HttpResponseRedirect("")
 
         # If redis_session.keys['application_id'] does not exists : FORBIDDEN
@@ -505,7 +505,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                                              authentication.redis_oauth2_session.keys))
 
             except AssertionError as e:
-                logger.error("PORTAL::log_in: Bad captcha taped for username '{}' : {}"
+                logger.exception(e)
+                logger.error("PORTAL::log_in: Bad captcha input for username '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request, error="Bad captcha")
 
