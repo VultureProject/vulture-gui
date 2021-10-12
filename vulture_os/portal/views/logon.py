@@ -234,7 +234,7 @@ def openid_callback(request, workflow_id, repo_id):
     except ACLError as e:
         logger.error("PORTAL::openid_callback: ACLError while trying to authenticate user '{}' : {}"
                         .format(authentication.credentials[0], e))
-        return authentication.ask_credentials_response(request=request, error="Bad credentials")
+        return authentication.ask_credentials_response(request=request, error="Authentication Failure")
 
     except OAuth2Error as e:
         logger.exception(e)
@@ -514,18 +514,18 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             except AuthenticationError as e:
                 logger.error("PORTAL::log_in: AuthenticationError while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request, error="Bad credentials")
+                return authentication.ask_credentials_response(request=request, error="Authentication Failure")
 
             except ACLError as e:
                 logger.error("PORTAL::log_in: ACLError while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request, error="Bad credentials")
+                return authentication.ask_credentials_response(request=request, error="Authentication Failure")
 
             except (DBAPIError, PyMongoError, LDAPError) as e:
                 logger.error("PORTAL::log_in: Repository driver Error while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request,
-                                                               error="Bad credentials")
+                                                               error="Authentication Failure")
 
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
                 # vltprtlsrnm is always empty during the initial redirection. Don't log that
