@@ -134,16 +134,16 @@ class SSOForward(object):
                     field_value = request.POST[field_name]
                     datas[field_name], fields_to_stock[field_name] = field_value,field_value
                 except Exception as e:
-                    logger.debug("SSOForward{}::retrieve_credentials: Unable to retrieve field '{}' from POST data : {}".format(fw_type, field_name, str(e)))
+                    logger.debug("SSOForward{}::retrieve_credential: Unable to retrieve field '{}' from POST data : {}".format(fw_type, field_name, str(e)))
                     try:
                         datas[field_name] = self.retrieve_sso_field(self.credentials[0], field_name)
                     except Exception as e:
-                        logger.debug("SSOForward{}::retrieve_credentials: Unable to retrieve field '{}' from POST data : {}".format(fw_type, field_name, str(e)))
+                        logger.debug("SSOForward{}::retrieve_credential: Unable to retrieve field '{}' from POST data : {}".format(fw_type, field_name, str(e)))
                 if not datas.get(field_name, None):
                     fields_to_learn[field_name] = field_html
 
             if fields_to_learn:
-                raise CredentialsMissingError("SSOForward{}::retrieve_credentials: Learning field(s) missing : {}".format(fw_type, fields_to_learn), fields_to_learn)
+                raise CredentialsMissingError("SSOForward{}::retrieve_credential: Learning field(s) missing : {}".format(fw_type, fields_to_learn), fields_to_learn)
 
             return datas, fields_to_stock, self.application.get_redirect_uri()
         else:
