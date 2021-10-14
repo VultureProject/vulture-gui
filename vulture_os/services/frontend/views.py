@@ -592,10 +592,11 @@ def frontend_edit(request, object_id=None, api=False):
                                              traceback=api_res.get('message'))
 
                 """ We need to configure Filebeat, it will check if conf has changed """
-                api_res = node.api_request("services.filebeat.filebeat.build_conf", frontend.id)
-                if not api_res.get('status'):
-                    raise ServiceConfigError("on node {}: API request error.".format(node.name), "filebeat",
-                                             traceback=api_res.get('message'))
+                if frontend.mode == "filebeat":
+                    api_res = node.api_request("services.filebeat.filebeat.build_conf", frontend.id)
+                    if not api_res.get('status'):
+                        raise ServiceConfigError("on node {}: API request error.".format(node.name), "filebeat",
+                                                 traceback=api_res.get('message'))
 
                 if not frontend.rsyslog_only_conf and not frontend.filebeat_only_conf:
                     """ Reload HAProxy service - After rsyslog / filebeat to prevent logging crash """
