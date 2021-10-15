@@ -67,6 +67,7 @@ class SSOForward(object):
     def __init__(self, request, application, authentication, user_infos):
         self.ssl_context = None
         ssl_client_certificate = None
+        cookies = None
         if application.authentication.sso_forward_url[:5] == "https" and application.authentication.sso_forward_tls_proto:
             self.ssl_context = SSLContext()
             # Use setter instead of kwargs, kwargs does not work...
@@ -77,13 +78,18 @@ class SSOForward(object):
             else:
                 self.ssl_context.verify_mode = CERT_NONE
 
+        if application.authentication.sso_keep_client_cookies:
+            logger.debug("SSOForward:__init__: keeping client's cookies while making requests")
+            cookies = request.COOKIES
+
         self.sso_client   = SSOClient(application.authentication.sso_forward_user_agent or request.META.get('HTTP_USER_AGENT',None),
                                       application.backend.headers.filter(enabled=True, type="request",
                                                        action__in=['add-header', 'set-header']),
                                     request.META.get('HTTP_REFERER', None),
                                     ssl_client_certificate,
                                     self.ssl_context,
-                                    verify_certificate=application.authentication.sso_forward_tls_check)
+                                    verify_certificate=application.authentication.sso_forward_tls_check,
+                                    existing_cookies=cookies)
         self.application  = application
         self.credentials  = authentication.credentials
         self.backend_id   = authentication.backend_id

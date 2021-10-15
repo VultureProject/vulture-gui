@@ -63,7 +63,7 @@ class SSLAdapter(HTTPAdapter):
 
 
 class SSOClient(object):
-    def __init__(self, user_agent, headers_in, referer, client_certificate, ssl_context, verify_certificate=False):
+    def __init__(self, user_agent, headers_in, referer, client_certificate, ssl_context, verify_certificate=False, existing_cookies=None):
         """
 		:param logger: logger instance
 		:param uri: The 'action' uri where to post the form
@@ -91,6 +91,9 @@ class SSOClient(object):
         if referer:
             self.session.headers.update({'Referer': referer})
             logger.debug("SSOClient::_init_: SSOClient referer used is '{}'".format(self.session.headers.get("Referer")))
+
+        if existing_cookies:
+            self.add_cookies(existing_cookies)
 
         for header in headers_in:
             if header.header_name.lower() == "cookie":
