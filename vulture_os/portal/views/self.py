@@ -46,6 +46,7 @@ from django.utils.datastructures     import MultiValueDictKeyError
 from django.core.exceptions          import ObjectDoesNotExist
 from ldap                            import LDAPError
 from portal.system.exceptions        import PasswordMatchError, RedirectionNeededError
+from portal.views.responses          import error_response
 from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError
 from smtplib                         import SMTPException
@@ -132,10 +133,10 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         logger.error("PORTAL::log_in: Unable to connect to Redis server : {}".format(str(e)))
         return HttpResponseServerError()
 
-    # If assertionError : Forbidden
+    # If assertionError : rdm is not valid
     except AssertionError as e:
         logger.error("PORTAL::log_in: AssertionError while trying to create Authentication : '{}'".format(e))
-        return HttpResponseForbidden()
+        return error_response(portal, error="Invalid link")
 
     except (DBAPIError, LDAPError, PyMongoError) as e:
         logger.error("SELF::self: Failed to update password :")

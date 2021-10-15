@@ -617,6 +617,18 @@ class REDISBase(object):
 
 
     # Retrieve function : no need master
+    def exists(self, key):
+        try:
+            v = self.r.exists(key)
+        except RedisResponseError as e:
+            return None
+        except Exception as e:
+            self.logger.exception(e)
+            return None
+        return v
+
+
+    # Retrieve function : no need master
     def get(self, key):
         try:
             v = self.r.get(key)
