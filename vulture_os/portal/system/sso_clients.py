@@ -133,12 +133,15 @@ class SSOClient(object):
         else:
             return response.content
 
-
-    def add_cookie_W_path(self, response, cookie_name, cookie_value, portal_url):
+    def add_cookie_W_path(self, response, cookie, portal_url):
         path = '/'+'/'.join(portal_url.split('/')[3:])
-        domain = portal_url.split('/')[2].split(':')[0]
-        response.set_cookie(cookie_name, cookie_value, domain=domain, httponly=True, path=path,
-                            secure=portal_url.startswith('https'))
+        response.set_cookie(cookie.name,
+                            cookie.value,
+                            path=path,
+                            httponly=True,
+                            secure=portal_url.startswith('https'),
+                            max_age=cookie.expires,
+                            samesite=cookie.get_nonstandard_attr('SameSite', 'Lax'))
         return response
 
 
@@ -149,9 +152,9 @@ class SSOClient(object):
             elif key.lower() != 'set-cookie' and key.lower() != 'www-authenticate':
                 final_response[key] = item
 
-        for key,item in self.session.cookies.items():
+        for cookie in self.session.cookies:
             if key not in self.banned_cookies:
-                final_response = self.add_cookie_W_path(final_response, key, item, app_uri)
+                final_response = self.add_cookie_W_path(final_response, cookie, app_uri)
 
         return final_response
 
