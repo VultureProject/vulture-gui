@@ -102,7 +102,8 @@ class UserAuthenticationForm(ModelForm):
                   'sso_forward_content_type','sso_forward_url','sso_forward_user_agent','sso_forward_content',
                   'sso_forward_enable_capture','sso_forward_capture_content','sso_forward_enable_replace',
                   'sso_forward_replace_pattern','sso_forward_replace_content','sso_forward_enable_additionnal',
-                  'sso_forward_additional_url', 'sso_forward_tls_proto', 'sso_forward_tls_cert', 'sso_forward_tls_check')
+                  'sso_forward_additional_url', 'sso_forward_tls_proto', 'sso_forward_tls_cert', 'sso_forward_tls_check',
+                  'sso_keep_client_cookies')
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'enable_tracking': CheckboxInput(attrs={'class': 'form-control js-switch'}),
@@ -151,6 +152,7 @@ class UserAuthenticationForm(ModelForm):
             'sso_forward_replace_pattern': Textarea(attrs={'class': "form-control"}),
             'sso_forward_replace_content': Textarea(attrs={'class': "form-control"}),
             'sso_forward_additional_url': TextInput(attrs={'class': "form-control"}),
+            'sso_keep_client_cookies': CheckboxInput(attrs={'class': "form-control js-switch"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -168,7 +170,8 @@ class UserAuthenticationForm(ModelForm):
                       "sso_forward_enable_capture", "sso_forward_enable_replace", "sso_forward_enable_additionnal",
                       "sso_forward_type", "sso_forward_content_type", "sso_forward_tls_proto", "sso_forward_url",
                       "sso_forward_user_agent", "sso_forward_content", "sso_forward_capture_content",
-                      "sso_forward_replace_pattern", "sso_forward_replace_content", "sso_forward_additional_url"]:
+                      "sso_forward_replace_pattern", "sso_forward_replace_content", "sso_forward_additional_url",
+                      "sso_keep_client_cookies"]:
             self.fields[field].required = False
         # Format oauth_redirect_uris
         self.initial['oauth_redirect_uris'] = '\n'.join(self.initial.get('oauth_redirect_uris', []) or self.fields['oauth_redirect_uris'].initial)

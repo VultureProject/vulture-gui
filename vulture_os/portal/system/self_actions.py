@@ -257,7 +257,8 @@ class SELFServiceChange(SELFService):
             super().retrieve_credentials(request)
         else:
             # Chec rdm key format
-            assert re_match("^[0-9a-f-]+$", rdm), "PORTAL::self: Injection attempt on 'rdm'"
+            assert re_match("^[0-9a-f-]+$", rdm), "SELFServiceChange::retrieve_credentials: Injection attempt on 'rdm'"
+            assert self.redis_base.exists(f"password_reset_{rdm}"), f"SELFServiceChange::retrieve_credentials: rdm key {rdm} does not exist"
 
         # Check if passwords are correct
         old_password = None  # None if rdm
