@@ -268,7 +268,8 @@ class CybereasonParser(ApiParser):
                     descr = descriptions.get(val)
 
                     if descr:
-                        tmp = ", ".join(tmp_malop['elements_names'])
+                        # Remove "None" value, that appears sometimes
+                        tmp = ", ".join([i for i in tmp_malop['elements_names'] if i != None])
                         tmp_malop['threat_rootcause'] = Template(descr).render(Context({
                             "suspectName": tmp
                         }))
