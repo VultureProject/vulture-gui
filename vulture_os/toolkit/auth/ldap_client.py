@@ -329,6 +329,7 @@ class LDAPClient(BaseAuth):
         """
         # input sanitation
         username = escape_filter_chars(username)
+        logger.debug(f"Searching for user {username} and getting attributes {attr_list}")
         # Defining user search filter
         query_filter = "({}={})".format(self.user_attr, username)
         if self.user_filter:
@@ -366,6 +367,7 @@ class LDAPClient(BaseAuth):
         """
         # input sanitation
         email = escape_filter_chars(email)
+        logger.debug(f"Searching user with email {email}")
         # Defining user search filter
         query_filter = "({}={})".format(self.user_email_attr, email)
         if self.user_filter:
@@ -434,6 +436,7 @@ class LDAPClient(BaseAuth):
         """
         # input sanitation
         groupname = escape_filter_chars(groupname)
+        logger.debug(f"Searching group {groupname} and getting attributes {attr_list}")
         # Defining group search filter
         query_filter = "({}={})".format(self.group_attr, groupname)
         if self.group_filter:
@@ -545,7 +548,7 @@ class LDAPClient(BaseAuth):
 
         if not self.user_account_locked_attr:
             return False
-        logger.debug("Looking if {} account is locked".format(user_dn))
+        logger.debug("Looking if account {} is locked".format(user_dn))
         # query_filter = "(dn={})".format(username)
         # if self.user_filter:
         #     query_filter = "(&{}{}{})".format(query_filter, self.user_filter,
@@ -570,7 +573,7 @@ class LDAPClient(BaseAuth):
 
         if not self.user_change_password_attr:
             return False
-        logger.debug("Looking if {} account needs to change its password"
+        logger.debug("Looking if account {} needs to change its password"
                     .format(user_dn))
         # query_filter = "({}={})".format(self.user_attr, username)
         # if self.user_filter:
@@ -636,6 +639,7 @@ class LDAPClient(BaseAuth):
             query_filter = "(&{}{})".format(query_filter, self.user_filter)
         dn = self._get_user_dn()
         self.scope = self.user_scope
+        logger.debug(f"Lookup on dn {dn} using query filter {query_filter} and value {value}")
         # Search LDAP_ALL_USER_ATTRIBUTES & LDAP_ALL_OPERATIONAL_ATTRIBUTES
         user_infos = self._search(dn, query_filter, value, attr_list=["+", "*"])
         if not user_infos:

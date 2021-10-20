@@ -541,6 +541,10 @@ class UserAuthentication(models.Model):
         default="http://My_Responsive_App.com/Default.aspx",
         help_text=_('URL of additionnal request')
     )
+    sso_keep_client_cookies = models.BooleanField(
+        default=False,
+        help_text=_("Take client's cookies while executing SSO requests")
+    )
 
     objects = models.DjongoManager()
 

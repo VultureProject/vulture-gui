@@ -634,6 +634,17 @@
                               </div>
                             </div>
                           </div> <!-- /.row -->
+                          <div class="row sso_forward">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.sso_keep_client_cookies.label }}</label>
+                                  <div class="col-sm-5">
+                                    {{form.sso_keep_client_cookies}}
+                                    {{form.sso_keep_client_cookies.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
                         </fieldset>
                       </div> <!-- /.tab-pane -->
                     </div> <!-- /.tab-content -->

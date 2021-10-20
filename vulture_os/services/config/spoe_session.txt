@@ -12,9 +12,9 @@ spoe-agent session-agent
 
         option var-prefix session
 
-        timeout hello      100ms
+        timeout hello      500ms
         timeout idle       30s
-        timeout processing 100ms
+        timeout processing 5s
 
         option set-on-error error
 

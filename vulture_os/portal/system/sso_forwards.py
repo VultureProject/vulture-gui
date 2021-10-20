@@ -67,6 +67,7 @@ class SSOForward(object):
     def __init__(self, request, application, authentication, user_infos):
         self.ssl_context = None
         ssl_client_certificate = None
+        cookies = None
         if application.authentication.sso_forward_url[:5] == "https" and application.authentication.sso_forward_tls_proto:
             self.ssl_context = SSLContext()
             # Use setter instead of kwargs, kwargs does not work...
@@ -77,13 +78,18 @@ class SSOForward(object):
             else:
                 self.ssl_context.verify_mode = CERT_NONE
 
+        if application.authentication.sso_keep_client_cookies:
+            logger.debug("SSOForward:__init__: keeping client's cookies while making requests")
+            cookies = request.COOKIES
+
         self.sso_client   = SSOClient(application.authentication.sso_forward_user_agent or request.META.get('HTTP_USER_AGENT',None),
                                       application.backend.headers.filter(enabled=True, type="request",
                                                        action__in=['add-header', 'set-header']),
                                     request.META.get('HTTP_REFERER', None),
                                     ssl_client_certificate,
                                     self.ssl_context,
-                                    verify_certificate=application.authentication.sso_forward_tls_check)
+                                    verify_certificate=application.authentication.sso_forward_tls_check,
+                                    existing_cookies=cookies)
         self.application  = application
         self.credentials  = authentication.credentials
         self.backend_id   = authentication.backend_id
@@ -134,16 +140,16 @@ class SSOForward(object):
                     field_value = request.POST[field_name]
                     datas[field_name], fields_to_stock[field_name] = field_value,field_value
                 except Exception as e:
-                    logger.debug("SSOForward{}::retrieve_credentials: Unable to retrieve field '{}' from POST data : {}".format(fw_type, field_name, str(e)))
+                    logger.debug("SSOForward{}::retrieve_credential: Unable to retrieve field '{}' from POST data : {}".format(fw_type, field_name, str(e)))
                     try:
                         datas[field_name] = self.retrieve_sso_field(self.credentials[0], field_name)
                     except Exception as e:
-                        logger.debug("SSOForward{}::retrieve_credentials: Unable to retrieve field '{}' from POST data : {}".format(fw_type, field_name, str(e)))
+                        logger.debug("SSOForward{}::retrieve_credential: Unable to retrieve field '{}' from POST data : {}".format(fw_type, field_name, str(e)))
                 if not datas.get(field_name, None):
                     fields_to_learn[field_name] = field_html
 
             if fields_to_learn:
-                raise CredentialsMissingError("SSOForward{}::retrieve_credentials: Learning field(s) missing : {}".format(fw_type, fields_to_learn), fields_to_learn)
+                raise CredentialsMissingError("SSOForward{}::retrieve_credential: Learning field(s) missing : {}".format(fw_type, fields_to_learn), fields_to_learn)
 
             return datas, fields_to_stock, self.application.get_redirect_uri()
         else:

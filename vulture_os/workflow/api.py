@@ -360,6 +360,7 @@ def workflow_edit(request, object_id, action=None):
             workflow.public_dir = public_dir
             workflow.frontend = frontend
             workflow.backend = backend
+            had_authentication = workflow.authentication is not None
 
             workflow_acls = []
 
@@ -423,6 +424,11 @@ def workflow_edit(request, object_id, action=None):
 
             # Reload HAProxy on concerned nodes
             for node in nodes:
+                # We need to rebuild configuration and reload Haproxy in case authentication is involved
+                # This is done to regenerate spoe configuration
+                # This also reloads Haproxy
+                if workflow.authentication is not None or had_authentication:
+                    api_res = node.api_request("services.haproxy.haproxy.configure_node")
                 api_res = node.api_request("services.haproxy.haproxy.restart_service")
                 if not api_res.get('status'):
                     logger.error("Workflow::edit: API error while trying to "
