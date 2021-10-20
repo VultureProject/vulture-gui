@@ -122,7 +122,7 @@ def openid_start(request, workflow_id, repo_id):
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
         portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
-        # We must stock the state into Redis
+        # We must store the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         redis_portal_session[STATE_REDIS_KEY] = state
         redis_portal_session[RETURN_OAUTH_TOKEN] = str(request.GET.get('get_token') in (True, "true", "True", "1", 1, "yes"))
@@ -176,8 +176,6 @@ def openid_callback(request, workflow_id, repo_id):
 
         # Use POSTAuthentication to print errors with html templates
         authentication = POSTAuthentication(portal_cookie, workflow, scheme)
-        # Set redirect url in redis
-        authentication.set_redirect_url(redirect_url)
 
         # Get user session with cookie
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
@@ -234,7 +232,7 @@ def openid_callback(request, workflow_id, repo_id):
     except ACLError as e:
         logger.error("PORTAL::openid_callback: ACLError while trying to authenticate user '{}' : {}"
                         .format(authentication.credentials[0], e))
-        return authentication.ask_credentials_response(request=request, error="Bad credentials")
+        return authentication.ask_credentials_response(request=request, error="Authentication Failure")
 
     except OAuth2Error as e:
         logger.exception(e)
@@ -254,11 +252,13 @@ def openid_callback(request, workflow_id, repo_id):
                                 openid=False) \
                    or authentication.generate_response()
     else:
+        session = RedisOpenIDSession(REDISBase(), f"oauth2_{oauth2_token}")
         return JsonResponse({
             'access_token': oauth2_token,
             'token_type': "Bearer",
             'scope': ["openid"],
-            'created_at': int(timezone.now().timestamp()),
+            'created_at': session['iat'],
+            'exp': session['exp'],
         })
 
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
@@ -369,7 +369,8 @@ def openid_token(request, portal_id):
             'access_token': session['access_token'],
             'token_type': "Bearer",
             'scope': ["openid"],
-            'created_at': int(timezone.now().timestamp()),
+            'created_at': session['iat'],
+            'exp': session['exp'],
         })
     except RedisError as e:
         return JsonResponse({"error": "internal_error", "error_description": "Session error"}, status=500)
@@ -406,8 +407,14 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
-        assert session['scope']
+        assert session, "Session not found"
+        assert session['scope'], "Session does not contain any scope"
+        # Add internal Oauth2 attributes
+        session['scope'].update({'exp': session['exp']})
         return JsonResponse(session['scope'])
+    except AssertionError as e:
+        logger.info(e)
+        return HttpResponse(status=401)
     except Exception as e:
         logger.exception(e)
         return HttpResponse(status=401)
@@ -444,7 +451,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
         except TokenNotFoundError as e:
             logger.error("PORTAL::log_in: {}".format(str(e)))
 
-            # Redirect to the same uri, to stock token in Redis via session filter
+            # Redirect to the same uri, to store token in Redis via session filter
             return HttpResponseRedirect("")
 
         # If redis_session.keys['application_id'] does not exists : FORBIDDEN
@@ -498,25 +505,26 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                                              authentication.redis_oauth2_session.keys))
 
             except AssertionError as e:
-                logger.error("PORTAL::log_in: Bad captcha taped for username '{}' : {}"
+                logger.exception(e)
+                logger.error("PORTAL::log_in: Bad captcha input for username '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request, error="Bad captcha")
 
             except AuthenticationError as e:
                 logger.error("PORTAL::log_in: AuthenticationError while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request, error="Bad credentials")
+                return authentication.ask_credentials_response(request=request, error="Authentication Failure")
 
             except ACLError as e:
                 logger.error("PORTAL::log_in: ACLError while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request, error="Bad credentials")
+                return authentication.ask_credentials_response(request=request, error="Authentication Failure")
 
             except (DBAPIError, PyMongoError, LDAPError) as e:
                 logger.error("PORTAL::log_in: Repository driver Error while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(request=request,
-                                                               error="Bad credentials")
+                                                               error="Authentication Failure")
 
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
                 # vltprtlsrnm is always empty during the initial redirection. Don't log that
@@ -676,6 +684,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # Generate response depending on application.sso_forward options
                 final_response = sso_forward.generate_response(request, response, authentication.get_redirect_url())
                 logger.info("PORTAL::log_in: SSOForward response successfuly generated")
+                # Remove potential custom redirect url once response has been generated
+                authentication.del_redirect_url()
 
                 return final_response
 
@@ -719,6 +729,7 @@ def log_in(request, workflow_id=None):
     try:
         scheme = request.META["HTTP_X_FORWARDED_PROTO"]
         host = request.META["HTTP_HOST"]
+        connection_url = scheme + "://" + host
         workflow = Workflow.objects.get(pk=workflow_id)
     except Exception as e:
         logger.exception(e)
@@ -732,6 +743,13 @@ def log_in(request, workflow_id=None):
         portal_cookie_name = global_config.portal_cookie_name
         token_name = global_config.public_token
         portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
+        redirect_url = request.GET.get('redirect_url')
+        if redirect_url:
+            redirect_url = scheme + "://" + host + redirect_url
+            logger.debug(f"redirect_url is {redirect_url}")
+            redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
+            redis_portal_session.set_redirect_url(workflow.id, redirect_url)
+            redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
     except Exception as e:
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
@@ -745,7 +763,5 @@ def log_in(request, workflow_id=None):
     except:
         pass
 
-    redirect_url = scheme + "://" + host + workflow.public_dir
-
     logger.info("PORTAL::log_in: Return response {}".format(response))
-    return set_portal_cookie(response, portal_cookie_name, portal_cookie, redirect_url)
+    return set_portal_cookie(response, portal_cookie_name, portal_cookie, connection_url)

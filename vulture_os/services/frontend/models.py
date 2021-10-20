@@ -820,6 +820,26 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # Vadesecure attributes
+    vadesecure_host = models.TextField(
+        verbose_name = _("Vadesecure Host"),
+        help_text = _("Hostname (without scheme or path) of the Vadesecure server"),
+        default = "",
+    )
+
+    vadesecure_login = models.TextField(
+        verbose_name = _("Vadesecure login"),
+        help_text = _("Login used to fetch the token for the Vadesecure API"),
+        default = "",
+    )
+
+    vadesecure_password = models.TextField(
+        verbose_name = _("Vadesecure password"),
+        help_text = _("Password used to fetch the token for the Vadesecure API"),
+        default = "",
+    )
+    
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -1017,6 +1037,10 @@ class Frontend(models.Model):
                 elif self.api_parser_type == "harfanglab":
                     result['harfanglab_host'] = self.harfanglab_host
                     result['harfanglab_apikey'] = self.harfanglab_apikey
+                elif self.api_parser_type == "vadesecure":
+                    result['vadesecure_host'] = self.vadesecure_host
+                    result['vadesecure_login'] = self.vadesecure_login
+                    result['vadesecure_password'] = self.vadesecure_password
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
@@ -1499,7 +1523,7 @@ class Frontend(models.Model):
     def get_log_format(self):
         """ Return log format depending on frontend conf """
         log_format = "{ " \
-                     "\\\"time-utc\\\": \\\"%[date,utime(%Y-%m-%dT%H:%M:%S:%Z)]\\\", " \
+                     "\\\"time-utc\\\": \\\"%[date,utime(%Y-%m-%dT%H:%M:%S%Z)]\\\", " \
                      "\\\"bytes_read\\\": \\\"%B\\\", " \
                      "\\\"hostname\\\": \\\"%{+E}H\\\", " \
                      "\\\"status_code\\\": %ST, " \
