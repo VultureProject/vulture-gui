@@ -220,6 +220,7 @@ class FrontendForm(ModelForm):
                            "netskope_host", 'netskope_apikey',
                            'rapid7_idr_host', 'rapid7_idr_apikey',
                            'harfanglab_host', 'harfanglab_apikey',
+                           'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
                            'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode']:
             self.fields[field_name].required = False
 
@@ -286,6 +287,7 @@ class FrontendForm(ModelForm):
                   "netskope_host", "netskope_apikey",
                   'rapid7_idr_host', 'rapid7_idr_apikey',
                   'harfanglab_host', 'harfanglab_apikey',
+                  'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
                   "carbon_black_host", "carbon_black_orgkey", "carbon_black_apikey",
                   'darwin_mode')
 
@@ -394,6 +396,9 @@ class FrontendForm(ModelForm):
             'rapid7_idr_apikey': TextInput(attrs={'class': 'form-control'}),
             'harfanglab_host': TextInput(attrs={'class': 'form-control'}),
             'harfanglab_apikey': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_host': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_login': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_password': TextInput(attrs={'type': "password", 'class': 'form-control'})
         }
 
     def clean_name(self):
