@@ -417,7 +417,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         return HttpResponse(status=401)
     except Exception as e:
         logger.exception(e)
-        return HttpResponse(status=500)
+        return HttpResponse(status=401)
 
 
 
