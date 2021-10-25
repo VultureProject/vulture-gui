@@ -28,6 +28,7 @@ import hashlib
 
 import os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
 
 # Static AES block size (block size is given in bits, but must be used as bytes)
 AES_BLOCK_SIZE = int(algorithms.AES.block_size/8)
@@ -35,28 +36,36 @@ AES_BLOCK_SIZE = int(algorithms.AES.block_size/8)
 class AESCipher(object):
 
     def __init__(self, key):
-        self.bs = 32
+        self.bs = AES_BLOCK_SIZE
         self.key = hashlib.sha256(key.encode()).digest()
 
     def encrypt(self, raw):
-        raw = self._pad(raw)
-        iv = os.urandom(AES_BLOCK_SIZE)
+        raw = raw.encode('utf-8')
+        iv = os.urandom(self.bs)
         cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv))
         encryptor = cipher.encryptor()
-        enc = iv + encryptor.update(raw.encode('utf-8')) + encryptor.finalize()
+        padder = padding.PKCS7(self.bs*8).padder()
+
+        padded_raw = padder.update(raw) + padder.finalize()
+        enc = iv + encryptor.update(padded_raw) + encryptor.finalize()
+
         return base64.b64encode(enc)
 
     def decrypt(self, enc):
         enc = base64.b64decode(enc)
-        iv = enc[:AES_BLOCK_SIZE]
+        iv = enc[:self.bs]
         cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv))
         decryptor = cipher.decryptor()
-        data = self._unpad(decryptor.update(enc[AES_BLOCK_SIZE:]) + decryptor.finalize()).decode('utf-8')
-        return data
+        unpadder = padding.PKCS7(self.bs*8).unpadder()
 
-    def _pad(self, s):
-        return s + (self.bs - len(s) % self.bs) * chr(self.bs - len(s) % self.bs)
+        padded_dec = decryptor.update(enc[self.bs:]) + decryptor.finalize()
 
-    @staticmethod
-    def _unpad(s):
-        return s[:-ord(s[len(s) - 1:])]
+        try:
+            data = unpadder.update(padded_dec) + unpadder.finalize()
+        except ValueError:
+            # This is to account for a padding error introduced previously
+            # TODO remove after correction script for version 1.3.11 has been broadly executed
+            unpadder = padding.PKCS7(32*8).unpadder()
+            data = unpadder.update(padded_dec) + unpadder.finalize()
+
+        return data.decode('utf-8')
