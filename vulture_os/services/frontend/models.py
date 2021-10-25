@@ -141,7 +141,7 @@ for module in glob.glob(FILEBEAT_MODULE_PATH+'/*.yml*', recursive=True):
     FILEBEAT_MODULE_LIST=sorted(FILEBEAT_MODULE_LIST, key=_getKey)
 
 
-FILEBEAT_LISTENING_MODE = (    
+FILEBEAT_LISTENING_MODE = (
     ('tcp', "TCP"),
     ('udp', "UDP"),
     ('file', "File"),
@@ -838,7 +838,7 @@ class Frontend(models.Model):
         help_text = _("Password used to fetch the token for the Vadesecure API"),
         default = "",
     )
-    
+
 
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -1176,10 +1176,10 @@ class Frontend(models.Model):
                 access_controls_301 = []
                 access_controls_302 = []
                 for acl in workflow.workflowacl_set.filter(before_policy=True):
-                    rules, acls_name = acl.access_control.generate_rules()
+                    rules, acl_names = acl.access_control.generate_rules()
                     access_controls_list.append(rules)
 
-                    conditions = acl.generate_condition(acls_name)
+                    conditions = acl.generate_condition(acl_names)
 
                     redirect_url = None
                     deny = False
@@ -1430,7 +1430,7 @@ class Frontend(models.Model):
         """
         return "Address=\"{}\" Port=\"{}\"".format(JAIL_ADDRESSES['rsyslog']['inet'],
                                                    self.api_rsyslog_port)
-    
+
     def generate_filebeat_conf(self):
         """ Generate filebeat configuration of this frontend
         """
@@ -1825,7 +1825,7 @@ class FrontendReputationContext(models.Model):
         verbose_name=_("Destination field name"),
         help_text=_("Field name which will contains the searched value")
     )
-    
+
     def to_dict(self):
         return {
             "frontend": str(self.frontend.pk),
