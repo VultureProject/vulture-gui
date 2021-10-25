@@ -305,6 +305,7 @@ class POSTAuthentication(Authentication):
         response = post_authentication_response(kwargs.get('request'),
                                                 self.workflow.authentication,
                                                 self.workflow.public_dir,
+                                                kwargs.get('public_token', ""),
                                                 captcha=captcha,
                                                 error=kwargs.get('error', ""))
 
