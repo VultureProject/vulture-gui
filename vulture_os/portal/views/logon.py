@@ -744,12 +744,16 @@ def log_in(request, workflow_id=None):
         token_name = global_config.public_token
         portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
         redirect_url = request.GET.get('redirect_url')
+        redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         if redirect_url:
             redirect_url = scheme + "://" + host + redirect_url
             logger.debug(f"redirect_url is {redirect_url}")
-            redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
             redis_portal_session.set_redirect_url(workflow.id, redirect_url)
+            # force write in redis to set expiration on session key
             redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
+        else:
+            # reset potentially existing redirect url to avoid wrong redirection
+            redis_portal_session.del_redirect_url(workflow.id)
     except Exception as e:
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()

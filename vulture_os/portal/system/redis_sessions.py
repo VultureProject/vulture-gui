@@ -287,6 +287,9 @@ class REDISPortalSession(REDISSession):
         self.keys[f'url_{workflow_id}'] = url
         return self.handler.hset(self.key, f'url_{workflow_id}', url)
 
+    def del_redirect_url(self, workflow_id):
+        return self.delete_key(f'url_{workflow_id}')
+
     def get_auth_backend(self, workflow_id):
         return self.handler.hget(self.key, f'backend_{workflow_id}')
 
