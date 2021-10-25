@@ -67,7 +67,8 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, user_n
     config = Cluster.get_global_config()
     portal_token = config.public_token
     smtp_server = config.smtp_server
-    assert smtp_server, "SMTP server is not configured in global configuration"
+    if not smtp_server:
+        raise SMTPException("SMTP server is not configured in global configuration")
 
     """ Send the email with the link """
     reset_link = base_url + str(portal_token) + '/self/change?rdm=' + reset_key
@@ -82,7 +83,7 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, user_n
                    template.render_template("email_body", resetLink=reset_link, app=obj, username=user_name))
         return True
     except Exception as e:
-        logger.error("")
+        logger.error(f"perform_email_reset: Could not send the reset email to '{user_email} ({user_name})'")
         logger.exception(e)
         return False
 
