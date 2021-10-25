@@ -45,7 +45,7 @@ from authentication.portal_template.models import (RESET_PASSWORD_NAME, INPUT_PA
 
 # Required exceptions imports
 from portal.system.exceptions import RedirectionNeededError, PasswordMatchError
-from toolkit.auth.exceptions import AuthenticationError
+from toolkit.auth.exceptions import AuthenticationError, UserNotFound
 
 # Extern modules imports
 from ast import literal_eval
@@ -78,7 +78,6 @@ class SELFService(object):
                                          self.workflow.get_redirect_uri())
 
     def get_username_by_email(self, repositories, email):
-        e = None
         for repo in repositories:
             try:
                 if repo.subtype == "internal":
@@ -95,13 +94,13 @@ class SELFService(object):
                             result['backend']))
                 return result
 
+            except (UserNotFound, User.DoesNotExist) as e:
+                raise UserNotFound(f"SELF::get_user_by_email: Could not find email '{email}' on backend '{repo}': {e}")
             except Exception as e:
-                logger.error(
-                    "SELF::get_user_by_email: Failed to find email '{}' on backend '{}' : '{}'".format(
-                        email, repo, str(e)))
-                logger.exception(e)
+                raise Exception(
+                    f"SELF::get_user_by_email: Unknown error while searching for email '{email}' on backend '{repo}': {e}")
 
-        raise e or AuthenticationError
+        raise UserNotFound(f"Could not find user from email '{email}'")
 
 
     def get_user_by_username(self, repositories, username):
@@ -406,15 +405,17 @@ class SELFServiceLost(SELFService):
 
         return email
 
-    def send_lost_mail(self, request, email):
 
-        perform_email_reset(logger, self.main_url, self.workflow.name, self.workflow.authentication.portal_template,
-                            email, self.username, expire=60, repo_id=self.backend.id)
+    def action_ok_message(self):
+        return ("<b>Mail successfully sent</b>"
+        "<br>If your email address is valid, you should receive a message shortly with information on how to reset your password")
 
-        return "Mail successfully sent to '{}'".format(email)
 
     def perform_action(self, request, email):
-        return self.send_lost_mail(request, email)
+        if not perform_email_reset(logger, self.main_url, self.workflow.name, self.workflow.authentication.portal_template,
+                            email, self.username, expire=60, repo_id=self.backend.id):
+            raise SMTPException("Could not send the reset email")
+        return self.action_ok_message()
 
     # def ask_credentials_response(self):
     #	return self_response()

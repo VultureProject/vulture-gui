@@ -36,7 +36,7 @@ from django.core.exceptions import ValidationError
 
 # Django project imports
 from portal.system.self_actions import SELFService, SELFServiceChange, SELFServiceLogout, SELFServiceLost
-from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError
+from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, UserNotFound
 from workflow.models import Workflow
 from system.cluster.models import Cluster
 from authentication.user_portal.models import UserAuthentication
@@ -142,6 +142,11 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         logger.error("SELF::self: Failed to update password :")
         logger.exception(e)
         return Action.ask_credentials_response(request, action, "<b> Database error </b> <br> Please contact your administrator")
+
+    except UserNotFound as e:
+        logger.info(f"SELF::self: no user found : {e}")
+        # Still validate operation even if User wasn't found, to avoid user enumeration
+        return Action.message_response(request, Action.action_ok_message())
 
     except (ChangePasswordError, PasswordMatchError, AuthenticationError) as e:
         logger.error("SELF::self: Error while trying to update password : '{}'".format(e))
