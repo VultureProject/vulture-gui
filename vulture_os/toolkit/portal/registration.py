@@ -71,7 +71,7 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, user_n
         raise SMTPException("SMTP server is not configured in global configuration")
 
     """ Send the email with the link """
-    reset_link = base_url + str(portal_token) + '/self/change?rdm=' + reset_key
+    reset_link = base_url.rstrip("/") + "/" + str(portal_token) + '/self/change?rdm=' + reset_key
 
     obj = {'name': app_name, 'url': base_url}
 
