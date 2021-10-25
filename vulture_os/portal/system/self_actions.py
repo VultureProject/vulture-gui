@@ -400,7 +400,7 @@ class SELFServiceLost(SELFService):
         # raise django.core.exceptions.ValidationError: ['Enter a valid email address.']
         validate_email(email)
 
-        user_infos = self.get_username_by_email(self.workflow.authentication.repositories, email)
+        user_infos = self.get_username_by_email([r.get_daughter() for r in self.workflow.authentication.repositories.all()], email)
         self.username = user_infos['name']
         self.backend = user_infos['backend']
 
