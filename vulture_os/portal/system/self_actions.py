@@ -389,7 +389,8 @@ class SELFServiceChange(SELFService):
 
 
 class SELFServiceLost(SELFService):
-    def __init__(self, workflow, token_name, global_config, main_url):
+    def __init__(self, workflow, token_name, global_config, main_url, mail_expiration=3600):
+        self.mail_expiration = mail_expiration
         super().__init__(workflow, token_name, global_config, main_url)
 
     def retrieve_credentials(self, request):
@@ -413,7 +414,7 @@ class SELFServiceLost(SELFService):
 
     def perform_action(self, request, email):
         if not perform_email_reset(logger, self.main_url, self.workflow.name, self.workflow.authentication.portal_template,
-                            email, self.username, expire=60, repo_id=self.backend.id):
+                            email, self.username, expire=self.mail_expiration, repo_id=self.backend.id):
             raise SMTPException("Could not send the reset email")
         return self.action_ok_message()
 
