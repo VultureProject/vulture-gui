@@ -190,6 +190,13 @@ class Authentication(object):
         logger.debug("AUTH::register_user: Authentication results successfully written in Redis portal session")
         return portal_cookie, self.oauth2_token
 
+    def allow_user(self):
+        logger.debug(f"Authentication::allow_user: allowing portal session on backend {self.backend_id}")
+        self.redis_portal_session.allow_access_to_app(
+            self.workflow.id,
+            self.workflow.authentication.auth_timeout
+        )
+
     def register_sso(self, backend_id):
         oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
 

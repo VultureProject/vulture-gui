@@ -401,9 +401,6 @@ class REDISPortalSession(REDISSession):
         # Save all user infos
         self.set_user_infos(backend_id, authentication_datas)
 
-        # Save additional related key for Darwin Session quick verification
-        self.set_in_redis(f"{self.key}_{app_id}", "1", timeout or self.default_timeout)
-
         if password:
             # Encrypt the password with the application id and user login and store it in portal session
             self.setAutologonPassword(app_id, app_name, backend_id, username, password)
@@ -413,6 +410,14 @@ class REDISPortalSession(REDISSession):
                                   "in REDIS")
 
         return self.key
+
+
+    def allow_access_to_app(self, app_id, timeout):
+        """
+        Set Redis key for Darwin to validate the portal session on this specific app
+        """
+        self.set_in_redis(f"{self.key}_{app_id}", "1", timeout or self.default_timeout)
+
 
     def register_doubleauthentication(self, app_id, otp_backend_id):
         self.keys[str(app_id)] = 1
@@ -434,7 +439,6 @@ class REDISPortalSession(REDISSession):
             self.keys[f"oauth2_{backend_id}"] = oauth2_token
 
         # Save additional related key for Darwin Session quick verification
-        self.set_in_redis(f"{self.key}_{app_id}", "1", timeout or self.default_timeout)
 
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::register_sso: Unable to write SSO infos in REDIS")

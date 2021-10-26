@@ -687,6 +687,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # Remove potential custom redirect url once response has been generated
                 authentication.del_redirect_url()
 
+                # Allow user to connect to backend after playing SSOForward
+                authentication.allow_user()
+
                 return final_response
 
             # If learning credentials cannot be retrieved : ask them
@@ -706,6 +709,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             except Exception as e:
                 logger.error("PORTAL::log_in: Unexpected error while trying to perform SSO Forward :")
                 logger.exception(e)
+
+    # Here, all double-authentication and SSOForwarding is either deactivated or completed, so we can allow the user
+    authentication.allow_user()
 
     # If we arrive here, the user is authenticated
     if openid:
