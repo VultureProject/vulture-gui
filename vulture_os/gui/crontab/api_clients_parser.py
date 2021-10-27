@@ -44,12 +44,12 @@ def execute_parser(frontend):
         frontend['tenant_name']
     except KeyError:
         frontend['tenant_name'] = "PleaseChangeMe"
-
-    parser = parser_class(frontend)
-    if not parser.can_run():
-        logger.info("API Parser {} (tenant={}): already running".format(frontend['name'], frontend['tenant_name']))
-        return
     try:
+        parser = parser_class(frontend)
+        if not parser.can_run():
+            logger.info("API Parser {} (tenant={}): already running".format(frontend['name'], frontend['tenant_name']))
+            return
+
         logger.info("API Parser {} (tenant={}): starting".format(frontend['name'], frontend['tenant_name']))
         parser.execute()
         try:

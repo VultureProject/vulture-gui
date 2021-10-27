@@ -227,14 +227,14 @@ class Authentication(object):
         RedisOpenIDSession(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, **kwargs)
 
     def get_redirect_url(self):
-        try:
-            return self.redis_portal_session.keys.get('url_{}'.format(self.workflow.id), None) or self.workflow.get_redirect_uri()
-        except:
-            return self.redis_portal_session.keys.get('url_{}'.format(self.workflow.id), None) or \
-                self.workflow.get_redirect_uri()
+        # Get custom redirect_url if present, or default workflow redirect url
+        return self.redis_portal_session.get_redirect_url(self.workflow.id) or self.workflow.get_redirect_uri()
 
     def set_redirect_url(self, redirect_url):
         self.redis_portal_session['url_{}'.format(self.workflow.id)] = redirect_url
+
+    def del_redirect_url(self):
+        self.redis_portal_session.delete_key('url_{}'.format(self.workflow.id))
 
     def get_url_portal(self):
         try:

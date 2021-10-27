@@ -39,6 +39,7 @@ from redis                          import Redis, ConnectionError as RedisConnec
 # Extern modules imports
 from hashlib                        import sha1
 import json
+import time
 from copy import deepcopy
 
 # Logger configuration
@@ -279,6 +280,13 @@ class REDISPortalSession(REDISSession):
         self.keys[f'oauth2_{backend_id}'] = oauth2_token
         return self.handler.hset(self.key, f'oauth2_{backend_id}', oauth2_token)
 
+    def get_redirect_url(self, workflow_id):
+        return self.handler.hget(self.key, f'url_{workflow_id}')
+
+    def set_redirect_url(self, workflow_id, url):
+        self.keys[f'url_{workflow_id}'] = url
+        return self.handler.hset(self.key, f'url_{workflow_id}', url)
+
     def get_auth_backend(self, workflow_id):
         return self.handler.hget(self.key, f'backend_{workflow_id}')
 
@@ -475,6 +483,8 @@ class REDISOauth2Session(REDISSession):
     def register_authentication(self, repo_id, oauth2_data, timeout):
         data = {
             'token_ttl': timeout,
+            'iat': int(time.time()),
+            'exp': int(time.time()) + timeout,
             'scope': oauth2_data,
             'repo': str(repo_id)
         }
@@ -485,6 +495,7 @@ class REDISOauth2Session(REDISSession):
                 self.keys['scope'] = {}
             if not self.keys.get('token_ttl'):
                 self.keys['token_ttl'] = timeout
+                self.keys['exp'] = int(time.time()) + timeout
             if not self.keys.get('repo'):
                 self.keys['repo'] = repo_id
             for key,item in oauth2_data.items():
@@ -606,6 +617,18 @@ class REDISBase(object):
 
 
     # Retrieve function : no need master
+    def exists(self, key):
+        try:
+            v = self.r.exists(key)
+        except RedisResponseError as e:
+            return None
+        except Exception as e:
+            self.logger.exception(e)
+            return None
+        return v
+
+
+    # Retrieve function : no need master
     def get(self, key):
         try:
             v = self.r.get(key)
@@ -717,7 +740,7 @@ class REDISBase(object):
             v = self.r.hgetall(hash)
         except Exception as e:
             self.logger.exception(e)
-            return None
+            return {}
         return v
 
 

@@ -45,6 +45,7 @@ from toolkit.api_parser.carbon_black.carbon_black import CarbonBlackParser
 from toolkit.api_parser.netskope.netskope import NetskopeParser
 from toolkit.api_parser.rapid7_idr.rapid7_idr import Rapid7IDRParser
 from toolkit.api_parser.harfanglab.harfanglab import HarfangLabParser
+from toolkit.api_parser.vadesecure.vadesecure import VadesecureParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -71,6 +72,7 @@ PARSER_LIST = {
     "netskope": NetskopeParser,
     "rapid7_idr": Rapid7IDRParser,
     "harfanglab": HarfangLabParser,
+    "vadesecure": VadesecureParser,
 }
 
 
