@@ -80,7 +80,7 @@ class BaseRepository(models.Model):
             return self.internalrepository.authenticate(username, password, **kwargs)
         else:
             result = subclass.get_client().authenticate(username, password, **kwargs)
-            if result['account_locked']:
+            if result.get('account_locked'):
                 raise AuthenticationError("Account '{}' locked".format(username))
             return result
 
