@@ -53,6 +53,7 @@ class SentinelOneParser(ApiParser):
     AGENTS = "/web/api/v2.1/agents"
     THREATS = "/web/api/v2.1/threats"
     POLICY_BY_SITE = "/web/api/v2.1/sites/{id}/policy"
+    ACTIVITIES = "web/api/v2.1/activities"
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -130,7 +131,7 @@ class SentinelOneParser(ApiParser):
 
             return {
                 "status": True,
-                "data": [self.format_log(log) for log in logs['data']]
+                "data": [self.format_log(log, "alert") for log in logs['data']]
             }
         except Exception as e:
             logger.exception(e)
@@ -139,9 +140,7 @@ class SentinelOneParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, cursor=None, since=None):
-        alert_url = f"{self.sentinel_one_host}/{self.THREATS}"
-
+    def get_logs(self, cursor=None, since=None, activity_logs=False):
         # Format timestamp for query, API wants a Z at the end
         if isinstance(since, datetime):
             since = since.isoformat()
@@ -149,11 +148,29 @@ class SentinelOneParser(ApiParser):
         if since[-1] != "Z":
             since += "Z"
 
-        query = {'updatedAt__gt': since, 'sortBy': "updatedAt"}
+        # Activity logs needs another endpoint + another payload
+        if activity_logs:
+            alert_url = f"{self.sentinel_one_host}/{self.ACTIVITIES}"
+            time_field_name = "createdAt"
+            query = {
+                'activityTypes': '27,65,66,80,81,85,86,133,134,3200,3201,3202,3203,3204,3400'
+            }
+        else:
+            alert_url = f"{self.sentinel_one_host}/{self.THREATS}"
+            time_field_name = "updatedAt"
+            query = {}
+
+        #query = {'createdAt__gt': since, 'sortBy': "createdAt"} => activity
+        #query = {'updatedAt__gt': since, 'sortBy': "updatedAt"} => alerts
+        query[f"{time_field_name}__gt"] = since
+        query['sortBy'] = time_field_name
+
+        # Handle paginated results
         if cursor:
             query['cursor'] = cursor
 
         return self.__execute_query("GET", alert_url, query)
+
 
     def getAlertComment(self, alertId):
         comment_url = f"{self.sentinel_one_host}/{self.THREATS}/{alertId}/notes"
@@ -161,55 +178,63 @@ class SentinelOneParser(ApiParser):
         return ret['data']
 
 
-    def format_log(self, log):
+    def format_log(self, log, event_kind):
+        if event_kind == "alert":
+            comments = []
+            for comment in self.getAlertComment(log['id']):
+                comments.append({
+                    'id': comment['id'],
+                    'message': comment['text'],
+                    'username': comment['creator'],
+                    'timestamp': datetime.fromisoformat(comment['createdAt'].replace("Z", "+00:00")).timestamp()
+                })
+            log['comments'] = comments
+            # Retrieve names of techniques of each tactics
+            techniques = list()
+            for indc in log['indicators']:
+                tech = [x['techniques'] for x in indc['tactics']]
+                if len(tech) > 0:
+                    # always one entry
+                    tech = tech.pop()
+                techniques += [x['name'] for x in tech]
+            log['mitre_techniques'] = list(set(techniques))
+            log['needs_attention'] = not log['threatInfo']['automaticallyResolved']
+            log['threatInfo']['createdAt'] = datetime.fromisoformat(log['threatInfo']['createdAt'].replace("Z", "+00:00")).timestamp()
+        else:
+            log['createdAt'] = datetime.fromisoformat(log['createdAt'].replace("Z", "+00:00")).timestamp()
         log['observer_name'] = self.sentinel_one_host.replace("https://", "")
-        comments = []
-        for comment in self.getAlertComment(log['id']):
-            comments.append({
-                'id': comment['id'],
-                'message': comment['text'],
-                'username': comment['creator'],
-                'timestamp': datetime.fromisoformat(comment['createdAt'].replace("Z", "+00:00")).timestamp()
-            })
-        log['comments'] = comments
-        log['threatInfo']['createdAt'] = datetime.fromisoformat(log['threatInfo']['createdAt'].replace("Z", "+00:00")).timestamp()
-        # Retrieve names of techniques of each tactics
-        techniques = list()
-        for indc in log['indicators']:
-            tech = [x['techniques'] for x in indc['tactics']]
-            if len(tech) > 0:
-                # always one entry
-                tech = tech.pop()
-            techniques += [x['name'] for x in tech]
-        log['mitre_techniques'] = list(set(techniques))
-        log['needs_attention'] = not log['threatInfo']['automaticallyResolved']
+        log['event_kind'] = event_kind
         return json.dumps(log)
 
 
     def execute(self):
 
-        first = True
-        cursor = None
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
 
-        while cursor or first:
+        for event_kind in ['alert', 'activity']:
+            first = True
+            cursor = None
 
-            response = self.get_logs(cursor, since)
+            while cursor or first:
 
-            # Downloading may take some while, so refresh token in Redis
-            self.update_lock()
+                response = self.get_logs(cursor, since, event_kind=='activity')
 
-            logs = response['data']
-            cursor = response.get('pagination', {}).get('nextCursor')
-            first = False
+                # Downloading may take some while, so refresh token in Redis
+                self.update_lock()
 
-            self.write_to_file([self.format_log(l) for l in logs])
+                logs = response['data']
+                cursor = response.get('pagination', {}).get('nextCursor')
+                first = False
 
-            # Writting may take some while, so refresh token in Redis
-            self.update_lock()
+                self.write_to_file([self.format_log(l, event_kind) for l in logs])
 
-            if len(logs) > 0:
-                # Replace "Z" by "+00:00" for datetime parsing
-                self.frontend.last_api_call = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+                # Writting may take some while, so refresh token in Redis
+                self.update_lock()
+
+                if len(logs) > 0 and event_kind == "alert":
+                    # Replace "Z" by "+00:00" for datetime parsing
+                    self.frontend.last_api_call = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+
+            logger.info(f"SentinelOne parser : events {event_kind} collected.")
 
         logger.info("SentinelOne parser ending.")
