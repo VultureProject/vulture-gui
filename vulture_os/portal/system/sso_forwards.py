@@ -32,6 +32,7 @@ from django.http                      import HttpResponse, HttpResponseRedirect
 from authentication.base_repository import BaseRepository
 from authentication.learning_profiles.models import LearningProfile
 from portal.system.sso_clients               import SSOClient
+from portal.views.responses                     import HttpResponseTemporaryRedirect
 from views.responses                  import create_gzip_response
 from toolkit.system.aes_utils import AESCipher
 from system.pki.models import PROTOCOLS_TO_INT, CERT_PATH
@@ -158,7 +159,7 @@ class SSOForward(object):
 
     def generate_response(self, request, response, redirect_url):
 
-        final_response = HttpResponseRedirect(redirect_url)
+        final_response = HttpResponseTemporaryRedirect(redirect_url)
         final_response = self.sso_client.fill_response(response, final_response, self.application.get_redirect_uri())
 
         """ We want to immediately return the result of the SSO Forward POST Request """
@@ -188,7 +189,6 @@ class SSOForward(object):
 
         elif response.status_code not in (301,302,303) or not self.application.authentication.sso_forward_follow_redirect:
             """ simply redirect to the default Application entry point """
-            final_response.status_code = 302
             # redirect user to url redirected
             final_response['Location'] = redirect_url
             del final_response['Content-Length']

@@ -36,7 +36,8 @@ from django.utils import timezone
 
 # Django project imports
 from system.cluster.models           import Cluster
-from portal.views.responses          import (response_redirect_with_portal_cookie, set_portal_cookie, split_domain)
+from portal.views.responses          import (HttpResponseTemporaryRedirect, response_redirect_with_portal_cookie,
+                                            set_portal_cookie, split_domain)
 from portal.system.authentications   import (Authentication, POSTAuthentication, BASICAuthentication,
                                              KERBEROSAuthentication, DOUBLEAuthentication)
 from portal.system.sso_forwards      import SSOForwardPOST, SSOForwardBASIC, SSOForwardKERBEROS
@@ -721,7 +722,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                        client_id=request.GET['client_id'],
                                        redirect_uri=request.GET['redirect_uri'])
 
-        return HttpResponseRedirect(build_url_params(request.GET['redirect_uri'],
+        return HttpResponseTemporaryRedirect(build_url_params(request.GET['redirect_uri'],
                                                      state=request.GET.get('state', ""),
                                                      code=token))
 
