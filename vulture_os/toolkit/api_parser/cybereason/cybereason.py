@@ -60,7 +60,9 @@ class CybereasonParser(ApiParser):
     DESCRIPTION_URI = "rest/translate/features/all"
     DESCRIPTION_MALOP_URI = "rest/translate/malopDescriptions/all"
 
-    MALOP_SIMPLE_VALUES = ["rootCauseElementNames", "rootCauseElementTypes"]
+    MALOP_SIMPLE_VALUES = ["rootCauseElementNames", "rootCauseElementTypes", "isBlocked", "comments",
+                           "malopActivityTypes", "detectionType", "malopActivityTypes", "managementStatus",
+                           "elementDisplayName", "malopPriority", "rootCauseElementHashes", "decisionFeature"]
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -117,7 +119,6 @@ class CybereasonParser(ApiParser):
         except Exception as err:
             raise CybereasonAPIError(err)
 
-
     def execute_query(self, method, url, query, timeout=10):
         self._connect()
 
@@ -170,48 +171,7 @@ class CybereasonParser(ApiParser):
         }
 
         tmp_malops = self.execute_query("POST", malop_url, query)
-        malops = tmp_malops.get('data', {}).get('resultIdToElementDataMap', {})
-        # enrich each malops
-        malopsGlobalDesc = self._descriptionsMalop()
-        featureGlobalDesc = self._descriptionsFeatures()
-        for k, v in malops.items():
-            malopId = k
-            reasons = v['simpleValues']['decisionFeature']['values']
-            malopDescList = []
-            malopFeatureList = []
-            for r in reasons:
-                rootEntry = r.split('.')[0]
-                subEntry = r[len(rootEntry) + 1:].split('(')[0]
-                malopDescList += [malopsGlobalDesc[rootEntry][subEntry]['single']]
-                malopFeatureList += [featureGlobalDesc[rootEntry][subEntry]['translatedName']]
-            v['threat_rootcause'] = ' + '.join(malopDescList)
-            v['detection_type'] = ' + '.join(malopFeatureList)
-            v['suspicion_list'] = self.suspicions(malopId)
-            v['url'] = f'{self.host}'
-
-            malopDevices = v['elementValues']['affectedMachines'].get('elementValues', [])
-            devicesNames = [x['name'] for x in malopDevices]
-            malopDevicesDetails = self.getDevicesDetails(devicesNames)
-            v['devices'] = []
-            for devices in malopDevicesDetails:
-                v['devices'] += [{
-                    "nat": {
-                        "ip": devices.get("internalIpAddress", '-'),
-                    },
-                    "hostname": devices.get("machineName", '-'),
-                    "os": {
-                        "full": devices.get("osVersionType", '-')
-                    },
-                    "domain": devices.get("fqdn", '-'),
-                    "ip": devices.get("externalIpAddress", '-'),
-                    "id": devices.get("sensorId", '-'),
-                    "type": devices.get("groupName", '-'),
-                    "policy": devices.get("policyName", '-'),
-                    "adOU": devices.get("organizationalUnit", '-'),
-                    "domainFqdn": devices.get("organization", '-')
-                }]
-            self.log_info(malops)
-        return malops
+        return tmp_malops
 
     def getMalwares(self, since):  # since is in hour
         malware_uri = f"{self.host}/{self.MALWARE_URI}"
@@ -244,7 +204,12 @@ class CybereasonParser(ApiParser):
                 malwareToRetrieve = False
         return malwareList
 
-    def parseMalop(self, malop):
+    def parseMalwares(self, malwares):
+        for i in malwares:
+            i["timestamp"] = float(i['timestamp'])/1000
+        return malwares
+
+    def parseMalops(self, malops):
         # function to get value from alert fields
         def popCybVal(sv, key):
             ret = sv.get(key, {}).get('values', [])
@@ -255,10 +220,82 @@ class CybereasonParser(ApiParser):
 
         tmp_malop = {}
         for field_name in self.MALOP_SIMPLE_VALUES:
-            tmp_malop[field_name] = popCybVal(malop, field_name)
+            tmp_malop[field_name] = popCybVal(malops, field_name)
+
+        malopsGlobalDesc = self._descriptionsMalop()
+        featureGlobalDesc = self._descriptionsFeatures()
+        for guid, value in malops.items():
+            malopDescList = []
+            malopFeatureList = []
+            malop_id = guid
+            tmp_malop['id'] = guid
+            tmp_malop["url"] = self.host + "#/malop/" + malop_id
+            tmp_malop['observer_name'] = f'{self.host}'
+            tmp_malop['suspicion_list'] = self.suspicions(malop_id)
+
+            try:
+                reason = value['decisionFeature']
+                rootEntry = reason.split('.')[0]
+                subEntry = reason[len(rootEntry) + 1:].split('(')[0]
+                malopDescList += [malopsGlobalDesc[rootEntry][subEntry]['single']]
+                malopFeatureList += [featureGlobalDesc[rootEntry][subEntry]['translatedName']]
+            except Exception as e:
+                self.log_error(f"[CYBEREASON]: Error enriching description: {e}")
+
+            try:
+                malopDevices = tmp_malop['elementValues']['affectedMachines'].get('elementValues', [])
+                devicesNames = [x['name'] for x in malopDevices]
+                malopDevicesDetails = self.getDevicesDetails(devicesNames)
+                tmp_malop['devices'] = []
+                for devices in malopDevicesDetails:
+                    tmp_malop['devices'] += [{
+                        "nat": {
+                            "ip": devices.get("internalIpAddress", '-'),
+                        },
+                        "hostname": devices.get("machineName", '-'),
+                        "os": {
+                            "full": devices.get("osVersionType", '-')
+                        },
+                        "domain": devices.get("fqdn", '-'),
+                        "ip": devices.get("externalIpAddress", '-'),
+                        "id": devices.get("sensorId", '-'),
+                        "type": devices.get("groupName", '-'),
+                        "policy": devices.get("policyName", '-'),
+                        "adOU": devices.get("organizationalUnit", '-'),
+                        "domainFqdn": devices.get("organization", '-')
+                    }]
+            except Exception as e:
+                self.log_error(f"[CYBEREASON]: Error enriching devices: {e}")
+
+            tmp_malop['threat_rootcause'] = ' + '.join(malopDescList)
+            tmp_malop['detection_type'] = ' + '.join(malopFeatureList)
+            tmp_malop = self.parseTimestamps(tmp_malop)
 
         return tmp_malop
 
+    def parseTimestamps(self, malop):
+        try:
+            timestamp_detected = float(malop['malopLastUpdateTime']['values'][0]) / 1000
+            malop["timestamp"] = timestamp_detected
+        except Exception as e:
+            self.log_error(f"[CYBEREASON]: Error enriching timestamp detected: {e}")
+            malop["timestamp"] = float(datetime.now().timestamp())
+
+        try:
+            if malop['closeTime']['values'][0] is not None:
+                malop["timestamp_closed"] = float(malop['closeTime']['values'][0]) / 1000
+        except Exception as e:
+            self.log_error(f"[CYBEREASON]: Error enriching timestamp closed: {e}")
+            malop["timestamp_closed"] = 0.0
+
+        try:
+            if malop['malopStartTime']['values'][0] is not None:
+                malop["timestamp_start"] = float(malop['malopStartTime']['values'][0]) / 1000
+        except Exception as e:
+            self.log_error(f"[CYBEREASON]: Error enriching timestamp start: {e}")
+            malop["timestamp_start"] = 0.0
+
+        return malop
 
     def _descriptionsMalop(self):
         if (len(self.DESC_MALOP_TRANSLATION) > 0):
@@ -388,16 +425,17 @@ class CybereasonParser(ApiParser):
                 "error": str(e)
             }
 
-
     def get_logs(self, kind, since, test=False):
         data = []
         self.log_info(since)
         try:
             if kind == "malops":
-                return self.getAlerts(since)
+                alertes = self.getAlerts(since)
+                return self.parseMalops(alertes)
 
             elif kind == "malwares":
-                return self.getMalwares(since)
+                malwares = self.getMalwares(since)
+                return self.parseMalwares(malwares)
 
             return True, data
 
@@ -438,7 +476,7 @@ class CybereasonParser(ApiParser):
                 setattr(self.frontend, f"cybereason_{kind}_timestamp", tmp_logs[0]['timestamp'])
 
             def format_log(log):
-                log['timestamp'] = datetime.datetime.fromtimestamp(log['timestamp']/1000).isoformat()
+                log['timestamp'] = datetime.datetime.fromtimestamp(log['timestamp']).isoformat()
                 log['kind'] = kind
                 log['observer_version'] = observer_version
                 log['observer_name'] = self.observer_name
@@ -449,4 +487,3 @@ class CybereasonParser(ApiParser):
             self.update_lock()
 
         self.log_info("Cybereason parser ending.")
-
