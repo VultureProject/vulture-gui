@@ -42,7 +42,7 @@ import gzip
 import csv
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 MAX_DELETE_ATTEMPTS = 3
 
@@ -105,7 +105,7 @@ class ProofpointTAPParser(ApiParser):
                 proxies=self.proxies
             )
         except requests.ConnectionError as e:
-            logger.error("Proofpoint API: {}".format(e))
+            logger.error("Proofpoint API: {}".format(e), extra={'tenant': self.tenant_name})
             raise ProofpointTAPAPIError(e)
 
         if response.status_code == 401:
@@ -117,14 +117,14 @@ class ProofpointTAPParser(ApiParser):
         elif response.status_code == 400:
             if b"too far into the past" in response.content:
                 error = "ProofpointTAP API call: cannot query this far into the past, coming back 12 hours back from now"
-                logger.warning(error)
+                logger.warning(error, extra={'tenant': self.tenant_name})
                 self.last_api_call = datetime.now(timezone.utc) - timedelta(hours=12)
                 raise ProofpointTAPAPITooFarError(error)
             error = f"Error at ProofpointTAP API Call: {response.content}"
             raise ProofpointTAPAPIError(error)
         elif response.status_code != 200:
             error = f"Error at ProofpointTAP API Call ({response.status_code}): {response.content}"
-            logger.error(error)
+            logger.error(error, extra={'tenant': self.tenant_name})
             raise ProofpointTAPAPIError(error)
 
         content = response.content
@@ -133,32 +133,36 @@ class ProofpointTAPParser(ApiParser):
 
 
     def _parse_logs(self, logs):
-        logger.debug("Proofpoint TAP API: parsing logs")
+        logger.debug("Proofpoint TAP API: parsing logs", extra={'tenant': self.tenant_name})
         time_string = ""
         parsed = []
         try:
             json_logs = json_loads(logs)
             time_string = json_logs['queryEndTime']
         except JSONDecodeError as e:
-            logger.error("proofpoint API parsing error: {}".format(e))
+            logger.error("proofpoint API parsing error: {}".format(e), extra={'tenant': self.tenant_name})
             raise ProofpointTAPParseError(e)
 
-        logger.debug("Proofpoint TAP API: got {} lines for 'messagesBlocked'".format(len(json_logs['messagesBlocked'])))
+        logger.debug("Proofpoint TAP API: got {} lines for 'messagesBlocked'".format(len(json_logs['messagesBlocked'])),
+                     extra={'tenant': self.tenant_name})
         for messageBlocked in json_logs["messagesBlocked"]:
             messageBlocked['messageType'] = 'messagesBlocked'
             parsed.append(messageBlocked)
 
-        logger.debug("Proofpoint TAP API: got {} lines for 'messagesDelivered'".format(len(json_logs['messagesDelivered'])))
+        logger.debug("Proofpoint TAP API: got {} lines for 'messagesDelivered'".format(len(json_logs['messagesDelivered'])),
+                     extra={'tenant': self.tenant_name})
         for messageDelivered in json_logs["messagesDelivered"]:
             messageDelivered['messageType'] = 'messagesDelivered'
             parsed.append(messageDelivered)
 
-        logger.debug("Proofpoint TAP API: got {} lines for 'clicksPermitted'".format(len(json_logs['clicksPermitted'])))
+        logger.debug("Proofpoint TAP API: got {} lines for 'clicksPermitted'".format(len(json_logs['clicksPermitted'])),
+                     extra={'tenant': self.tenant_name})
         for clickPermitted in json_logs["clicksPermitted"]:
             clickPermitted['messageType'] = 'clicksPermitted'
             parsed.append(clickPermitted)
 
-        logger.debug("Proofpoint TAP API: got {} lines for 'clicksBlocked'".format(len(json_logs['clicksBlocked'])))
+        logger.debug("Proofpoint TAP API: got {} lines for 'clicksBlocked'".format(len(json_logs['clicksBlocked'])),
+                     extra={'tenant': self.tenant_name})
         for clicksBlocked in json_logs["clicksBlocked"]:
             clicksBlocked['messageType'] = 'clicksBlocked'
             parsed.append(clicksBlocked)
@@ -196,7 +200,8 @@ class ProofpointTAPParser(ApiParser):
         try:
             # proofpoint API requires intervals of an hour max
             if currentTime - self.last_api_call < timedelta(hours=1):
-                logger.debug("Proofpoint TAP API: getting logs from {}".format(fromTime))
+                logger.debug("Proofpoint TAP API: getting logs from {}".format(fromTime),
+                             extra={'tenant': self.tenant_name})
                 status, contents = self._get_logs(endpoint=self.proofpoint_tap_endpoint,
                                                     params={"sinceTime": fromTime.isoformat().replace("+00:00", "Z")})
                 if status:
@@ -214,7 +219,8 @@ class ProofpointTAPParser(ApiParser):
                     # do not go over current time
                     toTime = min(currentTime, fromTime + timedelta(hours=1))
                     try:
-                        logger.debug("Proofpoint TAP API: getting logs from {} to {}".format(fromTime, toTime))
+                        logger.debug("Proofpoint TAP API: getting logs from {} to {}".format(fromTime, toTime),
+                                     extra={'tenant': self.tenant_name})
                         status, contents = self._get_logs(endpoint=self.proofpoint_tap_endpoint,
                                                             params={"interval": "{}/{}".format(
                                                                 fromTime.isoformat().replace("+00:00", "Z"),
@@ -246,17 +252,21 @@ class ProofpointTAPParser(ApiParser):
                         break
         
             if parsed_lines:
-                logger.debug("Proofpoint API: will write {} lines".format(len(parsed_lines)))
+                logger.debug("Proofpoint API: will write {} lines".format(len(parsed_lines)),
+                             extra={'tenant': self.tenant_name})
                 self.write_to_file([json_dumps(line) for line in parsed_lines])
             self.update_lock()
 
         except Exception as e:
-            logger.exception("Proofpoint TAP API unknown error: {}".format(e))
+            logger.exception("Proofpoint TAP API unknown error: {}".format(e),
+                             extra={'tenant': self.tenant_name})
 
         self.frontend.last_api_call = fromTime
-        logger.debug("Proofpoint TAP API: last_api_call updated to {}".format(self.frontend.last_api_call))
+        logger.debug("Proofpoint TAP API: last_api_call updated to {}".format(self.frontend.last_api_call),
+                     extra={'tenant': self.tenant_name})
 
         if error is not "":
-            logger.error("Proofpoint TAP API, errors while recovering logs :\n{}".format(error))
+            logger.error("Proofpoint TAP API, errors while recovering logs :\n{}".format(error),
+                         extra={'tenant': self.tenant_name})
 
-        logger.info("ProofpointTAP parser ending.")
+        logger.info("ProofpointTAP parser ending.", extra={'tenant': self.tenant_name})

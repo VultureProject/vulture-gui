@@ -37,7 +37,7 @@ from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 class SymantecParseError(Exception):
@@ -121,7 +121,8 @@ class SymantecParser(ApiParser):
             params = f"startDate={begin_timestamp}&endDate={end_timestamp}&token={token}"
             url = f"{self.start_console_uri}{params}"
 
-            logger.debug("[SYMANTEC API PARSER] Retrieving symantec logs from {}".format(url))
+            logger.debug("[SYMANTEC API PARSER] Retrieving symantec logs from {}".format(url),
+                         extra={'tenant': self.tenant_name})
 
             r = requests.get(
                 url,
@@ -142,11 +143,13 @@ class SymantecParser(ApiParser):
                 if retry > 300:
                     raise SymantecAPIError(f"Retry After {r.headers['Retry-After']}")
 
-                logger.debug(f"[SYMANTEC API PARSER] Waiting for {retry}s")
+                logger.debug(f"[SYMANTEC API PARSER] Waiting for {retry}s",
+                             extra={'tenant': self.tenant_name})
 
                 self.update_lock()
                 time.sleep(retry)
-                logger.debug('[SYMANTEC API PARSER] Resuming API calls')
+                logger.debug('[SYMANTEC API PARSER] Resuming API calls',
+                             extra={'tenant': self.tenant_name})
 
                 self.execute()
             else:
@@ -159,7 +162,8 @@ class SymantecParser(ApiParser):
 
                     tmp_file.seek(0)
                     if not len(tmp_file.read()):
-                        logger.info('[SYMANTEC API PARSER] No logs found')
+                        logger.info('[SYMANTEC API PARSER] No logs found',
+                                    extra={'tenant': self.tenant_name})
                         self.frontend.last_api_call = timezone.now()
                         self.finish()
                     else:
@@ -169,7 +173,8 @@ class SymantecParser(ApiParser):
                             with zipfile.ZipFile(tmp_file) as zip_file:
                                 # Pnly retrieve the DIRST
                                 gzip_filename = zip_file.namelist()[0]
-                                logger.debug("[SYMANTEC API PARSER] Parsing archive {}".format(gzip_filename))
+                                logger.debug("[SYMANTEC API PARSER] Parsing archive {}".format(gzip_filename),
+                                             extra={'tenant': self.tenant_name})
                                 self.update_lock()
                                 gzip_file = BytesIO(zip_file.read(gzip_filename))
 
@@ -205,7 +210,8 @@ class SymantecParser(ApiParser):
                             raise SymantecParseError(err)
 
                 else:
-                    logger.info(f'[SYMANTEC API PARSER] No filename found in headers {r.headers}')
+                    logger.info(f'[SYMANTEC API PARSER] No filename found in headers {r.headers}',
+                                extra={'tenant': self.tenant_name})
 
         except Exception as e:
             raise SymantecParseError(e)

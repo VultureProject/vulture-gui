@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 
@@ -134,7 +134,7 @@ class SentinelOneParser(ApiParser):
                 "data": [self.format_log(log, "alert") for log in logs['data']]
             }
         except Exception as e:
-            logger.exception(e)
+            logger.exception(e, extra={'tenant': self.tenant_name})
             return {
                 "status": False,
                 "error": str(e)
@@ -235,6 +235,7 @@ class SentinelOneParser(ApiParser):
                     # Replace "Z" by "+00:00" for datetime parsing
                     self.frontend.last_api_call = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
 
-            logger.info(f"SentinelOne parser : events {event_kind} collected.")
+            logger.info(f"SentinelOne parser : events {event_kind} collected.",
+                        extra={'tenant': self.tenant_name})
 
-        logger.info("SentinelOne parser ending.")
+        logger.info("SentinelOne parser ending.", extra={'tenant': self.tenant_name})

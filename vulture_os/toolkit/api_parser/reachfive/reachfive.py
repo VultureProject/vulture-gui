@@ -35,7 +35,7 @@ from datetime import datetime
 import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 class ReachFiveAPIError(Exception):
@@ -95,7 +95,7 @@ class ReachFiveParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(e)
+            logger.exception(e, extra={'tenant': self.tenant_name})
             return {
                 "status": False,
                 "error": str(e)
@@ -111,7 +111,8 @@ class ReachFiveParser(ApiParser):
             params['count']=1000
         if since:
             params['filter'] = 'date > "{}"'.format(timezone.make_naive(since).isoformat(timespec="milliseconds"))
-        logger.debug("ReachFive api::Get user events request params = {}".format(params))
+        logger.debug("ReachFive api::Get user events request params = {}".format(params),
+                     extra={'tenant': self.tenant_name})
 
         response = self.session.get(
             url,
@@ -124,7 +125,7 @@ class ReachFiveParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at ReachFive API Call: {response.content}"
-            logger.error(error)
+            logger.error(error, extra={'tenant': self.tenant_name})
             raise ReachFiveAPIError(error)
 
         content = response.json()
@@ -163,10 +164,11 @@ class ReachFiveParser(ApiParser):
                 last_datetime.extend([x['date'] for x in logs])
                 # ISO8601 timestamps are sortable as strings
                 last_datetime = max(last_datetime)
-                logger.debug(f"most recent log is from {last_datetime}")
+                logger.debug(f"most recent log is from {last_datetime}",
+                             extra={'tenant': self.tenant_name})
 
         # Replace "Z" by "+00:00" for datetime parsing
         # No need to make_aware, date already contains timezone
         self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
 
-        logger.info("ReachFive parser ending.")
+        logger.info("ReachFive parser ending.", extra={'tenant': self.tenant_name})

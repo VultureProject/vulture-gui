@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 
@@ -82,7 +82,7 @@ class NetskopeParser(ApiParser):
                 "data": logs
             }
         except Exception as e:
-            logger.exception(e)
+            logger.exception(e, extra={'tenant': self.tenant_name})
             return {
                 "status": False,
                 "error": str(e)
@@ -138,4 +138,4 @@ class NetskopeParser(ApiParser):
             if len(logs) > 0:
                 self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(self.upper_timestamp)+timedelta(seconds=1))
 
-        logger.info("Netskope parser ending.")
+        logger.info("Netskope parser ending.", extra={'tenant': self.tenant_name})

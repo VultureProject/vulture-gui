@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 
@@ -113,7 +113,7 @@ class CarbonBlackParser(ApiParser):
                 "data": [self.format_log(log) for log in logs['results']]
             }
         except Exception as e:
-            logger.exception(e)
+            logger.exception(e, extra={'tenant': self.tenant_name})
             return {
                 "status": False,
                 "error": str(e)
@@ -177,4 +177,4 @@ class CarbonBlackParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 self.frontend.last_api_call = datetime.fromisoformat(logs[0]['last_update_time'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
 
-        logger.info("CarbonBlack parser ending.")
+        logger.info("CarbonBlack parser ending.", extra={'tenant': self.tenant_name})

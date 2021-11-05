@@ -36,7 +36,7 @@ from datetime import datetime, timedelta
 import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 class HarfangLabAPIError(Exception):
@@ -124,7 +124,7 @@ class HarfangLabParser(ApiParser):
                 "data": result
             }
         except Exception as e:
-            logger.exception(e)
+            logger.exception(e, extra={'tenant': self.tenant_name})
             return {
                 "status": False,
                 "error": str(e)
@@ -155,7 +155,8 @@ class HarfangLabParser(ApiParser):
 
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
         to = timezone.now()
-        logger.info(f"HarfangLab API parser starting from {since} to {to}.")
+        logger.info(f"HarfangLab API parser starting from {since} to {to}.",
+                    extra={'tenant': self.tenant_name})
 
         index = 0
         total = 1
@@ -169,7 +170,8 @@ class HarfangLabParser(ApiParser):
             logs = response['results']
 
             total = int(response['count'])
-            logger.debug(f"HarfangLab API parser: got {total} lines available")
+            logger.debug(f"HarfangLab API parser: got {total} lines available",
+                         extra={'tenant': self.tenant_name})
 
             if total == 0:
                 # Means that there are no logs available. It may be for two
@@ -180,7 +182,8 @@ class HarfangLabParser(ApiParser):
                 break
 
             index += len(logs)
-            logger.debug(f"HarfangLab API parser: retrieved {index} lines")
+            logger.debug(f"HarfangLab API parser: retrieved {index} lines",
+                         extra={'tenant': self.tenant_name})
 
             self.write_to_file([self.format_log(l) for l in logs])
 
@@ -191,4 +194,5 @@ class HarfangLabParser(ApiParser):
             self.frontend.last_api_call = datetime.fromtimestamp(logs[0]['last_seen']) + timedelta(microseconds=1000)
             self.frontend.save()
 
-        logger.info("HarfangLab API parser ending.")
+        logger.info("HarfangLab API parser ending.",
+                    extra={'tenant': self.tenant_name})
