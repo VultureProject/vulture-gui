@@ -232,10 +232,10 @@ class AkamaiParser(ApiParser):
                     queue_parse.put(line)
                     i = i + 1
                 else:
-                    logger.info(line, extra={'tenant': self.tenant_name})
+                    logger.info(line, extra={'frontend': self.frontend.name})
                     self.offset = line['offset']
             
-            logger.info("akamai::get_logs: Fetched {} lines".format(i), extra={'tenant': self.tenant_name})
+            logger.info("akamai::get_logs: Fetched {} lines".format(i), extra={'frontend': self.frontend.name})
 
     def test(self):
         try:
@@ -288,9 +288,9 @@ class AkamaiParser(ApiParser):
                     self.get_logs()
                     self.update_lock()
                     self.frontend.last_api_call = self.last_log_time
-                    logger.info(self.last_log_time, extra={'tenant': self.tenant_name})
+                    logger.info(self.last_log_time, extra={'frontend': self.frontend.name})
             except Exception as e:
-                logger.error("Fail to download/update akamai logs : {}".format(e), extra={'tenant': self.tenant_name})
+                logger.error("Fail to download/update akamai logs : {}".format(e), extra={'frontend': self.frontend.name})
 
             event_parse.set()
             event_write.set()
@@ -303,7 +303,7 @@ class AkamaiParser(ApiParser):
             #queue_parse.join()
             #queue_write.join()
 
-            logger.info("Akamai parsing done.", extra={'tenant': self.tenant_name})
+            logger.info("Akamai parsing done.", extra={'frontend': self.frontend.name})
 
         except Exception as e:
             raise AkamaiParseError(e)

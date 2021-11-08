@@ -122,7 +122,7 @@ class SymantecParser(ApiParser):
             url = f"{self.start_console_uri}{params}"
 
             logger.debug("[SYMANTEC API PARSER] Retrieving symantec logs from {}".format(url),
-                         extra={'tenant': self.tenant_name})
+                         extra={'frontend': self.frontend.name})
 
             r = requests.get(
                 url,
@@ -144,12 +144,12 @@ class SymantecParser(ApiParser):
                     raise SymantecAPIError(f"Retry After {r.headers['Retry-After']}")
 
                 logger.debug(f"[SYMANTEC API PARSER] Waiting for {retry}s",
-                             extra={'tenant': self.tenant_name})
+                             extra={'frontend': self.frontend.name})
 
                 self.update_lock()
                 time.sleep(retry)
                 logger.debug('[SYMANTEC API PARSER] Resuming API calls',
-                             extra={'tenant': self.tenant_name})
+                             extra={'frontend': self.frontend.name})
 
                 self.execute()
             else:
@@ -163,7 +163,7 @@ class SymantecParser(ApiParser):
                     tmp_file.seek(0)
                     if not len(tmp_file.read()):
                         logger.info('[SYMANTEC API PARSER] No logs found',
-                                    extra={'tenant': self.tenant_name})
+                                    extra={'frontend': self.frontend.name})
                         self.frontend.last_api_call = timezone.now()
                         self.finish()
                     else:
@@ -174,7 +174,7 @@ class SymantecParser(ApiParser):
                                 # Pnly retrieve the DIRST
                                 gzip_filename = zip_file.namelist()[0]
                                 logger.debug("[SYMANTEC API PARSER] Parsing archive {}".format(gzip_filename),
-                                             extra={'tenant': self.tenant_name})
+                                             extra={'frontend': self.frontend.name})
                                 self.update_lock()
                                 gzip_file = BytesIO(zip_file.read(gzip_filename))
 
@@ -211,7 +211,7 @@ class SymantecParser(ApiParser):
 
                 else:
                     logger.info(f'[SYMANTEC API PARSER] No filename found in headers {r.headers}',
-                                extra={'tenant': self.tenant_name})
+                                extra={'frontend': self.frontend.name})
 
         except Exception as e:
             raise SymantecParseError(e)

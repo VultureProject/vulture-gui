@@ -117,7 +117,7 @@ class ForcepointParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at Forcepoint API Call: {response.content}"
-            logger.error(error, extra={'tenant': self.tenant_name})
+            logger.error(error, extra={'frontend': self.frontend.name})
             raise ForcepointAPIError(error)
 
         content = response.content
@@ -166,7 +166,7 @@ class ForcepointParser(ApiParser):
                 break
             except Exception as e:
                 logger.error("Failed to delete file {} : {}".format(file_url, str(e)),
-                             extra={'tenant': self.tenant_name})
+                             extra={'frontend': self.frontend.name})
                 attempt += 1
 
     def execute(self):
@@ -197,7 +197,7 @@ class ForcepointParser(ApiParser):
                 self.frontend.last_api_call = timezone.now()
             except Exception as e:
                 logger.error("Failed to retrieve file {} : {}".format(file_url, e),
-                             extra={'tenant': self.tenant_name})
-                logger.exception(e, extra={'tenant': self.tenant_name})
+                             extra={'frontend': self.frontend.name})
+                logger.exception(e, extra={'frontend': self.frontend.name})
 
-        logger.info("Forcepoint parser ending.", extra={'tenant': self.tenant_name})
+        logger.info("Forcepoint parser ending.", extra={'frontend': self.frontend.name})
