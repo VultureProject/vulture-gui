@@ -43,9 +43,6 @@ from urllib.parse import quote_plus
 BASE_DIR = dirname(dirname(__file__))
 
 
-# Temporary redirect allows to preserve the method of a query during a redirection
-class HttpResponseTemporaryRedirect(HttpResponseRedirect):
-    status_code = 307
 
 
 def split_domain(url):
