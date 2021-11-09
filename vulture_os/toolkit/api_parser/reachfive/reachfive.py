@@ -95,7 +95,7 @@ class ReachFiveParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': self.frontend.name})
+            logger.exception(e, extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -112,7 +112,7 @@ class ReachFiveParser(ApiParser):
         if since:
             params['filter'] = 'date > "{}"'.format(timezone.make_naive(since).isoformat(timespec="milliseconds"))
         logger.debug("ReachFive api::Get user events request params = {}".format(params),
-                     extra={'frontend': self.frontend.name})
+                     extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -125,7 +125,7 @@ class ReachFiveParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at ReachFive API Call: {response.content}"
-            logger.error(error, extra={'frontend': self.frontend.name})
+            logger.error(error, extra={'frontend': str(self.frontend)})
             raise ReachFiveAPIError(error)
 
         content = response.json()
@@ -165,10 +165,10 @@ class ReachFiveParser(ApiParser):
                 # ISO8601 timestamps are sortable as strings
                 last_datetime = max(last_datetime)
                 logger.debug(f"most recent log is from {last_datetime}",
-                             extra={'frontend': self.frontend.name})
+                             extra={'frontend': str(self.frontend)})
 
         # Replace "Z" by "+00:00" for datetime parsing
         # No need to make_aware, date already contains timezone
         self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
 
-        logger.info("ReachFive parser ending.", extra={'frontend': self.frontend.name})
+        logger.info("ReachFive parser ending.", extra={'frontend': str(self.frontend)})

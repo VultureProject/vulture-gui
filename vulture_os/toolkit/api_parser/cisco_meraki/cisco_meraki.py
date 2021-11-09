@@ -87,7 +87,7 @@ class CiscoMerakiParser(ApiParser):
         try:
             orga = self.get_organizations()[0]
             logger.info("CiscoMeraki:: Getting organisation {} networks".format(orga['name']),
-                        extra={'frontend': self.frontend.name})
+                        extra={'frontend': str(self.frontend)})
             data = self.get_organization_networks(orga['id'])
 
             # If we successfully retrieved organizations & networks, it's ok
@@ -97,7 +97,7 @@ class CiscoMerakiParser(ApiParser):
                 "data": data
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': self.frontend.name})
+            logger.exception(e, extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -107,7 +107,7 @@ class CiscoMerakiParser(ApiParser):
         self._connect()
 
         logger.debug("CiscoMeraki api::Get user events request params: startingAfter={}".format(since),
-                     extra={'frontend': self.frontend.name})
+                     extra={'frontend': str(self.frontend)})
 
         try:
             response = self.session.networks.getNetworkEvents(network_id,
@@ -125,17 +125,17 @@ class CiscoMerakiParser(ApiParser):
         for orga in self.get_organizations():
 
             logger.info("CiscoMeraki:: Getting organisation {}".format(orga['name']),
-                        extra={'frontend': self.frontend.name})
+                        extra={'frontend': str(self.frontend)})
 
             for network in self.get_organization_networks(orga['id']):
 
                 logger.info("CiscoMeraki:: Getting organisation network {}".format(network['name']),
-                            extra={'frontend': self.frontend.name})
+                            extra={'frontend': str(self.frontend)})
 
                 for product_type in network['productTypes']:
 
                     logger.info("CiscoMeraki:: Getting organisation network {} product {}".format(network['name'], product_type),
-                                extra={'frontend': self.frontend.name})
+                                extra={'frontend': str(self.frontend)})
 
                     nb_events = 1
                     while nb_events > 0:
@@ -146,7 +146,7 @@ class CiscoMerakiParser(ApiParser):
 
                         if not status:
                             logger.error(f"CiscoMeraki::Orga {orga['name']}:Network {network['name']}: Error getting events : {tmp_logs}",
-                                         extra={'frontend': self.frontend.name})
+                                         extra={'frontend': str(self.frontend)})
                             break
 
                         # Parsing 1k lines may take some while, so refresh token in Redis before
@@ -171,4 +171,4 @@ class CiscoMerakiParser(ApiParser):
                             # No need to make_aware, date already contains timezone
                             self.frontend.cisco_meraki_timestamp[f"{network['id']}_{product_type}"] = tmp_logs['pageEndAt']
 
-        logger.info("CiscoMeraki parser ending.", extra={'frontend': self.frontend.name})
+        logger.info("CiscoMeraki parser ending.", extra={'frontend': str(self.frontend)})

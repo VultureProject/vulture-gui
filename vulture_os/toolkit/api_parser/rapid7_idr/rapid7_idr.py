@@ -109,7 +109,7 @@ class Rapid7IDRParser(ApiParser):
                 "data": result["message"]
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': self.frontend.name})
+            logger.exception(e, extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -161,7 +161,7 @@ class Rapid7IDRParser(ApiParser):
         since = self.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=24))
         to = datetime.now(timezone.utc)
         logger.info(f"Rapid7 IDR API parser starting from {since} to {to}.",
-                    extra={'frontend': self.frontend.name})
+                    extra={'frontend': str(self.frontend)})
 
         index = 0
         available = 1
@@ -177,11 +177,11 @@ class Rapid7IDRParser(ApiParser):
             
             available = int(response['metadata']['total_data'])
             logger.debug(f"Rapid7 IDR API parser: got {available} lines available",
-                         extra={'frontend': self.frontend.name})
+                         extra={'frontend': str(self.frontend)})
             
             retrieved += len(logs)
             logger.debug(f"Rapid7 IDR API parser: retrieved {retrieved} lines",
-                         extra={'frontend': self.frontend.name})
+                         extra={'frontend': str(self.frontend)})
             
             index += 1
 
@@ -193,4 +193,4 @@ class Rapid7IDRParser(ApiParser):
         # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
         self.frontend.last_api_call = to + timedelta(microseconds=1000)
 
-        logger.info("Rapid7 IDR API parser ending.", extra={'frontend': self.frontend.name})
+        logger.info("Rapid7 IDR API parser ending.", extra={'frontend': str(self.frontend)})

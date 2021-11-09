@@ -124,7 +124,7 @@ class HarfangLabParser(ApiParser):
                 "data": result
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': self.frontend.name})
+            logger.exception(e, extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -156,7 +156,7 @@ class HarfangLabParser(ApiParser):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
         to = timezone.now()
         logger.info(f"HarfangLab API parser starting from {since} to {to}.",
-                    extra={'frontend': self.frontend.name})
+                    extra={'frontend': str(self.frontend)})
 
         index = 0
         total = 1
@@ -171,7 +171,7 @@ class HarfangLabParser(ApiParser):
 
             total = int(response['count'])
             logger.debug(f"HarfangLab API parser: got {total} lines available",
-                         extra={'frontend': self.frontend.name})
+                         extra={'frontend': str(self.frontend)})
 
             if total == 0:
                 # Means that there are no logs available. It may be for two
@@ -183,7 +183,7 @@ class HarfangLabParser(ApiParser):
 
             index += len(logs)
             logger.debug(f"HarfangLab API parser: retrieved {index} lines",
-                         extra={'frontend': self.frontend.name})
+                         extra={'frontend': str(self.frontend)})
 
             self.write_to_file([self.format_log(l) for l in logs])
 
@@ -195,4 +195,4 @@ class HarfangLabParser(ApiParser):
             self.frontend.save()
 
         logger.info("HarfangLab API parser ending.",
-                    extra={'frontend': self.frontend.name})
+                    extra={'frontend': str(self.frontend)})

@@ -180,7 +180,7 @@ class ImpervaParser(ApiParser):
                 for file in log_files:
                     self.update_lock()
                     logger.info(f"[IMPERVA PARSER] Downloading {file}",
-                                extra={'frontend': self.frontend.name})
+                                extra={'frontend': str(self.frontend)})
                     content = self.get_file(file)
                     data.extend(content.split(b'\n'))
 
@@ -199,7 +199,7 @@ class ImpervaParser(ApiParser):
                     self.write_to_file(data)
                     self.imperva_last_log_file = next_log_file
                 except Exception as e:
-                    logger.exception(e, extra={'frontend': self.frontend.name})
+                    logger.exception(e, extra={'frontend': str(self.frontend)})
 
                     # Download log files index
                     log_files = self._download_log_index()
@@ -207,15 +207,15 @@ class ImpervaParser(ApiParser):
                     if next_log_index < first_log_id_in_index:
                         logger.error("Current downloaded file is not in the index file any more. "
                                      "This is probably due to a long delay in downloading. Attempting to recover",
-                                     extra={'frontend': self.frontend.name})
+                                     extra={'frontend': str(self.frontend)})
                         self.imperva_last_log_file = ""
                     elif f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index+1}.log" in log_files:
                         logger.warning("Skipping file {}".format(next_log_file),
-                                       extra={'frontend': self.frontend.name})
+                                       extra={'frontend': str(self.frontend)})
                         self.imperva_last_log_file = next_log_file
                     else:
                         logger.info("Next file {} still does not exist.".format(next_log_file),
-                                    extra={'frontend': self.frontend.name})
+                                    extra={'frontend': str(self.frontend)})
 
             self.frontend.imperva_last_log_file = self.imperva_last_log_file
             self.frontend.last_api_call = self.last_api_call

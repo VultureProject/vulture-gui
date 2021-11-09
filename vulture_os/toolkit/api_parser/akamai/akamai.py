@@ -66,14 +66,14 @@ def akamai_write(akamai):
                 log = queue_write.get(block=True, timeout=2)
             except:
                 logger.info("akamai_write::get_bulk: Exception in queue_write.get()",
-                            extra={'tenant': akamai.tenant_name})
+                            extra={'frontend': str(akamai.frontend)})
                 continue
             try:
                 # Data to write must be bytes
                 res.append(json.dumps(log).encode('utf8'))
             except:
                 logger.error("Line {} is not json formated".format(log),
-                             extra={'tenant': akamai.tenant_name})
+                             extra={'frontend': str(akamai.frontend)})
                 pass
 #            queue_write.task_done()
         return res
@@ -85,7 +85,7 @@ def akamai_write(akamai):
         # logger.info("Write queue size: {}".format(queue_write.qsize()))
 
     logger.info("Writting thread finished",
-                extra={'tenant': akamai.tenant_name})
+                extra={'frontend': str(akamai.frontend)})
 
 
 def akamai_parse(akamai):
@@ -232,10 +232,10 @@ class AkamaiParser(ApiParser):
                     queue_parse.put(line)
                     i = i + 1
                 else:
-                    logger.info(line, extra={'frontend': self.frontend.name})
+                    logger.info(line, extra={'frontend': str(self.frontend)})
                     self.offset = line['offset']
             
-            logger.info("akamai::get_logs: Fetched {} lines".format(i), extra={'frontend': self.frontend.name})
+            logger.info("akamai::get_logs: Fetched {} lines".format(i), extra={'frontend': str(self.frontend)})
 
     def test(self):
         try:
@@ -288,9 +288,9 @@ class AkamaiParser(ApiParser):
                     self.get_logs()
                     self.update_lock()
                     self.frontend.last_api_call = self.last_log_time
-                    logger.info(self.last_log_time, extra={'frontend': self.frontend.name})
+                    logger.info(self.last_log_time, extra={'frontend': str(self.frontend)})
             except Exception as e:
-                logger.error("Fail to download/update akamai logs : {}".format(e), extra={'frontend': self.frontend.name})
+                logger.error("Fail to download/update akamai logs : {}".format(e), extra={'frontend': str(self.frontend)})
 
             event_parse.set()
             event_write.set()
@@ -303,7 +303,7 @@ class AkamaiParser(ApiParser):
             #queue_parse.join()
             #queue_write.join()
 
-            logger.info("Akamai parsing done.", extra={'frontend': self.frontend.name})
+            logger.info("Akamai parsing done.", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
             raise AkamaiParseError(e)

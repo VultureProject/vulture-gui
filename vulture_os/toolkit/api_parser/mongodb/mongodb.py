@@ -127,7 +127,7 @@ class MongoDBParser(ApiParser):
 
             for hostname in hostnames:
                 logger.info("[MONGODB API PARSER] Retrieve logs from hostname {}".format(hostname),
-                            extra={'frontend': self.frontend.name})
+                            extra={'frontend': str(self.frontend)})
 
                 url = self.base_url+"/groups/{}/logs/mongos.gz"
                 response = self.session.get(

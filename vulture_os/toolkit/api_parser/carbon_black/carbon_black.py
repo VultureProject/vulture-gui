@@ -113,7 +113,7 @@ class CarbonBlackParser(ApiParser):
                 "data": [self.format_log(log) for log in logs['results']]
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': self.frontend.name})
+            logger.exception(e, extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -177,4 +177,4 @@ class CarbonBlackParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 self.frontend.last_api_call = datetime.fromisoformat(logs[0]['last_update_time'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
 
-        logger.info("CarbonBlack parser ending.", extra={'frontend': self.frontend.name})
+        logger.info("CarbonBlack parser ending.", extra={'frontend': str(self.frontend)})
