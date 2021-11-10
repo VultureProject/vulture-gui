@@ -35,7 +35,7 @@ from datetime import datetime
 import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 class DefenderATPAPIError(Exception):
@@ -96,7 +96,7 @@ class DefenderATPParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(e)
+            logger.exception(e, extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -112,7 +112,8 @@ class DefenderATPParser(ApiParser):
         }
         if since:
             params['$filter'] = 'lastUpdateTime gt {}'.format(since.isoformat().replace('+00:00', "Z"))
-        logger.debug("DefenderATP api::Get user events request params = {}".format(params))
+        logger.debug("DefenderATP api::Get user events request params = {}".format(params),
+                     extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -125,11 +126,12 @@ class DefenderATPParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at Defender ATP API Call: {response.content}"
-            logger.error(error)
+            logger.error(error, extra={'frontend': str(self.frontend)})
             raise DefenderATPAPIError(error)
 
         content = response.json()
-        logger.info("DefenderATP API::Content retrieved")
+        logger.info("DefenderATP API::Content retrieved",
+                    extra={'frontend': str(self.frontend)})
 
         return True, content
 
@@ -189,4 +191,4 @@ class DefenderATPParser(ApiParser):
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
 
-        logger.info("Defender ATP parser ending.")
+        logger.info("Defender ATP parser ending.", extra={'frontend': str(self.frontend)})

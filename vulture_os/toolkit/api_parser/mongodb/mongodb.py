@@ -37,7 +37,7 @@ from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 class MongoDBParseError(Exception):
@@ -126,7 +126,8 @@ class MongoDBParser(ApiParser):
                 raise MongoDBAPIError(err)
 
             for hostname in hostnames:
-                logger.info("[MONGODB API PARSER] Retrieve logs from hostname {}".format(hostname))
+                logger.info("[MONGODB API PARSER] Retrieve logs from hostname {}".format(hostname),
+                            extra={'frontend': str(self.frontend)})
 
                 url = self.base_url+"/groups/{}/logs/mongos.gz"
                 response = self.session.get(

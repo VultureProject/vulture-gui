@@ -38,7 +38,7 @@ import gzip
 import csv
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 MAX_DELETE_ATTEMPTS = 3
 
@@ -117,7 +117,7 @@ class ForcepointParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at Forcepoint API Call: {response.content}"
-            logger.error(error)
+            logger.error(error, extra={'frontend': str(self.frontend)})
             raise ForcepointAPIError(error)
 
         content = response.content
@@ -165,7 +165,8 @@ class ForcepointParser(ApiParser):
                 response.raise_for_status()
                 break
             except Exception as e:
-                logger.error("Failed to delete file {} : {}".format(file_url, str(e)))
+                logger.error("Failed to delete file {} : {}".format(file_url, str(e)),
+                             extra={'frontend': str(self.frontend)})
                 attempt += 1
 
     def execute(self):
@@ -195,7 +196,8 @@ class ForcepointParser(ApiParser):
                 # And update last_api_call time
                 self.frontend.last_api_call = timezone.now()
             except Exception as e:
-                logger.error("Failed to retrieve file {} : {}".format(file_url, e))
-                logger.exception(e)
+                logger.error("Failed to retrieve file {} : {}".format(file_url, e),
+                             extra={'frontend': str(self.frontend)})
+                logger.exception(e, extra={'frontend': str(self.frontend)})
 
-        logger.info("Forcepoint parser ending.")
+        logger.info("Forcepoint parser ending.", extra={'frontend': str(self.frontend)})

@@ -35,7 +35,7 @@ from django.utils.translation import ugettext_lazy as _
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 class ElasticsearchParseError(Exception):
@@ -179,4 +179,4 @@ class ElasticsearchParser(ApiParser):
             self.finish()
 
         except Exception as e:
-            logger.critical(e, exc_info=1)
+            logger.critical(e, exc_info=1, extra={'frontend': str(self.frontend)})
