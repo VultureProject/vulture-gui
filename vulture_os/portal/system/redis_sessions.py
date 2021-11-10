@@ -350,10 +350,9 @@ class REDISPortalSession(REDISSession):
         self.handler.hset(self.key, f"otp_retries_{otp_repo_id}", otp_retries)
         return otp_retries
 
-    def deauthenticate(self, workflow_id, backend_id, timeout):
-        # TODO : otp_retries_{otp_backend_id}
-        self.keys.pop('otp_retries', None)
-        self.keys[workflow_id] = 0
+    def deauthenticate(self, workflow_id, backend_id, otp_backend_id, timeout):
+        self.keys.pop(f'otp_retries_{otp_backend_id}', None)
+        self.keys[str(workflow_id)] = 0
         self.keys[f'auth_backend_{backend_id}'] = 0
         self.keys.pop(f'backend_{workflow_id}', None)
         self.keys.pop(f'login_{backend_id}', None)

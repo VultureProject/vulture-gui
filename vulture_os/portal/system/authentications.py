@@ -477,6 +477,7 @@ class DOUBLEAuthentication(Authentication):
                     # Need to print the captcha to the user ?
                     self.print_captcha = otp_info[0]
                     otp_info = otp_info[1]
+                    self.credentials[0] = otp_info
 
                 logger.info("DB-AUTHENTICATION::create_authentication: Key successfully created/sent to {},"
                             "{}".format(user_mail, user_phone))
@@ -494,12 +495,15 @@ class DOUBLEAuthentication(Authentication):
             logger.debug("DB-AUTH::create_authentication: OTP key successfully written in Redis session")
 
         elif self.workflow.authentication.otp_repository.otp_type == "totp":
-            self.credentials[0] = self.redis_portal_session.get_otp_key()
-            # Show QRCode if not in MongoDB
+            # Retrieve TOTPProfile if exists, or generate a new key
             otp_info = self.workflow.authentication.otp_repository.get_client().register_authentication(
                 backend=self.backend,
                 login=self.redis_portal_session.get_login(self.backend_id))
             self.print_captcha = otp_info[0]
+            self.credentials[0] = otp_info[1]
+            # And save the generated/retrieved key in Redis
+            self.redis_portal_session.set_otp_info(otp_info[1])
+
 
     def authentication_failure(self):
         otp_retries = self.redis_portal_session.increment_otp_retries(self.workflow.authentication.otp_repository.id)
@@ -511,6 +515,7 @@ class DOUBLEAuthentication(Authentication):
 
     def deauthenticate_user(self):
         self.redis_portal_session.deauthenticate(self.workflow.id, self.backend_id,
+                                                 self.workflow.authentication.otp_repository.id,
                                                  self.workflow.authentication.auth_timeout)
         logger.debug("DB-AUTH::deauthenticate_user: Redis portal session successfully updated (deauthentication)")
 
@@ -519,7 +524,7 @@ class DOUBLEAuthentication(Authentication):
         if self.workflow.authentication.otp_repository.otp_type == "totp" and self.print_captcha:
             user_mail = self.redis_portal_session.keys.get('user_email', "")
             captcha_url = self.workflow.authentication.otp_repository.get_client().generate_captcha(self.credentials[0], user_mail)
-            logger.debug("DB-AUTH::ask_credentials_response: Captcha generated")
+            logger.debug(f"DB-AUTH::ask_credentials_response: Captcha generated for user {user_mail} : {self.credentials[0]}")
 
         response = otp_authentication_response(kwargs.get('request'),
                                                self.workflow.authentication,
