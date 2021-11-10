@@ -35,7 +35,7 @@ from toolkit.redis.redis_base import RedisBase
 from toolkit.network.network import JAIL_ADDRESSES
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 class NodeNotBootstraped(Exception):
@@ -59,7 +59,8 @@ class ApiParser:
         except Config.DoesNotExist:
             raise NodeNotBootstraped()
 
-        self.customer_name = config.internal_tenants.name
+        self.tenant_name = self.frontend.tenants_config.name if self.frontend else "test"
+
         self.last_api_call = self.data.get("last_api_call")
         self.key_redis = "api_parser_{frontend_id}_running".format(
             frontend_id=str(self.data.get('id', ""))

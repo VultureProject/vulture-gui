@@ -210,6 +210,9 @@ LOG_SETTINGS = {
         'simple': {
             'format': '%(levelname)s %(message)s'
         },
+        'api_parser': {
+            'format': '%(asctime)s %(module)s:%(lineno)d [%(levelname)s][%(frontend)s] %(message)s'
+        }
     },
     'handlers': {
         'console': {
@@ -274,6 +277,15 @@ LOG_SETTINGS = {
             'maxBytes': 10485760,
             'backupCount': 5,
         },
+        'api_parser': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': LOG_LEVEL,
+            'formatter': 'api_parser',
+            'filename': '/var/log/vulture/os/api_parser.log',
+            'mode': 'a',
+            'maxBytes': 10485760,
+            'backupCount': 5,
+        },
         'authentication': {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
@@ -326,6 +338,11 @@ LOG_SETTINGS = {
         },
         'crontab': {
             'handlers': ('crontab', 'database'),
+            'level': LOG_LEVEL,
+            'propagate': True
+        },
+        'api_parser': {
+            'handlers': ('api_parser', 'database'),
             'level': LOG_LEVEL,
             'propagate': True
         },

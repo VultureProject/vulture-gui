@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
 __author__ = "Kevin Guillemot"
-__credits__ = ["Olivier De-Regis"]
+__credits__ = ["Florian Ledoux", "Antoine Lucas"]
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
@@ -30,15 +30,17 @@ from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from datetime import datetime
-from toolkit.api_parser.cybereason.cybereason_toolkit import CybereasonToolkit
 
 import json
 import logging
 import datetime
 from pprint import pformat
+import requests
+import time
+import pprint
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 class CybereasonAPIError(Exception):
@@ -46,52 +48,31 @@ class CybereasonAPIError(Exception):
 
 
 class CybereasonParser(ApiParser):
-    MAPPING_MALOPS = {
-        "reason": {
-            'cybereason_key': "decisionFeature",
-            'value_key': 'values'
-        },
-        "threat_type": {
-            'cybereason_key': "detectionType",
-            'value_key': 'values'
-        },
-        # "edr_threat_rootcause": {
-        #     'cybereason_key': "rootCauseElementCompanyProduct",
-        #     "value_key": "values"
-        # },
-        "category": {
-            'cybereason_key': "malopActivityTypes",
-            'value_key': 'values'
-        },
-        "elements_type": {
-            'cybereason_key': "rootCauseElementTypes",
-            'value_key': 'values'
-        },
-        "killchain": {
-            'cybereason_key': "malopActivityTypes",
-            'value_key': 'values'
-        },
-        "status": {
-            'cybereason_key': "managementStatus",
-            'value_key': 'values'
-        },
-        "is_blocked": {
-            'cybereason_key': "isBlocked",
-            'value_key': 'values'
-        },
-        "level": {
-            'cybereason_key': "malopPriority",
-            'value_key': 'values'
-        },
-        "timestamp_start": {
-            'cybereason_key': "malopStartTime",
-            'value_key': 'values'
-        },
-        "af_reason": {
-            'cybereason_key': "elementDisplayName",
-            'value_key': 'values'
-        },
+    LOGIN_URI = "login.html"
+    MALOP_URI = "rest/crimes/unified"
+    SENSOR_URI = "rest/sensors/query"
+    MALWARE_URI = "rest/malware/query"
+    POLICY_URI = "rest/policies"
+    UPGRADE_URI = "rest/sensors/action/upgrade"
+    APP_VERSION_URI = "rest/monitor/global/server/version/all"
+    APP_DETAILS_URI = "rest/settings/get-detection-servers"
+    APP_STATUS_URI = "rest/monitor/global/server/base/status"
+    SEARCH_URI = "rest/visualsearch/query/simple"
+    DESCRIPTION_URI = "rest/translate/features/all"
+    DESCRIPTION_MALOP_URI = "rest/translate/malopDescriptions/all"
+
+    MALOP_SIMPLE_VALUES = ["rootCauseElementNames", "rootCauseElementTypes", "isBlocked", "comments",
+                           "malopActivityTypes", "detectionType", "malopActivityTypes", "managementStatus",
+                           "elementDisplayName", "malopPriority", "rootCauseElementHashes", "decisionFeature",
+                           "malopLastUpdateTime", "closeTime", "malopStartTime"]
+
+    HEADERS = {
+        "Content-Type": "application/json",
+        'Accept': 'application/json'
     }
+
+    DESC_TRANSLATION = {}
+    DESC_MALOP_TRANSLATION = {}
 
     def __init__(self, data):
         super().__init__(data)
@@ -99,319 +80,372 @@ class CybereasonParser(ApiParser):
         self.host = data["cybereason_host"]
         self.username = data["cybereason_username"]
         self.password = data["cybereason_password"]
+        # Remove last "/" if present
+        if self.host[-1] == '/':
+            self.host = self.host[:-1]
+        # Remove scheme for observer
         if not "://" in self.host:
             self.observer_name = self.host
             self.host = f"https://{self.host}"
         else:
             self.observer_name = self.host.split("://")[1]
-        self.cyber_tool = CybereasonToolkit(self.host, self.username, self.password, self.proxies)
 
-    def execute_query(self, kind, since, test=False, requestedType=None):
-        if kind == "malops":
-            self.query = {
-                'totalResultLimit': 10000,
-                'perGroupLimit': 10000,
-                'perFeatureLimit': 100,
-                'templateContext': 'OVERVIEW',
-                'queryPath': []
-            }
 
-            queryPath = {
-                'requestedType': requestedType,
-                'result': True,
-                'filters': [{
+        self.session = None
+
+    def _connect(self):
+        try:
+            if self.session is None:
+                self.session = requests.Session()
+
+                login_url = f"{self.host}/{self.LOGIN_URI}"
+
+                auth = {
+                    "username": self.username,
+                    "password": self.password
+                }
+
+                response = self.session.post(
+                    login_url,
+                    data=auth,
+                    proxies=self.proxies
+                )
+                response.raise_for_status()
+                if "app-login" in response.content.decode('utf-8'):
+                    raise CybereasonAPIError(f"Authentication failed on {login_url} for user {self.username}")
+
+                logger.info("[CYBEREASON]::_connect: Successfully logged-in", extra={'frontend': str(self.frontend)})
+
+            return True
+
+        except Exception as err:
+            raise CybereasonAPIError(err)
+
+    def execute_query(self, method, url, query, timeout=10):
+        self._connect()
+
+        response = None
+        retry = 3
+        while (retry > 0):
+            retry -= 1
+            try:
+                response = self.session.request(method, url, json=query)
+            except requests.exceptions.ReadTimeout:
+                time.sleep(timeout)
+                continue
+            except requests.exceptions.ConnectionError:
+                time.sleep(timeout)
+                continue
+            if response.status_code != 200:
+                time.sleep(timeout)
+                continue
+            break  # no error we break from the loop
+
+        # response.raise_for_status()
+        if response == None or response.status_code != 200:
+            if (response == None):
+                logger.error(f"[CYBEREASON]::execute_query: Error at Cybereason API Call URL: {url} [TIMEOUT]",
+                             extra={'frontend': str(self.frontend)})
+            else:
+                logger.error(f"[CYBEREASON]::execute_query: Error at Cybereason API Call URL: {url} Code: {response.status_code} ",
+                             extra={'frontend': str(self.frontend)})
+            return {}
+        return json.loads(response.content)
+
+    def getAlerts(self, since):
+        malop_url = f"{self.host}/{self.MALOP_URI}"
+
+        query = {
+            "totalResultLimit": 10000,
+            "perGroupLimit": 10000,
+            "perFeatureLimit": 100,
+            "templateContext": "OVERVIEW",
+            "queryPath": [{
+                "requestedType": "MalopProcess",
+                "result": True,
+                "filters": [{
                     'facetName': "malopLastUpdateTime",
                     'filterType': 'GreaterThan',
-                    'values': [
-                        since * 1000
-                    ]
+                    'values': [since * 1000]
                 }]
-            }
+            }]
+        }
 
-            self.query['queryPath'].append(queryPath)
+        tmp_malops = self.execute_query("POST", malop_url, query)
+        return tmp_malops.get('data', {}).get('resultIdToElementDataMap', {})
 
-        elif kind == "malwares":
-            self.query = {
-                "filters": [{
-                    "fieldName": "timestamp",
-                    "operator": "GreaterThan",
-                    "values": [since * 1000]
-                }],
-                "sortingFieldName": "timestamp",
-                "sortDirection": "DESC",
-                "limit": 1000,
-                "offset": 0,
-                "search": ""
-            }
+    def getMalwares(self, since):  # since is in hour
+        malware_uri = f"{self.host}/{self.MALWARE_URI}"
+        query = {
+            'filters': [{
+                'fieldName': 'timestamp',
+                'operator': 'GreaterThan',
+                'values': [since * 1000]
+            }],
+            'limit': 1000,
+            'offset': 0,
+            'search': '',
+            'sortDirection': 'DESC',
+            'sortingFieldName': 'timestamp'
+        }
 
-        logger.info(f"[CYBEREASON PLUGIN] Executing {json.dumps(self.query)}")
+        malwareList = []
+        malwareToRetrieve = True
+        offset = 0
+        while (malwareToRetrieve):
+            ret = self.execute_query("POST", malware_uri, query)
+            if ('data' not in ret.keys()):
+                return False, malwareList
+            malwareList += ret['data']['malwares']
+            if (ret['status'] != 'SUCCESS'):
+                return False, malwareList
+            offset += 1
+            query['offset'] = offset
+            if not ret['data']['hasMoreResults']:
+                malwareToRetrieve = False
+        return malwareList
 
-    def __get_affected_devices(self, devices, fieldName, test=False):
-        status, tmp_devices = self.cyber_tool.get_devices(devices, fieldName)
-        if not status:
-            raise Exception(tmp_devices)
+    def parseMalwares(self, malwares):
+        for i in malwares:
+            i["timestamp"] = float(i['timestamp'])/1000
+        return malwares
 
-        for tmp in tmp_devices.get('sensors', []):
-            tmp_fqdn = tmp.get('fqdn', "-").split('.')
+    def parseMalops(self, malops):
+        # malops is a DICT which key is malop ID
 
-            if len(tmp_fqdn) > 1:
-                fqdn = f'{tmp_fqdn[-2]}.{tmp_fqdn[-1]}'
-            elif len(tmp_fqdn) == 1:
-                fqdn = tmp_fqdn[0]
+        # function to get value from alert fields
+        def popCybVal(sv, key):
+            ret = sv.get('simpleValues', {}).get(key, {}).get('values', [])
+            if (ret == None or ret == []):
+                return '-'
             else:
-                fqdn = "-"
+                return ret[0]
 
-            device = {
-                'host': {
-                    'domain': fqdn,
-                    "id": tmp.get('sensorId', "-"),
-                    "hostname": tmp.get('machineName', "-"),
-                    "ip": tmp.get('internalIpAddress', "0.0.0.1"),
-                    "type": tmp.get('organization', "-"),
-                    "nat": {
-                        'ip': tmp.get('externalIpAddress', "0.0.0.1"),
-                    },
-                    'os': {
-                        'full': tmp.get('osVersionType', "-")
-                    }
-                }
-            }
+        # Retrieve external informations for enrichment
+        malopsGlobalDesc = self._descriptionsMalop()
+        featureGlobalDesc = self._descriptionsFeatures()
 
-            yield device
-
-            if test:
-                break
-
-    def __get_affected_machines(self, devices, test=False):
-        status, tmp_devices = self.cyber_tool.get_machines(devices)
-        if not status:
-            raise Exception(tmp_devices)
-        devices = []
-        for device_k,device_v in tmp_devices['data']['resultIdToElementDataMap'].items():
-            devices.append({key:value['values'][0] for key, value in device_v['simpleValues'].items()})
-            if test:
-                break
-        return devices
-
-    def __get_evidence(self, malop_id):
-        status, evidences = self.cyber_tool.get_evidence(malop_id)
-        if not status:
-            raise Exception(evidences)
-
-        evidences = [key for key in evidences['data']['suspicionsMap'].keys()]
-        status, evidences_network = self.cyber_tool.get_evidence_network(malop_id)
-
-        if not status:
-            raise Exception(evidences)
-
-        evidences.extend([key for key in evidences_network['data']['suspicionsMap'].keys()])
-        return evidences
-
-    def parse_malops(self, malops_data, test):
-        status, descriptions = self.cyber_tool.descriptions()
-        status, translate_process = self.cyber_tool.translate()
-        # status, enums = self.cyber_tool.enum()
-
-        for malop_id, malop_info in malops_data['data']['resultIdToElementDataMap'].items():
-            malop_simple_values = malop_info['simpleValues']
-            malop_element_values = malop_info['elementValues']
-
-            default_values = {
-                'values': [],
-                'elementValues': []
-            }
-
-            timestamp_detected = float(malop_simple_values['malopLastUpdateTime']['values'][0]) / 1000
-
-            timestamp_closed = 0.0
-            if malop_simple_values['closeTime']['values'][0] is not None:
-                timestamp_closed = float(malop_simple_values['closeTime']['values'][0]) / 1000
-            timestamp_start = 0.0
-            if malop_simple_values['malopStartTime']['values'][0] is not None:
-                timestamp_start = float(malop_simple_values['malopStartTime']['values'][0]) / 1000
+        tmp_malops = []
+        for guid, value in malops.items():
+            malopDescList = []
+            malopFeatureList = []
+            malop_id = guid
 
             tmp_malop = {
-                "threat_url": self.host + "#/malop/" + malop_id,
-                "threat_id": malop_id,
-                "timestamp_start": timestamp_start,
-                "timestamp_closed": timestamp_closed,
-                "timestamp": timestamp_detected,
-                'affected_devices': []
+                'id': guid,
+                "url": f"{self.host}/#/malop/{malop_id}",
+                'observer_name': f'{self.host}',
+                'suspicion_list': self.suspicions(malop_id),
             }
 
-            tmp_malop['elements_names'] = malop_simple_values.get(
-                'rootCauseElementNames', default_values
-            ).get('values')
-
-            tmp_malop['elements_hash'] = malop_simple_values.get(
-                'rootCauseElementHashes', default_values
-            ).get('values')
-
-            tmp_malop['killchain'] = malop_simple_values.get(
-                'malopActivityTypes', default_values
-            ).get('values')
-
-            tmp_malop['comments'] = malop_simple_values.get(
-                'comments', default_values
-            ).get('values')
-
-
-            for internal_field, cybereason_mapping in self.MAPPING_MALOPS.items():
-                try:
-                    tmp = malop_simple_values.get(cybereason_mapping['cybereason_key'], default_values)
-                    tmp_malop[internal_field] = tmp.get(cybereason_mapping['value_key'])[0]
-                except (IndexError, TypeError):
-                    tmp_malop[internal_field] = "-"
-
-                if internal_field == "reason":
-                    val = tmp_malop[internal_field].replace('Process.', '').replace('(Malop decision)', '')
-                    descr = descriptions.get(val)
-
-                    if descr:
-                        # Remove "None" value, that appears sometimes
-                        tmp = ", ".join([i for i in tmp_malop['elements_names'] if i != None])
-                        tmp_malop['threat_rootcause'] = Template(descr).render(Context({
-                            "suspectName": tmp
-                        }))
-
-            feature_name, tmp = tmp_malop['reason'].split('.')
-            tmp = tmp.split('(')[0]
+            for field_name in self.MALOP_SIMPLE_VALUES:
+                tmp_malop[field_name] = popCybVal(value, field_name)
 
             try:
-                edr_detection_type = translate_process[feature_name][tmp]['translatedName']
-            except KeyError:
-                edr_detection_type = None
+                reason = tmp_malop['decisionFeature']
+                rootEntry = reason.split('.')[0]
+                subEntry = reason[len(rootEntry) + 1:].split('(')[0]
+                malopDescList += [malopsGlobalDesc[rootEntry][subEntry]['single']]
+                malopFeatureList += [featureGlobalDesc[rootEntry][subEntry]['translatedName']]
+            except Exception as e:
+                logger.error(f"[CYBEREASON]::parseMalops: Error enriching description: {e}", extra={'frontend': str(self.frontend)})
 
-            tmp_malop['detection_type'] = edr_detection_type
+            tmp_malop['threat_rootcause'] = ' + '.join(malopDescList)
+            tmp_malop['detection_type'] = ' + '.join(malopFeatureList)
 
             devices = []
-            for tmp in malop_element_values['affectedMachines']['elementValues']:
-                devices.append(tmp.get("guid"))
-
-            users = []
-            if malop_element_values.get('affectedUsers'):
-                for tmp in malop_element_values['affectedUsers']['elementValues']:
-                    users.append(tmp.get("name"))
-            tmp_malop['affected_users'] = users
-
-            edr_suspicions_list = self.__get_evidence(malop_id)
-            # edr_suspicions_list = []
-            # for suspicion in tmp_edr_suspicions_list:
-            # try:
-            #     edr_suspicions_list.append(translate_process[tmp_malop['edr_elements_type']][suspicion]['translatedName'])
-            # except KeyError:
-            #     edr_suspicions_list.append(suspicion)
-
-            # guid_root_cause_list = {}
-            # for tmp in malop_element_values['primaryRootCauseElements']['elementValues']:
-            #     try:
-            #         guid_root_cause_list[tmp['elementType']].append(tmp['guid'])
-            #     except KeyError:
-            #         guid_root_cause_list[tmp['elementType']] = [tmp['guid']]
-
-            # root_cause = []
-            # edr_suspicions_list = []
-            # for elem_type, guid_list in guid_root_cause_list.items():
-            #     root_cause = self.__get_evidence(elem_type, list(set(guid_list)))
-            #     names = [key for key in root_cause['data']['suspicionsMap'].keys()]
-
-            #     for name in names:
-            #         try:
-            #             # description_process = translate_process[elem_type][name]['description']
-            #             edr_suspicions_list.append(translate_process[elem_type][name]['translatedName'])
-            #         except KeyError:
-            #             pass
-
-            tmp_malop['suspicions_list'] = edr_suspicions_list
-            tmp_affected_machines = self.__get_affected_devices(
-                devices,
-                'guid',
-                test
-            )
-
-            for device in tmp_affected_machines:
-                tmp_malop['affected_devices'].append(device)
-                if test:
-                    break
-
-            tmp_malop['affected_machines'] = self.__get_affected_machines(devices, test)
-
-            yield tmp_malop
-
-    def parse_malwares(self, malwares_data, test):
-        malwares = {}
-        tmp_machines = {}
-
-        for tmp_malware in malwares_data:
-            timestamp = float(tmp_malware['timestamp']) / 1000
-
-            malware_guid = tmp_malware['guid']
-
             try:
-                tmp_machines[malware_guid].append(tmp_malware['machineName'])
-            except KeyError:
-                tmp_machines[malware_guid] = [tmp_malware['machineName']]
+                malopDevices = value['elementValues']['affectedMachines'].get('elementValues', [])
+                devicesNames = [x['name'] for x in malopDevices]
+                malopDevicesDetails = self.getDevicesDetails(devicesNames)
+                for device in malopDevicesDetails:
+                    devices.append({
+                        "nat": {
+                            "ip": device.get("internalIpAddress", '-'),
+                        },
+                        "hostname": device.get("machineName", '-'),
+                        "os": {
+                            "full": device.get("osVersionType", '-')
+                        },
+                        "domain": device.get("fqdn", '-'),
+                        "ip": device.get("externalIpAddress", '-'),
+                        "id": device.get("sensorId", '-'),
+                        "type": device.get("groupName", '-'),
+                        "policy": device.get("policyName", '-'),
+                        "adOU": device.get("organizationalUnit", '-'),
+                        "domainFqdn": device.get("organization", '-')
+                    })
+            except Exception as e:
+                logger.error(f"[CYBEREASON]:parseMalops: Error enriching devices: {e}", extra={'frontend': str(self.frontend)})
 
-            malwares[malware_guid] = {
-                "timestamp": timestamp,
-                'affected_devices': [],
-                "threat_id": tmp_malware['guid'],
-                "name": tmp_malware['name'],
-                "category": tmp_malware['type'],
-                "threat_type": tmp_malware['elementType'],
-                "status": tmp_malware['status'],
-                "machine_name": tmp_malware['machineName'],
-                "engine": tmp_malware['detectionEngine'],
-                "detection_type": tmp_malware.get('detectionValueType', "-"),
-                "detection_value": tmp_malware.get('detectionValue', "-"),
-                'threat_need_attention': tmp_malware['needsAttention'],
-                'severity': tmp_malware.get('score', 0.0),
-                'threat_name': tmp_malware['malwareDataModel'].get('detectionName', "-"),
-                'threat_fullpath': tmp_malware['malwareDataModel'].get('filePath', "-"),
-                'threat_url': tmp_malware['malwareDataModel'].get('url') or "-"
-            }
+            tmp_malop['devices'] = devices
 
-        # for guid, machines in tmp_machines.items():
-        #     tmp_affected_machines = self.__get_affected_devices(
-        #         machines,
-        #         "machineName",
-        #         test
-        #     )
-        #
-        #     for device in tmp_affected_machines:
-        #         malwares[guid]['affected_devices'].append(device)
-        #         if test:
-        #             break
-        #
-        #     if test:
-        #         break
+            afUserNames = []
+            try:
+                if (value.get('elementValues', {}).get('affectedUsers')):
+                    afUserNames = [x['name'] for x in value['elementValues']['affectedUsers']['elementValues']]
+            except Exception as e:
+                logger.error(f"[CYBEREASON]::parseMalops: Error parsing affected users: {e}", extra={'frontend': str(self.frontend)})
 
-        for guid, value in malwares.items():
-            value['guid'] = guid
+            tmp_malop['affected_users'] = afUserNames
 
-            yield value
+            tmp_malop = self.parseTimestamps(tmp_malop)
 
-            if test:
-                break
+            tmp_malops.append(tmp_malop)
+
+        return tmp_malops
+
+    def parseTimestamps(self, malop):
+        try:
+            timestamp_detected = float(malop['malopLastUpdateTime']) / 1000
+            malop["timestamp"] = timestamp_detected
+        except Exception as e:
+            logger.error(f"[CYBEREASON]::parseTimestamps: Error enriching timestamp detected: {e}",
+                         extra={'frontend': str(self.frontend)})
+            malop["timestamp"] = float(datetime.datetime.now().timestamp())
+
+        try:
+            malop["timestamp_closed"] = float(malop['closeTime']) / 1000
+        except Exception as e:
+            logger.error(f"[CYBEREASON]::parseTimestamps: Error enriching timestamp closed: {e}",
+                         extra={'frontend': str(self.frontend)})
+            malop["timestamp_closed"] = 0.0
+
+        try:
+            malop["timestamp_start"] = float(malop['malopStartTime']) / 1000
+        except Exception as e:
+            logger.error(f"[CYBEREASON]::parseTimestamps: Error enriching timestamp start: {e}",
+                         extra={'frontend': str(self.frontend)})
+            malop["timestamp_start"] = 0.0
+
+        return malop
+
+    def _descriptionsMalop(self):
+        if (len(self.DESC_MALOP_TRANSLATION) > 0):
+            return self.DESC_MALOP_TRANSLATION
+
+        url = f"{self.host}/{self.DESCRIPTION_MALOP_URI}"
+        data = self.execute_query("GET", url, None)
+        self.DESC_MALOP_TRANSLATION = data
+        return data
+
+    def _descriptionsFeatures(self):
+        # retrive the traslation table for suspicion and other info from malop
+        if (len(self.DESC_TRANSLATION) > 0):
+            return self.DESC_TRANSLATION
+
+        url = f"{self.host}/{self.DESCRIPTION_URI}"
+        data = self.execute_query("GET", url, None)
+        self.DESC_TRANSLATION = data
+        return data
+
+    def getDevicesDetails(self, devices_ids):
+        sensors_url = f"{self.host}/{self.SENSOR_URI}"
+        query = {
+            'sortDirection': 'ASC',
+            'sortingFieldName': 'machineName',
+            'filters': [
+                {'fieldName': "machineName", 'operator': "ContainsIgnoreCase", 'values': devices_ids},
+                {"fieldName": "status", "operator": "NotEquals", "values": ["Archived"]}
+            ]
+        }
+        data = self.execute_query("POST", sensors_url, query)
+        return data.get('sensors', [])
+
+    def suspicions(self, malop_id):
+        self._descriptionsFeatures()
+
+        status, suspicions_process = self.suspicionsProcess(malop_id)
+        if not status:
+            return []
+
+        status, suspicions_network = self.suspicionsNetwork(malop_id)
+        if not status:
+            return []
+
+        suspicions = [key for key in suspicions_process['data']['suspicionsMap'].keys()]
+        suspicions.extend([key for key in suspicions_network['data']['suspicionsMap'].keys()])
+        return suspicions
+
+    def suspicionsProcess(self, malopId):
+        # cyb.suspicions('11.-2981478659050288999')
+        query = {
+            "queryPath": [{
+                "requestedType": "MalopProcess",
+                "guidList": [malopId],
+                "connectionFeature": {
+                    "elementInstanceType": "MalopProcess",
+                    "featureName": "suspects"
+                }
+            }, {
+                "requestedType": "Process",
+                "filters": [],
+                "isResult": True
+            }],
+            "totalResultLimit": 10000,
+            "perGroupLimit": 100,
+            "perFeatureLimit": 100,
+            "templateContext": "SPECIFIC",
+            "queryTimeout": 120000
+        }
+
+        url = f"{self.host}/rest/visualsearch/query/simple"
+        data = self.execute_query("POST", url, query)
+        if (data['status'] != 'SUCCESS'):
+            return False, data['message']
+        return True, data
+
+    def suspicionsNetwork(self, malopId):
+        query = {
+            "queryPath": [{
+                "requestedType": "MalopProcess",
+                "filters": [],
+                "guidList": [malopId],
+                "connectionFeature": {
+                    "elementInstanceType": "MalopProcess",
+                    "featureName": "suspects"
+                }
+            }, {
+                "requestedType": "Process",
+                "filters": [],
+                "connectionFeature": {
+                    "elementInstanceType": "Process",
+                    "featureName": "connections"
+                }
+            }, {
+                "requestedType": "Connection",
+                "filters": [],
+                "isResult": True
+            }],
+            "totalResultLimit": 1000,
+            "perGroupLimit": 1200,
+            "perFeatureLimit": 1200,
+            "templateContext": "SPECIFIC",
+            "queryTimeout": None
+        }
+
+        url = f"{self.host}/{self.SEARCH_URI}"
+        data = self.execute_query("POST", url, query)
+        if (data['status'] != 'SUCCESS'):
+            return False, data['message']
+        return True, data
 
     def test(self):
-        # Get logs from last 24 hours
-        query_time = (datetime.datetime.now()-datetime.timedelta(days=7)).timestamp()
         try:
-            status, logs = self.get_logs("malops", query_time, test=True)
-            logger.info(json.dumps(logs))
-            if not status:
-                return {
-                    "status": False,
-                    "error": logs
-                }
+            status, observer_version = self.get_appliance_version()
+            # Assert status is True, otherwize return error
+            assert status, observer_version
+            # Get logs from last 7 days
+            query_time = (datetime.datetime.now() - datetime.timedelta(days=7)).timestamp()
+            logs = self.get_logs("malops", query_time)
+            logger.info(f"[CYBEREASON]::Test: {len(logs)} malops retrieved", extra={'frontend': str(self.frontend)})
 
             return {
                 "status": True,
-                "data": _('Success')
+                "data": logs
             }
         except Exception as e:
-            logger.exception(e)
+            logger.exception(e, extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -419,65 +453,43 @@ class CybereasonParser(ApiParser):
 
     def get_logs(self, kind, since, test=False):
         data = []
+        logger.info(f"[CYBEREASON]::get_logs: Querying '{kind}' from '{datetime.datetime.fromtimestamp(since)}'",
+                    extra={'frontend': str(self.frontend)})
         try:
             if kind == "malops":
-                for requestedType in ('MalopProcess',):
-                    self.execute_query(
-                        kind,
-                        since,
-                        test=test,
-                        requestedType=requestedType
-                    )
-
-                    status, tmp_malops = self.cyber_tool.get_malops(self.query)
-                    if not status:
-                        raise Exception(tmp_malops)
-
-                    for malop in self.parse_malops(tmp_malops, test):
-                        data.append(malop)
-                        if test:
-                            break
+                alertes = self.getAlerts(since)
+                return self.parseMalops(alertes)
 
             elif kind == "malwares":
-                self.execute_query(
-                    kind,
-                    since,
-                    test=test
-                )
+                malwares = self.getMalwares(since)
+                return self.parseMalwares(malwares)
 
-                status, tmp_malwares = self.cyber_tool.get_malwares(self.query)
-                if not status:
-                    raise Exception(tmp_malwares)
-
-                data = []
-                for malware in self.parse_malwares(tmp_malwares['data']['malwares'], test):
-                    data.append(malware)
-                    if test:
-                        break
-
-            return True, data
+            else:
+                raise NotImplementedError(f"Unknown kind {kind}")
 
         except Exception as e:
-            logger.error("[CYBEREASON PLUGIN] Error querying {} logs : ".format(kind))
-            logger.exception(e)
+            logger.error("[CYBEREASON]:get_logs: Error querying {} logs : ".format(kind), extra={'frontend': str(self.frontend)})
+            logger.exception(e, extra={'frontend': str(self.frontend)})
+            return []
 
+    def get_appliance_version(self):
+        version_url = f"{self.host}/{self.APP_VERSION_URI}"
+        try:
+            ret = self.execute_query("GET", version_url, {})
+            return True, ret['data']['version']
+        except Exception as e:
+            return False, str(e)
 
     def execute(self):
         # Retrieve version of cybereason console
-        status, version_data = self.cyber_tool.get_version()
+        status, observer_version = self.get_appliance_version()
         if not status:
-            raise CybereasonAPIError("Failed to retrieve console version : {}".format(version_data))
-        observer_version = version_data.get('data', {}).get('version', "0.0")
+            raise CybereasonAPIError("Failed to retrieve console version : {}".format(observer_version))
 
         for kind in ["malops", "malwares"]:
-            logger.info("Cybereason:: Getting {} events".format(kind))
-
             # Default timestamp is 24 hours ago
-            since = getattr(self.frontend, f"cybereason_{kind}_timestamp") or (timezone.now()-datetime.timedelta(days=1)).timestamp()
-            status, tmp_logs = self.get_logs(kind, since=since)
-
-            if not status:
-                raise CybereasonAPIError(tmp_logs)
+            since = getattr(self.frontend, f"cybereason_{kind}_timestamp") or (timezone.now()-datetime.timedelta(days=30)).timestamp()
+            tmp_logs = self.get_logs(kind, since=since)
 
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
@@ -485,6 +497,12 @@ class CybereasonParser(ApiParser):
             total = len(tmp_logs)
 
             if total > 0:
+                logger.info(f"[CYBEREASON]::execute: {total} {kind} retrieved from "
+                            f"{datetime.datetime.fromtimestamp(since)}.",
+                            extra={'frontend': str(self.frontend)})
+                logger.info(f"[CYBEREASON]::execute: Setting new last time for {kind} to "
+                            f"{datetime.datetime.fromtimestamp(tmp_logs[0]['timestamp'])}",
+                            extra={'frontend': str(self.frontend)})
                 # Logs sorted by timestamp descending, so first is newer
                 setattr(self.frontend, f"cybereason_{kind}_timestamp", tmp_logs[0]['timestamp'])
 
@@ -499,5 +517,4 @@ class CybereasonParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-        logger.info("Cybereason parser ending.")
-
+        logger.info("[CYBEREASON]::execute: Parser ending.", extra={'frontend': str(self.frontend)})
