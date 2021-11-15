@@ -129,7 +129,7 @@ class CybereasonParser(ApiParser):
         while (retry > 0):
             retry -= 1
             try:
-                response = self.session.request(method, url, json=query)
+                response = self.session.request(method, url, json=query, proxies=self.proxies)
             except requests.exceptions.ReadTimeout:
                 time.sleep(timeout)
                 continue
