@@ -61,10 +61,11 @@ class CybereasonParser(ApiParser):
     DESCRIPTION_URI = "rest/translate/features/all"
     DESCRIPTION_MALOP_URI = "rest/translate/malopDescriptions/all"
 
-    MALOP_SIMPLE_VALUES = ["rootCauseElementNames", "rootCauseElementTypes", "isBlocked", "comments",
-                           "malopActivityTypes", "detectionType", "malopActivityTypes", "managementStatus",
-                           "elementDisplayName", "malopPriority", "rootCauseElementHashes", "decisionFeature",
-                           "malopLastUpdateTime", "closeTime", "malopStartTime"]
+    MALOP_SIMPLE_VALUES = ["rootCauseElementTypes", "isBlocked", "detectionType",
+                           "managementStatus", "elementDisplayName", "malopPriority", "decisionFeature",
+                           "malopLastUpdateTime", "closeTime", "malopStartTime",
+                           "malopActivityTypes", "rootCauseElementHashes","rootCauseElementNames"]
+    MALOP_LIST_VALUES = ["comments"]
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -221,6 +222,14 @@ class CybereasonParser(ApiParser):
             else:
                 return ret[0]
 
+        # function to get value from alert fields
+        def popCybList(sv, key):
+            ret = sv.get('simpleValues', {}).get(key, {}).get('values', [])
+            if (ret == None or ret == []):
+                return []
+            else:
+                return ret
+
         # Retrieve external informations for enrichment
         malopsGlobalDesc = self._descriptionsMalop()
         featureGlobalDesc = self._descriptionsFeatures()
@@ -240,6 +249,9 @@ class CybereasonParser(ApiParser):
 
             for field_name in self.MALOP_SIMPLE_VALUES:
                 tmp_malop[field_name] = popCybVal(value, field_name)
+
+            for field_name in self.MALOP_LIST_VALUES:
+                tmp_malop[field_name] = popCybList(value, field_name)
 
             try:
                 reason = tmp_malop['decisionFeature']
