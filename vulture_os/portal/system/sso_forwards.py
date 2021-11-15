@@ -256,7 +256,8 @@ class SSOForwardPOST(SSOForward):
             url, response = self.sso_client.get(self.application.authentication.sso_forward_url, True)
             logger.info("SSOForwardPOST::retrieve_credentials: Url '{}' successfully retrieved".format(self.application.authentication.sso_forward_url))
             # convert-it to robobrowser.forms.Form list
-            forms = [i for i in parse_html(response.content, self.application.authentication.sso_forward_url) if str(i.method).upper() != 'GET']
+            # Use response.text to automatically decode content depending on encoding
+            forms = [i for i in parse_html(response.text, self.application.authentication.sso_forward_url) if str(i.method).upper() != 'GET']
             # retrieve id of form
             form_id = -1
             for sso_profile in sso_profiles:
