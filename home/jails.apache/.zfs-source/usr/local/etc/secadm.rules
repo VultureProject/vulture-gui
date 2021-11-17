@@ -1,10 +1,5 @@
 secadm {
 	pax {
-		path: "/usr/local/bin/node",
-		mprotect: false,
-		prefer_acl: true
-	},
-	pax {
 		path: "/home/vlt-os/env/bin/python3.8",
 		mprotect: false,
 		pageexec: false,
