@@ -394,7 +394,7 @@ class LDAPClient(BaseAuth):
         return self._format_user_results(found_users[0][0], found_users[0][1])
 
 
-    def update_password (self, username, old_password, cleartext_password, **kwargs):
+    def update_password(self, username, old_password, cleartext_password, **kwargs):
         """ Update a user password inside LDAP Repo
 
         :param username: String with username
@@ -592,7 +592,7 @@ class LDAPClient(BaseAuth):
             return False
 
 
-    def authenticate (self, username, password, **kwargs):
+    def authenticate(self, username, password, **kwargs):
         """Authentication method of LDAP repository, which returns dict of specified attributes:their values
         :param username: String with username
         :param password: String with password
@@ -624,9 +624,9 @@ class LDAPClient(BaseAuth):
                 result = self._format_user_results(dn, found[0][1])
                 return result
         else:
-            logger.error("Unable to found username {} in LDAP repository"
+            logger.error("Unable to find username {} in LDAP repository"
                          "".format(username.encode('utf-8')))
-            raise UserNotFound("Unable to found {}".format(username))
+            raise UserNotFound("Unable to find {}".format(username))
 
 
     def user_lookup_enrichment(self, ldap_attr, value):
@@ -644,7 +644,7 @@ class LDAPClient(BaseAuth):
         user_infos = self._search(dn, query_filter, value, attr_list=["+", "*"])
         if not user_infos:
             logger.error("Ldap_client::user_lookup:User with {} in {} not found in LDAP".format(query_filter, self.scope))
-            raise UserNotFound("Unable to found user {}".format(value))
+            raise UserNotFound("Unable to find user {}".format(value))
         if len(user_infos) > 1:
             logger.warning("Ldap_client::user_lookup: Found multiple users with {} in {} - Getting the first".format(query_filter, self.scope))
         user_dn = user_infos[0][0]

@@ -119,7 +119,7 @@ class SSOForward(object):
             if not sso_profile:
                 raise Exception("Cannot retrieve sso profile")
         except Exception as e:
-            logger.debug("SSOForward::sstock_sso_field: Cannot retrieve sso profile '{}' for user '{}' : {}".format(field, username, e))
+            logger.debug("SSOForward::stock_sso_field: Cannot retrieve sso profile '{}' for user '{}' : {}".format(field, username, e))
             try:
                 sso_profile = LearningProfile()
                 sso_profile.set_data(str(self.application.id), self.application.name, str(self.backend_id),
@@ -230,7 +230,7 @@ class SSOForwardPOST(SSOForward):
         try:
             profile_value = self.retrieve_sso_field(self.credentials[0], learning_name)
             if profile_value:
-                logger.debug("SSOForwardPOST::get_learn_and_secret: Learning field '{}' successfully  retrieved in Mongo".format(profile_value))
+                logger.debug("SSOForwardPOST::get_learn_and_secret: Learning field '{}' successfully retrieved in Mongo".format(learning_name))
                 return False, profile_value
         except Exception as e:
             logger.info("SSOForwardPOST::get_learn_and_secret: Cannot retrieve field '{}' from LearningProfile : asking-it with learning. Exception : {}".format(learning_name, str(e)))

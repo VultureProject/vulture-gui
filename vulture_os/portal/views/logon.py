@@ -610,7 +610,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                                                   error="<b> Bad OTP key </b>")
 
             except TwoManyOTPAuthFailure as e:
-                logger.error("PORTAL::log_in: Two many OTP authentication failures for username'{}', "
+                logger.error("PORTAL::log_in: Too many OTP authentication failures for username'{}', "
                              "redirecting to portal".format(authentication.credentials[0]))
                 db_authentication.deauthenticate_user()
                 logger.info("PORTAL::log_in: User '{}' successfully deauthenticated due to db-authentication error"
@@ -630,7 +630,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                                               error="<b> OTP Error </b> {}".format(str(e)))
 
         except TwoManyOTPAuthFailure as e:
-            logger.error("PORTAL::log_in: Two many OTP authentication failures for username'{}', "
+            logger.error("PORTAL::log_in: Too many OTP authentication failures for username'{}', "
                          "redirecting to portal".format(authentication.credentials[0]))
             db_authentication.deauthenticate_user()
             logger.info("PORTAL::log_in: User '{}' successfully deauthenticated due to db-authentication error"

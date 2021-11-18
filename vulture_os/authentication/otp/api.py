@@ -48,14 +48,14 @@ class OTPAPIv1(View):
     def get(self, request, object_id=None):
         try:
             if object_id:
-                acl = OTPRepository.objects.get(pk=ObjectId(object_id)).to_dict()
+                otp = OTPRepository.objects.get(pk=ObjectId(object_id)).to_dict()
             elif request.GET.get('name'):
-                acl = OTPRepository.objects.get(name=request.GET['name']).to_dict()
+                otp = OTPRepository.objects.get(name=request.GET['name']).to_dict()
             else:
-                acl = [a.to_dict() for a in OTPRepository.objects.all()]
+                otp = [a.to_dict() for a in OTPRepository.objects.all()]
 
             return JsonResponse({
-                'data': acl
+                'data': otp
             })
 
         except OTPRepository.DoesNotExist:

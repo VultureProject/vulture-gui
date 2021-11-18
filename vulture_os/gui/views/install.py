@@ -154,7 +154,7 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Tell local sentinel to monitor local redis server """
     c = RedisBase(get_management_ip(), 26379)
     try:
-        # It may failed if Redis / Sentinel is already configured
+        # It may fail if Redis / Sentinel is already configured
         c.sentinel_monitor()
     except Exception as e:
         logger.error("Install::Sentinel monitor: Error: ")
@@ -335,7 +335,6 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             management_ip=get_management_ip()
         )
     except Exception:
-        logger.error("cluster_join:: Unable to find slave node !")
         logger.error("cluster_join:: Unable to find slave node !")
         return False
 
