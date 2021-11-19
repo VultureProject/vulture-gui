@@ -135,6 +135,8 @@ class ImpervaParser(ApiParser):
             headers=self.headers
         )
 
+        r.raise_for_status()
+
         # Let requests manage decompression
         r.raw.decode_content = True
 
@@ -144,18 +146,20 @@ class ImpervaParser(ApiParser):
 
         binary_stream.seek(0)
         text_data = binary_stream.read()
-        pos = text_data.index(b'|==|')
+        try:
+            pos = text_data.index(b'|==|')
+            binary_stream.seek(0)
+            file_header = binary_stream.read(pos).decode('utf-8')
 
-        binary_stream.seek(0)
-        file_header = binary_stream.read(pos).decode('utf-8')
+            binary_stream.seek(pos + 5)
+            file_data = binary_stream.read()
 
-        binary_stream.seek(pos + 5)
-        file_data = binary_stream.read()
-
-        r.raise_for_status()
-
-        content = self.__decrypt_file(filename, file_header, file_data)
-        return content
+            content = self.__decrypt_file(filename, file_header, file_data)
+            return content
+        except Exception as err:
+            logger.error(f"[IMPERVA PARSER] Could not locate string '|==|' in stream: {text_data}",
+                        extra={'frontend': str(self.frontend)})
+            raise ImpervaParseError(err)
 
     def test(self):
         try:
