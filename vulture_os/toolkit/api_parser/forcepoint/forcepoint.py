@@ -136,11 +136,16 @@ class ForcepointParser(ApiParser):
         stream_line = StringIO(orig_line.decode('utf-8'))
         r = csv.reader(stream_line, delimiter=",", doublequote=True, lineterminator="\n", quoting=csv.QUOTE_ALL)
         # Loop other the fields of the only line
-        for cpt, value in enumerate(list(r)[0]):
-            field = mapping[cpt]
-            res[field] = value.split(',') if field in self.TO_SPLIT_FIELDS else value
-        res['stream'] = stream
-        return json_dumps(res)
+        try:
+            for cpt, value in enumerate(list(r)[0]):
+                field = mapping[cpt]
+                res[field] = value.split(',') if field in self.TO_SPLIT_FIELDS else value
+            res['stream'] = stream
+            return json_dumps(res)
+        except Exception as e:
+            logger.error(f"Failed to parse line: {r}",
+                         extra={'frontend': str(self.frontend)})
+            raise ForcepointAPIError()
 
     def parse_file(self, file_content, gzipped=False):
         if gzipped:
