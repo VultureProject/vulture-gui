@@ -169,6 +169,9 @@ class CortexXDRParser(ApiParser):
                     # Replace "Z" by "+00:00" for datetime parsing
                     # No need to make_aware, date already contains timezone
                     # add 1 (ms) to timestamp to avoid getting last alert again
-                    setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][KIND_TIME_FIELDS[kind]]+1)/1000, tz=timezone.utc))
+                    try:
+                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][KIND_TIME_FIELDS[kind]]+1)/1000, tz=timezone.utc))
+                    except Exception as err:
+                        logger.error(f"CortexXDR Error: Could not locate key '{KIND_TIME_FIELDS[kind]}' from following log: {logs[-1]}", extra={'frontend': str(self.frontend)})
 
         logger.info("CortexXDR parser ending.", extra={'frontend': str(self.frontend)})
