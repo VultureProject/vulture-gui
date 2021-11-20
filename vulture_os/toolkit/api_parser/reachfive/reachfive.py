@@ -21,18 +21,18 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'ReachFive API Parser'
+__parser__ = 'REACHFIVE'
 
-
+import json
 import logging
 import requests
 
+from datetime import datetime
 from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from datetime import datetime
+from vulture_os.toolkit.api_parser.api_parser import ApiParser
 
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -95,7 +95,8 @@ class ReachFiveParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+
             return {
                 "status": False,
                 "error": str(e)
@@ -111,8 +112,9 @@ class ReachFiveParser(ApiParser):
             params['count']=1000
         if since:
             params['filter'] = 'date > "{}"'.format(timezone.make_naive(since).isoformat(timespec="milliseconds"))
-        logger.debug("ReachFive api::Get user events request params = {}".format(params),
-                     extra={'frontend': str(self.frontend)})
+
+        msg = f"Get user events request params: {params}"
+        logger.debug(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -124,9 +126,9 @@ class ReachFiveParser(ApiParser):
             return False, _('Authentication failed')
 
         if response.status_code != 200:
-            error = f"Error at ReachFive API Call: {response.content}"
-            logger.error(error, extra={'frontend': str(self.frontend)})
-            raise ReachFiveAPIError(error)
+            msg = f"Error at ReachFive API Call: {response.content}"
+            logger.error(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            raise ReachFiveAPIError(msg)
 
         content = response.json()
 
@@ -164,11 +166,10 @@ class ReachFiveParser(ApiParser):
                 last_datetime.extend([x['date'] for x in logs])
                 # ISO8601 timestamps are sortable as strings
                 last_datetime = max(last_datetime)
-                logger.debug(f"most recent log is from {last_datetime}",
-                             extra={'frontend': str(self.frontend)})
+                msg = f"most recent log is from {last_datetime}"
+                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
 
         # Replace "Z" by "+00:00" for datetime parsing
         # No need to make_aware, date already contains timezone
         self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
-
-        logger.info("ReachFive parser ending.", extra={'frontend': str(self.frontend)})
+        logger.error(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})

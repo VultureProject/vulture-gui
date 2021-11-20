@@ -21,18 +21,18 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Cortex XDR API Parser'
+__parser__ = 'CORTEX XDR'
 
-
+import json
 import logging
 import requests
 
+from datetime import datetime
 from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from datetime import datetime
+from vulture_os.toolkit.api_parser.api_parser import ApiParser
 
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -88,7 +88,7 @@ class CortexXDRParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -117,9 +117,8 @@ class CortexXDRParser(ApiParser):
                        "operator": "gte",
                        "value": int(since.timestamp()*1000)
                    }]
-        logger.debug("CortexXDR api::Get user events request params = {}".format(params),
-                     extra={'frontend': str(self.frontend)})
-
+        msg = f"Get user events request params: {params}"
+        logger.debug(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
         response = self.session.post(
             url,
             json=params,
@@ -131,7 +130,7 @@ class CortexXDRParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at CortexXDR API Call: {response.content}"
-            logger.error(error, extra={'frontend': str(self.frontend)})
+            logger.error(f"{[__parser__]}:{self.get_logs.__name__}: {error}", extra={'frontend': str(self.frontend)})
             raise CortexXDRAPIError(error)
 
         content = response.json()
@@ -140,7 +139,7 @@ class CortexXDRParser(ApiParser):
 
     def execute(self):
         for kind in ["alerts", "incidents"]:
-            logger.info("CortexXDR:: Getting {}".format(kind), extra={'frontend': str(self.frontend)})
+            logger.info(f"{[__parser__]}:{self.execute.__name__}: Getting {kind}", extra={'frontend': str(self.frontend)})
             cpt = 0
             total = 1
             while cpt < total:
@@ -172,6 +171,8 @@ class CortexXDRParser(ApiParser):
                     try:
                         setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][KIND_TIME_FIELDS[kind]]+1)/1000, tz=timezone.utc))
                     except Exception as err:
-                        logger.error(f"CortexXDR Error: Could not locate key '{KIND_TIME_FIELDS[kind]}' from following log: {logs[-1]}", extra={'frontend': str(self.frontend)})
+                        msg = f"Could not locate key '{KIND_TIME_FIELDS[kind]}' from following log: {logs[-1]}"
+                        logger.error(f"{[__parser__]}:{self.execute.__name__}: {msg}",
+                                     extra={'frontend': str(self.frontend)})
 
         logger.info("CortexXDR parser ending.", extra={'frontend': str(self.frontend)})

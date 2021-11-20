@@ -21,20 +21,16 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'MongoDB API Parser'
+__parser__ = 'MONGODB'
 
 import datetime
 import gzip
 import logging
 import requests
-import time
-
-import zipfile
-
-from io import BytesIO
 
 from django.conf import settings
 from django.utils import timezone
-from toolkit.api_parser.api_parser import ApiParser
+from vulture_os.toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -126,8 +122,8 @@ class MongoDBParser(ApiParser):
                 raise MongoDBAPIError(err)
 
             for hostname in hostnames:
-                logger.info("[MONGODB API PARSER] Retrieve logs from hostname {}".format(hostname),
-                            extra={'frontend': str(self.frontend)})
+                msg = f"Retrieve logs from hostname {hostname}"
+                logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
 
                 url = self.base_url+"/groups/{}/logs/mongos.gz"
                 response = self.session.get(

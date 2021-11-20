@@ -20,21 +20,21 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Forcepoint Console API Parser'
+__doc__ = 'Imperva API Parser'
+__parser__ = 'IMPERVA'
 
 
-import M2Crypto
 import base64
-import logging
-import requests
 import hashlib
-import zlib
 import io
+import logging
+import M2Crypto
+import requests
+import zlib
 
 from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
-
 from django.utils.translation import ugettext_lazy as _
+from vulture_os.toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -157,8 +157,8 @@ class ImpervaParser(ApiParser):
             content = self.__decrypt_file(filename, file_header, file_data)
             return content
         except Exception as err:
-            logger.error(f"[IMPERVA PARSER] Could not locate string '|==|' in stream: {text_data}",
-                        extra={'frontend': str(self.frontend)})
+            msg = f"Could not locate string '|==|' in stream: {text_data}"
+            logger.error(f"{[__parser__]}:{self.get_file.__name__}: {msg}", extra={'frontend': str(self.frontend)})
             raise ImpervaParseError(err)
 
     def test(self):
@@ -183,8 +183,7 @@ class ImpervaParser(ApiParser):
                 log_files = self._download_log_index()
                 for file in log_files:
                     self.update_lock()
-                    logger.info(f"[IMPERVA PARSER] Downloading {file}",
-                                extra={'frontend': str(self.frontend)})
+                    logger.info(f"{[__parser__]}:{self.execute.__name__}: Downloading {file}", extra={'frontend': str(self.frontend)})
                     content = self.get_file(file)
                     data.extend(content.split(b'\n'))
 
@@ -203,23 +202,23 @@ class ImpervaParser(ApiParser):
                     self.write_to_file(data)
                     self.imperva_last_log_file = next_log_file
                 except Exception as e:
-                    logger.exception(e, extra={'frontend': str(self.frontend)})
+                    logger.exception(f"{[__parser__]}:{self.execute.__name__}: {e}", extra={'frontend': str(self.frontend)})
 
                     # Download log files index
                     log_files = self._download_log_index()
                     first_log_id_in_index = int(log_files[0].split('.')[0].split('_')[1])
                     if next_log_index < first_log_id_in_index:
-                        logger.error("Current downloaded file is not in the index file any more. "
-                                     "This is probably due to a long delay in downloading. Attempting to recover",
-                                     extra={'frontend': str(self.frontend)})
+                        msg = f"Current downloaded file is not in the index file any more. This is probably due to a long delay in downloading. Attempting to recover"
+                        logger.error(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+
                         self.imperva_last_log_file = ""
                     elif f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index+1}.log" in log_files:
-                        logger.warning("Skipping file {}".format(next_log_file),
-                                       extra={'frontend': str(self.frontend)})
+                        msg = f"Skipping file {next_log_file}"
+                        logger.warning(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
                         self.imperva_last_log_file = next_log_file
                     else:
-                        logger.info("Next file {} still does not exist.".format(next_log_file),
-                                    extra={'frontend': str(self.frontend)})
+                        msg = f"Next file {next_log_file} still does not exist."
+                        logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
 
             self.frontend.imperva_last_log_file = self.imperva_last_log_file
             self.frontend.last_api_call = self.last_api_call

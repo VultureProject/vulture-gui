@@ -21,26 +21,28 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Forcepoint Console API Parser'
+__parser__ = 'FORCEPOINT'
 
 
+import csv
+import gzip
 import logging
 import requests
 import xml.etree.ElementTree as ET
 
 from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-
-from json import dumps as json_dumps
 from io import BytesIO, StringIO
-import gzip
-import csv
+from json import dumps as json_dumps
+from toolkit.api_parser.api_parser import ApiParser
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 MAX_DELETE_ATTEMPTS = 3
+
 
 class ForcepointParseError(Exception):
     pass
@@ -117,7 +119,7 @@ class ForcepointParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at Forcepoint API Call: {response.content}"
-            logger.error(error, extra={'frontend': str(self.frontend)})
+            logger.error(f"{[__parser__]}:{self.get_logs.__name__}: {error}", extra={'frontend': str(self.frontend)})
             raise ForcepointAPIError(error)
 
         content = response.content
@@ -143,8 +145,8 @@ class ForcepointParser(ApiParser):
             res['stream'] = stream
             return json_dumps(res)
         except Exception as e:
-            logger.error(f"Failed to parse line: {r}",
-                         extra={'frontend': str(self.frontend)})
+            msg = f"Failed to parse line: {r}"
+            logger.error(f"{[__parser__]}:{self.parse_line.__name__}: {msg}", extra={'frontend': str(self.frontend)})
             raise ForcepointAPIError()
 
     def parse_file(self, file_content, gzipped=False):
@@ -170,8 +172,8 @@ class ForcepointParser(ApiParser):
                 response.raise_for_status()
                 break
             except Exception as e:
-                logger.error("Failed to delete file {} : {}".format(file_url, str(e)),
-                             extra={'frontend': str(self.frontend)})
+                msg = f"Failed to delete file {file_url} : {str(e)}"
+                logger.error(f"{[__parser__]}:{self.delete_file.__name__}: {msg}", extra={'frontend': str(self.frontend)})
                 attempt += 1
 
     def execute(self):
@@ -201,8 +203,8 @@ class ForcepointParser(ApiParser):
                 # And update last_api_call time
                 self.frontend.last_api_call = timezone.now()
             except Exception as e:
-                logger.error("Failed to retrieve file {} : {}".format(file_url, e),
-                             extra={'frontend': str(self.frontend)})
-                logger.exception(e, extra={'frontend': str(self.frontend)})
+                msg = f"Failed to retrieve file {file_url} : {e}"
+                logger.error(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.exception(f"{[__parser__]}:{self.execute.__name__}: {e}", extra={'frontend': str(self.frontend)})
 
-        logger.info("Forcepoint parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})

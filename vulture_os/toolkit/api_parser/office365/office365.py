@@ -21,15 +21,16 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Office365 API Parser'
+__parser__ = 'OFFICE365'
 
 
-import json
 import datetime
+import json
 import logging
 import requests
 
 from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
+from vulture_os.toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')

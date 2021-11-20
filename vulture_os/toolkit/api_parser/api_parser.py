@@ -21,7 +21,7 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'API Parser'
-
+__parser__ = 'API PARSER'
 
 import logging
 import socket
@@ -30,9 +30,9 @@ import time
 from django.conf import settings
 from services.frontend.models import Frontend
 from system.config.models import Config
-from toolkit.network.network import get_proxy
-from toolkit.redis.redis_base import RedisBase
-from toolkit.network.network import JAIL_ADDRESSES
+from vulture_os.toolkit.network.network import get_proxy
+from vulture_os.toolkit.redis.redis_base import RedisBase
+from vulture_os.toolkit.network.network import JAIL_ADDRESSES
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -82,7 +82,8 @@ class ApiParser:
                 self.socket.connect((JAIL_ADDRESSES['rsyslog']['inet'], self.frontend.api_rsyslog_port))
             return True
         except Exception as e:
-            logger.error("Failed to connect to Rsyslog : {}".format(e))
+            msg = f"Failed to connect to Rsyslog : {e}"
+            logger.error(f"{[__parser__]}:{self.connect.__name__}: {msg}", extra={'frontend': str(self.frontend)})
             return False
 
     def get_system_proxy(self):
@@ -107,7 +108,8 @@ class ApiParser:
 
     def write_to_file(self, lines):
         if len(lines) != 0:
-            logger.info(f'[API PARSER] Writing {len(lines)} lines')
+            msg = f"Writing {len(lines)} lines"
+            logger.info(f"{[__parser__]}:{self.write_to_file.__name__}: {msg}", extra={'frontend': str(self.frontend)})
         cpt=0
         for line in lines:
             if cpt%500 == 0:
@@ -118,7 +120,8 @@ class ApiParser:
                 self.socket.send(line + b"\n")
                 cpt += 1
             except Exception as e:
-                logger.error("Failed to send to Rsyslog : {}".format(e))
+                msg = f"Failed to send to Rsyslog : {e}"
+                logger.error(f"{[__parser__]}:{self.write_to_file.__name__}: {msg}", extra={'frontend': str(self.frontend)})
                 # Connect will block until timeout has expired (30s)
                 while not self.connect():
                     time.sleep(0.05)

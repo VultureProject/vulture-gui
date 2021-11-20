@@ -21,27 +21,24 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Carbon Black EDR API Parser'
+__parser__ = 'CARBON BLACK'
 
 
+import json
 import logging
 import requests
 
-from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
-from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
 from datetime import datetime, timedelta
+from django.conf import settings
+from vulture_os.toolkit.api_parser.api_parser import ApiParser
 
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 
-
 class CarbonBlackAPIError(Exception):
     pass
-
 
 
 class CarbonBlackParser(ApiParser):
@@ -68,11 +65,8 @@ class CarbonBlackParser(ApiParser):
         try:
             if self.session is None:
                 self.session = requests.Session()
-
                 self.session.headers.update({'X-Auth-Token': self.carbon_black_apikey})
-
             return True
-
         except Exception as err:
             raise CarbonBlackAPIError(err)
 
@@ -113,7 +107,8 @@ class CarbonBlackParser(ApiParser):
                 "data": [self.format_log(log) for log in logs['results']]
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"{[__parser__]}:{self.__execute_query.__name__}: {e}",
+                             extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -129,7 +124,7 @@ class CarbonBlackParser(ApiParser):
         if since[-1] != "Z":
             since += "Z"
 
-        query =  {
+        query = {
             'criteria': {
                 'category': ['THREAT'],
                 'group_results': True,
@@ -148,7 +143,6 @@ class CarbonBlackParser(ApiParser):
         log['observer_name'] = self.carbon_black_host.replace("https://", "")
         log['url'] = self.carbon_black_host
         return json.dumps(log)
-
 
     def execute(self):
 
@@ -177,4 +171,5 @@ class CarbonBlackParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 self.frontend.last_api_call = datetime.fromisoformat(logs[0]['last_update_time'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
 
-        logger.info("CarbonBlack parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+

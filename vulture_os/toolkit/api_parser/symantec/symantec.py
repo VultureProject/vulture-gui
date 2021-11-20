@@ -21,20 +21,19 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Symantec API Parser'
+__parser__ = 'SYMANTEC'
 
 import datetime
 import gzip
 import logging
 import requests
 import time
-
 import zipfile
-
-from io import BytesIO
 
 from django.conf import settings
 from django.utils import timezone
-from toolkit.api_parser.api_parser import ApiParser
+from io import BytesIO
+from vulture_os.toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -120,9 +119,8 @@ class SymantecParser(ApiParser):
             end_timestamp = int(last_api_call.timestamp() * 1000) + 3600000
             params = f"startDate={begin_timestamp}&endDate={end_timestamp}&token={token}"
             url = f"{self.start_console_uri}{params}"
-
-            logger.debug("[SYMANTEC API PARSER] Retrieving symantec logs from {}".format(url),
-                         extra={'frontend': str(self.frontend)})
+            msg = f"Retrieving symantec logs from {url}"
+            logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
 
             r = requests.get(
                 url,
@@ -142,14 +140,13 @@ class SymantecParser(ApiParser):
                 retry = int(r.headers['Retry-After']) + 2
                 if retry > 300:
                     raise SymantecAPIError(f"Retry After {r.headers['Retry-After']}")
-
-                logger.debug(f"[SYMANTEC API PARSER] Waiting for {retry}s",
-                             extra={'frontend': str(self.frontend)})
+                msg = f"Waiting for {retry}s"
+                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
 
                 self.update_lock()
                 time.sleep(retry)
-                logger.debug('[SYMANTEC API PARSER] Resuming API calls',
-                             extra={'frontend': str(self.frontend)})
+                msg = f"Resuming API calls"
+                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
 
                 self.execute()
             else:
@@ -162,8 +159,8 @@ class SymantecParser(ApiParser):
 
                     tmp_file.seek(0)
                     if not len(tmp_file.read()):
-                        logger.info('[SYMANTEC API PARSER] No logs found',
-                                    extra={'frontend': str(self.frontend)})
+                        msg = f"No logs found"
+                        logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
                         self.frontend.last_api_call = timezone.now()
                         self.finish()
                     else:
@@ -173,8 +170,8 @@ class SymantecParser(ApiParser):
                             with zipfile.ZipFile(tmp_file) as zip_file:
                                 # Pnly retrieve the DIRST
                                 gzip_filename = zip_file.namelist()[0]
-                                logger.debug("[SYMANTEC API PARSER] Parsing archive {}".format(gzip_filename),
-                                             extra={'frontend': str(self.frontend)})
+                                msg = f"Parsing archive {gzip_filename}"
+                                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
                                 self.update_lock()
                                 gzip_file = BytesIO(zip_file.read(gzip_filename))
 
@@ -210,8 +207,8 @@ class SymantecParser(ApiParser):
                             raise SymantecParseError(err)
 
                 else:
-                    logger.info(f'[SYMANTEC API PARSER] No filename found in headers {r.headers}',
-                                extra={'frontend': str(self.frontend)})
+                    msg = f"No filename found in headers {r.headers}"
+                    logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
             raise SymantecParseError(e)
