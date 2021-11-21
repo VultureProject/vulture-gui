@@ -26,7 +26,7 @@ __doc__ = 'Parser URLS'
 import logging
 
 from django.conf import settings
-from vulture_os.toolkit.api_parser import *
+from toolkit.api_parser import *
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)

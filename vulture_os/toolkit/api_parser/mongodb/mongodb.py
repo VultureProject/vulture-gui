@@ -30,7 +30,7 @@ import requests
 
 from django.conf import settings
 from django.utils import timezone
-from vulture_os.toolkit.api_parser.api_parser import ApiParser
+from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')

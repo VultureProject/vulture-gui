@@ -29,7 +29,7 @@ import requests
 
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
-from vulture_os.toolkit.api_parser.api_parser import ApiParser
+from toolkit.api_parser.api_parser import ApiParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)

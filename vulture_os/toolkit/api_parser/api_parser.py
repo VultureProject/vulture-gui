@@ -30,9 +30,9 @@ import time
 from django.conf import settings
 from services.frontend.models import Frontend
 from system.config.models import Config
-from vulture_os.toolkit.network.network import get_proxy
-from vulture_os.toolkit.redis.redis_base import RedisBase
-from vulture_os.toolkit.network.network import JAIL_ADDRESSES
+from toolkit.network.network import get_proxy
+from toolkit.redis.redis_base import RedisBase
+from toolkit.network.network import JAIL_ADDRESSES
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
