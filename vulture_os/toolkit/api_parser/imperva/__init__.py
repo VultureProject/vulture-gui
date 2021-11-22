@@ -1,1 +1,0 @@
-from imperva import ImpervaParser

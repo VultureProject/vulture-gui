@@ -26,7 +26,26 @@ __doc__ = 'Parser URLS'
 import logging
 
 from django.conf import settings
-from toolkit.api_parser import *
+from toolkit.api_parser.akamai.akamai import AkamaiParser
+from toolkit.api_parser.aws_bucket.aws_bucket import AWSBucketParser
+from toolkit.api_parser.elasticsearch.els import ElasticsearchParser
+from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
+from toolkit.api_parser.imperva.imperva import ImpervaParser
+from toolkit.api_parser.office365.office365 import Office365Parser
+from toolkit.api_parser.symantec.symantec import SymantecParser
+from toolkit.api_parser.reachfive.reachfive import ReachFiveParser
+from toolkit.api_parser.mongodb.mongodb import MongoDBParser
+from toolkit.api_parser.defender_atp.defender_atp import DefenderATPParser
+from toolkit.api_parser.cortex_xdr.cortex_xdr import CortexXDRParser
+from toolkit.api_parser.cybereason.cybereason import CybereasonParser
+from toolkit.api_parser.cisco_meraki.cisco_meraki import CiscoMerakiParser
+from toolkit.api_parser.proofpoint_tap.proofpoint_tap import ProofpointTAPParser
+from toolkit.api_parser.sentinel_one.sentinel_one import SentinelOneParser
+from toolkit.api_parser.carbon_black.carbon_black import CarbonBlackParser
+from toolkit.api_parser.netskope.netskope import NetskopeParser
+from toolkit.api_parser.rapid7_idr.rapid7_idr import Rapid7IDRParser
+from toolkit.api_parser.harfanglab.harfanglab import HarfangLabParser
+from toolkit.api_parser.vadesecure.vadesecure import VadesecureParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)

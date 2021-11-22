@@ -1,1 +1,0 @@
-from netskope import NetskopeParser

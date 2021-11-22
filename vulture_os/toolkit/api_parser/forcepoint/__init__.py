@@ -1,1 +1,0 @@
-from forcepoint import ForcepointParser
