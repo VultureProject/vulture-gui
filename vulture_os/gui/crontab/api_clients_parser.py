@@ -31,7 +31,7 @@ from multiprocessing import Process
 
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('crontab')
+logger = logging.getLogger('api_parser')
 
 
 def execute_parser(frontend):
@@ -47,22 +47,26 @@ def execute_parser(frontend):
     try:
         parser = parser_class(frontend)
         if not parser.can_run():
-            logger.info("API Parser {} (tenant={}): already running".format(frontend['name'], frontend['tenant_name']))
+            logger.info("API Parser {} (tenant={}): already running".format(frontend['name'], frontend['tenant_name']),
+                        extra={'frontend': str(frontend['name'])})
             return
 
-        logger.info("API Parser {} (tenant={}): starting".format(frontend['name'], frontend['tenant_name']))
+        logger.info("API Parser {} (tenant={}): starting".format(frontend['name'], frontend['tenant_name']),
+                    extra={'frontend': str(frontend['name'])})
         parser.execute()
         try:
             parser.frontend.status[Cluster.get_current_node().name] = "OPEN"
         except Exception as e:
             logger.exception(e)
     except Exception as e:
-        logger.error(f"API Parser {frontend['name']} (tenant={frontend['tenant_name']}) failure : ")
-        logger.exception(e)
-        parser.frontend.status[Cluster.get_current_node().name] = "ERROR"
+        logger.error(f"API Parser {frontend['name']} (tenant={frontend['tenant_name']}) failure : ",
+                     extra={'frontend': str(frontend['name'])})
+        logger.exception(e, extra={'frontend': str(frontend['name'])})
+        frontend.status[Cluster.get_current_node().name] = "ERROR"
     finally:
         # Delete running key in redis
-        logger.info("API Parser {} (tenant={}): ending".format(frontend['name'], frontend['tenant_name']))
+        logger.info("API Parser {} (tenant={}): ending".format(frontend['name'], frontend['tenant_name']),
+                    extra={'frontend': str(frontend['name'])})
         parser.finish()
 
 
