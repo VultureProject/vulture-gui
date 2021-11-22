@@ -158,7 +158,7 @@ class ImpervaParser(ApiParser):
             return content
         except Exception as err:
             msg = f"Could not locate string '|==|' in stream: {text_data}"
-            logger.error(f"{[__parser__]}:{self.get_file.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_file: {msg}", extra={'frontend': str(self.frontend)})
             raise ImpervaParseError(err)
 
     def test(self):
@@ -183,7 +183,7 @@ class ImpervaParser(ApiParser):
                 log_files = self._download_log_index()
                 for file in log_files:
                     self.update_lock()
-                    logger.info(f"{[__parser__]}:{self.execute.__name__}: Downloading {file}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}]:execute: Downloading {file}", extra={'frontend': str(self.frontend)})
                     content = self.get_file(file)
                     data.extend(content.split(b'\n'))
 
@@ -202,23 +202,23 @@ class ImpervaParser(ApiParser):
                     self.write_to_file(data)
                     self.imperva_last_log_file = next_log_file
                 except Exception as e:
-                    logger.exception(f"{[__parser__]}:{self.execute.__name__}: {e}", extra={'frontend': str(self.frontend)})
+                    logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
                     # Download log files index
                     log_files = self._download_log_index()
                     first_log_id_in_index = int(log_files[0].split('.')[0].split('_')[1])
                     if next_log_index < first_log_id_in_index:
                         msg = f"Current downloaded file is not in the index file any more. This is probably due to a long delay in downloading. Attempting to recover"
-                        logger.error(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                        logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
                         self.imperva_last_log_file = ""
                     elif f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index+1}.log" in log_files:
                         msg = f"Skipping file {next_log_file}"
-                        logger.warning(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                        logger.warning(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                         self.imperva_last_log_file = next_log_file
                     else:
                         msg = f"Next file {next_log_file} still does not exist."
-                        logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             self.frontend.imperva_last_log_file = self.imperva_last_log_file
             self.frontend.last_api_call = self.last_api_call

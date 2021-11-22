@@ -83,7 +83,7 @@ class CiscoMerakiParser(ApiParser):
     def test(self):
         try:
             orga = self.get_organizations()[0]
-            logger.info(f"{[__parser__]}:{self.test.__name__}: Getting organisation {orga['name']} networks", 
+            logger.info(f"[{__parser__}]:test: Getting organisation {orga['name']} networks",
                         extra={'frontend': str(self.frontend)})
             # retreive organisation & networks
             data = self.get_organization_networks(orga['id'])
@@ -92,7 +92,7 @@ class CiscoMerakiParser(ApiParser):
                 "data": data
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -100,7 +100,7 @@ class CiscoMerakiParser(ApiParser):
 
     def get_logs(self, network_id, product_type, since):
         self._connect()
-        logger.debug(f"{[__parser__]}:{self.get_logs.__name__}: Get user events request params: startingAfter={since}", 
+        logger.debug(f"[{__parser__}]:get_logs: Get user events request params: startingAfter={since}",
                      extra={'frontend': str(self.frontend)})
         try:
             response = self.session.networks.getNetworkEvents(network_id, productType=product_type,
@@ -114,14 +114,14 @@ class CiscoMerakiParser(ApiParser):
 
         for orga in self.get_organizations():
 
-            logger.info(f"{[__parser__]}:{self.execute.__name__}: Getting organisation {orga['name']}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute: Getting organisation {orga['name']}", extra={'frontend': str(self.frontend)})
             for network in self.get_organization_networks(orga['id']):
 
-                logger.info(f"{[__parser__]}:{self.execute.__name__}: Getting organisation network {network['name']}",
+                logger.info(f"[{__parser__}]:execute: Getting organisation network {network['name']}",
                             extra={'frontend': str(self.frontend)})
                 for product_type in network['productTypes']:
 
-                    logger.info(f"{[__parser__]}:{self.execute.__name__}: Getting organisation network {network['name']} "
+                    logger.info(f"[{__parser__}]:execute: Getting organisation network {network['name']} "
                                 f"product {product_type}",
                                 extra={'frontend': str(self.frontend)})
                     nb_events = 1
@@ -132,7 +132,7 @@ class CiscoMerakiParser(ApiParser):
                                                          (timezone.now()-timedelta(days=1)).isoformat())
 
                         if not status:
-                            logger.error(f"{[__parser__]}:{self.execute.__name__}: "
+                            logger.error(f"[{__parser__}]:execute: "
                                          f"Orga {orga['name']}: "
                                          f"Network {network['name']}: "
                                          f"Error getting events : {tmp_logs}",
@@ -161,4 +161,4 @@ class CiscoMerakiParser(ApiParser):
                             # No need to make_aware, date already contains timezone
                             self.frontend.cisco_meraki_timestamp[f"{network['id']}_{product_type}"] = tmp_logs['pageEndAt']
 
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parser ending", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parser ending", extra={'frontend': str(self.frontend)})

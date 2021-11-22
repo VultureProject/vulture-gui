@@ -99,7 +99,7 @@ class ProofpointTAPParser(ApiParser):
                 proxies=self.proxies
             )
         except requests.ConnectionError as e:
-            logger.error(f"{[__parser__]}:{self._get_logs.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:_get_logs: {e}", extra={'frontend': str(self.frontend)})
             raise ProofpointTAPAPIError(e)
 
         if response.status_code == 401:
@@ -111,14 +111,14 @@ class ProofpointTAPParser(ApiParser):
         elif response.status_code == 400:
             if b"too far into the past" in response.content:
                 error = "ProofpointTAP API call: cannot query this far into the past, coming back 12 hours back from now"
-                logger.warning(f"{[__parser__]}:{self._get_logs.__name__}: {error}", extra={'frontend': str(self.frontend)})
+                logger.warning(f"[{__parser__}]:_get_logs: {error}", extra={'frontend': str(self.frontend)})
                 self.last_api_call = datetime.now(timezone.utc) - timedelta(hours=12)
                 raise ProofpointTAPAPITooFarError(error)
             error = f"Error at ProofpointTAP API Call: {response.content}"
             raise ProofpointTAPAPIError(error)
         elif response.status_code != 200:
             error = f"Error at ProofpointTAP API Call ({response.status_code}): {response.content}"
-            logger.error(f"{[__parser__]}:{self._get_logs.__name__}: {error}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:_get_logs: {error}", extra={'frontend': str(self.frontend)})
             raise ProofpointTAPAPIError(error)
 
         content = response.content
@@ -126,31 +126,31 @@ class ProofpointTAPParser(ApiParser):
         return True, content
 
     def _parse_logs(self, logs):
-        logger.debug(f"{[__parser__]}:{self._parse_logs.__name__}: parsing logs", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:_parse_logs: parsing logs", extra={'frontend': str(self.frontend)})
         time_string = ""
         parsed = []
         try:
             json_logs = json_loads(logs)
             time_string = json_logs['queryEndTime']
         except JSONDecodeError as e:
-            logger.error(f"{[__parser__]}:{self._parse_logs.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:_parse_logs: {e}", extra={'frontend': str(self.frontend)})
             raise ProofpointTAPParseError(e)
 
-        logger.debug(f"{[__parser__]}:{self._parse_logs.__name__}: "
+        logger.debug(f"[{__parser__}]:_parse_logs: "
                      f"got {len(json_logs['messagesBlocked'])} lines for 'messagesBlocked'",
                      extra={'frontend': str(self.frontend)})
         for messageBlocked in json_logs["messagesBlocked"]:
             messageBlocked['messageType'] = 'messagesBlocked'
             parsed.append(messageBlocked)
 
-        logger.debug(f"{[__parser__]}:{self._parse_logs.__name__}: "
+        logger.debug(f"[{__parser__}]:_parse_logs: "
                      f"got {len(json_logs['messagesDelivered'])} lines for 'messagesDelivered'",
                      extra={'frontend': str(self.frontend)})
         for messageDelivered in json_logs["messagesDelivered"]:
             messageDelivered['messageType'] = 'messagesDelivered'
             parsed.append(messageDelivered)
 
-        logger.debug(f"{[__parser__]}:{self._parse_logs.__name__}: "
+        logger.debug(f"[{__parser__}]:_parse_logs: "
                      f"got {len(json_logs['clicksPermitted'])} lines for 'clicksPermitted'",
                      extra={'frontend': str(self.frontend)})
 
@@ -158,7 +158,7 @@ class ProofpointTAPParser(ApiParser):
             clickPermitted['messageType'] = 'clicksPermitted'
             parsed.append(clickPermitted)
 
-        logger.debug(f"{[__parser__]}:{self._parse_logs.__name__}: "
+        logger.debug(f"[{__parser__}]:_parse_logs: "
                      f"got {len(json_logs['clicksBlocked'])} lines for 'clicksBlocked'",
                      extra={'frontend': str(self.frontend)})
 
@@ -197,7 +197,7 @@ class ProofpointTAPParser(ApiParser):
         try:
             # proofpoint API requires intervals of an hour max
             if currentTime - self.last_api_call < timedelta(hours=1):
-                logger.debug(f"{[__parser__]}:{self.execute.__name__}: getting logs from {fromTime}",
+                logger.debug(f"[{__parser__}]:execute: getting logs from {fromTime}",
                              extra={'frontend': str(self.frontend)})
 
                 status, contents = self._get_logs(endpoint=self.proofpoint_tap_endpoint,
@@ -218,7 +218,7 @@ class ProofpointTAPParser(ApiParser):
                     toTime = min(currentTime, fromTime + timedelta(hours=1))
                     try:
                         msg = f"getting logs from {fromTime} to {toTime}"
-                        logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                        logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                         status, contents = self._get_logs(endpoint=self.proofpoint_tap_endpoint, params={"interval": "{}/{}".format(fromTime.isoformat().replace("+00:00", "Z"),toTime.isoformat().replace("+00:00", "Z"))})
                     except ProofpointTAPAPITooFarError:
                         # script didn't launch in a long time, so last_api_call as too far back
@@ -248,19 +248,19 @@ class ProofpointTAPParser(ApiParser):
         
             if parsed_lines:
                 msg = f"will write {len(parsed_lines)} lines"
-                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                 self.write_to_file([json_dumps(line) for line in parsed_lines])
             self.update_lock()
 
         except Exception as e:
             msg = f"Unknown error: {e}"
-            logger.exception(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
         self.frontend.last_api_call = fromTime
         msg = f"last_api_call updated to {self.frontend.last_api_call}"
-        logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         if error is not "":
             msg = f"errors while recovering logs:\n{error}"
-            logger.error(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

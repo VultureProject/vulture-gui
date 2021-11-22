@@ -95,7 +95,7 @@ class ReachFiveParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
 
             return {
                 "status": False,
@@ -114,7 +114,7 @@ class ReachFiveParser(ApiParser):
             params['filter'] = 'date > "{}"'.format(timezone.make_naive(since).isoformat(timespec="milliseconds"))
 
         msg = f"Get user events request params: {params}"
-        logger.debug(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -127,7 +127,7 @@ class ReachFiveParser(ApiParser):
 
         if response.status_code != 200:
             msg = f"Error at ReachFive API Call: {response.content}"
-            logger.error(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
             raise ReachFiveAPIError(msg)
 
         content = response.json()
@@ -167,9 +167,9 @@ class ReachFiveParser(ApiParser):
                 # ISO8601 timestamps are sortable as strings
                 last_datetime = max(last_datetime)
                 msg = f"most recent log is from {last_datetime}"
-                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         # Replace "Z" by "+00:00" for datetime parsing
         # No need to make_aware, date already contains timezone
         self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
-        logger.error(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.error(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

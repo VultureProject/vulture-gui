@@ -120,7 +120,7 @@ class SymantecParser(ApiParser):
             params = f"startDate={begin_timestamp}&endDate={end_timestamp}&token={token}"
             url = f"{self.start_console_uri}{params}"
             msg = f"Retrieving symantec logs from {url}"
-            logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             r = requests.get(
                 url,
@@ -141,12 +141,12 @@ class SymantecParser(ApiParser):
                 if retry > 300:
                     raise SymantecAPIError(f"Retry After {r.headers['Retry-After']}")
                 msg = f"Waiting for {retry}s"
-                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
                 self.update_lock()
                 time.sleep(retry)
                 msg = f"Resuming API calls"
-                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
                 self.execute()
             else:
@@ -160,7 +160,7 @@ class SymantecParser(ApiParser):
                     tmp_file.seek(0)
                     if not len(tmp_file.read()):
                         msg = f"No logs found"
-                        logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                        logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                         self.frontend.last_api_call = timezone.now()
                         self.finish()
                     else:
@@ -171,7 +171,7 @@ class SymantecParser(ApiParser):
                                 # Pnly retrieve the DIRST
                                 gzip_filename = zip_file.namelist()[0]
                                 msg = f"Parsing archive {gzip_filename}"
-                                logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                                 self.update_lock()
                                 gzip_file = BytesIO(zip_file.read(gzip_filename))
 
@@ -208,7 +208,7 @@ class SymantecParser(ApiParser):
 
                 else:
                     msg = f"No filename found in headers {r.headers}"
-                    logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
             raise SymantecParseError(e)

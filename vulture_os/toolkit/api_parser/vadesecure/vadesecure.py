@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "blob"
+__author__ = "eduquennoy"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
@@ -145,7 +145,7 @@ class VadesecureParser(ApiParser):
         for log in logs:
             msgId = log["messageId"]
             msg = f"Fetching details of log with messageId: {msgId}"
-            logger.debug(f"{[__parser__]}:{self.fetch_details.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.debug(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
             try:
                 payload.update({
                     "date": log["date"],
@@ -158,19 +158,19 @@ class VadesecureParser(ApiParser):
                     log["details"] = json.dumps([l for l in response["detail"].split("\r\n") if l != ""])
                 except Exception as e:
                     msg = f"No details for log: {payload}"
-                    logger.warning(f"{[__parser__]}:{self.fetch_details.__name__}: {msg}", extra={'frontend': str(self.frontend)})
-                    logger.exception(f"{[__parser__]}:{self.fetch_details.__name__}: {e}", extra={'frontend': str(self.frontend)})
+                    logger.error(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
+                    logger.exception(e, extra={'frontend': str(self.frontend)})
                     continue
             except Exception as e:
                 msg = f"Couldn't fetch the details of a log (might be empty?)"
-                logger.warning(f"{[__parser__]}:{self.fetch_details.__name__}: {msg}", extra={'frontend': str(self.frontend)})
-                logger.exception(f"{[__parser__]}:{self.fetch_details.__name__}: {e}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
+                logger.exception(e, extra={'frontend': str(self.frontend)})
 
         return [self.format_log(l) for l in logs]
 
     def fetch_endpoint(self, endpoint, to, since, payload):
         msg = f"parser starting from {since} to {to}."
-        logger.debug(f"{[__parser__]}:{self.fetch_endpoint.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
         alert_url = f"{self.vadesecure_host}/{self.VERSION}/{endpoint}"
         index = 0
         total = 1
@@ -208,7 +208,7 @@ class VadesecureParser(ApiParser):
             # Turn to the next page
             index += 1
             msg = f"retrieved page n°{index}/{total}"
-            logger.debug(f"{[__parser__]}:{self.fetch_endpoint.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.debug(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
 
             if endpoint == self.GETREPORT and not self.isTest:
                 # We need to call getdetail for each logs 
@@ -240,17 +240,18 @@ class VadesecureParser(ApiParser):
         to = int(to_tz.timestamp() * 1000)
         
         period_payload = "MINUTES_05"
-        msg = f"DELTA: {to - since}"
-        logger.warning(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        msg = f"DELTA: {to - since} miliseconds"
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
+        # Execute every 5 minutes
         if self.last_api_call and round((timezone.now() - self.last_api_call).total_seconds()/60) < 5:
-            msg = f"Canceled API calls. Called at 4min 59s and 999ms intervals."
-            logger.warning(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            msg = f"Canceled API call. Last execution time is < 5 minutes."
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
             return
 
         for endpoint in self.ENDPOINTS:
             msg = f"fetching {endpoint}."
-            logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             # Init the payload
             payload = {
@@ -270,8 +271,6 @@ class VadesecureParser(ApiParser):
                     logs_endpoints += self.fetch_endpoint(endpoint, to, since, payload)
             else:
                 logs = self.fetch_endpoint(endpoint, to, since, payload)
-                msg = json.dumps(logs)
-                logger.warning(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
                 logs_endpoints += logs
 
         if self.isTest:
@@ -286,12 +285,12 @@ class VadesecureParser(ApiParser):
             self.frontend.last_api_call = to_tz + timedelta(milliseconds=1)
             self.frontend.save()
 
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
         self.isTest = True
         msg = f"init test"
-        logger.debug(f"{[__parser__]}:{self.test.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:test: {msg}", extra={'frontend': str(self.frontend)})
 
         try:
             result = self.execute()
@@ -301,7 +300,7 @@ class VadesecureParser(ApiParser):
                 "data": result
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)

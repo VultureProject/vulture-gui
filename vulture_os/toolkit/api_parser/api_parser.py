@@ -83,7 +83,7 @@ class ApiParser:
             return True
         except Exception as e:
             msg = f"Failed to connect to Rsyslog : {e}"
-            logger.error(f"{[__parser__]}:{self.connect.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:connect: {msg}", extra={'frontend': str(self.frontend)})
             return False
 
     def get_system_proxy(self):
@@ -109,7 +109,7 @@ class ApiParser:
     def write_to_file(self, lines):
         if len(lines) != 0:
             msg = f"Writing {len(lines)} lines"
-            logger.info(f"{[__parser__]}:{self.write_to_file.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:write_to_file: {msg}", extra={'frontend': str(self.frontend)})
         cpt=0
         for line in lines:
             if cpt%500 == 0:
@@ -121,7 +121,7 @@ class ApiParser:
                 cpt += 1
             except Exception as e:
                 msg = f"Failed to send to Rsyslog : {e}"
-                logger.error(f"{[__parser__]}:{self.write_to_file.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:write_to_file: {msg}", extra={'frontend': str(self.frontend)})
                 # Connect will block until timeout has expired (30s)
                 while not self.connect():
                     time.sleep(0.05)

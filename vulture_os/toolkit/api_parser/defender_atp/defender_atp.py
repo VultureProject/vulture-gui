@@ -94,7 +94,7 @@ class DefenderATPParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -111,7 +111,7 @@ class DefenderATPParser(ApiParser):
         if since:
             params['$filter'] = 'lastUpdateTime gt {}'.format(since.isoformat().replace('+00:00', "Z"))
         msg = f"Get user events request params: {params}"
-        logger.debug(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -124,12 +124,12 @@ class DefenderATPParser(ApiParser):
 
         if response.status_code != 200:
             msg = f"Error at Defender ATP API Call: {response.content}"
-            logger.error(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
             raise DefenderATPAPIError(msg)
 
         content = response.json()
         msg = f"Content retrieved"
-        logger.info(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
         return True, content
 
     def execute(self):
@@ -188,4 +188,4 @@ class DefenderATPParser(ApiParser):
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
 
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

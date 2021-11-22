@@ -24,16 +24,15 @@ __doc__ = 'Cybereason API Parser toolkit'
 __parser__ = 'CYBEREASON'
 
 
-import datetime
+from django.conf import settings
+from toolkit.api_parser.api_parser import ApiParser
+from django.utils import timezone
+
 import json
 import logging
+import datetime
 import requests
 import time
-
-from datetime import datetime
-from django.conf import settings
-from django.utils import timezone
-from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -109,7 +108,7 @@ class CybereasonParser(ApiParser):
                 response.raise_for_status()
                 if "app-login" in response.content.decode('utf-8'):
                     raise CybereasonAPIError(f"Authentication failed on {login_url} for user {self.username}")
-                logger.info(f"{[__parser__]}:{self._connect.__name__}: Successfully logged-in",
+                logger.info(f"[{__parser__}]:_connect: Successfully logged-in",
                             extra={'frontend': str(self.frontend)})
 
             return True
@@ -141,11 +140,11 @@ class CybereasonParser(ApiParser):
         if response == None or response.status_code != 200:
             if (response == None):
                 msg = f"Error Cybereason API Call URL: {url} [TIMEOUT]"
-                logger.error(f"{[__parser__]}:{self.execute_query.__name__}: {msg}",
+                logger.error(f"[{__parser__}]:execute_query: {msg}",
                              extra={'frontend': str(self.frontend)})
             else:
                 msg = f"Error Cybereason API Call URL: {url} [TIMEOUT], Code: {response.status_code}"
-                logger.error(f"{[__parser__]}:{self.execute_query.__name__}: {msg}",
+                logger.error(f"[{__parser__}]:execute_query: {msg}",
                              extra={'frontend': str(self.frontend)})
             return {}
         return json.loads(response.content)
@@ -257,7 +256,7 @@ class CybereasonParser(ApiParser):
                 malopDescList += [malopsGlobalDesc[rootEntry][subEntry]['single']]
                 malopFeatureList += [featureGlobalDesc[rootEntry][subEntry]['translatedName']]
             except Exception as e:
-                logger.error(f"{[__parser__]}:{self.parseMalops.__name__}: Error enriching description: {e}", 
+                logger.error(f"[{__parser__}]:parseMalops: Error enriching description: {e}",
                              extra={'frontend': str(self.frontend)})
 
             tmp_malop['threat_rootcause'] = ' + '.join(malopDescList)
@@ -286,7 +285,7 @@ class CybereasonParser(ApiParser):
                         "domainFqdn": device.get("organization", '-')
                     })
             except Exception as e:
-                logger.error(f"{[__parser__]}:{self.parseMalops.__name__}: Error enriching devices: {e}", 
+                logger.error(f"[{__parser__}]:parseMalops: Error enriching devices: {e}",
                              extra={'frontend': str(self.frontend)})
             tmp_malop['devices'] = devices
 
@@ -295,7 +294,7 @@ class CybereasonParser(ApiParser):
                 if (value.get('elementValues', {}).get('affectedUsers')):
                     afUserNames = [x['name'] for x in value['elementValues']['affectedUsers']['elementValues']]
             except Exception as e:
-                logger.error(f"{[__parser__]}:{self.parseMalops.__name__}: Error parsing affected users: {e}",
+                logger.error(f"[{__parser__}]:parseMalops: Error parsing affected users: {e}",
                              extra={'frontend': str(self.frontend)})
 
             tmp_malop['affected_users'] = afUserNames
@@ -312,21 +311,21 @@ class CybereasonParser(ApiParser):
             malop["timestamp"] = timestamp_detected
         except Exception as e:
             msg = f"Error enriching timestamp detected: {e}"
-            logger.error(f"{[__parser__]}:{self.parseTimestamps.__name__}: {msg}", 
+            logger.error(f"[{__parser__}]:parseTimestamps: {msg}",
                          extra={'frontend': str(self.frontend)})
             malop["timestamp"] = float(datetime.datetime.now().timestamp())
         try:
             malop["timestamp_closed"] = float(malop['closeTime']) / 1000
         except Exception as e:
             msg = f"Error enriching timestamp closed: {e}"
-            logger.error(f"{[__parser__]}:{self.parseTimestamps.__name__}: {msg}", 
+            logger.error(f"[{__parser__}]:parseTimestamps: {msg}",
                          extra={'frontend': str(self.frontend)})
             malop["timestamp_closed"] = 0.0
         try:
             malop["timestamp_start"] = float(malop['malopStartTime']) / 1000
         except Exception as e:
             msg = f"Error enriching timestamp start: {e}"
-            logger.error(f"{[__parser__]}:{self.parseTimestamps.__name__}: {msg}", 
+            logger.error(f"[{__parser__}]:parseTimestamps: {msg}",
                          extra={'frontend': str(self.frontend)})
             malop["timestamp_start"] = 0.0
 
@@ -451,13 +450,13 @@ class CybereasonParser(ApiParser):
             query_time = (datetime.datetime.now() - datetime.timedelta(days=7)).timestamp()
             logs = self.get_logs("malops", query_time)
             msg = f"{len(logs)} malops retrieved"
-            logger.info(f"{[__parser__]}:{self.test.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:test: {msg}", extra={'frontend': str(self.frontend)})
             return {
                 "status": True,
                 "data": logs
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -465,7 +464,7 @@ class CybereasonParser(ApiParser):
 
     def get_logs(self, kind, since, test=False):
         msg = f"Querying {kind} from {datetime.datetime.fromtimestamp(since)}"
-        logger.info(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         try:
             if kind == "malops":
@@ -479,8 +478,8 @@ class CybereasonParser(ApiParser):
 
         except Exception as e:
             msg = f"Error querying {kind} logs"
-            logger.error(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
-            logger.exception(f"{[__parser__]}:{self.get_logs.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:get_logs: {e}", extra={'frontend': str(self.frontend)})
             return []
 
     def get_appliance_version(self):
@@ -509,9 +508,9 @@ class CybereasonParser(ApiParser):
 
             if total > 0:
                 msg = f"{total} {kind} retrieved from {datetime.datetime.fromtimestamp(tmp_logs[0]['timestamp'])}"
-                logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                 msg = f"Setting new last time for {kind} to {datetime.datetime.fromtimestamp(tmp_logs[0]['timestamp'])}"
-                logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                 # Logs sorted by timestamp descending, so first is newer
                 setattr(self.frontend, f"cybereason_{kind}_timestamp", tmp_logs[0]['timestamp'])
 
@@ -526,4 +525,4 @@ class CybereasonParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

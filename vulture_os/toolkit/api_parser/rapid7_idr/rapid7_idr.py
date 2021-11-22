@@ -103,7 +103,7 @@ class Rapid7IDRParser(ApiParser):
                 "data": result["message"]
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -152,7 +152,7 @@ class Rapid7IDRParser(ApiParser):
         since = self.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=24))
         to = datetime.now(timezone.utc)
         msg = f"Parser starting from {since} to {to}"
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         index = 0
         available = 1
@@ -168,11 +168,11 @@ class Rapid7IDRParser(ApiParser):
             
             available = int(response['metadata']['total_data'])
             msg = f"got {available} lines available"
-            logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             retrieved += len(logs)
             msg = f"retrieved {retrieved} lines"
-            logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             index += 1
 
@@ -183,4 +183,4 @@ class Rapid7IDRParser(ApiParser):
 
         # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
         self.frontend.last_api_call = to + timedelta(microseconds=1000)
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

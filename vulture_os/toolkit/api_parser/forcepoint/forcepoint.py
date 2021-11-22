@@ -25,6 +25,7 @@ __parser__ = 'FORCEPOINT'
 
 
 import csv
+from sys import maxsize as sys_maxsize
 import gzip
 import logging
 import requests
@@ -119,7 +120,7 @@ class ForcepointParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at Forcepoint API Call: {response.content}"
-            logger.error(f"{[__parser__]}:{self.get_logs.__name__}: {error}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
             raise ForcepointAPIError(error)
 
         content = response.content
@@ -136,6 +137,8 @@ class ForcepointParser(ApiParser):
         res = {}
         # Convert line to BytesIO to use csv
         stream_line = StringIO(orig_line.decode('utf-8'))
+        # Needed to prevent error : _csv.Error: field larger than field limit (131072)
+        #csv.field_size_limit(sys_maxsize)
         r = csv.reader(stream_line, delimiter=",", doublequote=True, lineterminator="\n", quoting=csv.QUOTE_ALL)
         # Loop other the fields of the only line
         try:
@@ -146,7 +149,7 @@ class ForcepointParser(ApiParser):
             return json_dumps(res)
         except Exception as e:
             msg = f"Failed to parse line: {r}"
-            logger.error(f"{[__parser__]}:{self.parse_line.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:parse_line: {msg}", extra={'frontend': str(self.frontend)})
             raise ForcepointAPIError()
 
     def parse_file(self, file_content, gzipped=False):
@@ -173,7 +176,7 @@ class ForcepointParser(ApiParser):
                 break
             except Exception as e:
                 msg = f"Failed to delete file {file_url} : {str(e)}"
-                logger.error(f"{[__parser__]}:{self.delete_file.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:delete_file: {msg}", extra={'frontend': str(self.frontend)})
                 attempt += 1
 
     def execute(self):
@@ -204,7 +207,7 @@ class ForcepointParser(ApiParser):
                 self.frontend.last_api_call = timezone.now()
             except Exception as e:
                 msg = f"Failed to retrieve file {file_url} : {e}"
-                logger.error(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
-                logger.exception(f"{[__parser__]}:{self.execute.__name__}: {e}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

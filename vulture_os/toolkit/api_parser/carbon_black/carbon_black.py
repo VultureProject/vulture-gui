@@ -107,7 +107,7 @@ class CarbonBlackParser(ApiParser):
                 "data": [self.format_log(log) for log in logs['results']]
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.__execute_query.__name__}: {e}",
+            logger.exception(f"[{__parser__}]:__execute_query: {e}",
                              extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
@@ -159,7 +159,8 @@ class CarbonBlackParser(ApiParser):
 
             logs = response['results']
             found = int(response['num_found'])
-            available = int(response['num_available']) + 1
+            # available key is not present if response = {'results': [], 'num_found': 0}
+            available = int(response.get('num_available', "0")) + 1
 
             self.write_to_file([self.format_log(l) for l in logs])
 
@@ -171,5 +172,5 @@ class CarbonBlackParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 self.frontend.last_api_call = datetime.fromisoformat(logs[0]['last_update_time'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
 
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 

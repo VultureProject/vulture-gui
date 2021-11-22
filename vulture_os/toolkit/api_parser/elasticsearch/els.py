@@ -177,4 +177,4 @@ class ElasticsearchParser(ApiParser):
             self.finish()
 
         except Exception as e:
-            logger.critical(f"{[__parser__]}:{self.execute.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.critical(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})

@@ -118,7 +118,7 @@ class HarfangLabParser(ApiParser):
                 "data": result
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -147,7 +147,7 @@ class HarfangLabParser(ApiParser):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
         to = timezone.now()
         msg = f"Parser starting from {since} to {to}."
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         index = 0
         total = 1
@@ -162,7 +162,7 @@ class HarfangLabParser(ApiParser):
 
             total = int(response['count'])
             msg = f"got {total} lines available"
-            logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             if total == 0:
                 # Means that there are no logs available. It may be for two
@@ -174,19 +174,21 @@ class HarfangLabParser(ApiParser):
 
             index += len(logs)
             msg = f"retrieved {index} lines"
-            logger.debug(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             self.write_to_file([self.format_log(l) for l in logs])
 
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-            # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
+            # increment by 1s (ms not supported) to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             try:
-                self.frontend.last_api_call = datetime.fromtimestamp(logs[0]['last_seen']) + timedelta(microseconds=1000)
+                self.frontend.last_api_call = datetime.fromisoformat(logs[0]['@timestamp'].replace("Z", "+00:00")) \
+                                              + timedelta(seconds=1)
                 self.frontend.save()
             except Exception as err:
-                msg = f"could not locate 'last_seen' key on: {logs[0]}"
-                logger.error(f"{[__parser__]}:{self.execute.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+                logger.exception(f"[{__parser__}]:execute: {err}", extra={'frontend': str(self.frontend)})
+                msg = f"could not locate '@timestamp' key on: {logs[0]}"
+                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        logger.info(f"{[__parser__]}:{self.execute.__name__}: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

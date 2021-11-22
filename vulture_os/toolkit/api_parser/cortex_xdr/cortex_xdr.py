@@ -88,7 +88,7 @@ class CortexXDRParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:{self.test.__name__}: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -118,7 +118,7 @@ class CortexXDRParser(ApiParser):
                        "value": int(since.timestamp()*1000)
                    }]
         msg = f"Get user events request params: {params}"
-        logger.debug(f"{[__parser__]}:{self.get_logs.__name__}: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
         response = self.session.post(
             url,
             json=params,
@@ -130,7 +130,7 @@ class CortexXDRParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at CortexXDR API Call: {response.content}"
-            logger.error(f"{[__parser__]}:{self.get_logs.__name__}: {error}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
             raise CortexXDRAPIError(error)
 
         content = response.json()
@@ -139,7 +139,7 @@ class CortexXDRParser(ApiParser):
 
     def execute(self):
         for kind in ["alerts", "incidents"]:
-            logger.info(f"{[__parser__]}:{self.execute.__name__}: Getting {kind}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute: Getting {kind}", extra={'frontend': str(self.frontend)})
             cpt = 0
             total = 1
             while cpt < total:
@@ -172,7 +172,7 @@ class CortexXDRParser(ApiParser):
                         setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][KIND_TIME_FIELDS[kind]]+1)/1000, tz=timezone.utc))
                     except Exception as err:
                         msg = f"Could not locate key '{KIND_TIME_FIELDS[kind]}' from following log: {logs[-1]}"
-                        logger.error(f"{[__parser__]}:{self.execute.__name__}: {msg}",
+                        logger.error(f"[{__parser__}]:execute: {msg}",
                                      extra={'frontend': str(self.frontend)})
 
         logger.info("CortexXDR parser ending.", extra={'frontend': str(self.frontend)})
