@@ -21,27 +21,24 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Netskope API Parser'
+__parser__ = 'NETSKOPE'
 
-
+import json
 import logging
 import requests
 
-from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
-from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
 from datetime import datetime, timedelta
+from django.conf import settings
+from django.utils import timezone
+from toolkit.api_parser.api_parser import ApiParser
 
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 
-
 class NetskopeAPIError(Exception):
     pass
-
 
 
 class NetskopeParser(ApiParser):
@@ -72,7 +69,6 @@ class NetskopeParser(ApiParser):
         except Exception as err:
             raise NetskopeAPIError(err)
 
-
     def test(self):
         try:
             logs = self.get_logs(timezone.now()-timedelta(days=10))
@@ -82,7 +78,7 @@ class NetskopeParser(ApiParser):
                 "data": logs
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -113,10 +109,7 @@ class NetskopeParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-
-        self.upper_timestamp = int(self.frontend.last_api_call.timestamp()) if self.frontend.last_api_call \
-                                                                                        else 0
-
+        self.upper_timestamp = int(self.frontend.last_api_call.timestamp()) if self.frontend.last_api_call else 0
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
         offset = 0
 
@@ -138,4 +131,4 @@ class NetskopeParser(ApiParser):
             if len(logs) > 0:
                 self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(self.upper_timestamp)+timedelta(seconds=1))
 
-        logger.info("Netskope parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

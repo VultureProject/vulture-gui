@@ -28,6 +28,7 @@ import logging
 from django.conf import settings
 from toolkit.api_parser.akamai.akamai import AkamaiParser
 from toolkit.api_parser.aws_bucket.aws_bucket import AWSBucketParser
+from toolkit.api_parser.defender.defender import DefenderParser
 from toolkit.api_parser.elasticsearch.els import ElasticsearchParser
 from toolkit.api_parser.forcepoint.forcepoint import ForcepointParser
 from toolkit.api_parser.imperva.imperva import ImpervaParser
@@ -46,7 +47,6 @@ from toolkit.api_parser.netskope.netskope import NetskopeParser
 from toolkit.api_parser.rapid7_idr.rapid7_idr import Rapid7IDRParser
 from toolkit.api_parser.harfanglab.harfanglab import HarfangLabParser
 from toolkit.api_parser.vadesecure.vadesecure import VadesecureParser
-
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -73,6 +73,7 @@ PARSER_LIST = {
     "rapid7_idr": Rapid7IDRParser,
     "harfanglab": HarfangLabParser,
     "vadesecure": VadesecureParser,
+    "defender": DefenderParser
 }
 
 

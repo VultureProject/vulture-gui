@@ -21,18 +21,16 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Rapid7 InsightIDR API Parser'
+__parser__ = 'RAPID7 IDR'
 
-
+import json
 import logging
 import requests
 
+from datetime import datetime, timedelta, timezone
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
-
 from toolkit.api_parser.api_parser import ApiParser
 
-from datetime import datetime, timedelta, timezone
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -40,7 +38,6 @@ logger = logging.getLogger('api_parser')
 
 class Rapid7IDRAPIError(Exception):
     pass
-
 
 
 class Rapid7IDRParser(ApiParser):
@@ -64,7 +61,6 @@ class Rapid7IDRParser(ApiParser):
 
         self.session = None
 
-
     def _connect(self):
         try:
             if self.session is None:
@@ -79,7 +75,6 @@ class Rapid7IDRParser(ApiParser):
 
         except Exception as err:
             raise Rapid7IDRAPIError(err)
-
 
     def __execute_query(self, url, query={}, timeout=10):
 
@@ -97,7 +92,6 @@ class Rapid7IDRParser(ApiParser):
 
         return response.json()
 
-
     def test(self):
         validation_url = self.rapid7_idr_host + self.VALIDATE_ENDPOINT
 
@@ -109,12 +103,11 @@ class Rapid7IDRParser(ApiParser):
                 "data": result["message"]
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
             }
-
 
     def get_logs(self, index=0, since=None, to=None):
         alert_url = self.rapid7_idr_host + self.INVESTIGATIONS_ENDPOINT
@@ -128,7 +121,7 @@ class Rapid7IDRParser(ApiParser):
             to = to.isoformat()
             to = to.replace("+00:00", "Z")
 
-        query =  {
+        query = {
             'index': index,
             'size': 1000
         }
@@ -140,7 +133,6 @@ class Rapid7IDRParser(ApiParser):
             query['end_time'] = to
 
         return self.__execute_query(alert_url, query)
-
 
     def format_log(self, log):
         log['type'] = [x['type'] for x in log['alerts']]
@@ -155,13 +147,12 @@ class Rapid7IDRParser(ApiParser):
 
         return json.dumps(log)
 
-
     def execute(self):
 
         since = self.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=24))
         to = datetime.now(timezone.utc)
-        logger.info(f"Rapid7 IDR API parser starting from {since} to {to}.",
-                    extra={'frontend': str(self.frontend)})
+        msg = f"Parser starting from {since} to {to}"
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         index = 0
         available = 1
@@ -176,13 +167,13 @@ class Rapid7IDRParser(ApiParser):
             logs = response['data']
             
             available = int(response['metadata']['total_data'])
-            logger.debug(f"Rapid7 IDR API parser: got {available} lines available",
-                         extra={'frontend': str(self.frontend)})
-            
+            msg = f"got {available} lines available"
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
             retrieved += len(logs)
-            logger.debug(f"Rapid7 IDR API parser: retrieved {retrieved} lines",
-                         extra={'frontend': str(self.frontend)})
-            
+            msg = f"retrieved {retrieved} lines"
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
             index += 1
 
             self.write_to_file([self.format_log(l) for l in logs])
@@ -192,5 +183,4 @@ class Rapid7IDRParser(ApiParser):
 
         # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
         self.frontend.last_api_call = to + timedelta(microseconds=1000)
-
-        logger.info("Rapid7 IDR API parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

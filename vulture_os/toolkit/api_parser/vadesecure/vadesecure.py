@@ -1,16 +1,36 @@
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture OS.
+
+Vulture OS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture OS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
+"""
+__author__ = "eduquennoy"
+__credits__ = []
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture OS"
+__email__ = "contact@vultureproject.org"
+__doc__ = 'Vadesecure API Parser'
+__parser__ = 'VADESECURE'
+
+import json
 import logging
 import requests
 
+from datetime import timedelta
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
-
 from toolkit.api_parser.api_parser import ApiParser
-
-from datetime import datetime, timedelta
-from time import time, sleep
-import json
-from pprint import pprint
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -41,7 +61,6 @@ class VadesecureParser(ApiParser):
         """
         super().__init__(data)
 
-
         self.vadesecure_host = data["vadesecure_host"].rstrip("/")
         if not self.vadesecure_host.startswith('https://'):
             self.vadesecure_host = f"https://{self.vadesecure_host}"
@@ -53,7 +72,6 @@ class VadesecureParser(ApiParser):
         self.accountID = None   
 
         self.isTest = False
-
 
     def _connect(self):
         try:
@@ -89,7 +107,6 @@ class VadesecureParser(ApiParser):
         except Exception as err:
             raise VadesecureAPIError(err)
 
-
     def __execute_query(self, method, url, query, timeout=10):
         """
         raw request dosent handle the pagination natively
@@ -112,7 +129,6 @@ class VadesecureParser(ApiParser):
 
         return response.json()
 
-
     def format_log(self, log):
         """
             Stringifies the line of log.
@@ -120,17 +136,16 @@ class VadesecureParser(ApiParser):
         log['url'] = f"{self.vadesecure_host}"
         return json.dumps(log)
 
-
     def fetch_details(self, payload, logs):        
         url = f"{self.vadesecure_host}/{self.VERSION}/{self.GETDETAIL}"
         payload = {
             "userId": self.userId,
         }
-        # detailed_logs = []        
+
         for log in logs:
             msgId = log["messageId"]
-            logger.debug(f"Vadesecure API: Fetching details of log with messageId: {msgId}",
-                         extra={'frontend': str(self.frontend)})
+            msg = f"Fetching details of log with messageId: {msgId}"
+            logger.debug(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
             try:
                 payload.update({
                     "date": log["date"],
@@ -141,21 +156,21 @@ class VadesecureParser(ApiParser):
                 
                 try:
                     log["details"] = json.dumps([l for l in response["detail"].split("\r\n") if l != ""])
-                except:
-                    logger.warning(f"Vadesecure API: No details for log: {payload}",
-                                   extra={'frontend': str(self.frontend)})
+                except Exception as e:
+                    msg = f"No details for log: {payload}"
+                    logger.error(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
+                    logger.exception(e, extra={'frontend': str(self.frontend)})
                     continue
-            except:
-                logger.warning(f"Vadesecure API: Couldn't fetch the details of a log (might be empty?)",
-                               extra={'frontend': str(self.frontend)})
+            except Exception as e:
+                msg = f"Couldn't fetch the details of a log (might be empty?)"
+                logger.error(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
+                logger.exception(e, extra={'frontend': str(self.frontend)})
+
         return [self.format_log(l) for l in logs]
 
-
     def fetch_endpoint(self, endpoint, to, since, payload):
-
-        logger.debug(f"Vadesecure API: parser starting from {since} to {to}.",
-                     extra={'frontend': str(self.frontend)})
-
+        msg = f"parser starting from {since} to {to}."
+        logger.debug(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
         alert_url = f"{self.vadesecure_host}/{self.VERSION}/{endpoint}"
         index = 0
         total = 1
@@ -191,9 +206,9 @@ class VadesecureParser(ApiParser):
                 break
 
             # Turn to the next page
-            index += 1 
-            logger.debug(f"Vadesecure API parser: retrieved page n°{index}/{total}",
-                         extra={'frontend': str(self.frontend)})
+            index += 1
+            msg = f"retrieved page n°{index}/{total}"
+            logger.debug(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
 
             if endpoint == self.GETREPORT and not self.isTest:
                 # We need to call getdetail for each logs 
@@ -225,16 +240,18 @@ class VadesecureParser(ApiParser):
         to = int(to_tz.timestamp() * 1000)
         
         period_payload = "MINUTES_05"
-        logger.warning(f"DELTA: {to - since}", extra={'frontend': str(self.frontend)})
+        msg = f"DELTA: {to - since} miliseconds"
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
+        # Execute every 5 minutes
         if self.last_api_call and round((timezone.now() - self.last_api_call).total_seconds()/60) < 5:
-            logger.warning(f"Vadesecure API: Canceled API calls. Called at 4min 59s and 999ms intervals.",
-                           extra={'frontend': str(self.frontend)})
+            msg = f"Canceled API call. Last execution time is < 5 minutes."
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
             return
 
         for endpoint in self.ENDPOINTS:
-            logger.debug(f"Vadesecure API: fetching {endpoint}.",
-                         extra={'frontend': str(self.frontend)})
-
+            msg = f"fetching {endpoint}."
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             # Init the payload
             payload = {
@@ -244,7 +261,6 @@ class VadesecureParser(ApiParser):
             }
 
             # We need to wait 5min between each call of GETREPORT
-
             if endpoint == self.GETREPORT:
                 del payload["endDate"]
                 for stream in ["inbound", "outbound"]:
@@ -255,7 +271,6 @@ class VadesecureParser(ApiParser):
                     logs_endpoints += self.fetch_endpoint(endpoint, to, since, payload)
             else:
                 logs = self.fetch_endpoint(endpoint, to, since, payload)
-                logger.warning(json.dumps(logs), extra={'frontend': str(self.frontend)})
                 logs_endpoints += logs
 
         if self.isTest:
@@ -270,12 +285,13 @@ class VadesecureParser(ApiParser):
             self.frontend.last_api_call = to_tz + timedelta(milliseconds=1)
             self.frontend.save()
 
-        logger.info("Vadesecure API: parser ending.", extra={'frontend': str(self.frontend)})
-
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
         self.isTest = True
-        logger.debug(f"Vadesecure API: inititating the TEST.", extra={'frontend': str(self.frontend)})
+        msg = f"init test"
+        logger.info(f"[{__parser__}]:test: {msg}", extra={'frontend': str(self.frontend)})
+
         try:
             result = self.execute()
 
@@ -284,7 +300,7 @@ class VadesecureParser(ApiParser):
                 "data": result
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)

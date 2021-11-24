@@ -21,27 +21,24 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Carbon Black EDR API Parser'
+__parser__ = 'CARBON BLACK'
 
 
+import json
 import logging
 import requests
 
+from datetime import datetime, timedelta
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
-from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
-from datetime import datetime, timedelta
 
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 
-
 class CarbonBlackAPIError(Exception):
     pass
-
 
 
 class CarbonBlackParser(ApiParser):
@@ -68,11 +65,8 @@ class CarbonBlackParser(ApiParser):
         try:
             if self.session is None:
                 self.session = requests.Session()
-
                 self.session.headers.update({'X-Auth-Token': self.carbon_black_apikey})
-
             return True
-
         except Exception as err:
             raise CarbonBlackAPIError(err)
 
@@ -113,7 +107,8 @@ class CarbonBlackParser(ApiParser):
                 "data": [self.format_log(log) for log in logs['results']]
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:__execute_query: {e}",
+                             extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -129,7 +124,7 @@ class CarbonBlackParser(ApiParser):
         if since[-1] != "Z":
             since += "Z"
 
-        query =  {
+        query = {
             'criteria': {
                 'category': ['THREAT'],
                 'group_results': True,
@@ -149,7 +144,6 @@ class CarbonBlackParser(ApiParser):
         log['url'] = self.carbon_black_host
         return json.dumps(log)
 
-
     def execute(self):
 
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
@@ -165,7 +159,8 @@ class CarbonBlackParser(ApiParser):
 
             logs = response['results']
             found = int(response['num_found'])
-            available = int(response['num_available']) + 1
+            # available key is not present if response = {'results': [], 'num_found': 0}
+            available = int(response.get('num_available', "0")) + 1
 
             self.write_to_file([self.format_log(l) for l in logs])
 
@@ -177,4 +172,5 @@ class CarbonBlackParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 self.frontend.last_api_call = datetime.fromisoformat(logs[0]['last_update_time'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
 
-        logger.info("CarbonBlack parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+

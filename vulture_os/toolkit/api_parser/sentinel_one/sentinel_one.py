@@ -21,27 +21,24 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Sentinel One EDR API Parser'
+__parser__ = 'SENTINEL ONE'
 
 
+import json
 import logging
 import requests
 
+from datetime import datetime, timedelta
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
-from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
-from datetime import datetime, timedelta
 
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 
-
 class SentinelOneAPIError(Exception):
     pass
-
 
 
 class SentinelOneParser(ApiParser):
@@ -134,7 +131,7 @@ class SentinelOneParser(ApiParser):
                 "data": [self.format_log(log, "alert") for log in logs['data']]
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -171,12 +168,10 @@ class SentinelOneParser(ApiParser):
 
         return self.__execute_query("GET", alert_url, query)
 
-
     def getAlertComment(self, alertId):
         comment_url = f"{self.sentinel_one_host}/{self.THREATS}/{alertId}/notes"
         ret = self.__execute_query("GET", comment_url, {})
         return ret['data']
-
 
     def format_log(self, log, event_kind):
         if event_kind == "alert":
@@ -206,7 +201,6 @@ class SentinelOneParser(ApiParser):
         log['event_kind'] = event_kind
         return json.dumps(log)
 
-
     def execute(self):
 
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
@@ -235,7 +229,7 @@ class SentinelOneParser(ApiParser):
                     # Replace "Z" by "+00:00" for datetime parsing
                     self.frontend.last_api_call = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
 
-            logger.info(f"SentinelOne parser : events {event_kind} collected.",
-                        extra={'frontend': str(self.frontend)})
+            msg = f"events {event_kind} collected."
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        logger.info("SentinelOne parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

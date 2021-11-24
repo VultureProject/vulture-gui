@@ -21,18 +21,16 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Microsoft Defender ATP API Parser'
+__parser__ = 'DEFENDER ATP'
 
-
+import json
 import logging
 import requests
 
 from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from datetime import datetime
-
-import json
+from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -96,7 +94,7 @@ class DefenderATPParser(ApiParser):
                 "data": _('Success')
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -112,8 +110,8 @@ class DefenderATPParser(ApiParser):
         }
         if since:
             params['$filter'] = 'lastUpdateTime gt {}'.format(since.isoformat().replace('+00:00', "Z"))
-        logger.debug("DefenderATP api::Get user events request params = {}".format(params),
-                     extra={'frontend': str(self.frontend)})
+        msg = f"Get user events request params: {params}"
+        logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -125,14 +123,13 @@ class DefenderATPParser(ApiParser):
             return False, _('Authentication failed')
 
         if response.status_code != 200:
-            error = f"Error at Defender ATP API Call: {response.content}"
-            logger.error(error, extra={'frontend': str(self.frontend)})
-            raise DefenderATPAPIError(error)
+            msg = f"Error at Defender ATP API Call: {response.content}"
+            logger.error(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+            raise DefenderATPAPIError(msg)
 
         content = response.json()
-        logger.info("DefenderATP API::Content retrieved",
-                    extra={'frontend': str(self.frontend)})
-
+        msg = f"Content retrieved"
+        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
         return True, content
 
     def execute(self):
@@ -191,4 +188,4 @@ class DefenderATPParser(ApiParser):
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
 
-        logger.info("Defender ATP parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
