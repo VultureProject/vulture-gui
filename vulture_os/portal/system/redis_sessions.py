@@ -154,7 +154,6 @@ class REDISAppSession(REDISSession):
         self.keys['authenticated'] = 0
         self.handler.hset(self.key, 'authenticated', 0)
         self.keys.pop('otp_retries', None)
-        self.handler.hdel(self.key, 'otp_retries')
 
 
     def setHeader(self, headers):
@@ -350,8 +349,7 @@ class REDISPortalSession(REDISSession):
         self.handler.hset(self.key, f"otp_retries_{otp_repo_id}", otp_retries)
         return otp_retries
 
-    def deauthenticate(self, workflow_id, backend_id, otp_backend_id, timeout):
-        self.keys.pop(f'otp_retries_{otp_backend_id}', None)
+    def deauthenticate(self, workflow_id, backend_id, timeout):
         self.keys[str(workflow_id)] = 0
         self.keys[f'auth_backend_{backend_id}'] = 0
         self.keys.pop(f'backend_{workflow_id}', None)
@@ -365,6 +363,10 @@ class REDISPortalSession(REDISSession):
         if not self.write_in_redis(timeout or self.default_timeout):
             raise REDISWriteError("REDISPortalSession::deauthenticate: Unable to write authentication infos "
                                   "in REDIS")
+
+    def reset_otp_retries(self, otp_backend_id):
+        self.keys.pop(f'otp_retries_{otp_backend_id}', None)
+        self.handler.hdel(self.key, f'otp_retries_{otp_backend_id}')
 
     def deauthenticate_app(self, app_id, timeout):
         self.keys[str(app_id)] = 0

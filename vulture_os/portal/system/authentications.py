@@ -435,7 +435,7 @@ class DOUBLEAuthentication(Authentication):
         if repository.otp_type == 'email':
             if repository.otp_mail_service == 'vlt_mail_service':
                 if self.credentials[0] != self.credentials[1] and self.credentials[0] not in ['', None, 'None', False]:
-                    raise AuthenticationError("The taped OTP key does not match with Redis value saved")
+                    raise AuthenticationError("The OTP key entered does not match the one saved")
 
         else:
             # The function raise itself AuthenticationError, or return True
@@ -447,6 +447,7 @@ class DOUBLEAuthentication(Authentication):
         logger.info("DB-AUTH::authenticate: User successfully double-authenticated "
                     "on OTP backend '{}'".format(repository))
         self.redis_portal_session.register_doubleauthentication(self.workflow.id, repository.id)
+        self.redis_portal_session.reset_otp_retries(repository.id)
         logger.debug("DB-AUTH::authenticate: Double-authentication results successfully written in Redis portal session")
 
     def create_authentication(self):
@@ -515,8 +516,9 @@ class DOUBLEAuthentication(Authentication):
 
     def deauthenticate_user(self):
         self.redis_portal_session.deauthenticate(self.workflow.id, self.backend_id,
-                                                 self.workflow.authentication.otp_repository.id,
                                                  self.workflow.authentication.auth_timeout)
+        if self.workflow.authentication.otp_repository:
+            self.redis_portal_session.reset_otp_retries(self.workflow.authentication.otp_repository.id)
         logger.debug("DB-AUTH::deauthenticate_user: Redis portal session successfully updated (deauthentication)")
 
     def ask_credentials_response(self, **kwargs):
