@@ -32,7 +32,7 @@ from oauthlib.oauth2 import BackendApplicationClient
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 from requests_oauthlib import OAuth2Session
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
@@ -164,8 +164,8 @@ class DefenderParser(ApiParser):
 
         if len(logs) > 0:
 
-            # All alerts are retrieved, reset timezone to now
-            self.frontend.last_api_call = current_time
+            # All alerts are retrieved, reset timezone to now (+1ms to avoid repeating last log)
+            self.frontend.last_api_call = current_time + timedelta(milliseconds=1)
 
             self.write_to_file([json.dumps(l) for l in logs])
             # Writting may take some while, so refresh token in Redis
