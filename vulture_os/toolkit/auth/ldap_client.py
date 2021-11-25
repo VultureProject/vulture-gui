@@ -141,6 +141,16 @@ class LDAPClient(BaseAuth):
         self.ldap_uri = "{}://{}:{}".format(proto, self.host, self.port)
         self._ldap_connection = None
 
+    def _format_ldap_exception(self, exception):
+        if len(exception.args) > 0:
+            if 'desc' in exception.args[0] and 'info' in exception.args[0]:
+                return f"{exception.args[0]['desc']}: {exception.args[0]['info']}"
+            elif 'desc' in exception.args[0]:
+                return str(exception.args[0]['desc'])
+            elif 'info' in exception.args[0]:
+                return str(exception.args[0]['info'])
+        return "LDAP Error: Unknown Error"
+
     def get_user_attributes_list(self):
         res = [self.user_attr]
         if self.user_account_locked_attr:
@@ -417,10 +427,12 @@ class LDAPClient(BaseAuth):
 
                 result = self._process_results(result)
                 logger.debug("LDAP passwd_s result is: {}".format(result))
+            except ldap.LDAPError as e:
+                logger.error(f"LDAP passwd_s error: {e}")
+                raise ChangePasswordError(self._format_ldap_exception(e))
             except Exception as e:
-                logger.error ("LDAP passwd_s error: {}".format(e))
                 logger.exception(e)
-                raise ChangePasswordError(str(e))
+                raise ChangePasswordError("LDAPClient: an unknown error occured")
 
             if len(result):
                 return result
@@ -705,9 +717,13 @@ class LDAPClient(BaseAuth):
             self._bind_connection(self.user, self.password)
             response['status'] = True
         except ldap.LDAPError as e:
-            logger.exception(e)
+            logger.error(e)
             response['status'] = False
-            response['reason'] = str(e)
+            response['reason'] = self._format_ldap_exception(e)
+        except Exception as e:
+            logger.error(e)
+            response['status'] = False
+            response['reason'] = "An unknown error occurred"
         return response
 
     def test_user_connection(self, username, password):
@@ -720,17 +736,22 @@ class LDAPClient(BaseAuth):
             response = self.authenticate(username, password)
             response['status'] = True
 
-        except ldap.INVALID_CREDENTIALS:
-            logger.error("Invalid credentials : '{}' '{}'".format(self.user, self.password))
-            response['status'] = False
-            response['reason'] = "Invalid credentials"
         except UserNotFound as e:
             response['status'] = False
             response['reason'] = "User doesn't exist"
-        except (ldap.LDAPError, Exception) as e:
+        except ldap.INVALID_CREDENTIALS as e:
+            logger.error(f"LDAPClient::test_user_connection: Invalid credentials for {username}")
+            logger.debug(f"credentials are: '{username}' and '{password}'")
+            response['status'] = False
+            response['reason'] = self._format_ldap_exception(e)
+        except ldap.LDAPError as e:
+            logger.error(str(e))
+            response['status'] = False
+            response['reason'] = self._format_ldap_exception(e)
+        except Exception as e:
             logger.exception(e)
             response['status'] = False
-            response['reason'] = str(e)
+            response['reason'] = "An unknown error occurred"
 
         return response
 
@@ -752,10 +773,14 @@ class LDAPClient(BaseAuth):
                         'group_members': group_members
                     })
             response['status'] = True
+        except ldap.LDAPError as e:
+            logger.error(e)
+            response['status'] = False
+            response['reason'] = self._format_ldap_exception(e)
         except Exception as e:
             logger.exception(e)
             response['status'] = False
-            response['reason'] = str(e)
+            response['reason'] = "An unknown error has occurred"
         return response
 
     def add_new_user(self, username, password, email, phone, group, update_group):
