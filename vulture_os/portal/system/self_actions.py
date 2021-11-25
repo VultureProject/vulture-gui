@@ -44,7 +44,7 @@ from authentication.portal_template.models import (RESET_PASSWORD_NAME, INPUT_PA
                                                INPUT_PASSWORD_2, INPUT_EMAIL)
 
 # Required exceptions imports
-from portal.system.exceptions import RedirectionNeededError, PasswordMatchError
+from portal.system.exceptions import RedirectionNeededError, PasswordMatchError, PasswordEmptyError
 from toolkit.auth.exceptions import AuthenticationError, UserNotFound
 
 # Extern modules imports
@@ -265,6 +265,8 @@ class SELFServiceChange(SELFService):
         new_passwd_cfrm = request.POST[INPUT_PASSWORD_2]
         if new_passwd != new_passwd_cfrm:
             raise PasswordMatchError("Password and confirmation mismatches")
+        if new_passwd == "":
+            raise PasswordEmptyError("Password cannot be empty")
 
         # If reset key, search username by email in repositories
         if rdm:

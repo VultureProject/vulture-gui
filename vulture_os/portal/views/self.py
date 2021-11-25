@@ -45,7 +45,7 @@ from authentication.user_portal.models import UserAuthentication
 from django.utils.datastructures     import MultiValueDictKeyError
 from django.core.exceptions          import ObjectDoesNotExist
 from ldap                            import LDAPError
-from portal.system.exceptions        import PasswordMatchError, RedirectionNeededError
+from portal.system.exceptions        import PasswordEmptyError, PasswordMatchError, RedirectionNeededError
 from portal.views.responses          import error_response
 from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError
@@ -148,7 +148,7 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         # Still validate operation even if User wasn't found, to avoid user enumeration
         return Action.message_response(request, Action.action_ok_message())
 
-    except (ChangePasswordError, PasswordMatchError, AuthenticationError) as e:
+    except (ChangePasswordError, PasswordMatchError, PasswordEmptyError, AuthenticationError) as e:
         logger.error("SELF::self: Error while trying to update password : '{}'".format(e))
         return Action.ask_credentials_response(request, action, e)
 
