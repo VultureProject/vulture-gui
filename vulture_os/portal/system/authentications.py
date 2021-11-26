@@ -305,7 +305,7 @@ class POSTAuthentication(Authentication):
     def ask_credentials_response(self, **kwargs):
         if self.workflow.authentication.enable_captcha:
             captcha_key = self.redis_portal_session.register_captcha(self.workflow.id)
-            captcha = b64encode(ImageCaptcha().generate(captcha_key).read())
+            captcha = "data:image/image/png;base64," + b64encode(ImageCaptcha().generate(captcha_key).read()).decode()
         else:
             captcha = False
 
