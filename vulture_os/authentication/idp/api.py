@@ -264,8 +264,16 @@ class IDPApiUserView(View):
 
             elif action in ("lock", "unlock"):
                 user_dn = request.JSON["id"]
-                to_lock = action == "lock"
-                ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
+                # Check if a proper filter was configured in GUI before trying to lock
+                if ldap_repo.user_account_locked_attr and ldap_repo.get_user_account_locked_attr:
+                    to_lock = action == "lock"
+                    ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
+                else:
+                    logger.error(f"Cannot lock user '{user_dn}' on repository '{ldap_repo}': no locking filter configured")
+                    return JsonResponse({
+                        "status": False,
+                        "error": _("Lock unavailable for Repository")
+                    }, status=409)
 
 
             return JsonResponse({
