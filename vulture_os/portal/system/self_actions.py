@@ -120,14 +120,13 @@ class SELFService(object):
                             result['name'],
                             result['backend']))
                 return result
-
+            except (UserNotFound, User.DoesNotExist) as e:
+                raise UserNotFound(f"SELF::get_user_by_username: Could not find username '{username}' on backend '{repo}': {e}")
             except Exception as e:
-                logger.error(
-                    "SELF::get_user_by_username: Failed to find username '{}' on backend '{}' : '{}'".format(
-                        username, repo, str(e)))
-                logger.exception(e)
+                raise Exception(
+                    f"SELF::get_user_by_username: Unknown error while searching for username '{username}' on backend '{repo}': {e}")
 
-        raise e or AuthenticationError
+        raise UserNotFound(f"Could not find user from username '{username}'")
 
 
     def set_authentication_params(self, repo, authentication_results, username):
