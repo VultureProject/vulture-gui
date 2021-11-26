@@ -21,26 +21,29 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Forcepoint Console API Parser'
+__parser__ = 'FORCEPOINT'
 
 
+import csv
+from sys import maxsize as sys_maxsize
+import gzip
 import logging
 import requests
 import xml.etree.ElementTree as ET
 
 from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-
-from json import dumps as json_dumps
 from io import BytesIO, StringIO
-import gzip
-import csv
+from json import dumps as json_dumps
+from toolkit.api_parser.api_parser import ApiParser
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 MAX_DELETE_ATTEMPTS = 3
+
 
 class ForcepointParseError(Exception):
     pass
@@ -117,7 +120,7 @@ class ForcepointParser(ApiParser):
 
         if response.status_code != 200:
             error = f"Error at Forcepoint API Call: {response.content}"
-            logger.error(error, extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
             raise ForcepointAPIError(error)
 
         content = response.content
@@ -134,13 +137,20 @@ class ForcepointParser(ApiParser):
         res = {}
         # Convert line to BytesIO to use csv
         stream_line = StringIO(orig_line.decode('utf-8'))
+        # Needed to prevent error : _csv.Error: field larger than field limit (131072)
+        #csv.field_size_limit(sys_maxsize)
         r = csv.reader(stream_line, delimiter=",", doublequote=True, lineterminator="\n", quoting=csv.QUOTE_ALL)
         # Loop other the fields of the only line
-        for cpt, value in enumerate(list(r)[0]):
-            field = mapping[cpt]
-            res[field] = value.split(',') if field in self.TO_SPLIT_FIELDS else value
-        res['stream'] = stream
-        return json_dumps(res)
+        try:
+            for cpt, value in enumerate(list(r)[0]):
+                field = mapping[cpt]
+                res[field] = value.split(',') if field in self.TO_SPLIT_FIELDS else value
+            res['stream'] = stream
+            return json_dumps(res)
+        except Exception as e:
+            msg = f"Failed to parse line: {r}"
+            logger.error(f"[{__parser__}]:parse_line: {msg}", extra={'frontend': str(self.frontend)})
+            raise ForcepointAPIError()
 
     def parse_file(self, file_content, gzipped=False):
         if gzipped:
@@ -165,8 +175,8 @@ class ForcepointParser(ApiParser):
                 response.raise_for_status()
                 break
             except Exception as e:
-                logger.error("Failed to delete file {} : {}".format(file_url, str(e)),
-                             extra={'frontend': str(self.frontend)})
+                msg = f"Failed to delete file {file_url} : {str(e)}"
+                logger.error(f"[{__parser__}]:delete_file: {msg}", extra={'frontend': str(self.frontend)})
                 attempt += 1
 
     def execute(self):
@@ -196,8 +206,8 @@ class ForcepointParser(ApiParser):
                 # And update last_api_call time
                 self.frontend.last_api_call = timezone.now()
             except Exception as e:
-                logger.error("Failed to retrieve file {} : {}".format(file_url, e),
-                             extra={'frontend': str(self.frontend)})
-                logger.exception(e, extra={'frontend': str(self.frontend)})
+                msg = f"Failed to retrieve file {file_url} : {e}"
+                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
-        logger.info("Forcepoint parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

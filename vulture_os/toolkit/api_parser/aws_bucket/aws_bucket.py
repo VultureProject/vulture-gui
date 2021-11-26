@@ -20,7 +20,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Cisco Umbrella API Parser'
+__doc__ = 'AWS Bucket API Parser'
 
 
 import boto3

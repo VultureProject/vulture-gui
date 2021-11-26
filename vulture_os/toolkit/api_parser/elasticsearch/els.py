@@ -21,18 +21,16 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Elasticsearch API Parser'
+__parser__ = 'ELASTICSEARCH'
 
 
-import logging
 import datetime
+import logging
 
 from django.conf import settings
-from elasticsearch import Elasticsearch
-from elasticsearch import exceptions
-from toolkit.api_parser.api_parser import ApiParser
-
 from django.utils.translation import ugettext_lazy as _
-
+from elasticsearch import Elasticsearch, exceptions
+from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -179,4 +177,4 @@ class ElasticsearchParser(ApiParser):
             self.finish()
 
         except Exception as e:
-            logger.critical(e, exc_info=1, extra={'frontend': str(self.frontend)})
+            logger.critical(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})

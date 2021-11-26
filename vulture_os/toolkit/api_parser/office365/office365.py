@@ -21,10 +21,11 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Office365 API Parser'
+__parser__ = 'OFFICE365'
 
 
-import json
 import datetime
+import json
 import logging
 import requests
 

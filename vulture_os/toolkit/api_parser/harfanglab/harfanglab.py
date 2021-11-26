@@ -21,19 +21,18 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'HarfangLab EDR API Parser'
+__parser__ = 'HARFANGLAB'
 
 
+import json
 import logging
 import requests
 
+from datetime import datetime, timedelta
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
-
 from toolkit.api_parser.api_parser import ApiParser
 
-from datetime import datetime, timedelta
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -41,7 +40,6 @@ logger = logging.getLogger('api_parser')
 
 class HarfangLabAPIError(Exception):
     pass
-
 
 
 class HarfangLabParser(ApiParser):
@@ -53,7 +51,6 @@ class HarfangLabParser(ApiParser):
     AGENT = "api/data/endpoint/Agent/"
     AGENT_STATS = "api/data/endpoint/Agent/dashboard_stats/"
     POLICY = "api/data/endpoint/Policy/"
-
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -70,7 +67,6 @@ class HarfangLabParser(ApiParser):
         self.harfanglab_apikey = data["harfanglab_apikey"]
 
         self.session = None
-
 
     def _connect(self):
         try:
@@ -94,7 +90,6 @@ class HarfangLabParser(ApiParser):
         except Exception as err:
             raise HarfangLabAPIError(err)
 
-
     def __execute_query(self, method, url, query, timeout=10):
         '''
         raw request dosent handle the pagination natively
@@ -114,7 +109,6 @@ class HarfangLabParser(ApiParser):
 
         return response.json()
 
-
     def test(self):
         try:
             result = self.get_logs(timezone.now()-timedelta(hours=24), timezone.now())
@@ -124,12 +118,11 @@ class HarfangLabParser(ApiParser):
                 "data": result
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
             }
-
 
     def get_logs(self, since=None, to=None, index=0):
         alert_url = f"{self.harfanglab_host}/{self.ALERTS}"
@@ -150,13 +143,11 @@ class HarfangLabParser(ApiParser):
         log['url'] = f"{self.harfanglab_host}"
         return json.dumps(log)
 
-
     def execute(self):
-
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
         to = timezone.now()
-        logger.info(f"HarfangLab API parser starting from {since} to {to}.",
-                    extra={'frontend': str(self.frontend)})
+        msg = f"Parser starting from {since} to {to}."
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         index = 0
         total = 1
@@ -170,8 +161,8 @@ class HarfangLabParser(ApiParser):
             logs = response['results']
 
             total = int(response['count'])
-            logger.debug(f"HarfangLab API parser: got {total} lines available",
-                         extra={'frontend': str(self.frontend)})
+            msg = f"got {total} lines available"
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             if total == 0:
                 # Means that there are no logs available. It may be for two
@@ -182,17 +173,22 @@ class HarfangLabParser(ApiParser):
                 break
 
             index += len(logs)
-            logger.debug(f"HarfangLab API parser: retrieved {index} lines",
-                         extra={'frontend': str(self.frontend)})
+            msg = f"retrieved {index} lines"
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             self.write_to_file([self.format_log(l) for l in logs])
 
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-            # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
-            self.frontend.last_api_call = datetime.fromtimestamp(logs[0]['last_seen']) + timedelta(microseconds=1000)
-            self.frontend.save()
+            # increment by 1s (ms not supported) to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
+            try:
+                self.frontend.last_api_call = datetime.fromisoformat(logs[0]['@timestamp'].replace("Z", "+00:00")) \
+                                              + timedelta(seconds=1)
+                self.frontend.save()
+            except Exception as err:
+                logger.exception(f"[{__parser__}]:execute: {err}", extra={'frontend': str(self.frontend)})
+                msg = f"could not locate '@timestamp' key on: {logs[0]}"
+                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        logger.info("HarfangLab API parser ending.",
-                    extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

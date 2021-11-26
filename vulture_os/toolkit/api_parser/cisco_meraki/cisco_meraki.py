@@ -21,23 +21,21 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Cisco Meraki API Parser'
+__parser__ = 'CISCO MERAKI'
 
 
-import logging
-import requests
-
-from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
-from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
-
-from datetime import datetime, timedelta
 import json
+import logging
 import meraki
+
+from datetime import timedelta
+from django.conf import settings
+from django.utils import timezone
+from toolkit.api_parser.api_parser import ApiParser
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
-
 
 
 class CiscoMerakiAPIError(Exception):
@@ -82,22 +80,19 @@ class CiscoMerakiParser(ApiParser):
         except Exception as e:
             raise CiscoMerakiAPIError(e)
 
-
     def test(self):
         try:
             orga = self.get_organizations()[0]
-            logger.info("CiscoMeraki:: Getting organisation {} networks".format(orga['name']),
+            logger.info(f"[{__parser__}]:test: Getting organisation {orga['name']} networks",
                         extra={'frontend': str(self.frontend)})
+            # retreive organisation & networks
             data = self.get_organization_networks(orga['id'])
-
-            # If we successfully retrieved organizations & networks, it's ok
-
             return {
                 "status": True,
                 "data": data
             }
         except Exception as e:
-            logger.exception(e, extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
@@ -105,16 +100,11 @@ class CiscoMerakiParser(ApiParser):
 
     def get_logs(self, network_id, product_type, since):
         self._connect()
-
-        logger.debug("CiscoMeraki api::Get user events request params: startingAfter={}".format(since),
+        logger.debug(f"[{__parser__}]:get_logs: Get user events request params: startingAfter={since}",
                      extra={'frontend': str(self.frontend)})
-
         try:
-            response = self.session.networks.getNetworkEvents(network_id,
-                                                              productType=product_type,
-                                                              startingAfter=since,
-                                                              perPage=1000)
-
+            response = self.session.networks.getNetworkEvents(network_id, productType=product_type,
+                                                              startingAfter=since, perPage=1000)
         except Exception as e:
             return False, e
 
@@ -124,19 +114,16 @@ class CiscoMerakiParser(ApiParser):
 
         for orga in self.get_organizations():
 
-            logger.info("CiscoMeraki:: Getting organisation {}".format(orga['name']),
-                        extra={'frontend': str(self.frontend)})
-
+            logger.info(f"[{__parser__}]:execute: Getting organisation {orga['name']}", extra={'frontend': str(self.frontend)})
             for network in self.get_organization_networks(orga['id']):
 
-                logger.info("CiscoMeraki:: Getting organisation network {}".format(network['name']),
+                logger.info(f"[{__parser__}]:execute: Getting organisation network {network['name']}",
                             extra={'frontend': str(self.frontend)})
-
                 for product_type in network['productTypes']:
 
-                    logger.info("CiscoMeraki:: Getting organisation network {} product {}".format(network['name'], product_type),
+                    logger.info(f"[{__parser__}]:execute: Getting organisation network {network['name']} "
+                                f"product {product_type}",
                                 extra={'frontend': str(self.frontend)})
-
                     nb_events = 1
                     while nb_events > 0:
                         status, tmp_logs = self.get_logs(network['id'],
@@ -145,8 +132,11 @@ class CiscoMerakiParser(ApiParser):
                                                          (timezone.now()-timedelta(days=1)).isoformat())
 
                         if not status:
-                            logger.error(f"CiscoMeraki::Orga {orga['name']}:Network {network['name']}: Error getting events : {tmp_logs}",
-                                         extra={'frontend': str(self.frontend)})
+                            logger.error(f"[{__parser__}]:execute: "
+                                         f"Orga {orga['name']}: "
+                                         f"Network {network['name']}: "
+                                         f"Error getting events : {tmp_logs}",
+                                        extra={'frontend': str(self.frontend)})
                             break
 
                         # Parsing 1k lines may take some while, so refresh token in Redis before
@@ -171,4 +161,4 @@ class CiscoMerakiParser(ApiParser):
                             # No need to make_aware, date already contains timezone
                             self.frontend.cisco_meraki_timestamp[f"{network['id']}_{product_type}"] = tmp_logs['pageEndAt']
 
-        logger.info("CiscoMeraki parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parser ending", extra={'frontend': str(self.frontend)})
