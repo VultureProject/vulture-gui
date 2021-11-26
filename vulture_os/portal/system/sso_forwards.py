@@ -26,21 +26,20 @@ __doc__ = 'System utils sso_forward'
 
 # Django system imports
 from django.conf                      import settings
-from django.http                      import HttpResponse, HttpResponseRedirect
 
 # Django project imports
-from authentication.base_repository import BaseRepository
-from authentication.learning_profiles.models import LearningProfile
-from portal.system.sso_clients               import SSOClient
-from portal.views.responses                  import HttpResponseTemporaryRedirect
-from views.responses                  import create_gzip_response
-from toolkit.system.aes_utils import AESCipher
-from system.pki.models import PROTOCOLS_TO_INT, CERT_PATH
-from toolkit.http.utils import parse_html
+from authentication.base_repository             import BaseRepository
+from authentication.learning_profiles.models    import LearningProfile
+from portal.system.sso_clients                  import SSOClient
+from portal.views.responses                     import HttpResponseTemporaryRedirect
+from views.responses                            import create_gzip_response
+from toolkit.system.aes_utils                   import AESCipher
+from system.pki.models                          import PROTOCOLS_TO_INT, CERT_PATH
+from toolkit.http.utils                         import parse_html
 
 # Required exceptions imports
 from bson.errors                      import InvalidId
-from .exceptions                       import CredentialsMissingError
+from .exceptions                      import CredentialsMissingError
 
 # Extern modules imports
 from base64                           import b64encode
@@ -279,8 +278,11 @@ class SSOForwardPOST(SSOForward):
                         control_names[control_id] = control_name
                     control_ids[control_name]     = str(control_id)
                     control_values[control_name]  = control_value
+            except IndexError as e:
+                logger.error(f"SSOForwardPOST::retrieve_credentials: Cannot retrieve a form on url '{url}'")
+                raise
             except Exception as e:
-                logger.error("SSOForwardPOST::retrieve_credentials: Cannot retrieve form with id '{}' on url '{}'".format(form_id, url))
+                logger.error(f"SSOForwardPOST::retrieve_credentials: Unknown error while retrieving form with id '{form_id}' on url '{url}'")
                 logger.exception(e)
                 raise
 
