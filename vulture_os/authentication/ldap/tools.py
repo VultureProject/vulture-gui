@@ -86,6 +86,35 @@ def _find_group(ldap_repo, group_dn, attr_list):
     return group
 
 
+def _create_user(ldap_repository, user_dn, username, userPassword, attrs, group_dn=False):
+    try:
+        if _find_user(ldap_repository, user_dn, ["*"]):
+            raise NotUniqueError(user_dn)
+    except IndexError:
+        # User does not exists
+        pass
+
+    user = {
+        "sn": [username],
+        "cn": [username],
+        ldap_repository.user_attr: [username],
+        "objectClass": ["inetOrgPerson", "top"],
+        "description": ["User created by Vulture"]
+    }
+
+    for k, v in attrs.items():
+        if not v:
+            attrs[k] = []
+        elif not isinstance(v, list):
+            attrs[k] = [v]
+
+    user.update(attrs)
+    client = ldap_repository.get_client()
+    r = client.add_user(user_dn, user, userPassword, group_dn)
+    logger.info(f"User {username} created in LDAP {ldap_repository.name}")
+    return r, user_dn
+
+
 def search_users(ldap_repo, search, by_dn=False):
     client = ldap_repo.get_client()
     tmp_users = client.search_user(f"{search}*", attr_list=["+","*"])
@@ -133,38 +162,13 @@ def find_user_email(ldap_repository, username):
     return dn, mail[0] if isinstance(mail, list) else mail
 
 
-def create_user(ldap_repository, username, userPassword, attrs, group_dn=False):
-    if group_dn:
-        group_dn = f"{group_dn},{ldap_repository.get_client()._get_group_dn()}"
-
+def create_user(ldap_repository, username, userPassword, attrs, group=False):
+    group_dn = f"{group},{ldap_repository.get_client()._get_group_dn()}" if group else False
     user_dn = ldap_repository.create_user_dn(username)
 
-    try:
-        if _find_user(ldap_repository, user_dn, ["*"]):
-            raise NotUniqueError(user_dn)
-    except IndexError:
-        # User does not exists
-        pass
+    logger.debug(f"Creating user {username}({user_dn}) with attributes {attrs}")
 
-    user = {
-        "sn": [username],
-        "cn": [username],
-        ldap_repository.user_attr: [username],
-        "objectClass": ["inetOrgPerson", "top"],
-        "description": ["User created by Vulture"]
-    }
-
-    for k, v in attrs.items():
-        if not v:
-            attrs[k] = []
-        elif not isinstance(v, list):
-            attrs[k] = [v]
-
-    user.update(attrs)
-    client = ldap_repository.get_client()
-    r = client.add_user(user_dn, user, userPassword, group_dn)
-    logger.info(f"User {username} created in LDAP {ldap_repository.name}")
-    return r, user_dn
+    return _create_user(ldap_repository, user_dn, username, userPassword, attrs, group_dn)
 
 
 def lock_unlock_user(ldap_repository, user_dn, lock=True):
@@ -172,9 +176,12 @@ def lock_unlock_user(ldap_repository, user_dn, lock=True):
     if not user:
         raise UserNotExistError()
 
-    lock_value = ldap_repository.get_user_account_locked_value
     if not lock:
+        logger.debug(f"Unlocking user {user_dn}")
         lock_value = ""
+    else:
+        logger.debug(f"Locking user {user_dn}")
+        lock_value = ldap_repository.get_user_account_locked_value
 
     new_attrs = deepcopy(user)
     new_attrs[ldap_repository.get_user_account_locked_attr] = lock_value
@@ -188,7 +195,9 @@ def update_user(ldap_repository, user_dn, attrs, userPassword):
         if not old_user:
             raise IndexError()
     except IndexError:
-        return create_user(ldap_repository, user_dn, userPassword, attrs)
+        # attrs[ldap_repository.user_attr] is the username
+        # update_user should return a key error if it doesn't exist (cannot create an user without it)
+        return _create_user(ldap_repository, user_dn, attrs[ldap_repository.user_attr], userPassword, attrs)
 
     dn = old_user['dn']
     del(old_user['dn'])
