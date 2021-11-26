@@ -765,7 +765,7 @@ def log_in(request, workflow_id=None):
         return HttpResponseServerError()
 
     response = authenticate(request, workflow, portal_cookie, token_name) or \
-               HttpResponseRedirect("#")
+               HttpResponseRedirect(workflow.public_dir)
 
     try:
         kerberos_token_resp = authentication_results['data']['token_resp']
