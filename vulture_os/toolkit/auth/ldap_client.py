@@ -362,7 +362,7 @@ class LDAPClient(BaseAuth):
         lst=list()
         lst.append(self.group_dn)
         lst.append(self.base_dn)
-        res = self.search_group("*")
+        res = self._search_group("*")
         if res:
             for result in res:
                 lst.append(result[0])
@@ -440,14 +440,12 @@ class LDAPClient(BaseAuth):
         raise ChangePasswordError("Cannot find user '{}'".format(username))
 
 
-    def search_group(self, groupname, attr_list=None):
+    def _search_group(self, groupname, attr_list=None):
         """ Method used to search a group inside LDAP repository
 
         :param groupname: String with groupname
         :return: An list with results if query match, None otherwise
         """
-        # input sanitation
-        groupname = escape_filter_chars(groupname)
         logger.debug(f"Searching group {groupname} and getting attributes {attr_list}")
         # Defining group search filter
         query_filter = "({}={})".format(self.group_attr, groupname)
@@ -460,6 +458,13 @@ class LDAPClient(BaseAuth):
         results = self._search(dn, query_filter, groupname, attr_list=attr_list)
         self.attributes_list.remove(group_member_attr)
         return results
+
+
+    def search_group(self, groupname, attr_list=None):
+        # input sanitation
+        groupname = escape_filter_chars(groupname)
+        return self._search_group(groupname, attr_list)
+
 
     def search_user_groups(self, username):
         """ Method used to retrieve user's group
@@ -494,7 +499,7 @@ class LDAPClient(BaseAuth):
 
         """ Search "member style" membership of the given user user inside groups entries """
         self.attributes_list.append(group_membership_attr)
-        for group_info in self.search_group("*"):
+        for group_info in self._search_group("*"):
             group_dn=group_info[0]
             members=group_info[1].get(self.group_member_attr.lower())
             if members:
@@ -511,7 +516,7 @@ class LDAPClient(BaseAuth):
         group_membership_attr = str(self.group_member_attr.lower())
         self.attributes_list.append(group_membership_attr)
         group_list = []
-        for group_info in self.search_group("*"):
+        for group_info in self._search_group("*"):
             group_dn=group_info[0]
             members=group_info[1].get(self.group_member_attr.lower())
             if members:
