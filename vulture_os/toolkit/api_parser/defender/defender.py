@@ -62,6 +62,7 @@ class DefenderParser(ApiParser):
         # Initialize OAuthSession for Oauth2.0 Microsoft specification
         client = BackendApplicationClient(client_id=self.client_id)
         self.oauthSession = OAuth2Session(client=client)
+        self.oauthSession.proxies = self.proxies
 
 
     def __str__(self):
@@ -114,7 +115,6 @@ class DefenderParser(ApiParser):
             response = self.oauthSession.get(
                 url,
                 params=params,
-                proxies=self.proxies
             )
         except OAuth2Error as e:
             logger.error(f"{[__parser__]}:get_logs: Internal authentication error wile trying to get logs: '{str(e)}'")
