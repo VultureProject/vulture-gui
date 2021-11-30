@@ -78,12 +78,12 @@ class DefenderParser(ApiParser):
                                     client_secret=self.client_secret, resource=self.DEFENDER_RESOURCE)
                     self.session_expire = self.oauthSession.token['expires_on']
                 except KeyError as e:
-                    logger.critical(f"{[__parser__]}:_connect: Missing 'expires_on' key in token")
+                    logger.critical(f"{[__parser__]}:_connect: Missing 'expires_on' key in token", extra={'frontend': str(self.frontend)})
                     raise DefenderAPIError("DEFENDER API: Missing key in generated Oauth2 token")
                 except OAuth2Error as e:
-                    logger.error(f"{[__parser__]}:_connect: Error while trying to get a new OAuth token from Microsoft")
-                    logger.exception(str(e))
-                    logger.debug(f"{[__parser__]}:_connect: params -> {str(self)}")
+                    logger.error(f"{[__parser__]}:_connect: Error while trying to get a new OAuth token from Microsoft", extra={'frontend': str(self.frontend)})
+                    logger.exception(str(e), extra={'frontend': str(self.frontend)})
+                    logger.debug(f"{[__parser__]}:_connect: params -> {str(self)}", extra={'frontend': str(self.frontend)})
                     raise DefenderAPIError("DEFENDER API: Error while getting a new OAuth token")
 
             return True
@@ -117,17 +117,17 @@ class DefenderParser(ApiParser):
                 params=params,
             )
         except OAuth2Error as e:
-            logger.error(f"{[__parser__]}:get_logs: Internal authentication error wile trying to get logs: '{str(e)}'")
-            logger.debug(f"{[__parser__]}:get_logs: API parameters: {str(self)}, request parameters: {params}")
+            logger.error(f"{[__parser__]}:get_logs: Internal authentication error wile trying to get logs: '{str(e)}'", extra={'frontend': str(self.frontend)})
+            logger.debug(f"{[__parser__]}:get_logs: API parameters: {str(self)}, request parameters: {params}", extra={'frontend': str(self.frontend)})
             raise DefenderAPIError(str(e))
 
         if response.status_code == 401:
-            logger.error(f"{[__parser__]}:get_logs: Authentication failure while trying to get logs")
-            logger.debug(f"{[__parser__]}:get_logs: API parameters: {str(self)}, request parameters: {params}")
+            logger.error(f"{[__parser__]}:get_logs: Authentication failure while trying to get logs", extra={'frontend': str(self.frontend)})
+            logger.debug(f"{[__parser__]}:get_logs: API parameters: {str(self)}, request parameters: {params}", extra={'frontend': str(self.frontend)})
             return DefenderAPIError("Authentication failed")
         elif response.status_code == 403:
-            logger.error(f"{[__parser__]}:get_logs: Authorization error, domain(s) might not be managed by the tenant administrator")
-            logger.debug(f"{[__parser__]}:get_logs: API parameters: {str(self)}, request parameters: {params}")
+            logger.error(f"{[__parser__]}:get_logs: Authorization error, domain(s) might not be managed by the tenant administrator", extra={'frontend': str(self.frontend)})
+            logger.debug(f"{[__parser__]}:get_logs: API parameters: {str(self)}, request parameters: {params}", extra={'frontend': str(self.frontend)})
             return DefenderAPIError("Unauthorized, check Defender application parameters")
         elif response.status_code != 200:
             logger.error(f"{[__parser__]}:get_logs: Could not get Defender logs : status code is {response.status_code} with message '{response.text}'", extra={'frontend': str(self.frontend)})
