@@ -542,7 +542,7 @@ class UserAuthentication(models.Model):
         help_text=_('URL of additionnal request')
     )
     sso_keep_client_cookies = models.BooleanField(
-        default=False,
+        default=True,
         help_text=_("Take client's cookies while executing SSO requests")
     )
 
