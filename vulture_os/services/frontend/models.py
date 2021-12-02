@@ -839,6 +839,24 @@ class Frontend(models.Model):
         default = "",
     )
     
+    # Defender attributes
+    defender_token_endpoint = models.TextField(
+        verbose_name = _("Defender token endpoint"),
+        help_text = _("Complete enpoint address to get an Oauth token before requesting Microsoft's APIs"),
+        default = "",
+    )
+
+    defender_client_id = models.TextField(
+        verbose_name = _("Defender OAuth client id"),
+        help_text = _("Client id of the OAuth endpoint to get an OAuth token before requesting Microsoft's APIs"),
+        default = "",
+    )
+
+    defender_client_secret = models.TextField(
+        verbose_name = _("Defender OAuth client secret"),
+        help_text = _("Client secret of the OAuth endpoint to get an OAuth token before requesting Microsoft's APIs"),
+        default = "",
+    )
 
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -1041,6 +1059,10 @@ class Frontend(models.Model):
                     result['vadesecure_host'] = self.vadesecure_host
                     result['vadesecure_login'] = self.vadesecure_login
                     result['vadesecure_password'] = self.vadesecure_password
+                elif self.api_parser_type == "defender":
+                    result['defender_token_endpoint'] = self.defender_token_endpoint
+                    result['defender_client_id'] = self.defender_client_id
+                    result['defender_client_secret'] = self.defender_client_secret
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]

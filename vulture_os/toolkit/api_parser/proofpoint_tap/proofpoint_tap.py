@@ -211,7 +211,7 @@ class ProofpointTAPParser(ApiParser):
                     except ProofpointTAPAPIError as e:
                         error = "API error: {}".format(e)
                 else:
-                    error = "{}".format(e) # should be fixed here IMPORTANT
+                    error += f"Could not get logs: {contents}"
             else:
                 while True:
                     # do not go over current time

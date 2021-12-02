@@ -95,7 +95,7 @@ class ApiParser:
 
     def can_run(self):
         """
-        Check if the parser must run (avoid twice execution)
+        Check if the parser must run (avoid double execution)
         """
         if self.redis_cli.redis.get(self.key_redis):
             return False

@@ -137,7 +137,7 @@ class AWSBucketParser(ApiParser):
             for filename in self._fetch_files():
                 self.update_lock()
                 file_data = self._download_file(filename)
-                print(file_data) # WTH HERE?
+                print(file_data)
 
         except AWSBucketBucketEmpty:
             pass
