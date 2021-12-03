@@ -138,7 +138,7 @@ class ForcepointParser(ApiParser):
         # Convert line to BytesIO to use csv
         stream_line = StringIO(orig_line.decode('utf-8'))
         # Needed to prevent error : _csv.Error: field larger than field limit (131072)
-        #csv.field_size_limit(sys_maxsize)
+        csv.field_size_limit(sys_maxsize)
         r = csv.reader(stream_line, delimiter=",", doublequote=True, lineterminator="\n", quoting=csv.QUOTE_ALL)
         # Loop other the fields of the only line
         try:
