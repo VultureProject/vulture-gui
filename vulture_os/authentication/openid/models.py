@@ -97,13 +97,14 @@ class OpenIDRepository(BaseRepository):
                     "For example, google's URL would be https://accounts.google.com for their discover document.")
     )
     client_id = models.TextField(
-        default="",
+        unique=True,
+        blank=False,
         verbose_name=_("Provider Client ID"),
         help_text=_("Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. "
                     "See your identity provider's documentation.")
     )
     client_secret = models.TextField(
-        default="",
+        blank=False,
         verbose_name=_("Provider Client Secret"),
         help_text=_("Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. "
                     "See your identity provider's documentation.")
