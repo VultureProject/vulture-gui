@@ -44,7 +44,7 @@ from workflow.models import Workflow
 from authentication.openid.models import OpenIDRepository
 from authentication.user_portal.models import UserAuthentication
 from portal.system.redis_sessions import REDISBase, REDISPortalSession, RedisOpenIDSession, REDISOauth2Session
-from portal.views.responses import error_response
+from portal.views.responses          import error_response, HttpResponseTemporaryRedirect
 
 # Required exceptions imports
 from bson.errors                     import InvalidId
@@ -724,6 +724,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
         return HttpResponseRedirect(build_url_params(request.GET['redirect_uri'],
                                                      state=request.GET.get('state', ""),
                                                      code=token))
+    else:
+        return HttpResponseTemporaryRedirect(authentication.get_redirect_url() or workflow.public_dir)
 
 
 def log_in(request, workflow_id=None):
@@ -764,8 +766,7 @@ def log_in(request, workflow_id=None):
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
 
-    response = authenticate(request, workflow, portal_cookie, token_name) or \
-               HttpResponseRedirect(workflow.public_dir)
+    response = authenticate(request, workflow, portal_cookie, token_name)
 
     try:
         kerberos_token_resp = authentication_results['data']['token_resp']
