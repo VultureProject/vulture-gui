@@ -348,6 +348,14 @@ class IDPApiUserView(View):
                 "status": True,
                 "user_id": user_dn
             })
+
+        except AssertionError as err:
+            logger.debug(err)
+            return JsonResponse({
+                "status": False,
+                "error": _(str(err))
+            }, status=409)
+
         except KeyError as err:
             logger.debug(err)
             return JsonResponse({

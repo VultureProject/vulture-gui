@@ -202,6 +202,10 @@ def update_user(ldap_repository, user_dn, attrs, userPassword):
     dn = old_user['dn']
     del(old_user['dn'])
 
+    if ldap_repository.user_attr in attrs:
+        logger.debug(f"ldap_tools::update_user: prevented username modification from '{old_user.get(ldap_repository.user_attr, [''])[0]}' to '{attrs[ldap_repository.user_attr]}'")
+        assert attrs[ldap_repository.user_attr] == old_user.get(ldap_repository.user_attr, [''])[0], "Username cannot be modified after creation"
+
     # Add new attributes to old user
     attrs = dict(old_user, **attrs)
     for k, v in attrs.items():
