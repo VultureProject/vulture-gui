@@ -673,6 +673,15 @@ class LDAPClient(BaseAuth):
         user_groups = []
         # Standardize attributes
         for key, val in user_attrs.items():
+            # decode all bytes entries
+            if isinstance(val, bytes):
+                val = val.decode('utf-8')
+            if isinstance(val, list):
+                for subval in val:
+                    if isinstance(subval, bytes):
+                        i = val.index(subval)
+                        val.pop(i)
+                        val.insert(i, subval.decode('utf-8'))
             if key == "userPassword":
                 continue
             elif key == self.user_groups_attr:
