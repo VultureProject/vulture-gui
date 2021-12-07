@@ -74,12 +74,12 @@ class CrowdstrikeParser(ApiParser):
         self.login()
 
     def login(self):
-        logger.info(f"[{__parser__}]: Login in...")
+        logger.info(f"[{__parser__}][login]: Login in...", extra={'frontend': str(self.frontend)})
         auth_url = f"{self.api_host}/{self.AUTH_URI}"
 
         self.session = requests.session()
-        for k, v in self.HEADERS.items():
-            self.session.headers.update({k: v})
+        self.session.proxies = self.proxies
+        self.session.headers.update(self.HEADERS)
 
         payload = {'client_id': self.client_id,
                    'client_secret': self.client_secret}
@@ -91,17 +91,17 @@ class CrowdstrikeParser(ApiParser):
                 )
         except requests.exceptions.ConnectionError as e:
             self.session = None
-            logger.error('Connection failed (ConnectionError)', exc_info=True)
+            logger.error(f'[{__parser__}][login]: Connection failed (ConnectionError)', exc_info=True, extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
         except requests.exceptions.ReadTimeout:
             self.session = None
-            logger.error(f'Connection failed {self.client_id} (read_timeout)')
+            logger.error(f'[{__parser__}][login]: Connection failed {self.client_id} (read_timeout)', extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
 
         response.raise_for_status()
         if response.status_code not in [200, 201]:
             self.session = None
-            logger.error(f'Authentication failed. code {response.status_code} ')
+            logger.error(f'[{__parser__}][login]: Authentication failed. code {response.status_code}', extra={'frontend': str(self.frontend)})
             return False, ('Authentication failed')
 
         ret = response.json()
@@ -131,7 +131,8 @@ class CrowdstrikeParser(ApiParser):
 
         if response.status_code not in [200, 201]:
             logger.error(
-                f"Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}")
+                f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}", extra={'frontend': str(self.frontend)}
+            )
             return {}
         return response.json()
 
@@ -177,16 +178,17 @@ class CrowdstrikeParser(ApiParser):
         ret = self.execute_query('GET', device_url, {'limit': 1})
         return int(ret['meta']['pagination']['total'])
 
-    def getAlerts(self, since):
+    def getAlerts(self, since, to):
         '''
         we retrive raw incidents and detections
         '''
-        finalRawAlerts = []
+        logger.debug(f"[{__parser__}][getAlerts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
 
+        finalRawAlerts = []
         # first retrive the detection raw ids
         alert_url = f"{self.api_host}/{self.DETECTION_URI}"
         payload = {
-            "filter": f"last_behavior:>'{since}'",
+            "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
             "sort": "last_behavior|desc"
         }
         ret = self.execute_query("GET", alert_url, payload)
@@ -204,7 +206,7 @@ class CrowdstrikeParser(ApiParser):
         # then retrive the incident raw ids
         alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
         payload = {
-            "filter": f"start:>'{since}'",
+            "filter": f"start:>'{since}'+start:<='{to}'",
             "sort": "end|desc"
         }
 
@@ -221,20 +223,19 @@ class CrowdstrikeParser(ApiParser):
                 finalRawAlerts += [alert]
         return finalRawAlerts
 
-    def get_logs(self, kind, since, test=False):
+    def get_logs(self, kind, since, to):
         msg = f"Querying {kind} from {since}"
-        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
 
         try:
-            return self.getAlerts(since)
+            return self.getAlerts(since, to)
         except Exception as e:
             msg = f"Error querying {kind} logs"
-            logger.error(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
-            logger.exception(f"[{__parser__}]:get_logs: {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}][get_logs]: {e}", extra={'frontend': str(self.frontend)})
             return []
 
     def format_log(self, log):
-        log['timestamp'] = datetime.datetime.fromtimestamp(log['timestamp']).isoformat()
         log['kind'] = self.kind
         log['observer_version'] = self.observer_version
         return json.dumps(log)
@@ -245,44 +246,45 @@ class CrowdstrikeParser(ApiParser):
 
         self.kind = "details"
         # Default timestamp is 24 hours ago
-        since = self.last_api_call or (timezone.now() - datetime.timedelta(days=7)).timestamp()
-
-        tmp_logs = self.get_logs(self.kind, since=since)
+        since = (self.last_api_call or (timezone.now() - datetime.timedelta(days=7))).strftime("%Y-%m-%dT%H:%M:%SZ")
+        to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        tmp_logs = self.get_logs(self.kind, since=since, to=to)
         
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
 
         total = len(tmp_logs)
-
+        
         if total > 0:
-            logger.info(f"[{__parser__}]: {tmp_logs[0]}")
+            logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
 
             # Logs sorted by timestamp descending, so first is newer
-            self.frontend.last_api_call = timezone.now() + timedelta(milliseconds=1)
+            self.frontend.last_api_call = to
 
         self.write_to_file([self.format_log(l) for l in tmp_logs])
 
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
 
-        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
         try:
-            logger.info(f"[{__parser__}]:Running tests...")
+            logger.debug(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
 
-            # Get logs from last 7 days                                 2019-09-07T20:06:36Z
             query_time = (timezone.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%SZ")
-            logs = self.get_logs("details", query_time)
+            to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            logs = self.get_logs("details", query_time, to)
 
             msg = f"{len(logs)} details retrieved"
-            logger.info(f"[{__parser__}]:test: {msg}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}][test]: {msg}", extra={'frontend': str(self.frontend)})
             return {
                 "status": True,
                 "data": logs
             }
         except Exception as e:
-            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}][test]: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
