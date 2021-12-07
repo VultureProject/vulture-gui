@@ -34,6 +34,7 @@ from system.users.models import User
 from toolkit.network.network import get_hostname, get_management_ip
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
+from toolkit.system.secret_key import set_key
 import logging
 import requests
 import subprocess
@@ -236,6 +237,26 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     except Exception as e:
         logger.error("Error at API Request Cluster Info: {} Invalid API KEY ?".format(e), exc_info=1)
+        return False
+
+    try:
+        response = requests.get(
+            "https://{}:8000/api/v1/system/cluster/key".format(master_ip),
+            headers={'Cluster-api-key': secret_key},
+            verify=False
+        )
+
+        response.raise_for_status()
+        cluster_infos = response.json()
+
+        if not cluster_infos['status']:
+            raise Exception('Error at API Request Cluster Key: {}'.format(cluster_infos['data']))
+
+        encryption_key = cluster_infos['data']
+        set_key(settings.SETTINGS_DIR, secret_key=encryption_key)
+
+    except Exception as e:
+        logger.error("Error at API Request Cluster Key: {}".format(e), exc_info=1)
         return False
 
     if not ca_cert:

@@ -5,6 +5,7 @@ Django settings for vulture project.
 import os
 from pymongo import ReadPreference
 from toolkit.network.network import get_hostname
+from toolkit.system.secret_key import set_key
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -13,15 +14,10 @@ try:
     from vulture_os.secret_key import SECRET_KEY
 # File doesn't exist, we need to create it
 except ImportError:
-    from django.utils.crypto import get_random_string
-    SETTINGS_DIR = os.path.abspath(os.path.dirname(__file__))
-    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-    secret_key = get_random_string(64, chars)
+    # Generate a key in the settings' folder
+    SECRET_KEY = set_key(SETTINGS_DIR)
 
-    with open(os.path.join(SETTINGS_DIR, 'secret_key.py'), 'w') as f:
-        f.write("SECRET_KEY = '{}'\n".format(secret_key))
 
-    SECRET_KEY = secret_key
 
 
 DEBUG = False
