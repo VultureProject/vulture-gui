@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Cybereason API Parser toolkit'
+__doc__ = 'CrowdStrike API Parser toolkit'
 __parser__ = 'CROWDSTRIKE'
 
 import datetime
