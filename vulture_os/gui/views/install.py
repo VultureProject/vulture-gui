@@ -320,31 +320,38 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     mongo.repl_destroy()
 
     """ Ask primary to join us on our management IP """
-    # TODO: verify to true
-    infos = requests.post(
-        "https://{}:8000/api/system/cluster/add/".format(master_ip),
-        headers={'Cluster-api-key': secret_key},
-        data={'slave_ip': get_management_ip(), 'slave_name': get_hostname()},
-        verify=False
-    )
+    try:
+        infos = requests.post(
+            "https://{}:8000/api/system/cluster/add/".format(master_ip),
+            headers={'Cluster-api-key': secret_key},
+            data={'slave_ip': get_management_ip(), 'slave_name': get_hostname()},
+            verify=False
+        )
 
-    if infos.status_code != 200:
-        raise Exception("Error at API Call on /system/cluster/add/  Response code: {}".format(infos.status_code))
+        infos = infos.json()
 
-    infos = infos.json()
+        if not infos.get('status'):
+            logger.error("Error during API Call to add node to cluster: {}".format(infos.get('message')))
+            return False
 
-    if not infos.get('status'):
-        logger.error("Error during API Call to add node to cluster: {}".format(infos.get('message')))
+    except Exception:
+        logger.error("Error at API Call on /system/cluster/add/ Response code: {}".format(infos.status_code))
         return False
 
-    """ Join our redis server to the redis master """
-    c = RedisBase()
-    redis_master_node = c.get_master(master_hostname)
-    c.slave_of(redis_master_node, 6379)
+    try:
+        """ Join our redis server to the redis master """
+        c = RedisBase()
+        redis_master_node = c.get_master(master_ip)
+        c.slave_of(redis_master_node, 6379)
 
-    """ Tell local sentinel to monitor local redis server """
-    c = RedisBase(get_management_ip(), 26379)
-    c.sentinel_monitor()
+        """ Tell local sentinel to monitor local redis server """
+        c = RedisBase(get_management_ip(), 26379)
+        c.sentinel_monitor(node=redis_master_node)
+
+    except Exception as e:
+        logger.error(f"Could not synchronize Redis instances: {e}")
+        return False
+
 
     """ Sleep a few seconds in order for the replication to occur """
     time.sleep(3)
