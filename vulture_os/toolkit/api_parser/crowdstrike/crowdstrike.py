@@ -78,7 +78,6 @@ class CrowdstrikeParser(ApiParser):
         auth_url = f"{self.api_host}/{self.AUTH_URI}"
 
         self.session = requests.session()
-        self.session.proxies = self.proxies
         self.session.headers.update(self.HEADERS)
 
         payload = {'client_id': self.client_id,
@@ -87,7 +86,8 @@ class CrowdstrikeParser(ApiParser):
             response = self.session.post(
                 auth_url,
                 data=payload,
-                timeout=10
+                timeout=10,
+                proxies=self.proxies
                 )
         except requests.exceptions.ConnectionError as e:
             self.session = None
@@ -119,11 +119,11 @@ class CrowdstrikeParser(ApiParser):
             try:
                 if(method == "GET"):
                     response = self.session.get(
-                        url, params=query, timeout=timeout)
+                        url, params=query, timeout=timeout, proxies=self.proxies)
                 elif(method == "POST"):
                     headers = {'Content-Type': 'application/json'}
                     response = self.session.post(url, data=json.dumps(
-                        query), headers=headers, timeout=timeout)
+                        query), headers=headers, timeout=timeout, proxies=self.proxies)
             except requests.exceptions.ReadTimeout:
                 time.sleep(timeout)
                 continue
