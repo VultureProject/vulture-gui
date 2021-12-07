@@ -222,7 +222,9 @@ class FrontendForm(ModelForm):
                            'harfanglab_host', 'harfanglab_apikey',
                            'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
                            'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
-                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode']:
+                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode',
+                           'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client'
+                           ]:
             self.fields[field_name].required = False
 
         """ Build choices of "ruleset" field with rsyslog jinja templates names """
@@ -291,6 +293,7 @@ class FrontendForm(ModelForm):
                   'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
                   "carbon_black_host", "carbon_black_orgkey", "carbon_black_apikey",
                   'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
+                  'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
                   'darwin_mode')
 
         widgets = {
@@ -404,6 +407,10 @@ class FrontendForm(ModelForm):
             'defender_token_endpoint': TextInput(attrs={'class': 'form-control'}),
             'defender_client_id': TextInput(attrs={'class': 'form-control'}),
             'defender_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'crowdstrike_host': TextInput(attrs={'class': 'form-control'}),
+            'crowdstrike_client_id': TextInput(attrs={'class': 'form-control'}),
+            'crowdstrike_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'crowdstrike_client': TextInput(attrs={'class': 'form-control'})
         }
 
     def clean_name(self):
