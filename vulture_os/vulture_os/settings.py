@@ -228,75 +228,59 @@ LOG_SETTINGS = {
         },
         'api': {
             'level': LOG_LEVEL,
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'filename': '/var/log/vulture/os/api.log',
             'formatter': 'verbose',
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+            'mode': 'a'
         },
         'gui': {
             'level': LOG_LEVEL,
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'filename': '/var/log/vulture/os/gui.log',
             'formatter': 'verbose',
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+            'mode': 'a'
         },
         'services': {
             'level': LOG_LEVEL,
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'filename': '/var/log/vulture/os/services.log',
             'formatter': 'verbose',
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+            'mode': 'a'
         },
         'daemon': {
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
             'filename': '/var/log/vulture/os/cluster.log',
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+            'mode': 'a'
         },
         'crontab': {
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
             'filename': '/var/log/vulture/os/crontab.log',
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+            'mode': 'a'
         },
         'api_parser': {
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'api_parser',
             'filename': '/var/log/vulture/os/api_parser.log',
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+            'mode': 'a'
         },
         'authentication': {
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
             'filename': '/var/log/vulture/os/authentication.log',
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+            'mode': 'a'
         },
         'system': {
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
             'filename': '/var/log/vulture/os/system.log',
-            'mode': 'a',
-            'maxBytes': 10485760,
-            'backupCount': 5,
+            'mode': 'a'
         }
     },
     'loggers': {
