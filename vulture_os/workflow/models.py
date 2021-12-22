@@ -75,20 +75,16 @@ class WorkflowACL(models.Model):
     redirect_url_not_satisfy = models.TextField()
     before_policy = models.BooleanField(default=True)
 
-    def generate_condition(self, acls_names):
+
+    def generate_condition(self, or_groups):
         conditions = []
 
-        for tmp_acls in acls_names:
-            acls = []
-            for a in tmp_acls:
-                if self.action_satisfy == "200":
-                    acls.append("!{}".format(a))
-                elif self.action_not_satisfy == "200":
-                    acls.append(a)
-
-            conditions.append(" ".join(acls))
+        for or_group in or_groups:
+            # join AND rules in a OR group
+            conditions.append(" ".join(or_group))
 
         return conditions
+
 
     def to_dict(self):
         return {

@@ -373,20 +373,19 @@ class Backend(models.Model):
             access_controls_301 = []
             access_controls_302 = []
             for acl in workflow.workflowacl_set.filter(before_policy=False):
-                rules, acl_name = acl.access_control.generate_rules()
+                rules, acls_name = acl.access_control.generate_rules()
                 access_controls_list.append(rules)
 
-                condition = acl.generate_condition(acl_name)
+                condition = acl.generate_condition(acls_name)
 
                 redirect_url = None
-                deny = False
+                deny = acl.action_satisfy == "403"
+                redirect = acl.action_satisfy in ("301", "302")
                 for type_acl in ('action_satisfy', 'action_not_satisfy'):
                     action = getattr(acl, type_acl)
                     if action != "200":
                         if action in ("301", "302"):
                             redirect_url = getattr(acl, type_acl.replace('action', 'redirect_url'))
-                        elif action == "403":
-                            deny = True
 
                         break
 
@@ -395,7 +394,8 @@ class Backend(models.Model):
                     'redirect_url': redirect_url,
                     'conditions': condition,
                     'action': action,
-                    'deny': deny
+                    'deny': deny,
+                    "redirect": redirect,
                 }
 
                 if action == "403":
