@@ -38,3 +38,5 @@ def set_key(directory, secret_key=None):
 
     with open(os.path.join(directory, 'secret_key.py'), 'w') as f:
         f.write("SECRET_KEY = '{}'\n".format(secret_key))
+
+    return secret_key
