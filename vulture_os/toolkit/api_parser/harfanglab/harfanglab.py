@@ -127,8 +127,14 @@ class HarfangLabParser(ApiParser):
     def get_logs(self, since=None, to=None, index=0):
         alert_url = f"{self.harfanglab_host}/{self.ALERTS}"
         # Remove miliseconds - format not supported
-        since_utc = since.isoformat().split('.')[0] + "+00:00"
-        to_utc = to.isoformat().split('.')[0] + "+00:00"
+        since_utc = since.isoformat().split('.')[0]
+        to_utc = to.isoformat().split('.')[0]
+
+        if '+' not in since_utc:
+            since_utc += "+00:00"
+        if '+' not in to_utc:
+            to_utc += "+00:00"
+
         payload = {
             'offset': index,
             'limit': 100, # Mandatory
