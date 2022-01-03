@@ -858,6 +858,32 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # CrowdStrike attributes
+    crowdstrike_host = models.TextField(
+        verbose_name = _("CrowdStrike Host"),
+        help_text = _("Complete enpoint address"),
+        default = "",
+    )
+
+    crowdstrike_client = models.TextField(
+        verbose_name = _("CrowdStrike Username"),
+        help_text = _("User's name"),
+        default = "",
+    )
+
+    crowdstrike_client_id = models.TextField(
+        verbose_name = _("CrowdStrike Client ID"),
+        help_text = _("Client ID used for authentication"),
+        default = "",
+    )
+
+    crowdstrike_client_secret = models.TextField(
+        verbose_name = _("CrowdStrike Client's Secret"),
+        help_text = _("Client's secret used for authentication"),
+        default = "",
+    )
+
+    
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -1063,6 +1089,11 @@ class Frontend(models.Model):
                     result['defender_token_endpoint'] = self.defender_token_endpoint
                     result['defender_client_id'] = self.defender_client_id
                     result['defender_client_secret'] = self.defender_client_secret
+                elif self.api_parser_type == "crowdstrike":
+                    result['crowdstrike_host'] = self.crowdstrike_host
+                    result['crowdstrike_client'] = self.crowdstrike_client
+                    result['crowdstrike_client_id'] = self.crowdstrike_client_id
+                    result['crowdstrike_client_secret'] = self.crowdstrike_client_secret
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]

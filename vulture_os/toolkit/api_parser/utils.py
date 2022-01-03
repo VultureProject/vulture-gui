@@ -47,6 +47,7 @@ from toolkit.api_parser.netskope.netskope import NetskopeParser
 from toolkit.api_parser.rapid7_idr.rapid7_idr import Rapid7IDRParser
 from toolkit.api_parser.harfanglab.harfanglab import HarfangLabParser
 from toolkit.api_parser.vadesecure.vadesecure import VadesecureParser
+from toolkit.api_parser.crowdstrike.crowdstrike import CrowdstrikeParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -73,7 +74,8 @@ PARSER_LIST = {
     "rapid7_idr": Rapid7IDRParser,
     "harfanglab": HarfangLabParser,
     "vadesecure": VadesecureParser,
-    "defender": DefenderParser
+    "defender": DefenderParser,
+    "crowdstrike": CrowdstrikeParser
 }
 
 
