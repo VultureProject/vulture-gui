@@ -232,7 +232,6 @@ class SentinelOneParser(ApiParser):
                         last_timestamp = datetime.fromisoformat(logs[-1]['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
 
                     if last_timestamp > self.frontend.last_api_call:
-                        # Replace "Z" by "+00:00" for datetime parsing
                         self.frontend.last_api_call = last_timestamp
 
             msg = f"events {event_kind} collected."
