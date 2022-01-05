@@ -225,9 +225,15 @@ class SentinelOneParser(ApiParser):
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
 
-                if len(logs) > 0 and event_kind == "alert":
-                    # Replace "Z" by "+00:00" for datetime parsing
-                    self.frontend.last_api_call = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+                if len(logs) > 0:
+                    if event_kind == "alert":
+                        last_timestamp = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+                    else:
+                        last_timestamp = datetime.fromisoformat(logs[-1]['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+
+                    if last_timestamp > self.frontend.last_api_call:
+                        # Replace "Z" by "+00:00" for datetime parsing
+                        self.frontend.last_api_call = last_timestamp
 
             msg = f"events {event_kind} collected."
             logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
