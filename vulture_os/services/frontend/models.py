@@ -306,6 +306,16 @@ class Frontend(models.Model):
         null=True,
         help_text=_("Tag used in rsyslog template")
     )
+    ratelimit_interval = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Specifies the rate-interval in seconds. 0 means no rate-limiting.")
+    )
+    ratelimit_burst = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Specifies the rate-limiting burst in number of messages.")
+    )
     """ Status of frontend for each nodes """
     status = models.JSONField(
         default={}
@@ -1291,6 +1301,8 @@ class Frontend(models.Model):
             'log_condition': self.log_condition,
             'ruleset_name': self.get_ruleset(),
             'parser_tag': self.parser_tag,
+            'ratelimit_interval': self.ratelimit_interval,
+            'ratelimit_burst': self.ratelimit_burst,
             'unix_socket': self.get_unix_socket(),
             'headers': header_list,
             'custom_haproxy_conf': self.custom_haproxy_conf,

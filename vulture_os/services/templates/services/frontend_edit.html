@@ -345,17 +345,6 @@
                         </div>
                       </div>
                     </div> <!-- /.row log-mode -->
-                    <div class="row log-mode listening-tcp no-filebeat-mode">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Disable 'Octet-counted framing' (advanced) :" %}</label>
-                          <div class="col-sm-5">
-                            {{form.disable_octet_counting_framing}}
-                            {{form.disable_octet_counting_framing.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row log-mode -->
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -388,6 +377,54 @@
                           </div>
                         </div>
                       </div> <!-- /.row darwin-mode -->
+                    <!-- Advanced tab -->
+                    <div class="row">
+                      <div class="col-sm-4 pull-right">
+                        <div class="form-group">
+                          <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
+                            <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group collapse advanced_options">
+                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Disable 'Octet-counted framing' (advanced) :" %}</label>
+                            <div class="col-sm-5">
+                              {{form.disable_octet_counting_framing}}
+                              {{form.disable_octet_counting_framing.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row log-mode -->
+                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "rate-limiting interval (advanced) :" %}</label>
+                            <div class="col-sm-5">
+                              {{form.ratelimit_interval}}
+                              {{form.ratelimit_interval.errors|safe}}
+                            </div>
+                            <div class="col-sm-2">
+                              {% trans " s" %}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row log-mode -->
+                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "rate-limiting burst (advanced) :" %}</label>
+                            <div class="col-sm-5">
+                              {{form.ratelimit_burst}}
+                              {{form.ratelimit_burst.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row log-mode -->
+                    </div> <!-- /advanced_options -->
                     </div> <!-- /.row -->
                   </div> <!-- /.tab-pane -->
                   <div class="tab-pane" id="tab_network">
