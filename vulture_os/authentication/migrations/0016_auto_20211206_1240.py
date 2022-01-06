@@ -48,13 +48,18 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='openidrepository',
             name='client_id',
-            field=models.TextField(help_text="Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. See your identity provider's documentation.", unique=True, verbose_name='Provider Client ID'),
+            field=models.TextField(help_text="Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. See your identity provider's documentation.", verbose_name='Provider Client ID'),
         ),
         migrations.AlterField(
             model_name='openidrepository',
             name='client_secret',
-            field=models.TextField(help_text="Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. See your identity provider's documentation.", verbose_name='Provider Client Secret'),
+            field=models.TextField(help_text="Client secret is the OAuth 2.0 Client secretassociated with your client ID and retrieved from your identity provider. See your identity provider's documentation.", verbose_name='Provider Client Secret'),
         ),
+        migrations.AddConstraint(
+            model_name='openidrepository',
+            constraint=models.UniqueConstraint(fields=('provider', 'client_id', 'client_secret'), name='unique_openid_truple'),
+        ),
+
         migrations.AlterField(
             model_name='userauthentication',
             name='sso_keep_client_cookies',
