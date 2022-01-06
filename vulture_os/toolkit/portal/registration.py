@@ -107,7 +107,7 @@ def create_redis_reset(user_email, user_name, expire, repo_id=None):
         redis_key_content['repo'] = repo_id
 
     redis_base.hmset(redis_key, redis_key_content)
-    """ The key will expire in 10 minutes """
+    """ The key will expire after 'expire' seconds """
     redis_base.expire(redis_key, expire)
 
     return reset_key

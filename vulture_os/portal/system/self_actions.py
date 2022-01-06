@@ -390,8 +390,8 @@ class SELFServiceChange(SELFService):
 
 
 class SELFServiceLost(SELFService):
-    def __init__(self, workflow, token_name, global_config, main_url, mail_expiration=10800):
-        # Default value is 3 days
+    def __init__(self, workflow, token_name, global_config, main_url, mail_expiration=259200):
+        # Default expiration value is 3 days
         # TODO allow User to configure the timeout on GUI
         self.mail_expiration = mail_expiration
         super().__init__(workflow, token_name, global_config, main_url)
