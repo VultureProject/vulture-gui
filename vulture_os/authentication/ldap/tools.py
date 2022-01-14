@@ -204,7 +204,7 @@ def update_user(ldap_repository, user_dn, attrs, userPassword):
 
     if ldap_repository.user_attr in attrs:
         if isinstance(attrs[ldap_repository.user_attr], list):
-            user_attr = attrs[ldap_repository.user_attr][0]
+            user_attr = attrs[ldap_repository.user_attr][0] if attrs[ldap_repository.user_attr] else ''
         else:
             user_attr = attrs[ldap_repository.user_attr]
         logger.debug(f"ldap_tools::update_user: prevented username modification from '{old_user.get(ldap_repository.user_attr, [''])[0]}' to '{user_attr}'")
