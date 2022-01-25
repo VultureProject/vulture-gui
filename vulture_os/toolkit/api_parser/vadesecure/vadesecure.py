@@ -36,6 +36,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 
+
 class VadesecureAPIError(Exception):
     pass
 
@@ -69,7 +70,7 @@ class VadesecureParser(ApiParser):
         self.vadesecure_password = data["vadesecure_password"]
 
         self.session = None
-        self.accountID = None   
+        self.accountID = None
 
         self.isTest = False
 
@@ -136,12 +137,12 @@ class VadesecureParser(ApiParser):
         log['url'] = f"{self.vadesecure_host}"
         return json.dumps(log)
 
-    def fetch_details(self, payload, logs):        
+
+    def fetch_details(self, payload, logs):
         url = f"{self.vadesecure_host}/{self.VERSION}/{self.GETDETAIL}"
         payload = {
             "userId": self.userId,
         }
-
         for log in logs:
             msgId = log["messageId"]
             msg = f"Fetching details of log with messageId: {msgId}"
@@ -153,7 +154,7 @@ class VadesecureParser(ApiParser):
                     "hostname": log["hostname"]
                 })
                 response = self.__execute_query("POST", url, payload)
-                
+
                 try:
                     log["details"] = json.dumps([l for l in response["detail"].split("\r\n") if l != ""])
                 except Exception as e:
@@ -175,8 +176,8 @@ class VadesecureParser(ApiParser):
         index = 0
         total = 1
         logs_pages = []
-        while index < total:   
-        
+        while index < total:
+
             # Should be moved?
             # Right now it's a call every query
             self._connect()
@@ -185,7 +186,7 @@ class VadesecureParser(ApiParser):
                 'pageToGet': index,
                 'userId': self.userId
             })
-            response = self.__execute_query("POST", alert_url, payload)         
+            response = self.__execute_query("POST", alert_url, payload)
 
             # Downloading may take a while, so refresh token in Redis
             try:
@@ -194,7 +195,7 @@ class VadesecureParser(ApiParser):
                 pass
 
             logs = response['logs']
-            
+
             total = response['availablePages']
 
             if total == 0:
@@ -211,7 +212,7 @@ class VadesecureParser(ApiParser):
             logger.debug(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
 
             if endpoint == self.GETREPORT and not self.isTest:
-                # We need to call getdetail for each logs 
+                # We need to call getdetail for each logs
                 logs_pages += self.fetch_details(payload, logs)
             else:
                 logs_pages += [self.format_log(l) for l in logs]
@@ -232,13 +233,13 @@ class VadesecureParser(ApiParser):
 
         # POSIX Timestamps in milliseconds
         if self.isTest:
-            self.last_api_call = None    
-    
+            self.last_api_call = None
+
         since = int( (self.last_api_call or timezone.now()-timedelta(minutes=5 )).timestamp() ) * 1000
-        
+
         to_tz = timezone.now()
         to = int(to_tz.timestamp() * 1000)
-        
+
         period_payload = "MINUTES_05"
         msg = f"DELTA: {to - since} miliseconds"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})

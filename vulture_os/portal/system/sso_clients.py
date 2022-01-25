@@ -138,7 +138,7 @@ class SSOClient(object):
         response.set_cookie(cookie.name,
                             cookie.value,
                             path=path,
-                            httponly=True,
+                            httponly=cookie._rest.get('HttpOnly', False),
                             secure=portal_url.startswith('https'),
                             max_age=cookie.expires,
                             samesite=cookie.get_nonstandard_attr('SameSite', 'Lax'))

@@ -58,9 +58,10 @@ class TOTPClient(BaseAuth):
 
     # WARNING : Do not touch this method, Big consequences !
     def authenticate(self, user_id, key, **kwargs):
+        results = {}
         totp = TOTP(user_id)
         if not totp.verify(key):
-            raise AuthenticationError("TOTP taped token is not valid for user {}.".format(user_id))
+            raise AuthenticationError("Provided TOTP token is not valid for TOTP id {}.".format(user_id))
 
         logger.info("TOTP Token for user {} successfully verified.".format(user_id))
 
@@ -79,7 +80,7 @@ class TOTPClient(BaseAuth):
                 totp_profile.store()
                 logger.info("TOTP token for user {} stored in database.".format(login))
 
-            return True
+            return results
 
         except Exception as e:
             logger.exception(e)

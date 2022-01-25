@@ -190,6 +190,13 @@ class Authentication(object):
         logger.debug("AUTH::register_user: Authentication results successfully written in Redis portal session")
         return portal_cookie, self.oauth2_token
 
+    def allow_user(self):
+        logger.debug(f"Authentication::allow_user: allowing portal session on backend {self.backend_id}")
+        self.redis_portal_session.allow_access_to_app(
+            self.workflow.id,
+            self.workflow.authentication.auth_timeout
+        )
+
     def register_sso(self, backend_id):
         oauth_timeout = self.workflow.authentication.oauth_timeout if self.workflow.authentication.enable_oauth else self.workflow.authentication.auth_timeout
 
@@ -298,13 +305,14 @@ class POSTAuthentication(Authentication):
     def ask_credentials_response(self, **kwargs):
         if self.workflow.authentication.enable_captcha:
             captcha_key = self.redis_portal_session.register_captcha(self.workflow.id)
-            captcha = b64encode(ImageCaptcha().generate(captcha_key).read())
+            captcha = "data:image/image/png;base64," + b64encode(ImageCaptcha().generate(captcha_key).read()).decode()
         else:
             captcha = False
 
         response = post_authentication_response(kwargs.get('request'),
                                                 self.workflow.authentication,
                                                 self.workflow.public_dir,
+                                                kwargs.get('public_token', ""),
                                                 captcha=captcha,
                                                 error=kwargs.get('error', ""))
 
@@ -427,7 +435,7 @@ class DOUBLEAuthentication(Authentication):
         if repository.otp_type == 'email':
             if repository.otp_mail_service == 'vlt_mail_service':
                 if self.credentials[0] != self.credentials[1] and self.credentials[0] not in ['', None, 'None', False]:
-                    raise AuthenticationError("The taped OTP key does not match with Redis value saved")
+                    raise AuthenticationError("The OTP key entered does not match the one saved")
 
         else:
             # The function raise itself AuthenticationError, or return True
@@ -439,6 +447,7 @@ class DOUBLEAuthentication(Authentication):
         logger.info("DB-AUTH::authenticate: User successfully double-authenticated "
                     "on OTP backend '{}'".format(repository))
         self.redis_portal_session.register_doubleauthentication(self.workflow.id, repository.id)
+        self.redis_portal_session.reset_otp_retries(repository.id)
         logger.debug("DB-AUTH::authenticate: Double-authentication results successfully written in Redis portal session")
 
     def create_authentication(self):
@@ -469,6 +478,7 @@ class DOUBLEAuthentication(Authentication):
                     # Need to print the captcha to the user ?
                     self.print_captcha = otp_info[0]
                     otp_info = otp_info[1]
+                    self.credentials[0] = otp_info
 
                 logger.info("DB-AUTHENTICATION::create_authentication: Key successfully created/sent to {},"
                             "{}".format(user_mail, user_phone))
@@ -486,12 +496,15 @@ class DOUBLEAuthentication(Authentication):
             logger.debug("DB-AUTH::create_authentication: OTP key successfully written in Redis session")
 
         elif self.workflow.authentication.otp_repository.otp_type == "totp":
-            self.credentials[0] = self.redis_portal_session.get_otp_key()
-            # Show QRCode if not in MongoDB
+            # Retrieve TOTPProfile if exists, or generate a new key
             otp_info = self.workflow.authentication.otp_repository.get_client().register_authentication(
                 backend=self.backend,
                 login=self.redis_portal_session.get_login(self.backend_id))
             self.print_captcha = otp_info[0]
+            self.credentials[0] = otp_info[1]
+            # And save the generated/retrieved key in Redis
+            self.redis_portal_session.set_otp_info(otp_info[1])
+
 
     def authentication_failure(self):
         otp_retries = self.redis_portal_session.increment_otp_retries(self.workflow.authentication.otp_repository.id)
@@ -504,6 +517,8 @@ class DOUBLEAuthentication(Authentication):
     def deauthenticate_user(self):
         self.redis_portal_session.deauthenticate(self.workflow.id, self.backend_id,
                                                  self.workflow.authentication.auth_timeout)
+        if self.workflow.authentication.otp_repository:
+            self.redis_portal_session.reset_otp_retries(self.workflow.authentication.otp_repository.id)
         logger.debug("DB-AUTH::deauthenticate_user: Redis portal session successfully updated (deauthentication)")
 
     def ask_credentials_response(self, **kwargs):
@@ -511,7 +526,7 @@ class DOUBLEAuthentication(Authentication):
         if self.workflow.authentication.otp_repository.otp_type == "totp" and self.print_captcha:
             user_mail = self.redis_portal_session.keys.get('user_email', "")
             captcha_url = self.workflow.authentication.otp_repository.get_client().generate_captcha(self.credentials[0], user_mail)
-            logger.debug("DB-AUTH::ask_credentials_response: Captcha generated")
+            logger.debug(f"DB-AUTH::ask_credentials_response: Captcha generated for user {user_mail} : {self.credentials[0]}")
 
         response = otp_authentication_response(kwargs.get('request'),
                                                self.workflow.authentication,

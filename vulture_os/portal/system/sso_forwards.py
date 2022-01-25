@@ -26,20 +26,20 @@ __doc__ = 'System utils sso_forward'
 
 # Django system imports
 from django.conf                      import settings
-from django.http                      import HttpResponse, HttpResponseRedirect
 
 # Django project imports
-from authentication.base_repository import BaseRepository
-from authentication.learning_profiles.models import LearningProfile
-from portal.system.sso_clients               import SSOClient
-from views.responses                  import create_gzip_response
-from toolkit.system.aes_utils import AESCipher
-from system.pki.models import PROTOCOLS_TO_INT, CERT_PATH
-from toolkit.http.utils import parse_html
+from authentication.base_repository             import BaseRepository
+from authentication.learning_profiles.models    import LearningProfile
+from portal.system.sso_clients                  import SSOClient
+from portal.views.responses                     import HttpResponseTemporaryRedirect
+from views.responses                            import create_gzip_response
+from toolkit.system.aes_utils                   import AESCipher
+from system.pki.models                          import PROTOCOLS_TO_INT, CERT_PATH
+from toolkit.http.utils                         import parse_html
 
 # Required exceptions imports
 from bson.errors                      import InvalidId
-from .exceptions                       import CredentialsMissingError
+from .exceptions                      import CredentialsMissingError
 
 # Extern modules imports
 from base64                           import b64encode
@@ -96,7 +96,7 @@ class SSOForward(object):
         self.oauth2_token = authentication.redis_portal_session.get_oauth2_token(self.backend_id)
         #self.user_infos = authentication.redis_portal_session.get_user_infos(self.backend_id)
         self.user_infos = user_infos
-        logger.debug("SSOFORWARD::_init_: Object successfully created")
+        logger.debug("SSOForward::__init__: Object successfully created")
 
 
     def retrieve_sso_profile(self, username, field):
@@ -118,7 +118,7 @@ class SSOForward(object):
             if not sso_profile:
                 raise Exception("Cannot retrieve sso profile")
         except Exception as e:
-            logger.debug("Cannot retrieve sso profile '{}' for user '{}' : {}".format(field, username, e))
+            logger.debug("SSOForward::stock_sso_field: Cannot retrieve sso profile '{}' for user '{}' : {}".format(field, username, e))
             try:
                 sso_profile = LearningProfile()
                 sso_profile.set_data(str(self.application.id), self.application.name, str(self.backend_id),
@@ -158,7 +158,7 @@ class SSOForward(object):
 
     def generate_response(self, request, response, redirect_url):
 
-        final_response = HttpResponseRedirect(redirect_url)
+        final_response = HttpResponseTemporaryRedirect(redirect_url)
         final_response = self.sso_client.fill_response(response, final_response, self.application.get_redirect_uri())
 
         """ We want to immediately return the result of the SSO Forward POST Request """
@@ -188,7 +188,6 @@ class SSOForward(object):
 
         elif response.status_code not in (301,302,303) or not self.application.authentication.sso_forward_follow_redirect:
             """ simply redirect to the default Application entry point """
-            final_response.status_code = 302
             # redirect user to url redirected
             final_response['Location'] = redirect_url
             del final_response['Content-Length']
@@ -225,15 +224,15 @@ class SSOForwardPOST(SSOForward):
         learning_name = kwargs['learning_name']
         for key, item in kwargs['request'].POST.items():
             if learning_name in key.split(';vlt;'):
-                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully retrieved in POST")
+                logger.debug("SSOForwardPOST::get_learn_and_secret: Learning field '{}' successfully retrieved in POST")
                 return True, item
         try:
             profile_value = self.retrieve_sso_field(self.credentials[0], learning_name)
             if profile_value:
-                logger.debug("SSOForward::get_learn_and_secret: Learning field '{}' successfully  retrieved in Mongo".format(profile_value))
+                logger.debug("SSOForwardPOST::get_learn_and_secret: Learning field '{}' successfully retrieved in Mongo".format(learning_name))
                 return False, profile_value
         except Exception as e:
-            logger.info("SSOCLIENT::process_form: Cannot retrieve field '{}' from LearningProfile : asking-it with learning. Exception : {}".format(learning_name, str(e)))
+            logger.info("SSOForwardPOST::get_learn_and_secret: Cannot retrieve field '{}' from LearningProfile : asking-it with learning. Exception : {}".format(learning_name, str(e)))
         raise CredentialsMissingError("Cannot find learning field '{}' for username '{}'".format(learning_name, self.credentials[0]), {learning_name : learning_field_html[kwargs['control_type']]})
 
 
@@ -248,15 +247,16 @@ class SSOForwardPOST(SSOForward):
     def retrieve_credentials(self, request):
         sso_profiles = json_loads(self.application.authentication.sso_forward_content)
         # Make a request
-        logger.debug("SSOForwardPOST::authenticate: Trying to retrieve URL '{}'".format(self.application.authentication.sso_forward_url))
+        logger.debug("SSOForwardPOST::retrieve_credentials: Trying to retrieve URL '{}'".format(self.application.authentication.sso_forward_url))
 
         control_ids, control_names, control_values = dict(), dict(), dict()
 
         if not self.application.authentication.sso_forward_direct_post:
             url, response = self.sso_client.get(self.application.authentication.sso_forward_url, True)
-            logger.info("SSOForwardPOST::authenticate: Url '{}' successfully retrieved".format(self.application.authentication.sso_forward_url))
+            logger.info("SSOForwardPOST::retrieve_credentials: Url '{}' successfully retrieved".format(self.application.authentication.sso_forward_url))
             # convert-it to robobrowser.forms.Form list
-            forms = [i for i in parse_html(response.content, self.application.authentication.sso_forward_url) if str(i.method).upper() != 'GET']
+            # Use response.text to automatically decode content depending on encoding
+            forms = [i for i in parse_html(response.text, self.application.authentication.sso_forward_url) if str(i.method).upper() != 'GET']
             # retrieve id of form
             form_id = -1
             for sso_profile in sso_profiles:
@@ -278,8 +278,11 @@ class SSOForwardPOST(SSOForward):
                         control_names[control_id] = control_name
                     control_ids[control_name]     = str(control_id)
                     control_values[control_name]  = control_value
+            except IndexError as e:
+                logger.error(f"SSOForwardPOST::retrieve_credentials: Cannot retrieve a form on url '{url}'")
+                raise
             except Exception as e:
-                logger.error("SSOForwardPOST::retrieve_credentials: Cannot retrieve form with id '{}' on url '{}'".format(form_id, url))
+                logger.error(f"SSOForwardPOST::retrieve_credentials: Unknown error while retrieving form with id '{form_id}' on url '{url}'")
                 logger.exception(e)
                 raise
 
@@ -317,7 +320,7 @@ class SSOForwardPOST(SSOForward):
                     profile_name, profile_id = sso_profile['name'].split(';vlt;')
                 except:
                     profile_name, profile_id = sso_profile['name'], ""
-                logger.debug("SSOForwardPOST::authenticate: profile_name is '{}', profile id is '{}'".format(profile_name, profile_id))
+                logger.debug("SSOForwardPOST::retrieve_credentials: profile_name is '{}', profile id is '{}'".format(profile_name, profile_id))
                 control_id = control_ids.get(profile_name, None)
                 control_name = control_names.get(profile_id, None)
                 # If name is variable, get the new name by id
@@ -335,12 +338,12 @@ class SSOForwardPOST(SSOForward):
 
                 except CredentialsMissingError as e:
 
-                    logger.info("SSOForwardPOST::authenticate: Field missing for SSO : '{}' , it will be asked with learning".format(list(e.fields_missing.keys())[0]))
+                    logger.info("SSOForwardPOST::retrieve_credentials: Field missing for SSO : '{}' , it will be asked with learning".format(list(e.fields_missing.keys())[0]))
                     fields_to_learn[list(e.fields_missing.keys())[0]] = list(e.fields_missing.values())[0]
 
                 except KeyError as e:
                     logger.exception(e)
-                    logger.info("SSOForwardPOST::authenticate: Field missing for SSO : '{}' , it will not be present in SSO request".format(e))
+                    logger.info("SSOForwardPOST::retrieve_credentials: Field missing for SSO : '{}' , it will not be present in SSO request".format(e))
 
             if to_stock:
                 profiles_to_stock[profile_name] = profile_value
@@ -414,16 +417,16 @@ class SSOForwardKERBEROS(SSOForward):
         kerberos_TGT  = kerberos_repo.get_backend().create_tgt(self.backend_id, credentials['kerberos_username'], credentials['kerberos_password'], "HTTP/"+self.application.app_krb_service)
 
         if kerberos_TGT:
-            logger.debug("SSOForwardKRB5::authenticate: TGT successfully created with credentials for user '{}'".format(credentials['kerberos_username']))
+            logger.debug("SSOForwardKERBEROS::authenticate: TGT successfully created with credentials for user '{}'".format(credentials['kerberos_username']))
 
             self.sso_client.session.headers.update({'Authorization':'Negotiate %s'%str(kerberos_TGT)})
             url, response = self.sso_client.get(url, self.application.sso_forward_follow_redirect)
-            logger.info("SSOForwardKRB5::authenticate: URL '{}' successfully gotten with Kerberos TGT".format(url))
+            logger.info("SSOForwardKERBEROS::authenticate: URL '{}' successfully gotten with Kerberos TGT".format(url))
 
             #### POSSIBILITY OF VERIFY CREDENTIALS => IF RESPONSE.STATUS_CODE == 401
             if not self.application.sso_forward_only_login:
                 redis_session.setKrb5Infos(credentials['kerberos_username'], self.application.app_krb_service, self.backend_id)
-                logger.debug("SSOForwardKRB5::authenticate: Kerberos infos for user '{}' successfully written in Redis session".format(credentials['kerberos_username']))
+                logger.debug("SSOForwardKERBEROS::authenticate: Kerberos infos for user '{}' successfully written in Redis session".format(credentials['kerberos_username']))
 
         return response
 

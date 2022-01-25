@@ -77,7 +77,7 @@ class IDPApiView(View):
                             tmp_user["is_locked"] = tmp[ldap_repo.get_user_account_locked_attr][0]
                     except IndexError:
                         pass
- 
+
                     try:
                         tmp_user["need_change_password"] = ""
                         if ldap_repo.user_change_password_attr and tmp.get(ldap_repo.get_user_change_password_attr):
@@ -91,7 +91,7 @@ class IDPApiView(View):
                             tmp_user["mobile"] = tmp[ldap_repo.user_mobile_attr][0]
                     except IndexError:
                         pass
-                    
+
                     try:
                         tmp_user["email"] = ""
                         if ldap_repo.user_email_attr:
@@ -105,7 +105,7 @@ class IDPApiView(View):
                                 tmp_user[key] = tmp.get(value["internal_key"], [])[0]
                             except (IndexError, TypeError):
                                 tmp_user[key] = ""
-                        
+
                         elif value["type"] == list:
                             tmp_user[key] = tmp.get(value["internal_key"], [])
 
@@ -134,6 +134,7 @@ class IDPApiView(View):
                 "status": False,
                 "error": _("Portal does not exist")
             }, status=404)
+
         except Exception as err:
             logger.critical(err, exc_info=1)
             if settings.DEV_MODE:
@@ -143,6 +144,7 @@ class IDPApiView(View):
                 "status": False,
                 "error": str(err)
             }, status=500)
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiUserView(View):
@@ -264,14 +266,23 @@ class IDPApiUserView(View):
 
             elif action in ("lock", "unlock"):
                 user_dn = request.JSON["id"]
-                to_lock = action == "lock"
-                ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
+                # Check if a proper filter was configured in GUI before trying to lock
+                if ldap_repo.user_account_locked_attr and ldap_repo.get_user_account_locked_attr:
+                    to_lock = action == "lock"
+                    ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
+                else:
+                    logger.error(f"Cannot lock user '{user_dn}' on repository '{ldap_repo}': no locking filter configured")
+                    return JsonResponse({
+                        "status": False,
+                        "error": _("Lock unavailable for Repository")
+                    }, status=409)
 
 
             return JsonResponse({
                 "status": True,
                 "user_id": user_id
             }, status=201)
+
         except KeyError as err:
             logger.debug(err)
             return JsonResponse({
@@ -282,14 +293,16 @@ class IDPApiUserView(View):
         except NotUniqueError as e:
             return JsonResponse({
                 "status": False,
-                "error": _("User already exist"),
+                "error": _("User already exists"),
                 "user_id": str(e)
             }, status=409)
+
         except UserAuthentication.DoesNotExist:
             return JsonResponse({
                 "status": False,
                 "error": _("Portal does not exist")
             }, status=404)
+
         except Exception as err:
             logger.critical(err, exc_info=1)
             if settings.DEV_MODE:
@@ -314,18 +327,18 @@ class IDPApiUserView(View):
 
             if ldap_repo.user_email_attr:
                 attrs[ldap_repo.user_email_attr] = request.JSON.get('email')
-            
+
             if ldap_repo.user_account_locked_attr:
                 attr = ldap_repo.get_user_account_locked_attr
                 attrs[attr] = request.JSON.get('is_locked')
-            
+
             if ldap_repo.user_change_password_attr:
                 attr = ldap_repo.get_user_change_password_attr
                 attrs[attr] = request.JSON.get('need_change_password')
-            
+
             if ldap_repo.user_mobile_attr:
                 attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
-            
+
             for key, value in MAPPING_ATTRIBUTES.items():
                 attrs[value["internal_key"]] = request.JSON.get(key)
 
@@ -340,6 +353,14 @@ class IDPApiUserView(View):
                 "status": True,
                 "user_id": user_dn
             })
+
+        except AssertionError as err:
+            logger.debug(err)
+            return JsonResponse({
+                "status": False,
+                "error": _(str(err))
+            }, status=409)
+
         except KeyError as err:
             logger.debug(err)
             return JsonResponse({
@@ -352,6 +373,7 @@ class IDPApiUserView(View):
                 "status": False,
                 "error": _("Portal does not exist")
             }, status=404)
+
         except Exception as err:
             logger.critical(err, exc_info=1)
             if settings.DEV_MODE:
@@ -399,6 +421,7 @@ class IDPApiUserView(View):
                 "status": False,
                 "error": _("Portal does not exist")
             }, status=404)
+
         except Exception as err:
             logger.critical(err, exc_info=1)
             if settings.DEV_MODE:

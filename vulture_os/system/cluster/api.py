@@ -139,6 +139,37 @@ def cluster_info(request):
         }, 500)
 
 
+@csrf_exempt
+@api_need_key('cluster_api_key')
+@require_http_methods(['GET'])
+def secret_key(request):
+    try:
+
+        assert settings.SECRET_KEY
+
+        return JsonResponse({
+            'status': True,
+            'data': settings.SECRET_KEY
+        })
+
+    except AssertionError:
+        logger.error("Cannot get secret key: no key in settings")
+        return JsonResponse({
+            'status': False,
+            'data': _("No secret key to provide")
+        }, 404)
+
+    except Exception as e:
+        logger.critical(e, exc_info=1)
+        if settings.DEV_MODE:
+            raise
+
+        return JsonResponse({
+            'status': False,
+            'data': _('An error has occurred')
+        }, 500)
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class NodeAPIv1(View):
     @api_need_key('cluster_api_key')

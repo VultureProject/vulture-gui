@@ -121,16 +121,18 @@ class DarwinPolicyAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
-            if object_id:
-                try:
+            name = request.GET.get('name')
+            try:
+                if object_id:
                     obj = DarwinPolicy.objects.get(pk=object_id).to_dict()
-                except DarwinPolicy.DoesNotExist:
-                    return JsonResponse({
-                        'error': _('Object does not exist')
-                    }, status=404)
-
-            else:
-                obj = [s.to_dict() for s in DarwinPolicy.objects.all()]
+                elif name:
+                    obj = DarwinPolicy.objects.get(name=name).to_dict()
+                else:
+                    obj = [s.to_dict() for s in DarwinPolicy.objects.all()]
+            except DarwinPolicy.DoesNotExist:
+                return JsonResponse({
+                    'error': _('Object does not exist')
+                }, status=404)
 
             return JsonResponse({
                 'data': obj

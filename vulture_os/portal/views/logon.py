@@ -44,7 +44,7 @@ from workflow.models import Workflow
 from authentication.openid.models import OpenIDRepository
 from authentication.user_portal.models import UserAuthentication
 from portal.system.redis_sessions import REDISBase, REDISPortalSession, RedisOpenIDSession, REDISOauth2Session
-from portal.views.responses import error_response
+from portal.views.responses          import error_response, HttpResponseTemporaryRedirect
 
 # Required exceptions imports
 from bson.errors                     import InvalidId
@@ -463,7 +463,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
         # If assertionError : Ask credentials by portal
         except AssertionError as e:
             logger.error("PORTAL::log_in: AssertionError while trying to create Authentication : ".format(e))
-            return authentication.ask_credentials_response(request=request)
+            return authentication.ask_credentials_response(public_token=token_name, request=request)
 
 
         """ If user is not authenticated : try to retrieve credentials and authenticate him on backend/fallback-backends """
@@ -508,22 +508,22 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 logger.exception(e)
                 logger.error("PORTAL::log_in: Bad captcha input for username '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request, error="Bad captcha")
+                return authentication.ask_credentials_response(public_token=token_name, request=request, error="Bad captcha")
 
             except AuthenticationError as e:
                 logger.error("PORTAL::log_in: AuthenticationError while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request, error="Authentication Failure")
+                return authentication.ask_credentials_response(public_token=token_name, request=request, error="Authentication Failure")
 
             except ACLError as e:
                 logger.error("PORTAL::log_in: ACLError while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request, error="Authentication Failure")
+                return authentication.ask_credentials_response(public_token=token_name, request=request, error="Authentication Failure")
 
             except (DBAPIError, PyMongoError, LDAPError) as e:
                 logger.error("PORTAL::log_in: Repository driver Error while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request,
+                return authentication.ask_credentials_response(public_token=token_name, request=request,
                                                                error="Authentication Failure")
 
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
@@ -531,7 +531,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 if str(e) != "vltprtlsrnm":
                     logger.error("PORTAL::log_in: Error while trying to authenticate user '{}' : {}"
                                  .format(authentication.credentials[0], e))
-                return authentication.ask_credentials_response(request=request)
+                return authentication.ask_credentials_response(public_token=token_name, request=request)
 
             except REDISWriteError as e:
                 logger.error("PORTAL::log_in: RedisWriteError while trying to register user '{}' informations : {}"
@@ -563,7 +563,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             """ If redis_portal_session does not exists or can't retrieve otp key in redis """
             logger.error("PORTAL::log_in: DoubleAuthentication failure for username '{}' : {}"
                          .format(authentication.credentials[0], str(e)))
-            return authentication.ask_credentials_response(request=request,
+            return authentication.ask_credentials_response(public_token=token_name, request=request,
                                                            error="Portal cookie expired")
 
         except (Workflow.DoesNotExist, ValidationError, InvalidId) as e:
@@ -585,7 +585,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                          .format(authentication.credentials[0], str(e)))
             try:
                 db_authentication.create_authentication()
-                return db_authentication.ask_credentials_response(request=request)
+                return db_authentication.ask_credentials_response(public_token=token_name, request=request)
 
             except (OTPError, REDISWriteError, RedisConnectionError) as e:
                 """ Error while sending/registering in Redis the OTP informations : display portal"""
@@ -593,7 +593,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 db_authentication.deauthenticate_user()
                 logger.info("PORTAL::log_in: User '{}' successfully deauthenticated due to db-authentication error"
                             .format(authentication.credentials[0]))
-                return authentication.ask_credentials_response(request=request,
+                return authentication.ask_credentials_response(public_token=token_name, request=request,
                                                                error="<b> Error sending OTP Key </b> </br> "+str(e))
             except Exception as e:
                 logger.exception(e)
@@ -606,36 +606,36 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 db_authentication.create_authentication()
                 db_authentication.authentication_failure()
                 logger.debug("PORTAL:log_in: DoubleAuthentication failure successfully registered in Redis")
-                return db_authentication.ask_credentials_response(request=request,
+                return db_authentication.ask_credentials_response(public_token=token_name, request=request,
                                                                   error="<b> Bad OTP key </b>")
 
             except TwoManyOTPAuthFailure as e:
-                logger.error("PORTAL::log_in: Two many OTP authentication failures for username'{}', "
+                logger.error("PORTAL::log_in: Too many OTP authentication failures for username'{}', "
                              "redirecting to portal".format(authentication.credentials[0]))
                 db_authentication.deauthenticate_user()
                 logger.info("PORTAL::log_in: User '{}' successfully deauthenticated due to db-authentication error"
                             .format(authentication.credentials[0]))
-                return authentication.ask_credentials_response(request=request, error=str(e))
+                return authentication.ask_credentials_response(public_token=token_name, request=request, error=str(e))
 
             except (OTPError, REDISWriteError, RedisConnectionError) as e:
                 logger.error("PORTAL::log_in: Error while preparing double-authentication : {}".format(str(e)))
-                return db_authentication.ask_credentials_response(request=request,
+                return db_authentication.ask_credentials_response(public_token=token_name, request=request,
                                                                   error="<b> Error sending OTP Key </b> </br> "+str(e))
 
         except OTPError as e:
             """ OTP Error while authenticating given token """
             logger.error("PORTAL::log_in: Double-authentication failure for username {} : {}"
                          .format(authentication.credentials[0], str(e)))
-            return db_authentication.ask_credentials_response(request=request,
+            return db_authentication.ask_credentials_response(public_token=token_name, request=request,
                                                               error="<b> OTP Error </b> {}".format(str(e)))
 
         except TwoManyOTPAuthFailure as e:
-            logger.error("PORTAL::log_in: Two many OTP authentication failures for username'{}', "
+            logger.error("PORTAL::log_in: Too many OTP authentication failures for username'{}', "
                          "redirecting to portal".format(authentication.credentials[0]))
             db_authentication.deauthenticate_user()
             logger.info("PORTAL::log_in: User '{}' successfully deauthenticated due to db-authentication error"
                         .format(authentication.credentials[0]))
-            return authentication.ask_credentials_response(request=request, error=e.message)
+            return authentication.ask_credentials_response(public_token=token_name, request=request, error=e.message)
 
     if sso_forward:
         # If we arrive here : the user is authenticated
@@ -664,7 +664,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             except Exception as e:
                 logger.error("PORTAL::log_in: Error while retrieving credentials for SSO : ")
                 logger.exception(e)
-                return authentication.ask_credentials_response(request=request,
+                return authentication.ask_credentials_response(public_token=token_name, request=request,
                                                                error="Credentials not found")
 
             try:
@@ -687,6 +687,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # Remove potential custom redirect url once response has been generated
                 authentication.del_redirect_url()
 
+                # Allow user to connect to backend after playing SSOForward
+                authentication.allow_user()
+
                 return final_response
 
             # If learning credentials cannot be retrieved : ask them
@@ -707,6 +710,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 logger.error("PORTAL::log_in: Unexpected error while trying to perform SSO Forward :")
                 logger.exception(e)
 
+    # Here, all double-authentication and SSOForwarding is either deactivated or completed, so we can allow the user
+    authentication.allow_user()
+
     # If we arrive here, the user is authenticated
     if openid:
         token = random_sha256()
@@ -718,6 +724,8 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
         return HttpResponseRedirect(build_url_params(request.GET['redirect_uri'],
                                                      state=request.GET.get('state', ""),
                                                      code=token))
+    else:
+        return HttpResponseTemporaryRedirect(authentication.get_redirect_url() or workflow.public_dir)
 
 
 def log_in(request, workflow_id=None):
@@ -744,18 +752,21 @@ def log_in(request, workflow_id=None):
         token_name = global_config.public_token
         portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
         redirect_url = request.GET.get('redirect_url')
+        redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         if redirect_url:
             redirect_url = scheme + "://" + host + redirect_url
             logger.debug(f"redirect_url is {redirect_url}")
-            redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
             redis_portal_session.set_redirect_url(workflow.id, redirect_url)
+            # force write in redis to set expiration on session key
             redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
+        else:
+            # reset potentially existing redirect url to avoid wrong redirection
+            redis_portal_session.del_redirect_url(workflow.id)
     except Exception as e:
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
 
-    response = authenticate(request, workflow, portal_cookie, portal_cookie_name) or \
-               HttpResponseRedirect("#")
+    response = authenticate(request, workflow, portal_cookie, token_name)
 
     try:
         kerberos_token_resp = authentication_results['data']['token_resp']

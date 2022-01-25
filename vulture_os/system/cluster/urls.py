@@ -57,6 +57,10 @@ urlpatterns = [
          api.cluster_info,
          name="system.cluster.info"),
 
+    path('api/v1/system/cluster/key/',
+         api.secret_key,
+         name="system.cluster.key"),
+
     path('api/v1/system/node/', api.NodeAPIv1.as_view(), name="system.node.api"),
 
     path('api/v1/system/node/<int:object_id>/', api.NodeAPIv1.as_view(), name="system.node.api"),

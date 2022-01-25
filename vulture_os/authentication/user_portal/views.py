@@ -234,7 +234,7 @@ def sso_wizard(request):
         sso_client = SSOClient(user_agent, [], request.META.get('HTTP_REFERER'), ssl_client_certificate, ssl_context,
                                verify_certificate=tls_check)
         url, response = sso_client.get(url, redirect_before)
-        forms = parse_html(response.content, url)
+        forms = parse_html(response.text, url)
 
         # forms, final_uri, response, response_body = fetch_forms(logger, uris, request, user_agent,
         #                                                         ssl_context=ssl_context,
