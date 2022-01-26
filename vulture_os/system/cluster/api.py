@@ -194,7 +194,7 @@ def get_message_queues(request):
         except:
             return JsonResponse({
                 'status': False,
-                'data': _("Invalid parameter 'limit'")
+                'data': _("Invalid value for parameter 'limit'")
             }, status=400)
 
         tasks = MessageQueue.objects.filter(**params).order_by('modified')[:limit]
