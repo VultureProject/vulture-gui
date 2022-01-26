@@ -62,7 +62,7 @@ def execute_parser(frontend):
         logger.error(f"API Parser {frontend['name']} (tenant={frontend['tenant_name']}) failure : ",
                      extra={'frontend': str(frontend['name'])})
         logger.exception(e, extra={'frontend': str(frontend['name'])})
-        frontend.status[Cluster.get_current_node().name] = "ERROR"
+        parser.frontend.status[Cluster.get_current_node().name] = "ERROR"
     finally:
         # Delete running key in redis
         logger.info("API Parser {} (tenant={}): ending".format(frontend['name'], frontend['tenant_name']),
