@@ -181,7 +181,7 @@ def get_message_queues(request):
             if status not in ("new", "running", "done", "failure"):
                 return JsonResponse({
                     'status': False,
-                    'data': _("Invalid parameter 'status'")
+                    'data': _("Invalid value for parameter 'status'")
                 }, status=400)
             params['status'] = status
         node = request.GET.get('node')
