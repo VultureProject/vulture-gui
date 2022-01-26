@@ -188,7 +188,6 @@ def get_message_queues(request):
         if node:
             params['node__name'] = node
 
-        tasks = MessageQueue.objects.filter(**params).order_by('modified')
         limit = request.GET.get('limit', "100")
         try:
             limit = int(limit)
@@ -197,7 +196,8 @@ def get_message_queues(request):
                 'status': False,
                 'data': _("Invalid parameter 'limit'")
             }, status=400)
-        tasks = tasks[:limit]
+
+        tasks = MessageQueue.objects.filter(**params).order_by('modified')[:limit]
 
         res = [m.to_template() for m in tasks]
 
