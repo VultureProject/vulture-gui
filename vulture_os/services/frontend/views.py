@@ -214,8 +214,10 @@ def frontend_edit(request, object_id=None, api=False):
     """ Create form with object if exists, and request.POST (or JSON) if exists """
     empty = {} if api else None
     if hasattr(request, "JSON") and api:
+        validate = request.JSON.get('validate', True)
         form = FrontendForm(request.JSON or {}, instance=frontend, error_class=DivErrorList)
     else:
+        validate = request.POST.get('validate', True) not in (False, "false", "False")
         form = FrontendForm(request.POST or empty, instance=frontend, error_class=DivErrorList)
 
     def render_form(front, **kwargs):
@@ -431,16 +433,14 @@ def frontend_edit(request, object_id=None, api=False):
         try:
             """ For each node, the conf differs if listener chosen """
             """ Generate the conf """
-            logger.debug("Generating conf of frontend '{}'".format(frontend.name))
-            for node, listeners in node_listeners.items():
-                # HAProxy conf does not use reputationctx_list, Rsyslog conf does
-                frontend.configuration[node.name] = frontend.generate_conf(listener_list=listeners,
+            if validate:
+                logger.debug("Generating conf of frontend '{}'".format(frontend.name))
+                for node, listeners in node_listeners.items():
+                    # HAProxy conf does not use reputationctx_list, Rsyslog conf does
+                    frontend.configuration[node.name] = frontend.generate_conf(listener_list=listeners,
                                                                            header_list=header_objs)
-
-            """ Save the conf on disk, and test-it with haproxy -c """
-            logger.debug("Writing/Testing conf of frontend '{}'".format(frontend.name))
-            frontend.test_conf()
-
+                    frontend.test_conf(node.name)
+                    logger.info(f"FRONTEND::Edit: Configuration test ok on node {node.name}")
         except ServiceError as e:
             logger.exception(e)
             return render_form(frontend, save_error=[str(e), e.traceback])
@@ -574,15 +574,11 @@ def frontend_edit(request, object_id=None, api=False):
                                                          arg_field=reputationctx.arg_field,
                                                          dst_field=reputationctx.dst_field)
 
-            # Re-generate config AFTER save, to get ID
-            for node, listeners in node_listeners.items():
-                frontend.configuration[node.name] = frontend.generate_conf(listener_list=listeners)
-
             for node in node_listeners.keys():
 
                 """ asynchronous API request to save conf on node """
                 # Save conf first, to raise if there is an error
-                frontend.save_conf(node)
+                node.api_request("services.haproxy.haproxy.build_conf", frontend.id)
                 logger.debug("Write conf of frontend '{}' asked on node '{}'".format(frontend.name, node.name))
 
                 """ We need to configure Rsyslog, it will check if conf has changed & restart service if needed """
