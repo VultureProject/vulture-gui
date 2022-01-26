@@ -231,7 +231,7 @@ def get_cluster_status(request):
             except Node.DoesNotExist:
                 return JsonResponse({
                     'status': False,
-                    'data': _("Invalid parameter 'node'")},
+                    'data': _(f"node with name {node_name} does not exist")},
                     status=404
                 )
 
