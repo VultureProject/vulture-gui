@@ -246,7 +246,6 @@ def get_cluster_status(request):
                     continue
                 f_status = f.status.get(node.name, "UNKNOWN")
                 if f_status != "OPEN":
-                    logger.info(f_status)
                     result = False
             else:
                 # No need to set status=False if it already is
@@ -254,7 +253,6 @@ def get_cluster_status(request):
                     # Check on each node is status is UP
                     for f_node, f_stat in f.status.items():
                         if f_stat != "OPEN":
-                            logger.info(f_stat)
                             result = False
                 f_status = f.status
 
@@ -267,7 +265,7 @@ def get_cluster_status(request):
             'status': result,
             'data': {
                 'tasks': {
-                    'pendings': pending_tasks,
+                    'pending': pending_tasks,
                     'failed': failed_tasks
                 },
                 'frontends': frontends_status
