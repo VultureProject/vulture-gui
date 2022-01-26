@@ -34,7 +34,7 @@ from django.views import View
 
 # Django project imports
 from gui.decorators.apicall import api_need_key
-from system.cluster.models import Node
+from system.cluster.models import Node, MessageQueue
 from system.cluster.views import COMMAND_LIST, cluster_edit
 from system.cluster.models import Cluster
 from toolkit.mongodb.mongo_base import MongoBase
@@ -158,6 +158,52 @@ def secret_key(request):
             'status': False,
             'data': _("No secret key to provide")
         }, 404)
+
+    except Exception as e:
+        logger.critical(e, exc_info=1)
+        if settings.DEV_MODE:
+            raise
+
+        return JsonResponse({
+            'status': False,
+            'data': _('An error has occurred')
+        }, 500)
+
+
+@api_need_key('cluster_api_key')
+@require_http_methods(['GET'])
+def get_message_queues(request):
+    try:
+        params = {}
+        status = request.GET.get('status')
+        if status:
+            if status not in ("new", "running", "done", "failure"):
+                return JsonResponse({
+                    'status': False,
+                    'data': _("Invalid parameter 'status'")
+                }, status=400)
+            params['status'] = status
+        node = request.GET.get('node')
+        if node:
+            params['node__name'] = node
+
+        tasks = MessageQueue.objects.filter(**params).order_by('modified')
+        limit = request.GET.get('limit', "100")
+        try:
+            limit = int(limit)
+        except:
+            return JsonResponse({
+                'status': False,
+                'data': _("Invalid parameter 'limit'")
+            }, status=400)
+        tasks = tasks[:limit]
+
+        res = [m.to_template() for m in tasks]
+
+        return JsonResponse({
+            'status': True,
+            'data': res
+        })
 
     except Exception as e:
         logger.critical(e, exc_info=1)
