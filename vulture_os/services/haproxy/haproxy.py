@@ -292,9 +292,8 @@ def delete_conf(node_logger, filename):
 
 
 def build_conf(node_logger, frontend_id):
-    """ Generate conf of rsyslog inputs, based on all frontends LOG
-    ruleset of frontend
-    outputs of all frontends
+    """ Generate conf of haproxy frontend
+    with it's ID
     :param node_logger: Logger sent to all API requests
     :param frontend_id: The name of the frontend in conf file
     :return:
@@ -311,6 +310,7 @@ def build_conf(node_logger, frontend_id):
         tmp = frontend.generate_conf()
         if frontend.configuration[node.name] != tmp:
             frontend.configuration[node.name] = tmp
+            frontend.save()
             reload = True
         """ And write-it """
 
@@ -321,7 +321,7 @@ def build_conf(node_logger, frontend_id):
         raise VultureSystemError("Frontend with id {} not found, failed to generate conf.".format(frontend_id),
                                  "build HAProxy conf", traceback=" ")
 
-    """ Generate inputs configuration """
+    """ Restart service if needed (conf has changed) """
     service = HaproxyService()
     """ If frontend was given we cannot check if its conf has changed to restart service
      and if reload_conf is True, conf has changed so restart service
