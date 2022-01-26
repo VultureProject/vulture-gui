@@ -217,7 +217,7 @@ def frontend_edit(request, object_id=None, api=False):
         validate = request.JSON.get('validate', True)
         form = FrontendForm(request.JSON or {}, instance=frontend, error_class=DivErrorList)
     else:
-        validate = request.POST.get('validate', True)
+        validate = request.POST.get('validate', True) not in (False, "false", "False")
         form = FrontendForm(request.POST or empty, instance=frontend, error_class=DivErrorList)
 
     def render_form(front, **kwargs):
