@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
-__doc__ = "Update portal template(s) content with initial image"
+__doc__ = "Reload HTTP frontends configuration due to jinja template update"
 
 import sys
 import os
