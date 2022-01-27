@@ -1264,6 +1264,7 @@ class Frontend(models.Model):
                 tmp['access_controls_deny'] = access_controls_deny
                 tmp['access_controls_302'] = access_controls_302
                 tmp['access_controls_301'] = access_controls_301
+
                 workflow_list.append(tmp)
 
         result = {
@@ -1309,7 +1310,10 @@ class Frontend(models.Model):
             'filebeat_module': self.filebeat_module,
             'filebeat_config': self.filebeat_config,
             'filebeat_listening_mode': self.filebeat_listening_mode,
-            'external_idps': self.userauthentication_set.filter(enable_external=True)
+            'external_idps': self.userauthentication_set.filter(enable_external=True),
+            'defender_enabled': self.workflow_set.filter(defender_policy__isnull=False).count() > 0,
+            'session_enabled': self.workflow_set.filter(authentication__isnull=False).count() > 0
+
         }
 
         if self.mode == "impcap":
@@ -1351,38 +1355,38 @@ class Frontend(models.Model):
         # If there was an exception, raise a more general exception with the message and the traceback
         raise exception
 
-    def test_conf(self):
+    def test_conf(self, node_name):
         """ Write the configuration attribute on disk, in test directory, as {id}.conf.new
             And test the conf with 'haproxy -c'
         :return     True or raise
         """
         test_filename = self.get_test_filename()
-        for node_name, conf in self.configuration.items():
-            if not conf:
-                return
-            test_conf = conf.replace("frontend {}".format(self.name),
-                                     "frontend test_{}".format(self.id or "test")) \
-                            .replace("listen {}".format(self.name),
-                                     "listen test_{}".format(self.id or "test"))
-            if node_name != Cluster.get_current_node().name:
-                try:
-                    global_config = Cluster().get_global_config()
-                    cluster_api_key = global_config.cluster_api_key
-                    infos = post("https://{}:8000/api/services/frontend/test_conf/".format(node_name),
-                                 headers={'cluster-api-key': cluster_api_key},
-                                 data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
-                                 verify=False, timeout=9).json()
-                except Exception as e:
-                    logger.error(e)
-                    raise ServiceTestConfigError("on node '{}'\n Request failure.".format(node_name), "haproxy")
-                if not infos.get('status'):
-                    raise ServiceTestConfigError("on node '{}'\n{}".format(node_name, infos.get('error')), "haproxy",
-                                                 traceback=infos.get('error_details'))
-            else:
-                # Replace name of frontend to prevent duplicate frontend while testing conf
-                test_haproxy_conf(test_filename,
-                                  test_conf,
-                                  disabled=(not self.enabled))
+        conf = self.configuration.get(node_name)
+        if not conf:
+            return
+        test_conf = conf.replace("frontend {}".format(self.name),
+                                 "frontend test_{}".format(self.id or "test")) \
+                        .replace("listen {}".format(self.name),
+                                 "listen test_{}".format(self.id or "test"))
+        if node_name != Cluster.get_current_node().name:
+            try:
+                global_config = Cluster().get_global_config()
+                cluster_api_key = global_config.cluster_api_key
+                infos = post("https://{}:8000/api/services/frontend/test_conf/".format(node_name),
+                             headers={'cluster-api-key': cluster_api_key},
+                             data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
+                             verify=False, timeout=9).json()
+            except Exception as e:
+                logger.error(e)
+                raise ServiceTestConfigError("on node '{}'\n Request failure.".format(node_name), "haproxy")
+            if not infos.get('status'):
+                raise ServiceTestConfigError("on node '{}'\n{}".format(node_name, infos.get('error')), "haproxy",
+                                             traceback=infos.get('error_details'))
+        else:
+            # Replace name of frontend to prevent duplicate frontend while testing conf
+            test_haproxy_conf(test_filename,
+                              test_conf,
+                              disabled=(not self.enabled))
 
     def get_base_filename(self):
         """ Return the base filename (without path) """
@@ -1650,14 +1654,9 @@ class Frontend(models.Model):
          """
         nodes = set()
         for node in self.get_nodes():
-            # Generate frontend conf with no error_template
-            self.configuration[node.name] = self.generate_conf(node=node)
-            # And write conf on disk
-            self.save_conf(node)
+            node.api_request("services.haproxy.haproxy.build_conf", self.id)
             # Add node to nodes, it's a set (unicity implicitly handled)
             nodes.add(node)
-        # Save the object in database to save the configuration attribute
-        self.save()
         return nodes
 
     def enable(self):
