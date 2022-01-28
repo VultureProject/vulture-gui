@@ -105,7 +105,7 @@ class OpenIDRepository(BaseRepository):
     client_secret = models.TextField(
         blank=False,
         verbose_name=_("Provider Client Secret"),
-        help_text=_("Client secret is the OAuth 2.0 Client secretassociated with your client ID and retrieved from your identity provider. "
+        help_text=_("Client secret is the OAuth 2.0 Client secret associated with your client ID and retrieved from your identity provider. "
                     "See your identity provider's documentation.")
     )
     scopes = models.JSONField(
