@@ -16,20 +16,19 @@
 #               Set to the full path of the pid file
 # gunicorn_conf_file (str):     default: /usr/local/etc/gunicorn.d/portal.conf.py
 #               Set to the full path of the config file
-
 . /etc/rc.subr
-
-: ${gunicorn_enable:="NO"}
-: ${gunicorn_pid_file:="/var/run/gunicorn.pid"}
-: ${gunicorn_conf_file:="/usr/local/etc/gunicorn.d/portal.conf.py"}
-
 
 name="gunicorn"
 rcvar=gunicorn_enable
 gunicorn_group="vlt-web"
 command="/home/vlt-os/env/bin/python3.8"
-command_args="/home/vlt-os/env/bin/gunicorn portal.wsgi -D -c ${gunicorn_conf_file} -p ${gunicorn_pid_file}"
 
+: ${gunicorn_enable:="NO"}
+: ${gunicorn_pid_file:="/var/run/gunicorn.pid"}
+: ${gunicorn_conf_file:="/usr/local/etc/gunicorn.d/portal.conf.py"}
+load_rc_config $name
+
+command_args="/home/vlt-os/env/bin/gunicorn portal.wsgi -D -c ${gunicorn_conf_file} -p ${gunicorn_pid_file}"
 # Define this method to use /etc/rc.subr routine
 pidfile="$gunicorn_pid_file"
 extra_commands="reload"
@@ -46,3 +45,4 @@ gunicorn_prestart()
 }
 
 run_rc_command "$1"
+
