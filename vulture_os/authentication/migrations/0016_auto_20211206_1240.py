@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='openidrepository',
-            constraint=models.UniqueConstraint(fields=('provider', 'client_id', 'client_secret'), name='unique_openid_truple'),
+            constraint=models.UniqueConstraint(fields=('provider', 'client_id', 'client_secret'), name='unique_openid_tuple'),
         ),
 
         migrations.AlterField(
