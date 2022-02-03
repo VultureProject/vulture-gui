@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# VultureOS: Service script to manage gunicorn for portal
+#
+
+# PROVIDE: gunicorn
+# REQUIRE: LOGIN cleanvar sshd
+# KEYWORD: shutdown
+
+#
+# Add the following lines to /etc/rc.conf to enable gunicorn:
+#
+# gunicorn_enable (bool):    default: "NO"
+#               Set to "YES" to enable gunicorn
+# gunicorn_pid_file (str):    default: /var/run/gunicorn.pid
+#               Set to the full path of the pid file
+# gunicorn_conf_file (str):     default: /usr/local/etc/gunicorn.d/portal.conf.py
+#               Set to the full path of the config file
+. /etc/rc.subr
+
+name="gunicorn"
+rcvar=gunicorn_enable
+gunicorn_group="vlt-web"
+command="/home/vlt-os/env/bin/python3.8"
+
+: ${gunicorn_enable:="NO"}
+: ${gunicorn_pid_file:="/var/run/gunicorn.pid"}
+: ${gunicorn_conf_file:="/usr/local/etc/gunicorn.d/portal.conf.py"}
+: ${gunicorn_workers:="5"}
+load_rc_config $name
+
+command_args="/home/vlt-os/env/bin/gunicorn portal.wsgi -D -w ${gunicorn_workers} -c ${gunicorn_conf_file} -p ${gunicorn_pid_file}"
+# Define this method to use /etc/rc.subr routine
+pidfile="$gunicorn_pid_file"
+extra_commands="reload"
+sig_reload="HUP"
+# Needed to CD into project base
+start_precmd="gunicorn_prestart"
+
+
+# Define pre-start function to CD into project directory (otherwise gunicorn can't locate portal.wsgi file)
+gunicorn_prestart()
+{
+    cd /home/vlt-os/vulture_os
+    return 0
+}
+
+run_rc_command "$1"
+
