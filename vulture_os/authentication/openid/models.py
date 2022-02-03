@@ -97,15 +97,15 @@ class OpenIDRepository(BaseRepository):
                     "For example, google's URL would be https://accounts.google.com for their discover document.")
     )
     client_id = models.TextField(
-        default="",
+        blank=False,
         verbose_name=_("Provider Client ID"),
         help_text=_("Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. "
                     "See your identity provider's documentation.")
     )
     client_secret = models.TextField(
-        default="",
+        blank=False,
         verbose_name=_("Provider Client Secret"),
-        help_text=_("Client ID is the OAuth 2.0 Client Identifier retrieved from your identity provider. "
+        help_text=_("Client secret is the OAuth 2.0 Client secret associated with your client ID and retrieved from your identity provider. "
                     "See your identity provider's documentation.")
     )
     scopes = models.JSONField(
@@ -161,6 +161,12 @@ class OpenIDRepository(BaseRepository):
         verbose_name=_("User's scope"),
         help_text=_("Scope of user to construct")
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['provider', 'client_id', 'client_secret'], name="unique_openid_tuple")
+        ]
+
 
     def __str__(self):
         return "{} ({})".format(self.name, self.str_provider())

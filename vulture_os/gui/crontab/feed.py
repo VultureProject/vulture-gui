@@ -227,7 +227,7 @@ def security_update(node_logger=None, tenant_id=None):
         except VultureSystemError as e:
             if "404" in str(e) or "403" in str(e) and reputation_ctx.internal:
                 logger.info("Security_update::info: Reputation context '{}' is now unavailable ({}). "
-                            "Deleting it.".format(str(e), reputation_ctx))
+                            "Deleting it.".format(reputation_ctx, str(e)))
                 reputation_ctx.delete()
             else:
                 logger.error("Security_update::error: Failed to download reputation database '{}' : {}"

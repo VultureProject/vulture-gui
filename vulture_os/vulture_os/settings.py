@@ -18,25 +18,19 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 import os
 from pymongo import ReadPreference
 from toolkit.network.network import get_hostname
+from toolkit.system.secret_key import set_key
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SETTINGS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Retrieving Django SECRET_KEY
 try:
     from vulture_os.secret_key import SECRET_KEY
 # File doesn't exist, we need to create it
 except ImportError:
-    from django.utils.crypto import get_random_string
-    SETTINGS_DIR = os.path.abspath(os.path.dirname(__file__))
-    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-    secret_key = get_random_string(64, chars)
-
-    with open(os.path.join(SETTINGS_DIR, 'secret_key.py'), 'w') as f:
-        f.write("SECRET_KEY = '{}'\n".format(secret_key))
-
-    SECRET_KEY = secret_key
-
+    # Generate a key in the settings' folder
+    SECRET_KEY = set_key(SETTINGS_DIR)
 
 LOG_LEVEL = "INFO"
 

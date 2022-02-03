@@ -36,7 +36,7 @@ from django.core.exceptions import ValidationError
 
 # Django project imports
 from portal.system.self_actions import SELFService, SELFServiceChange, SELFServiceLogout, SELFServiceLost
-from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError
+from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, UserNotFound
 from workflow.models import Workflow
 from system.cluster.models import Cluster
 from authentication.user_portal.models import UserAuthentication
@@ -45,7 +45,7 @@ from authentication.user_portal.models import UserAuthentication
 from django.utils.datastructures     import MultiValueDictKeyError
 from django.core.exceptions          import ObjectDoesNotExist
 from ldap                            import LDAPError
-from portal.system.exceptions        import PasswordMatchError, RedirectionNeededError
+from portal.system.exceptions        import PasswordEmptyError, PasswordMatchError, RedirectionNeededError
 from portal.views.responses          import error_response
 from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError
@@ -101,20 +101,20 @@ def self(request, workflow_id=None, portal_id=None, action=None):
 
     except RedisConnectionError as e:
         # Redis connection error
-        logger.error("PORTAL::log_in: Unable to connect to Redis server : {}".format(str(e)))
+        logger.error("SELF::self: Unable to connect to Redis server : {}".format(str(e)))
         return HttpResponseServerError()
 
     # If assertionError : Forbidden
     except AssertionError as e:
-        logger.error("PORTAL::log_in: AssertionError while trying to create Authentication : ".format(e))
+        logger.error("SELF::self: AssertionError while trying to create Authentication : ".format(e))
         return HttpResponseForbidden()
 
     except ObjectDoesNotExist:
-        logger.error("SELF::Workflow with id '{}' not found".format(workflow_id))
+        logger.error("SELF::self: Workflow with id '{}' not found".format(workflow_id))
         return HttpResponseForbidden()
 
     except Exception as e:
-        logger.error("Unknown error occurred while retrieving user informations :")
+        logger.error("SELF::self: Unknown error occurred while retrieving user informations :")
         logger.exception(e)
         return HttpResponseForbidden()
 
@@ -130,12 +130,12 @@ def self(request, workflow_id=None, portal_id=None, action=None):
 
     # Redis connection error
     except RedisConnectionError as e:
-        logger.error("PORTAL::log_in: Unable to connect to Redis server : {}".format(str(e)))
+        logger.error("SELF::self: Unable to connect to Redis server : {}".format(str(e)))
         return HttpResponseServerError()
 
     # If assertionError : rdm is not valid
     except AssertionError as e:
-        logger.error("PORTAL::log_in: AssertionError while trying to create Authentication : '{}'".format(e))
+        logger.error("SELF::self: AssertionError while trying to create Authentication : '{}'".format(e))
         return error_response(portal, error="Invalid link")
 
     except (DBAPIError, LDAPError, PyMongoError) as e:
@@ -143,7 +143,12 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         logger.exception(e)
         return Action.ask_credentials_response(request, action, "<b> Database error </b> <br> Please contact your administrator")
 
-    except (ChangePasswordError, PasswordMatchError, AuthenticationError) as e:
+    except UserNotFound as e:
+        logger.info(f"SELF::self: no user found : {e}")
+        # Still validate operation even if User wasn't found, to avoid user enumeration
+        return Action.message_response(request, Action.action_ok_message())
+
+    except (ChangePasswordError, PasswordMatchError, PasswordEmptyError, AuthenticationError) as e:
         logger.error("SELF::self: Error while trying to update password : '{}'".format(e))
         return Action.ask_credentials_response(request, action, e)
 
@@ -154,8 +159,10 @@ def self(request, workflow_id=None, portal_id=None, action=None):
             logger.error("SELF::self: Field missing : '{}'".format(e))
             return Action.ask_credentials_response(request, action, "Field missing : "+str(e))
 
-    except (SMTPException, ValidationError) as e:
-        return Action.ask_credentials_response(request, action, str(e))
+    except SMTPException as e:
+        return Action.ask_credentials_response(request, action, f"<b>{str(e)}</b><br>Please contact an administrator")
+    except ValidationError as e:
+        return Action.ask_credentials_response(request, action, f"<b>{str(e)}</b>")
 
     except KeyError as e:
         logger.exception(e)

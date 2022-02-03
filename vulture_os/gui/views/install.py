@@ -34,6 +34,7 @@ from system.users.models import User
 from toolkit.network.network import get_hostname, get_management_ip
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
+from toolkit.system.secret_key import set_key
 import logging
 import requests
 import subprocess
@@ -154,7 +155,7 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Tell local sentinel to monitor local redis server """
     c = RedisBase(get_management_ip(), 26379)
     try:
-        # It may failed if Redis / Sentinel is already configured
+        # It may fail if Redis / Sentinel is already configured
         c.sentinel_monitor()
     except Exception as e:
         logger.error("Install::Sentinel monitor: Error: ")
@@ -238,6 +239,26 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         logger.error("Error at API Request Cluster Info: {} Invalid API KEY ?".format(e), exc_info=1)
         return False
 
+    try:
+        response = requests.get(
+            "https://{}:8000/api/v1/system/cluster/key".format(master_ip),
+            headers={'Cluster-api-key': secret_key},
+            verify=False
+        )
+
+        response.raise_for_status()
+        cluster_infos = response.json()
+
+        if not cluster_infos['status']:
+            raise Exception('Error at API Request Cluster Key: {}'.format(cluster_infos['data']))
+
+        encryption_key = cluster_infos['data']
+        set_key(settings.SETTINGS_DIR, secret_key=encryption_key)
+
+    except Exception as e:
+        logger.error("Error at API Request Cluster Key: {}".format(e), exc_info=1)
+        return False
+
     if not ca_cert:
         try:
             infos = requests.post(
@@ -299,31 +320,38 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     mongo.repl_destroy()
 
     """ Ask primary to join us on our management IP """
-    # TODO: verify to true
-    infos = requests.post(
-        "https://{}:8000/api/system/cluster/add/".format(master_ip),
-        headers={'Cluster-api-key': secret_key},
-        data={'slave_ip': get_management_ip(), 'slave_name': get_hostname()},
-        verify=False
-    )
+    try:
+        infos = requests.post(
+            "https://{}:8000/api/system/cluster/add/".format(master_ip),
+            headers={'Cluster-api-key': secret_key},
+            data={'slave_ip': get_management_ip(), 'slave_name': get_hostname()},
+            verify=False
+        )
 
-    if infos.status_code != 200:
-        raise Exception("Error at API Call on /system/cluster/add/  Response code: {}".format(infos.status_code))
+        infos = infos.json()
 
-    infos = infos.json()
+        if not infos.get('status'):
+            logger.error("Error during API Call to add node to cluster: {}".format(infos.get('message')))
+            return False
 
-    if not infos.get('status'):
-        logger.error("Error during API Call to add node to cluster: {}".format(infos.get('message')))
+    except Exception:
+        logger.error("Error at API Call on /system/cluster/add/ Response code: {}".format(infos.status_code))
         return False
 
-    """ Join our redis server to the redis master """
-    c = RedisBase()
-    redis_master_node = c.get_master(master_hostname)
-    c.slave_of(redis_master_node, 6379)
+    try:
+        """ Join our redis server to the redis master """
+        c = RedisBase()
+        redis_master_node = c.get_master(master_ip)
+        c.slave_of(redis_master_node, 6379)
 
-    """ Tell local sentinel to monitor local redis server """
-    c = RedisBase(get_management_ip(), 26379)
-    c.sentinel_monitor()
+        """ Tell local sentinel to monitor local redis server """
+        c = RedisBase(get_management_ip(), 26379)
+        c.sentinel_monitor(node=redis_master_node)
+
+    except Exception as e:
+        logger.error(f"Could not synchronize Redis instances: {e}")
+        return False
+
 
     """ Sleep a few seconds in order for the replication to occur """
     time.sleep(3)
@@ -335,7 +363,6 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             management_ip=get_management_ip()
         )
     except Exception:
-        logger.error("cluster_join:: Unable to find slave node !")
         logger.error("cluster_join:: Unable to find slave node !")
         return False
 

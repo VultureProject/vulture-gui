@@ -84,7 +84,7 @@ class RedisBase:
         return self.redis.config_rewrite()
 
 
-    def sentinel_monitor(self):
+    def sentinel_monitor(self, node=None):
         """
         Dynamically configure sentinel to monitor the local redis node.
          WARNING: FOr sentinel to work properly, self.node is supposed to be an IP address)
@@ -92,10 +92,10 @@ class RedisBase:
         :return: False if we are not connected to sentinel
         """
 
-        if not self.node or not self.port or self.port != 26379:
+        if not node and not self.node or not self.port or self.port != 26379:
             return False
 
-        return self.redis.sentinel_monitor('mymaster', self.node, 6379, 1)
+        return self.redis.sentinel_monitor('mymaster', node or self.node, 6379, 2)
 
 
     # Write function : need master Redis

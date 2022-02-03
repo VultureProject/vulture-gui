@@ -44,8 +44,8 @@ from authentication.portal_template.models import (RESET_PASSWORD_NAME, INPUT_PA
                                                INPUT_PASSWORD_2, INPUT_EMAIL)
 
 # Required exceptions imports
-from portal.system.exceptions import RedirectionNeededError, PasswordMatchError
-from toolkit.auth.exceptions import AuthenticationError
+from portal.system.exceptions import RedirectionNeededError, PasswordMatchError, PasswordEmptyError
+from toolkit.auth.exceptions import AuthenticationError, UserNotFound
 
 # Extern modules imports
 from ast import literal_eval
@@ -78,7 +78,6 @@ class SELFService(object):
                                          self.workflow.get_redirect_uri())
 
     def get_username_by_email(self, repositories, email):
-        e = None
         for repo in repositories:
             try:
                 if repo.subtype == "internal":
@@ -95,13 +94,13 @@ class SELFService(object):
                             result['backend']))
                 return result
 
+            except (UserNotFound, User.DoesNotExist) as e:
+                raise UserNotFound(f"SELF::get_user_by_email: Could not find email '{email}' on backend '{repo}': {e}")
             except Exception as e:
-                logger.error(
-                    "SELF::get_user_by_email: Failed to find email '{}' on backend '{}' : '{}'".format(
-                        email, repo, str(e)))
-                logger.exception(e)
+                raise Exception(
+                    f"SELF::get_user_by_email: Unknown error while searching for email '{email}' on backend '{repo}': {e}")
 
-        raise e or AuthenticationError
+        raise UserNotFound(f"Could not find user from email '{email}'")
 
 
     def get_user_by_username(self, repositories, username):
@@ -121,14 +120,13 @@ class SELFService(object):
                             result['name'],
                             result['backend']))
                 return result
-
+            except (UserNotFound, User.DoesNotExist) as e:
+                raise UserNotFound(f"SELF::get_user_by_username: Could not find username '{username}' on backend '{repo}': {e}")
             except Exception as e:
-                logger.error(
-                    "SELF::get_user_by_username: Failed to find username '{}' on backend '{}' : '{}'".format(
-                        username, repo, str(e)))
-                logger.exception(e)
+                raise Exception(
+                    f"SELF::get_user_by_username: Unknown error while searching for username '{username}' on backend '{repo}': {e}")
 
-        raise e or AuthenticationError
+        raise UserNotFound(f"Could not find user from username '{username}'")
 
 
     def set_authentication_params(self, repo, authentication_results, username):
@@ -266,6 +264,8 @@ class SELFServiceChange(SELFService):
         new_passwd_cfrm = request.POST[INPUT_PASSWORD_2]
         if new_passwd != new_passwd_cfrm:
             raise PasswordMatchError("Password and confirmation mismatches")
+        if new_passwd == "":
+            raise PasswordEmptyError("Password cannot be empty")
 
         # If reset key, search username by email in repositories
         if rdm:
@@ -390,7 +390,10 @@ class SELFServiceChange(SELFService):
 
 
 class SELFServiceLost(SELFService):
-    def __init__(self, workflow, token_name, global_config, main_url):
+    def __init__(self, workflow, token_name, global_config, main_url, mail_expiration=259200):
+        # Default expiration value is 3 days
+        # TODO allow User to configure the timeout on GUI
+        self.mail_expiration = mail_expiration
         super().__init__(workflow, token_name, global_config, main_url)
 
     def retrieve_credentials(self, request):
@@ -400,21 +403,23 @@ class SELFServiceLost(SELFService):
         # raise django.core.exceptions.ValidationError: ['Enter a valid email address.']
         validate_email(email)
 
-        user_infos = self.get_username_by_email(self.workflow.authentication.repositories, email)
+        user_infos = self.get_username_by_email([r.get_daughter() for r in self.workflow.authentication.repositories.all()], email)
         self.username = user_infos['name']
         self.backend = user_infos['backend']
 
         return email
 
-    def send_lost_mail(self, request, email):
 
-        perform_email_reset(logger, self.main_url, self.workflow.name, self.workflow.authentication.portal_template,
-                            email, self.username, expire=60, repo_id=self.backend.id)
+    def action_ok_message(self):
+        return ("<b>Mail successfully sent</b>"
+        "<br>If your email address is valid, you should receive a message shortly with information on how to reset your password")
 
-        return "Mail successfully sent to '{}'".format(email)
 
     def perform_action(self, request, email):
-        return self.send_lost_mail(request, email)
+        if not perform_email_reset(logger, self.main_url, self.workflow.name, self.workflow.authentication.portal_template,
+                            email, self.username, expire=self.mail_expiration, repo_id=self.backend.id):
+            raise SMTPException("Could not send the reset email")
+        return self.action_ok_message()
 
     # def ask_credentials_response(self):
     #	return self_response()

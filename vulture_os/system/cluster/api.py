@@ -34,10 +34,11 @@ from django.views import View
 
 # Django project imports
 from gui.decorators.apicall import api_need_key
-from system.cluster.models import Node
+from system.cluster.models import Node, MessageQueue
 from system.cluster.views import COMMAND_LIST, cluster_edit
 from system.cluster.models import Cluster
 from toolkit.mongodb.mongo_base import MongoBase
+from services.frontend.models import Frontend
 
 # Required exceptions imports
 
@@ -126,6 +127,149 @@ def cluster_info(request):
         return JsonResponse({
             'status': True,
             'data': nodes
+        })
+
+    except Exception as e:
+        logger.critical(e, exc_info=1)
+        if settings.DEV_MODE:
+            raise
+
+        return JsonResponse({
+            'status': False,
+            'data': _('An error has occurred')
+        }, 500)
+
+
+@csrf_exempt
+@api_need_key('cluster_api_key')
+@require_http_methods(['GET'])
+def secret_key(request):
+    try:
+
+        assert settings.SECRET_KEY
+
+        return JsonResponse({
+            'status': True,
+            'data': settings.SECRET_KEY
+        })
+
+    except AssertionError:
+        logger.error("Cannot get secret key: no key in settings")
+        return JsonResponse({
+            'status': False,
+            'data': _("No secret key to provide")
+        }, 404)
+
+    except Exception as e:
+        logger.critical(e, exc_info=1)
+        if settings.DEV_MODE:
+            raise
+
+        return JsonResponse({
+            'status': False,
+            'data': _('An error has occurred')
+        }, 500)
+
+
+@api_need_key('cluster_api_key')
+@require_http_methods(['GET'])
+def get_message_queues(request):
+    try:
+        params = {}
+        status = request.GET.get('status')
+        if status:
+            if status not in ("new", "running", "done", "failure"):
+                return JsonResponse({
+                    'status': False,
+                    'data': _("Invalid value for parameter 'status'")
+                }, status=400)
+            params['status'] = status
+        node = request.GET.get('node')
+        if node:
+            params['node__name'] = node
+
+        limit = request.GET.get('limit', "100")
+        try:
+            limit = int(limit)
+        except:
+            return JsonResponse({
+                'status': False,
+                'data': _("Invalid value for parameter 'limit'")
+            }, status=400)
+
+        tasks = MessageQueue.objects.filter(**params).order_by('modified')[:limit]
+
+        res = [m.to_template() for m in tasks]
+
+        return JsonResponse({
+            'status': True,
+            'data': res
+        })
+
+    except Exception as e:
+        logger.critical(e, exc_info=1)
+        if settings.DEV_MODE:
+            raise
+
+        return JsonResponse({
+            'status': False,
+            'data': _('An error has occurred')
+        }, 500)
+
+
+@api_need_key('cluster_api_key')
+@require_http_methods(['GET'])
+def get_cluster_status(request):
+    try:
+        params = {}
+        node_name = request.GET.get('node')
+        node = None
+        if node_name:
+            try:
+                node = Node.objects.get(name=node_name)
+                params['node'] = node
+            except Node.DoesNotExist:
+                return JsonResponse({
+                    'status': False,
+                    'data': _(f"node with name {node_name} does not exist")},
+                    status=404
+                )
+
+        pending_tasks = MessageQueue.objects.filter(**params, status__in=["new", "running"]).count()
+        failed_tasks = MessageQueue.objects.filter(**params, status="failure").count()
+
+        result = True
+        frontends_status = []
+        for f in Frontend.objects.filter(enabled=True):
+            if node:
+                if node not in f.get_nodes():
+                    continue
+                f_status = f.status.get(node.name, "UNKNOWN")
+                if f_status != "OPEN":
+                    result = False
+            else:
+                # No need to set status=False if it already is
+                if result:
+                    # Check on each node is status is UP
+                    for f_node, f_stat in f.status.items():
+                        if f_stat != "OPEN":
+                            result = False
+                f_status = f.status
+
+            frontends_status.append({f.name: f_status})
+
+        if result and (pending_tasks > 0 or failed_tasks > 0):
+            result = False
+
+        return JsonResponse({
+            'status': result,
+            'data': {
+                'tasks': {
+                    'pending': pending_tasks,
+                    'failed': failed_tasks
+                },
+                'frontends': frontends_status
+            }
         })
 
     except Exception as e:

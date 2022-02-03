@@ -435,12 +435,13 @@ class Node(models.Model):
 
                 message.result = my_function(*args)
                 message.status = 'done'
-            except ServiceExit:
+            except ServiceExit as e:
                 """ Service stop asked """
-                raise
+                raise e
             except KeyError as e:
                 logger.exception(e)
                 message.result = "KeyError {}".format(str(e))
+                message.status = 'failure'
             except Exception as e:
                 logger.exception(e)
                 logger.error("Cluster::process_messages: {}".format(str(e)))

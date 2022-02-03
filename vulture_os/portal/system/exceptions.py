@@ -67,6 +67,11 @@ class PasswordMatchError(Exception):
         super(PasswordMatchError, self).__init__(message)
 
 
+class PasswordEmptyError(Exception):
+    def __init__(self, message):
+        super(PasswordEmptyError, self).__init__(message)
+
+
 class UserAlreadyExistsError(Exception):
     def __init__(self, message):
         super(UserAlreadyExistsError, self).__init__(message)
