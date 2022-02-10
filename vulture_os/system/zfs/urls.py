@@ -39,7 +39,7 @@ urlpatterns = [
 
 
     path('api/v1/system/zfs/', api.ZFSAPIv1.as_view(), name="system.zfs.api"),
-    path('api/v1/system/zfs/<int:object_id>', api.ZFSAPIv1.as_view(), name="system.zfs.api"),
+    path('api/v1/system/zfs/<int:object_id>/', api.ZFSAPIv1.as_view(), name="system.zfs.api"),
     path('api/v1/system/zfs/<int:object_id>/<str:action>/', api.ZFSAPIv1.as_view(), name="system.zfs.api"),
 
 ]

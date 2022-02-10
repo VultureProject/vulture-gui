@@ -33,6 +33,7 @@ urlpatterns = [
     re_path('^portal/authentication/acl/edit/(?P<object_id>[A-Fa-f0-9]+)?$', views.auth_access_control_edit, name="portal.authentication_access_control.edit"),
     path('api/v1/portal/authentication/acl/clone/', api.auth_access_control_clone, name="portal.authentication_access_control.clone"),
     path('api/v1/portal/authentication/acl/', api.AuthenticationAccessControlAPIv1.as_view(), name="api.portal.authentication_access_control"),
-    re_path('^api/v1/portal/authentication/acl/(?P<object_id>[A-Fa-f0-9]+)?$', api.AuthenticationAccessControlAPIv1.as_view(), name="api.portal.authentication_access_control"),
+
+    path('api/v1/portal/authentication/acl/<str:object_id>/', api.AuthenticationAccessControlAPIv1.as_view(), name="api.portal.authentication_access_control"),
     re_path('^portal/authentication/acl/delete/(?P<object_id>[A-Fa-f0-9]+)?$', DeleteAuthAccessControl.as_view(), name="portal.authentication_access_control.delete"),
 ]
