@@ -73,5 +73,5 @@ urlpatterns = [
                 name="darwin.defender_ruleset.delete"),
 
         path("api/v1/darwin/defender_policy/", api.DefenderPolicyAPIv1.as_view(), name="api.darwin.defender_policy"),
-        path("api/v1/darwin/defender_policy/<str:object_id>", api.DefenderPolicyAPIv1.as_view(), name="api.darwin.defender_policy"),
+        path("api/v1/darwin/defender_policy/<str:object_id>/", api.DefenderPolicyAPIv1.as_view(), name="api.darwin.defender_policy"),
 ]
