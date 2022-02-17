@@ -49,6 +49,6 @@ urlpatterns = [
     re_path('^api/ci/get/(?P<objclass>[A-Za-z0-9\._]+)/(?P<object_id>[A-Fa-f0-9]+)?$',
             ApiWrapperGet.as_view(), name='gui.views.api_wrapper_get'),
 
-    re_path('^api/v1/services/monitor$', api_view.services_monitor, name="api.services_monitor"),
+    re_path('^api/v1/services/monitor/$', api_view.services_monitor, name="api.services_monitor"),
 
 ]

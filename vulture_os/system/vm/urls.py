@@ -37,7 +37,7 @@ urlpatterns = [
     re_path('^system/vm/stop/(?P<object_id>[A-Fa-f0-9]+)$', views.vm_stop, name="system.vm.stop"),
 
     path('api/v1/system/vm/', api.VMAPIv1.as_view(), name="system.vm.api"),
-    path('api/v1/system/vm/<int:object_id>', api.VMAPIv1.as_view(), name="system.vm.api"),
+    path('api/v1/system/vm/<int:object_id>/', api.VMAPIv1.as_view(), name="system.vm.api"),
     path('api/v1/system/vm/<int:object_id>/<str:action>/', api.VMAPIv1.as_view(), name="system.vm.api"),
 
 ]

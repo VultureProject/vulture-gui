@@ -43,7 +43,7 @@ urlpatterns = [
             views.tenants_edit,
             name="system.tenants.edit"),
 
-    re_path('api/v1/system/tenants/(?P<object_id>[A-Fa-f0-9]+)?$', api.TenantsAPIv1.as_view(), name="system.tenants.api"),
-    re_path('api/v1/system/tenants/(?P<object_id>[A-Fa-f0-9]+)?/$', api.TenantsAPIv1.as_view(), name="system.tenants.api"),
+    path('api/v1/system/tenants/', api.TenantsAPIv1.as_view(), name="system.tenants.api"),
+    re_path('api/v1/system/tenants/(?P<object_id>[A-Fa-f0-9]+)/$', api.TenantsAPIv1.as_view(), name="system.tenants.api"),
 
 ]

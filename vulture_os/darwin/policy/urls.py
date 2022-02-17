@@ -49,11 +49,11 @@ urlpatterns = [
             DeleteDarwinPolicy.as_view(),
             name="darwin.policy.delete"),
 
-    path('api/v1/darwin/policy', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
-    path('api/v1/darwin/policy/<int:object_id>', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
-    path('api/v1/darwin/policy/<int:object_id>/<str:action>', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
-    path('api/v1/darwin/filter/types', api.DarwinFilterTypesAPIv1.as_view(), name="darwin.filter.types.api"),
-    path('api/v1/darwin/filter', api.DarwinFilterAPIv1.as_view(), name="darwin.filter.api"),
-    path('api/v1/darwin/filter/<int:filter_id>', api.DarwinFilterAPIv1.as_view(), name="darwin.filter.api"),
-    path('api/v1/darwin/filter/<str:filter_type>/<str:ressource>', api.DarwinFilterRessourcesAPIv1.as_view(), name="darwin.filter.api"),
+    path('api/v1/darwin/policy/', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
+    path('api/v1/darwin/policy/<int:object_id>/', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
+    path('api/v1/darwin/policy/<int:object_id>/<str:action>/', api.DarwinPolicyAPIv1.as_view(), name="darwin.policy.api"),
+    path('api/v1/darwin/filter/types/', api.DarwinFilterTypesAPIv1.as_view(), name="darwin.filter.types.api"),
+    path('api/v1/darwin/filter/', api.DarwinFilterAPIv1.as_view(), name="darwin.filter.api"),
+    path('api/v1/darwin/filter/<int:filter_id>/', api.DarwinFilterAPIv1.as_view(), name="darwin.filter.api"),
+    path('api/v1/darwin/filter/<str:filter_type>/<str:ressource>/', api.DarwinFilterRessourcesAPIv1.as_view(), name="darwin.filter.api"),
 ]
