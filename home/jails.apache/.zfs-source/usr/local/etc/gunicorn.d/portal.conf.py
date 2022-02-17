@@ -1,5 +1,5 @@
 # Gunicorn configuration file for portal
-bind="127.0.0.7:9000"
+bind=["127.0.0.7:9000","[fd00::207]:9000"]
 accesslog="/var/log/vulture/os/gunicorn-access.log"
 errorlog="/var/log/vulture/os/gunicorn-error.log"
 worker_connections=1000

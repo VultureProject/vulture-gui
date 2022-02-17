@@ -36,7 +36,8 @@ urlpatterns = [
     re_path('portal/template/edit/(?P<object_id>[A-Fa-f0-9]+)?', views.template_edit, name="portal.template.edit"),
     path('api/v1/portal/template/clone/', api.portal_template_clone, name="portal.template.clone"),
     path('api/v1/portal/template/', api.PortalTemplateAPIv1.as_view(), name="api.portal.template"),
-    re_path('^api/v1/portal/template/(?P<object_id>[A-Fa-f0-9]+)?$', api.PortalTemplateAPIv1.as_view(), name="api.portal.template"),
+    re_path('^api/v1/portal/template/(?P<object_id>[A-Fa-f0-9]+)/$', api.PortalTemplateAPIv1.as_view(), name="api.portal.template"),
+
     re_path('^portal/template/delete/(?P<object_id>[A-Fa-f0-9]+)?$', DeletePortalTemplate.as_view(), name="portal.template.delete"),
 
     path('api/v1/portal/images/', api.PortalImageAPIv1.as_view(), name="api.portal.image"),

@@ -27,8 +27,10 @@ from django.urls import path, re_path
 from authentication.idp.api import IDPApiView, IDPApiUserView
 
 urlpatterns = [
-   re_path('^api/v1/authentication/idp/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)$', IDPApiView.as_view(), name="authentication.idp"),
-   re_path('^api/v1/authentication/idp/users/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)$', IDPApiUserView.as_view(), name="authentication.idp.users"),
+   re_path('^api/v1/authentication/idp/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)/$', IDPApiView.as_view(), name="authentication.idp"),
+
+   re_path('^api/v1/authentication/idp/users/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)/$', IDPApiUserView.as_view(), name="authentication.idp.users"),
+
    path('api/v1/authentication/idp/users/<int:portal_id>/<int:repo_id>/<str:action>/',
         IDPApiUserView.as_view(),
         name="authentication.idp.users.action")
