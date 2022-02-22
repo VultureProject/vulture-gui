@@ -91,9 +91,10 @@ class VadesecureO365Parser(ApiParser):
         )
 
         if response.status_code != 200:
-            self.frontend.vadesecure_o365_access_token = None
-            self.frontend.vadesecure_o365_access_token_expiry = None
-            self.frontend.save()
+            if self.frontend:
+                self.frontend.vadesecure_o365_access_token = None
+                self.frontend.vadesecure_o365_access_token_expiry = None
+                self.frontend.save()
             raise VadesecureO365APIError(f"Error on URL: {self.TOKEN_ENDPOINT} Status: {response.status_code} Reason/Content: {response.content}")
 
         data = response.json()
@@ -102,9 +103,10 @@ class VadesecureO365Parser(ApiParser):
         # decrease value by 10 seconds to ensure token is refreshed before being invalid (while still using it for most of its validity time)
         self.expires_on = datetime.fromtimestamp(time.time() + int(data['expires_in']) - 10).replace(tzinfo=timezone.utc)
 
-        self.frontend.vadesecure_o365_access_token = self.access_token
-        self.frontend.vadesecure_o365_access_token_expiry = self.expires_on
-        self.frontend.save()
+        if self.frontend:
+            self.frontend.vadesecure_o365_access_token = self.access_token
+            self.frontend.vadesecure_o365_access_token_expiry = self.expires_on
+            self.frontend.save()
 
         logger.info(f"[{__parser__}]:__connect: Successfuly got a new token, valid until {self.expires_on}", extra={'frontend': str(self.frontend)})
 
@@ -141,9 +143,10 @@ class VadesecureO365Parser(ApiParser):
             raise VadesecureO365APIError(f"Error at Vadesecure request, unknown method : {method}")
 
         if response.status_code != 200:
-            self.frontend.vadesecure_o365_access_token = None
-            self.frontend.vadesecure_o365_access_token_expiry = None
-            self.frontend.save()
+            if self.frontend:
+                self.frontend.vadesecure_o365_access_token = None
+                self.frontend.vadesecure_o365_access_token_expiry = None
+                self.frontend.save()
             logger.info(f"[{__parser__}]:__execute_query: Error while getting logs, invalidated cached access token for next try", extra={'frontend': str(self.frontend)})
             raise VadesecureO365APIError(f"Error at Vadesecure API Call URL: {url} Code: {response.status_code} Reason/Content: {response.content}")
 
