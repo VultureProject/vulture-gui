@@ -48,6 +48,7 @@ from toolkit.api_parser.rapid7_idr.rapid7_idr import Rapid7IDRParser
 from toolkit.api_parser.harfanglab.harfanglab import HarfangLabParser
 from toolkit.api_parser.vadesecure.vadesecure import VadesecureParser
 from toolkit.api_parser.crowdstrike.crowdstrike import CrowdstrikeParser
+from toolkit.api_parser.vadesecure_o365.vadesecure_o365 import VadesecureO365Parser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -75,7 +76,8 @@ PARSER_LIST = {
     "harfanglab": HarfangLabParser,
     "vadesecure": VadesecureParser,
     "defender": DefenderParser,
-    "crowdstrike": CrowdstrikeParser
+    "crowdstrike": CrowdstrikeParser,
+    "vadesecure_o365": VadesecureO365Parser,
 }
 
 

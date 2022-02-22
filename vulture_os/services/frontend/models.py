@@ -883,6 +883,42 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # Vadesecure 0365 attributes
+    vadesecure_o365_host = models.TextField(
+        verbose_name = _("Vadesecure O365 Host"),
+        help_text = _("FQDN of the API endpoint"),
+        default = "",
+    )
+
+    vadesecure_o365_tenant = models.TextField(
+        verbose_name = _("Vadesecure O365 tenant"),
+        help_text = _("Tenant"),
+        default = "",
+    )
+
+    vadesecure_o365_client_id = models.TextField(
+        verbose_name = _("Vadesecure O365 Client ID"),
+        help_text = _("Client ID used for authentication"),
+        default = "",
+    )
+
+    vadesecure_o365_client_secret = models.TextField(
+        verbose_name = _("Vadesecure O365 Client's Secret"),
+        help_text = _("Client's secret used for authentication"),
+        default = "",
+    )
+
+    # Only used internally to keep a valid access_token across runs
+    vadesecure_o365_access_token = models.TextField(
+        verbose_name = _("API current cached token"),
+        default = "",
+    )
+
+    # Only used internally to keep a valid access_token across runs
+    vadesecure_o365_access_token_expiry = models.DateTimeField(
+        default=datetime.datetime.utcnow
+    )
+
     
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -1094,6 +1130,13 @@ class Frontend(models.Model):
                     result['crowdstrike_client'] = self.crowdstrike_client
                     result['crowdstrike_client_id'] = self.crowdstrike_client_id
                     result['crowdstrike_client_secret'] = self.crowdstrike_client_secret
+                elif self.api_parser_type == "vadesecure_o365":
+                    result['vadesecure_o365_host'] = self.vadesecure_o365_host
+                    result['vadesecure_o365_tenant'] = self.vadesecure_o365_tenant
+                    result['vadesecure_o365_client_id'] = self.vadesecure_o365_client_id
+                    result['vadesecure_o365_client_secret'] = self.vadesecure_o365_client_secret
+                    result['vadesecure_o365_access_token'] = self.vadesecure_o365_access_token
+                    result['vadesecure_o365_access_token_expiry'] = self.vadesecure_o365_access_token_expiry
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
