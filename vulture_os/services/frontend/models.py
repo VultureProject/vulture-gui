@@ -826,13 +826,11 @@ class Frontend(models.Model):
         help_text = _("Hostname (without scheme or path) of the Vadesecure server"),
         default = "",
     )
-
     vadesecure_login = models.TextField(
         verbose_name = _("Vadesecure login"),
         help_text = _("Login used to fetch the token for the Vadesecure API"),
         default = "",
     )
-
     vadesecure_password = models.TextField(
         verbose_name = _("Vadesecure password"),
         help_text = _("Password used to fetch the token for the Vadesecure API"),
@@ -845,13 +843,11 @@ class Frontend(models.Model):
         help_text = _("Complete enpoint address to get an Oauth token before requesting Microsoft's APIs"),
         default = "",
     )
-
     defender_client_id = models.TextField(
         verbose_name = _("Defender OAuth client id"),
         help_text = _("Client id of the OAuth endpoint to get an OAuth token before requesting Microsoft's APIs"),
         default = "",
     )
-
     defender_client_secret = models.TextField(
         verbose_name = _("Defender OAuth client secret"),
         help_text = _("Client secret of the OAuth endpoint to get an OAuth token before requesting Microsoft's APIs"),
@@ -864,19 +860,16 @@ class Frontend(models.Model):
         help_text = _("Complete enpoint address"),
         default = "",
     )
-
     crowdstrike_client = models.TextField(
         verbose_name = _("CrowdStrike Username"),
         help_text = _("User's name"),
         default = "",
     )
-
     crowdstrike_client_id = models.TextField(
         verbose_name = _("CrowdStrike Client ID"),
         help_text = _("Client ID used for authentication"),
         default = "",
     )
-
     crowdstrike_client_secret = models.TextField(
         verbose_name = _("CrowdStrike Client's Secret"),
         help_text = _("Client's secret used for authentication"),
@@ -889,36 +882,47 @@ class Frontend(models.Model):
         help_text = _("FQDN of the API endpoint"),
         default = "",
     )
-
     vadesecure_o365_tenant = models.TextField(
         verbose_name = _("Vadesecure O365 tenant"),
         help_text = _("Tenant"),
         default = "",
     )
-
     vadesecure_o365_client_id = models.TextField(
         verbose_name = _("Vadesecure O365 Client ID"),
         help_text = _("Client ID used for authentication"),
         default = "",
     )
-
     vadesecure_o365_client_secret = models.TextField(
         verbose_name = _("Vadesecure O365 Client's Secret"),
         help_text = _("Client's secret used for authentication"),
         default = "",
     )
-
     # Only used internally to keep a valid access_token across runs
     vadesecure_o365_access_token = models.TextField(
         verbose_name = _("API current cached token"),
         default = "",
     )
-
     # Only used internally to keep a valid access_token across runs
     vadesecure_o365_access_token_expiry = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
 
+    # Nozomi Probe attributes
+    nozomi_probe_host = models.TextField(
+        verbose_name = _("Nozomi Probe Host"),
+        help_text = _("Hostname (without scheme or path) of the Nozomi Probe"),
+        default = "",
+    )
+    nozomi_probe_login = models.TextField(
+        verbose_name = _("Nozomi Probe User"),
+        help_text = _("User to use to contact Nozomi probe api"),
+        default = "",
+    )
+    nozomi_probe_password = models.TextField(
+        verbose_name=_("Nozomi Probe Password"),
+        help_text=_("Password to use to contact Nozomi probe api"),
+        default="",
+    )
     
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -1137,6 +1141,10 @@ class Frontend(models.Model):
                     result['vadesecure_o365_client_secret'] = self.vadesecure_o365_client_secret
                     result['vadesecure_o365_access_token'] = self.vadesecure_o365_access_token
                     result['vadesecure_o365_access_token_expiry'] = self.vadesecure_o365_access_token_expiry
+                elif self.api_parser_type == "nozomi_probe":
+                    result['nozomi_probe_host'] = self.nozomi_probe_host
+                    result['nozomi_probe_login'] = self.nozomi_probe_login
+                    result['nozomi_probe_password'] = self.nozomi_probe_password
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]

@@ -49,6 +49,7 @@ from toolkit.api_parser.harfanglab.harfanglab import HarfangLabParser
 from toolkit.api_parser.vadesecure.vadesecure import VadesecureParser
 from toolkit.api_parser.crowdstrike.crowdstrike import CrowdstrikeParser
 from toolkit.api_parser.vadesecure_o365.vadesecure_o365 import VadesecureO365Parser
+from toolkit.api_parser.nozomi_probe.nozomi_probe import NozomiProbeParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -78,6 +79,7 @@ PARSER_LIST = {
     "defender": DefenderParser,
     "crowdstrike": CrowdstrikeParser,
     "vadesecure_o365": VadesecureO365Parser,
+    "nozomi_probe": NozomiProbeParser
 }
 
 
