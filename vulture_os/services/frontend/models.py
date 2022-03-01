@@ -923,6 +923,32 @@ class Frontend(models.Model):
         help_text=_("Password to use to contact Nozomi probe api"),
         default="",
     )
+
+    # Blackberry Cylance attributes
+    blackberry_cylance_host = models.TextField(
+        verbose_name = _("Blackberry Cylance Host"),
+        help_text = _("FQDN of the API endpoint"),
+        default = "",
+    )
+
+    blackberry_cylance_tenant = models.TextField(
+        verbose_name = _("Blackberry Cylance tenant"),
+        help_text = _("Tenant"),
+        default = "",
+    )
+
+    blackberry_cylance_app_id = models.TextField(
+        verbose_name = _("Blackberry Cylance Application ID"),
+        help_text = _("Client ID used for authentication"),
+        default = "",
+    )
+
+    blackberry_cylance_app_secret = models.TextField(
+        verbose_name = _("Blackberry Cylance Application's Secret"),
+        help_text = _("Client's secret used for authentication"),
+        default = "",
+    )
+
     
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
@@ -1145,6 +1171,11 @@ class Frontend(models.Model):
                     result['nozomi_probe_host'] = self.nozomi_probe_host
                     result['nozomi_probe_login'] = self.nozomi_probe_login
                     result['nozomi_probe_password'] = self.nozomi_probe_password
+                elif self.api_parser_type == "blackberry_cylance":
+                    result['blackberry_cylance_host'] = self.blackberry_cylance_host
+                    result['blackberry_cylance_tenant'] = self.blackberry_cylance_tenant
+                    result['blackberry_cylance_app_id'] = self.blackberry_cylance_app_id
+                    result['blackberry_cylance_app_secret'] = self.blackberry_cylance_app_secret
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
