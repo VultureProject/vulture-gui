@@ -28,7 +28,7 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
 
@@ -146,13 +146,18 @@ class SentinelOneParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, cursor=None, since=None, activity_logs=False):
+    def get_logs(self, cursor=None, since=None, to=None, activity_logs=False):
         # Format timestamp for query, API wants a Z at the end
         if isinstance(since, datetime):
             since = since.isoformat()
         since = since.replace("+00:00", "Z")
         if since[-1] != "Z":
             since += "Z"
+        if isinstance(to, datetime):
+            to = to.isoformat()
+        to = to.replace("+00:00", "Z")
+        if to[-1] != "Z":
+            to += "Z"
 
         # Activity logs needs another endpoint + another payload
         if activity_logs:
@@ -168,7 +173,10 @@ class SentinelOneParser(ApiParser):
 
         #query = {'createdAt__gt': since, 'sortBy': "createdAt"} => activity
         #query = {'updatedAt__gt': since, 'sortBy': "updatedAt"} => alerts
-        query[f"{time_field_name}__gt"] = since
+        if since:
+            query[f"{time_field_name}__gt"] = since
+        if to:
+            query[f"{time_field_name}__lte"] = to
         query['sortBy'] = time_field_name
 
         # Handle paginated results
@@ -216,6 +224,7 @@ class SentinelOneParser(ApiParser):
     def execute(self):
 
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
+        to = datetime.now(timezone.utc)
 
         for event_kind in ['alert', 'activity']:
             first = True
@@ -225,7 +234,7 @@ class SentinelOneParser(ApiParser):
 
             while cursor or first:
 
-                response = self.get_logs(cursor, since, event_kind=='activity')
+                response = self.get_logs(cursor=cursor, since=since, to=to, activity_logs=event_kind=='activity')
 
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
