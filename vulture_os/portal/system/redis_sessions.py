@@ -506,6 +506,7 @@ class REDISOauth2Session(REDISSession):
                 self.keys['scope'] = {}
             if not self.keys.get('token_ttl'):
                 self.keys['token_ttl'] = timeout
+                self.keys['iat'] = int(time.time())
                 self.keys['exp'] = int(time.time()) + timeout
             if not self.keys.get('repo'):
                 self.keys['repo'] = repo_id
