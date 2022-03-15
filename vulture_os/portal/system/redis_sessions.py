@@ -71,12 +71,15 @@ class REDISSession(object):
     def __getitem__(self, key):
         return self.keys.get(key)
 
+    def set_ttl(self, ttl):
+        if self.handler.ttl(self.key) < ttl:
+            return self.handler.expire(self.key, ttl)
+        return True
+
     def write_in_redis(self, timeout):
         # Do NOT write user_infos in Redis, it has already be done  in set_user_infos
         if self.handler.hmset(self.key, {k:v for k,v in self.keys.items() if not k.startswith("user_infos_") and v is not None}):
-            if self.handler.ttl(self.key) < timeout:
-                return self.handler.expire(self.key, timeout)
-            return True
+            return self.set_ttl(timeout)
         else:
             return False
 
