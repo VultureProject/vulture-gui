@@ -241,9 +241,12 @@ class SentinelOneParser(ApiParser):
 
                 if len(logs) > 0:
                     if event_kind == "alert":
-                        last_timestamp = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+                        # timestamps compared by API have a 10ms precision (empiric observation)
+                        last_timestamp = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=10)
                     else:
-                        last_timestamp = datetime.fromisoformat(logs[-1]['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+                        # timestamps compared by API have a 10ms precision (empiric observation)
+                        # need to use fromtimestamp() as value in log has been modified by previous format_log()
+                        last_timestamp = datetime.fromtimestamp(logs[-1]['createdAt'])+timedelta(milliseconds=10)
 
                     if last_timestamp > self.frontend.last_api_call:
                         self.frontend.last_api_call = last_timestamp
