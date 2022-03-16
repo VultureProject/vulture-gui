@@ -24,7 +24,6 @@ __doc__ = 'Blackberry Cylance API Parser'
 __parser__ = 'BLACKBERRY CYLANCE'
 
 import json
-from importlib_metadata import requires
 import jwt
 import logging
 import requests
