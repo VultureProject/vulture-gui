@@ -50,6 +50,7 @@ from toolkit.api_parser.vadesecure.vadesecure import VadesecureParser
 from toolkit.api_parser.crowdstrike.crowdstrike import CrowdstrikeParser
 from toolkit.api_parser.vadesecure_o365.vadesecure_o365 import VadesecureO365Parser
 from toolkit.api_parser.nozomi_probe.nozomi_probe import NozomiProbeParser
+from toolkit.api_parser.blackberry_cylance.blackberry_cylance import BlackberryCylanceParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -79,7 +80,8 @@ PARSER_LIST = {
     "defender": DefenderParser,
     "crowdstrike": CrowdstrikeParser,
     "vadesecure_o365": VadesecureO365Parser,
-    "nozomi_probe": NozomiProbeParser
+    "nozomi_probe": NozomiProbeParser,
+    "blackberry_cylance": BlackberryCylanceParser,
 }
 
 
