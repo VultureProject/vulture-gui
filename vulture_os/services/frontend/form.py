@@ -226,6 +226,7 @@ class FrontendForm(ModelForm):
                            'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode',
                            'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
                            'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id','vadesecure_o365_client_secret',
+                           'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id','blackberry_cylance_app_secret',
                            ]:
             self.fields[field_name].required = False
 
@@ -298,6 +299,7 @@ class FrontendForm(ModelForm):
                   'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
                   'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
                   'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id','vadesecure_o365_client_secret',
+                  'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id','blackberry_cylance_app_secret',
                   'darwin_mode')
 
         widgets = {
@@ -422,6 +424,10 @@ class FrontendForm(ModelForm):
             'vadesecure_o365_tenant': TextInput(attrs={'class': 'form-control'}),
             'vadesecure_o365_client_id': TextInput(attrs={'class': 'form-control'}),
             'vadesecure_o365_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'blackberry_cylance_host': TextInput(attrs={'class': 'form-control'}),
+            'blackberry_cylance_tenant': TextInput(attrs={'class': 'form-control'}),
+            'blackberry_cylance_app_id': TextInput(attrs={'class': 'form-control'}),
+            'blackberry_cylance_app_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
         }
 
     def clean_name(self):
