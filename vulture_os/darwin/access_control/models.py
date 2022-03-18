@@ -229,9 +229,14 @@ class AccessControl(models.Model):
                 acl += "acl {}".format(acl_name)
                 acl += " {}".format(make_criterion(line['criterion'], line.get('criterion_name')))
 
+                pattern = line.get('pattern', '')
+                # ensure quoting in haproxy conf when pattern contains spaces
+                if " " in pattern:
+                    pattern = '"' + pattern + '"'
+
                 tmp_lst = [line.get('converter', ''),
                            line.get('operator', ''),
-                           line.get('pattern', '')]
+                           pattern]
                 # Add -m option if a converter is used
                 if line.get('converter', '') != "":
                     acl += " -m"
