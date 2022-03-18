@@ -204,10 +204,10 @@ access_control_vue = new Vue({
 
             var ands = [];
             for (var i in tmp_acls_or){
-                ands.push("("+tmp_acls_or[i].join(' and ')+")");
+                ands.push(tmp_acls_or[i].join(' '));
             }
 
-            rule += ands.join(' or ');
+            rule += ands.join(' || ');
             this.rule = acl_html + "\n\n" + rule;
         },
 
