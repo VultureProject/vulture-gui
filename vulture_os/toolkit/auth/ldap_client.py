@@ -675,13 +675,22 @@ class LDAPClient(BaseAuth):
         for key, val in user_attrs.items():
             # decode all bytes entries
             if isinstance(val, bytes):
-                val = val.decode('utf-8')
+                try:
+                    val = val.decode('utf-8')
+                except UnicodeDecodeError:
+                    logger.warning(f"ldap_client::_format_user_results:: ignoring key {key} -> cannot decode")
+                    continue
             if isinstance(val, list):
                 for subval in val:
                     if isinstance(subval, bytes):
-                        i = val.index(subval)
-                        val.pop(i)
-                        val.insert(i, subval.decode('utf-8'))
+                        try:
+                            i = val.index(subval)
+                            val.pop(i)
+                            val.insert(i, subval.decode('utf-8'))
+                        except UnicodeDecodeError:
+                            logger.warning(f"ldap_client::_format_user_results:: ignoring value in key {key} -> cannot decode")
+                            continue
+
             if key == "userPassword":
                 continue
             elif key == self.user_groups_attr:
