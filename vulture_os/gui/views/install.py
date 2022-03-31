@@ -247,12 +247,12 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         )
 
         response.raise_for_status()
-        cluster_infos = response.json()
+        keys_info = response.json()
 
-        if not cluster_infos['status']:
-            raise Exception('Error at API Request Cluster Key: {}'.format(cluster_infos['data']))
+        if not keys_info['status']:
+            raise Exception('Error at API Request Cluster Key: {}'.format(keys_info['data']))
 
-        encryption_key = cluster_infos['data']
+        encryption_key = keys_info['data']
         set_key(settings.SETTINGS_DIR, secret_key=encryption_key)
 
     except Exception as e:
