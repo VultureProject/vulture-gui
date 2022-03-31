@@ -337,8 +337,8 @@ def build_conf(node_logger, frontend_id):
      and if reload_conf is True, conf has changed so restart service
     """
     if reload:
-        result = "HAProxy conf updated. Restarting service."
-        result += service.restart()
+        result = "HAProxy conf updated. Reloading service."
+        result += service.reload()
     else:
         result += "HAProxy conf hasn't changed."
     return result

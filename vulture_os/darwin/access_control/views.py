@@ -151,7 +151,7 @@ def access_control_edit(request, object_id=None, api=None):
                 #     nodes = nodes.union(nodes_tmp)
 
                 for node in nodes:
-                    api_res = node.api_request("services.haproxy.haproxy.restart_service")
+                    api_res = node.api_request("services.haproxy.haproxy.reload_service")
                     if not api_res.get('status'):
                         logger.error("Access_Control::edit: API error while trying to "
                                      "restart HAProxy service : {}".format(api_res.get('message')))
