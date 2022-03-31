@@ -311,6 +311,11 @@ class SELFServiceChange(SELFService):
 
         return old_password
 
+
+    def action_ok_message(self):
+        return "Password successfully changed"
+
+
     # Change password
     def perform_action(self, request, old_password):
 
@@ -365,7 +370,8 @@ class SELFServiceChange(SELFService):
             # Delete key in Redis
             self.redis_base.delete('password_reset_' + rdm)
 
-        return "Password successfully changed"
+        return self.action_ok_message()
+
 
     def ask_credentials_response(self, request, action, error_msg, **kwargs):
         rdm = request.GET.get(RESET_PASSWORD_NAME, None) or request.POST.get(RESET_PASSWORD_NAME, None)
