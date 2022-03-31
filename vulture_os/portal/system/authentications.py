@@ -452,7 +452,7 @@ class DOUBLEAuthentication(Authentication):
 
     def create_authentication(self):
         if self.resend or not self.redis_portal_session.get_otp_key():
-            """ If the user ask for resend otp key or if the otp key has not yet been sent """
+            """ If the user ask to resend otp key or if the otp key has not yet been sent """
             otp_repo = self.workflow.authentication.otp_repository
             user_infos = self.redis_portal_session.get_user_infos(self.backend_id)
             user_phone = user_infos.get('user_phone', None)
@@ -493,6 +493,8 @@ class DOUBLEAuthentication(Authentication):
                 raise OTPError("Error while sending secret key <br> <b> Contact your administrator </b>")
 
             self.redis_portal_session.set_otp_info(otp_info)
+            # Ensure session is valid for at least 5 minutes
+            self.redis_portal_session.set_ttl(300)
             logger.debug("DB-AUTH::create_authentication: OTP key successfully written in Redis session")
 
         elif self.workflow.authentication.otp_repository.otp_type == "totp":

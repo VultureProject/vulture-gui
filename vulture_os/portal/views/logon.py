@@ -257,7 +257,7 @@ def openid_callback(request, workflow_id, repo_id):
             'access_token': oauth2_token,
             'token_type': "Bearer",
             'scope': ["openid"],
-            'created_at': session['iat'],
+            'iat': session['iat'],
             'exp': session['exp'],
         })
 
@@ -369,7 +369,7 @@ def openid_token(request, portal_id):
             'access_token': session['access_token'],
             'token_type': "Bearer",
             'scope': ["openid"],
-            'created_at': session['iat'],
+            'iat': session['iat'],
             'exp': session['exp'],
         })
     except RedisError as e:
@@ -411,6 +411,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         assert session['scope'], "Session does not contain any scope"
         # Add internal Oauth2 attributes
         session['scope'].update({'exp': session['exp']})
+        session['scope'].update({'iat': session['iat']})
         return JsonResponse(session['scope'])
     except AssertionError as e:
         logger.info(e)
