@@ -28,7 +28,7 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
 
@@ -68,17 +68,20 @@ class SentinelOneParser(ApiParser):
 
         self.session = None
 
+
     def _connect(self):
         try:
             if self.session is None:
                 self.session = requests.Session()
                 login_url = f"{self.sentinel_one_host}/{self.LOGIN_URI_TOKEN}"
+                logger.info(f"[{__parser__}]:_connect: connecting with endpoint '{login_url}'...", extra={'frontend': str(self.frontend)})
 
                 payload = {
                     "data": {
                         "apiToken": self.sentinel_one_apikey
                     }
                 }
+                logger.debug(f"[{__parser__}]:_connect: payload is '{payload}'", extra={'frontend': str(self.frontend)})
                 response = requests.post(
                     login_url,
                     json=payload,
@@ -88,15 +91,18 @@ class SentinelOneParser(ApiParser):
                 assert response.get('data', {}).get('token'), "Cannot retrieve token from API : {}".format(
                     response)
                 self.session.headers.update({'Authorization': f"Token {response['data']['token']}"})
+                logger.info(f"[{__parser__}]:_connect: access token successfuly retrieved, ready to query", extra={'frontend': str(self.frontend)})
 
             return True
 
         except Exception as err:
             raise SentinelOneAPIError(err)
 
+
     def __execute_query(self, method, url, query, timeout=10):
 
         self._connect()
+        logger.debug(f"[{__parser__}]:__execute_query: url: '{url}', query: '{query}', method: '{method}'", extra={'frontend': str(self.frontend)})
 
         if method == "GET":
             response = self.session.get(
@@ -120,9 +126,12 @@ class SentinelOneParser(ApiParser):
         if response.status_code != 200:
             raise SentinelOneAPIError(f"Error at SentinelOne API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
+        logger.info(f"[{__parser__}]:__execute_query: query successful", extra={'frontend': str(self.frontend)})
         return response.json()
 
+
     def test(self):
+        logger.info(f"[{__parser__}]:test: launching test query (getting logs from 10 days ago)", extra={'frontend': str(self.frontend)})
         try:
             logs = self.get_logs(since=(datetime.utcnow()-timedelta(days=10)).isoformat()+"Z")
 
@@ -137,13 +146,18 @@ class SentinelOneParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, cursor=None, since=None, activity_logs=False):
+    def get_logs(self, cursor=None, since=None, to=None, activity_logs=False):
         # Format timestamp for query, API wants a Z at the end
         if isinstance(since, datetime):
             since = since.isoformat()
         since = since.replace("+00:00", "Z")
         if since[-1] != "Z":
             since += "Z"
+        if isinstance(to, datetime):
+            to = to.isoformat()
+        to = to.replace("+00:00", "Z")
+        if to[-1] != "Z":
+            to += "Z"
 
         # Activity logs needs another endpoint + another payload
         if activity_logs:
@@ -159,7 +173,10 @@ class SentinelOneParser(ApiParser):
 
         #query = {'createdAt__gt': since, 'sortBy': "createdAt"} => activity
         #query = {'updatedAt__gt': since, 'sortBy': "updatedAt"} => alerts
-        query[f"{time_field_name}__gt"] = since
+        if since:
+            query[f"{time_field_name}__gt"] = since
+        if to:
+            query[f"{time_field_name}__lte"] = to
         query['sortBy'] = time_field_name
 
         # Handle paginated results
@@ -168,10 +185,12 @@ class SentinelOneParser(ApiParser):
 
         return self.__execute_query("GET", alert_url, query)
 
+
     def getAlertComment(self, alertId):
         comment_url = f"{self.sentinel_one_host}/{self.THREATS}/{alertId}/notes"
         ret = self.__execute_query("GET", comment_url, {})
         return ret['data']
+
 
     def format_log(self, log, event_kind):
         if event_kind == "alert":
@@ -201,17 +220,21 @@ class SentinelOneParser(ApiParser):
         log['event_kind'] = event_kind
         return json.dumps(log)
 
+
     def execute(self):
 
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
+        to = datetime.now(timezone.utc)
 
         for event_kind in ['alert', 'activity']:
             first = True
             cursor = None
 
+            logger.info(f"[{__parser__}]:execute: getting '{event_kind}' logs", extra={'frontend': str(self.frontend)})
+
             while cursor or first:
 
-                response = self.get_logs(cursor, since, event_kind=='activity')
+                response = self.get_logs(cursor=cursor, since=since, to=to, activity_logs=event_kind=='activity')
 
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
@@ -227,9 +250,12 @@ class SentinelOneParser(ApiParser):
 
                 if len(logs) > 0:
                     if event_kind == "alert":
-                        last_timestamp = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+                        # timestamps compared by API have a 10ms precision (empiric observation)
+                        last_timestamp = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=10)
                     else:
-                        last_timestamp = datetime.fromisoformat(logs[-1]['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+                        # timestamps compared by API have a 10ms precision (empiric observation)
+                        # need to use fromtimestamp() as value in log has been modified by previous format_log()
+                        last_timestamp = datetime.fromtimestamp(logs[-1]['createdAt'])+timedelta(milliseconds=10)
 
                     if last_timestamp > self.frontend.last_api_call:
                         self.frontend.last_api_call = last_timestamp
