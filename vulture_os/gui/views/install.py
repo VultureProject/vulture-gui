@@ -181,7 +181,9 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request("services.rsyslogd.rsyslog.restart_service")
 
     logger.debug("API call to configure HAProxy")
+    node.api_request("services.haproxy.haproxy.build_portals_conf")
     node.api_request("services.haproxy.haproxy.configure_node")
+    node.api_request("services.haproxy.haproxy.reload_service")
 
     logger.debug("API call to fetch default yara rules")
     node.api_request("toolkit.yara.yara.fetch_yara_rules")
@@ -247,12 +249,12 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         )
 
         response.raise_for_status()
-        cluster_infos = response.json()
+        keys_info = response.json()
 
-        if not cluster_infos['status']:
-            raise Exception('Error at API Request Cluster Key: {}'.format(cluster_infos['data']))
+        if not keys_info['status']:
+            raise Exception('Error at API Request Cluster Key: {}'.format(keys_info['data']))
 
-        encryption_key = cluster_infos['data']
+        encryption_key = keys_info['data']
         set_key(settings.SETTINGS_DIR, secret_key=encryption_key)
 
     except Exception as e:
@@ -390,7 +392,9 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     node.api_request("gui.crontab.feed.security_update")
 
     logger.debug("API call to configure HAProxy")
+    Cluster.api_request("services.haproxy.haproxy.build_portals_conf")
     node.api_request("services.haproxy.haproxy.configure_node")
+    Cluster.api_request("services.haproxy.haproxy.reload_service")
 
     logger.debug("API call to reload whole darwin configuration")
     node.api_request("services.darwin.darwin.reload_all")
