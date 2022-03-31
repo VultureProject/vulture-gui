@@ -148,16 +148,18 @@ class SentinelOneParser(ApiParser):
 
     def get_logs(self, cursor=None, since=None, to=None, activity_logs=False):
         # Format timestamp for query, API wants a Z at the end
-        if isinstance(since, datetime):
-            since = since.isoformat()
-        since = since.replace("+00:00", "Z")
-        if since[-1] != "Z":
-            since += "Z"
-        if isinstance(to, datetime):
-            to = to.isoformat()
-        to = to.replace("+00:00", "Z")
-        if to[-1] != "Z":
-            to += "Z"
+        if since:
+            if isinstance(since, datetime):
+                since = since.isoformat()
+            since = since.replace("+00:00", "Z")
+            if since[-1] != "Z":
+                since += "Z"
+        if to:
+            if isinstance(to, datetime):
+                to = to.isoformat()
+            to = to.replace("+00:00", "Z")
+            if to[-1] != "Z":
+                to += "Z"
 
         # Activity logs needs another endpoint + another payload
         if activity_logs:
