@@ -429,7 +429,7 @@ def workflow_edit(request, object_id, action=None):
                 # This also reloads Haproxy
                 if workflow.authentication is not None or had_authentication:
                     api_res = node.api_request("services.haproxy.haproxy.configure_node")
-                api_res = node.api_request("services.haproxy.haproxy.restart_service")
+                api_res = node.api_request("services.haproxy.haproxy.reload_service")
                 if not api_res.get('status'):
                     logger.error("Workflow::edit: API error while trying to "
                                     "restart HAProxy service : {}".format(api_res.get('message')))

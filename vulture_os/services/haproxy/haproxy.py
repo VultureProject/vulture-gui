@@ -32,15 +32,22 @@ from services.haproxy.models import HAProxySettings
 from services.service import Service
 
 # Local imports
-from system.cluster.models import Cluster
+from system.cluster.models import Cluster, Node
 from system.config.models import write_conf
 from system.exceptions import VultureSystemError
+from toolkit.network.network import get_hostname
+
 # Required exceptions imports
-from services.exceptions import ServiceError, ServiceStatusError, ServiceTestConfigError
+from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
+                               TemplateSyntaxError, UndefinedError)
+from services.exceptions import ServiceError, ServiceStatusError, ServiceTestConfigError, ServiceJinjaError
+from system.exceptions import VultureSystemConfigError
+
 from subprocess import CalledProcessError
 
 # Extern modules imports
 from subprocess import check_output, PIPE
+from jinja2 import Environment, FileSystemLoader
 
 # Logger configuration imports
 import logging
@@ -57,6 +64,9 @@ MANAGEMENT_SOCKET = "/var/sockets/haproxy/haproxy.sock"
 
 JINJA_PATH = "/home/vlt-os/vulture_os/services/haproxy/config/"
 JINJA_TEMPLATE = "spoe_session.txt"
+
+JINJA_PORTAL_PATH = "/home/vlt-os/vulture_os/services/config/"
+JINJA_PORTAL_TEMPLATE = "haproxy_internal_portals.conf"
 
 
 class HaproxyService(Service):
@@ -327,8 +337,57 @@ def build_conf(node_logger, frontend_id):
      and if reload_conf is True, conf has changed so restart service
     """
     if reload:
-        result = "HAProxy conf updated. Restarting service."
-        result += service.restart()
+        result = "HAProxy conf updated. Reloading service."
+        result += service.reload()
     else:
         result += "HAProxy conf hasn't changed."
     return result
+
+
+def generate_portals_conf(node_logger, node):
+    """ Render the internal portals' configuration for the current node
+    :return:     The generated configuration as string, or raise
+    """
+    # The following var is only used by error, do not forget to adapt if needed
+    template_name = JINJA_PORTAL_PATH + JINJA_PORTAL_TEMPLATE
+    try:
+        jinja2_env = Environment(loader=FileSystemLoader(JINJA_PORTAL_PATH))
+        template = jinja2_env.get_template(JINJA_PORTAL_TEMPLATE)
+        return template.render({'my_node': node,
+                                'other_nodes': Node.objects.exclude(name=node.name)})
+    # In ALL exceptions, associate an error message
+    # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
+    except TemplateNotFound:
+        raise ServiceJinjaError("The following file cannot be found : '{}'".format(template_name), "haproxy")
+    except TemplatesNotFound:
+        raise ServiceJinjaError("The following files cannot be found : '{}'".format(template_name), "haproxy")
+    except (TemplateAssertionError, TemplateRuntimeError):
+        raise ServiceJinjaError("Unknown error in template generation: {}".format(template_name), "haproxy")
+    except UndefinedError:
+        raise ServiceJinjaError("A variable is undefined while trying to render the following template: "
+                                        "{}".format(template_name), "haproxy")
+    except TemplateSyntaxError:
+        raise ServiceJinjaError("Syntax error in the template: '{}'".format(template_name), "haproxy")
+
+
+def get_portals_filename():
+    return f"{HAPROXY_PATH}/internal_portals.cfg"
+
+
+def build_portals_conf(node_logger):
+    """ Generate conf of haproxy cluster portals proxy on local node
+    This function must be called during whenever a new node is added or removed from a cluster (or when the cluster is created)
+    :param node_logger: Logger sent to all API requests
+    :return:
+    """
+
+    node = Cluster.get_current_node()
+    service = HaproxyService()
+
+    if not node:
+        raise VultureSystemConfigError("Could not get current node information")
+
+    write_conf(node_logger, [get_portals_filename(), generate_portals_conf(node_logger, node), HAPROXY_OWNER, HAPROXY_PERMS])
+
+    return service.reload()
+
