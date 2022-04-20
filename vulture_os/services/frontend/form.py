@@ -225,8 +225,12 @@ class FrontendForm(ModelForm):
                            'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
                            'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode',
                            'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
-                           'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id','vadesecure_o365_client_secret',
-                           'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id','blackberry_cylance_app_secret',
+                           'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id',
+                           'vadesecure_o365_client_secret',
+                           'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id',
+                           'blackberry_cylance_app_secret',
+                           'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
+                           'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
                            ]:
             self.fields[field_name].required = False
 
@@ -298,8 +302,12 @@ class FrontendForm(ModelForm):
                   "carbon_black_host", "carbon_black_orgkey", "carbon_black_apikey",
                   'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
                   'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
-                  'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id','vadesecure_o365_client_secret',
-                  'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id','blackberry_cylance_app_secret',
+                  'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id',
+                  'vadesecure_o365_client_secret',
+                  'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id',
+                  'blackberry_cylance_app_secret',
+                  'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret', 'ms_sentinel_subscription_id',
+                  'ms_sentinel_resource_group', 'ms_sentinel_workspace',
                   'darwin_mode')
 
         widgets = {
@@ -428,6 +436,12 @@ class FrontendForm(ModelForm):
             'blackberry_cylance_tenant': TextInput(attrs={'class': 'form-control'}),
             'blackberry_cylance_app_id': TextInput(attrs={'class': 'form-control'}),
             'blackberry_cylance_app_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'ms_sentinel_tenant_id': TextInput(attrs={'class': 'form-control'}),
+            'ms_sentinel_appid': TextInput(attrs={'class': 'form-control'}),
+            'ms_sentinel_appsecret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'ms_sentinel_subscription_id': TextInput(attrs={'class': 'form-control'}),
+            'ms_sentinel_resource_group': TextInput(attrs={'class': 'form-control'}),
+            'ms_sentinel_workspace': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):

@@ -930,26 +930,54 @@ class Frontend(models.Model):
         help_text = _("FQDN of the API endpoint"),
         default = "",
     )
-
     blackberry_cylance_tenant = models.TextField(
         verbose_name = _("Blackberry Cylance tenant"),
         help_text = _("Tenant"),
         default = "",
     )
-
     blackberry_cylance_app_id = models.TextField(
         verbose_name = _("Blackberry Cylance Application ID"),
         help_text = _("Client ID used for authentication"),
         default = "",
     )
-
     blackberry_cylance_app_secret = models.TextField(
         verbose_name = _("Blackberry Cylance Application's Secret"),
         help_text = _("Client's secret used for authentication"),
         default = "",
     )
 
-    
+    # Microsoft Sentinel attributes
+    ms_sentinel_tenant_id = models.TextField(
+        verbose_name = _("Microsoft Sentinel Tenant ID"),
+        help_text = _("Your Microsoft Tenant ID"),
+        default = "",
+    )
+    ms_sentinel_appid = models.TextField(
+        verbose_name = _("Microsoft Sentinel App ID"),
+        help_text = _("Microsoft Sentinel Client ID"),
+        default = "",
+    )
+    ms_sentinel_appsecret = models.TextField(
+        verbose_name=_("Microsoft Sentinel App Secret"),
+        help_text=_("Application Secret"),
+        default="",
+    )
+    ms_sentinel_subscription_id = models.TextField(
+        verbose_name=_("Microsoft Sentinel Subscription ID"),
+        help_text=_("Subscription ID"),
+        default="",
+    )
+    ms_sentinel_resource_group = models.TextField(
+        verbose_name=_("Microsoft Sentinel Resource Group"),
+        help_text=_("Resource Group name"),
+        default="",
+    )
+    ms_sentinel_workspace = models.TextField(
+        verbose_name=_("Microsoft Sentinel Workspace"),
+        help_text=_("Workspace name"),
+        default="",
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -1131,35 +1159,44 @@ class Frontend(models.Model):
                     result['proofpoint_tap_endpoint'] = self.proofpoint_tap_endpoint
                     result['proofpoint_tap_principal'] = self.proofpoint_tap_principal
                     result['proofpoint_tap_secret'] = self.proofpoint_tap_secret
+
                 elif self.api_parser_type == "sentinel_one":
                     result['sentinel_one_host'] = self.sentinel_one_host
                     result['sentinel_one_apikey'] = self.sentinel_one_apikey
+
                 elif self.api_parser_type == "carbon_black":
                     result['carbon_black_host'] = self.carbon_black_host
                     result['carbon_black_orgkey'] = self.carbon_black_orgkey
                     result['carbon_black_apikey'] = self.carbon_black_apikey
+
                 elif self.api_parser_type == "rapid7_idr":
                     result['rapid7_idr_host'] = self.rapid7_idr_host
                     result['rapid7_idr_apikey'] = self.rapid7_idr_apikey
+
                 elif self.api_parser_type == "netskope":
                     result['netskope_host'] = self.netskope_host
                     result['netskope_apikey'] = self.netskope_apikey
+
                 elif self.api_parser_type == "harfanglab":
                     result['harfanglab_host'] = self.harfanglab_host
                     result['harfanglab_apikey'] = self.harfanglab_apikey
+
                 elif self.api_parser_type == "vadesecure":
                     result['vadesecure_host'] = self.vadesecure_host
                     result['vadesecure_login'] = self.vadesecure_login
                     result['vadesecure_password'] = self.vadesecure_password
+
                 elif self.api_parser_type == "defender":
                     result['defender_token_endpoint'] = self.defender_token_endpoint
                     result['defender_client_id'] = self.defender_client_id
                     result['defender_client_secret'] = self.defender_client_secret
+
                 elif self.api_parser_type == "crowdstrike":
                     result['crowdstrike_host'] = self.crowdstrike_host
                     result['crowdstrike_client'] = self.crowdstrike_client
                     result['crowdstrike_client_id'] = self.crowdstrike_client_id
                     result['crowdstrike_client_secret'] = self.crowdstrike_client_secret
+
                 elif self.api_parser_type == "vadesecure_o365":
                     result['vadesecure_o365_host'] = self.vadesecure_o365_host
                     result['vadesecure_o365_tenant'] = self.vadesecure_o365_tenant
@@ -1167,15 +1204,25 @@ class Frontend(models.Model):
                     result['vadesecure_o365_client_secret'] = self.vadesecure_o365_client_secret
                     result['vadesecure_o365_access_token'] = self.vadesecure_o365_access_token
                     result['vadesecure_o365_access_token_expiry'] = self.vadesecure_o365_access_token_expiry
+
                 elif self.api_parser_type == "nozomi_probe":
                     result['nozomi_probe_host'] = self.nozomi_probe_host
                     result['nozomi_probe_login'] = self.nozomi_probe_login
                     result['nozomi_probe_password'] = self.nozomi_probe_password
+
                 elif self.api_parser_type == "blackberry_cylance":
                     result['blackberry_cylance_host'] = self.blackberry_cylance_host
                     result['blackberry_cylance_tenant'] = self.blackberry_cylance_tenant
                     result['blackberry_cylance_app_id'] = self.blackberry_cylance_app_id
                     result['blackberry_cylance_app_secret'] = self.blackberry_cylance_app_secret
+
+                elif self.api_parser_type == "ms_sentinel":
+                    result['ms_sentinel_tenant_id'] = self.ms_sentinel_tenant_id
+                    result['ms_sentinel_appid'] = self.ms_sentinel_appid
+                    result['ms_sentinel_appsecret'] = self.ms_sentinel_appsecret
+                    result['ms_sentinel_subscription_id'] = self.ms_sentinel_subscription_id
+                    result['ms_sentinel_resource_group'] = self.ms_sentinel_resource_group
+                    result['ms_sentinel_workspace'] = self.ms_sentinel_workspace
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
