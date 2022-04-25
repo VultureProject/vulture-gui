@@ -169,7 +169,7 @@ class ReachFiveParser(ApiParser):
                 msg = f"most recent log is from {last_datetime}"
                 logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        # Replace "Z" by "+00:00" for datetime parsing
-        # No need to make_aware, date already contains timezone
-        self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
+                # Replace "Z" by "+00:00" for datetime parsing
+                # No need to make_aware, date already contains timezone
+                self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
         logger.error(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
