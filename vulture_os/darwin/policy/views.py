@@ -50,7 +50,7 @@ def policy_edit(request, object_id=None, clone=False):
     darwin_filters = []
     for filter_type in DarwinFilter.objects.all():
         darwin_filters.append(filter_type.to_dict())
-    return render(request, 'policy_edit_v2.html', {
+    return render(request, 'policy_edit.html', {
         "object_id": object_id if object_id else "",
         "clone": 1 if clone else 0,
         "darwin_filters": json_dumps(darwin_filters)

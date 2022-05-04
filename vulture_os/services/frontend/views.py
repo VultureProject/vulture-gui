@@ -336,9 +336,9 @@ def frontend_edit(request, object_id=None, api=False):
             reputationctx_objs.append(reputationctx_f.save(commit=False))
 
         listener_objs = []
-        if form.data.get('mode') not in ["impcap", "filebeat"] and form.data.get('listening_mode') not in ("file", "api", "kafka", "redis"):
+        if form.data.get('mode') not in ["filebeat"] and form.data.get('listening_mode') not in ("file", "api", "kafka", "redis"):
 
-            # At least one Listener is required if Frontend enabled, except for listener of type "File", "pcap", and "API"
+            # At least one Listener is required if Frontend enabled, except for listener of type "File", and "API"
             if form.data.get('enabled') and not listener_ids:
                 form.add_error(None, "At least one listener is required if frontend is enabled.")
 
@@ -416,10 +416,7 @@ def frontend_edit(request, object_id=None, api=False):
         frontend = form.save(commit=False)
         frontend.configuration = {}
 
-        if frontend.mode == "impcap":
-            if frontend.impcap_intf.node:
-                node_listeners[frontend.impcap_intf.node] = []
-        elif frontend.mode == "log" and frontend.listening_mode in ("file", "kafka", "redis"):
+        if frontend.mode == "log" and frontend.listening_mode in ("file", "kafka", "redis"):
             if frontend.node:
                 node_listeners[frontend.node] = []
         elif frontend.mode == "filebeat" and frontend.filebeat_listening_mode in ("file", "api"):
@@ -496,7 +493,7 @@ def frontend_edit(request, object_id=None, api=False):
                         Cluster.api_request('services.haproxy.haproxy.reload_service')
 
                     """ If it is an HAProxy only conf """
-                elif frontend.mode not in ("log", "filebeat", "impcap") and not frontend.enable_logging:
+                elif frontend.mode not in ("log", "filebeat") and not frontend.enable_logging:
                     """ And it was not """
                     if "mode" in changed_data or "enable_logging" in changed_data:
                         # API request deletion of rsyslog frontend filename
@@ -519,8 +516,6 @@ def frontend_edit(request, object_id=None, api=False):
                 frontend.ruleset = "haproxy"
             elif frontend.mode == "tcp":
                 frontend.ruleset = "haproxy_tcp"
-            elif frontend.mode == "impcap":
-                frontend.ruleset = "impcap"
 
             if frontend.enable_logging:
                 log_forwarders = set()

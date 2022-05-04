@@ -179,15 +179,7 @@ class PFService(Service):
         if not os_path.isfile(filepath):
             write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
 
-        filepath = DATABASES_PATH + "/vulture-v4.netset"
-        if not os_path.isfile(filepath):
-            write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
-
-        filepath = DATABASES_PATH + "/vulture-v6.netset"
-        if not os_path.isfile(filepath):
-            write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
-
-        """ Check if Whitelist and Blacklist has changed """
+        """ Check if Whitelist and Blacklist have changed """
         wl_bl = {
             'pf.whitelist.conf': config_model.pf_whitelist,
             'pf.blacklist.conf': config_model.pf_blacklist,

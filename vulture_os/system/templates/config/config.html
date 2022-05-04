@@ -202,10 +202,6 @@
 
   $('.tageditor').tagEditor();
 
-  $('#reinit_predator_key').on('click', function(){
-    $('#id_predator_apikey').val($(this).data('key'));
-  });
-
   {% if success %}
   new PNotify({
     title: "Success",

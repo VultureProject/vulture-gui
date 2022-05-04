@@ -345,8 +345,3 @@ LOGO_SM = 'img/vulture-logo-small.png'
 LOGO = 'img/vulture-logo.png'
 LOGO_LG = 'img/vulture_logo.png'
 WALLPAPER = 'img/VultureOS_wallpaper.png'
-
-DOCUMENTATION_PATH = "/var/db/documentation"
-
-PREDATOR_HOST = "https://predator.vultureproject.org/"
-PREDATOR_VERSION = "v1"

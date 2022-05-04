@@ -22,13 +22,6 @@ if [ "$loop" ==  "0" ]; then
         echo "# Declare interfaces to be cloned (eg: 'lagg0 vlan100 vlan200') in /usr/local/etc/cloned.intf" >> /etc/rc.conf.d/network 
         echo -n "cloned_interfaces=\"lo1 lo2 lo3 lo4 lo5 lo6${vlan_nic}" >> /etc/rc.conf.d/network
 
-        # tap0 must be always written in network config to avoid interface drop when altering network settings
-        # if ! /usr/local/sbin/vm switch info public ; then
-            echo " tap0\"" >> /etc/rc.conf.d/network
-            echo "ifconfig_tap0=\"inet 192.168.1.1 netmask 255.255.255.0\"" >> /etc/rc.conf.d/network
-        #else
-        #    echo "\"" >> /etc/rc.conf.d/network
-        #fi
         echo "# Declare custom configuration in /usr/local/etc/custom.intf" >> /etc/rc.conf.d/network
         if [ -f "/usr/local/etc/custom.intf" ]; then
             /bin/cat /usr/local/etc/custom.intf >> /etc/rc.conf.d/network

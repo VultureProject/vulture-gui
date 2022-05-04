@@ -46,26 +46,6 @@
                           </div>
                         </div>
                       </div>
-                      <div class="form-group col-md-12">
-                        <label class="col-sm-4 control-label">{% trans "Predator API KEY" %}</label>
-                        <div class="col-sm-5">
-                          <div class="input-group">
-                            {{form.predator_apikey}}
-                            <span class="input-group-btn">
-                              <button class="btn btn-primary" type="button" id="reinit_predator_key" data-key="fdsqJr_45;..">{% trans "Reinit" %}</button>
-                            </span>
-                          </div>
-                          {{form.predator_apikey.errors|safe}}
-                        </div>
-                      </div>
-                      <div class="form-group col-md-12">
-                        <label class="col-sm-4 control-label">{% trans "Shodan API KEY" %}</label>
-                        <div class="col-sm-5">
-                          {{form.shodan_apikey}}
-                          {{form.shodan_apikey.errors|safe}}
-                          <span class="text-primary">{% trans "Connect to" %} <a href="https://shodan.io">Shodan.io</a> {% trans "to get an API KEY" %}</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -86,9 +66,5 @@
 {% block jquery_code %}
 
   $('.tageditor').tagEditor();
-
-  $('#reinit_predator_key').on('click', function(){
-    $('#id_predator_apikey').val($(this).data('key'));
-  });
 
 {% endblock %}

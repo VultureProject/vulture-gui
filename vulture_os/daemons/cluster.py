@@ -44,7 +44,6 @@ logger = logging.getLogger('daemon')
 from system.cluster.models import Cluster
 from services.pf.pf import PFService
 from daemons.monitor import MonitorJob
-from daemons.reconcile import ReconcileJob
 from services.exceptions import ServiceExit
 from signal import signal, SIGTERM, SIGINT
 
@@ -62,10 +61,6 @@ if __name__ == '__main__':
     """ Launch monitor job """
     monitor_job = MonitorJob(10)
     monitor_job.start()
-
-    """ Launch reconciliate job """
-    reconcile_job = ReconcileJob(10)
-    reconcile_job.start()
 
     signal(SIGTERM, service_shutdown)
     signal(SIGINT, service_shutdown)
@@ -134,10 +129,8 @@ if __name__ == '__main__':
 
     # Ask the jobs to terminate.
     monitor_job.ask_shutdown()
-    reconcile_job.ask_shutdown()
 
     # Wait for the threads to close...
     monitor_job.join()
-    reconcile_job.join()
 
     logger.info("Vultured stopped.")

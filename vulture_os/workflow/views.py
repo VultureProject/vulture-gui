@@ -31,7 +31,6 @@ from django.conf import settings
 from django.urls import reverse
 
 # Django project imports
-from darwin.defender_policy.models import DefenderPolicy
 from darwin.access_control.models import AccessControl
 from system.cluster.models import Cluster
 from workflow.models import Workflow, WorkflowACL
@@ -137,10 +136,6 @@ def save_workflow(request, workflow_obj, object_id=None):
     order = 1
     had_authentication = workflow_obj.authentication is not None
 
-    old_defender_policy_id = None
-    if workflow_obj.defender_policy:
-        old_defender_policy_id = deepcopy(workflow_obj.defender_policy.pk)
-
     try:
         workflow = json.loads(request.POST['workflow'])
         workflow_name = request.POST['workflow_name']
@@ -197,17 +192,6 @@ def save_workflow(request, workflow_obj, object_id=None):
 
                 workflow_acls.append(workflow_acl)
             
-            elif step['data']['type'] == "waf":
-                if step['data']['object_id']:
-                    defender_policy = DefenderPolicy.objects.get(pk=step['data']['object_id'])
-                    workflow_obj.defender_policy = defender_policy
-                else:
-                    workflow_obj.defender_policy = None
-
-
-                before_policy = False
-                order = 1
-
             elif step['data']['type'] == "authentication":
                 if step['data']['object_id']:
                     authentication = UserAuthentication.objects.get(pk=step['data']['object_id'])
@@ -245,31 +229,6 @@ def save_workflow(request, workflow_obj, object_id=None):
             node.api_request("workflow.workflow.build_conf", workflow_obj.pk)
         workflow_obj.frontend.reload_conf()
         workflow_obj.backend.reload_conf()
-
-        # We need to reload the new defender policy configuration if:
-        # we set a defender policy and (if we create an object, or if we updated the policy, the FQDN or the
-        # public directory)
-        if workflow_obj.defender_policy:
-            logger.info("Need to reload the Defender Policy SPOE configuration")
-            Cluster.api_request(
-                "darwin.defender_policy.policy.write_defender_backend_conf",
-                workflow_obj.defender_policy.pk
-            )
-            Cluster.api_request(
-                "darwin.defender_policy.policy.write_defender_spoe_conf",
-                workflow_obj.defender_policy.pk
-            )
-
-        # We need to reload the old defender policy configuration if:
-        # we set a defender policy previously, and the previous configuration is different from the new one
-        if old_defender_policy_id and old_defender_policy_id != workflow_obj.defender_policy.pk:
-            logger.info(
-                "Old Defender policy {} SPOE configuration will be reloaded".format(old_defender_policy_id)
-            )
-
-            Cluster.api_request(
-                "darwin.defender_policy.policy.write_defender_spoe_conf", old_defender_policy_id
-            )
 
         # Reload HAProxy on concerned nodes
         for node in nodes:
@@ -322,7 +281,6 @@ def workflow_edit(request, object_id=None, api=False):
                 data = {
                     'acls': [a.to_template() for a in AccessControl.objects.all()],
                     'backends': [b.to_dict() for b in Backend.objects.filter(enabled=True, mode=mode)],
-                    'waf_policies': [w.to_template() for w in DefenderPolicy.objects.all()],
                     'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)],
                     'authentication_filters': [a.to_dict() for a in AuthAccessControl.objects.all()],
                 }

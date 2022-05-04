@@ -3,290 +3,398 @@
 {% load static %}
 
 {% block css_include %}
-
-
+  <link rel="stylesheet" href="{% static 'plugins/vue/vue-select.min.css' %}"/>
 {% endblock %}
 
 {% block js_include %}
+  <script src="{% static 'plugins/vue/vue-select.min.js' %}"></script>
+  <script src="{% static 'plugins/vue/vue-js-toggle-button.min.js' %}"></script>
+  <script src="{% static 'plugins/vue/vue-tags-input.min.js' %}"></script>
+  <script src="{% static 'js/darwin_policy_edit.js' %}"></script>
 {% endblock %}
 
 
 {% block content %}
 
-  <section class="content">
-    <div class="row">
-      <div class="col-md-12">
-        <form id="policy_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
-          {% csrf_token %}
-          {# Print form errors correctly #}
-          {% if form.non_field_errors %}
-            <div class="panel panel-danger">
-              <div class="panel-heading">
-              <h4 class="panel-title"><i class="icon fa fa-ban"></i> Form errors </h4>
+  <section class="content" id="darwin_policy_edit">
+    <form @submit.prevent="savePolicy" class="form-horizontal">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="panel">
+            <div class="panel-heading">
+              <div class="panel-control">
+                <button type="submit" class="btn btn-default btn-active-primary"><i class="fa fa-save"></i>&nbsp;Save</button>
               </div>
-              <div class="panel-body">
-                {{ form.non_field_errors|safe }}
-              </div>
-            </div>
-          {% endif %}
-          {# If there is save/configuration errors #}
-          {% if save_error %}
-            <div class="alert alert-danger alert-dismissible nav-tabs-custom">
-              <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                <li><a href="#tab_2" data-toggle="tab">Advanced informations</a></li>
-                <li class="active"><a href="#tab_1" data-toggle="tab">Message</a></li>
-                <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
-              </ul>
-              <div class="tab-content no-padding">
-                <div class="tab-pane active" id="tab_1">
-                  <pre>{{ save_error.0 }}</pre>
-                </div>
-                <div class="tab-pane" id="tab_2">
-                  <pre>{{ save_error.1 }}</pre>
-                </div>
-              </div>
-            </div> <!-- /.alert -->
-          {% endif %}
-          {# If there is connection test errors #}
-          {% if connection_error %}
-            <div class="alert alert-danger alert-dismissible nav-tabs-custom">
-              <h4>Connection error</h4>
-              {{ connection_error }}
-            </div> <!-- /.alert -->
-          {% endif %}
-          {# If there is success message #}
-          {% if success %}
-            <div class="alert alert-success alert-dismissible nav-tabs-custom">
-              <h4>Success</h4>
-              <pre>{{ success }}</pre>
-            </div> <!-- /.alert -->
-          {% endif %}
-            <div class="panel">
-            <div class="panel-title">
-                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Darwin Security policies" %}</h1>
+              <h3 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Darwin Security policy" %}</h3>
             </div>
             <div class="panel-body">
-              <div class="nav-tabs-custom">
-                <ul class="nav nav-tabs">
-                  <li class="active">
-                    <a href="#tab_general" data-toggle="tab">{% trans "General" %}</a>
-                  </li>
-                  <li>
-                    <a href="#tab_filters" data-toggle="tab">{% trans "Filters selection" %}</a>
-                  </li>
+              <div class="row">
+                <div class="form-group col-md-12">
+                  <label class="col-sm-4 control-label">{% trans "Name" %}:</label>
+                  <div class="col-sm-5">
+                    <input type="text" v-model="policy.name" class="form-control" placeholder="{% trans 'Policy Name' %}"/>
+                    <small class="help-block">{% trans "The friendly name of your policy (should be unique)" %}</small>
+                  </div>
+                </div>
+                <div class="form-group col-md-12">
+                  <label class="col-sm-4 control-label">{% trans "Description" %}:</label>
+                  <div class="col-sm-5">
+                    <textarea v-model="policy.description" class="form-control" placeholder="{% trans 'Policy description' %}"></textarea>
+                    <small class="help-block">{% trans "A description for your policy" %}</small>
+                  </div>
+                </div>
+              </div>
 
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane active" id="tab_general">
-                    <br/>
-                    <div class="row">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label class="col-sm-4 control-label">{{ form.name.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.name}}
-                              {{form.name.errors|safe}}
-                            </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row -->
-                    <div class="row">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                        <label class="col-sm-4 control-label">{{ form.description.label }}</label>
-                          <div class="col-sm-5">
-                            {{form.description}}
-                            {{form.description.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row -->
-                  </div> <!-- /.tab-pane -->
-                  <div class="tab-pane " id="tab_filters">
-                    <div class="row">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <p>
-                            {% for filterpolicy in filterpolicies %}
-                              {% if filterpolicy.errors %}
-                            <label>Filter {{ filterpolicy.filter_name.initial }}</label>
-                                {{ filterpolicy.non_field_errors|safe }}
-                              {% endif %}
-                            {% endfor %}
-                            <table class="table" id="filter_table">
-                            <thead>
-                              <tr>
-                                <th style="visibility:hidden;"></th>
-                                {% for field_name in filterpolicyform.common_fields %}
-                                  
-                                {% endfor %}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {% for filterpolicy in filterpolicies %}
-                                  {{ filterpolicy.as_table_td|safe }}
-                              {% endfor %}
-                            </tbody>
-                            </table>
-                          </p>
-                        </div>
-                        <div>
-                          {% for filterpolicy in filterpolicies %}
-                            {% if filterpolicy.is_custom_fields %}
-                              <div class="modal fade" id="{{loop.index}}_modal" role="dialog">
-                                <div class="modal-dialog">
-                                  <div class="modal-content">
+              <div class="row">
+                <div class="table-responsive col-md-12">
+                  <h4 class="text-main">{% trans "Filters list" %}</h4>
+                  <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>{% trans "Enabled" %}</th>
+                        <th>{% trans "Filter name" %}</th>
+                        <th>{% trans "Threshold" %}</th>
+                        <th>{% trans "Log Level" %}</th>
+                        <th>{% trans "NB Thread" %}</th>
+                        <th>{% trans "Cache size" %}</th>
+                        <th>{% trans "Config" %}</th>
+                        <th>{% trans "" %}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(filter, index) of policy.filters">
+                        <template v-if="!is_internal(filter.filter_type)">
+                          <td><v-toggle-button :sync="true" :color="renderButtonColor(filter.filter_type)" v-model="filter.enabled"/></td>
+                          <td v-html="renderLabel(filter.filter_type)"></td>
+                          <td>${filter.threshold}</td>
+                          <td v-html="renderLogLevel(filter.log_level)"></td>
+                          <td>${filter.nb_thread}</td>
+                          <td>${filter.cache_size}</td>
+                          <td v-html="renderCustomConfig(filter)"></td>
+                          <td>
+                            <button type="button" class="btn btn-xs btn-primary" @click="editFilter(index)"><i class="fa fa-edit"></i></button>
+                            <button type="button" class="btn btn-xs btn-danger" @click="removeFilter(index)"><i class="fa fa-trash"></i></button>
+                          </td>
+                        </template>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
 
-                                    <div class="modal-header">
-                                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">×</span></button>
-                                      <h4 class="modal-title">Configure {{ filterpolicy.initial.filter_name }} filter</h4>
-                                    </div>
-                                    {% with index="{{loop.index}}" %}
-                                    <div class="modal-body">
-                                      {% for field in  filterpolicy %}
-                                        {% if field in filterpolicy.custom_fields %}
-                                          {% if field.name == "mmdarwin_parameters" %}
-                                            <div id="{{index}}_mmdarwin_parameters">
-                                          {% endif %}
-                                          <label class="col-sm-3 control-label">{{ field.label }}</label>
-                                          {{ field }}
-                                          {% if field.name == "mmdarwin_parameters" %}
-                                            </div>
-                                          {% endif %}
-                                        {% endif %}
-                                      {% endfor %}
-                                    </div>
-                                    {% endwith %}
-                                    <div class="modal-footer">
-                                      <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            {% endif %}
-                          {% endfor %}
-                        </div>
-                      </div>
-                    </div> <!-- /.row -->
-                  </div> <!-- /.tab-pane -->
-                  <div class="tab-pane" id="tab_group">
-                    <div class="row">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label class="col-sm-4 control-label">{{ form.filters.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.filters}}
-                              {{form.filters.errors|safe}}
-                            </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row -->
-                  </div> <!-- /.tab-pane -->
-                </div> <!-- /.tab-content -->
               </div>
             </div>
-            <div class="panel-footer">
-              <a type="button" href="{% url 'darwin.policy.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
-            </div> <!-- /.box-footer -->
           </div>
-        </form>
-      </div> <!-- /.col-md-12 -->
-    </div> <!-- /.row -->
-</section> <!-- /.content -->
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+          <div class="panel">
+            <div class="panel-heading">
+              <div class="panel-control">
+              </div>
+              <h3 class="panel-title"><i class="fa fa-bolt">&nbsp;</i>{% trans "Filter" %}</h3>
+            </div>
+
+            <div class="panel-body">
+              <div class="form-group col-md-12">
+                <label class="col-sm-4 control-label">{% trans "Filter" %}:</label>
+                <div class="col-sm-5">
+                  <v-select :options="filters_choices" v-model="filter.filter_type" :reduce="elem => elem.id"/>
+                </div>
+                <div class="col-sm-5 col-sm-offset-4">
+                  <small class="help-block">{% trans "The type of darwin filter this instance is" %}</small>
+                </div>
+              </div>
+
+              <div v-if="filter.filter_type">
+                <div class="col-md-8 col-md-offset-2">
+                  <div class="alert alert-primary text-center">
+                    <strong><i class="fa fa-question-circle"></i></strong> <span v-html="hint(filter.filter_type)"></span>
+                  </div>
+                </div>
+
+                <div class="col-md-12 form-group">
+                  <label class="col-sm-4 control-label">{% trans "Enabled" %}:</label>
+                  <div class="col-sm-5">
+                    <v-toggle-button :sync="true" :color="renderButtonColor(filter.filter_type)" v-model="filter.enabled"/>
+                  </div>
+                  <div class="col-sm-5 col-sm-offset-4">
+                    <small class="text-danger" v-if="filter.enabled & !is_launchable(filter.filter_type)">This filter is not installed, it can be enabled but won't be started as long as it's not available</small>
+                    <small class="help-block">{% trans "Whether this filter should be started" %}</small>
+                  </div>
+                </div>
+
+                <div class="col-md-12 form-group">
+                  <label class="col-sm-4 control-label">{% trans "Threshold" %}:</label>
+                  <div class="col-sm-5">
+                    <input type="number" class="form-control" min="0" v-model="filter.threshold">
+                    <small class="help-block">{% trans "The threshold above which the filter should trigger an alert: filters return a certitude between 0 and 100 (inclusive), this tells the filter to raise an alert if the certitude for the data analysed is above or equal to this threshold" %}</small>
+                  </div>
+                </div>
+
+                <div class="col-md-12 form-group">
+                  <label class="col-sm-4 control-label">{% trans "Log Level" %}:</label>
+                  <div class="col-sm-5">
+                    <v-select :options="log_level_choices" v-model="filter.log_level" :reduce="elem => elem.id"/>
+                  </div>
+                  <div class="col-sm-5 col-sm-offset-4">
+                    <small class="help-block">{% trans "The logging level for this particular instance (closer to DEBUG means more info, but also more disk space taken and less performances overall)" %}</small>
+                  </div>
+                </div>
+
+                <div class="col-md-12 form-group">
+                  <label class="col-sm-4 control-label">{% trans "Number of threads" %}:</label>
+                  <div class="col-sm-5">
+                    <input type="number" v-model="filter.nb_thread" class="form-control" min="0">
+                    <small class="help-block">{% trans "The number of concurrent threads to run for this instance (going above 10 is rarely a good idea)" %}</small>
+                  </div>
+                </div>
+
+                <div class="col-md-12 form-group">
+                  <label class="col-sm-4 control-label">{% trans "Weight" %}:</label>
+                  <div class="col-sm-5">
+                    <input type="number" v-model="filter.weight" step="0.1" class="form-control" min="0">
+                    <small class="help-block">{% trans "The weight of this filter when calculating mean certitude during multiple calls to different filters with the same data" %}</small>
+                  </div>
+                </div>
+
+                <div class="col-md-12 form-group">
+                  <label class="col-sm-4 control-label">{% trans "Cache size" %}:</label>
+                  <div class="col-sm-5">
+                    <input type="number" v-model="filter.cache_size" class="form-control" min="0">
+                    <small class="help-block">{% trans "The number of cache entries the filter can have to keep previous results" %}</small>
+                  </div>
+                </div>
+
+                <template v-if="can_be_buffered(filter.filter_type)">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Enable continuous analysis" %}:</label>
+                    <div class="col-sm-5">
+                      <v-toggle-button v-model="filter.continuous_analysis_enabled"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "Filter will buffer data continuously, and analyse batches at configured intervals" %}</small>
+                    </div>
+                  </div>
+                  <template v-if="filter.continuous_analysis_enabled">
+                    <div class="col-md-12 form-group">
+                      <label class="col-sm-4 control-label">{% trans "Analysis frequency" %}:</label>
+                      <div class="col-sm-5">
+                        <input type="number" v-model="filter.buffering.interval" class="form-control" min="1">
+                        <small class="help-block">{% trans "Number of seconds to cache data before analysing batch" %}</small>
+                      </div>
+                    </div>
+                    <div class="col-md-12 form-group">
+                      <label class="col-sm-4 control-label">{% trans "Minimum batch size" %}:</label>
+                      <div class="col-sm-5">
+                        <input type="number" v-model="filter.buffering.required_log_lines" class="form-control" min="0">
+                        <small class="help-block">{% trans "Minimal number of entries to require before launching analysis" %}</small>
+                      </div>
+                    </div>
+                  </template>
+                </template>
+
+                <template v-if="custom_rsyslog_calls(filter.filter_type)">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Override Rsyslog inputs" %}:</label>
+                    <div class="col-sm-5">
+                      <v-toggle-button v-model="filter.mmdarwin_enabled"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "Activate custom calls to Darwin, using specific fields from Rsyslog parsing" %}</small>
+                    </div>
+                  </div>
+
+                  <div class="col-md-12 form-group" v-if="filter.mmdarwin_enabled">
+                    <label class="col-sm-4 control-label">{% trans "Rsyslog inputs" %}:</label>
+                    <div class="col-sm-5">
+                      <vue-tags-input
+                        :add-on-key="[13, ' ']"
+                        :tags="filter.mmdarwin_parameters"
+                        v-model="tagRsyslog"
+                        @tags-changed="newTags => filter.mmdarwin_parameters = newTags"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">
+                        {% trans "A list of fields to use during custom darwin calls from Rsyslog. The fields should respect rsyslog configuration syntax (e.g $!root_container!field). All fields will be taken and used in order in a single call to the configured Darwin filter" %}<br/>
+                        {% trans "See the" %} <a target="_blank" href="https://www.rsyslog.com/doc/v8-stable/rainerscript/variable_property_types.html">{% trans "documentation" %}</a> {% trans "for more details" %}
+                      </small>
+                    </div>
+                  </div>
+                </template>
+
+                <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Additional Rsyslog enrichment tags" %}:</label>
+                    <div class="col-sm-5">
+                      <vue-tags-input
+                        :tags="filter.enrichment_tags"
+                        v-model="enrichmentTagsRsyslog"
+                        @tags-changed="newTags => filter.enrichment_tags = newTags"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">
+                        {% trans "A list of tags to add in case enrichment is activated on source, and filter returns a certitude above threshold (a match)" %}
+                      </small>
+                    </div>
+                  </div>
+
+                <template v-if="renderName(filter.filter_type) === 'conn'">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Redis expire" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.redis_expire" class="form-control" min="0">
+                      <small class="help-block">{% trans "Number of seconds to cache connection, after this delay the connection will be considered new again" %}</small>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="renderName(filter.filter_type) === 'dgad'">
+                  <div class="col-sm-4 pull-right">
+                    <div class="form-group">
+                      <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced-params">
+                        <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Max token" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.max_tokens" class="form-control" min="0">
+                      <small class="help-block">{% trans "The maximum number of tokens from domain to take into account during calculation" %}</small>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="renderName(filter.filter_type) === 'lkup'">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Database" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="hostlookup_reputation_choices" v-model="filter.config.reputation_ctx_id" :reduce="elem => elem.id"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "The lookup file to use for detection" %}</small>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="renderName(filter.filter_type) === 'vast'">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Model" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="vast_model_choices" v-model="filter.config.model" :reduce="elem => elem.label"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "The model file to use with this filter" %}</small>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="renderName(filter.filter_type) === 'vaml'">
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Model" %}:</label>
+                    <div class="col-sm-5">
+                      <v-select :options="vaml_model_choices" v-model="filter.config.model" :reduce="elem => elem.label"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "The model file to use with this filter" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Percent more before alert" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.percent_more_alert" class="form-control" min="0" step="0.1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "The percentage of upper variation admitted before raising an alert" %}</small>
+                      <small class="help-block">{% trans "Percentage is expressed as quotient (write 0.1 for 10%)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group">
+                    <label class="col-sm-4 control-label">{% trans "Percent less before alert" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.percent_less_alert" class="form-control" min="0" step="0.1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block">{% trans "The percentage of lower variation admitted before raising an alert" %}</small>
+                      <small class="help-block">{% trans "Percentage is expressed as quotient (write 0.1 for 10%)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-sm-4 pull-right">
+                    <div class="form-group">
+                      <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced-params">
+                        <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Percent more before warning" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.percent_more_warning" class="form-control" min="0" step="0.1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block"><b>{% trans "(optional, keep empty if unsure)" %}</b></small>
+                      <small class="help-block">{% trans "The percentage of upper variation admitted before raising a warning" %}</small>
+                      <small class="help-block">{% trans "Percentage is expressed as quotient (write 0.1 for 10%)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Percent less before warning" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.percent_less_warning" class="form-control" min="0" step="0.1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block"><b>{% trans "(optional, keep empty if unsure)" %}</b></small>
+                      <small class="help-block">{% trans "The percentage of lower variation admitted before raising a warning" %}</small>
+                      <small class="help-block">{% trans "Percentage is expressed as quotient (write 0.1 for 10%)" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Minimal variation" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.minimal_variation" class="form-control" min="0" step="1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block"><b>{% trans "(optional, keep empty if unsure)" %}</b></small>
+                      <small class="help-block">{% trans "The minimal variation to require between the expected and real values before raising warnings or alerts" %}</small>
+                      <small class="help-block">{% trans "This is useful to avoid raising warnings/alerts too quickly when expected differences ought to be small" %}</small>
+                      <small class="help-block">{% trans "It takes precedence over calculated percentages if they result in smaller accepted variation" %}</small>
+                    </div>
+                  </div>
+                  <div class="col-md-12 form-group collapse advanced-params">
+                    <label class="col-sm-4 control-label">{% trans "Lower absolute" %}:</label>
+                    <div class="col-sm-5">
+                      <input type="number" v-model="filter.config.lower_absolute" class="form-control" step="1"/>
+                    </div>
+                    <div class="col-md-5 col-md-offset-4">
+                      <small class="help-block"><b>{% trans "(optional, keep empty if unsure)" %}</b></small>
+                      <small class="help-block">{% trans "The absolute lower value before raising alerts (percentages for lower warnings/alerts are ignored)" %}</small>
+                      <small class="help-block">{% trans "This is useful when alerts should be raised only when observed values drop below a certain threshold (upper warnings/alerts are still taken into account)" %}</small>
+                      <small class="help-block">{% trans "lower percentages are ignored" %}</small>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="panel-footer text-right">
+              <button type="button" @click="addFilter" v-if="filter.filter_type" class="btn btn-primary"><i class="fa fa-plus"></i>&nbsp;Add filter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
 
 {% endblock %}
 
 {% block jquery_code %}
-$(document).ready(function () {
-  if (!String.prototype.endsWith) {
-    String.prototype.endsWith = function(searchString, position) {
-      var subjectString = this.toString();
-      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
-        position = subjectString.length;
-      }
-      position -= searchString.length;
-      var lastIndex = subjectString.lastIndexOf(searchString, position);
-      return lastIndex !== -1 && lastIndex === position;
-    };
-  }
+let object_id = '{{ object_id }}'
+let clone = {{ clone }}
+let darwin_filters = {{ darwin_filters|safe }}
 
-  /* Initialize select2 objects */
-  $('.select2').select2();
-
-  /* Initialize Switchery of decision_enabled element
-  var decision_enabled_js = new Switchery(document.querySelector('#decision_enabled'), {
-    'color': '#FA9834',
-  });
-   And disable the button
-  decision_enabled_js.disable(); */
-
-  /* Re-enable decision */
-  $('#policy_edit_form').submit(function(event) {
-    decision_enabled_js.enable();
-  });
-
-
-  function handle_form_errors(data){
-    if (typeof(data['form_errors']) !== 'undefined'){
-      $('.errorlist').remove();
-      $.each(data['form_errors'], function(field_name, error_list){
-        field_selector = $('#id_'+field_name);
-        var ul = $('<ul/>').insertAfter(field_selector);
-        $.each(error_list, function(idx, err_msg){
-          console.log(err_msg);
-          var li = $('<li/>').addClass('errorlist').attr('role', 'menuitem').appendTo(ul);
-          var group = $('<span/>').text(err_msg).appendTo(li);
-        });
-      });
-    }
-  }
-
-let is_switchery = true;
-
-$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-  var target = $(e.target).attr("href") // activated tab
-  if (target !== '#tab_filters' || !is_switchery) return;
-
-  is_switchery = false;
-
-  /* Switchery mandatory code */
-  var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch:not(#decision_enabled)'));
-
-    elems.forEach(function(html) {
-    var switchery = new Switchery(html, {
-      'color': '#FA9834',
-    });
-  });
-});
-
-$('.tags-input').tagsinput({
-  allowDuplicates: true
-});
-
-$('.mmdarwin-enabled-btn').each((index, element) => {
-  element = $(element)
-
-  const element_id = element.attr('id');
-  const line_number = element_id.substr(0, element_id.indexOf('_mmdarwin_enabled'));
-  let mmdarwin_parameters_input = $(`#${line_number}_mmdarwin_parameters`);
-
-  element.on('change', (event) => {
-    handleMMDarwinEvent(element, mmdarwin_parameters_input);
-  });
-
-  handleMMDarwinEvent(element, mmdarwin_parameters_input);
-});
-
-}); // end of function()
-
-function handleMMDarwinEvent (element, mmdarwin_parameters_input) {
-  if (element.is(':checked')) {
-      mmdarwin_parameters_input.show();
-  } else {
-    mmdarwin_parameters_input.hide();
-  }
-}
-
+let darwin_policy_list_uri = "{% url 'darwin.policy.list' %}"
+let darwin_policy_api_uri = "{% url 'darwin.policy.api' %}"
+let application_reputation_ctx_uri = "{% url 'applications.reputation_ctx.api' %}"
+let darwin_filter_ressources_uri = "{% url 'darwin.filter.api' %}"
 {% endblock %}

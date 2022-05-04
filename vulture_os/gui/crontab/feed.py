@@ -40,7 +40,6 @@ from django.utils.timezone import make_aware, now as timezone_now
 from gui.models.rss import RSS
 from toolkit.network.network import get_hostname, get_proxy
 from applications.reputation_ctx.models import ReputationContext
-from system.tenants.models import Tenants
 from system.exceptions import VultureSystemError
 
 import subprocess
@@ -51,9 +50,6 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('crontab')
 
-
-# The slash at the end is mandatory
-IPSET_VULTURE = "https://predator.vultureproject.org/ipsets/"
 
 def security_alert(title, level, content):
     """
@@ -78,7 +74,7 @@ def security_alert(title, level, content):
     return True
 
 
-def security_update(node_logger=None, tenant_id=None):
+def security_update(node_logger=None):
     """
     :return: Update Vulture's security databases
     """
@@ -128,101 +124,13 @@ def security_update(node_logger=None, tenant_id=None):
     except Exception as e:
         logger.error("Crontab::security_update: Failed to retrieve vulnerabilities : {}".format(e))
 
-    # If tenant id given, try to retrieve the tenant
-    if tenant_id:
-        try:
-            tenant = Tenants.objects.get(pk=tenant_id)
-        except:
-            logger.error("Security_update: Failed to retrieve reputation database with asked id {}".format(tenant_id))
-            raise Exception("Tenant not found")
-
-    # If it is the master node, retrieve the databases
-    if Cluster.get_current_node().is_master_mongo:
-        # If tenant id given, retrieve the predator api key
-        if tenant_id:
-            predator_tokens = [tenant.predator_apikey]
-        else:
-            predator_tokens = Tenants.objects.mongo_distinct("predator_apikey")
-        # Loop over predator api keys configured over Multi-Tenants configs
-        for predator_token in predator_tokens:
-            """ Download newest reputation databases list """
-            try:
-                logger.info("Crontab::security_update: get Vulture's ipsets...")
-                infos = requests.get(IPSET_VULTURE+"index.json",
-                                     headers={'Authorization': predator_token},
-                                     proxies=proxies,
-                                     timeout=5).json()
-            except Exception as e:
-                logger.error("Crontab::security_update: Unable to download Vulture's ipsets: {}".format(e))
-                return False
-
-            infos.append({
-                'filename': "firehol_level1.netset",
-                'label': "Firehol Level 1 netset",
-                'description': "Firehol IPSET Level 1",
-                'type': "ipv4_netset",
-                'url': IPSET_VULTURE+"firehol_level1.netset"
-            })
-            infos.append({
-                'filename': "vulture-v4.netset",
-                'label': "Vulture Cloud IPv4",
-                'description': "Vulture Cloud IPv4",
-                'type': "ipv4_netset",
-                'url': IPSET_VULTURE + "firehol_level1.netset"
-            })
-            infos.append({
-                'filename': "vulture-v6.netset",
-                'label': "Vulture Cloud IPv6",
-                'description': "Vulture Cloud IPv6",
-                'type': "ipv6_netset",
-                'url':  IPSET_VULTURE + "vulture-v6.netset"
-            })
-
-            for info in infos:
-                label = info['label']
-                description = info['description']
-                entry_type = info['type']
-                url = info.get('url', IPSET_VULTURE+info['filename'])
-                nb_netset = info.get('nb_netset', 0)
-                nb_unique = info.get('nb_unique', 0)
-                # Add predator api key in filename
-                encoded_token = b64encode(predator_token.encode('utf8')).decode('utf8')
-                filename = ".".join(info['filename'].split('.')[:-1]) + "_" + encoded_token + "." + \
-                           info['filename'].split('.')[-1]
-
-                """ Create/update object """
-                try:
-                    reputation_ctx = ReputationContext.objects.get(filename=filename)
-                except Exception as e:
-                    reputation_ctx = ReputationContext(filename=filename)
-                reputation_ctx.name = label
-                reputation_ctx.url = url
-                reputation_ctx.db_type = entry_type
-                reputation_ctx.label = label
-                reputation_ctx.description = description
-                reputation_ctx.nb_netset = nb_netset
-                reputation_ctx.nb_unique = nb_unique
-                reputation_ctx.internal = True
-                # Use predator_apikey only for predator requests
-                if "predator.vultureproject.org" in reputation_ctx.url:
-                    reputation_ctx.custom_headers = {'Authorization': predator_token}
-                else:
-                    reputation_ctx.custom_headers = {}
-                reputation_ctx.save()
-                logger.info("Reputation context {} created.".format(label))
-
     # On ALL nodes, write databases on disk
     # All internal reputation contexts are retrieved and created if needed
     # We can now download and write all reputation contexts
-    # If tenant id given, only write on disk related reputation databases
-    if tenant_id:
-        encoded_token = b64encode(tenant.predator_apikey.encode('utf8')).decode('utf8')
-        reputation_ctxs = ReputationContext.mongo_find({"enable_hour_download": "true",
-                                                        "filename": {"$regex": ".*_{}.[a-z]+$".format(encoded_token)}})
-    else:
-        reputation_ctxs = ReputationContext.objects.filter(enable_hour_download=True)
+    reputation_ctxs = ReputationContext.objects.filter(enable_hour_download=True)
     for reputation_ctx in reputation_ctxs:
         try:
+            # FIXME: Download once and store data into MongoDB
             content = reputation_ctx.download()
         except VultureSystemError as e:
             if "404" in str(e) or "403" in str(e) and reputation_ctx.internal:

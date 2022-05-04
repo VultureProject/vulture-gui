@@ -35,10 +35,7 @@ from django.views.generic import View
 
 # Django project imports
 from darwin.access_control.models import AccessControl
-from darwin.defender_policy.models import DefenderPolicy
 from darwin.policy.models import DarwinPolicy
-from darwin.log_viewer.models import DefenderRuleset
-from darwin.inspection.models import InspectionPolicy, InspectionRule
 from services.frontend.models import BlacklistWhitelist, Frontend
 from system.cluster.models import Cluster
 from workflow.models import Workflow
@@ -171,129 +168,6 @@ class DeleteBlacklistWhitelists(DeleteView):
                     logger.error("Access_Control::edit: API error while trying to "
                                  "restart HAProxy service : {}".format(api_res.get('message')))
 
-        return HttpResponseRedirect(self.redirect_url)
-
-
-class DeleteInspectionPolicy(DeleteView):
-    menu_name = _("Darwin -> Packet Inspection policies -> Delete")
-    obj = InspectionPolicy
-    redirect_url = "/darwin/inspection/"
-    delete_url = "/darwin/inspection/policy/delete/"
-
-    # This method is mandatory for all child classes
-    # Returns [] if nothing to do
-    def used_by(self, object):
-        """ Retrieve all objects that use the current object
-        Return a list of strings, printed in template as "Used by this object:"
-        """
-        # TODO: Frontend use
-        # return [str(i) for i in object.]
-        return []
-
-    # get methods inherited from mother class
-    def post(self, request, object_id, **kwargs):
-        confirm = request.POST.get('confirm')
-        if confirm == 'yes':
-            try:
-                obj_inst = self.obj.objects.get(pk=object_id)
-            except ObjectDoesNotExist:
-                return HttpResponseForbidden('Injection detected.')
-
-            try:
-                obj_inst.delete()
-                obj_inst.delete_policy_file()
-            except Exception as e:
-                logger.error(e)
-
-        return HttpResponseRedirect(self.redirect_url)
-
-
-class DeleteInspectionRule(DeleteView):
-    menu_name = _("Darwin -> Packet Inspection rules -> Delete")
-    obj = InspectionRule
-    redirect_url = "/darwin/inspection/"
-    delete_url = "/darwin/inspection/rule/delete/"
-
-    # This method is mandatory for all child classes
-    # Returns [] if nothing to do
-    def used_by(self, object):
-        """ Retrieve all objects that use the current object
-        Return a list of strings, printed in template as "Used by this object:"
-        """
-        # TODO: Frontend use
-        return [str(i) for i in object.inspectionpolicy_set.all()]
-        # return [str(i) for i in object.]
-
-    # get methods inherited from mother class
-    def post(self, request, object_id, **kwargs):
-        confirm = request.POST.get('confirm')
-        if confirm == 'yes':
-            try:
-                obj_inst = self.obj.objects.get(pk=object_id)
-            except ObjectDoesNotExist:
-                return HttpResponseForbidden('Injection detected.')
-
-            obj_inst.delete()
-
-        return HttpResponseRedirect(self.redirect_url)
-
-class DeleteDefenderPolicy(DeleteView):
-    menu_name = _("Darwin -> Defender Policy -> Delete")
-    obj = DefenderPolicy
-    redirect_url = "/darwin/defender_policy/"
-    delete_url = "/darwin/defender_policy/delete/"
-
-    # This method is mandatory for all child classes
-    # Returns [] if nothing to do
-    def used_by(self, object):
-        """ Retrieve all objects that use the current object
-        Return a list of strings, printed in template as "Used by this object:"
-        """
-        to_return = [
-            "Workflow {frontend_name} - {fqdn} - {public_dir} - {backend_name}".format(
-                frontend_name=workflow.frontend.name,
-                fqdn=workflow.fqdn,
-                public_dir=workflow.public_dir,
-                backend_name=workflow.backend.name,
-            )
-            for workflow in Workflow.objects.filter(defender_policy=object)
-        ]
-
-        return to_return
-
-    # get methods inherited from mother class
-    def post(self, request, object_id, **kwargs):
-        confirm = request.POST.get('confirm')
-        if confirm == 'yes':
-            DefenderPolicy.objects.get(pk=object_id).delete()
-            Cluster.api_request("darwin.defender_policy.policy.delete_defender_conf", object_id)
-        return HttpResponseRedirect(self.redirect_url)
-
-
-class DeleteDefenderRuleset(DeleteView):
-    menu_name = _("Darwin -> Defender ruleset -> Delete")
-    obj = DefenderRuleset
-    redirect_url = "/darwin/defender_ruleset/"
-    delete_url = "/darwin/defender_ruleset/delete/"
-
-    # This method is mandatory for all child classes
-    # Returns [] if nothing to do
-    def used_by(self, object):
-        """ Retrieve all objects that use the current object
-        Return a list of strings, printed in template as "Used by this object:"
-        """
-        to_return = [
-            "Defender policy {name}".format(name=defender_policy.name)
-            for defender_policy in DefenderPolicy.objects.filter(defender_ruleset=object)
-        ]
-
-        return to_return
-
-    # get methods inherited from mother class
-    def post(self, request, object_id, **kwargs):
-        confirm = request.POST.get('confirm')
-        if confirm == 'yes':
-            DefenderRuleset.objects.get(pk=object_id).delete()
         return HttpResponseRedirect(self.redirect_url)
 
 

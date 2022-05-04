@@ -152,22 +152,10 @@
         aTargets: [5],
         defaultContent: "",
         mData: "public_dir"
-      },
-      {
-        sTitle: '{% trans "WAF Policy" %}',
-        name: "defender_policy",
-        aTargets: [6],
-        defaultContent: "",
-        mData: "defender_policy",
-        mRender: function(data, type, row){
-          if (data === "None")
-            return "<i class='fa fa-ban'></i>";
-          return data;
-        }
       },{
         sTitle: '{% trans "Authentication" %}',
         name: "authentication",
-        aTargets: [7],
+        aTargets: [6],
         defaultContent: "",
         mData: "authentication",
         mRender: function(data, type, row){
@@ -179,14 +167,14 @@
       {
         sTitle: '{% trans "ACLs" %}',
         name: "acls",
-        aTargets: [8],
+        aTargets: [7],
         defaultContent: "",
         mData: "acls"
       },
       {
         sTitle: '{% trans "Action" %}',
         mData:"id",
-        aTargets: [9],
+        aTargets: [8],
         sWidth: "5%",
         defaultContent: "",
         mRender: function(data, type, row) {

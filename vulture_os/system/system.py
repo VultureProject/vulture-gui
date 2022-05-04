@@ -67,10 +67,6 @@ class System:
                 'text': 'Users',
                 'url': '/system/users'
             }, {
-                'link': 'vm',
-                'text': 'Virtual Machines',
-                'url': '/system/vm'
-            }, {
                 'link': 'pki',
                 'text': 'X509 Certificates',
                 'url': '/system/pki'
@@ -78,10 +74,6 @@ class System:
                 'link': 'tls_profile',
                 'text': 'TLS Profiles',
                 'url': '/system/tls_profile'
-            }, {
-                'link': 'zfs',
-                'text': 'ZFS Filesystem',
-                'url': '/system/zfs'
             }, {
                 'link': 'error_templates',
                 'text': 'HTTP Messages',

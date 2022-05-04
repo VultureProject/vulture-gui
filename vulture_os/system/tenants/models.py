@@ -25,11 +25,6 @@ __doc__ = 'Perimeter Configuration main models'
 from django.utils.translation import ugettext_lazy as _
 from djongo import models
 
-# Django project imports
-from applications.reputation_ctx.models import ReputationContext
-
-# Required exceptions imports
-
 # Extern modules imports
 from base64 import b64encode
 
@@ -43,8 +38,6 @@ class Tenants(models.Model):
     Tenants vulture Configuration class
     """
     name = models.TextField(default="ACME Corporation", unique=True)
-    predator_apikey = models.TextField(default="fdsqJr_45;..", blank=True)
-    shodan_apikey = models.TextField(default="", blank=True)
     chameleon_apikey = models.TextField(default="", blank=True)
 
     """ Use DjongoManager to use mongo_find() & Co """
@@ -53,16 +46,10 @@ class Tenants(models.Model):
     def __str__(self):
         return "Tenants config {}".format(self.name)
 
-    @property
-    def encoded_predator_apikey(self):
-        return b64encode(self.predator_apikey.encode('utf8')).decode('utf8')
-
     def to_dict(self):
         result = {
             'id': str(self.id),
-            'name': self.name,
-            'predator_apikey': self.predator_apikey,
-            'shodan_apikey': self.shodan_apikey
+            'name': self.name
         }
 
         return result
@@ -71,7 +58,6 @@ class Tenants(models.Model):
         return {
             "id": str(self.id),
             "name": self.name,
-            "reputation_contexts": ",".join([r.name for r in ReputationContext.objects.filter(filename__contains=self.encoded_predator_apikey)]),
             'frontends': [f.name for f in self.frontend_set.all().only("name")],
             'internal': self.config_set.all().count() > 0
         }

@@ -46,8 +46,6 @@ from services.darwin.darwin import DarwinService
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 
-from system.vm.vm import vm_update_status
-
 # Required exceptions imports
 from services.exceptions import ServiceError
 from django.core.exceptions import ObjectDoesNotExist
@@ -93,14 +91,18 @@ def monitor():
         # Get some statuses outside for reusing variable later
         if service == StrongswanService:
             strongswan_status = get_service_status(StrongswanService)
+            mon.services.add(strongswan_status)
         elif service == OpenvpnService:
             openvpn_status = get_service_status(OpenvpnService)
+            mon.services.add(openvpn_status)
         elif service == RsyslogService:
             rsyslogd_status = get_service_status(RsyslogService)
+            mon.services.add(rsyslogd_status)
         elif service == FilebeatService:
             filebeat_status = get_service_status(FilebeatService)
-
-        mon.services.add(get_service_status(service))
+            mon.services.add(filebeat_status)
+        else:
+            mon.services.add(get_service_status(service))
 
     """ Get status of Redis, Mongod and Sshd """
     # Instantiate mother class to get status easily
@@ -221,15 +223,10 @@ def monitor():
                 dfilter.status[node.name] = filter_statuses.get(dfilter.name).get('status').upper()
             dfilter.save()
 
-
-
     # Delete old monitoring
     last_date = (timezone.now() - timedelta(days=30))
     for m in Monitor.objects.filter(date__lte=last_date):
         m.delete()
-
-    #Update Bhyve status
-    vm_update_status()
 
     return True
 
