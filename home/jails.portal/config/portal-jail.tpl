@@ -13,5 +13,5 @@ portal {                                                            #PORTALJAIL
         allow.sysvipc = 0;                                          #PORTALJAIL
         enforce_statfs = "2";                                       #PORTALJAIL
 	    devfs_ruleset = "4";    #devfsrules_jail                    #PORTALJAIL
-    	mount.devfs;                                                #PORTALJAIL
+	mount.devfs;                                                #PORTALJAIL
 }                                                                   #PORTALJAIL
