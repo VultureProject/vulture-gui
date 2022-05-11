@@ -31,7 +31,7 @@ import requests
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
-
+from django.utils.timezone import make_aware
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -249,7 +249,6 @@ class SentinelOneParser(ApiParser):
 
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
-
                 if len(logs) > 0:
                     if event_kind == "alert":
                         # timestamps compared by API have a 10ms precision (empiric observation)
@@ -257,7 +256,7 @@ class SentinelOneParser(ApiParser):
                     else:
                         # timestamps compared by API have a 10ms precision (empiric observation)
                         # need to use fromtimestamp() as value in log has been modified by previous format_log()
-                        last_timestamp = datetime.fromtimestamp(logs[-1]['createdAt'])+timedelta(milliseconds=10)
+                        last_timestamp = make_aware(datetime.fromtimestamp(logs[-1]['createdAt'])+timedelta(milliseconds=10))
 
                     if last_timestamp > self.frontend.last_api_call:
                         self.frontend.last_api_call = last_timestamp
