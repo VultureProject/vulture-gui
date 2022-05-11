@@ -978,6 +978,23 @@ class Frontend(models.Model):
         default="",
     )
 
+    # Proofpoint PoD Attributes
+    proofpoint_pod_uri = models.TextField(
+        verbose_name=_("Proofpoint PoD URI"),
+        help_text=_("Server URI"),
+        default="wss://logstream.proofpoint.com:443/v1/stream",
+    )
+    proofpoint_pod_cluster_id = models.TextField(
+        verbose_name=_("Proofpoint PoD Cluster ID"),
+        help_text=_("Cluster ID"),
+        default="",
+    )
+    proofpoint_pod_token = models.TextField(
+        verbose_name=_("Proofpoint PoD Authentication token"),
+        help_text=_("Authentication token"),
+        default="",
+    )
+
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
@@ -1223,6 +1240,11 @@ class Frontend(models.Model):
                     result['ms_sentinel_subscription_id'] = self.ms_sentinel_subscription_id
                     result['ms_sentinel_resource_group'] = self.ms_sentinel_resource_group
                     result['ms_sentinel_workspace'] = self.ms_sentinel_workspace
+
+                elif self.api_parser_type == "proofpoint_pod":
+                    result['proofpoint_pod_uri'] = self.proofpoint_pod_uri
+                    result['proofpoint_pod_cluster_id'] = self.proofpoint_pod_cluster_id
+                    result['proofpoint_pod_token'] = self.proofpoint_pod_token
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
