@@ -59,7 +59,6 @@ AVAILABLE_APPS = [
     'authentication',
     'applications',
     'darwin',
-    'documentation',
     'toolkit',
     'workflow'
 ]
@@ -73,7 +72,6 @@ CRONJOBS = [
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
     ("1 * * * *", "gui.crontab.feed.security_update"),  # Every hour
-    ("1 * * * *", "gui.crontab.documentation.doc_update"),  # Every hour
     ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
 ]
 
@@ -111,7 +109,6 @@ TEMPLATES = [
             BASE_DIR + "/gui/templates/gui/",
             BASE_DIR + "/services/templates/services/",
             BASE_DIR + "/system/templates/system/",
-            BASE_DIR + "/documentation/templates/documentation/",
             BASE_DIR + "/darwin/access_control/config"
         ],
         'APP_DIRS': True,
@@ -186,8 +183,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 STATICFILES_DIRS = [
-    # os.path.join(BASE_DIR, "static"),
-    ('documentation', os.path.join(BASE_DIR, "documentation", "static"))
+    os.path.join(BASE_DIR, "static")
 ]
 
 MEDIA_PATH = '/gui/static/img/'

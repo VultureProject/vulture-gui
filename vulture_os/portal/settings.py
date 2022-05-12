@@ -45,7 +45,6 @@ AVAILABLE_APPS = [
     'authentication',
     'applications',
     'darwin',
-    'documentation',
     'toolkit',
     'workflow'
 ]
