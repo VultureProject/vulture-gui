@@ -24,7 +24,6 @@ __doc__ = 'Proofpoint POD API Parser'
 __parser__ = 'PROOFPOINT POD'
 
 
-from asyncio.constants import SENDFILE_FALLBACK_READBUFFER_SIZE
 from datetime import timezone, datetime, timedelta
 import json
 import logging
@@ -134,7 +133,7 @@ class ProofpointPodParser(ApiParser):
                 }
             })
 
-            for part in parsed.get('msgParts', []):
+            for part in parsed.pop('msgParts', []):
                 parsed['additional']['related']['hash'].add(part.get('md5', ''))
                 parsed['additional']['related']['hash'].add(part.get('sha256', ''))
                 for url_obj in part.get('urls', []):
@@ -150,7 +149,7 @@ class ProofpointPodParser(ApiParser):
 
                 parsed['additional']['email']['attachments'].append({
                     'file': {
-                        'extension': part.get('detectedExt', ''),
+                        'extension': part.get('detectedExt', '').lower(),
                         'mime_type': part.get('detectedMime', ''),
                         'name': part.get('detectedName', ''),
                         'size': part.get('detectedSizeBytes', ''),
@@ -233,7 +232,6 @@ class ProofpointPodParser(ApiParser):
     def execute(self):
         start_time = time.monotonic()
         logger.info(f"[{__parser__}]:execute: Starting tasks", extra={'frontend': str(self.frontend)})
-        count = 0
         stop_after = 50 # stop parser after 50 seconds (allows to refresh code during upgrades)
 
         current_time = time.time()
@@ -253,7 +251,6 @@ class ProofpointPodParser(ApiParser):
                     if msg:
                         self.buffer.append(json.dumps(msg))
                         self.last_timestamp = max(self.last_timestamp, timestamp)
-                        count += 1
                         if len(self.buffer) >= 128:
                             self._flush_buffer()
                 else:
