@@ -133,6 +133,7 @@ class ProofpointPodParser(ApiParser):
                 }
             })
 
+            # pop dictionnary, to keep only required fields in result
             for part in parsed.pop('msgParts', []):
                 parsed['additional']['related']['hash'].add(part.get('md5', ''))
                 parsed['additional']['related']['hash'].add(part.get('sha256', ''))
@@ -235,6 +236,8 @@ class ProofpointPodParser(ApiParser):
         stop_after = 50 # stop parser after 50 seconds (allows to refresh code during upgrades)
 
         current_time = time.time()
+        if not self.frontend.last_api_call:
+            self.frontend.last_api_call = datetime.now(timezone.utc)
         self.last_timestamp = self.frontend.last_api_call
 
         # stop parser after 1 hour when last call was more that an hour ago (need time to get bundle of logs for past hours, and will stop once it's done)
