@@ -40,6 +40,7 @@ from django.utils.timezone import make_aware, now as timezone_now
 from gui.models.rss import RSS
 from toolkit.network.network import get_hostname, get_proxy
 from applications.reputation_ctx.models import ReputationContext
+from system.tenants.models import Tenants
 from system.exceptions import VultureSystemError
 
 import subprocess
@@ -50,6 +51,9 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('crontab')
 
+
+# The slash at the end is mandatory
+IPSET_VULTURE = "https://predator.vultureproject.org/ipsets/"
 
 def security_alert(title, level, content):
     """
@@ -124,13 +128,49 @@ def security_update(node_logger=None):
     except Exception as e:
         logger.error("Crontab::security_update: Failed to retrieve vulnerabilities : {}".format(e))
 
+    # If it is the master node, update our internal database with predator feed list
+    # Update May 2022: Predator Feeds are public and shared with all tenants
+    if Cluster.get_current_node().is_master_mongo:
+
+        try:
+            logger.info("Crontab::security_update: get Vulture's ipsets...")
+            infos = requests.get(IPSET_VULTURE+"index.json",proxies=proxies,timeout=5).json()
+        except Exception as e:
+            logger.error("Crontab::security_update: Unable to download Vulture's ipsets: {}".format(e))
+            return False
+
+        for info in infos:
+            label = info['label']
+            description = info['description']
+            entry_type = info['type']
+            url = info.get('url', IPSET_VULTURE+info['filename'])
+            nb_netset = info.get('nb_netset', 0)
+            nb_unique = info.get('nb_unique', 0)
+            filename = info['filename']
+
+            """ Create/update object """
+            try:
+                reputation_ctx = ReputationContext.objects.get(filename=filename)
+            except Exception as e:
+                reputation_ctx = ReputationContext(filename=filename)
+            reputation_ctx.name = label
+            reputation_ctx.url = url
+            reputation_ctx.db_type = entry_type
+            reputation_ctx.label = label
+            reputation_ctx.description = description
+            reputation_ctx.nb_netset = nb_netset
+            reputation_ctx.nb_unique = nb_unique
+            reputation_ctx.internal = True
+            reputation_ctx.custom_headers = {}
+            reputation_ctx.save()
+            logger.info("Reputation context {} created.".format(label))
+
     # On ALL nodes, write databases on disk
     # All internal reputation contexts are retrieved and created if needed
     # We can now download and write all reputation contexts
     reputation_ctxs = ReputationContext.objects.filter(enable_hour_download=True)
     for reputation_ctx in reputation_ctxs:
         try:
-            # FIXME: Download once and store data into MongoDB
             content = reputation_ctx.download()
         except VultureSystemError as e:
             if "404" in str(e) or "403" in str(e) and reputation_ctx.internal:
