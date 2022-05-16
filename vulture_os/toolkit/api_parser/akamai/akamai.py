@@ -153,8 +153,8 @@ def akamai_parse(akamai):
         queue_write.put(tmp)
 
         # Update the last log time
-        if timestamp > akamai.last_log_time:
-            with data_lock:
+        with data_lock:
+            if timestamp > akamai.last_log_time:
                 akamai.last_log_time = timestamp
 
 
