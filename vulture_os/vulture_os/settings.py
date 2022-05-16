@@ -67,7 +67,6 @@ AVAILABLE_APPS = [
 INSTALLED_APPS.extend(AVAILABLE_APPS)
 
 CRONJOBS = [
-    ("* * * * *", "gui.crontab.rss.rss_fetch"),  # Every minute
     ("* * * * *", "gui.crontab.api_clients_parser.api_clients_parser"),  # Every minute
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
