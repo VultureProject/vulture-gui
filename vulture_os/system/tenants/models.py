@@ -55,11 +55,25 @@ class Tenants(models.Model):
         return result
 
     def to_template(self):
+        # Build CTI feed list associated to this tenant
+        frontend_list = list()
+        feed_list = list()
+        for f in self.frontend_set.all().only("name"):
+            frontend_list.append(f.name)
+            for ctx in f.frontendreputationcontext_set.all().only("reputation_ctx"):
+                try:
+                    feed = ReputationContext.objects.get(id=ctx.reputation_ctx.id)
+                    if feed.name not in feed_list:
+                        feed_list.append(feed.name)
+                except Exception as e:
+                    logger.error("Error when getting reputation context for tenant {}: {}".format(f.name, str(e)))
+                    pass
         return {
             "id": str(self.id),
             "name": self.name,
-            'frontends': [f.name for f in self.frontend_set.all().only("name")],
-            'internal': self.config_set.all().count() > 0
+            "frontends": frontend_list,
+            "reputation_contexts": feed_list,
+            "internal": self.config_set.all().count() > 0
         }
 
     class Meta:
