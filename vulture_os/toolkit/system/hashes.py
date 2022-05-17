@@ -25,7 +25,10 @@ __doc__ = 'System Utils for Hashes'
 
 from hashlib import sha3_256, sha1
 from os import urandom
+from string import hexdigits
 
+def validate_digest(digest: str) -> bool:
+    return len(digest) == 64 and all(character in hexdigits for character in digest)
 
 def random_sha256():
     return sha3_256(urandom(64)).hexdigest()
