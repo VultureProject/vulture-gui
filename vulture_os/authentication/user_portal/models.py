@@ -24,6 +24,7 @@ __doc__ = 'LDAP Repository model'
 
 # Django system imports
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
@@ -458,6 +459,11 @@ class UserAuthentication(models.Model):
         choices=SSO_TYPE_CHOICES,
         default="form",
         help_text=_('Select the way to propagate authentication')
+    )
+    sso_forward_timeout = models.PositiveIntegerField(
+        help_text=_("Timeout in seconds before dropping SSO"),
+        default=10,
+        validators=[MinValueValidator(1)]
     )
     sso_forward_tls_proto = models.TextField(
         choices=TLS_PROTOCOL_CHOICES,
