@@ -59,7 +59,7 @@ from sqlalchemy.exc                  import DBAPIError
 from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeededError, CredentialsMissingError,
                                              CredentialsError, REDISWriteError, TwoManyOTPAuthFailure, ACLError)
 from toolkit.auth.exceptions import AuthenticationError, OTPError
-from toolkit.system.hashes import random_sha256
+from toolkit.system.hashes import random_sha256, validate_digest
 from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
 
@@ -75,6 +75,20 @@ logger = logging.getLogger('portal_authentication')
 
 STATE_REDIS_KEY = "oauth_state"
 RETURN_OAUTH_TOKEN = "return_oauth_token"
+
+
+def validate_portal_cookie(portal_cookie):
+    if not portal_cookie:
+        return None
+    if not validate_digest(portal_cookie):
+        logger.warning(f"validate_portal_cookie:: presented session cookie's value is not valid")
+        return None
+    if not REDISBase().exists(portal_cookie):
+        logger.info(f"validate_portal_cookie:: session cookie does not exist in Redis")
+        return None
+
+    return portal_cookie
+
 
 
 def openid_configuration(request, portal_id):
@@ -121,7 +135,7 @@ def openid_start(request, workflow_id, repo_id):
         """ Retrieve token and cookies to instantiate Redis wrapper objects """
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
-        portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
+        portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
         # We must store the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         redis_portal_session[STATE_REDIS_KEY] = state
@@ -172,7 +186,7 @@ def openid_callback(request, workflow_id, repo_id):
         code = request.GET['code']
         state = request.GET['state']
         # Cookie can be empty, it will be created in Authentication class
-        portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
+        portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
 
         # Use POSTAuthentication to print errors with html templates
         authentication = POSTAuthentication(portal_cookie, workflow, scheme)
@@ -308,7 +322,7 @@ def openid_authorize(request, portal_id):
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
         token_name = global_config.public_token
-        portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
+        portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
     except Exception as e:
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
@@ -751,7 +765,7 @@ def log_in(request, workflow_id=None):
         # Retrieve cookies required for authentication
         portal_cookie_name = global_config.portal_cookie_name
         token_name = global_config.public_token
-        portal_cookie = request.COOKIES.get(portal_cookie_name) or random_sha256()
+        portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
         redirect_url = request.GET.get('redirect_url')
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         if redirect_url:
