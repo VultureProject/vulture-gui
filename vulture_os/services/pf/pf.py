@@ -207,3 +207,11 @@ def test_config(config):
     return check_output(["/sbin/pfctl", "-n", "-f", "-"],
                         stderr=PIPE,
                         input=config.encode('utf8')).decode('utf8')
+
+def gen_config(node_logger):
+    pf = PFService()
+    if pf.reload_conf():
+       node_logger.info("PF Configuration updated")
+       pf.reload()
+    else:
+       node_logger.info("PF Configuration does not need any change")

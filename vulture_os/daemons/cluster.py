@@ -78,12 +78,6 @@ if __name__ == '__main__':
                 """ Process inter-cluster messages """
                 this_node.process_messages()
 
-                """ Synchronize Packet Filter configuration """
-                pf = PFService()
-                if pf.reload_conf():
-                    logger.info("Cluster::daemon: PF Configuration updated")
-                    pf.reload()
-
                 if error:
                     logger.info("Cluster::daemon: Recovered from previous failure")
                     error = False
