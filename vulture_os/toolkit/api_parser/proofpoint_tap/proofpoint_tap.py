@@ -259,7 +259,7 @@ class ProofpointTAPParser(ApiParser):
         msg = f"last_api_call updated to {self.frontend.last_api_call}"
         logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        if error is not "":
+        if error != "":
             msg = f"errors while recovering logs:\n{error}"
             logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
