@@ -204,13 +204,13 @@ class Header(models.Model):
 
     def generate_conf(self):
         # http-request or http-response
-        result = "http-{} {} {} ".format(self.type, self.action, self.header_name)
+        result = "http-{} {} {}".format(self.type, self.action, self.header_name)
         if self.action == "add-header" or self.action == "set-header":
-            result += "{} ".format(self.replace)
+            result += ' "{}"'.format(self.replace.replace('"', '\\"'))
         elif self.action == "replace-header" or self.action == "replace-value":
-            result += "{} {} ".format(self.match, self.replace)
+            result += ' "{}" "{}"'.format(self.match.replace('"', '\\"'), self.replace.replace('"', '\\"'))
         if self.condition:
-            result += "{} {}".format(self.condition_action, self.condition)
+            result += " {} {}".format(self.condition_action, self.condition)
         return result
 
 
