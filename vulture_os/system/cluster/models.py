@@ -536,12 +536,6 @@ class Cluster (models.Model):
                 logger.error("Cluster::api_request: {}".format(str(e)))
                 return {'status': False, 'message': str(e)}
 
-        # When an api_request is done, it means that we are changing a cluster-wide or a node-wide setting
-        # So we need to be sure that firewall configuration is OK
-        # We do not check firewall config every minute, as before, because it cost a lot in terms of performance
-        if action != "services.pf.pf.gen_config":
-            self.api_request ("services.pf.pf.gen_config", config, node, internal)
-
         return {'status': True, 'message': ''}
 
 

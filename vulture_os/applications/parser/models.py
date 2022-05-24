@@ -45,8 +45,8 @@ logger = logging.getLogger('gui')
 
 
 class Parser(models.Model):
-    """ Model used to enrich logs in Rsyslog with mmdb database"""
-    """ Name of the ReputationContext, unique constraint """
+    """ Model used to transform raw logs into parsed ECS Json format """
+    """ Name of the parser, unique constraint """
     name = models.TextField(
         unique=True,
         default="Parser",

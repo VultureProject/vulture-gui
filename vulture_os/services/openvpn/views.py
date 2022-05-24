@@ -92,9 +92,8 @@ def openvpn_delete(request, object_id, api=False):
     if request.POST.get('confirm', "").lower() == "yes" or api:
         try:
             openvpn.node.api_request("services.openvpn.openvpn.stop_service")
-            openvpn.delete()
-
             openvpn.node.api_request("services.openvpn.openvpn.set_rc_conf", "NO")
+            openvpn.delete()
 
             if api:
                 return JsonResponse({
@@ -161,8 +160,8 @@ def openvpn_edit(request, object_id=None, api=False, update=False):
 
             if not openvpn.enabled:
 
+                """ Stop openvpn """
                 openvpn.node.api_request("services.openvpn.openvpn.set_rc_conf", "NO")
-                """Stop openvpn"""
                 api_res = openvpn.node.api_request("services.openvpn.openvpn.stop_service")
                 if not api_res.get('status'):
                     raise ServiceError(
@@ -172,9 +171,9 @@ def openvpn_edit(request, object_id=None, api=False, update=False):
                     )
 
             else:
-                openvpn.node.api_request("services.openvpn.openvpn.set_rc_conf", "YES")
 
-                """Reload openvpn"""
+                """ Reload openvpn """
+                openvpn.node.api_request("services.openvpn.openvpn.set_rc_conf", "YES")
                 api_res = openvpn.node.api_request("services.openvpn.openvpn.restart_service")
                 if not api_res.get('status'):
                     raise ServiceRestartError(

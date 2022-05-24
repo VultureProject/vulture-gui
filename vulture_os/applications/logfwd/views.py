@@ -156,12 +156,18 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                             raise ServiceConfigError("on node {}\n API request error.".format(node.name), "rsyslog",
                                                      traceback=api_res.get('message'))
                         frontends.append(listener.frontend.id)
+
                 # If at least one frontend uses this log_forwarder
                 # Write logrotate config
                 if len(frontends) > 0:
                     node.api_request("services.logrotate.logrotate.reload_conf")
+
+            """ Reload cluster PF configuration """
+            Cluster.api_request ("services.pf.pf.gen_config")
+
             if api:
                 return build_response(log_om.id, "applications.logfwd.api", COMMAND_LIST)
+
             return HttpResponseRedirect('/apps/logfwd')
 
     if api:

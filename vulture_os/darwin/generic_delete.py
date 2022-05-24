@@ -127,48 +127,14 @@ class DeleteDarwinPolicy(DeleteView):
 
                 for filter_conf_path in filter_conf_paths:
                     Cluster.api_request("services.darwin.darwin.delete_filter_conf", filter_conf_path)
+
                 Cluster.api_request("services.darwin.darwin.reload_conf")
+
             except ProtectedError as e:
                 error = "Policy is still used. Cannot remove"
 
         return HttpResponseRedirect(self.redirect_url)
 
-
-class DeleteBlacklistWhitelists(DeleteView):
-    menu_name = _("Darwin -> WAF Rules -> Delete")
-    obj = BlacklistWhitelist
-    redirect_url = "/darwin/waf_rules/"
-    delete_url = "/darwin/waf_rules/delete/"
-
-    # This method is mandatory for all child classes
-    # Returns [] if nothing to do
-    def used_by(self, object):
-        """ Retrieve all objects that use the current object
-        Return a list of strings, printed in template as "Used by this object:"
-        """
-        # TODO: Workflow use
-        # return [str(i) for i in object.]
-        return []
-
-    # get methods inherited from mother class
-    def post(self, request, object_id, **kwargs):
-        confirm = request.POST.get('confirm')
-        if confirm == 'yes':
-            try:
-                obj_inst = self.obj.objects.get(pk=object_id)
-            except ObjectDoesNotExist:
-                return HttpResponseForbidden('Injection detected.')
-
-            frontend = obj_inst.frontend
-            obj_inst.delete()
-
-            for node in frontend.get_nodes():
-                api_res = node.api_request("services.haproxy.haproxy.build_conf", frontend.id)
-                if not api_res.get('status'):
-                    logger.error("Access_Control::edit: API error while trying to "
-                                 "restart HAProxy service : {}".format(api_res.get('message')))
-
-        return HttpResponseRedirect(self.redirect_url)
 
 
 class DeleteAccessControl(DeleteView):

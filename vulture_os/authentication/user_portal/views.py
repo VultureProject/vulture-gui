@@ -142,6 +142,7 @@ def user_authentication_edit(request, object_id=None, api=False):
                         if timeout_changed:
                             for node in nodes:
                                 node.api_request("services.haproxy.haproxy.configure_node")
+
                 if profile.enable_external:
                     # Automatically create OpenID repo
                     openid_repo, _ = OpenIDRepository.objects.get_or_create( client_id=profile.oauth_client_id,
@@ -157,9 +158,12 @@ def user_authentication_edit(request, object_id=None, api=False):
                     if external_listener_changed:
                         old_external_frontend.reload_conf()
                     profile.external_listener.reload_conf()
+
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
                 profile.save_conf()
                 Cluster.api_request("services.haproxy.haproxy.reload_service")
+                Cluster.api_request("services.pf.pf.gen_config")
+
             except Exception as e:
                 if api:
                     return JsonResponse({

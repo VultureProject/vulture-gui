@@ -138,7 +138,7 @@ def frontend_delete(request, object_id, api=False):
             # API request deletion of frontend filename
             Cluster.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
 
-            # And reload of HAProxy service
+            # And reload HAProxy services
             Cluster.api_request('services.haproxy.haproxy.reload_service')
 
             # Delete frontend conf
@@ -155,6 +155,9 @@ def frontend_delete(request, object_id, api=False):
             if was_darwin_buffered:
                 DarwinPolicy.update_buffering()
                 Cluster.api_request("services.darwin.darwin.reload_conf")
+
+            # Update cluster's PF configuration
+            Cluster.api_request("services.pf.pf.gen_config")
 
             if api:
                 return JsonResponse({
@@ -619,6 +622,9 @@ def frontend_edit(request, object_id=None, api=False):
                 logger.debug("frontend_edit: frontend has darwin bufferings, will update buffering policy")
                 DarwinPolicy.update_buffering()
                 Cluster.api_request("services.darwin.darwin.reload_conf")
+
+            # Reload cluster PF configuration
+            Cluster.api_request("services.pf.pf.gen_config")
 
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """

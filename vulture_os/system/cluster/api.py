@@ -64,11 +64,10 @@ def cluster_add(request):
             'message': 'Invalid call'
         })
 
-    """ Make the slave_name resolvable on all Cluster nodes"""
+    """ Make the slave_name resolvable on all Cluster nodes """
     Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
 
-    """ Now the slave should be in the cluster:
-        Add it's management IP """
+    """ Now the slave should be in the cluster: Add it's management IP """
     node = Node()
     node.name = slave_name
     node.management_ip = slave_ip
@@ -77,7 +76,9 @@ def cluster_add(request):
     node.logom_outgoing_ip = slave_ip
     node.save()
 
-    # We need to wait for the VultureD daemon to reload PF Conf
+    """ Ask cluster to reload PF Conf and wait for it """
+    logger.info("Call cluster-wide services.pf.pf.gen_config()...")
+    Cluster.api_request ("services.pf.pf.gen_config")
     time.sleep(6)
 
     """ Add NEW node into the REPLICASET, as a pending member """

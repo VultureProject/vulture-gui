@@ -266,13 +266,6 @@ class Workflow(models.Model):
         if not self.authentication:
             return "No authentication activated, no need to write portal conf."
 
-        # try:
-        #     api_res = Cluster.api_request("workflow.api.write_portal_template", config=self.id)
-        #     if not api_res.get('status'):
-        #         raise VultureSystemConfigError(". API request failure ", traceback=api_res.get('message'))
-        # except Exception:
-        #     raise VultureSystemConfigError("API request failure.")
-
         params = [self.get_filename(), self.generate_conf(), WORKFLOW_OWNER, WORKFLOW_PERMS]
         try:
             api_res = Cluster.api_request("system.config.models.write_conf", config=params)

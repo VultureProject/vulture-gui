@@ -146,52 +146,6 @@ class ListDarwinPolicy(ListView):
         })
 
 
-class ListBlacklistWhitelists(ListView):
-    template_name = "waf_rules.html"
-    obj = BlacklistWhitelist
-
-    def get(self, request, **kwargs):
-        if not request.is_ajax():
-            return render(request, self.template_name)
-        return HttpResponseBadRequest()
-
-    def post(self, request, **kwargs):
-        if not request.is_ajax():
-            return HttpResponseBadRequest()
-
-        order = {
-            "asc": "",
-            "desc": "-"
-        }
-
-        start = int(request.POST['iDisplayStart'])
-        length = int(request.POST['iDisplayLength']) + start
-
-        search = request.POST['sSearch']
-        columns = json_loads(request.POST['columns'])
-        col_sort = columns[int(request.POST["iSortingCols"])]
-
-        col_order = "{}{}".format(order[request.POST['sSortDir_0']], col_sort)
-
-        s = Q()
-        if search:
-            s = Q(rule__icontains=search)
-
-        objs = []
-        max_objs = self.obj.objects.filter(s).count()
-
-        for obj in self.obj.objects.filter(s).order_by(col_order)[start:length]:
-            # use to_html_template instead of to_html
-            objs.append(obj.to_html_template())
-
-        return JsonResponse({
-            "status": True,
-            "iTotalRecords": max_objs,
-            "iTotalDisplayRecords": max_objs,
-            "aaData": objs
-        })
-
-
 class ListAccessControl(ListLDAPRepository):
     """ Class dedicated to list all AccessControl objects """
     template_name = "access_control.html",
