@@ -54,7 +54,7 @@ class GsuiteParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        self.product = 'google_alertcenter'
+        self.product = 'gsuite_alertcenter'
 
         self.client_json_conf = data['google_client_json_conf']
         self.client_admin_mail = data['google_client_admin_mail']
