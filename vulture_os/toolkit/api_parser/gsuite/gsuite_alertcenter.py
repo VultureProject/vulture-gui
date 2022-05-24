@@ -50,7 +50,7 @@ class GsuiteAPIError(Exception):
     pass
 
 
-class Gsuite(ApiParser):
+class GsuiteParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
