@@ -26,7 +26,7 @@ __doc__ = 'Frontends & Listeners dedicated form classes'
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
-                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
+                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput, FileField)
 from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
@@ -231,6 +231,7 @@ class FrontendForm(ModelForm):
                            'blackberry_cylance_app_secret',
                            'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
                            'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
+                           'google_client_json_conf', 'google_client_admin_mail', 'google_client_scopes'
                            ]:
             self.fields[field_name].required = False
 
@@ -307,8 +308,8 @@ class FrontendForm(ModelForm):
                   'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id',
                   'blackberry_cylance_app_secret',
                   'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret', 'ms_sentinel_subscription_id',
-                  'ms_sentinel_resource_group', 'ms_sentinel_workspace',
-                  'darwin_mode')
+                  'ms_sentinel_resource_group', 'ms_sentinel_workspace', 'google_client_json_conf',
+                  'google_client_admin_mail', 'google_client_scopes', 'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -442,6 +443,9 @@ class FrontendForm(ModelForm):
             'ms_sentinel_subscription_id': TextInput(attrs={'class': 'form-control'}),
             'ms_sentinel_resource_group': TextInput(attrs={'class': 'form-control'}),
             'ms_sentinel_workspace': TextInput(attrs={'class': 'form-control'}),
+            'google_client_json_conf': FileField(attrs={'class': 'form-control'}),
+            'google_client_admin_mail': Textarea(attrs={'class': 'form-control'}),
+            'google_client_scopes': Textarea(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
