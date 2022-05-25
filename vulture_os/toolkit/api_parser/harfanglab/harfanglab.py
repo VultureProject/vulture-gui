@@ -189,7 +189,7 @@ class HarfangLabParser(ApiParser):
 
             # increment by 1s (ms not supported) to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             try:
-                self.frontend.last_api_call = datetime.fromisoformat(logs[0]['@timestamp'].replace("Z", "+00:00")) \
+                self.frontend.last_api_call = datetime.fromisoformat(logs[0]['alert_time'].replace("Z", "+00:00")) \
                                               + timedelta(seconds=1)
                 self.frontend.save()
             except Exception as err:
