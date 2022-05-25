@@ -194,7 +194,7 @@ class HarfangLabParser(ApiParser):
                 self.frontend.save()
             except Exception as err:
                 logger.exception(f"[{__parser__}]:execute: {err}", extra={'frontend': str(self.frontend)})
-                msg = f"could not locate '@timestamp' key on: {logs[0]}"
+                msg = f"could not locate 'alert_time' key on: {logs[0]}"
                 logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
