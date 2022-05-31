@@ -1463,7 +1463,6 @@ class Frontend(models.Model):
             'filebeat_listening_mode': self.filebeat_listening_mode,
             'external_idps': self.userauthentication_set.filter(enable_external=True),
             'defender_enabled': self.workflow_set.filter(defender_policy__isnull=False).count() > 0,
-            'session_enabled': self.workflow_set.filter(authentication__isnull=False).count() > 0
 
         }
 
@@ -1518,7 +1517,8 @@ class Frontend(models.Model):
         test_conf = conf.replace("frontend {}".format(self.name),
                                  "frontend test_{}".format(self.id or "test")) \
                         .replace("listen {}".format(self.name),
-                                 "listen test_{}".format(self.id or "test"))
+                                 "listen test_{}".format(self.id or "test")) \
+                        .replace('filter spoe engine', '#filter spoe engine') # don't test spoe files, they won't be up-to-date
         if node_name != Cluster.get_current_node().name:
             try:
                 global_config = Cluster().get_global_config()
