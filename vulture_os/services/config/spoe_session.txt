@@ -7,10 +7,11 @@
 
 {% for w in workflows %}
 {% if w.authentication %}
+# Workflow {{ w.name }}
 [session_{{w.id}}]
 
 spoe-agent session-agent
-        messages check-session_{{w.id}}
+        messages check-session_{{w.id}} check-session_oauth_{{w.id}}
 
         option var-prefix session
 
@@ -26,10 +27,18 @@ spoe-message check-session_{{w.id}}
     acl workflow_{{w.id}}_host hdr(host) {{w.fqdn}}
     acl workflow_{{w.id}}_host hdr(host) -m beg {{w.fqdn}}:
     acl workflow_{{w.id}}_dir path -i -m beg {{ w.public_dir }}
+    acl workflow_{{w.id}}_header req.hdr(Authorization) -m found
     args req.cook({{ global_config.portal_cookie_name }}) str("{{w.id}}") str("{% if w.authentication.enable_timeout_restart %}{{w.authentication.auth_timeout}}{% else %}0{% endif %}")
-    event on-frontend-http-request if workflow_{{w.id}}_host workflow_{{w.id}}_dir
+    event on-frontend-http-request if workflow_{{w.id}}_host workflow_{{w.id}}_dir !workflow_{{w.id}}_header
 
+spoe-message check-session_oauth_{{w.id}}
+    acl workflow_{{w.id}}_host hdr(host) {{w.fqdn}}
+    acl workflow_{{w.id}}_host hdr(host) -m beg {{w.fqdn}}:
+    acl workflow_{{w.id}}_dir path -i -m beg {{ w.public_dir }}
+    acl workflow_{{w.id}}_header req.hdr(Authorization) -m found
+    # remove Authorization type from header value (such as 'Bearer'...) and prefix with 'oauth2_' for redis querying
+    args req.hdr(Authorization),field(-1,' '),regsub('^','oauth2_') str("{{w.authentication.repositories | join(';')}}")
+    event on-frontend-http-request if workflow_{{w.id}}_host workflow_{{w.id}}_dir workflow_{{w.id}}_header
 {% endif %}
-{% endfor%}
-
+{% endfor %}
 
