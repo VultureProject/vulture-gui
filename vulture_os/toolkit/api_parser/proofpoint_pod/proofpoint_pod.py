@@ -129,7 +129,8 @@ class ProofpointPodParser(ApiParser):
                     },
                     'email': {
                         'attachments': []
-                    }
+                    },
+                    'msgParts': []
                 }
             })
 
@@ -159,6 +160,17 @@ class ProofpointPodParser(ApiParser):
                             'sha256': part.get('sha256', ''),
                         }
                     }
+                })
+
+                parsed['additional']['msgParts'].append({
+                    'name': part.get('detectedName', ''),
+                    'isVirtual': part.get('isVirtual', False),
+                    'isTimedOut': part.get('isTimedOut', False),
+                    'isProtected': part.get('isProtected', False),
+                    'isDeleted': part.get('isDeleted', False),
+                    'isCorrupted': part.get('isCorrupted', False),
+                    'isArchive': part.get('isArchive', False),
+                    'metadata': part.get('metadata', {}),
                 })
 
             if results := get_obj_value_or_default(parsed, 'filter.modules.dmarc.alignment.results'):
