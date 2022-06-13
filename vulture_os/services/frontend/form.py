@@ -231,6 +231,7 @@ class FrontendForm(ModelForm):
                            'blackberry_cylance_app_secret',
                            'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
                            'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
+                           'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
                            ]:
             self.fields[field_name].required = False
 
@@ -308,6 +309,7 @@ class FrontendForm(ModelForm):
                   'blackberry_cylance_app_secret',
                   'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret', 'ms_sentinel_subscription_id',
                   'ms_sentinel_resource_group', 'ms_sentinel_workspace',
+                  'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
                   'darwin_mode')
 
         widgets = {
@@ -442,6 +444,9 @@ class FrontendForm(ModelForm):
             'ms_sentinel_subscription_id': TextInput(attrs={'class': 'form-control'}),
             'ms_sentinel_resource_group': TextInput(attrs={'class': 'form-control'}),
             'ms_sentinel_workspace': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_pod_uri': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_pod_cluster_id': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_pod_token': TextInput(attrs={'type': "password", 'class': 'form-control'}),
         }
 
     def clean_name(self):

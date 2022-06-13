@@ -117,7 +117,7 @@ class ApiParser:
             try:
                 if isinstance(line, str):
                     line = line.encode('utf8')
-                self.socket.send(line + b"\n")
+                self.socket.sendall(line + b"\n")
                 cpt += 1
             except Exception as e:
                 msg = f"Failed to send to Rsyslog : {e}"

@@ -241,6 +241,15 @@ fabric.properties
 #   having no cross-platform support, pipenv may install dependencies that don't work, or not
 #   install all needed dependencies.
 
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak
+
 # celery beat schedule file
 
 # SageMath parsed files
