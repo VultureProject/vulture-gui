@@ -42,7 +42,7 @@ class OsMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
-        self.is_nodeBootstrapped = Cluster.get_current_node()
+        self.is_nodeBootstrapped = True if Cluster.get_current_node() else False
         # One-time configuration and initialization.
 
     def __call__(self, request):
