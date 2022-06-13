@@ -26,7 +26,7 @@ __doc__ = 'Middleware for GUI of Vulture OS'
 from django.conf.urls.static import static
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
-from system.cluster.models import Node
+from system.cluster.models import Node, Cluster
 
 from django.conf import settings
 from django.urls import reverse
@@ -42,14 +42,13 @@ class OsMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
+        self.is_nodeBootstrapped = Cluster.get_current_node()
         # One-time configuration and initialization.
 
     def __call__(self, request):
         # Code to be executed for each request before
         # the view (and later middleware) are called.
-
-        install_file = os.path.join(settings.BASE_DIR, '.node_ok')
-        if not os.path.exists(install_file):
+        if not self.is_nodeBootstrapped:
             return render(request, "gui/not_install.html", {
                 'TITLE': 'VultureOS',
                 'WALLPAPER': static("img/VultureOS_wallpaper.png")

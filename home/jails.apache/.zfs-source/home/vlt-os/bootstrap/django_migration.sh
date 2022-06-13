@@ -17,5 +17,3 @@ if [ $? -ne 0 ] ; then
     /bin/echo "ERROR:: crontab add : Please solve and relaunch bootstrap"
     exit 1
 fi
-
-touch /home/vlt-os/vulture_os/.install

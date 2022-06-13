@@ -32,15 +32,17 @@ if len(sys.argv) != 4:
     print("This command will join the current node into an existing Vulture cluster. It requires bootstrap first.")
     sys.exit(1)
 
-if not os.path.isfile('/home/vlt-os/vulture_os/.install'):
-    print("Error: This node is not bootstraped.")
-    sys.exit(1)
-
 sys.path.append("/home/vlt-os/vulture_os/")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
-
 import django
-django.setup()
+try:
+    django.setup()
+    from django.core.management import call_command
+    with open(os.devnull, 'w') as f:
+        call_command('check', stdout = f)
+except:
+    print ("Error: This node is not bootstraped.")
+    sys.exit(1)
 
 from gui.views.install import cluster_join
 cluster_join(sys.argv[1], sys.argv[2], sys.argv[3])
