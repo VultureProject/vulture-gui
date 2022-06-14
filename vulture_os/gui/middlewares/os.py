@@ -42,13 +42,12 @@ class OsMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
-        self.is_nodeBootstrapped = True if Cluster.get_current_node() else False
         # One-time configuration and initialization.
 
     def __call__(self, request):
         # Code to be executed for each request before
         # the view (and later middleware) are called.
-        if not self.is_nodeBootstrapped:
+        if not Cluster.is_node_bootstrapped():
             return render(request, "gui/not_install.html", {
                 'TITLE': 'VultureOS',
                 'WALLPAPER': static("img/VultureOS_wallpaper.png")

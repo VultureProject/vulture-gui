@@ -4,5 +4,5 @@
 
 # If the node has been bootstrapped, the rsyslog configuration file has been created
 if [ -f /usr/local/etc/rsyslog.d/pf.conf ] ; then
-    /usr/bin/touch /home/vlt-os/vulture_os/.node_ok
+    #/usr/bin/touch /home/vlt-os/vulture_os/.node_ok
 fi
