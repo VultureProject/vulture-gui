@@ -125,7 +125,8 @@ class ProofpointPodParser(ApiParser):
                     'related': {
                         'hash': set(),
                         'hosts': set(),
-                        'url': set()
+                        'url': set(),
+                        'filename': set(),
                     },
                     'email': {
                         'attachments': []
@@ -161,6 +162,8 @@ class ProofpointPodParser(ApiParser):
                         }
                     }
                 })
+
+                parsed['additional']['related']['filename'].add(part.get('detectedName', ''))
 
                 parsed['additional']['msgParts'].append({
                     'name': part.get('detectedName', ''),
