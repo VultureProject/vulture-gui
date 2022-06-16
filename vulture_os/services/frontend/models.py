@@ -1470,7 +1470,6 @@ class Frontend(models.Model):
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
-            'serialized_blwl_list': serialized_blwl_list,
             'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
