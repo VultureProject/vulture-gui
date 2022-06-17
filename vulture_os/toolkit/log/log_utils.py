@@ -70,3 +70,27 @@ class DatabaseHandler(logging.StreamHandler):
 
         except Exception:
             pass
+
+
+def get_obj_value_or_default(element, keys=[], default=None):
+    '''
+    Check if keys (nested) exists in `element` (obj).
+    `keys`can be either a list defining ordered sub-objects to traverse, or a string in the form 'obj1.obj2.obj3'
+    Returns value if last key exists, else returns default value
+    '''
+    if isinstance(keys, str):
+        keys = keys.split('.')
+
+    if not isinstance(element, dict) and not isinstance(element, list):
+        return default
+
+    current_element = element
+    for key in keys:
+        if isinstance(current_element, dict) and key in current_element:
+            current_element = current_element[key]
+        elif isinstance(current_element, list) and isinstance(key, int) and key < len(current_element):
+            current_element = current_element[key]
+        else:
+            return default
+
+    return current_element

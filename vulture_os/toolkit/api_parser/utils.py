@@ -52,6 +52,7 @@ from toolkit.api_parser.vadesecure_o365.vadesecure_o365 import VadesecureO365Par
 from toolkit.api_parser.nozomi_probe.nozomi_probe import NozomiProbeParser
 from toolkit.api_parser.blackberry_cylance.blackberry_cylance import BlackberryCylanceParser
 from toolkit.api_parser.ms_sentinel.ms_sentinel import MSSentinelParser
+from toolkit.api_parser.proofpoint_pod.proofpoint_pod import ProofpointPodParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -84,6 +85,7 @@ PARSER_LIST = {
     "nozomi_probe": NozomiProbeParser,
     "blackberry_cylance": BlackberryCylanceParser,
     "ms_sentinel": MSSentinelParser,
+    "proofpoint_pod": ProofpointPodParser,
 }
 
 

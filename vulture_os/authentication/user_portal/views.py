@@ -192,6 +192,7 @@ def sso_wizard(request):
             url = request.POST['sso_forward_url']
             user_agent = request.POST.get('sso_forward_user_agent') or request.META.get('HTTP_USER_AGENT')
             redirect_before = request.POST.get('sso_forward_follow_redirect_before')
+            sso_timeout = int(request.POST.get('sso_forward_timeout', '10'))
 
         except KeyError as e:
             return JsonResponse({'status': False, 'reason': "Missing field : {}".format(str(e))})
@@ -232,7 +233,7 @@ def sso_wizard(request):
     try:
         # Directly use portal classes
         sso_client = SSOClient(user_agent, [], request.META.get('HTTP_REFERER'), ssl_client_certificate, ssl_context,
-                               verify_certificate=tls_check)
+                               verify_certificate=tls_check, timeout=sso_timeout)
         url, response = sso_client.get(url, redirect_before)
         forms = parse_html(response.text, url)
 
