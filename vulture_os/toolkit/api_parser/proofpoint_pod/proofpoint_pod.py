@@ -192,6 +192,7 @@ class ProofpointPodParser(ApiParser):
             parsed['additional']['related']['hash'] = list(parsed['additional']['related']['hash'])
             parsed['additional']['related']['hosts'] = list(parsed['additional']['related']['hosts'])
             parsed['additional']['related']['url'] = list(parsed['additional']['related']['url'])
+            parsed['additional']['related']['filename'] = list(parsed['additional']['related']['filename'])
 
             return parsed_ts, parsed
         except (json.JSONDecodeError, KeyError, ValueError) as e:
