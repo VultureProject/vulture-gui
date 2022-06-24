@@ -89,7 +89,8 @@ class SSOForward(object):
                                     ssl_client_certificate,
                                     self.ssl_context,
                                     verify_certificate=application.authentication.sso_forward_tls_check,
-                                    existing_cookies=cookies)
+                                    existing_cookies=cookies,
+                                    timeout=application.authentication.sso_forward_timeout)
         self.application  = application
         self.credentials  = authentication.credentials
         self.backend_id   = authentication.backend_id

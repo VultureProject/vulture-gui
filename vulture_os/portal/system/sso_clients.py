@@ -63,7 +63,15 @@ class SSLAdapter(HTTPAdapter):
 
 
 class SSOClient(object):
-    def __init__(self, user_agent, headers_in, referer, client_certificate, ssl_context, verify_certificate=False, existing_cookies=None):
+    def __init__(   self,
+                    user_agent,
+                    headers_in,
+                    referer,
+                    client_certificate,
+                    ssl_context,
+                    verify_certificate=False,
+                    existing_cookies=None,
+                    timeout=10):
         """
 		:param logger: logger instance
 		:param uri: The 'action' uri where to post the form
@@ -78,6 +86,7 @@ class SSOClient(object):
         self.ssl_context = ssl_context
         self.verify_certificate = False
         self.client_side_cert = None
+        self.timeout=timeout
         if ssl_context:
             # Only compatible with request-2.18.1 !!!
             self.session.mount("https://", SSLAdapter(ssl_context=ssl_context))
@@ -159,7 +168,7 @@ class SSOClient(object):
         return final_response
 
 
-    def get(self, url, follow_redirect, timeout=5):
+    def get(self, url, follow_redirect):
         """
         Get the page requested with requests.Session
         Encode in utf-8 if necessary 
@@ -168,7 +177,7 @@ class SSOClient(object):
         Return: the url requested, the response
         """
         response = self.session.get(url, verify=self.verify_certificate, cert=self.client_side_cert,
-                                    allow_redirects=follow_redirect, timeout=(timeout,timeout))
+                                    allow_redirects=follow_redirect, timeout=(5,self.timeout))
         url      = response.url
 
         # Check if we have to follow a meta-redirect
@@ -179,7 +188,7 @@ class SSOClient(object):
         return url, response
 
 
-    def post(self, url, content_type, post_data, follow_redirect, timeout=5):
+    def post(self, url, content_type, post_data, follow_redirect):
         if content_type == 'json':
             post_data = json_dumps(post_data)
             self.session.headers.update({'Content-Type': "application/json"})
@@ -192,7 +201,7 @@ class SSOClient(object):
             self.session.headers.update({'Content-Type': content_type_hdr})
 
         response = self.session.post(url, data=post_data, verify=self.verify_certificate, cert=self.client_side_cert,
-                                     allow_redirects=follow_redirect, timeout=(timeout,timeout))
+                                     allow_redirects=follow_redirect, timeout=(5,self.timeout))
         url      = response.url
 
         redirect_url = self.get_url_metaredirect(self.encode_body(response))
