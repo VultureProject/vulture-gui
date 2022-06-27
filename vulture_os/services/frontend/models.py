@@ -979,7 +979,7 @@ class Frontend(models.Model):
     )
 
     # Google worspace alertcenter attributes
-    google_client_json_conf = models.FileField(
+    google_client_json_conf = models.TextField(
         verbose_name = _("Google Alertcenter JSON Conf"),
         help_text = _("Your JSON Conf from Google"),
         default = "",
