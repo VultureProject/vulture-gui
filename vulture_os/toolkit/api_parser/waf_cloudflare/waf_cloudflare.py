@@ -80,7 +80,7 @@ class WAFCloudflareParser(ApiParser):
         if logs_to:
             query.update({'end': logs_to.strftime('%Y-%m-%dT%H:%M:%SZ')})
 
-        query.update({"fields":"BotScore,BotScoreSrc,BotTags,ClientDeviceType,ClientIP,ClientIPClass,ClientRequestBytes,ClientRequestHost,ClientRequestMethod,ClientRequestPath,ClientRequestProtocol,ClientRequestReferer,ClientRequestScheme,ClientRequestSource,ClientRequestURI,ClientRequestAgent,ClientSSIProtocol,ClientSrcPort,ClientXRequestedWith,Cookies,FirewallMatchesActions,FirewallMatchesSources,OriginIP,OriginResponseBytes,OriginResponseStatus,OriginSSLProtocol,RequestHeaders,ResponseHeaders,SecurityLevel,WAFAction,WAFRuleID,WAFRuleMessage,ZoneName"})
+        query.update({"fields":"EdgeStartTimestamp,BotScore,BotScoreSrc,BotTags,ClientDeviceType,ClientIP,ClientIPClass,ClientRequestBytes,ClientRequestHost,ClientRequestMethod,ClientRequestPath,ClientRequestProtocol,ClientRequestReferer,ClientRequestScheme,ClientRequestSource,ClientRequestURI,ClientRequestAgent,ClientSSIProtocol,ClientSrcPort,ClientXRequestedWith,Cookies,FirewallMatchesActions,FirewallMatchesSources,OriginIP,OriginResponseBytes,OriginResponseStatus,OriginSSLProtocol,RequestHeaders,ResponseHeaders,SecurityLevel,WAFAction,WAFRuleID,WAFRuleMessage,ZoneName"})
 
         logger.debug(f"{[__parser__]}:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
 
