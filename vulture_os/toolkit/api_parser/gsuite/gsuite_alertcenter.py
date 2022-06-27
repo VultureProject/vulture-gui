@@ -81,7 +81,9 @@ class GsuiteParser(ApiParser):
             self.scopes += self.default_scopes
 
         # use credentials
-        self.credentials = service_account.Credentials.from_service_account_file(json.loads(self.client_json_conf), scopes=self.scopes)
+        data = json.loads(self.client_json_conf)
+        signer = from_dict(data)
+        self.credentials = Credentials._from_signer_and_info(signer, data, scopes=self.scopes)
 
         # impersonate with an admin email set to "me" if not provided
         if not self.client_admin_mail:
@@ -148,3 +150,20 @@ class GsuiteParser(ApiParser):
         self.update_lock()
 
         logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
+    
+    def test(self):
+        try:
+            since = (self.last_api_call or (timezone.now() - timedelta(days=1))).strftime("%Y-%m-%dT%H:%M:%SZ")
+            to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+            have_logs, tmp_logs = self.get_alerts(since=since, to=to)
+            logger.info(f"[{__parser__}]:test: Getting alerts", extra={'frontend': str(self.frontend)})
+            return {
+                "status": True,
+                "data": tmp_logs
+            }
+        except Exception as e:
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
+            return {
+                "status": False,
+                "error": str(e)
+            }
