@@ -26,7 +26,7 @@ __doc__ = 'Frontends & Listeners dedicated form classes'
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
-                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput, FileField)
+                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
 from django.utils.translation import ugettext_lazy as _
 
 # Django project imports
@@ -443,7 +443,7 @@ class FrontendForm(ModelForm):
             'ms_sentinel_subscription_id': TextInput(attrs={'class': 'form-control'}),
             'ms_sentinel_resource_group': TextInput(attrs={'class': 'form-control'}),
             'ms_sentinel_workspace': TextInput(attrs={'class': 'form-control'}),
-            'google_client_json_conf': FileField(attrs={'class': 'form-control'}),
+            'google_client_json_conf': Textarea(attrs={'class': 'form-control'}),
             'google_client_admin_mail': Textarea(attrs={'class': 'form-control'}),
             'google_client_scopes': Textarea(attrs={'class': 'form-control'}),
         }
