@@ -36,9 +36,11 @@ from django.conf import settings
 from django.utils import dateparse
 from django.utils import timezone
 
-from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+from google.auth._service_account_info import from_dict
+from google.oauth2.service_account import Credentials
+
 
 from toolkit.api_parser.api_parser import ApiParser
 
