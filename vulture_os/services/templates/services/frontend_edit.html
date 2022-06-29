@@ -1397,6 +1397,29 @@
                         </div>
                       </div>
 
+                      <div class="col-md-12 api_clients_row" id="api_gsuite_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.google_client_json_conf.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.google_client_json_conf }}
+                            {{ form.google_client_json_conf.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.google_client_admin_mail.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.google_client_admin_mail }}
+                            {{ form.google_client_admin_mail.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.google_client_scopes.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.google_client_scopes }}
+                            {{ form.google_client_scopes.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api_clients_row" id="api_vadesecure_o365_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.vadesecure_o365_host.label }}</label>
@@ -1427,6 +1450,7 @@
                           </div>
                         </div>
                       </div>
+
                       <div class="col-md-12 api_clients_row" id="api_ms_sentinel_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.ms_sentinel_tenant_id.label }}</label>
@@ -1449,25 +1473,41 @@
                             {{ form.ms_sentinel_appsecret.errors|safe }}
                           </div>
                         </div>
+                          <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.ms_sentinel_subscription_id.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ms_sentinel_subscription_id }}
+                              {{ form.ms_sentinel_subscription_id.errors|safe }}
+                          </div>
+                        </div>
+                          <div class="form-group">
+                              <label class="col-sm-3 control-label">{{ form.ms_sentinel_resource_group.label }}</label>
+                              <div class="col-sm-5">
+                                {{ form.ms_sentinel_resource_group }}
+                                {{ form.ms_sentinel_resource_group.errors|safe }}
+                              </div>
+                        </div>
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_subscription_id.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ms_sentinel_subscription_id }}
-                            {{ form.ms_sentinel_subscription_id.errors|safe }}
+                            <label class="col-sm-3 control-label">{{ form.ms_sentinel_workspace.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.ms_sentinel_workspace }}
+                              {{ form.ms_sentinel_workspace.errors|safe }}
+                            </div>
+                        </div>
+                      </div>
+                        <div class="col-md-12 api_clients_row" id="api_waf_cloudflare_row">
+                          <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.waf_cloudflare_apikey.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.waf_cloudflare_apikey }}
+                              {{ form.waf_cloudflare_apikey.errors|safe }}
                           </div>
                         </div>
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_resource_group.label }}</label>
+                          <label class="col-sm-3 control-label">{{ form.waf_cloudflare_zoneid.label }}</label>
                           <div class="col-sm-5">
-                            {{ form.ms_sentinel_resource_group }}
-                            {{ form.ms_sentinel_resource_group.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.ms_sentinel_workspace.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.ms_sentinel_workspace }}
-                            {{ form.ms_sentinel_workspace.errors|safe }}
+                            {{ form.waf_cloudflare_zoneid }}
+                            {{ form.waf_cloudflare_zoneid.errors|safe }}
                           </div>
                         </div>
                       </div>
