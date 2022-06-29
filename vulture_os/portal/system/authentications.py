@@ -332,7 +332,7 @@ class BASICAuthentication(Authentication):
     def retrieve_credentials(self, request):
         authorization_header = request.META.get("HTTP_AUTHORIZATION").replace("Basic ", "")
         authorization_header += '=' * (4 - len(authorization_header) % 4)
-        username, password = urlsafe_b64decode(authorization_header).split(':')
+        username, password = urlsafe_b64decode(authorization_header).decode('utf-8').split(':')
         self.credentials = [username, password]
 
     def ask_credentials_response(self, **kwargs):
