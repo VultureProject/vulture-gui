@@ -231,7 +231,7 @@ class FrontendForm(ModelForm):
                            'blackberry_cylance_app_secret',
                            'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
                            'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
-                           'google_client_json_conf', 'google_client_admin_mail', 'google_client_scopes'
+                           'google_client_json_conf', 'google_client_admin_mail'
                            ]:
             self.fields[field_name].required = False
 
