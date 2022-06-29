@@ -989,11 +989,6 @@ class Frontend(models.Model):
         help_text = _("Google Alertcenter Admin email"),
         default = "",
     )
-    google_client_scopes = models.TextField(
-        verbose_name=_("Google Alertcenter Scopes"),
-        help_text=_("Google Alertcenter Scopes"),
-        default="",
-    )
 
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
