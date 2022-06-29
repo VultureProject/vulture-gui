@@ -268,7 +268,9 @@ class OpenIDRepository(BaseRepository):
         self.retrieve_config()
         return oauth2_session.fetch_token(self.token_endpoint,
                                           code=code,
-                                          client_secret=self.client_secret)
+                                          client_secret=self.client_secret,
+                                          proxies=get_proxy() if self.use_proxy else None,
+                                          verify=self.verify_certificate)
 
     def get_userinfo(self, oauth2_session):
         self.retrieve_config()
