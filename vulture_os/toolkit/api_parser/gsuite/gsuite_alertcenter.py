@@ -77,15 +77,10 @@ class GsuiteParser(ApiParser):
         """
         logger.info(f"[{__parser__}][get_creds]: Asking google to check credentials", extra={'frontend': str(self.frontend)})
 
-        if self.scopes:
-            # add defaults
-            logger.info(f"[{__parser__}][get_creds]: Adding scopes {self.scopes} to defaults", extra={'frontend': str(self.frontend)})
-            self.scopes += self.default_scopes
-
         # use credentials
         data = json.loads(self.client_json_conf)
         signer = from_dict(data)
-        self.credentials = Credentials._from_signer_and_info(signer, data, scopes=self.scopes)
+        self.credentials = Credentials._from_signer_and_info(signer, data, scopes=self.default_scopes)
 
         # impersonate with an admin email set to "me" if not provided
         if not self.client_admin_mail:
@@ -155,7 +150,7 @@ class GsuiteParser(ApiParser):
     
     def test(self):
         try:
-            since = (self.last_api_call or (timezone.now() - timedelta(days=1))).strftime("%Y-%m-%dT%H:%M:%SZ")
+            since = (self.last_api_call or (timezone.now() - timedelta(days=10))).strftime("%Y-%m-%dT%H:%M:%SZ")
             to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
             have_logs, tmp_logs = self.get_alerts(since=since, to=to)
             logger.info(f"[{__parser__}]:test: Getting alerts", extra={'frontend': str(self.frontend)})
