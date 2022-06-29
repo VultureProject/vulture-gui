@@ -80,7 +80,7 @@ class WAFCloudflareParser(ApiParser):
         if logs_to:
             query.update({'end': logs_to.strftime('%Y-%m-%dT%H:%M:%SZ')})
 
-        query.update({"fields":"EdgeStartTimestamp,BotScore,BotScoreSrc,BotTags,ClientDeviceType,ClientIP,ClientIPClass,ClientRequestBytes,ClientRequestHost,ClientRequestMethod,ClientRequestPath,ClientRequestProtocol,ClientRequestReferer,ClientRequestScheme,ClientRequestSource,ClientRequestURI,ClientRequestAgent,ClientSSIProtocol,ClientSrcPort,ClientXRequestedWith,Cookies,FirewallMatchesActions,FirewallMatchesSources,OriginIP,OriginResponseBytes,OriginResponseStatus,OriginSSLProtocol,RequestHeaders,ResponseHeaders,SecurityLevel,WAFAction,WAFRuleID,WAFRuleMessage,ZoneName"})
+        query.update({"fields":"BotScore,BotScoreSrc,BotTags,CacheCacheStatus,CacheResponseBytes,CacheResponseStatus,CacheTieredFill,ClientASN,ClientCountry,ClientDeviceType,ClientIP,ClientIPClass,ClientMTLSAuthCertFingerprint,ClientMTLSAuthStatus,ClientRequestBytes,ClientRequestHost,ClientRequestMethod,ClientRequestPath,ClientRequestProtocol,ClientRequestReferer,ClientRequestScheme,ClientRequestSource,ClientRequestURI,ClientRequestUserAgent,ClientSSLCipher,ClientSSLProtocol,ClientSrcPort,ClientTCPRTTMs,ClientSrcPort,ClientXRequestedWith,Cookies,EdgeCFConnectingO2O,EdgeColoCode,EdgeColoID,EdgeEndTimestamp,EdgePathingOp,EdgePathingSrc,EdgePathingStatus,EdgeRateLimitAction,EdgeRateLimitID,EdgeRequestHost,EdgeResponseBodyBytes,EdgeResponseBytes,EdgeResponseCompressionRatio,EdgeResponseContentType,EdgeResponseStatus,EdgeServerIP,EdgeStartTimestamp,EdgeTimeToFirstByteMs,FirewallMatchesActions,FirewallMatchesRuleIDs,FirewallMatchesSources,OriginIP,JA3Hash,OriginDNSResponseTimeMs,OriginRequestHeaderSendDurationMs,OriginIP,OriginResponseBytes,OriginResponseDurationMs,OriginResponseHTTPExpires,OriginResponseHTTPLastModified,OriginResponseHeaderReceiveDurationMs,OriginResponseStatus,OriginResponseTime,OriginSSLProtocol,OriginTCPHandshakeDurationMs,OriginTLSHandshakeDurationMs,ParentRayID,RayID,RequestHeaders,ResponseHeaders,SecurityLevel,UpperTierColoID,SmartRouteColoID,WAFAction,WAFFlags,WAFMatchedVar,WAFRuleID,WAFProfile,WAFRuleMessage,WorkerCPUTime,WorkerStatus,WorkerSubrequest,WorkerSubrequestCount,ZoneID,ZoneName"})
 
         logger.debug(f"{[__parser__]}:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
 
@@ -95,16 +95,18 @@ class WAFCloudflareParser(ApiParser):
 
     def execute(self):
         # Aware UTC datetime
-        current_time = datetime.now(timezone.utc)
+        current_time = timezone.now()
         since = self.last_api_call
-        if (self.last_api_call is None) or (datetime.now(timezone.utc) - self.last_api_call >= timedelta(seconds=62)):
-            since = (datetime.now(timezone.utc) - timedelta(seconds=62))
+        if (self.last_api_call is None) or (timezone.now() - self.last_api_call >= timedelta(minutes=30)):
+            since = (timezone.now() - timedelta(minutes=30))
         #The API has a delay of 60 seconds
         to = current_time - timedelta(seconds=60)
+        msg = f"Parser starting from {since} to {to}."
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
         logs = self.get_logs(logs_from=since, logs_to=to)
         self.update_lock()
-        # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
-        self.last_api_call = to + timedelta(microseconds=1000)
+        # from is inclusive, to is exclusive
+        self.last_api_call = to
         self.write_to_file(logs)
 
         logger.info(f"{[__parser__]}:execute: Parsing done.", extra={'frontend': str(self.frontend)})
