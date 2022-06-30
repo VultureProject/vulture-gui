@@ -41,7 +41,6 @@ from googleapiclient.discovery import build
 from google.auth._service_account_info import from_dict
 from google.oauth2.service_account import Credentials
 
-
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -74,7 +73,8 @@ class GsuiteParser(ApiParser):
         """
         Returns:
         """
-        logger.info(f"[{__parser__}][get_creds]: Asking google to check credentials", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}][get_creds]: Asking google to check credentials",
+                    extra={'frontend': str(self.frontend)})
 
         # use credentials
         data = json.loads(self.client_json_conf)
@@ -85,37 +85,34 @@ class GsuiteParser(ApiParser):
         if not self.client_admin_mail:
             self.client_admin_mail = self.default_client_admin_mail
 
-        logger.info(f"[{__parser__}][get_creds]: Admin mail: {self.client_admin_mail}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}][get_creds]: Admin mail: {self.client_admin_mail}",
+                    extra={'frontend': str(self.frontend)})
         self.credentials = self.credentials.with_subject(self.client_admin_mail)
         self.credentials.refresh(Request())
 
-        logger.info(f"[{__parser__}][get_creds]: Token valid: {self.credentials.valid}, Token expiration: {self.credentials.expiry}", extra={'frontend': str(self.frontend)})
+        logger.info(
+            f"[{__parser__}][get_creds]: Token valid: {self.credentials.valid}, Token expiration: {self.credentials.expiry}",
+            extra={'frontend': str(self.frontend)})
         if not self.credentials.valid:
-            logger.error(f'[{__parser__}][get_creds]: Please check your configuration file and related account', exc_info=True, extra={'frontend': str(self.frontend)})
+            logger.error(f'[{__parser__}][get_creds]: Please check your configuration file and related account',
+                         exc_info=True, extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
 
         return True, self.credentials
 
-    def get_alertcenter(self):
-        logger.info(f"[{__parser__}][get_alertcenter]: Get the alertcli center", extra={'frontend': str(self.frontend)})
-        try:
-            self.alertcenter = build('alertcenter', 'v1beta1', credentials=self.credentials).alerts()
-        except Exception as e:
-            logger.error(f"[{__parser__}][get_alertcenter]: Failed to get the altercenter client, should investigate this: {e}", exc_info=True, extra={'frontend': str(self.frontend)})
-            self.alertcenter = None
-            return False, self.alertcenter
-        return True, self.alertcenter
-
     def get_alerts(self, since, to):
-        logger.debug(f"[{__parser__}][get_alerts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
-        one_min_behind = datetime.utcnow() - timedelta(minutes=1)
-        now = datetime.utcnow()
-        time_filter_str1 = one_min_behind.isoformat().split(".")[0] + "Z"
-        time_filter_str2 = now.isoformat().split(".")[0] + "Z"
-        final_filter = "createTime >= \"{}\" AND createTime < \"{}\" ".format(time_filter_str1, time_filter_str2)
+        logger.info(f"[{__parser__}][get_alerts]: From {since} until {to}", extra={'frontend': str(self.frontend)})
+
+        final_filter = "createTime >= \"{}\" AND createTime < \"{}\" ".format(since, to)
         orderfilter = "create_time desc"
-        logger.info(f"[{__parser__}][get_alerts]: Filter {final_filter}",  extra={'frontend': str(self.frontend)})
-        recent_alerts = self.alertcenter.list(orderBy=orderfilter, filter=final_filter).execute()
+        logger.info(f"[{__parser__}][get_alerts]: Filter {final_filter}", extra={'frontend': str(self.frontend)})
+
+        self.alertcenter = build('alertcenter', 'v1beta1', credentials=self.credentials).alerts()
+        try:
+            recent_alerts = self.alertcenter.list(orderBy=orderfilter, filter=final_filter).execute()
+        except Exception as e:
+            logger.error(f'[{__parser__}][get_alerts]: {e}')
+            return False, []
         if not recent_alerts:
             logger.info(f"[{__parser__}][get_alerts]: no new alerts received", extra={'frontend': str(self.frontend)})
             return False, []
@@ -135,8 +132,10 @@ class GsuiteParser(ApiParser):
 
         if have_logs:
             nb_logs = len(tmp_logs)
-            logger.info(f"[{__parser__}][execute]: Total logs fetched : {nb_logs}",  extra={'frontend': str(self.frontend)})
-            last_timestamp = datetime.fromisoformat(tmp_logs[-1]['createTime'].replace("Z", "+00:00")) + timedelta(milliseconds=10)
+            logger.info(f"[{__parser__}][execute]: Total logs fetched : {nb_logs}",
+                        extra={'frontend': str(self.frontend)})
+            last_timestamp = datetime.fromisoformat(tmp_logs[-1]['createTime'].replace("Z", "+00:00")) + timedelta(
+                milliseconds=10)
             if last_timestamp > self.frontend.last_api_call:
                 self.frontend.last_api_call = last_timestamp
 
@@ -146,13 +145,14 @@ class GsuiteParser(ApiParser):
         self.update_lock()
 
         logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
-    
+
     def test(self):
         try:
             since = (self.last_api_call or (timezone.now() - timedelta(days=10))).strftime("%Y-%m-%dT%H:%M:%SZ")
             to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
             have_logs, tmp_logs = self.get_alerts(since=since, to=to)
-            logger.info(f"[{__parser__}]:test: Getting alerts", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:test: Getting alerts from {since} to {to} done",
+                        extra={'frontend': str(self.frontend)})
             return {
                 "status": True,
                 "data": tmp_logs
