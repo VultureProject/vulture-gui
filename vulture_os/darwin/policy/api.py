@@ -62,8 +62,9 @@ class DarwinFilterTypesAPIv1(View):
     def get(self, request):
         data = []
         try:
+            fields = request.GET.getlist('fields[]') or None
             for filter_type in DarwinFilter.objects.all():
-                data.append(filter_type.to_dict())
+                data.append(filter_type.to_dict(fields=fields))
         except Exception as e:
             logger.critical(e, exc_info=1)
             error = _("An error has occurred")
@@ -86,14 +87,15 @@ class DarwinFilterAPIv1(View):
     def get(self, request, filter_id=None):
         data = {}
         try:
+            fields = request.GET.getlist('fields[]') or None
             if not filter_id:
                 data = []
                 for policy_filter in FilterPolicy.objects.all():
-                    data.append(policy_filter.to_dict())
+                    data.append(policy_filter.to_dict(fields=fields))
             else:
                 try:
                     policy_filter = FilterPolicy.objects.get(id=filter_id)
-                    data = policy_filter.to_dict()
+                    data = policy_filter.to_dict(fields=fields)
                 except FilterPolicy.DoesNotExist:
                     return JsonResponse({
                         'error': _("filter with id {} does not exist".format(filter_id))
@@ -122,13 +124,14 @@ class DarwinPolicyAPIv1(View):
     def get(self, request, object_id=None):
         try:
             name = request.GET.get('name')
+            fields = request.GET.getlist('fields[]') or None
             try:
                 if object_id:
-                    obj = DarwinPolicy.objects.get(pk=object_id).to_dict()
+                    obj = DarwinPolicy.objects.get(pk=object_id).to_dict(fields=fields)
                 elif name:
-                    obj = DarwinPolicy.objects.get(name=name).to_dict()
+                    obj = DarwinPolicy.objects.get(name=name).to_dict(fields=fields)
                 else:
-                    obj = [s.to_dict() for s in DarwinPolicy.objects.all()]
+                    obj = [s.to_dict(fields=fields) for s in DarwinPolicy.objects.all()]
             except DarwinPolicy.DoesNotExist:
                 return JsonResponse({
                     'error': _('Object does not exist')

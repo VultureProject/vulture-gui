@@ -25,6 +25,7 @@ __doc__ = 'FParser model classes'
 # Django system imports
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -79,18 +80,14 @@ class Parser(models.Model):
     def __str__(self):
         return "Parser '{}'".format(self.name)
 
-    def to_dict(self):
+    def to_dict(self, fields=None):
         """ This method MUST be used in API instead of to_template() method
                 to prevent no-serialization of sub-models 
         :return     A JSON object
         """
-        result = {
-            'id': str(self.id),
-            'name': self.name,
-            'rulebase': self.rulebase,
-            'to_test': self.to_test,
-            'tags': self.tags
-        }
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
         return result
 
     def get_base_filename(self):

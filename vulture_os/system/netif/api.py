@@ -120,15 +120,15 @@ class NetworkAddressAPIv1(View):
         try:
             name = request.GET.get('name')
             ip = request.GET.get('ip')
-
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
-                obj = NetworkAddress.objects.get(pk=object_id).to_dict()
+                obj = NetworkAddress.objects.get(pk=object_id).to_dict(fields=fields)
             elif name and ip:
-                obj = NetworkAddress.objects.get(name=name, ip=ip).to_dict()
+                obj = NetworkAddress.objects.get(name=name, ip=ip).to_dict(fields=fields)
             elif name:
-                obj = [n.to_dict() for n in NetworkAddress.objects.filter(name=name)]
+                obj = [n.to_dict(fields=fields) for n in NetworkAddress.objects.filter(name=name)]
             else:
-                obj = [s.to_dict() for s in NetworkAddress.objects.all()]
+                obj = [s.to_dict(fields=fields) for s in NetworkAddress.objects.all()]
 
             return JsonResponse({
                 'status': True,

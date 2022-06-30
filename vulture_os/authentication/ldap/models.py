@@ -239,8 +239,8 @@ class LDAPRepository(BaseRepository):
     def create_group_dn(self, group_name):
         return f"{self.group_attr}={escape_dn_chars(group_name)},{self.group_dn},{self.base_dn}"
 
-    def to_dict(self):
-        return model_to_dict(self)
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
 
     def to_template(self):
         """  returns the attributes of the class """

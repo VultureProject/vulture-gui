@@ -68,13 +68,13 @@ class PortalTemplateAPIv1(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
-                ret = PortalTemplate.objects.get(pk=object_id).to_dict()
+                ret = PortalTemplate.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
-                ret = PortalTemplate.objects.get(name=name).to_dict()
+                ret = PortalTemplate.objects.get(name=name).to_dict(fields=fields)
             else:
-                ret = [p.to_dict() for p in PortalTemplate.objects.all()]
+                ret = [p.to_dict(fields=fields) for p in PortalTemplate.objects.all()]
             
             return JsonResponse({
                 "data": ret
@@ -186,13 +186,13 @@ class PortalImageAPIv1(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
-                ret = TemplateImage.objects.get(pk=object_id).to_dict()
+                ret = TemplateImage.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
-                ret = TemplateImage.objects.get(name=name).to_dict()
+                ret = TemplateImage.objects.get(name=name).to_dict(fields=fields)
             else:
-                ret = [p.to_dict() for p in TemplateImage.objects.all()]
+                ret = [p.to_dict(fields=fields) for p in TemplateImage.objects.all()]
             
             return JsonResponse({
                 "res": ret

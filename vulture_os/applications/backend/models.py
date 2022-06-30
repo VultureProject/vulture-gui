@@ -27,6 +27,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -296,36 +297,33 @@ class Backend(models.Model):
     def __str__(self):
         return "{} Backend '{}'".format(self.mode.upper(), self.name)
 
-    def to_dict(self):
+    def to_dict(self, fields=None):
         """ This method MUST be used in API instead of to_template() method
                 to prevent no-serialization of sub-models like Listeners
         :return     A JSON object
         """
-        result = {
-            'id': str(self.id),
-            'enabled': self.enabled,
-            'name': self.name,
-            'mode': self.mode,
-            'balancing_mode': self.balancing_mode,
-            'timeout_connect': self.timeout_connect,
-            'timeout_server': self.timeout_server,
-            'balancing_param': self.balancing_param,
-            'status': dict(self.status),  # It is an OrderedDict
-            'servers': [],
-            'custom_haproxy_conf': self.custom_haproxy_conf,
-            'tags': self.tags
-        }
-        """ Add listeners """
-        for server in self.server_set.all():
-            s = server.to_template()
-            # Remove frontend to prevent infinite loop
-            del s['backend']
-            result['servers'].append(s)
-        """ Other attributes """
-        if self.mode == "http":
-            result['headers'] = []
-            for header in self.headers.all():
-                result['headers'].append(header.to_template())
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "servers" in fields:
+            result['servers'] = []
+            """ Add listeners """
+            for server in self.server_set.all():
+                s = server.to_template()
+                # Remove frontend to prevent infinite loop
+                del s['backend']
+                result['servers'].append(s)
+        if not fields or "status" in fields:
+            result['status'] = dict(self.status)
+        if not fields or "headers" in fields:
+            """ Other attributes """
+            if self.mode == "http":
+                result['headers'] = []
+                for header in self.headers.all():
+                    result['headers'].append(header.to_template())
+            ## set headers field anyway if requested
+            elif "headers" in fields:
+                result['headers'] = []
         return result
 
     def to_html_template(self):

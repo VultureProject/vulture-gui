@@ -44,17 +44,18 @@ class StrongswanAPIv1(View):
     def get(self, request, object_id=None):
         node_id = request.GET.get("node")
         try:
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
                 try:
-                    obj = Strongswan.objects.get(pk=object_id).to_dict()
+                    obj = Strongswan.objects.get(pk=object_id).to_dict(fields=fields)
                 except Strongswan.DoesNotExist:
                     return JsonResponse({
                         'error': _('Object does not exist')
                     }, status=404)
             elif node_id:
-                obj = Strongswan.objects.get(node__pk=node_id).to_dict()
+                obj = Strongswan.objects.get(node__pk=node_id).to_dict(fields=fields)
             else:
-                obj = [s.to_dict() for s in Strongswan.objects.all()]
+                obj = [s.to_dict(fields=fields) for s in Strongswan.objects.all()]
 
             return JsonResponse({
                 'data': obj

@@ -47,12 +47,13 @@ class OTPAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
-                otp = OTPRepository.objects.get(pk=ObjectId(object_id)).to_dict()
+                otp = OTPRepository.objects.get(pk=ObjectId(object_id)).to_dict(fields=fields)
             elif request.GET.get('name'):
-                otp = OTPRepository.objects.get(name=request.GET['name']).to_dict()
+                otp = OTPRepository.objects.get(name=request.GET['name']).to_dict(fields=fields)
             else:
-                otp = [a.to_dict() for a in OTPRepository.objects.all()]
+                otp = [a.to_dict(fields=fields) for a in OTPRepository.objects.all()]
 
             return JsonResponse({
                 'data': otp

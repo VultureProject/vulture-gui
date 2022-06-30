@@ -53,14 +53,20 @@ class UserPortalApi(View):
     @api_need_key("cluster_api_key")
     def get(self, request, object_id=None):
         try:
+            fields = request.GET.getlist('fields[]') or None
+            if request.GET.get('enable_external', None) :
+                enable_external = True if request.GET.get('enable_external') == "true" else False
             if object_id:
-                data = UserAuthentication.objects.get(pk=object_id).to_dict()
+                data = UserAuthentication.objects.get(pk=object_id).to_dict(fields=fields)
             elif request.GET.get('name'):
-                data = UserAuthentication.objects.get(name=request.GET['name']).to_dict()
+                data = UserAuthentication.objects.get(name=request.GET['name']).to_dict(fields=fields)
+            elif enable_external:
+                data = [a.to_dict(fields=fields) for a in UserAuthentication.objects.filter(enable_external=enable_external)]
             else:
-                data = [ua.to_dict() for ua in UserAuthentication.objects.all()]
+                data = [ua.to_dict(fields=fields) for ua in UserAuthentication.objects.all()]
 
             return JsonResponse({
+                'status': True,
                 "data": data
             })
         except UserAuthentication.DoesNotExist:

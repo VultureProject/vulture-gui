@@ -24,6 +24,7 @@ __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
 from django.conf import settings
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -106,32 +107,14 @@ class Strongswan(models.Model):
         """
         return {'conf': self.to_html_template()}
 
-    def to_dict(self):
+    def to_dict(self, fields=None):
         """ Serialized version of object """
-        return {
-            'id': str(self.id),
-            'node': self.node.to_dict(),
-            'enabled': self.enabled,
-            'status': self.status,
-            'statusall': self.statusall,
-            'ipsec_type': self.ipsec_type,
-            'ipsec_keyexchange': self.ipsec_keyexchange,
-            'ipsec_authby': self.ipsec_authby,
-            'ipsec_psk': self.ipsec_psk,
-            'ipsec_fragmentation': self.ipsec_fragmentation,
-            'ipsec_forceencaps': self.ipsec_forceencaps,
-            'ipsec_ike': self.ipsec_ike,
-            'ipsec_esp': self.ipsec_esp,
-            'ipsec_dpdaction': self.ipsec_dpdaction,
-            'ipsec_dpddelay': self.ipsec_dpddelay,
-            'ipsec_rekey': self.ipsec_rekey,
-            'ipsec_ikelifetime': self.ipsec_ikelifetime,
-            'ipsec_keylife': self.ipsec_keylife,
-            'ipsec_right': self.ipsec_right,
-            'ipsec_leftsubnet': self.ipsec_leftsubnet,
-            'ipsec_leftid': self.ipsec_leftid,
-            'ipsec_rightsubnet': self.ipsec_rightsubnet
-        }
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "node" in fields:
+            result['node'] = self.node.to_dict()
+        return result
 
     def get_status(self):
         return {

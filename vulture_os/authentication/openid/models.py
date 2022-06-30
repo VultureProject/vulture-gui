@@ -183,11 +183,12 @@ class OpenIDRepository(BaseRepository):
                 provider_type = p[1]
         return provider_type
 
-    def to_dict(self):
-        ret = model_to_dict(self)
+    def to_dict(self, fields=None):
+        ret = model_to_dict(self, fields=fields)
         # model_to_dict will not return a list if the field only contains 1 value
-        if not isinstance(ret['scopes'], list):
-            ret['scopes'] = [ret['scopes']]
+        if not fields or "scopes" in fields:
+            if not isinstance(ret['scopes'], list):
+                ret['scopes'] = [ret['scopes']]
         return ret
 
     def to_template(self):

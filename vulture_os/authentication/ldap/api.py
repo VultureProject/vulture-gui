@@ -44,18 +44,19 @@ class LDAPApi(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
                 ldap_repository = LDAPRepository.objects.get(pk=object_id)
             elif request.GET.get('name'):
                 ldap_repository = LDAPRepository.objects.get(name=request.GET['name'])
             else:
-                ldap_repos = [ld.to_dict() for ld in LDAPRepository.objects.all()]
+                ldap_repos = [ld.to_dict(fields=fields) for ld in LDAPRepository.objects.all()]
                 return JsonResponse({
                     "data": ldap_repos
                 })
 
             return JsonResponse({
-                "data": ldap_repository.to_dict()
+                "data": ldap_repository.to_dict(fields=fields)
             })
 
         except LDAPRepository.DoesNotExist:

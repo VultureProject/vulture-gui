@@ -26,6 +26,7 @@ __doc__ = 'Frontends & Listeners model classes'
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -191,28 +192,12 @@ class ReputationContext(models.Model):
     def __str__(self):
         return "ReputationContext '{}'".format(self.name)
 
-    def to_dict(self):
+    def to_dict(self, fields=None):
         """ This method MUST be used in API instead of to_template() method
                 to prevent no-serialization of sub-models 
         :return     A JSON object
         """
-        result = {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'db_type': self.db_type,
-            'method': self.method,
-            'url': self.url,
-            'verify_cert': self.verify_cert,
-            'post_data': self.post_data,
-            'auth_type': self.auth_type,
-            'user': self.user,
-            'password': self.password,
-            'custom_headers': self.custom_headers,
-            'internal': self.internal,
-            'tags': self.tags
-        }
-        return result
+        return model_to_dict(self, fields=fields)
 
     def to_html_template(self):
         """ Dictionary used to render object as html

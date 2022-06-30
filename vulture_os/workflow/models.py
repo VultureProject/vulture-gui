@@ -26,6 +26,7 @@ __doc__ = 'Workflow model classes'
 # Django system imports
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 from django.template import Context
 from django.template import Template
@@ -85,15 +86,11 @@ class WorkflowACL(models.Model):
         return conditions
 
 
-    def to_dict(self):
-        return {
-            'access_control': self.access_control.to_template(),
-            'action_satisfy': self.action_satisfy,
-            'action_not_satisfy': self.action_not_satisfy,
-            'redirect_url_satisfy': self.redirect_url_satisfy,
-            'redirect_url_not_satisfy': self.redirect_url_not_satisfy,
-            'before_policy': self.before_policy
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "access_control" in fields:
+            result['access_control'] = self.access_control.to_template()
+        return result
 
 
 class Workflow(models.Model):
@@ -170,30 +167,33 @@ class Workflow(models.Model):
         }
         return tmp
 
-    def to_dict(self):
+    def to_dict(self, fields=None):
         authentication = None
         
         if self.authentication:
             authentication = self.authentication.to_dict()
 
-        result = {
-            'id': str(self.id),
-            'name': self.name,
-            'enabled': self.enabled,
-            'frontend': self.frontend.to_dict(),
-            'backend': self.backend.to_dict(),
-            'frontend_id': str(self.frontend.pk),
-            'backend_id': str(self.backend.pk),
-            'authentication_id': str(self.authentication.pk) if self.authentication else "",
-            'workflow_json': json.dumps(self.workflow_json),
-            'frontend_status': dict(self.frontend.status),
-            'backend_status': dict(self.backend.status),
-            'public_dir': self.public_dir,
-            'fqdn': self.fqdn,
-            'authentication': authentication,
-            'acls': [acl.to_dict() for acl in self.workflowacl_set.all()]
-        }
-
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "frontend_id" in fields:
+            result['frontend_id'] = str(self.frontend.pk)
+        if not fields or "backend_id" in fields:
+            result['backend_id'] = str(self.backend.pk)
+        if not fields or "frontend" in fields:
+            result['frontend'] = self.frontend.to_dict()
+        if not fields or "backend" in fields:
+            result['backend'] = self.backend.to_dict()
+        if not fields or "authentication_id" in fields:
+            result['authentication_id'] = str(self.authentication.pk) if self.authentication else ""
+        if not fields or "frontend_status" in fields:
+            result['frontend_status'] = dict(self.frontend.status)
+        if not fields or "backend_status" in fields:
+            result['backend_status'] = dict(self.backend.status)
+        if not fields or "authentication" in fields:
+            result['authentication'] = authentication
+        if not fields or "acls" in fields:
+            result['acls'] = [acl.to_dict() for acl in self.workflowacl_set.all()]
         return result
 
     def to_template(self):

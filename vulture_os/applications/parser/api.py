@@ -81,16 +81,17 @@ class ParserAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
                 try:
-                    obj = Parser.objects.get(pk=object_id).to_dict()
+                    obj = Parser.objects.get(pk=object_id).to_dict(fields=fields)
                 except Parser.DoesNotExist:
                     return JsonResponse({
                         'error': _('Object does not exist')
                     }, status=404)
 
             else:
-                obj = [s.to_dict() for s in Parser.objects.all()]
+                obj = [s.to_dict(fields=fields) for s in Parser.objects.all()]
 
             return JsonResponse({
                 'data': obj

@@ -76,15 +76,16 @@ class AuthenticationAccessControlAPIv1(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
-                res = AuthAccessControl.objects.get(pk=object_id).to_dict()
+                res = AuthAccessControl.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
-                res = AuthAccessControl.objects.get(name=name).to_dict()
+                res = AuthAccessControl.objects.get(name=name).to_dict(fields=fields)
             else:
-                res = [a.to_dict() for a in AuthAccessControl.objects.all()]
+                res = [a.to_dict(fields=fields) for a in AuthAccessControl.objects.all()]
 
             return JsonResponse({
+                'status': True,
                 "res": res
             })
 

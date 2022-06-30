@@ -44,12 +44,13 @@ class OPENIDApi(View):
     @api_need_key("cluster_api_key")
     def get(self, request, object_id=None):
         try:
+            fields = request.GET.getlist('fields[]') or None
             if object_id:
-                open_id = OpenIDRepository.objects.get(pk=object_id).to_dict()
+                open_id = OpenIDRepository.objects.get(pk=object_id).to_dict(fields=fields)
             elif request.GET.get('name'):
-                open_id = OpenIDRepository.objects.get(name=request.GET.get("name")).to_dict()
+                open_id = OpenIDRepository.objects.get(name=request.GET.get("name")).to_dict(fields=fields)
             else:
-                open_id = [obj.to_dict() for obj in OpenIDRepository.objects.all()]
+                open_id = [obj.to_dict(fields=fields) for obj in OpenIDRepository.objects.all()]
 
             return JsonResponse({
                 "data": open_id
