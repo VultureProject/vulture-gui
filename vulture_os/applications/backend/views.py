@@ -413,7 +413,7 @@ def backend_edit(request, object_id=None, api=False):
 
             backend.save()
 
-            cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
 
 
         except (VultureSystemError, ServiceError) as e:
