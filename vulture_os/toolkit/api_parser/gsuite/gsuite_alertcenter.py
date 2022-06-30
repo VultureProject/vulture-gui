@@ -123,7 +123,7 @@ class GsuiteParser(ApiParser):
 
     def execute(self):
         # Default timestamp is 24 hours ago
-        since = (self.last_api_call or (timezone.now() - timedelta(days=7))).strftime("%Y-%m-%dT%H:%M:%SZ")
+        since = (self.last_api_call or (timezone.now() - timedelta(days=1))).strftime("%Y-%m-%dT%H:%M:%SZ")
         to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         have_logs, tmp_logs = self.get_alerts(since=since, to=to)
 
