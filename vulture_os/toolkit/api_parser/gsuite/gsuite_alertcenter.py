@@ -57,8 +57,8 @@ class GsuiteParser(ApiParser):
 
         self.product = 'gsuite_alertcenter'
 
-        self.client_json_conf = data['google_client_json_conf']
-        self.client_admin_mail = data['google_client_admin_mail']
+        self.client_json_conf = data['gsuite_alertcenter_json_conf']
+        self.client_admin_mail = data['gsuite_alertcenter_admin_mail']
         self.default_scopes = ['https://www.googleapis.com/auth/apps.alerts']
         self.default_client_admin_mail = "me"
 
