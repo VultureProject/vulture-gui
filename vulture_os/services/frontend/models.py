@@ -995,7 +995,6 @@ class Frontend(models.Model):
         default="",
     )
 
-
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
