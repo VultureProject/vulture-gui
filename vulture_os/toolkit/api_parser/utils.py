@@ -85,7 +85,7 @@ PARSER_LIST = {
     "nozomi_probe": NozomiProbeParser,
     "blackberry_cylance": BlackberryCylanceParser,
     "ms_sentinel": MSSentinelParser,
-    "gsuite_alertcenter": GsuiteParser,
+    "gsuite_alertcenter": GsuiteAlertcenterParser,
 }
 
 
