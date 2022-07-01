@@ -979,12 +979,12 @@ class Frontend(models.Model):
     )
 
     # Google worspace alertcenter attributes
-    google_client_json_conf = models.TextField(
+    gsuite_alertcenter_json_conf = models.TextField(
         verbose_name = _("Google Alertcenter JSON Conf"),
         help_text = _("Your JSON Conf from Google"),
         default = "",
     )
-    google_client_admin_mail = models.TextField(
+    gsuite_alertcenter_admin_mail = models.TextField(
         verbose_name = _("Google Alertcenter Admin email for delegated wrights"),
         help_text = _("Google Alertcenter Admin email"),
         default = "",
@@ -1237,8 +1237,8 @@ class Frontend(models.Model):
                     result['ms_sentinel_workspace'] = self.ms_sentinel_workspace
 
                 elif self.api_parser_type == "gsuite_alertcenter":
-                    result['google_client_json_conf'] = self.google_client_json_conf
-                    result['google_client_admin_email'] = self.google_client_admin_mail
+                    result['gsuite_alertcenter_json_conf'] = self.gsuite_alertcenter_json_conf
+                    result['gsuite_alertcenter_admin_email'] = self.gsuite_alertcenter_admin_mail
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
