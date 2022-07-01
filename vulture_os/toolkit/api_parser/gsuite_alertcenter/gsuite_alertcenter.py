@@ -132,14 +132,12 @@ class GsuiteAlertcenterParser(ApiParser):
 
         if have_logs:
             nb_logs = len(tmp_logs)
-            logger.info(f"[{__parser__}][execute]: Total logs fetched : {nb_logs}",
-                        extra={'frontend': str(self.frontend)})
-            last_timestamp = datetime.fromisoformat(tmp_logs[-1]['createTime'].replace("Z", "+00:00")) + timedelta(
-                milliseconds=10)
+            logger.info(f"[{__parser__}][execute]: Total logs fetched : {nb_logs}", extra={'frontend': str(self.frontend)})
+            last_timestamp = datetime.fromisoformat(tmp_logs['alerts'][-1]['createTime'].replace("Z", "+00:00")) + timedelta(milliseconds=10)
             if last_timestamp > self.frontend.last_api_call:
                 self.frontend.last_api_call = last_timestamp
 
-        self.write_to_file([json.dumps(l) for l in tmp_logs])
+        self.write_to_file([json.dumps(l) for l in tmp_logs['alerts']])
 
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
