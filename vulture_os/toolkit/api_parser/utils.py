@@ -52,7 +52,7 @@ from toolkit.api_parser.vadesecure_o365.vadesecure_o365 import VadesecureO365Par
 from toolkit.api_parser.nozomi_probe.nozomi_probe import NozomiProbeParser
 from toolkit.api_parser.blackberry_cylance.blackberry_cylance import BlackberryCylanceParser
 from toolkit.api_parser.ms_sentinel.ms_sentinel import MSSentinelParser
-from toolkit.api_parser.gsuite.gsuite_alertcenter import GsuiteParser
+from toolkit.api_parser.gsuite_alertcenter.gsuite_alertcenter import GsuiteAlertcenterParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
