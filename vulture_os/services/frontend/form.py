@@ -231,7 +231,7 @@ class FrontendForm(ModelForm):
                            'blackberry_cylance_app_secret',
                            'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
                            'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
-                           'google_client_json_conf', 'google_client_admin_mail'
+                           'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail'
                            ]:
             self.fields[field_name].required = False
 
@@ -308,8 +308,8 @@ class FrontendForm(ModelForm):
                   'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id',
                   'blackberry_cylance_app_secret',
                   'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret', 'ms_sentinel_subscription_id',
-                  'ms_sentinel_resource_group', 'ms_sentinel_workspace', 'google_client_json_conf',
-                  'google_client_admin_mail', 'darwin_mode')
+                  'ms_sentinel_resource_group', 'ms_sentinel_workspace', 'gsuite_alertcenter_json_conf',
+                  'gsuite_alertcenter_admin_mail', 'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -443,8 +443,8 @@ class FrontendForm(ModelForm):
             'ms_sentinel_subscription_id': TextInput(attrs={'class': 'form-control'}),
             'ms_sentinel_resource_group': TextInput(attrs={'class': 'form-control'}),
             'ms_sentinel_workspace': TextInput(attrs={'class': 'form-control'}),
-            'google_client_json_conf': Textarea(attrs={'class': 'form-control'}),
-            'google_client_admin_mail': TextInput(attrs={'class': 'form-control'}),
+            'gsuite_alertcenter_json_conf': Textarea(attrs={'class': 'form-control'}),
+            'gsuite_alertcenter_admin_mail': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
