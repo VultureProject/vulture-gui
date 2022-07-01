@@ -1238,7 +1238,7 @@ class Frontend(models.Model):
 
                 elif self.api_parser_type == "gsuite_alertcenter":
                     result['gsuite_alertcenter_json_conf'] = self.gsuite_alertcenter_json_conf
-                    result['gsuite_alertcenter_admin_email'] = self.gsuite_alertcenter_admin_mail
+                    result['gsuite_alertcenter_admin_mail'] = self.gsuite_alertcenter_admin_mail
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
