@@ -21,7 +21,7 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Google GSUITE API Parser'
-__parser__ = 'GOOGLE GSUITE'
+__parser__ = 'GSUITE ALERTCENTER'
 
 import json
 import jwt
