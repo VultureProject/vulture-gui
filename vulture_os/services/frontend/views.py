@@ -293,7 +293,10 @@ def frontend_edit(request, object_id=None, api=False):
             for header in header_ids:
                 """ If id is given, retrieve object from mongo """
                 try:
-                    instance_h = frontend.headers.get(pk=header['id']) if frontend and header['id'] else None
+                    if frontend and hasattr(header, "id"):
+                        instance_h = frontend.headers.get(pk=header['id'])
+                    else:
+                        instance_h = None
                 except ObjectDoesNotExist:
                     form.add_error("headers", "Request-header with id {} not found.".format(header['id']))
                     continue

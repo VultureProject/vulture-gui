@@ -232,6 +232,7 @@ class FrontendForm(ModelForm):
                            'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
                            'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
                            'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
+                           'waf_cloudflare_apikey','waf_cloudflare_zoneid',
                            ]:
             self.fields[field_name].required = False
 
@@ -310,6 +311,7 @@ class FrontendForm(ModelForm):
                   'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret', 'ms_sentinel_subscription_id',
                   'ms_sentinel_resource_group', 'ms_sentinel_workspace',
                   'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
+                  'waf_cloudflare_apikey', 'waf_cloudflare_zoneid',
                   'darwin_mode')
 
         widgets = {
@@ -447,6 +449,8 @@ class FrontendForm(ModelForm):
             'proofpoint_pod_uri': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_pod_cluster_id': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_pod_token': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'waf_cloudflare_apikey': TextInput(attrs={'class': 'form-control'}),
+            'waf_cloudflare_zoneid': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
