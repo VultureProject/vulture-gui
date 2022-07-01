@@ -1014,6 +1014,19 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # WAF Cloudflare attributes
+    waf_cloudflare_apikey = models.TextField(
+        verbose_name = _("WAF Cloudflare API token"),
+        help_text = _("WAF Cloudflare  API token"),
+        default = "",
+    )
+
+    waf_cloudflare_zoneid = models.TextField(
+        verbose_name = _("WAF Cloudflare zone ID"),
+        help_text = _("WAF Cloudflare zone ID"),
+        default = "",
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
@@ -1245,6 +1258,10 @@ class Frontend(models.Model):
                     result['proofpoint_pod_uri'] = self.proofpoint_pod_uri
                     result['proofpoint_pod_cluster_id'] = self.proofpoint_pod_cluster_id
                     result['proofpoint_pod_token'] = self.proofpoint_pod_token
+
+                elif self.api_parser_type == "waf_cloudflare":
+                    result['waf_cloudflare_zoneid'] = self.waf_cloudflare_zoneid
+                    result['waf_cloudflare_apikey'] = self.waf_cloudflare_apikey
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]

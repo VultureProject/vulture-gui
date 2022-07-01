@@ -53,6 +53,7 @@ from toolkit.api_parser.nozomi_probe.nozomi_probe import NozomiProbeParser
 from toolkit.api_parser.blackberry_cylance.blackberry_cylance import BlackberryCylanceParser
 from toolkit.api_parser.ms_sentinel.ms_sentinel import MSSentinelParser
 from toolkit.api_parser.proofpoint_pod.proofpoint_pod import ProofpointPodParser
+from toolkit.api_parser.waf_cloudflare.waf_cloudflare import WAFCloudflareParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -86,6 +87,7 @@ PARSER_LIST = {
     "blackberry_cylance": BlackberryCylanceParser,
     "ms_sentinel": MSSentinelParser,
     "proofpoint_pod": ProofpointPodParser,
+    "waf_cloudflare": WAFCloudflareParser,
 }
 
 
