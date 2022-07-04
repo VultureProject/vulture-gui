@@ -160,6 +160,9 @@ class LogOM (models.Model):
     def to_html_template(self):
         return self.select_log_om(self.id).to_html_template()
 
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
+
 
 class LogOMFile(LogOM):
 
