@@ -28,6 +28,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from services.strongswan.models import Strongswan
+from system.cluster.models import Node
 from gui.decorators.apicall import api_need_key
 from django.http import JsonResponse
 from django.conf import settings

@@ -149,7 +149,7 @@ class Node(models.Model):
         if not fields or "unix_timestamp" in fields:
             result['unix_timestamp'] = time.time()
         if not fields or "pstats_forwarders" in fields:
-            result['pstats_forwarders'] = list(self.pstats_forwarders.all())
+            result['pstats_forwarders'] = [p.to_dict() for p in self.pstats_forwarders.all()]
         return result
 
     def api_request(self, action, config=None, internal=False):
