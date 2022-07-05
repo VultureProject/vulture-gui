@@ -1027,6 +1027,18 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # Google worspace alertcenter attributes
+    gsuite_alertcenter_json_conf = models.TextField(
+        verbose_name = _("Google Alertcenter JSON Conf"),
+        help_text = _("Your JSON Conf from Google"),
+        default = "",
+    )
+    gsuite_alertcenter_admin_mail = models.TextField(
+        verbose_name = _("Google Alertcenter Admin email for delegated wrights"),
+        help_text = _("Google Alertcenter Admin email"),
+        default = "",
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
@@ -1262,6 +1274,10 @@ class Frontend(models.Model):
                 elif self.api_parser_type == "waf_cloudflare":
                     result['waf_cloudflare_zoneid'] = self.waf_cloudflare_zoneid
                     result['waf_cloudflare_apikey'] = self.waf_cloudflare_apikey
+
+                elif self.api_parser_type == "gsuite_alertcenter":
+                    result['gsuite_alertcenter_json_conf'] = self.gsuite_alertcenter_json_conf
+                    result['gsuite_alertcenter_admin_mail'] = self.gsuite_alertcenter_admin_mail
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
