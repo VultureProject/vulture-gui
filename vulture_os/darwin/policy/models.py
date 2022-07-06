@@ -642,7 +642,7 @@ class FilterPolicy(models.Model):
             try:
                 database = ReputationContext.objects.get(pk=reputation_ctx_id)
                 json_conf['database'] = database.absolute_filename
-            except ReputationContet.DoesNotExist:
+            except ReputationContext.DoesNotExist:
                 logger.error("FilterPolicy::conf_to_json:: Could not find ReputationContext with id {}".format(reputation_ctx_id))
 
         return json_conf
