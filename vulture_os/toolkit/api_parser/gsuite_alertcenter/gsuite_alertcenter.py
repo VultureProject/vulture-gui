@@ -91,55 +91,54 @@ class GsuiteAlertcenterParser(ApiParser):
 
     def get_alerts(self, since, to):
 
+        logger.info(f"[{__parser__}]:execute: Getting alerts from {since} to {to}",
+                    extra={'frontend': str(self.frontend)})
+
         final_filter = "createTime >= \"{}\" AND createTime < \"{}\" ".format(since, to)
         orderfilter = "create_time asc"
 
         self.alertcenter = build('alertcenter', 'v1beta1', credentials=self.credentials).alerts()
-        try:
-            recent_alerts = self.alertcenter.list(orderBy=orderfilter, filter=final_filter).execute()
-        except Exception as e:
-            #logger.info(f'[{__parser__}][get_alerts]: {e}')
-            return False, []
+        recent_alerts = self.alertcenter.list(orderBy=orderfilter, filter=final_filter).execute()
+
         if not recent_alerts:
             return False, []
         else:
-            num_alerts = len(recent_alerts['alerts'])
             return True, recent_alerts
 
     def execute(self):
 
         self.get_creds()
         # Default timestamp is 24 hours ago
-        since = (self.last_api_call or (timezone.now() - timedelta(days=5))).strftime("%Y-%m-%dT%H:%M:%SZ")
-        logger.info(f"[{__parser__}][execute]: since {since}", extra={'frontend': str(self.frontend)})
-        to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        since = (self.last_api_call or (timezone.now() - timedelta(days=5))).isoformat()
+        to = timezone.now().isoformat()
         have_logs, tmp_logs = self.get_alerts(since=since, to=to)
-        logger.info(f"[{__parser__}]:execute: Getting alerts from {since} to {to} done", extra={'frontend': str(self.frontend)})
 
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
 
         if have_logs:
             nb_logs = len(tmp_logs['alerts'])
-            logger.info(f"[{__parser__}][execute]: Total logs fetched : {nb_logs}",
+            logger.info(f"[{__parser__}]execute: Total logs fetched : {nb_logs}",
                         extra={'frontend': str(self.frontend)})
-            last_timestamp = datetime.fromisoformat(tmp_logs['alerts'][-1]['createTime'].replace("Z", "+00:00")) + timedelta(
-                milliseconds=10)
+            last_timestamp = datetime.fromisoformat(tmp_logs['alerts'][-1]['createTime'].replace("Z", "+00:00")) + \
+                             timedelta(milliseconds=1)
             if last_timestamp > self.frontend.last_api_call:
                 self.frontend.last_api_call = last_timestamp
 
             self.write_to_file([json.dumps(l) for l in tmp_logs['alerts']])
+        else:
+            logger.info(f"[{__parser__}]:execute: No recent alert found", extra={'frontend': str(self.frontend)})
 
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
 
-        logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
         try:
             self.get_creds()
-            since = (timezone.now() - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
-            to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+            since = (timezone.now() - timedelta(days=10)).isoformat()
+            to = timezone.now().isoformat()
             have_logs, tmp_logs = self.get_alerts(since=since, to=to)
             return {
                 "status": True,
