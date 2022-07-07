@@ -232,7 +232,8 @@ class FrontendForm(ModelForm):
                            'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
                            'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
                            'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
-                           'waf_cloudflare_apikey','waf_cloudflare_zoneid',
+                           'waf_cloudflare_apikey','waf_cloudflare_zoneid', 'gsuite_alertcenter_json_conf',
+                            'gsuite_alertcenter_admin_mail'
                            ]:
             self.fields[field_name].required = False
 
@@ -311,8 +312,8 @@ class FrontendForm(ModelForm):
                   'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret', 'ms_sentinel_subscription_id',
                   'ms_sentinel_resource_group', 'ms_sentinel_workspace',
                   'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
-                  'waf_cloudflare_apikey', 'waf_cloudflare_zoneid',
-                  'darwin_mode')
+                  'waf_cloudflare_apikey', 'waf_cloudflare_zoneid', 'gsuite_alertcenter_json_conf',
+                  'gsuite_alertcenter_admin_mail', 'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -451,6 +452,8 @@ class FrontendForm(ModelForm):
             'proofpoint_pod_token': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'waf_cloudflare_apikey': TextInput(attrs={'class': 'form-control'}),
             'waf_cloudflare_zoneid': TextInput(attrs={'class': 'form-control'}),
+            'gsuite_alertcenter_json_conf': Textarea(attrs={'class': 'form-control'}),
+            'gsuite_alertcenter_admin_mail': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
