@@ -1027,6 +1027,23 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # Sophos Cloud attributes
+    sophos_cloud_client_id = models.TextField(
+        verbose_name=_("Sophos Cloud - Client ID"),
+        help_text=_("Client ID"),
+        default="",
+    )
+    sophos_cloud_client_secret = models.TextField(
+        verbose_name=_("Sophos Cloud - Client Secret"),
+        help_text=_("Client Secret"),
+        default="",
+    )
+    sophos_cloud_tenant_id = models.TextField(
+        verbose_name=_("Sophos Cloud - Tenant ID"),
+        help_text=_("Tenant ID"),
+        default="",
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
@@ -1262,6 +1279,11 @@ class Frontend(models.Model):
                 elif self.api_parser_type == "waf_cloudflare":
                     result['waf_cloudflare_zoneid'] = self.waf_cloudflare_zoneid
                     result['waf_cloudflare_apikey'] = self.waf_cloudflare_apikey
+
+                elif self.api_parser_type == "sophos_cloud":
+                    result['sophos_cloud_client_id'] = self.sophos_cloud_client_id
+                    result['sophos_cloud_client_secret'] = self.sophos_cloud_client_secret
+                    result['sophos_cloud_tenant_id'] = self.sophos_cloud_tenant_id
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]

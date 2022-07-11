@@ -54,6 +54,7 @@ from toolkit.api_parser.blackberry_cylance.blackberry_cylance import BlackberryC
 from toolkit.api_parser.ms_sentinel.ms_sentinel import MSSentinelParser
 from toolkit.api_parser.proofpoint_pod.proofpoint_pod import ProofpointPodParser
 from toolkit.api_parser.waf_cloudflare.waf_cloudflare import WAFCloudflareParser
+from toolkit.api_parser.sophos_cloud.sophos_cloud import SophosCloudParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -88,6 +89,7 @@ PARSER_LIST = {
     "ms_sentinel": MSSentinelParser,
     "proofpoint_pod": ProofpointPodParser,
     "waf_cloudflare": WAFCloudflareParser,
+    "sophos_cloud": SophosCloudParser
 }
 
 
