@@ -54,9 +54,10 @@ class BaseRepository(models.Model):
     def __str__(self):
         return "{} ({})".format(self.name, self.subtype)
 
-    def to_dict(self):
-        data = self.get_daughter().to_dict()
-        data['id'] = str(self.pk)
+    def to_dict(self, fields=None):
+        data = self.get_daughter().to_dict(fields=fields)
+        if not fields or "id" in fields:
+            data['id'] = str(self.pk)
         return data
 
     def get_daughter(self):

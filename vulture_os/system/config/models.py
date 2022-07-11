@@ -72,8 +72,7 @@ class Config(models.Model):
     internal_tenants = models.ForeignKey(to=Tenants, null=False, default=1, on_delete=models.PROTECT)
 
     def to_dict(self, fields=None):
-        result = model_to_dict(self, fields=fields)
-        return result
+        return model_to_dict(self, fields=fields)
 
     class Meta:
         app_label = "system"

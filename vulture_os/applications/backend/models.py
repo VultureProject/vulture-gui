@@ -324,6 +324,8 @@ class Backend(models.Model):
             ## set headers field anyway if requested
             elif "headers" in fields:
                 result['headers'] = []
+        if not fields or "http_health_check_headers" in fields:
+            result["http_health_check_headers"] = result["http_health_check_headers"] or []
         return result
 
     def to_html_template(self):
