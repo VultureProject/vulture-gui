@@ -30,6 +30,7 @@ from django.db.models.deletion import ProtectedError
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.utils.translation import ugettext_lazy as _
+from system.cluster.models import Cluster
 
 # Django project imports
 from applications.logfwd.form import (LogOMFileForm, LogOMRELPForm, LogOMHIREDISForm, LogOMFWDForm,
