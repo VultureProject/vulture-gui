@@ -103,13 +103,16 @@ def edit(request, object_id=None, api=False):
 
 
 def test_provider(request):
-    form = OpenIDRepositoryForm(request.POST)
+    provider = OpenIDRepository.objects.filter(provider=request.POST.get('provider'), client_id=request.POST.get('client_id'), client_secret=request.POST.get('client_secret')).first()
 
-    if not form.is_valid():
-        return JsonResponse({'status': False,
-                             'form_errors': form.errors})
+    if not provider:   
+        form = OpenIDRepositoryForm(request.POST)
 
-    provider = form.save(commit=False)
+        if not form.is_valid():
+            return JsonResponse({'status': False,
+                                'form_errors': form.errors})
+
+        provider = form.save(commit=False)
 
     try:
         return JsonResponse({'status':True, 'data':provider.retrieve_config(test=True)})
