@@ -21,22 +21,20 @@ __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Sophos Cloud API Parser'
-__parser__ = 'SOPHOS CLOUD'
+__parser__ = 'SOPHOS_CLOUD'
 
 import json
 import logging
-import requests
-
-from datetime import datetime, timedelta, timezone
-from dateutil.parser import parse
-
-from django.conf import settings
-from toolkit.api_parser.api_parser import ApiParser
-
-from sophos_central_siem_integration import api_client
 import time
-from dataclasses import dataclass
 import urllib.parse
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+
+from dateutil.parser import parse
+from django.conf import settings
+from django.utils import timezone
+from sophos_central_siem_integration import api_client
+from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -47,6 +45,7 @@ class SophosCloudAPIError(Exception):
 
 
 class SophosCloudState:
+    """ Custom State Class for Sophos API Parser without state file on disk"""
 
     def __init__(self, *args, **kwargs):
         self.state_data = {}
@@ -99,13 +98,9 @@ class SophosCloudParser(ApiParser):
     AUTH_URL = "https://id.sophos.com/api/v2/oauth2/token"
     API_HOST = "api.central.sophos.com"
 
-    DEFAULT_LAST_API_CALL_DATETIME = datetime.now(timezone.utc) - timedelta(hours=23)
-    DEFAULT_LAST_API_CALL = urllib.parse.quote(str(int(round(time.mktime(DEFAULT_LAST_API_CALL_DATETIME.timetuple())))))
-
     def __init__(self, data):
         super().__init__(data)
 
-        logger.info(data)
         self.client_id = data["sophos_cloud_client_id"]
         self.client_secret = data["sophos_cloud_client_secret"]
         self.tenant_id = data["sophos_cloud_tenant_id"]
@@ -114,11 +109,8 @@ class SophosCloudParser(ApiParser):
 
         api_client.ApiClient.create_log_dir = lambda this: None
 
-    def test(self):
-        if self.last_api_call:
-            last_api_call = urllib.parse.quote(str(int(round(time.mktime(self.last_api_call.timetuple())))))
-        else:
-            last_api_call = self.DEFAULT_LAST_API_CALL
+    def get_logs(self, since):
+        since_unix = int(since.timestamp())
 
         config = Config(
             filename="stdout",
@@ -132,7 +124,7 @@ class SophosCloudParser(ApiParser):
         )
 
         options = Options(
-            since=last_api_call,
+            since=since_unix,
             light=False,
             debug=False,
             quiet=False
@@ -140,74 +132,43 @@ class SophosCloudParser(ApiParser):
         state = SophosCloudState(options, "")
 
         events = []
+        for e in api_client.ENDPOINT_MAP[self.ENDPOINT]:
+            apiclient = api_client.ApiClient(e, options, config, state)
+            events.extend(iter(apiclient.get_alerts_or_events()))
+        return events
+
+    def test(self):
         try:
-            for e in api_client.ENDPOINT_MAP[self.ENDPOINT]:
-                apiclient = api_client.ApiClient(e, options, config, state)
-                events.extend(iter(apiclient.get_alerts_or_events()))
-            if not events:
-                raise SophosCloudAPIError("There is no event returned by api")
+            result = self.get_logs(timezone.now() - timedelta(hours=23))
+            return {
+                "status": True,
+                "data": result
+            }
         except Exception as e:
             logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
             }
-        else:
-            return {
-                "status": True,
-                "data": events
-            }
 
     def execute(self):
-        since = urllib.parse.quote(str(int(round(time.mktime(self.last_api_call.timetuple()))))) or self.DEFAULT_LAST_API_CALL
-        to = datetime.now(timezone.utc)
-        msg = f"Parser starting from {since} to {to}"
+        default_last_api_call = timezone.now() - timedelta(hours=23)
+        since = self.last_api_call or default_last_api_call
+        msg = f"Parser starting from {since} to now"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        config = Config(
-            filename="stdout",
-            format="json",
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            tenant_id=self.tenant_id,
-            token_info=self.TOKEN_INFO,
-            auth_url=self.AUTH_URL,
-            api_host=self.API_HOST
-        )
-
-        options = Options(
-            since=since,
-            light=False,
-            debug=False,
-            quiet=False
-        )
-        state = SophosCloudState(options, "")
-
-        events = []
-        try:
-            for e in api_client.ENDPOINT_MAP[self.ENDPOINT]:
-                api_client.ApiClient.create_log_dir = lambda this: None
-                apiclient = api_client.ApiClient(e, options, config, state)
-                events.extend(iter(apiclient.get_alerts_or_events()))
-            if not events:
-                raise SophosCloudAPIError("There is no event returned by api")
-        except Exception as e:
-            logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
-        else:
-
+        events = self.get_logs(since)
+        if events:
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
 
             self.write_to_file([json.dumps(e) for e in events])
 
-            last_event_date = events[-1].get('created_at')
+            last_event_date = events[-1].get('when')
             if last_event_date:
-                last_event_date_with_delta = parse(last_event_date) + timedelta(milliseconds=1)
-                last_event_date_unix_timestamp = int(round(time.mktime(last_event_date_with_delta.timetuple())))
-                last_event_date_url_encode = urllib.parse.quote(str(last_event_date_unix_timestamp))
-                self.frontend.last_api_call = last_event_date_url_encode
-
-            # Writting may take some while, so refresh token in Redis
-            self.update_lock()
+                self.frontend.last_api_call = parse(last_event_date) + timedelta(seconds=1)
+            else:
+                logger.error(f"[{__parser__}]:execute: Cannot set last_api_call, created_at not found",
+                             extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
