@@ -233,7 +233,7 @@ class FrontendForm(ModelForm):
                            'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
                            'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
                            'waf_cloudflare_apikey','waf_cloudflare_zoneid',
-                           'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail'
+                           'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail',
                            'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id'
                            ]:
             self.fields[field_name].required = False
