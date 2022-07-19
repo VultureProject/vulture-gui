@@ -226,7 +226,7 @@ class Backend(models.Model):
     )
     """ """
     http_health_check_headers = models.JSONField(
-        default={},
+        default=[],
         help_text=_("HTTP Health Check Headers"),
         verbose_name=_("HTTP Health Check Headers")
     )
@@ -324,8 +324,7 @@ class Backend(models.Model):
             ## set headers field anyway if requested
             elif "headers" in fields:
                 result['headers'] = []
-        if not fields or "http_health_check_headers" in fields:
-            result["http_health_check_headers"] = result["http_health_check_headers"] or []
+
         return result
 
     def to_html_template(self):

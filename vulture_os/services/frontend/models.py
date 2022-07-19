@@ -1894,8 +1894,9 @@ class FrontendReputationContext(models.Model):
             result['frontend'] = str(result['frontend'])
         if not fields or "reputation_ctx" in fields:
             result['reputation_ctx'] = str(result['reputation_ctx'])
+        if not fields or "compression_algos" in fields:
+            result['compression_algos'] = self.compression_algos.split(' ')
         return result
-
 
 
 def ha_lt(criterion, key, value):
