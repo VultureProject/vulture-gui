@@ -226,7 +226,7 @@ class Backend(models.Model):
     )
     """ """
     http_health_check_headers = models.JSONField(
-        default=[],
+        default={},
         help_text=_("HTTP Health Check Headers"),
         verbose_name=_("HTTP Health Check Headers")
     )
