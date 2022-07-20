@@ -54,7 +54,7 @@ class OpenIDRepositoryForm(ModelForm):
             'provider': Select(choices=PROVIDERS_TYPE, attrs={'class': 'form-control select2'}),
             'provider_url': TextInput(attrs={'class': 'form-control'}),
             'client_id': TextInput(attrs={'class': 'form-control'}),
-            'client_secret': TextInput(attrs={'class': 'form-control'}),
+            'client_secret': TextInput(attrs={'class': 'form-control','autocomplete': 'off'}),
             'scopes': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'use_proxy': CheckboxInput(attrs={"class": " js-switch"}),
             'verify_certificate': CheckboxInput(attrs={"class": " js-switch"}),
