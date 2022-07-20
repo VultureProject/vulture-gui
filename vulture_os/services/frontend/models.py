@@ -1104,7 +1104,8 @@ class Frontend(models.Model):
             result['darwin_policies'] = list(self.darwin_policies.all())
         if not fields or "darwin_policies" in fields:
             result['darwin_policies'] = list(self.darwin_policies.all())
-
+        if not fields or "compression_algos" in fields:
+            result['compression_algos'] = self.compression_algos.split(' ')
 
         """ Other attributes """
         if not fields or "headers" in fields:
@@ -1894,8 +1895,6 @@ class FrontendReputationContext(models.Model):
             result['frontend'] = str(result['frontend'])
         if not fields or "reputation_ctx" in fields:
             result['reputation_ctx'] = str(result['reputation_ctx'])
-        if not fields or "compression_algos" in fields:
-            result['compression_algos'] = self.compression_algos.split(' ')
         return result
 
 
