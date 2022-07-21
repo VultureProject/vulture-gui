@@ -87,11 +87,10 @@ def workflow_delete(request, object_id, api=False):
             Cluster.api_request('services.haproxy.haproxy.delete_conf', filename)
 
             for node in nodes:
-                # We need to rebuild configuration and reload Haproxy in case authentication is involved
-                # This is done to regenerate spoe configuration
-                # This also reloads Haproxy
+                # We need to rebuild spoe configuration in case authentication is involved
+                # BEFORE reloading Haproxy conf
                 if workflow.authentication is not None:
-                    api_res = node.api_request("services.haproxy.haproxy.configure_node")
+                    api_res = node.api_request("services.haproxy.haproxy.build_spoe_conf")
                 api_res = node.api_request("services.haproxy.haproxy.reload_service")
                 if not api_res.get('status'):
                     logger.error("Workflow::edit: API error while trying to "
@@ -237,10 +236,15 @@ def save_workflow(request, workflow_obj, object_id=None):
             workflow_acl.save()
 
         # Reloading configuration
-        nodes = workflow_obj.frontend.reload_conf()
-        workflow_obj.backend.reload_conf()
+        nodes = workflow_obj.frontend.get_nodes()
         for node in nodes:
+            # We need to rebuild spoe configuration in case authentication is involved
+            # BEFORE reloading Frontend/backend conf
+            if workflow_obj.authentication is not None or had_authentication:
+                api_res = node.api_request("services.haproxy.haproxy.build_spoe_conf")
             node.api_request("workflow.workflow.build_conf", workflow_obj.pk)
+        workflow_obj.frontend.reload_conf()
+        workflow_obj.backend.reload_conf()
 
         # We need to reload the new defender policy configuration if:
         # we set a defender policy and (if we create an object, or if we updated the policy, the FQDN or the
@@ -269,11 +273,6 @@ def save_workflow(request, workflow_obj, object_id=None):
 
         # Reload HAProxy on concerned nodes
         for node in nodes:
-            # We need to rebuild configuration and reload Haproxy in case authentication is involved
-            # This is done to regenerate spoe configuration
-            # This also reloads Haproxy
-            if workflow_obj.authentication is not None or had_authentication:
-                api_res = node.api_request("services.haproxy.haproxy.configure_node")
             api_res = node.api_request("services.haproxy.haproxy.reload_service")
             if not api_res.get('status'):
                 logger.error("Workflow::edit: API error while trying to "

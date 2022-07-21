@@ -49,10 +49,34 @@ class HAProxySettings(models.Model):
         """
         """ First, use to_mongo() internal django function """
         from workflow.models import Workflow
+        from authentication.user_portal.models import UserAuthentication
+
+        endpoints = list()
+
+        for workflow in Workflow.objects.filter(authentication__isnull=False):
+            endpoint = {
+                "id": workflow.id,
+                "name": workflow.name,
+                "fqdn": workflow.fqdn,
+                "public_dir": workflow.public_dir,
+                "auth_timeout": workflow.authentication.auth_timeout if workflow.authentication.enable_timeout_restart else 0,
+                "oauth_repositories_id": list()
+            }
+
+            # Add openid repositories' client_id for validation of oauth token from those repositories on this endpoint
+            for repo in workflow.authentication.repositories.filter(subtype="openid"):
+                repo = repo.get_daughter()
+                endpoint['oauth_repositories_id'].append(repo.client_id)     
+
+            # Add the endpoint's portal to the authorized sources of oauth token (if oauth is enabled on it)
+            if workflow.authentication.enable_oauth:
+                endpoint['oauth_repositories_id'].append(workflow.authentication.oauth_client_id)
+
+            endpoints.append(endpoint)
 
         return {
             'global_config': Cluster.get_global_config(),
-            'workflows': [w.to_template() for w in Workflow.objects.filter(authentication__isnull=False)]
+            'endpoints': endpoints
         }
 
     def __str__(self):

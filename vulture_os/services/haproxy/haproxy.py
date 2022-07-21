@@ -94,7 +94,7 @@ class HaproxyService(Service):
 
 def configure_node(node_logger):
     """ Generate and write HAProxy conf file, depending on node conf
-    :return    A string, what has beeen done
+    :return    A string, what has been done
     """
     result = ""
 
@@ -391,3 +391,15 @@ def build_portals_conf(node_logger):
 
     return service.reload()
 
+
+def build_spoe_conf(node_logger):
+    """ Generate and write HAProxy SPOE file, depending on node conf
+    Does NOT reload/restart the service
+    :return    A string, what has been done
+    """
+    service = HaproxyService()
+
+    if service.reload_conf():
+        return "HAProxy conf updated.\n"
+    else:
+        return "HAProxy conf hasn't changed.\n"

@@ -699,5 +699,11 @@ class UserAuthentication(models.Model):
             ],
             "response_types_supported": [
                 "code"
+            ],
+            "response_modes_suppported": [
+                "query"
+            ],
+            "grant_types_supported" : [
+                "authorization_code"
             ]
         }

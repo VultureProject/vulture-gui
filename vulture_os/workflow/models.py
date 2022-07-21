@@ -211,7 +211,7 @@ class Workflow(models.Model):
     def to_template(self):
         """ Dictionary used to create configuration file
 
-        :return     Dictionnary of configuration parameters
+        :return     Dictionary of configuration parameters
         """
         """ Retrieve list/custom objects """
         """ And returns the attributes of the class """
@@ -223,7 +223,7 @@ class Workflow(models.Model):
             'public_dir': self.public_dir,
             'frontend': self.frontend,
             'backend': self.backend,
-            'authentication': self.authentication,
+            'authentication': self.authentication.to_template() if self.authentication else None,
             'defender_policy': self.defender_policy,
             'disconnect_url': self.get_disconnect_url()
         }
