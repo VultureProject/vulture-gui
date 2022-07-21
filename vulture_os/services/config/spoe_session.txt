@@ -28,8 +28,9 @@ spoe-message check-session_{{endpoint.id}}
     acl workflow_{{endpoint.id}}_dir path -i -m beg {{ endpoint.public_dir }}
     acl workflow_{{endpoint.id}}_header req.hdr(Authorization) -m found
     acl workflow_{{endpoint.id}}_header req.hdr(X-Vlt-Token) -m found
+    acl workflow_{{endpoint.id}}_cook req.cook({{ global_config.portal_cookie_name }}) -m found
     args req.cook({{ global_config.portal_cookie_name }}) str("{{endpoint.id}}") str("{{endpoint.auth_timeout}}")
-    event on-frontend-http-request if workflow_{{endpoint.id}}_host workflow_{{endpoint.id}}_dir !workflow_{{endpoint.id}}_header
+    event on-frontend-http-request if workflow_{{endpoint.id}}_host workflow_{{endpoint.id}}_dir workflow_{{endpoint.id}}_cook !workflow_{{endpoint.id}}_header
 
 spoe-message check-session_oauth_{{endpoint.id}}
     acl workflow_{{endpoint.id}}_host hdr(host) {{endpoint.fqdn}}
