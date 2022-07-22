@@ -134,7 +134,9 @@ def security_update(node_logger=None):
 
         try:
             logger.info("Crontab::security_update: get Vulture's ipsets...")
-            infos = requests.get(IPSET_VULTURE+"index.json",proxies=proxies,timeout=5).json()
+            result = requests.get(IPSET_VULTURE+"index.json",proxies=proxies,timeout=5)
+            result.raise_for_status()
+            infos = result.json()
         except Exception as e:
             logger.error("Crontab::security_update: Unable to download Vulture's ipsets: {}".format(e))
             return False
@@ -149,21 +151,20 @@ def security_update(node_logger=None):
             filename = info['filename']
 
             """ Create/update object """
-            try:
-                reputation_ctx = ReputationContext.objects.get(filename=filename)
-            except Exception as e:
-                reputation_ctx = ReputationContext(filename=filename)
-            reputation_ctx.name = label
-            reputation_ctx.url = url
-            reputation_ctx.db_type = entry_type
-            reputation_ctx.label = label
-            reputation_ctx.description = description
-            reputation_ctx.nb_netset = nb_netset
-            reputation_ctx.nb_unique = nb_unique
-            reputation_ctx.internal = True
-            reputation_ctx.custom_headers = {}
-            reputation_ctx.save()
-            logger.info("Reputation context {} created.".format(label))
+            ctx, created = ReputationContext.objects.update_or_create(
+                filename = filename,
+                defaults = {
+                    "name": label,
+                    "url": url,
+                    "db_type": entry_type,
+                    "description": description,
+                    "nb_netset": nb_netset,
+                    "nb_unique": nb_unique,
+                    "internal": True,
+                    "custom_headers": {},
+                }
+            )
+            logger.info("Reputation context {} {}.".format(ctx.name, "created" if created else "updated"))
 
     # On ALL nodes, write databases on disk
     # All internal reputation contexts are retrieved and created if needed
