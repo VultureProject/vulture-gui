@@ -27,7 +27,6 @@ __doc__ = 'OpenID Repository views'
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
-
 # Django project imports
 from gui.forms.form_utils import DivErrorList
 
@@ -103,16 +102,20 @@ def edit(request, object_id=None, api=False):
 
 
 def test_provider(request):
-    form = OpenIDRepositoryForm(request.POST)
+    errors = {}
+    if not request.POST.get('provider_url'):
+        errors['provider_url'] = ['This field is required.']
+    if not request.POST.get('client_id'):
+        errors['client_id'] = ['This field is required.']
+    if not request.POST.get('client_secret'):
+        errors['client_secret'] = ['This field is required.']
 
-    if not form.is_valid():
+    if errors:
         return JsonResponse({'status': False,
-                             'form_errors': form.errors})
-
-    provider = form.save(commit=False)
+                            'form_errors': errors})
 
     try:
-        return JsonResponse({'status':True, 'data':provider.retrieve_config(test=True)})
+        return JsonResponse({'status':True, 'data':OpenIDRepository.retrieve_config(request.POST.get('provider_url'), use_proxy=False, verify_certificate=False)})
     except Exception as e:
         logger.exception(e)
         return JsonResponse({'status': False, 'error': str(e)})
