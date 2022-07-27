@@ -57,6 +57,7 @@ from toolkit.api_parser.waf_cloudflare.waf_cloudflare import WAFCloudflareParser
 from toolkit.api_parser.gsuite_alertcenter.gsuite_alertcenter import GsuiteAlertcenterParser
 from toolkit.api_parser.sophos_cloud.sophos_cloud import SophosCloudParser
 
+from toolkit.api_parser.trendmicro_worryfree.trendmicro_worryfree import TrendmicroWorryfreeParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -92,7 +93,8 @@ PARSER_LIST = {
     "proofpoint_pod": ProofpointPodParser,
     "waf_cloudflare": WAFCloudflareParser,
     "gsuite_alertcenter": GsuiteAlertcenterParser,
-    "sophos_cloud": SophosCloudParser
+    "sophos_cloud": SophosCloudParser,
+    "trendmicro_worryfree": TrendmicroWorryfreeParser,
 }
 
 
