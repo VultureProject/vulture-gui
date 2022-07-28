@@ -309,9 +309,8 @@ class Backend(models.Model):
             result['servers'] = []
             """ Add listeners """
             for server in self.server_set.all():
-                s = server.to_template()
-                # Remove frontend to prevent infinite loop
-                del s['backend']
+                # Remove backend to prevent infinite loop
+                s = server.to_dict(fields=['id','target','port','mode','weight', 'tls_profile'])
                 result['servers'].append(s)
         if not fields or "status" in fields:
             result['status'] = dict(self.status)

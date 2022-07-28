@@ -168,11 +168,6 @@ class Workflow(models.Model):
         return tmp
 
     def to_dict(self, fields=None):
-        authentication = None
-        
-        if self.authentication:
-            authentication = self.authentication.to_dict()
-
         result = model_to_dict(self, fields=fields)
         if not fields or "id" in fields:
             result['id'] = str(result['id'])
@@ -191,7 +186,7 @@ class Workflow(models.Model):
         if not fields or "backend_status" in fields:
             result['backend_status'] = dict(self.backend.status)
         if not fields or "authentication" in fields:
-            result['authentication'] = authentication
+            result['authentication'] = self.authentication.to_dict() if self.authentication else None
         if not fields or "acls" in fields:
             result['acls'] = [acl.to_dict() for acl in self.workflowacl_set.all()]
         return result
