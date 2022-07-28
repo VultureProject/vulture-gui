@@ -293,11 +293,10 @@ def backend_edit(request, object_id=None, api=False):
         server_objs = []
         """ For each listener in list """
         for server in server_ids:
-            """ If id is given, retrieve object from mongo """
+            """ If server exists, retrieve object from mongo """
             try:
-                instance_s = Server.objects.get(pk=server['id']) if server.get('id') else None
+                instance_s = Server.objects.filter(target=server['target'], port=server['port']).first() if server.get('target') and server.get('port') else None
             except ObjectDoesNotExist:
-                form.add_error(None, "Server with id {} not found.".format(server['id']))
                 continue
 
             """ And instantiate form with the object, or None """
@@ -353,11 +352,12 @@ def backend_edit(request, object_id=None, api=False):
             backend.save()
             logger.debug("Backend '{}' (id={}) saved in MongoDB.".format(backend.name, backend.id))
 
-            """ And all the listeners created earlier """
-            for s in server_objs:
-                s.backend = backend
-                logger.debug("Saving server {}".format(str(s)))
-                s.save()
+            """ Create or update all the listeners """
+            for i, s in enumerate(server_objs):
+                defaults = s.to_dict()
+                defaults['backend'] = backend
+                defaults['tls_profile'] = s.tls_profile if defaults['tls_profile'] else None
+                server_objs[i], created = Server.objects.update_or_create(target=s.target, port=s.port, defaults=defaults)
 
             """ Delete listeners deleted in form """
             for s in backend.server_set.exclude(pk__in=[l.id for l in server_objs]):

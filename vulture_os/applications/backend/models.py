@@ -27,6 +27,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -641,4 +642,14 @@ class Server(models.Model):
                 result += " source {}".format(self.source)
         if self.tls_profile:
             result += self.tls_profile.generate_conf(backend=True)
+        return result
+
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+
+        if not fields or "backend" in fields:
+            result['backend'] = self.backend.to_dict() if result['backend'] else None
+        if not fields or "tls_profile" in fields:
+            result['tls_profile'] = self.tls_profile.to_dict() if result['tls_profile'] else ""
+
         return result
