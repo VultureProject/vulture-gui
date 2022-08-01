@@ -25,9 +25,7 @@ __doc__ = 'Cluster daemon'
 
 import os
 import sys
-import daemon
 import time
-import lockfile
 
 # Django setup part
 sys.path.append('/home/vlt-os/vulture_os')
@@ -55,9 +53,6 @@ def service_shutdown(signum, frame):
 
 """ This is for the cluster daemon process """
 if __name__ == '__main__':
-    daemon_context = daemon.DaemonContext(pidfile=lockfile.FileLock('/var/run/vulture/vultured.pid'),)
-    daemon_context.detach_process = False
-
     """ Launch monitor job """
     monitor_job = MonitorJob(10)
     monitor_job.start()
@@ -122,9 +117,6 @@ if __name__ == '__main__':
             continue
 
     # Ask the jobs to terminate.
-    monitor_job.ask_shutdown()
-
-    # Wait for the threads to close...
-    monitor_job.join()
+    monitor_job.stop()
 
     logger.info("Vultured stopped.")

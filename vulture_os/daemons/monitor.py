@@ -65,6 +65,9 @@ def monitor():
 
     node = Cluster.get_current_node()
 
+    if not node:
+        return False
+
     def get_service_status(service_class):
         """ Get a service_class (eg HaproxyService) 
         :return  a dict {'name':service_name, 'status': status} """
@@ -244,21 +247,16 @@ class MonitorJob(Thread):
         logger.info("Monitor job started.")
 
         # While we are not asked to terminate
-        while not self.shutdown_flag.is_set():
+        while not self.shutdown_flag.wait(self.delay):
             try:
                 monitor()
             except Exception as e:
                 logger.exception("Monitor job failure: {}".format(e))
                 logger.info("Resuming ...")
 
-            # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
-            cpt = 0
-            while not self.shutdown_flag.is_set() and cpt < self.delay:
-                sleep(2)
-                cpt += 2
-
         logger.info("Monitor job stopped.")
 
-    def ask_shutdown(self):
+    def stop(self):
         logger.info("Monitor shutdown asked !")
         self.shutdown_flag.set()
+        self.join()
