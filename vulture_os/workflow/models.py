@@ -155,14 +155,11 @@ class Workflow(models.Model):
             'fqdn': self.fqdn,
             'enabled': self.enabled,
             'frontend': str(self.frontend),
-            'frontend_id': str(self.frontend.pk),
-            'backend_id': str(self.backend.pk),
             'public_dir': self.public_dir,
             'backend': str(self.backend),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             'acls': self.workflowacl_set.count(),
-            'authentication_id': str(self.authentication.pk) if self.authentication else "",
             'authentication': str(self.authentication)
         }
         return tmp
@@ -171,16 +168,10 @@ class Workflow(models.Model):
         result = model_to_dict(self, fields=fields)
         if not fields or "id" in fields:
             result['id'] = str(result['id'])
-        if not fields or "frontend_id" in fields:
-            result['frontend_id'] = str(self.frontend.pk)
-        if not fields or "backend_id" in fields:
-            result['backend_id'] = str(self.backend.pk)
         if not fields or "frontend" in fields:
             result['frontend'] = self.frontend.to_dict()
         if not fields or "backend" in fields:
             result['backend'] = self.backend.to_dict()
-        if not fields or "authentication_id" in fields:
-            result['authentication_id'] = str(self.authentication.pk) if self.authentication else ""
         if not fields or "frontend_status" in fields:
             result['frontend_status'] = dict(self.frontend.status)
         if not fields or "backend_status" in fields:
