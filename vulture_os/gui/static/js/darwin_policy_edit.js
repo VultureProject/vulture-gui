@@ -457,36 +457,36 @@ function init_vue(){
           filter_type_name = (available_filter_types[tmp_filter.filter_type]) ? available_filter_types[tmp_filter.filter_type].name : ""
 
           switch(filter_type_name){
-              case "conn":
-                config.redis_expire = parseInt(tmp_filter.config.redis_expire, 10)
-                break
+            case "conn":
+              config.redis_expire = parseInt(tmp_filter.config.redis_expire, 10)
+              break
 
-              case "dgad":
-                config.max_tokens = parseInt(tmp_filter.config.max_tokens, 10)
-                break
+            case "dgad":
+              config.max_tokens = parseInt(tmp_filter.config.max_tokens, 10)
+              break
 
-              case "lkup":
-                config.reputation_ctx_id = parseInt(tmp_filter.config.reputation_ctx_id, 10)
-                break
+            case "lkup":
+              config.reputation_ctx_id = parseInt(tmp_filter.config.reputation_ctx_id, 10)
+              break
 
-              case "vast":
-                config.model = tmp_filter.config.model
-                break
+            case "vast":
+              config.model = tmp_filter.config.model
+              break
 
-              case "vaml":
-                config.model = tmp_filter.config.model
-                // this is not a mistake, holidays_file has the same name as the model
-                config.holidays_file = tmp_filter.config.model
-                config.percent_more_alert = parseFloat(tmp_filter.config.percent_more_alert, 10)
-                config.percent_less_alert = parseFloat(tmp_filter.config.percent_less_alert, 10)
-                if (tmp_filter.config.percent_more_warning !== null)
-                  config.percent_more_warning = parseFloat(tmp_filter.config.percent_more_warning, 10)
-                if (tmp_filter.config.percent_less_warning !== null)
-                  config.percent_less_warning = parseFloat(tmp_filter.config.percent_less_warning, 10)
-                if (tmp_filter.config.minimal_variation !== null)
-                  config.minimal_variation = parseFloat(tmp_filter.config.minimal_variation, 10)
-                if (tmp_filter.config.lower_absolute !== null)
-                  config.lower_absolute = parseFloat(tmp_filter.config.lower_absolute, 10)
+            case "vaml":
+              config.model = tmp_filter.config.model
+              // this is not a mistake, holidays_file has the same name as the model
+              config.holidays_file = tmp_filter.config.model
+              config.percent_more_alert = parseFloat(tmp_filter.config.percent_more_alert, 10)
+              config.percent_less_alert = parseFloat(tmp_filter.config.percent_less_alert, 10)
+              if (tmp_filter.config.percent_more_warning !== null)
+                config.percent_more_warning = parseFloat(tmp_filter.config.percent_more_warning, 10)
+              if (tmp_filter.config.percent_less_warning !== null)
+                config.percent_less_warning = parseFloat(tmp_filter.config.percent_less_warning, 10)
+              if (tmp_filter.config.minimal_variation !== null)
+                config.minimal_variation = parseFloat(tmp_filter.config.minimal_variation, 10)
+              if (tmp_filter.config.lower_absolute !== null)
+                config.lower_absolute = parseFloat(tmp_filter.config.lower_absolute, 10)
           }
 
           for (let tmp of tmp_filter.mmdarwin_parameters)
