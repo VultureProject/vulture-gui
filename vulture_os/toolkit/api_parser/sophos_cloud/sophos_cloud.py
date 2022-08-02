@@ -90,7 +90,7 @@ class Config:
     token_info: str
     auth_url: str
     api_host: str
-    proxy: str
+    proxy: dict
 
 
 class SophosCloudParser(ApiParser):
