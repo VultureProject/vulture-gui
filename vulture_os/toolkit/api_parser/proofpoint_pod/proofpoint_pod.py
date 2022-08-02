@@ -30,6 +30,7 @@ import logging
 import signal
 import time
 from threading import Event
+from urllib.parse import urlparse
 import websocket
 
 from django.conf import settings
@@ -228,7 +229,14 @@ class ProofpointPodParser(ApiParser):
                 proofpoint_pod_url = self.proofpoint_pod_url
             logger.debug(f"[{__parser__}]:_websocket_connect: trying to connect to {proofpoint_pod_url}, with headers {self.extra_headers}", extra={'frontend': str(self.frontend)})
             # timeout is set for connection
-            self.ws = websocket.create_connection(proofpoint_pod_url, timeout=10, header=self.extra_headers, http_proxy_host=self.proxies)
+            proxy_ = urlparse(self.proxies.get('http'))
+            proxy_split = proxy_.netloc.split(':')
+            http_proxy_host = proxy_split[0]
+            if len(proxy_split) > 1:
+                http_proxy_port = proxy_split[1]
+            else:
+                http_proxy_port = 80
+            self.ws = websocket.create_connection(proofpoint_pod_url, timeout=10, header=self.extra_headers, http_proxy_host=http_proxy_host, http_proxy_port=http_proxy_port)
         except websocket._exceptions.WebSocketConnectionClosedException:
             raise
         except websocket._exceptions.WebSocketException as e:
