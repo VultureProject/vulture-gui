@@ -185,7 +185,19 @@ class MongoBase:
             logger.critical(e, exc_info=1)
             return False
 
-    def connect(self, node=None, primary=True):
+
+    def connect_with_retries(self, retries, node=None, primary=True, timeout=2):
+        connection_ok = False
+        tries = 1
+        while not connection_ok and tries <= retries:
+            logger.debug(f"connect_when_ready: Trying to connect to Mongodb (try {tries})")
+            connection_ok = self.connect(node, primary, timeout_ms=timeout * 1000)
+            tries += 1
+
+        return connection_ok
+
+
+    def connect(self, node=None, primary=True, timeout_ms=5000):
         try:
             if node:
                 host = 'mongodb://{}'.format(node)
@@ -197,14 +209,14 @@ class MongoBase:
                     'ssl_certfile': "/var/db/pki/node.pem",
                     'ssl_ca_certs': "/var/db/pki/ca.pem",
                     'read_preference': ReadPreference.PRIMARY_PREFERRED,
-                    "serverSelectionTimeoutMS": 5000}
+                    "serverSelectionTimeoutMS": timeout_ms}
             if primary:
                 args['replicaset'] = "Vulture"
             self.db = MongoClient(**args)
             # Execute a request to test connection (pymongo doesn't try connecting until a command is executed on client)
-            self.db.server_info()
+            self.db.admin.command('ping')
         except Exception as e:
-            logger.error("connect: Error during mongoDB connexion: {}".format(str(e)), exc_info=1)
+            logger.error("connect: Error during mongoDB connection: {}".format(str(e)), exc_info=1)
             return False
 
         return True
