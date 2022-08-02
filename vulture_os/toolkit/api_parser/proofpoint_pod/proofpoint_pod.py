@@ -228,7 +228,7 @@ class ProofpointPodParser(ApiParser):
                 proofpoint_pod_url = self.proofpoint_pod_url
             logger.debug(f"[{__parser__}]:_websocket_connect: trying to connect to {proofpoint_pod_url}, with headers {self.extra_headers}", extra={'frontend': str(self.frontend)})
             # timeout is set for connection
-            self.ws = websocket.create_connection(proofpoint_pod_url, timeout=10, header=self.extra_headers)
+            self.ws = websocket.create_connection(proofpoint_pod_url, timeout=10, header=self.extra_headers, http_proxy_host=self.proxies)
         except websocket._exceptions.WebSocketConnectionClosedException:
             raise
         except websocket._exceptions.WebSocketException as e:
