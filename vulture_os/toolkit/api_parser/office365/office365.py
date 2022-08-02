@@ -125,7 +125,8 @@ class Office365Parser(ApiParser):
             url,
             headers={
                 'Authorization': f'Bearer {access_token}'
-            }
+            },
+            proxies=self.proxies
         )
 
         if response.status_code != 200:
