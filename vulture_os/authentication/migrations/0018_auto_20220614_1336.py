@@ -9,7 +9,7 @@ import djongo.models.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('services', '0042_auto_20220614_1336'),
+        ('services', '0043_auto_20220628_1037'),
         ('authentication', '0017_auto_20220504_0906'),
     ]
 
