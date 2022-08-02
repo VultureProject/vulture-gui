@@ -30,10 +30,9 @@ import hmac
 import base64
 import hashlib
 import uuid
-import calendar
-import time
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
 from urllib.parse import urlencode, unquote
@@ -100,7 +99,7 @@ class TrendmicroWorryfreeParser(ApiParser):
         '''
         Generate authentication herders
         '''
-        posix_time = calendar.timegm(time.gmtime())
+        posix_time = int(timezone.now().timestamp())
 
         headers = {}
         headers["content-type"] = "application/json"
@@ -123,10 +122,6 @@ class TrendmicroWorryfreeParser(ApiParser):
         while retry_time < retry:
             headers = self.__get_auth_headers(http_method, request_uri, body)
             url = "%s://%s%s" % (self.scheme, self.trendmicro_worryfree_server_name, request_uri)
-            print(url)
-            print(body)
-            print(headers)
-            print(datetime.now())
             resp = self.session.request(http_method, url, data=body, headers=headers, proxies=self.proxies)
             if resp.status_code == 200:
                 break
@@ -204,13 +199,12 @@ class TrendmicroWorryfreeParser(ApiParser):
                     else:
                         err = True
                         print("query_logs_realtime return error.")
-                        print("query_logs_realtime return error.")
         return result_logs
 
     def test(self):
 
-        since = calendar.timegm(time.gmtime()) - 3000
-        to = calendar.timegm(time.gmtime())
+        since = int((timezone.now() - timedelta(hours=1)).timestamp())
+        to = int(timezone.now().timestamp())
 
         query = {'range_from': since, 'range_to': to}
 
@@ -231,10 +225,10 @@ class TrendmicroWorryfreeParser(ApiParser):
     def execute(self):
 
         if self.last_api_call is None:
-            since = calendar.timegm(time.gmtime()) - 24*3600
+            since = int((timezone.now() - timedelta(hours=1)).timestamp())
         else:
             since = self.last_api_call
-        to = calendar.timegm(time.gmtime())
+        to = int(timezone.now().timestamp())
         query = {'range_from': since, 'range_to': to}
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
