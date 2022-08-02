@@ -90,6 +90,7 @@ class Config:
     token_info: str
     auth_url: str
     api_host: str
+    proxy: str
 
 
 class SophosCloudParser(ApiParser):
@@ -120,7 +121,8 @@ class SophosCloudParser(ApiParser):
             tenant_id=self.tenant_id,
             token_info=self.TOKEN_INFO,
             auth_url=self.AUTH_URL,
-            api_host=self.API_HOST
+            api_host=self.API_HOST,
+            proxy=self.proxies
         )
 
         options = Options(
