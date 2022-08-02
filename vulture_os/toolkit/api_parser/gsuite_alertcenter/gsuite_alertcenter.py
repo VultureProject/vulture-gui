@@ -82,7 +82,10 @@ class GsuiteAlertcenterParser(ApiParser):
         self.credentials = self.credentials.with_subject(self.client_admin_mail)
 
         if not self.credentials.valid:
-            self.credentials.refresh(Request())
+            with requests.Session() as session:
+                session.proxies = self.proxies
+                self.credentials.refresh(Request(session=session))
+
             if not self.credentials.valid:
                 logger.error(f'[{__parser__}][get_creds]: Please check your configuration file and related account', exc_info=True, extra={'frontend': str(self.frontend)})
                 return False, ('Connection failed')
