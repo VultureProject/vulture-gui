@@ -85,7 +85,7 @@ class WAFCloudflareParser(ApiParser):
         logger.debug(f"{[__parser__]}:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
 
 
-        response = self.session.get(url, params=query)
+        response = self.session.get(url, params=query, proxies=self.proxies)
         response.raise_for_status()
         content = response.text.split("\n")[:-1]
 
