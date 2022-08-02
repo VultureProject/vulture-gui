@@ -1,8 +1,7 @@
 #!/bin/sh
 
 # If node already created
-/usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vulture_os/manage.py is_node_bootstrapped >/dev/null 2>&1
-if [ $? = 0 ] ; then
+if /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vulture_os/manage.py is_node_bootstrapped >/dev/null 2>&1; then
     # If IPv6 - Make v0.9 migration
     if /usr/bin/grep ":" /usr/local/etc/management.ip > /dev/null ; then
         # If it is the master mongo
