@@ -65,6 +65,7 @@ class WAFCloudflareParser(ApiParser):
 
         if self.session is None:
             self.session = requests.Session()
+            self.session.proxies = self.proxies
             self.session.headers.update(self.HEADERS)
             self.session.headers.update({"Authorization": f"Bearer {self.waf_cloudflare_apikey}"})
 
