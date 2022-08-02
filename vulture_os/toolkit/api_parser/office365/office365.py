@@ -82,7 +82,8 @@ class Office365Parser(ApiParser):
                 'client_id': self.office365_client_id,
                 'client_assertion_type': 'urn%3Aietf%3Aparams%3Aoauth',
                 'client_secret': self.office365_client_secret
-            }
+            },
+            proxies=self.proxies
         )
 
         if response.status_code != 200:
@@ -106,7 +107,8 @@ class Office365Parser(ApiParser):
             },
             headers={
                 "Authorization": f"Bearer {access_token}"
-            }
+            },
+            proxies=self.proxies
         )
 
         for feed in response.json():
