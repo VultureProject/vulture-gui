@@ -32,7 +32,7 @@ from gui.forms.form_utils import DivErrorList
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from authentication.openid.form import OpenIDRepositoryForm
+from authentication.openid.form import OpenIDRepositoryForm, OpenIDRepositoryTestForm
 from authentication.openid.models import OpenIDRepository
 
 # Extern modules imports
@@ -102,20 +102,23 @@ def edit(request, object_id=None, api=False):
 
 
 def test_provider(request):
-    errors = {}
-    if not request.POST.get('provider_url'):
-        errors['provider_url'] = ['This field is required.']
-    if not request.POST.get('client_id'):
-        errors['client_id'] = ['This field is required.']
-    if not request.POST.get('client_secret'):
-        errors['client_secret'] = ['This field is required.']
+    form = OpenIDRepositoryTestForm(request.POST)
 
-    if errors:
+    if not form.is_valid():
+        for field, errors in form.errors.items():
+            logger.error(f"OpenID:test_provider: Error while validating [{field}]: {', '.join(errors)}")
         return JsonResponse({'status': False,
-                            'form_errors': errors})
+                             'form_errors': form.errors})
 
     try:
-        return JsonResponse({'status':True, 'data':OpenIDRepository.retrieve_config(request.POST.get('provider_url'), use_proxy=False, verify_certificate=False)})
+        return JsonResponse(
+            {
+                'status':True,
+                'data': OpenIDRepository.retrieve_config(
+                    form.cleaned_data.get('provider_url'),
+                    use_proxy=form.cleaned_data.get('use_proxy'),
+                    verify_certificate=form.cleaned_data.get('verify_certificate'))
+            })
     except Exception as e:
         logger.exception(e)
         return JsonResponse({'status': False, 'error': str(e)})

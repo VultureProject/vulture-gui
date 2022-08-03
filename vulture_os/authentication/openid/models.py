@@ -225,8 +225,9 @@ class OpenIDRepository(BaseRepository):
             raise NotImplemented("OTP client type not implemented yet")
 
     @staticmethod
-    def retrieve_config(provider_url, use_proxy=True, verify_certificate=True ):
-        logger.info(get_proxy() if use_proxy else None)
+    def retrieve_config(provider_url, use_proxy=True, verify_certificate=True):
+        logger.info(f"retrieving openid configuration for provider {provider_url}")
+
         r = requests.get("{}/.well-known/openid-configuration".format(provider_url),
                             proxies=get_proxy() if use_proxy else None,
                             verify=verify_certificate, timeout=10)
