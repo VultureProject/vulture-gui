@@ -514,7 +514,10 @@ class Cluster (models.Model):
         :param node:      The node to set the action to
         :param internal:  Is this request internal ? Means that it will not be shown to the admin
         :return:
-            { 'status': True, 'message': 'A meaningful message' }
+                for no node is specified:
+                { 'status': True, 'message': 'A meaningful message' }
+                for specific node:
+                { 'status': True, 'message': 'A meaningful message', instance: messagequeue_object_created }
             { 'status': False, 'message': 'A meaningful message' }
         """
 
@@ -536,7 +539,7 @@ class Cluster (models.Model):
                 except Exception as e:
                     logger.error("Cluster::api_request: {}".format(str(e)))
                     return {'status': False, 'message': str(e)}
-
+            return {'status': True, 'message': ''}
         else:
             m, created = MessageQueue.objects.get_or_create(
                 node=node,
@@ -554,7 +557,7 @@ class Cluster (models.Model):
                 logger.error("Cluster::api_request: {}".format(str(e)))
                 return {'status': False, 'message': str(e)}
 
-        return {'status': True, 'message': ''}
+            return {'status': True, 'message': '', 'instance': m}
 
 
 class MessageQueue (models.Model):
@@ -597,6 +600,36 @@ class MessageQueue (models.Model):
         self.modified = timezone.now()
         return super().save(*args, **kwargs)
 
+    def await_result(self, interval=2, max_tries=30):
+        """
+
+        :param interval:    Time interval to wait before checking status again
+        :param max_tries:   The maximum number of times to check status
+        :return:
+                The result of the messagequeue or an empty string with an exception raised when the status
+                is not done in the interval and maximum tries given
+        """
+        counter = 0
+        try:
+            while True:
+                message_instance = MessageQueue.objects.get(pk=self.id)
+                if message_instance.status == "done":
+                    break
+                counter += 1
+                if counter == max_tries:
+                    raise APISyncResultTimeOutException(f"MessageQueue:: Timeout on the result of {message_instance.action}. Config is {message_instance.config}")
+                time.sleep(interval)
+
+            return message_instance.result
+        except APISyncResultTimeOutException as e:
+            logger.error(e)
+            return ""
+        except Exception as e:
+            logger.error(e)
+            return ""
+
+class APISyncResultTimeOutException(Exception):
+    pass
 
 class NetworkInterfaceCard(models.Model):
     """
