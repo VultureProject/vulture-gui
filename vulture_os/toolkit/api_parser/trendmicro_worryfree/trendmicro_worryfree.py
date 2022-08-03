@@ -52,9 +52,8 @@ class TrendmicroWorryfreeParser(ApiParser):
     LOG_EXISTENCE_URI = "/SMPI/service/wfbss/customer/api/1.0/log_existence"
     QUERY_LOG_URI = "/SMPI/service/wfbss/customer/api/1.0/logfeeder/query_syslog"
     LOG_PAGE_LIMIT = 100
-    retry = 3
 
-    log_types = ["virus","spyware","wtp","url_filtering","behavior_monitoring","application_control","machine_learning","network_virus","dlp"]
+    LOG_TYPES = ["virus","spyware","wtp","url_filtering","behavior_monitoring","application_control","machine_learning","network_virus","dlp"]
 
     def __init__(self, data):
         super().__init__(data)
@@ -88,7 +87,7 @@ class TrendmicroWorryfreeParser(ApiParser):
         payload = x_posix_time + request_method.upper() + request_uri
         if body:
             payload += self.__get_content_md5(body)
-        print(payload)
+        logger.info(f"[{__parser__}]:gen_x_signature:Paylod :{payload}", extra={'frontend': str(self.frontend)})
         hm = hmac.new(self.trendmicro_worryfree_secret_key.encode("utf8"),
                       payload.encode("utf8"), hashlib.sha256)
         digest = hm.digest()
@@ -97,7 +96,7 @@ class TrendmicroWorryfreeParser(ApiParser):
 
     def __get_auth_headers(self, method, request_uri, body):
         '''
-        Generate authentication herders
+        Generate authentication headers
         '''
         posix_time = int(timezone.now().timestamp())
 
@@ -137,8 +136,8 @@ class TrendmicroWorryfreeParser(ApiParser):
         try:
             res_status, headers, res_data = self.send_request(method, uri, body=body)
             if res_status != 200:
-                print("Response status: \n%r" % res_status)
-                print("Response data: \n%r" % res_data)
+                logger.info(f"[{__parser__}]:run:Response status: {res_status}", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}]:run:Response data: {res_data}", extra={'frontend': str(self.frontend)})
         finally:
             self.close()
         try:
@@ -157,18 +156,16 @@ class TrendmicroWorryfreeParser(ApiParser):
         result = {}
         if res_status == 200 and res_data["result"]:
             # Show the converted Epoch time
-            print(u'|%50s | %140s|' % ('customer id', 'log_types'))
             for i in res_data["result"]:
                 result[i.get("cid", "endpoint")] = i["log_types"]
-                print(u'|%50s | %140s|' % (i.get("cid"), ', '.join(i["log_types"])))
+                logger.info(f'[{__parser__}]:execute_query:|{i.get("cid")} | {", ".join(i["log_types"])}|', extra={'frontend': str(self.frontend)})
         else:
-            print("There is no log in time range in Epoch %d ~ %d" % (query["range_from"], query["range_to"]))
+            logger.info(f"[{__parser__}]:execute_query:There is no log in time range in Epoch {query['range_from']} ~ {query['range_to']}", extra={'frontend': str(self.frontend)})
 
-        print(result.items)
         result_logs = []
         for cid, log_types in result.items():
             for log_type in log_types:
-                if log_type in self.log_types:
+                if log_type in self.LOG_TYPES:
                     params = {
                         'event_type': log_type,
                         'range_from': query['range_from'],
@@ -178,15 +175,14 @@ class TrendmicroWorryfreeParser(ApiParser):
 
                     uri = self.QUERY_LOG_URI + '?' + urlencode(params)
                     sub_status, sub_data = self._run("GET", uri)
-                    print(sub_data)
 
                     if sub_status == 200:
                         result_logs.extend(sub_data['result'])
                         page_id = sub_data['params']['params']['record_range']['page_id']
                         total_pages = sub_data['params']['params']['record_range']['total_pages']
                         total_records = sub_data['params']['params']['record_range']['total_records']
-                        print('There are total %d logs(total pages: %d)' % (total_records, total_pages))
-                        print('%d/%d' % (page_id, total_pages))
+                        logger.info(f'[{__parser__}]:execute_query:There are total {total_records} logs(total pages: {total_pages})', extra={'frontend': str(self.frontend)})
+                        logger.info(f'[{__parser__}]:execute_query:{page_id}/{total_pages}', extra={'frontend': str(self.frontend)})
                         while total_pages > page_id:
                             params['page'] = page_id + 1
                             uri = self.QUERY_LOG_URI + '?' + urlencode(params)
@@ -194,11 +190,11 @@ class TrendmicroWorryfreeParser(ApiParser):
                             result_logs.extend(sub_data['result'])
                             page_id = sub_data['params']['params']['record_range']['page_id']
                             total_pages = sub_data['params']['params']['record_range']['total_pages']
-                            print('%d/%d' % (page_id, total_pages))
-                        print("query_logs_realtime successfully.")
+                            logger.info(f'[{__parser__}]:execute_query:{page_id}/{total_pages}', extra={'frontend': str(self.frontend)})
+                        logger.info(f"[{__parser__}]:execute_query:query_logs_realtime successfully.", extra={'frontend': str(self.frontend)})
                     else:
                         err = True
-                        print("query_logs_realtime return error.")
+                        logger.info(f"[{__parser__}]:execute_query:query_logs_realtime return error.", extra={'frontend': str(self.frontend)})
         return result_logs
 
     def test(self):
