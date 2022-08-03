@@ -224,29 +224,31 @@ class OpenIDRepository(BaseRepository):
         else:
             raise NotImplemented("OTP client type not implemented yet")
 
-    def retrieve_config(self, test=False, force=True):
+    @staticmethod
+    def retrieve_config(provider_url, use_proxy=True, verify_certificate=True):
+        logger.info(f"retrieving openid configuration for provider {provider_url}")
+
+        r = requests.get("{}/.well-known/openid-configuration".format(provider_url),
+                            proxies=get_proxy() if use_proxy else None,
+                            verify=verify_certificate, timeout=10)
+        r.raise_for_status()
+        config = r.json()
+        logger.info(config)
+        return config
+
+    def openid_save(self, force=True):
         # TODO : Handle CA_BUNDLE
         # If loaded data is too old, reload it again
         refresh_time = timezone.now() - timedelta(hours=CONFIG_RELOAD_INTERVAL)
-        if (self.last_config_time is None or self.last_config_time < refresh_time)\
-                or test:
-            logger.info(get_proxy() if self.use_proxy else None)
-            r = requests.get("{}/.well-known/openid-configuration".format(self.provider_url),
-                             proxies=get_proxy() if self.use_proxy else None,
-                             verify=self.verify_certificate, timeout=10)
-            r.raise_for_status()
-            config = r.json()
-            logger.info(config)
+        if (self.last_config_time is None or self.last_config_time < refresh_time):
+            config = OpenIDRepository.retrieve_config(self.provider_url, self.use_proxy, self.verify_certificate)
             self.issuer = config['issuer']
             self.authorization_endpoint = config['authorization_endpoint']
             self.token_endpoint = config['token_endpoint']
             self.userinfo_endpoint = config['userinfo_endpoint']
             self.end_session_endpoint = config.get('end_session_endpoint') or config['revocation_endpoint']
             self.last_config_time = timezone.now()
-            if not test:
-                self.save()
-            else:
-                return config
+            self.save()
 
     def get_oauth2_session(self, redirect_uri):
         session = OAuth2Session(self.client_id, redirect_uri=redirect_uri, scope=self.scopes)
@@ -261,11 +263,11 @@ class OpenIDRepository(BaseRepository):
         :param  redirect_uri parameter in authorization_url
         :return tuple authorization_url, state
         """
-        self.retrieve_config()
+        self.openid_save()
         return oauth2_session.authorization_url(self.authorization_endpoint)
 
     def fetch_token(self, oauth2_session, code):
-        self.retrieve_config()
+        self.openid_save()
         return oauth2_session.fetch_token(self.token_endpoint,
                                           code=code,
                                           client_secret=self.client_secret,
@@ -273,7 +275,7 @@ class OpenIDRepository(BaseRepository):
                                           verify=self.verify_certificate)
 
     def get_userinfo(self, oauth2_session):
-        self.retrieve_config()
+        self.openid_save()
         response = oauth2_session.get(self.userinfo_endpoint, verify=self.verify_certificate)
         response.raise_for_status()
         result = response.json()
