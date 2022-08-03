@@ -203,10 +203,9 @@ class TrendmicroWorryfreeParser(ApiParser):
 
     def test(self):
 
-        since = int((timezone.now() - timedelta(hours=1)).timestamp())
-        to = int(timezone.now().timestamp())
-
-        query = {'range_from': since, 'range_to': to}
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        to = datetime.now(timezone.utc)
+        query = {'range_from': int(since.timestamp()), 'range_to': int(to.timestamp())}
 
         try:
             result = self.__execute_query(query)
@@ -224,12 +223,9 @@ class TrendmicroWorryfreeParser(ApiParser):
 
     def execute(self):
 
-        if self.last_api_call is None:
-            since = int((timezone.now() - timedelta(hours=1)).timestamp())
-        else:
-            since = self.last_api_call
-        to = int(timezone.now().timestamp())
-        query = {'range_from': since, 'range_to': to}
+        since = self.frontend.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=1))
+        to = datetime.now(timezone.utc)
+        query = {'range_from': int(since.timestamp()), 'range_to': int(to.timestamp())}
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
@@ -240,6 +236,5 @@ class TrendmicroWorryfreeParser(ApiParser):
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
 
-        # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
         self.frontend.last_api_call = to
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
