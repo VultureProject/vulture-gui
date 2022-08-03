@@ -34,8 +34,6 @@ import re
 logger = logging.getLogger('system')
 
 
-MANAGEMENT_IP_PATH = "/usr/local/etc/management.ip"
-
 JAIL_ADDRESSES = {
     'apache': {
         'inet': "127.0.0.6",
@@ -79,9 +77,11 @@ def get_management_ip():
 
     :return: The Management IP address of the node, as defined during bootstrap
     """
-
-    with open(MANAGEMENT_IP_PATH, "r") as f:
-        return f.read().strip()
+    from toolkit.system.rc import get_rc_config
+    management_ip = get_rc_config(logger,("network","management_ip"))
+    logger.critical(f"get_management_ip: {management_ip}")
+    if management_ip:
+        return management_ip
 
     return False
 

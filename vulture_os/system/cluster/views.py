@@ -142,7 +142,7 @@ def cluster_edit(request, object_id, api=False, update=False):
         return render(request, 'system/cluster_edit.html', {'form': form, **kwargs})
 
     if request.method in ("POST", "PUT", "PATCH") and form.is_valid():
-        ip_changed = "management_ip" in form.changed_data
+        ip_changed = "management_ip" or "internet_ip" or "backends_outgoing_ip" or "logom_outgoing_ip"in form.changed_data
         gateway_changed = "gateway" in form.changed_data
         gateway_ipv6_changed = "gateway_ipv6" in form.changed_data
         static_route_changed = "static_routes" in form.changed_data
@@ -174,6 +174,10 @@ def cluster_edit(request, object_id, api=False, update=False):
         if ip_changed:
             node.api_request("services.apache.apache.reload_conf")
             Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (node.name, node.management_ip))
+            RC_FILENAME = "network"
+            node.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "internet_ip", node.internet_ip))
+            node.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "backends_outgoing_ip", node.backends_outgoing_ip))
+            node.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "logom_outgoing_ip", node.logom_outgoing_ip))
             res = node.write_management_ip()
             if not res.get('status'):
                 return render_form(save_error=res.get('message'))

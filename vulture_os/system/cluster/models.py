@@ -25,7 +25,7 @@ __doc__ = 'Cluster main models'
 
 from system.config.models import Config
 
-from toolkit.network.network import get_hostname, MANAGEMENT_IP_PATH
+from toolkit.network.network import get_hostname
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
@@ -276,17 +276,14 @@ class Node(models.Model):
         return False
 
     def write_management_ip(self):
-        """ Write self.management_ip in management.ip files (jails and host) """
-        """ First write on host's file """
-        api_res = self.api_request("system.config.models.write_conf",
-                                   [MANAGEMENT_IP_PATH, self.management_ip, "root:wheel", "644"])
-        """ Then, write into jails same path """
-        for jail in JAILS:
-            api_res = self.api_request("system.config.models.write_conf",
-                                       ["/zroot/{}{}".format(jail, MANAGEMENT_IP_PATH),
-                                        self.management_ip, "root:wheel", "644"])
-        """ Returns the last api request """
-        return api_res
+        """ Write self.management_ip in management_ip variable in /etc/rc.conf.d/network """
+        RC_FILENAME ="network"
+        api_res = self.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "management_ip", self.management_ip))
+        """ Returns the messagequeue status with an error message if failed """
+        return {
+            "status": api_res.get("status"),
+            "message": "" if api_res.get("status") else "Failed to write Management IP"
+        }
 
     def addresses(self, nic=None):
         """
