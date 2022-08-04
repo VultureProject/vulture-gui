@@ -37,8 +37,8 @@ django.setup()
 from system.cluster.models import Cluster
 from darwin.policy.models import DarwinFilter, DarwinPolicy, FilterPolicy
 
-# if not Cluster.is_node_bootstrapped():
-#     sys.exit(0)
+if not Cluster.is_node_bootstrapped():
+    sys.exit(0)
 
 if __name__ == "__main__":
 
