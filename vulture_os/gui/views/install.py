@@ -137,6 +137,9 @@ def cluster_create(admin_user=None, admin_password=None):
     system_config.set_logs_ttl()
     system_config.save()
 
+    # regenerate PF configuration to account for new system configuration
+    node.api_request("services.pf.pf.gen_config")
+
     for name in ('Administrator', 'Log Viewer'):
         Group.objects.get_or_create(
             name=name
@@ -193,7 +196,7 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request("services.logrotate.logrotate.reload_conf")
 
     logger.debug("API call to update PF")
-    node.api_request ("services.pf.pf.gen_config")
+    node.api_request("services.pf.pf.gen_config")
 
 
 def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None, key=None):

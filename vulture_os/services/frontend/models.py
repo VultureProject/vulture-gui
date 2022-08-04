@@ -1034,8 +1034,6 @@ class Frontend(models.Model):
                 logger.error("Access_Control::edit: API error while trying to "
                              "restart HAProxy service : {}".format(api_res.get('message')))
 
-        Cluster.api_request("services.pf.pf.gen_config")
-
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
@@ -1819,7 +1817,6 @@ class Frontend(models.Model):
             # Add node to nodes, it's a set (unicity implicitly handled)
             nodes.add(node)
 
-        Cluster.api_request("services.pf.pf.gen_config")
         return nodes
 
     def enable(self):

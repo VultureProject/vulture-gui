@@ -214,6 +214,9 @@ def logfwd_delete(request, fw_type, object_id, api=False):
             # Delete the object
             log_om.delete()
 
+            # Reload cluster PF configuration
+            Cluster.api_request ("services.pf.pf.gen_config")
+
             if api:
                 return JsonResponse({
                     'status': True

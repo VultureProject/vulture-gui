@@ -219,7 +219,7 @@ def generate_workflow(workflow):
             }
         })
         parent = user_authentication_id
-    
+
     if workflow.authentication_filter != None:
         user_authentication_filter_id = str(uuid.uuid4())
         data.append({
@@ -352,7 +352,7 @@ def workflow_edit(request, object_id, action=None):
             acl_frontend = form_data.get("acl_frontend", [])
             if isinstance(form_data.get('acl_frontend'), str):
                 acl_frontend = json.loads(acl_frontend)
-            
+
             acl_backend = form_data.get("acl_backend", [])
             if isinstance(form_data.get('acl_backend'), str):
                 acl_backend = json.loads(acl_backend)
@@ -390,17 +390,15 @@ def workflow_edit(request, object_id, action=None):
                 if workflow.authentication is not None or had_authentication:
                     api_res = node.api_request("services.haproxy.haproxy.build_spoe_conf")
                 node.api_request("workflow.workflow.build_conf", workflow.pk)
+
+            # THEN reload backend/frontend configuration files (SPOE conf needs to be up-to-date)
             workflow.backend.reload_conf()
             workflow.frontend.reload_conf()
 
-                # Reload HAProxy on concerned nodes
-                # We need to rebuild configuration and reload Haproxy in case authentication is involved
-                # This is done to regenerate spoe configuration
-                # This also reloads Haproxy
-                if workflow.authentication is not None or had_authentication:
-                    api_res = node.api_request("services.haproxy.haproxy.configure_node")
-
+            for node in nodes:
+                # Reload HAProxy and PF on concerned nodes
                 api_res = node.api_request("services.haproxy.haproxy.reload_service")
+
                 if not api_res.get('status'):
                     logger.error("Workflow::edit: API error while trying to "
                                     "restart HAProxy service : {}".format(api_res.get('message')))
@@ -416,8 +414,6 @@ def workflow_edit(request, object_id, action=None):
                     return JsonResponse({
                         'error': api_res.get('message')
                     }, status=500)
-
-                Cluster.api_request ("services.pf.pf.gen_config")
 
             return JsonResponse({
                 'message': _('Workflow saved')

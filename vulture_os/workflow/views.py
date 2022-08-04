@@ -59,7 +59,7 @@ class InvalidWorkflowError(Exception):
     pass
 
 
-def workflow_delete(request, object_id, api=False): 
+def workflow_delete(request, object_id, api=False):
     """ Delete Backend and related Listeners """
     error = ""
     try:
@@ -95,8 +95,6 @@ def workflow_delete(request, object_id, api=False):
                     logger.error("Workflow::edit: API error while trying to "
                                  "restart HAProxy service : {}".format(api_res.get('message')))
                     raise InvalidWorkflowError(api_res.get('message'))
-
-            Cluster.api_request ("services.pf.pf.gen_config")
 
             if api:
                 return JsonResponse({
@@ -193,7 +191,7 @@ def save_workflow(request, workflow_obj, object_id=None):
                 order += 1
 
                 workflow_acls.append(workflow_acl)
-            
+
             elif step['data']['type'] == "authentication":
                 if step['data']['object_id']:
                     authentication = UserAuthentication.objects.get(pk=step['data']['object_id'])
@@ -207,7 +205,7 @@ def save_workflow(request, workflow_obj, object_id=None):
                     workflow_obj.authentication_filter = authentication_filter
                 else:
                     workflow_obj.authentication_filter = None
-                
+
         if (workflow_obj.name == ""):
             raise InvalidWorkflowError(_("A name is required"))
         if not workflow_obj.backend:
@@ -229,23 +227,18 @@ def save_workflow(request, workflow_obj, object_id=None):
             if workflow_obj.authentication is not None or had_authentication:
                 api_res = node.api_request("services.haproxy.haproxy.build_spoe_conf")
             node.api_request("workflow.workflow.build_conf", workflow_obj.pk)
-        workflow_obj.frontend.reload_conf()
+
+        # THEN reload backend and frontend configurations (SPOE conf needs to be udpated before)
         workflow_obj.backend.reload_conf()
+        workflow_obj.frontend.reload_conf()
 
-            # Reload HAProxy on concerned nodes
-            # We need to rebuild configuration and reload Haproxy in case authentication is involved
-            # This is done to regenerate spoe configuration
-            # This also reloads Haproxy
-            if workflow_obj.authentication is not None or had_authentication:
-                api_res = node.api_request("services.haproxy.haproxy.configure_node")
-
+        for node in nodes:
+            # Finally, Reload HAProxy on concerned nodes
             api_res = node.api_request("services.haproxy.haproxy.reload_service")
             if not api_res.get('status'):
                 logger.error("Workflow::edit: API error while trying to "
                              "restart HAProxy service : {}".format(api_res.get('message')))
                 raise InvalidWorkflowError(api_res.get('message'))
-
-        Cluster.api_request ("services.pf.pf.gen_config")
 
         return JsonResponse({'status': True})
 

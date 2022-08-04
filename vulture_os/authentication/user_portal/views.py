@@ -162,7 +162,6 @@ def user_authentication_edit(request, object_id=None, api=False):
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
                 profile.save_conf()
                 Cluster.api_request("services.haproxy.haproxy.reload_service")
-                Cluster.api_request("services.pf.pf.gen_config")
 
             except Exception as e:
                 if api:
