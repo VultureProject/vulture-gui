@@ -11,9 +11,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='server',
-            name='weight',
-            field=models.PositiveIntegerField(default=1, help_text='', validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(256)]),
+        migrations.AlterUniqueTogether(
+            name='server',
+            unique_together=None,
         ),
     ]
