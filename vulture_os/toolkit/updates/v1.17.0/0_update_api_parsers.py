@@ -26,9 +26,6 @@ __doc__ = ''
 import sys
 import os
 
-if not os.path.exists("/home/vlt-os/vulture_os/.node_ok"):
-    sys.exit(0)
-
 # Django setup part
 sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
@@ -40,6 +37,8 @@ django.setup()
 from system.cluster.models import Cluster
 from services.frontend.models import Frontend
 
+if not Cluster.is_node_bootstrapped():
+    sys.exit(0)
 
 UPDATED_API_PARSERS = ["gsuite_alertcenter", "office_365", "proofpoint_pod", "sophos_cloud", "waf_cloudflare"]
 
