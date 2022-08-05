@@ -183,7 +183,6 @@ def cluster_create(admin_user=None, admin_password=None):
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.build_portals_conf")
     node.api_request("services.haproxy.haproxy.configure_node")
-    node.api_request("services.haproxy.haproxy.reload_service")
 
     logger.debug("API call to fetch default yara rules")
     node.api_request("toolkit.yara.yara.fetch_yara_rules")
@@ -394,7 +393,6 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     logger.debug("API call to configure HAProxy")
     Cluster.api_request("services.haproxy.haproxy.build_portals_conf")
     node.api_request("services.haproxy.haproxy.configure_node")
-    Cluster.api_request("services.haproxy.haproxy.reload_service")
 
     logger.debug("API call to reload whole darwin configuration")
     node.api_request("services.darwin.darwin.reload_all")
