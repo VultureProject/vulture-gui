@@ -153,7 +153,7 @@ def monitor():
         for backend in backends:
             status = "DISABLED" if not backend.enabled else statuses.get("BACKEND", {}).get(backend.name, "ERROR")
             logger.debug("Status of backend '{}': {}".format(backend.name, status))
-            if backend.status[node.name] != status:
+            if backend.status.get(node.name) != status:
                 backend.status[node.name] = status
                 backend.save()
 
@@ -251,7 +251,7 @@ class MonitorJob(Thread):
             try:
                 monitor()
             except Exception as e:
-                logger.error("Monitor job failure: {}".format(e))
+                logger.exception("Monitor job failure: {}".format(e))
                 logger.info("Resuming ...")
 
             # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
