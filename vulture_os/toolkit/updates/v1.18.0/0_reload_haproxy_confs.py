@@ -56,6 +56,11 @@ if __name__ == "__main__":
                 node.api_request("services.haproxy.haproxy.build_conf", frontend.id)
                 print("Frontend {} conf reload asked".format(frontend))
 
+            # reload all IDP portals' Haproxy configuration
+            for portal in UserAuthentication.objects.filter(enable_external=True):
+                portal.save_conf()
+                print("IDP portal {} conf reload asked".format(portal))
+
             node.api_request("services.haproxy.haproxy.reload_service")
 
         except Exception as e:
