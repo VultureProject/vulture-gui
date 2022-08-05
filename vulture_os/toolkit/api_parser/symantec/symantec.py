@@ -64,8 +64,11 @@ class SymantecParser(ApiParser):
 
     def test(self):
         try:
-            startDate = timezone.now()
-            startDate = startDate.replace(minute=0, second=0, microsecond=0)
+            startDate = datetime.datetime.now(timezone.utc) - datetime.timedelta(days=1)
+
+            msg = f"Parser starting from {startDate} to now"
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
             startDate = startDate.timestamp() * 1000
 
             url = f"{self.start_console_uri}startDate={int(startDate)}&endDate=0&token=none"
@@ -102,21 +105,26 @@ class SymantecParser(ApiParser):
     def execute(self, token="none"):
         self.update_lock()
 
+        default_last_api_range_sec = 600  # get 10 minutes of logs
         last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
         now = timezone.now().replace(minute=0, second=0, microsecond=0)
-        if last_api_call > now - datetime.timedelta(hours=1):
+        if last_api_call > now - datetime.timedelta(minutes=default_last_api_range_sec/60):
             return
 
         # If we have less than one hour
-        if (now - last_api_call).total_seconds() <= 60*60 and timezone.now().minute < 30:
+        if (now - last_api_call).total_seconds() <= default_last_api_range_sec and timezone.now().minute < (default_last_api_range_sec/60)/2:
             return
 
         try:
             last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
+
+            msg = f"Parser starting from {last_api_call} to {last_api_call}+{default_last_api_range_sec/60}min"
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
             # Begin date is in milisecond
             begin_timestamp = int(last_api_call.timestamp() * 1000)
             # End date = start date + 1h (in milisecond)
-            end_timestamp = int(last_api_call.timestamp() * 1000) + 3600000
+            end_timestamp = int(last_api_call.timestamp() * 1000) + (default_last_api_range_sec*1000)
             params = f"startDate={begin_timestamp}&endDate={end_timestamp}&token={token}"
             url = f"{self.start_console_uri}{params}"
             msg = f"Retrieving symantec logs from {url}"
@@ -195,9 +203,9 @@ class SymantecParser(ApiParser):
                                 self.write_to_file(data)
 
                                 try:
-                                    self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(hours=1)
+                                    self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(minutes=default_last_api_range_sec/60)
                                 except:
-                                    self.last_api_call += datetime.timedelta(hours=1)
+                                    self.last_api_call += datetime.timedelta(minutes=default_last_api_range_sec/60)
 
                                 self.frontend.last_api_call = self.last_api_call
                                 self.frontend.save()
