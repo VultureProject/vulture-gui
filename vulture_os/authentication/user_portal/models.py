@@ -700,7 +700,7 @@ class UserAuthentication(models.Model):
             "response_types_supported": [
                 "code"
             ],
-            "response_modes_suppported": [
+            "response_modes_supported": [
                 "query"
             ],
             "grant_types_supported" : [
