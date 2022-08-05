@@ -486,6 +486,11 @@ class REDISOauth2Session(REDISSession):
         # Do not insert json into Redis
         self.keys['scope'] = json.dumps(self.keys['scope'])
         ret = super().write_in_redis(timeout)
+
+        # set additional keys for API calls use and validation
+        if repo := self.keys.get('repo'):
+            self.set_in_redis(f"{self.key}_{repo}", 1, timeout)
+
         # Restore dict in case of re-use
         self.keys['scope'] = backup_scope
 

@@ -27,13 +27,12 @@ __doc__ = 'OpenID Repository views'
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
-
 # Django project imports
 from gui.forms.form_utils import DivErrorList
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from authentication.openid.form import OpenIDRepositoryForm
+from authentication.openid.form import OpenIDRepositoryForm, OpenIDRepositoryTestForm
 from authentication.openid.models import OpenIDRepository
 
 # Extern modules imports
@@ -48,9 +47,9 @@ logger = logging.getLogger('gui')
 
 def clone(request, object_id):
     """ LDAPRepository view used to clone an object
-    N.B: Do not totally clone the object and save-it in MongoDB 
+    N.B: Do not totally clone the object and save-it in MongoDB
         because some attributes are unique constraints
- 
+
     :param request: Django request object
     :param object_id: MongoDB object_id of an LDAPRepository object
     """
@@ -103,16 +102,23 @@ def edit(request, object_id=None, api=False):
 
 
 def test_provider(request):
-    form = OpenIDRepositoryForm(request.POST)
+    form = OpenIDRepositoryTestForm(request.POST)
 
     if not form.is_valid():
+        for field, errors in form.errors.items():
+            logger.error(f"OpenID:test_provider: Error while validating [{field}]: {', '.join(errors)}")
         return JsonResponse({'status': False,
                              'form_errors': form.errors})
 
-    provider = form.save(commit=False)
-
     try:
-        return JsonResponse({'status':True, 'data':provider.retrieve_config(test=True)})
+        return JsonResponse(
+            {
+                'status':True,
+                'data': OpenIDRepository.retrieve_config(
+                    form.cleaned_data.get('provider_url'),
+                    use_proxy=form.cleaned_data.get('use_proxy'),
+                    verify_certificate=form.cleaned_data.get('verify_certificate'))
+            })
     except Exception as e:
         logger.exception(e)
         return JsonResponse({'status': False, 'error': str(e)})

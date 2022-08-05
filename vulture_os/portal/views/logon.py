@@ -59,6 +59,7 @@ from sqlalchemy.exc                  import DBAPIError
 from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeededError, CredentialsMissingError,
                                              CredentialsError, REDISWriteError, TwoManyOTPAuthFailure, ACLError)
 from toolkit.auth.exceptions import AuthenticationError, OTPError
+from toolkit.portal.pkce import validate_code_verifier as validate_pkce_code_identifier
 from toolkit.system.hashes import random_sha256, validate_digest
 from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
@@ -305,12 +306,22 @@ def openid_authorize(request, portal_id):
         logger.exception(e)
         return error_response(portal, "Invalid parameter: {}.".format(e.args[0]))
 
+    # Get potential additional parameters
+    code_challenge = request.GET.get('code_challenge', None)
+    code_challenge_method = request.GET.get('code_challenge_method', None)
+
     # Check parameters validity
     try:
         assert client_id == portal.oauth_client_id, "Client authentication failed due to unknown client."
         assert redirect_uri in portal.oauth_redirect_uris, "Invalid redirect URI."
-        assert scope == "openid", "The requested scope is invalid."
+        assert "openid" in scope, "The requested scope is invalid."
         assert response_type == "code", "The requested response_type is invalid."
+        if code_challenge:
+            assert code_challenge_method, "No code challenge method specified."
+            assert code_challenge_method.upper() == "S256", "unsupported code challenge method (should be S256)"
+        if code_challenge_method:
+            assert code_challenge, "No provided code challenge, even though the code challenge method is provided"
+            assert len(code_challenge) > 0, "Code challenge shouldn't be zero"
     except AssertionError as e:
         logger.exception(e)
         return error_response(portal, str(e))
@@ -343,12 +354,15 @@ def openid_authorize(request, portal_id):
 def openid_token(request, portal_id):
     try:
         scheme = request.META['HTTP_X_FORWARDED_PROTO']
+        fqdn = request.META['HTTP_HOST']
     except KeyError:
-        logger.error("PORTAL::openid_token: could not get scheme from request")
+        logger.error("PORTAL::openid_token: could not get scheme and/or fqdn from request")
         return HttpResponseServerError()
 
     try:
         portal = UserAuthentication.objects.get(pk=portal_id)
+        portal_configuration = portal.generate_openid_config(f"{scheme}://{fqdn}")
+        logger.debug(f"openid_token:: portal_configuration is {portal_configuration}")
     except UserAuthentication.DoesNotExist:
         logger.error("PORTAL::openid_token: could not find a portal with id {}".format(portal_id))
         return HttpResponseServerError()
@@ -357,7 +371,7 @@ def openid_token(request, portal_id):
         return HttpResponseServerError()
 
     try:
-        assert request.POST.get('grant_type') == "authorization_code", "The authorization grant type is not supported by the authorization server."
+        assert request.POST.get('grant_type') in portal_configuration.get("grant_types_supported", []), "The authorization grant type is not supported by the authorization server."
         assert request.POST.get('redirect_uri'), "Missing required parameter: redirect_uri."
         assert request.POST.get('code'), "Missing required parameter: code."
     except AssertionError as e:
@@ -365,18 +379,31 @@ def openid_token(request, portal_id):
         return JsonResponse({'error':"invalid_request", "error_description": str(e)},
                             status=400)
 
-    # Check mandatory URI parameters presence
-    try:
-        client_id, client_secret = b64decode(request.headers.get("Authorization").replace("Basic ", "")).decode('utf8').split(':')
-        assert client_id == portal.oauth_client_id
-        assert client_secret == portal.oauth_client_secret
-    except Exception as e:
-        logger.exception(e)
-        return JsonResponse({'error':"invalid_grant", "error_description": "Authorization error"},
-                            status=400)
+    # Get optional parameters
+    # This is for PKCE validation
+    code_verifier = request.POST.get('code_verifier')
 
+    # Check mandatory URI parameters and conditionss
     try:
+        if auth_header := request.headers.get("Authorization"):
+            client_id, client_secret = b64decode(auth_header.replace("Basic ", "")).decode('utf8').split(':')
+        else:
+            # Some clients (such as Single-Page Apps) might prefer to include all data as request parameters
+            client_id = request.POST.get('client_id')
+            client_secret = request.POST.get('client_secret')
+
         session = RedisOpenIDSession(REDISBase(), f"token_{request.POST.get('code')}")
+
+        assert client_id == portal.oauth_client_id
+        # Allow public Single-Page Apps to ommit client_secret if initial authorization request used PKCE
+        # So if code_verifier is absent, the client_secret is still required
+        if not session.keys.get('code_challenge'):
+            assert client_secret, "Missing client_secret in request"
+            assert client_secret == portal.oauth_client_secret
+        else:
+            assert code_verifier, "Missing code_verifier"
+            assert validate_pkce_code_identifier(code_verifier, session.keys.get('code_challenge')), "Could not validate code verifier"
+
         assert session['client_id'] == client_id, "Invalid client_id."
         assert session['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
         return JsonResponse({
@@ -387,11 +414,14 @@ def openid_token(request, portal_id):
             'exp': session['exp'],
         })
     except RedisError as e:
+        logger.exception(e)
         return JsonResponse({"error": "internal_error", "error_description": "Session error"}, status=500)
     except AssertionError as e:
         logger.exception(e)
         return JsonResponse({'error':"invalid_request", "error_description": str(e)},
                             status=400)
+    except Exception as e:
+        logger.exception(e)
 
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
@@ -485,7 +515,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
         # If the user is not authenticated and application needs authentication
         if not authentication.is_authenticated():
             try:
-                backend_id = authentication.authenticate_sso()
+                backend_id = authentication.authenticated_on_backend()
                 if not backend_id:
                     # Retrieve credentials
                     authentication.retrieve_credentials(request)
@@ -734,7 +764,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
         authentication.register_openid(token,
                                        scope=request.GET['scope'],
                                        client_id=request.GET['client_id'],
-                                       redirect_uri=request.GET['redirect_uri'])
+                                       redirect_uri=request.GET['redirect_uri'],
+                                       code_challenge=request.GET.get("code_challenge"),
+                                       code_challenge_method=request.GET.get("code_challenge_method"))
 
         return HttpResponseRedirect(build_url_params(request.GET['redirect_uri'],
                                                      state=request.GET.get('state', ""),

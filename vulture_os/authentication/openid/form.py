@@ -25,7 +25,8 @@ __doc__ = 'OpenIDRepository dedicated form class'
 # Django system imports
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.forms import CheckboxInput, ModelForm, NumberInput, PasswordInput, Select, TextInput, ModelChoiceField
+from django.forms import CheckboxInput, Form, ModelForm, Select, TextInput
+from django.forms import URLField, BooleanField
 # Django project imports
 from authentication.openid.models import OpenIDRepository, PROVIDERS_TYPE
 from authentication.user_scope.models import UserScope
@@ -54,7 +55,7 @@ class OpenIDRepositoryForm(ModelForm):
             'provider': Select(choices=PROVIDERS_TYPE, attrs={'class': 'form-control select2'}),
             'provider_url': TextInput(attrs={'class': 'form-control'}),
             'client_id': TextInput(attrs={'class': 'form-control'}),
-            'client_secret': TextInput(attrs={'class': 'form-control'}),
+            'client_secret': TextInput(attrs={'class': 'form-control','autocomplete': 'off'}),
             'scopes': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'use_proxy': CheckboxInput(attrs={"class": " js-switch"}),
             'verify_certificate': CheckboxInput(attrs={"class": " js-switch"}),
@@ -88,3 +89,8 @@ class OpenIDRepositoryForm(ModelForm):
             except json.JSONDecodeError:
                 scopes = [i.replace(" ", "") for i in scopes.split(',')]
         return scopes
+
+class OpenIDRepositoryTestForm(Form):
+    provider_url = URLField()
+    use_proxy = BooleanField(required=False)
+    verify_certificate = BooleanField(required=False)
