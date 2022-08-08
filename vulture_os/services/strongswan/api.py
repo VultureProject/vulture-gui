@@ -60,7 +60,7 @@ class StrongswanAPIv1(View):
                 'data': obj
             })
 
-        except (Strongswan.DoesNotExist, Node.DoesNotExist):
+        except Strongswan.DoesNotExist:
             return JsonResponse({
                 "error": _("Object not found")
             }, status=404)
