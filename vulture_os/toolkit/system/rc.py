@@ -1,3 +1,27 @@
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture 3.
+
+Vulture 3 is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture 3 is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
+"""
+__author__ = "William DARKWA"
+__credits__ = []
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture Project"
+__email__ = "contact@vultureproject.org"
+__doc__ = 'System rc configuration manipulation'
+
 import os
 from ast import literal_eval
 
@@ -14,7 +38,7 @@ def get_rc_config(logger, rc_args):
     :param rc_args:     A tuple containing filename, variable
 
     :return: The value of the variable in rc configuration. If the
-    file specified or the varible does not exist, an empty string is returned.
+    file specified or the variable does not exist, an empty string is returned.
 
     Note: If used over node API request, use await_result function
     on the instance return in the API response to get the response
@@ -35,7 +59,7 @@ def get_rc_config(logger, rc_args):
         return result.stdout.decode("utf8").strip()
 
     except Exception as e:
-        logger.error("Error set_rc_config: {}".format(e))
+        logger.error("set_rc_config: {}".format(e))
         return False
 
 def set_rc_config(logger, rc_args):
@@ -62,9 +86,9 @@ def set_rc_config(logger, rc_args):
         if not errors:
             return True
         else:
-            logger.error("Failed to call script {} : {}".format(command, errors))
+            logger.error("set_rc_config: Failed to call script {} : {}".format(command, errors))
             return False
 
     except Exception as e:
-        logger.error("Error set_rc_config: {}".format(e))
+        logger.error("set_rc_config: {}".format(e))
         return False
