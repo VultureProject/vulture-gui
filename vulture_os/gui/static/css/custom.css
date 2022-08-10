@@ -682,10 +682,6 @@ ul li{
     overflow-x: hidden;
 }
 
-.predator_info{
-    color: #7a878e !important;
-}
-
 #traffic{
     background-color: #3A444E;
 }
@@ -715,15 +711,6 @@ ul li{
 #btn-send-whitelist {
     position: relative !important;
     right: 5px !important;
-}
-
-#mod-defender-raw-rules {
-    display: block;
-    min-height: 300px;
-    width: 100%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
 }
 
 .rule-matched-property {

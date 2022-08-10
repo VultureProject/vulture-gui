@@ -78,7 +78,6 @@ var workflow_vue = new Vue({
         access_control_choices: [],
         authentication_choices: [],
         authentication_filter_choices: [],
-        waf_policy_choices: [],
 
         workflow: [],
 
@@ -181,7 +180,6 @@ var workflow_vue = new Vue({
                         self.access_control_choices = response.data.acls;
                         self.authentication_choices = response.data.authentications;
                         self.authentication_filter_choices = response.data.authentication_filters;
-                        self.waf_policy_choices = response.data.waf_policies;
                     }
 
                     self.init_toolbox_tree();
@@ -250,9 +248,6 @@ var workflow_vue = new Vue({
                     case "acl":
                         break;
 
-                    case "waf":
-                        break;
-
                     case "authentication":
                         break;
 
@@ -296,8 +291,6 @@ var workflow_vue = new Vue({
 
                 if (item === "add_access_control") {
                     window.open(access_control_add_uri, "_blank");
-                } else if (item === "add_defender_policy") {
-                    window.open(defender_policy_add_uri, '_blank');
                 } else if (item === "add_frontend") {
                     window.open(frontend_add_uri, '_blank');
                 } else if (item === "add_backend") {
@@ -381,34 +374,6 @@ var workflow_vue = new Vue({
             }
         },
 
-        generate_waf_policies_tree(){
-            var self = this;
-
-            var waf_policies = self.init_folder_structure(self.waf_policy_choices, 'waf', " ");
-
-            waf_policies.push({
-                id: "add_defender_policy",
-                text: "<i class='fa fa-plus'></i>&nbsp;" + gettext('Add')
-            })
-
-            waf_policies.unshift({
-                id: 'no_policy',
-                text: gettext("No policy"),
-                data: {
-                    type: 'waf',
-                    object_id: null,
-                    name: gettext('No policy')
-                }
-            })
-
-            return {
-                text: "<img src='"+favicon+"' class='icon-vulture'/>&nbsp;&nbsp;" + gettext('WAF Policies'),
-                state: {opened: true},
-                children: waf_policies,
-                icon: "fas fa-eye"
-            }
-        },
-
         generate_authentication_tree(){
             var self = this;
 
@@ -471,26 +436,21 @@ var workflow_vue = new Vue({
 
                 tree_data.push(this.generate_acl_tree());
 
-                if (!self.policy_set){
+
+                if (!self.authentication_set){
                     
-                    tree_data.push(this.generate_waf_policies_tree());
-                    
+                    tree_data.push(this.generate_authentication_tree());
+
                 } else {
-                    if (!self.authentication_set){
+                    if(!self.authentication_filter_set) {
                         
-                        tree_data.push(this.generate_authentication_tree());
+                        tree_data.push(this.generate_authentication_filter_tree());
                     
-                    } else {
-                        if(!self.authentication_filter_set) {
-                            
-                            tree_data.push(this.generate_authentication_filter_tree());
-                        
-                        }
                     }
-
-                    tree_data.push(this.generate_backend_tree());
-
                 }
+
+                tree_data.push(this.generate_backend_tree());
+
             }
 
             this.refresh_jstree(tree_data);
@@ -745,15 +705,6 @@ var workflow_vue = new Vue({
                     self.append_acl(tmp);
                     break;
 
-                case "waf":
-                    tmp.label = node.data.name;
-                    self.workflow.push(tmp);
-                    self.last_node_append = tmp.id;
-                    self.policy_set = true;
-                    self.get_dependencies();
-                    self.redraw_workflow();
-                    break;
-
                 case "authentication":
                     tmp.label = node.data.name;
                     self.workflow.push(tmp);
@@ -901,13 +852,6 @@ var workflow_vue = new Vue({
                             color: color_action[step.data.action],
                             size: 20
                         }
-                        break;
-                    case "waf":
-                        tmp.shape = "image";
-                        tmp.image = vulture_logo
-
-                        if (!tmp.label)
-                            tmp.label = step.data.name
                         break;
                     case "authentication":
                         for (let auth of self.authentication_choices){
@@ -1125,45 +1069,7 @@ var workflow_vue = new Vue({
                                     onContentReady: onContentReady
                                 });
                                 break;
-                            case "waf":
-                                $.confirm({
-                                    title: gettext('Defender Policy'),
-                                    columnClass: "medium",
-                                    content: form_waf(self.waf_policy_choices, node.data.object_id),
-                                    buttons: {
-                                        formSubmit: {
-                                            text: gettext('Save'),
-                                            btnClass: 'btn-blue',
-                                            action: function(){
-                                                var waf_id = this.$content.find('.waf_policy').val();
 
-                                                if (waf_id === ""){
-                                                    node.data.object_id = null;
-                                                    node.data.name = gettext('No policy');
-                                                    node.label = gettext('No policy')
-                                                } else {
-                                                    node.data.object_id = waf_id;
-                                                    for (var i in self.waf_policy_choices){
-                                                        var waf = self.waf_policy_choices[i];
-                                                        if (waf.id === waf_id){
-                                                            node.label = waf.name;
-                                                            node.data.name = waf.name;
-                                                        }
-                                                    }
-                                                }
-
-
-                                                var index_waf = self.get_node(node.id, true);
-                                                self.workflow[index_waf] = node;
-                                                self.redraw_workflow();
-                                            }
-                                        },
-                                        cancel: function(){
-                                            return true;
-                                        }
-                                    }
-                                })
-                                break;
                             case "authentication":
                                 $.confirm({
                                     title: gettext('Authentication Portal'),
@@ -1298,11 +1204,6 @@ var workflow_vue = new Vue({
                             case "backend":
                                 self.backend_set = false;
                                 break;
-                            case "waf":
-                                self.policy_set= false;
-                                self.authentication_set = false;
-                                self.backend_set = false;
-                                break;
                             case "authentication":
                                 self.backend_set = false;
                                 self.authentication_filter_set = false;
@@ -1333,8 +1234,6 @@ var workflow_vue = new Vue({
                                 self.frontend_set = false;
                             else if (node.data.type === "backend")
                                 self.backend_set = false;
-                            else if (node.data.type === "waf")
-                                self.policy_set = false;
                             else if (node.data.type === "authentication"){
                                 self.authentication_set = false;
                             }

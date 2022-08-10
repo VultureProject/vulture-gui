@@ -123,9 +123,8 @@ def netif_edit(request, object_id=None, api=False):
                 """ If the current nic is not in the new config anymore:
                 Remove it from NetworkAddressNIC """
                 if str(current_networkadress_nic.nic.pk) not in nic_list:
-                    # NetworkAddressNIC().remove(nicid=current_networkadress_nic.nic.pk,
-                    #                                 network_addressid=netif.id)
                     current_networkadress_nic.delete()
+
 
         """ Call ifconfig to setup network IP address right now """
         Cluster.api_request('toolkit.network.network.ifconfig_call', netif.id)
@@ -136,6 +135,9 @@ def netif_edit(request, object_id=None, api=False):
         """ Garbage collector to delete obsolete running ifconfig and configuration """
         Cluster.api_request('toolkit.network.network.address_cleanup')
 
+        """ Update PF configurations """
+        Cluster.api_request ("services.pf.pf.gen_config")
+
         if api:
             return build_response(netif.id, "api.system.netaddr", [])
 
@@ -145,9 +147,6 @@ def netif_edit(request, object_id=None, api=False):
     if api:
         logger.error("NetworkAddress api form error : {}".format(form.errors.get_json_data()))
         return JsonResponse(form.errors.get_json_data(), status=400)
-        # if save_error:
-        #     logger.error("Frontend api save error : {}".format(save_error))
-        #     return JsonResponse({'error': save_error[0]}, status=500)
 
     if netif_model:
         return render(request, 'system/netif_edit.html', {
@@ -186,6 +185,9 @@ def netif_delete(request, object_id, api=False):
 
             """ Garbage collector to delete obsolete running ifconfig and configuration """
             Cluster.api_request('toolkit.network.network.address_cleanup')
+
+            """ Update PF configurations """
+            Cluster.api_request ("services.pf.pf.gen_config")
 
             if api:
                 return JsonResponse({

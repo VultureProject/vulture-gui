@@ -77,7 +77,6 @@
                                     <label><i class="fa fa-user fa-2x"></i>&nbsp;&nbsp;{% trans "Authentication" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><i class="fa fa-shield fa-2x"></i>&nbsp;&nbsp;{% trans "Authentication Filter" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <label><i class="fa fa-database fa-2x"></i>&nbsp;&nbsp;{% trans "Database" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <label><img id="favicon-legend" src="{% static 'img/favicon.ico' %}"/>&nbsp;&nbsp;{% trans "Defender Policy" %}</label>
                                 </div>
                             </div>
                         </div>
@@ -107,7 +106,6 @@
     var server_icon = "{% static 'plugins/visjs/img/network/server-icon.jpg' %}";
     var favicon = "{% static 'img/favicon.ico' %}";
     var access_control_add_uri = "{% url 'darwin.access_control.edit' %}";
-    var defender_policy_add_uri = "{% url 'darwin.defender_policy.edit' %}";
     var frontend_add_uri = "{% url 'services.frontend.edit' %}";
     var backend_add_uri = "{% url 'applications.backend.edit' %}";
     var worflow_list_uri = "{% url 'workflow.list' %}";

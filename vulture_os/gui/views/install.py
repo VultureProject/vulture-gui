@@ -80,8 +80,6 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Read network config and store it into mongo """
     """ No rights to do that in jail - API request """
     node.api_request('toolkit.network.network.refresh_nic')
-    """ Read ZFS file systems """
-    node.api_request('system.zfs.zfs.refresh')
 
     """ Obtain Certificates and store it into mongoDB """
     with open("/var/db/pki/ca.pem") as f:
@@ -139,6 +137,9 @@ def cluster_create(admin_user=None, admin_password=None):
     system_config.set_logs_ttl()
     system_config.save()
 
+    # regenerate PF configuration to account for new system configuration
+    node.api_request("services.pf.pf.gen_config")
+
     for name in ('Administrator', 'Log Viewer'):
         Group.objects.get_or_create(
             name=name
@@ -184,14 +185,8 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request("services.haproxy.haproxy.build_portals_conf")
     node.api_request("services.haproxy.haproxy.configure_node")
 
-    logger.debug("API call to fetch default yara rules")
-    node.api_request("toolkit.yara.yara.fetch_yara_rules")
-    node.api_request("toolkit.yara.yara.compile_all_rules")
-
     logger.debug("API call to reload whole darwin configuration")
     DarwinPolicy.update_buffering()
-    node.api_request("services.darwin.darwin.init_default_yara_policy")
-    node.api_request("services.darwin.darwin.init_default_ioc_policy")
     node.api_request("services.darwin.darwin.reload_all")
 
     logger.debug("API call to configure Apache GUI")
@@ -199,6 +194,9 @@ def cluster_create(admin_user=None, admin_password=None):
 
     logger.debug("API call to configure Logrotate")
     node.api_request("services.logrotate.logrotate.reload_conf")
+
+    logger.debug("API call to update PF")
+    node.api_request("services.pf.pf.gen_config")
 
 
 def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None, key=None):
@@ -384,8 +382,6 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     """ Read network config and store it into mongo """
     """ No rights to do that in jail - API request """
     node.api_request('toolkit.network.network.refresh_nic')
-    """ Read ZFS file systems """
-    node.api_request('system.zfs.zfs.refresh')
 
     """ Download reputation databases before crontab """
     node.api_request("gui.crontab.feed.security_update")
@@ -409,8 +405,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     logger.debug("API call to configure logrotate")
     node.api_request("services.logrotate.logrotate.reload_conf")
 
-    # Compile all Inspection policy rules on local node
-    logger.debug("API call to compile all Inspection Policies locally")
-    node.api_request("toolkit.yara.yara.compile_all_rules")
+    logger.debug("API call to update PF")
+    Cluster.api_request ("services.pf.pf.gen_config")
 
     return True

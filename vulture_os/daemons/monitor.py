@@ -46,8 +46,6 @@ from services.darwin.darwin import DarwinService
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 
-from system.vm.vm import vm_update_status
-
 # Required exceptions imports
 from services.exceptions import ServiceError
 from django.core.exceptions import ObjectDoesNotExist
@@ -66,6 +64,9 @@ logger = logging.getLogger('daemon')
 def monitor():
 
     node = Cluster.get_current_node()
+
+    if not node:
+        return False
 
     def get_service_status(service_class):
         """ Get a service_class (eg HaproxyService) 
@@ -93,14 +94,18 @@ def monitor():
         # Get some statuses outside for reusing variable later
         if service == StrongswanService:
             strongswan_status = get_service_status(StrongswanService)
+            mon.services.add(strongswan_status)
         elif service == OpenvpnService:
             openvpn_status = get_service_status(OpenvpnService)
+            mon.services.add(openvpn_status)
         elif service == RsyslogService:
             rsyslogd_status = get_service_status(RsyslogService)
+            mon.services.add(rsyslogd_status)
         elif service == FilebeatService:
             filebeat_status = get_service_status(FilebeatService)
-
-        mon.services.add(get_service_status(service))
+            mon.services.add(filebeat_status)
+        else:
+            mon.services.add(get_service_status(service))
 
     """ Get status of Redis, Mongod and Sshd """
     # Instantiate mother class to get status easily
@@ -221,15 +226,10 @@ def monitor():
                 dfilter.status[node.name] = filter_statuses.get(dfilter.name).get('status').upper()
             dfilter.save()
 
-
-
     # Delete old monitoring
     last_date = (timezone.now() - timedelta(days=30))
     for m in Monitor.objects.filter(date__lte=last_date):
         m.delete()
-
-    #Update Bhyve status
-    vm_update_status()
 
     return True
 
@@ -247,21 +247,16 @@ class MonitorJob(Thread):
         logger.info("Monitor job started.")
 
         # While we are not asked to terminate
-        while not self.shutdown_flag.is_set():
+        while not self.shutdown_flag.wait(self.delay):
             try:
                 monitor()
             except Exception as e:
                 logger.exception("Monitor job failure: {}".format(e))
                 logger.info("Resuming ...")
 
-            # Sleep DELAY time, 2 seconds at a time to prevent long sleep when shutdown_flag is set
-            cpt = 0
-            while not self.shutdown_flag.is_set() and cpt < self.delay:
-                sleep(2)
-                cpt += 2
-
         logger.info("Monitor job stopped.")
 
-    def ask_shutdown(self):
+    def stop(self):
         logger.info("Monitor shutdown asked !")
         self.shutdown_flag.set()
+        self.join()

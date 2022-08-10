@@ -26,9 +26,6 @@ __doc__ = "Add new VAST and VAML filters to Darwin's list of filters"
 import sys
 import os
 
-if not os.path.exists("/home/vlt-os/vulture_os/.node_ok"):
-    sys.exit(0)
-
 # Django setup part
 sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
@@ -38,6 +35,9 @@ from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster, Node
+
+if not Cluster.is_node_bootstrapped():
+    sys.exit(0)
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter, DarwinBuffering, REDIS_SOCKET_PATH
 
 if __name__ == "__main__":

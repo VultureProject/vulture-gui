@@ -49,13 +49,11 @@ class TenantsForm(ModelForm):
         model = Tenants
 
         fields = [
-            'name', 'predator_apikey', 'shodan_apikey'
+            'name'
         ]
 
         widgets = {
-            'name': TextInput(attrs={'class': 'form-control'}),
-            'predator_apikey': TextInput(attrs={'class': 'form-control'}),
-            'shodan_apikey': TextInput(attrs={'class': 'form-control'}),
+            'name': TextInput(attrs={'class': 'form-control'})
         }
 
     def __init__(self, *args, **kwargs):

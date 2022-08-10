@@ -120,14 +120,20 @@ def backend_delete(request, object_id, api=False):
 
             # API request deletion of backend filename
             Cluster.api_request('services.haproxy.haproxy.delete_conf', backend_filename)
+
             # And reload of HAProxy service
             Cluster.api_request('services.haproxy.haproxy.reload_service')
+
+            # Reload cluster PF configuration
+            Cluster.api_request ("services.pf.pf.gen_config")
 
             if api:
                 return JsonResponse({
                     'status': True
                 }, status=204)
+
             return HttpResponseRedirect(reverse('applications.backend.list'))
+
         except ProtectedError as e:
             logger.error("Error trying to delete Backend '{}': Object is currently used :".format(backend.name))
             logger.exception(e)
@@ -149,6 +155,7 @@ def backend_delete(request, object_id, api=False):
             if api:
                 return JsonResponse({'status': False,
                                      'error': error}, status=500)
+
     if api:
         return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
 
@@ -400,10 +407,14 @@ def backend_edit(request, object_id=None, api=False):
             if not api_res.get('status'):
                 raise ServiceReloadError("on cluster\n API request error.", "haproxy",
                                          traceback=api_res.get('message'))
+
             for node in Node.objects.all():
                 backend.status[node.name] = "WAITING"
 
             backend.save()
+
+            Cluster.api_request("services.pf.pf.gen_config")
+
 
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """

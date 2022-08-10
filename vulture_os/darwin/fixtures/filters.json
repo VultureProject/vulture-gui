@@ -107,17 +107,6 @@
     "model": "darwin.DarwinFilter",
     "pk": 10,
     "fields": {
-      "name": "yara",
-      "longname": "Yara Engine",
-      "description": "Scans arbitrary chunks of data with the Yara engine",
-      "is_internal": false,
-      "can_be_buffered": false
-    }
-  },
-  {
-    "model": "darwin.DarwinFilter",
-    "pk": 11,
-    "fields": {
       "name": "vast",
       "longname": "STatistical VAriation",
       "description": "Detection of abnormal variation through statistical approach",
@@ -127,7 +116,7 @@
   },
   {
     "model": "darwin.DarwinFilter",
-    "pk": 12,
+    "pk": 11,
     "fields": {
       "name": "vaml",
       "longname": "VAriation Machine Learning",

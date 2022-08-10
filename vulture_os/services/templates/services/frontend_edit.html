@@ -105,7 +105,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row -->
-                    <div class="row tcp-mode log-mode http-mode impcap-mode">
+                    <div class="row tcp-mode log-mode http-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% trans "Enable logging" %}</label>
@@ -423,38 +423,8 @@
                         <input id="listeners" name="listeners" value="" type="hidden">
                       </div>
                     </div>
-                    <div class="row impcap-mode">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label class="col-sm-4 control-label">{{ form.impcap_intf.label }}</label>
-                          <div class="col-sm-5">
-                            {{form.impcap_intf}}
-                            {{form.impcap_intf.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row impcap-mode -->
-                    <div class="row impcap-mode">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label class="col-sm-4 control-label">{{ form.impcap_filter_type.label }}</label>
-                          <div class="col-sm-5">
-                            {{form.impcap_filter_type}}
-                            {{form.impcap_filter_type.errors|safe}}
-                          </div>
-                        </div>
-                      </div> <!-- col-md-12 -->
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label class="col-sm-4 control-label">{{ form.impcap_filter.label }}</label>
-                          <div class="col-sm-5">
-                            {{form.impcap_filter}}
-                            {{form.impcap_filter.errors|safe}}
-                          </div>
-                        </div>
-                      </div> <!-- col-md-12 -->
-                    </div> <!-- /.row impcap-mode -->
-                  <fieldset class="col-lg-12 sol-sm-12 haproxy-conf">
+
+                    <fieldset class="col-lg-12 sol-sm-12 haproxy-conf">
                       <legend>{% trans "Timeout options" %}</legend>
                       <div class="row haproxy-conf">
                         <div class="col-md-12">

@@ -219,7 +219,7 @@
       .done( function( msg ) {
         handle_form_errors(msg);
         if( msg['status'] ) {
-          $('#parser_status').html('<b style="color:green;">{% trans "Successful connection" %}</b>');
+          $('#parser_status').html('<b style="color:green;">{% trans "Parsing successful" %}</b>');
           const message_type = $.type(msg['message']);
           if( message_type === "object" || message_type === "array" ) {
             $('#result').html(JSON.stringify(msg['message'], undefined, 4));

@@ -26,9 +26,6 @@ __doc__ = "Fix portal template(s) content"
 import sys
 import os
 
-if not os.path.exists("/home/vlt-os/vulture_os/.node_ok"):
-    sys.exit(0)
-
 # Django setup part
 sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
@@ -38,6 +35,9 @@ from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster
+
+if not Cluster.is_node_bootstrapped():
+    sys.exit(0)
 from authentication.portal_template.models import PortalTemplate
 from authentication.user_portal.models import UserAuthentication
 

@@ -59,7 +59,7 @@ class Apps:
                 },
                 {
                     'link': 'reputation_ctx',
-                    'text': 'Context Tags',
+                    'text': 'CTI Lookup',
                     'url': '/apps/reputation_ctx/',
                     'state': "DOWN"
                 },

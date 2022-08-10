@@ -104,7 +104,7 @@ class TenantsAPIv1(View):
 
     @api_need_key('cluster_api_key')
     def patch(self, request, object_id):
-        allowed_fields = ('predator_apikey', 'shodan_apikey', 'chameleon_apikey')
+        allowed_fields = ('chameleon_apikey')
         try:
             for key in request.JSON.keys():
                 if key not in allowed_fields:

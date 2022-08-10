@@ -25,9 +25,7 @@ __doc__ = 'Cluster daemon'
 
 import os
 import sys
-import daemon
 import time
-import lockfile
 
 # Django setup part
 sys.path.append('/home/vlt-os/vulture_os')
@@ -44,7 +42,6 @@ logger = logging.getLogger('daemon')
 from system.cluster.models import Cluster
 from services.pf.pf import PFService
 from daemons.monitor import MonitorJob
-from daemons.reconcile import ReconcileJob
 from services.exceptions import ServiceExit
 from signal import signal, SIGTERM, SIGINT
 
@@ -56,16 +53,9 @@ def service_shutdown(signum, frame):
 
 """ This is for the cluster daemon process """
 if __name__ == '__main__':
-    daemon_context = daemon.DaemonContext(pidfile=lockfile.FileLock('/var/run/vulture/vultured.pid'),)
-    daemon_context.detach_process = False
-
     """ Launch monitor job """
     monitor_job = MonitorJob(10)
     monitor_job.start()
-
-    """ Launch reconciliate job """
-    reconcile_job = ReconcileJob(10)
-    reconcile_job.start()
 
     signal(SIGTERM, service_shutdown)
     signal(SIGINT, service_shutdown)
@@ -82,12 +72,6 @@ if __name__ == '__main__':
                 # Process messages FIRST
                 """ Process inter-cluster messages """
                 this_node.process_messages()
-
-                """ Synchronize Packet Filter configuration """
-                pf = PFService()
-                if pf.reload_conf():
-                    logger.info("Cluster::daemon: PF Configuration updated")
-                    pf.reload()
 
                 if error:
                     logger.info("Cluster::daemon: Recovered from previous failure")
@@ -133,11 +117,6 @@ if __name__ == '__main__':
             continue
 
     # Ask the jobs to terminate.
-    monitor_job.ask_shutdown()
-    reconcile_job.ask_shutdown()
-
-    # Wait for the threads to close...
-    monitor_job.join()
-    reconcile_job.join()
+    monitor_job.stop()
 
     logger.info("Vultured stopped.")
