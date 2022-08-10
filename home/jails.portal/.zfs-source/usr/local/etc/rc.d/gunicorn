@@ -21,7 +21,7 @@
 name="gunicorn"
 rcvar=gunicorn_enable
 gunicorn_group="vlt-web"
-command="/home/vlt-os/env/bin/python3.8"
+command="/home/vlt-os/env/bin/python3"
 
 : ${gunicorn_enable:="NO"}
 : ${gunicorn_pid_file:="/var/run/gunicorn.pid"}

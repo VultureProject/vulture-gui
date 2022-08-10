@@ -1,6 +1,6 @@
 secadm {
     pax {
-        path: "/home/vlt-os/env/bin/python3.8",
+        path: "/home/vlt-os/env/bin/python3",
         mprotect: false,
         pageexec: false,
         prefer_acl: true

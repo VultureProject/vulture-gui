@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #Relocate Python
-/usr/local/bin/virtualenv-3.8 /home/jails.apache/.zfs-source/home/vlt-os/env
+/usr/local/bin/virtualenv-3.* /home/jails.apache/.zfs-source/home/vlt-os/env
 
 if [ -f /etc/host-hostname ] ; then
     /usr/sbin/service vultured status && /bin/kill -9 $(/bin/cat /var/run/vulture/vultured.pid)
