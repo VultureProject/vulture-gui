@@ -32,7 +32,6 @@ from djongo import models
 
 # Django project imports
 from applications.reputation_ctx.models import ReputationContext
-from darwin.inspection.models import InspectionPolicy
 from system.cluster.models import Cluster
 
 # External modules imports
@@ -115,61 +114,6 @@ def validate_connection_config(config):
     return cleaned_config
 
 
-def validate_content_inspection_config(config):
-    cleaned_config = {}
-
-    yara_scan_type = config.get('yara_scan_type', None)
-    yara_policy_id = config.get('yara_policy_id', None)
-    yara_scan_max_size = config.get('yara_scan_max_size', None)
-    max_connections = config.get('max_connections', None)
-    max_memory_usage = config.get('max_memory_usage', None)
-
-    # Mandatory parameters
-    if not yara_scan_type:
-        raise ValidationError({'config': _("configuration should define 'yara_scan_type'")})
-    if not yara_policy_id:
-        raise ValidationError({'config': _("configuration should define 'yara_policy_id'")})
-
-    # yaraScanType validation
-    if not isinstance(yara_scan_type, str):
-        raise ValidationError({'yara_scan_type': _("should be a string")})
-    if yara_scan_type not in ['stream', 'packet']:
-        raise ValidationError({'yara_scan_type': _("should be either 'stream' or 'packet'")})
-    else:
-        cleaned_config['yara_scan_type'] = yara_scan_type
-
-    # yaraRuleFile validation
-    if not isinstance(yara_policy_id, int):
-        raise ValidationError({'yara_policy_id': _("should be an integer")})
-    if not InspectionPolicy.objects.filter(pk=yara_policy_id).exists():
-        raise ValidationError({'yara_policy_id': _("yara policy {} not found".format(yara_policy_id))})
-    else:
-        cleaned_config['yara_policy_id'] = yara_policy_id
-
-    # yaraScanMaxSize validation
-    if yara_scan_max_size is not None:
-        if not isinstance(yara_scan_max_size, int) or not yara_scan_max_size > 0:
-            raise ValidationError({'yara_scan_max_size': _("should be a positive integer")})
-        else:
-            cleaned_config['yara_scan_max_size'] = yara_scan_max_size
-
-    # maxConnections validation
-    if max_connections is not None:
-        if not isinstance(max_connections, int) or not max_connections > 0:
-            raise ValidationError({'max_connections': _("should be a positive integer")})
-        else:
-            cleaned_config['max_connections'] = max_connections
-
-    # maxMemoryUsage validation
-    if max_memory_usage is not None:
-        if not isinstance(max_memory_usage, int) or not max_memory_usage > 0:
-            raise ValidationError({'max_memory_usage': _("should be a positive integer")})
-        else:
-            cleaned_config['max_memory_usage'] = max_memory_usage
-
-    return cleaned_config
-
-
 def validate_dga_config(config):
     cleaned_config = {}
 
@@ -225,43 +169,6 @@ def validate_sofa_config(config):
 
 def validate_tanomaly_config(config):
     cleaned_config = {}
-    return cleaned_config
-
-
-def validate_yara_config(config):
-    cleaned_config = {}
-
-    yara_policies_id = config.get('yara_policies_id', None)
-    fastmode = config.get('fastmode', None)
-    timeout = config.get('timeout', None)
-
-    if yara_policies_id is None:
-        raise ValidationError({'config': _("configuration should contain at least the 'yara_policies_id' parameter")})
-
-    # yara_policies_id validation
-    if not isinstance(yara_policies_id, list) or yara_policies_id == []:
-        raise ValidationError({'yara_policies_id': _("should be a non-empty list")})
-    for yara_policy_id in yara_policies_id:
-        if not isinstance(yara_policy_id, int):
-            raise ValidationError({'yara_policies_id': _("values should be integers")})
-        if not InspectionPolicy.objects.filter(pk=yara_policy_id).exists():
-            raise ValidationError({'yara_policies_id': _("{} is not a valid inspection policy ID".format(yara_policy_id))})
-    cleaned_config["yara_policies_id"] = yara_policies_id
-
-    # fastmode validation
-    if fastmode is not None:
-        if not isinstance(fastmode, bool):
-            raise ValidationError({'fastmode': _("should be a boolean")})
-        else:
-            cleaned_config['fastmode'] = fastmode
-
-    # timeout validation
-    if timeout is not None:
-        if not isinstance(timeout, int) or timeout < 0:
-            raise ValidationError({'timeout': _("should be a positive integer or zero")})
-        else:
-            cleaned_config['timeout'] = timeout
-
     return cleaned_config
 
 
@@ -349,12 +256,10 @@ def validate_vaml_config(config):
 DARWIN_FILTER_CONFIG_VALIDATORS = {
     'unad': validate_anomaly_config,
     'conn': validate_connection_config,
-    'content_inspection': validate_content_inspection_config,
     'dgad': validate_dga_config,
     'lkup': validate_hostlookup_config,
     'sofa': validate_sofa_config,
     'tanomaly': validate_tanomaly_config,
-    'yara': validate_yara_config,
     'vast': validate_vast_config,
     'vaml': validate_vaml_config,
 }
@@ -724,52 +629,6 @@ class FilterPolicy(models.Model):
 
         return ret
 
-
-    def _generate_yara_conf(self):
-        json_conf = {}
-
-        # Resolve yara_policies_id into rule_file_list for fyara
-        yara_policies_id = self.config.get('yara_policies_id', None)
-        if yara_policies_id:
-            json_conf['rule_file_list'] = []
-            for yara_policy_id in yara_policies_id:
-                try:
-                    yara_policy = InspectionPolicy.objects.get(pk=yara_policy_id)
-                    json_conf['rule_file_list'].append(yara_policy.get_full_filename())
-                except InspectionPolicy.DoesNotExist:
-                    logger.error("FilterPolicy::conf_to_json:: Could not find InspectionPolicy with id {}".format(yara_policy_id))
-
-        return json_conf
-
-
-    def _generate_content_inspection_conf(self):
-        json_conf = {}
-
-        # rename content_inspection fields
-        yara_policy_id = self.config.get('yara_policy_id', None)
-        if yara_policy_id:
-            try:
-                yara_policy = InspectionPolicy.objects.get(pk=yara_policy_id)
-                json_conf['yaraRuleFile'] = yara_policy.get_full_filename()
-            except InspectionPolicy.DoesNotExist:
-                logger.error("FilterPolicy::conf_to_json:: Could not find InspectionPolicy with id {}".format(yara_policy_id))
-
-        yara_scan_type = self.config.get('yara_scan_type', None)
-        if yara_scan_type:
-            json_conf['yaraScanType'] = yara_scan_type
-        yara_scan_max_size = self.config.get('yara_scan_max_size', None)
-        if yara_scan_max_size:
-            json_conf['yaraScanMaxSize'] = yara_scan_max_size
-        max_connections = self.config.get('max_connections', None)
-        if max_connections:
-            json_conf['maxConnections'] = max_connections
-        max_memory_usage = self.config.get('max_memory_usage', None)
-        if max_memory_usage:
-            json_conf['maxMemoryUsage'] = max_memory_usage
-
-        return json_conf
-
-
     def _generate_lkup_conf(self):
         json_conf = {}
 
@@ -783,7 +642,7 @@ class FilterPolicy(models.Model):
             try:
                 database = ReputationContext.objects.get(pk=reputation_ctx_id)
                 json_conf['database'] = database.absolute_filename
-            except ReputationContet.DoesNotExist:
+            except ReputationContext.DoesNotExist:
                 logger.error("FilterPolicy::conf_to_json:: Could not find ReputationContext with id {}".format(reputation_ctx_id))
 
         return json_conf
@@ -912,16 +771,12 @@ class FilterPolicy(models.Model):
                                 'percent_more_alert', 'percent_less_alert', 'percent_more_warning',
                                 'percent_less_warning', 'minimal_variation', 'lower_absolute']
 
-        if self.filter_type.name == "yara":
-            json_conf.update(self._generate_yara_conf())
         if self.filter_type.name == "lkup":
             json_conf.update(self._generate_lkup_conf())
         if self.filter_type.name == "dgad":
             json_conf.update(self._generate_dgad_conf())
         if self.filter_type.name == "bufr":
             json_conf.update(self._generate_bufr_conf())
-        if self.filter_type.name == "content_inspection":
-            json_conf.update(self._generate_content_inspection_conf())
         if self.filter_type.name == "vast":
             json_conf.update(self._generate_vast_conf())
         if self.filter_type.name == "vaml":

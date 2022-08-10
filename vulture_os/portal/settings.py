@@ -45,7 +45,6 @@ AVAILABLE_APPS = [
     'authentication',
     'applications',
     'darwin',
-    'documentation',
     'toolkit',
     'workflow'
 ]
@@ -101,6 +100,7 @@ DATABASES = {
         "CLIENT": {
             'host': get_hostname(),
             'port': 9091,
+            'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
             'SSL': True,
             'SSL_CERTFILE': '/var/db/pki/node.pem',

@@ -28,8 +28,6 @@
     <link rel="stylesheet" href="{% static 'plugins/jquery-ui/jquery-ui.min.css' %}" type='text/css'/>
     <link rel="stylesheet" href="{% static 'plugins/switchery/switchery.min.css' %}" type='text/css'/>
     <link rel="stylesheet" href="{% static 'css/custom.css' %}" type='text/css'/>
-    <link rel="stylesheet" href="{% static 'css/predator.css' %}" type='text/css'/>
-    <link rel="stylesheet" href="{% static 'css/doc.css' %}"/>
 
     {% block css_include %}{% endblock %}
 </head>
@@ -56,9 +54,6 @@
           </aside>
         {% endif %}
 
-        <div id="predator_tab"></div>
-        <div id="documentation_tab"></div>
-
         {% include "sidebar2.html" %}
 
       </div>
@@ -77,7 +72,6 @@
   <script src="{% static 'plugins/axios.min.js' %}"></script>
   <script src="{% static 'js/bootstrap.min.js' %}"></script>
   <script src="{% static 'js/nifty.min.js' %}"></script>
-  <script src="{% static 'js/enrich.js' %}"></script>
   <script src="{% static 'plugins/datatables/jquery.dataTables.js' %}"></script>  
   <script src="{% static 'plugins/datatables/dataTables.bootstrap.js' %}"></script>
   <script src="{% static 'plugins/tageditor/jquery.caret.min.js' %}"></script>
@@ -315,10 +309,6 @@
       }
     }
     /* DATATABLE */
-
-    var documentation_uri = "{% url 'documentation' %}";
-    var predator_uri = "{% url 'darwin.predator' %}";
-    var predator_submit_uri = "{% url 'darwin.predator_submit' %}";
     var system_pf_list_uri = '{% url "system.pf.list" %}';
 
     {% block jquery_code %}{% endblock %}

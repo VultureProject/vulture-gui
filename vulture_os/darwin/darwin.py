@@ -48,35 +48,15 @@ class Darwin:
             'url': "#",
             'submenu': [
                 {
-                    'link': 'log_viewer',
-                    'text': _('Log Viewer'),
-                    'url': '/darwin/logviewer/'
-                },
-                {
                     'link': 'access_control',
                     'text': _('Access Control'),
                     'url': '/darwin/acl/'
-                },
-                {
-                    'link': 'defender_ruleset',
-                    'text': _('WAF Rulesets'),
-                    'url': '/darwin/defender_ruleset/'
-                },
-                {
-                    'link': 'defender_policy',
-                    'text': _('WAF Policies'),
-                    'url': '/darwin/defender_policy/'
                 },
                 {
                     'link': 'policy',
                     'text': _('Darwin Engine'),
                     'url': '/darwin/policy/',
                     'state': DarwinService().last_status()[0]
-                },
-                {
-                    'link': 'inspection_policies',
-                    'text': _("Inspection engine"),
-                    'url': '/darwin/inspection/'
                 }
             ]
         }

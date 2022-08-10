@@ -26,9 +26,6 @@ __doc__ = ''
 import sys
 import os
 
-if not os.path.exists("/home/vlt-os/vulture_os/.node_ok"):
-    sys.exit(0)
-
 # Django setup part
 sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
@@ -41,6 +38,8 @@ from system.cluster.models import Cluster, Node
 from services.frontend.models import Frontend
 from applications.reputation_ctx.models import ReputationContext
 
+if not Cluster.is_node_bootstrapped():
+    sys.exit(0)
 
 if __name__ == "__main__":
 

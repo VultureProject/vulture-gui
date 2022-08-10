@@ -52,11 +52,7 @@ function init_vue(){
         config: {
           redis_expire: 300,
           max_connections: 64000,
-          yara_scan_type: "packet",
-          yara_scan_max_size: 16384,
           max_memory_usage: 200,
-          yara_policy_id: null,
-          yara_policies_id: [],
           reputation_ctx_id: null,
           max_tokens: 75,
           timeout: 0,
@@ -86,14 +82,7 @@ function init_vue(){
         {label: "Critical", id: "CRITICAL"},
       ],
 
-      yara_scan_type_choices: [
-        {label: "Packet", id: "packet"},
-        {label: "Stream", id: "stream"}
-      ],
 
-      yara_rule_file_choices: [],
-
-      yara_policies_list: [],
       hostlookup_reputation_choices: [],
       vast_model_choices: [],
       vaml_model_choices: []
@@ -132,12 +121,8 @@ function init_vue(){
               }
               filter_type = available_filter_types[filter.filter_type]
               if (filter_type) {
-                if (filter_type.name === "content_inspection")
-                  self.fetch_content_inspection_choices()
-                else if (filter_type.name === "lkup")
+                if (filter_type.name === "lkup")
                   self.fetch_reputation_ctx()
-                else if (filter_type.name === "yara")
-                  self.fetch_yara_rule_file()
                 else if (filter_type.name === "vast")
                   self.fetch_vast_models()
                 else if (filter_type.name === "vaml")
@@ -173,12 +158,8 @@ function init_vue(){
       "filter.filter_type"(filter_type_id) {
         let filter_type = available_filter_types[filter_type_id]
         if (filter_type) {
-          if (filter_type.name === "content_inspection")
-            this.fetch_content_inspection_choices()
-          else if (filter_type.name === "lkup")
+          if (filter_type.name === "lkup")
             this.fetch_reputation_ctx()
-          else if (filter_type.name === "yara")
-            this.fetch_yara_rule_file()
           else if (filter_type.name === "vast")
             this.fetch_vast_models()
           else if (filter_type.name === "vaml")
@@ -264,22 +245,6 @@ function init_vue(){
             `
             break
 
-          case "content_inspection":
-            let label_yara_rule_file = ""
-            for (let file of this.yara_rule_file_choices){
-              if (file.id === filter.config.yara_policy_id)
-                label_yara_rule_file = file.label
-            }
-
-            customConfig = `
-              <p><b>${gettext("Max connexions")}:</b> ${filter.config.max_connections}</p>
-              <p><b>${gettext("Yara Scan Type")}:</b> ${filter.config.yara_scan_type}</p>
-              <p><b>${gettext("Yara Scan Max Size")}:</b> ${filter.config.yara_scan_max_size}</p>
-              <p><b>${gettext("Max Memory usage")}:</b> ${filter.config.max_memory_usage}</p>
-              <p><b>${gettext("Yara Rule File")}:</b> <label class='label label-primary'>${label_yara_rule_file}</label></p>
-            `
-            break
-
           case "dgad":
             customConfig = `
               <p><b>${gettext('Max Tokens')}:</b> ${filter.config.max_tokens}</p>
@@ -294,22 +259,6 @@ function init_vue(){
             }
             customConfig = `
               <p><b>${gettext("Database")}:</b> <label class='label label-primary'>${label_hostlookup_rule_file}</label></p>
-            `
-            break
-
-          case "yara":
-            let rule_file_list = []
-            for (let id of filter.config.yara_policies_id){
-              for (let tmp of this.yara_policies_list){
-                if (id === tmp.id)
-                  rule_file_list.push(`<label class='label label-primary'>${tmp.label}</label>`)
-              }
-            }
-
-            customConfig = `
-              <p><b>${gettext("Fast Mode")}:</b> ${filter.config.fastmode}</p>
-              <p><b>${gettext("Timeout")}:</b> ${filter.config.timeout}</p>
-              <p><b>${gettext("Rule file list")}:</b> ${rule_file_list.join('&nbsp;')}</p>
             `
             break
 
@@ -354,28 +303,6 @@ function init_vue(){
         `
       },
 
-      fetch_content_inspection_choices() {
-        let self = this
-
-        $.get(
-          darwin_inspection_policies_uri,
-          null,
-
-          function(response) {
-            self.yara_rule_file_choices = []
-            for (let tmp of response.data){
-              self.yara_rule_file_choices.push({
-                label: tmp.name,
-                id: tmp.id
-              })
-            }
-          }
-        ).fail(function(response) {
-          let error = response.responseJSON.error
-          notify('error', gettext('Error'), error)
-        })
-      },
-
       fetch_reputation_ctx() {
         let self = this
 
@@ -398,25 +325,6 @@ function init_vue(){
           let error = response.responseJSON.error
           notify('error', gettext('Error'), error)
         })
-      },
-
-      fetch_yara_rule_file() {
-        let self = this
-
-        $.get(
-          darwin_inspection_policies_uri,
-          null,
-
-          function(response) {
-            self.yara_policies_list = []
-            for (let tmp of response.data){
-              self.yara_policies_list.push({
-                label: tmp.name,
-                id: tmp.id
-              })
-            }
-          }
-        )
       },
 
       fetch_vast_models() {
@@ -512,11 +420,7 @@ function init_vue(){
           config: {
             redis_expire: 300,
             max_connections: 64000,
-            yara_scan_type: "packet",
-            yara_scan_max_size: 16384,
             max_memory_usage: 200,
-            yara_policy_id: null,
-            yara_policies_id: [],
             reputation_ctx_id: null,
             max_tokens: 75,
             timeout: 0,
@@ -557,46 +461,32 @@ function init_vue(){
               config.redis_expire = parseInt(tmp_filter.config.redis_expire, 10)
               break
 
-            case "content_inspection":
-              config.max_connections = parseInt(tmp_filter.config.max_connections, 10)
-              config.yara_scan_type = tmp_filter.config.yara_scan_type
-              config.yara_scan_max_size = parseInt(tmp_filter.config.yara_scan_max_size, 10)
-              config.max_memory_usage = parseInt(tmp_filter.config.max_memory_usage, 10)
-              config.yara_policy_id = parseInt(tmp_filter.config.yara_policy_id, 10)
+            case "dgad":
+              config.max_tokens = parseInt(tmp_filter.config.max_tokens, 10)
               break
 
-              case "dgad":
-                config.max_tokens = parseInt(tmp_filter.config.max_tokens, 10)
-                break
+            case "lkup":
+              config.reputation_ctx_id = parseInt(tmp_filter.config.reputation_ctx_id, 10)
+              break
 
-              case "lkup":
-                config.reputation_ctx_id = parseInt(tmp_filter.config.reputation_ctx_id, 10)
-                break
+            case "vast":
+              config.model = tmp_filter.config.model
+              break
 
-              case "yara":
-                config.fastmode = tmp_filter.config.fastmode
-                config.timeout = parseInt(tmp_filter.config.timeout, 10)
-                config.yara_policies_id = tmp_filter.config.yara_policies_id
-                break
-
-              case "vast":
-                config.model = tmp_filter.config.model
-                break
-
-              case "vaml":
-                config.model = tmp_filter.config.model
-                // this is not a mistake, holidays_file has the same name as the model
-                config.holidays_file = tmp_filter.config.model
-                config.percent_more_alert = parseFloat(tmp_filter.config.percent_more_alert, 10)
-                config.percent_less_alert = parseFloat(tmp_filter.config.percent_less_alert, 10)
-                if (tmp_filter.config.percent_more_warning !== null)
-                  config.percent_more_warning = parseFloat(tmp_filter.config.percent_more_warning, 10)
-                if (tmp_filter.config.percent_less_warning !== null)
-                  config.percent_less_warning = parseFloat(tmp_filter.config.percent_less_warning, 10)
-                if (tmp_filter.config.minimal_variation !== null)
-                  config.minimal_variation = parseFloat(tmp_filter.config.minimal_variation, 10)
-                if (tmp_filter.config.lower_absolute !== null)
-                  config.lower_absolute = parseFloat(tmp_filter.config.lower_absolute, 10)
+            case "vaml":
+              config.model = tmp_filter.config.model
+              // this is not a mistake, holidays_file has the same name as the model
+              config.holidays_file = tmp_filter.config.model
+              config.percent_more_alert = parseFloat(tmp_filter.config.percent_more_alert, 10)
+              config.percent_less_alert = parseFloat(tmp_filter.config.percent_less_alert, 10)
+              if (tmp_filter.config.percent_more_warning !== null)
+                config.percent_more_warning = parseFloat(tmp_filter.config.percent_more_warning, 10)
+              if (tmp_filter.config.percent_less_warning !== null)
+                config.percent_less_warning = parseFloat(tmp_filter.config.percent_less_warning, 10)
+              if (tmp_filter.config.minimal_variation !== null)
+                config.minimal_variation = parseFloat(tmp_filter.config.minimal_variation, 10)
+              if (tmp_filter.config.lower_absolute !== null)
+                config.lower_absolute = parseFloat(tmp_filter.config.lower_absolute, 10)
           }
 
           for (let tmp of tmp_filter.mmdarwin_parameters)

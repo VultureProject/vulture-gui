@@ -35,7 +35,6 @@ from django.views import View
 
 # Django project imports
 from django.views.decorators.csrf import csrf_exempt
-from darwin.defender_policy.models import DefenderPolicy
 from authentication.user_portal.models import UserAuthentication
 from system.cluster.models import Cluster
 from services.frontend.models import Frontend
@@ -206,16 +205,6 @@ def generate_workflow(workflow):
             data.append(a)
 
     workflow_policy_id = str(uuid.uuid4())
-    data.append({
-        'id': workflow_policy_id,
-        'parent': parent,
-        'data': {
-            'type': 'waf',
-            'object_id': workflow.defender_policy.pk if workflow.defender_policy else None,
-            'name': workflow.defender_policy.name if workflow.defender_policy else "No policy"
-        }
-    })
-
     parent = workflow_policy_id
 
     if workflow.authentication != None:
@@ -230,7 +219,7 @@ def generate_workflow(workflow):
             }
         })
         parent = user_authentication_id
-    
+
     if workflow.authentication_filter != None:
         user_authentication_filter_id = str(uuid.uuid4())
         data.append({
@@ -267,7 +256,6 @@ def generate_workflow(workflow):
 
 def workflow_edit(request, object_id, action=None):
     try:
-        defender_policy = False
         authentication = False
         fqdn = ""
         public_dir = "/"
@@ -326,14 +314,6 @@ def workflow_edit(request, object_id, action=None):
                 'error': _('You must define a backend for a workflow')
             }, status=400)
 
-        if form_data.get('defender_policy'):
-            try:
-                defender_policy = DefenderPolicy.objects.get(pk=form_data['defender_policy'])
-            except DefenderPolicy.DoesNotExist:
-                return JsonResponse({
-                    'error': _('Defender Policy with id {} does not exist'.format(form_data['defender_policy']))
-                }, status=400)
-
         if form_data.get('authentication'):
             try:
                 authentication = UserAuthentication.objects.get(pk=form_data['authentication'])
@@ -364,9 +344,6 @@ def workflow_edit(request, object_id, action=None):
 
             workflow_acls = []
 
-            if defender_policy:
-                workflow.defender_policy = defender_policy
-
             if authentication:
                 workflow.authentication = authentication
 
@@ -375,7 +352,7 @@ def workflow_edit(request, object_id, action=None):
             acl_frontend = form_data.get("acl_frontend", [])
             if isinstance(form_data.get('acl_frontend'), str):
                 acl_frontend = json.loads(acl_frontend)
-            
+
             acl_backend = form_data.get("acl_backend", [])
             if isinstance(form_data.get('acl_backend'), str):
                 acl_backend = json.loads(acl_backend)
@@ -413,26 +390,19 @@ def workflow_edit(request, object_id, action=None):
                 if workflow.authentication is not None or had_authentication:
                     api_res = node.api_request("services.haproxy.haproxy.build_spoe_conf")
                 node.api_request("workflow.workflow.build_conf", workflow.pk)
+
+            # THEN reload backend/frontend configuration files (SPOE conf needs to be up-to-date)
             workflow.backend.reload_conf()
             workflow.frontend.reload_conf()
 
-            if workflow.defender_policy:
-                logger.info("Need to reload the Defender Policy SPOE configuration")
-                Cluster.api_request(
-                    "darwin.defender_policy.policy.write_defender_backend_conf",
-                    workflow.defender_policy.pk
-                )
-                Cluster.api_request(
-                    "darwin.defender_policy.policy.write_defender_spoe_conf",
-                    workflow.defender_policy.pk
-                )
-
-            # Reload HAProxy on concerned nodes
             for node in nodes:
+                # Reload HAProxy and PF on concerned nodes
                 api_res = node.api_request("services.haproxy.haproxy.reload_service")
+
                 if not api_res.get('status'):
                     logger.error("Workflow::edit: API error while trying to "
                                     "restart HAProxy service : {}".format(api_res.get('message')))
+
                     for workflow_acl in workflow.workflowacl_set.all():
                         workflow_acl.delete()
 

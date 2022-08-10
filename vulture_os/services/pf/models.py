@@ -28,7 +28,6 @@ from django.conf import settings
 from djongo import models
 
 # Django project imports
-from darwin.defender_policy.models import DefenderPolicy
 from applications.reputation_ctx.models import DATABASES_PATH
 from system.cluster.models import Cluster, Node
 from toolkit.network.network import get_hostname, JAIL_ADDRESSES
@@ -59,7 +58,6 @@ class PFSettings(models.Model):
             'global_config': Cluster.get_global_config(),
             'jail_addresses': JAIL_ADDRESSES,
             'databases_path': DATABASES_PATH,
-            'defender_policy_list': DefenderPolicy.objects.all(),
             'proxy': get_sanitized_proxy()
         }
 

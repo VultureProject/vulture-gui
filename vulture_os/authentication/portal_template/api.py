@@ -55,6 +55,7 @@ def save_portal_template(data, instance):
     # Reload template for all portals that uses this template
     for portal in obj.userauthentication_set.all().only('pk'):
         Cluster.api_request("authentication.user_portal.api.write_templates", portal.id)
+
     return JsonResponse({
         "message": _("Portal Template saved"),
         "object": obj.to_dict()

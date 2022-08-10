@@ -84,25 +84,6 @@ function form_frontend(edit, frontend_choices, frontend_id, workflow_mode, fqdn,
     return form;
 }
 
-function form_waf(waf_list, waf_id){
-    var form = `<form action='' class='waf-define'>
-        <div class="row">
-            <div class="col-md-12 form-group">
-                <select class="form-control waf_policy">
-                    <option value=''>${gettext('No policy')}</option>`;
-
-    for (var i in waf_list){
-        var waf = waf_list[i];
-        var selected = "";
-        if (waf.id === waf_id)
-            selected = "selected='selected'";
-
-        form += `<option ${selected} value='${waf.id}'>${waf.name}</option>`;
-    }
-
-    form += "</select></div></div></form>";
-    return form;
-}
 
 function form_acl(mode, edit, acls_list, acl_id, action_satisfy, redirect_url_satisfy, action_not_satisfy, redirect_url_not_satisfy){
     if (!redirect_url_satisfy)

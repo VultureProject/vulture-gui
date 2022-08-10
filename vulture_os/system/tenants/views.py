@@ -98,41 +98,17 @@ def tenants_edit(request, object_id=None, api=False, update=False):
         return render(request, 'system/tenants_edit.html', {'form': form, **kwargs})
 
     # Save old attributes BEFORE IS_VALID
-    if tenant_model:
-        old_predator_apikey = str(tenant_model.predator_apikey)
+
 
     if request.method in ("POST", "PUT", "PATCH") and form.is_valid():
-        predator_apikey_changed = "predator_apikey" in form.changed_data
         name_changed = "name" in form.changed_data
-
-        # If predator api key changed
-        if predator_apikey_changed and tenant_model:
-            # Check if there is another Tenants Config using the old api key
-            # If there is another tenant using the old api key, don't delete databases
-            other_tenants =  Tenants.objects.filter(predator_apikey=old_predator_apikey).exclude(pk=tenant_model.pk).count()
-            if other_tenants == 0:
-                encoded_predator_apikey = b64encode(old_predator_apikey.encode('utf8')).decode('utf8')
-                reputation_ctxs = ReputationContext.mongo_find(
-                    {"filename": {"$regex": ".*_{}\.[a-z]+$".format(encoded_predator_apikey)}})
-                filenames = []
-                for feed in reputation_ctxs:
-                    filenames.append(feed.absolute_filename)
-                    feed.delete(delete=False)
-                Cluster.api_request("system.config.models.delete_conf", filenames)
 
         # Update the api key
         tenant = form.save(commit=False)
         tenant.save()
 
-        # If the predator api key changed (mmdb databases paths contain this key)
-        # And no other tenant sharing the same key, download reputation databases
-        # (in case of creation, predator_apikey_changed is true if not default value)
-        if predator_apikey_changed and Tenants.objects.filter(predator_apikey=tenant.predator_apikey).exclude(pk=tenant.pk).count() == 0:
-            # Download and save new reputation contexts
-            Cluster.api_request("gui.crontab.feed.security_update", tenant.pk)
-
-        # If name or predator api key changed
-        if name_changed or predator_apikey_changed:
+        # If name changed
+        if name_changed:
             # Reload Rsyslog conf of each frontends using this tenant
             tenant.reload_frontends_conf()
 
@@ -164,15 +140,6 @@ def tenants_delete(request, object_id, api=False):
         try:
             assert tenant.frontend_set.count() == 0, "This tenants config is used by listener(s)"
 
-            # If there is another Tenant config sharing the predator apikey
-            # Don't delete reputation contexts
-            if Tenants.objects.filter(predator_apikey=tenant.predator_apikey).exclude(pk=tenant.pk).count() == 0:
-                encoded_predator_apikey = b64encode(tenant.predator_apikey.encode('utf8')).decode('utf8')
-                reputation_ctxs = ReputationContext.mongo_find(
-                    {"filename": {"$regex": ".*_{}\.[a-z]+$".format(encoded_predator_apikey)}})
-                for feed in reputation_ctxs:
-                    feed.delete()
-
             """ If everything's ok, delete the object """
             tenant.delete()
             logger.info("Tenants config '{}' deleted.".format(tenant))
@@ -195,9 +162,6 @@ def tenants_delete(request, object_id, api=False):
                                     'error': error}, status=500)
     if api:
         return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
-
-    encoded_predator_apikey = b64encode(tenant.predator_apikey.encode('utf8')).decode('utf8')
-    reputation_ctxs = [a['name'] for a in ReputationContext.objects.mongo_find({"filename": {"$regex": ".*_{}\.[a-z]+$".format(encoded_predator_apikey)}})]
     # If GET request or POST request and API/Delete failure
     return render(request, 'generic_delete.html', {
         'menu_name': _("System -> Tenants config -> Delete"),
@@ -205,7 +169,7 @@ def tenants_delete(request, object_id, api=False):
         'delete_url': reverse("system.tenants.delete", kwargs={'object_id': tenant.id}),
         'obj_inst': tenant,
         'error': error,
-        'used_by': [*tenant.frontend_set.all(), *reputation_ctxs],
+        'used_by': [*tenant.frontend_set.all()],
     })
 
 

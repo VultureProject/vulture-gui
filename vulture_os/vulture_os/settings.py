@@ -59,7 +59,6 @@ AVAILABLE_APPS = [
     'authentication',
     'applications',
     'darwin',
-    'documentation',
     'toolkit',
     'workflow'
 ]
@@ -68,12 +67,10 @@ AVAILABLE_APPS = [
 INSTALLED_APPS.extend(AVAILABLE_APPS)
 
 CRONJOBS = [
-    ("* * * * *", "gui.crontab.rss.rss_fetch"),  # Every minute
     ("* * * * *", "gui.crontab.api_clients_parser.api_clients_parser"),  # Every minute
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
     ("1 * * * *", "gui.crontab.feed.security_update"),  # Every hour
-    ("1 * * * *", "gui.crontab.documentation.doc_update"),  # Every hour
     ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
 ]
 
@@ -111,7 +108,6 @@ TEMPLATES = [
             BASE_DIR + "/gui/templates/gui/",
             BASE_DIR + "/services/templates/services/",
             BASE_DIR + "/system/templates/system/",
-            BASE_DIR + "/documentation/templates/documentation/",
             BASE_DIR + "/darwin/access_control/config"
         ],
         'APP_DIRS': True,
@@ -136,6 +132,7 @@ DATABASES = {
         "CLIENT": {
             'host': get_hostname(),
             'port': 9091,
+            'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
             'SSL': True,
             'SSL_CERTFILE': '/var/db/pki/node.pem',
@@ -185,11 +182,6 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
-STATICFILES_DIRS = [
-    # os.path.join(BASE_DIR, "static"),
-    ('documentation', os.path.join(BASE_DIR, "documentation", "static"))
-]
-
 MEDIA_PATH = '/gui/static/img/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = '/static/'
@@ -345,8 +337,3 @@ LOGO_SM = 'img/vulture-logo-small.png'
 LOGO = 'img/vulture-logo.png'
 LOGO_LG = 'img/vulture_logo.png'
 WALLPAPER = 'img/VultureOS_wallpaper.png'
-
-DOCUMENTATION_PATH = "/var/db/documentation"
-
-PREDATOR_HOST = "https://predator.vultureproject.org/"
-PREDATOR_VERSION = "v1"

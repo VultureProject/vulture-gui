@@ -174,20 +174,7 @@ class PFService(Service):
 
         config_model = Cluster.get_global_config()
 
-        """ Check if firehol and vulture netsets exist """
-        filepath = DATABASES_PATH + "/firehol_level1.netset"
-        if not os_path.isfile(filepath):
-            write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
-
-        filepath = DATABASES_PATH + "/vulture-v4.netset"
-        if not os_path.isfile(filepath):
-            write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
-
-        filepath = DATABASES_PATH + "/vulture-v6.netset"
-        if not os_path.isfile(filepath):
-            write_conf(logger, [filepath, "", DATABASES_OWNER, DATABASES_PERMS])
-
-        """ Check if Whitelist and Blacklist has changed """
+        """ Check if Whitelist and Blacklist have changed """
         wl_bl = {
             'pf.whitelist.conf': config_model.pf_whitelist,
             'pf.blacklist.conf': config_model.pf_blacklist,
@@ -220,3 +207,11 @@ def test_config(config):
     return check_output(["/sbin/pfctl", "-n", "-f", "-"],
                         stderr=PIPE,
                         input=config.encode('utf8')).decode('utf8')
+
+def gen_config(node_logger):
+    pf = PFService()
+    if pf.reload_conf():
+       node_logger.info("PF Configuration updated")
+       pf.reload()
+    else:
+       node_logger.info("PF Configuration does not need any change")

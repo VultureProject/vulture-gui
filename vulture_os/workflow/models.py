@@ -35,7 +35,6 @@ from applications.backend.models import Backend
 from darwin.access_control.models import AccessControl
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.user_portal.models import UserAuthentication
-from darwin.defender_policy.models import DefenderPolicy
 from services.frontend.models import Frontend
 from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PERMS, HAPROXY_PATH
 from system.cluster.models import Cluster, Node
@@ -108,12 +107,6 @@ class Workflow(models.Model):
         on_delete=models.PROTECT,
         help_text=_("Frontend"),
     )
-    """ Security """
-    defender_policy = models.ForeignKey(
-        DefenderPolicy,
-        on_delete=models.CASCADE,
-        null=True
-    )
     """ Authentication """
     authentication = models.ForeignKey(
         UserAuthentication,
@@ -169,7 +162,6 @@ class Workflow(models.Model):
             'backend_id': str(self.backend.pk),
             'public_dir': self.public_dir,
             'backend': str(self.backend),
-            'defender_policy': str(self.defender_policy),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             'acls': self.workflowacl_set.count(),
@@ -179,10 +171,7 @@ class Workflow(models.Model):
         return tmp
 
     def to_dict(self):
-        defender_policy = None
         authentication = None
-        if self.defender_policy:
-            defender_policy = self.defender_policy.to_template()
         
         if self.authentication:
             authentication = self.authentication.to_dict()
@@ -201,7 +190,6 @@ class Workflow(models.Model):
             'backend_status': dict(self.backend.status),
             'public_dir': self.public_dir,
             'fqdn': self.fqdn,
-            'defender_policy': defender_policy,
             'authentication': authentication,
             'acls': [acl.to_dict() for acl in self.workflowacl_set.all()]
         }
@@ -224,7 +212,6 @@ class Workflow(models.Model):
             'frontend': self.frontend,
             'backend': self.backend,
             'authentication': self.authentication.to_template() if self.authentication else None,
-            'defender_policy': self.defender_policy,
             'disconnect_url': self.get_disconnect_url()
         }
 
@@ -278,13 +265,6 @@ class Workflow(models.Model):
         """
         if not self.authentication:
             return "No authentication activated, no need to write portal conf."
-
-        # try:
-        #     api_res = Cluster.api_request("workflow.api.write_portal_template", config=self.id)
-        #     if not api_res.get('status'):
-        #         raise VultureSystemConfigError(". API request failure ", traceback=api_res.get('message'))
-        # except Exception:
-        #     raise VultureSystemConfigError("API request failure.")
 
         params = [self.get_filename(), self.generate_conf(), WORKFLOW_OWNER, WORKFLOW_PERMS]
         try:

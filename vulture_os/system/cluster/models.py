@@ -478,6 +478,10 @@ class Cluster (models.Model):
             return False
 
     @staticmethod
+    def is_node_bootstrapped():
+        return True if Cluster.get_current_node() else False
+
+    @staticmethod
     def get_global_config():
         try:
             global_config = Config.objects.get()

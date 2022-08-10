@@ -70,8 +70,7 @@ MODE_CHOICES = (
     ('tcp', 'TCP'),
     ('http', 'HTTP'),
     ('log', 'LOG (Rsyslog)'),
-    ('filebeat', 'LOG (Filebeat)'),
-    ('impcap', 'PCAP')
+    ('filebeat', 'LOG (Filebeat)')
 )
 
 LOG_LEVEL_CHOICES = (
@@ -100,14 +99,6 @@ LISTENING_MODE_CHOICES = (
 REDIS_MODE_CHOICES = (
     ('queue', "Queue mode, using push/pop"),
     ('subscribe',"Channel mode, using pub/sub"),
-)
-
-IMPCAP_FILTER_CHOICES = (
-    ('udp and port 53', "DNS"),
-    ('tcp[13] & 2 != 0', "SYN FLAGS"),
-    ('tcp and (port 80 or port 443)', "WEB"),
-    ('icmp or udp or (tcp and tcp[tcpflags] & tcp-syn == tcp-syn)', "CONNECTIONS"),
-    ('custom', "Custom"),
 )
 
 DARWIN_MODE_CHOICES = (
@@ -207,27 +198,7 @@ class Frontend(models.Model):
         verbose_name=_("Redirect HTTP to HTTPS")
     )
 
-    """ *** IMPCAP OPTIONS *** """
-    """ Impcap interface """
-    impcap_intf = models.ForeignKey(
-        NetworkInterfaceCard,
-        verbose_name=_("Listening interface"),
-        help_text=_("Interface used by impcap for trafic listening"),
-        null=True,
-        on_delete=models.PROTECT
-    )
-    impcap_filter_type = models.TextField(
-        default=IMPCAP_FILTER_CHOICES[0][0],
-        choices=IMPCAP_FILTER_CHOICES,
-        verbose_name=_("Impcap filter type"),
-        help_text=_("Simple filters used by impcap")
-    )
-    """ Impcap filter """
-    impcap_filter = models.TextField(
-        default="",
-        verbose_name=_("Impcap filter"),
-        help_text=_("Filter used by impcap for trafic listening (tcpdump format)")
-    )
+
     """ *** DARWIN OPTIONS *** """
     """ Darwin policy """
     darwin_policies = models.ArrayReferenceField(
@@ -1331,9 +1302,7 @@ class Frontend(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ Retrieve list/custom objects """
-        if self.mode == "impcap":
-            listeners_list = [str(self.impcap_intf), str(self.impcap_filter)]
-        elif self.listening_mode == "file":
+        if self.listening_mode == "file":
             listeners_list = [self.file_path]
         elif self.listening_mode == "api":
             listeners_list = [self.api_parser_type]
@@ -1355,8 +1324,6 @@ class Frontend(models.Model):
                     listening_mode = m[1]
             additional_infos.append("Listening mode : {}".format(listening_mode))
             additional_infos.append("Data type : {}".format(self.ruleset))
-        elif self.mode == "impcap":
-            additional_infos.append("Data type : Impcap")
         elif self.mode == "http":
             if self.enable_cache:
                 additional_infos.append("Option cache")
@@ -1398,13 +1365,6 @@ class Frontend(models.Model):
         if not header_list:
             header_list = self.headers.all()
 
-        serialized_blwl_list = []
-
-        if self.mode == "http":
-            blwl_list = self.blacklistwhitelist_set.all()
-
-            for blwl_obj in blwl_list:
-                serialized_blwl_list.append(blwl_obj.generate_conf())
 
         reputation_database_v4 = None
         reputation_database_v6 = None
@@ -1508,7 +1468,6 @@ class Frontend(models.Model):
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
-            'serialized_blwl_list': serialized_blwl_list,
             'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
@@ -1517,13 +1476,9 @@ class Frontend(models.Model):
             'filebeat_config': self.filebeat_config,
             'filebeat_listening_mode': self.filebeat_listening_mode,
             'external_idps': self.userauthentication_set.filter(enable_external=True),
-            'defender_enabled': self.workflow_set.filter(defender_policy__isnull=False).count() > 0,
+            'session_enabled': self.workflow_set.filter(authentication__isnull=False).count() > 0
 
         }
-
-        if self.mode == "impcap":
-            result['impcap_filter'] = self.impcap_filter
-            result['impcap_intf'] = self.impcap_intf
 
         """ And returns the attributes of the class """
         return result
@@ -1833,7 +1788,6 @@ class Frontend(models.Model):
                           "\\\"darwin_user_agent_error\\\": \\\"%[var(txn.user_agent.error)]\\\", " \
                           "\\\"darwin_session_score\\\": \\\"%[var(sess.session.ip_score)]\\\", " \
                           "\\\"darwin_user_agent_score\\\": \\\"%[var(sess.user_agent.ip_score)]\\\", " \
-                          "\\\"defender_score\\\": \\\"%[var(sess.defender.status)]\\\"" \
                           ", \\\"http_request_cookies\\\": \\\"%[capture.req.hdr(1),json(ascii)]\\\"" \
                           ", \\\"http_request_body\\\": \\\"%[var(sess.body),json(ascii)]\\\"" \
                           ", \\\"http_request_content_type\\\": \\\"%[capture.req.hdr(3),json(ascii)]\\\"" \
@@ -1849,10 +1803,9 @@ class Frontend(models.Model):
         """
         if self.listening_mode == "file" or self.listening_mode == "kafka" or self.filebeat_listening_mode == "file" :
             return {self.node}
-        elif self.mode != "impcap":
-            return set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.id))
         else:
-            return {self.impcap_intf.node}
+            return set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.id))
+
 
     def reload_conf(self):
         """ Generate conf based on MongoDB data and save-it on concerned nodes
@@ -1863,6 +1816,7 @@ class Frontend(models.Model):
             node.api_request("services.haproxy.haproxy.build_conf", self.id)
             # Add node to nodes, it's a set (unicity implicitly handled)
             nodes.add(node)
+
         return nodes
 
     def enable(self):
@@ -1871,6 +1825,7 @@ class Frontend(models.Model):
         if not self.enabled:
             raise ServiceError("Cannot start a disabled frontend.", "haproxy", "enable frontend",
                                traceback="Please edit, enable and save a frontend to start-it.")
+
         """ If it is an Rsyslog only conf, start rsyslog """
         if self.rsyslog_only_conf:
             nodes = self.get_nodes()
@@ -1879,15 +1834,18 @@ class Frontend(models.Model):
                 if not api_res.get('status'):
                     raise ServiceStartError("API request failure on node '{}'".format(node.name), "rsyslog",
                                             traceback=api_res.get('message'))
+
             return "Start rsyslog service asked on nodes {}".format(",".join([n.name for n in nodes]))
 
         elif self.filebeat_only_conf:
             nodes = self.get_nodes()
+
             for node in nodes:
                 api_res = node.api_request("services.filebeat.filebeat.start_service")
                 if not api_res.get('status'):
                     raise ServiceStartError("API request failure on node '{}'".format(node.name), "filebeat",
                                             traceback=api_res.get('message'))
+
             return "Start filebeat service asked on nodes {}".format(",".join([n.name for n in nodes]))
 
         else:
@@ -1897,13 +1855,17 @@ class Frontend(models.Model):
                 if not api_res.get('status'):
                     raise ServiceStartError("API request failure on node '{}'".format(node.name), "haproxy",
                                             traceback=api_res.get('message'))
+
             return "Start frontend '{}' asked on nodes {}".format(self.name, ",".join([n.name for n in nodes]))
 
+
     def disable(self):
+
         """ Disable frontend in HAProxy, by management socket """
         if not self.enabled:
             return "This frontend is already disabled."
-        """ If it is an Rsyslog / Filebeat only conf, try to start service """
+
+        """ Cannot stop Rsyslog / Filebeat only frontend """
         if self.rsyslog_only_conf:
             raise ServiceError("Cannot hot disable an Rsyslog only frontend.", "rsyslog", "disable frontend",
                                traceback="Please edit, disable and save the frontend.")
@@ -1917,12 +1879,13 @@ class Frontend(models.Model):
                 if not api_res.get('status'):
                     raise ServiceStartError("API request failure on node '{}'".format(node.name), "haproxy",
                                             traceback=api_res.get('message'))
+
             return "Stop frontend '{}' asked on nodes {}".format(self.name, ",".join([n.name for n in nodes]))
 
     @property
     def rsyslog_only_conf(self):
         """ Check if this frontend has only rsyslog configuration, not haproxy at all """
-        return self.mode == "impcap" or (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka", "redis")))
+        return (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka", "redis")))
 
     @property
     def filebeat_only_conf(self):
@@ -2191,7 +2154,6 @@ CRITERION_MAPPING = {
     "darwin_session_score": None,  # TODO: TO IMPLEMENT
     "darwin_user_agent_error": None,  # TODO: TO IMPLEMENT
     "darwin_user_agent_score": None,  # TODO: TO IMPLEMENT
-    "defender_score": None,  # TODO: TO IMPLEMENT
     "feconn": None,  # TODO: TO IMPLEMENT
     "frontend_ip": None,  # TODO: TO IMPLEMENT
     "frontend_name": None,  # TODO: TO IMPLEMENT

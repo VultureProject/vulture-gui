@@ -34,8 +34,6 @@ from django.views.generic import View
 # Django project imports
 from system.cluster.models import NetworkAddress, Node
 from system.tenants.models import Tenants
-from system.zfs.models import ZFS
-from system.vm.models import VM
 from system.pki.models import X509Certificate, TLSProfile
 
 # Required exceptions imports
@@ -116,20 +114,6 @@ class ListNode(ListView):
 class ListNetworkAddress(ListView):
     template_name = "netif.html"
     obj = NetworkAddress
-
-    # get and post methods herited from mother class
-
-
-class ListZFS(ListView):
-    template_name = "zfs.html"
-    obj = ZFS
-
-    # get and post methods herited from mother class
-
-
-class ListVM(ListView):
-    template_name = "vm.html"
-    obj = VM
 
     # get and post methods herited from mother class
 

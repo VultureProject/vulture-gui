@@ -64,11 +64,10 @@ def cluster_add(request):
             'message': 'Invalid call'
         })
 
-    """ Make the slave_name resolvable on all Cluster nodes"""
+    """ Make the slave_name resolvable on all Cluster nodes """
     Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
 
-    """ Now the slave should be in the cluster:
-        Add it's management IP """
+    """ Now the slave should be in the cluster: Add it's management IP """
     node = Node()
     node.name = slave_name
     node.management_ip = slave_ip
@@ -77,29 +76,32 @@ def cluster_add(request):
     node.logom_outgoing_ip = slave_ip
     node.save()
 
-    # We need to wait for the VultureD daemon to reload PF Conf
-    time.sleep(6)
+    """ Ask cluster to reload PF Conf and wait for it """
+    logger.info("Call cluster-wide services.pf.pf.gen_config()...")
+    Cluster.api_request ("services.pf.pf.gen_config")
 
     """ Add NEW node into the REPLICASET, as a pending member """
     c = MongoBase()
-    c.connect()
-    cpt = 0
     response = None
-    while not response:
-        try:
-            logger.debug("Adding {} to replicaset".format(slave_name))
-            response = c.repl_add(slave_name + ':9091')
-        except Exception as e:
-            logger.error("Cannot connect to slave for the moment : {}".format(e))
-            cpt += 1
-            if cpt > 10:
-                logger.error("Failed to connect to the slave 10 times, aborting.")
-                return JsonResponse({
-                    'status': False,
-                    'message': 'Error during repl_add. Check logs'
-                })
-        logger.info("Waiting for next connection to slave ...")
-        time.sleep(1)
+    if c.connect_with_retries(retries=10, timeout=2):
+        cpt = 0
+        while not response:
+            try:
+                logger.debug("Adding {} to replicaset".format(slave_name))
+                response = c.repl_add(slave_name + ':9091')
+            except Exception as e:
+                logger.error("Cannot connect to slave for the moment : {}".format(e))
+                cpt += 1
+                if cpt > 10:
+                    logger.error("Failed to connect to the slave 10 times, aborting.")
+                    return JsonResponse({
+                        'status': False,
+                        'message': 'Error during repl_add. Check logs'
+                    })
+            logger.info("Waiting for next connection to slave ...")
+            time.sleep(1)
+    else:
+        logger.error("Could not connect to the MongoDB replicaset")
 
     if response:
         node.api_request('toolkit.network.network.refresh_nic')

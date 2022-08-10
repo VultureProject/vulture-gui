@@ -142,8 +142,6 @@ function refresh_api_parser_type(type_){
 
 $(function() {
 
-  load_impcap_filter_type();
-
   /* All events to refresh (re-apply) after a table is modified */
   function refresh_table_events() {
 
@@ -261,7 +259,7 @@ $(function() {
   /* Show rsyslog only fields, or hide them */
   function show_custom_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an UDP mode only => HAProxy is useless */
-    if( (mode === "log" && (listening_mode === "udp" || listening_mode === "file" || listening_mode === "api" || listening_mode === "kafka" || listening_mode === "redis")) || (mode === "filebeat" && (filebeat_listening_mode === "udp" || filebeat_listening_mode === "file" || filebeat_listening_mode === "api")) || mode === "impcap") {
+    if( (mode === "log" && (listening_mode === "udp" || listening_mode === "file" || listening_mode === "api" || listening_mode === "kafka" || listening_mode === "redis")) || (mode === "filebeat" && (filebeat_listening_mode === "udp" || filebeat_listening_mode === "file" || filebeat_listening_mode === "api")) ) {
       $('.haproxy-conf').hide();
     } else {
       $('.haproxy-conf').show();
@@ -328,58 +326,11 @@ $(function() {
     }
   }
 
-  var saved_impcap_filter = "";
-  var saved_impcap_filter_type = "";
-
-  function load_impcap_filter_type() {
-    let impcap_filter_type = $('#id_impcap_filter_type').val();
-    if( impcap_filter_type === "custom" ) {
-      $('#id_impcap_filter').prop("readonly", false);
-      saved_impcap_filter = $('#id_impcap_filter').val();
-    } else {
-      $('#id_impcap_filter').prop("readonly", true);
-      $('#id_impcap_filter').val($('#id_impcap_filter_type').val());
-    }
-
-    saved_impcap_filter_type = $('#id_impcap_filter_type').val();
-  }
-
-  /* Show impcap_filter depending on what filter_type is chosen */
-  function toggle_impcap_filter_type() {
-    let impcap_filter_type = $('#id_impcap_filter_type').val();
-    if( impcap_filter_type === "custom" ) {
-      $('#id_impcap_filter').prop("readonly", false);
-      $('#id_impcap_filter').val(saved_impcap_filter);
-    } else {
-      if( saved_impcap_filter_type == "custom" )
-        saved_impcap_filter = $('#id_impcap_filter').val();
-      $('#id_impcap_filter').prop("readonly", true);
-      $('#id_impcap_filter').val($('#id_impcap_filter_type').val());
-    }
-    saved_impcap_filter_type = impcap_filter_type;
-  }
-  $('#id_impcap_filter_type').on('change', toggle_impcap_filter_type);
-
   function refresh_dashboard_forwarder(old_mode, new_mode) {
     // retrieve selected forwarders
     var selected_forwarders = $('#id_log_forwarders').val();
     if (selected_forwarders === null)
       selected_forwarders = [];
-    // if new mode is impcap and was not
-    if( old_mode != "impcap" && new_mode == "impcap" ) {
-      // If the dashboard forwarder was not selected
-      if ($.inArray(redis_forwarder, selected_forwarders) === -1) {
-        redis_forwarder_added = true;
-        selected_forwarders.push(redis_forwarder);
-      } else {
-        redis_forwarder_added = false;
-      }
-    } else if( old_mode == "impcap" && new_mode != "impcap" ) {
-      // If the dashboard forwarder was automatically selected, deselect it
-      if (redis_forwarder_added && $.inArray(redis_forwarder, selected_forwarders) !== -1) {
-        selected_forwarders.pop(redis_forwarder);
-      }
-    }
     $('#id_log_forwarders').val(selected_forwarders).trigger('change');
   }
 
@@ -391,7 +342,6 @@ $(function() {
     $('.tcp-mode').hide();
     $('.log-mode').hide();
     $('.filebeat-mode').hide();
-    $('.impcap-mode').hide();
     $('.'+mode+'-mode').show();
 
     if (mode === "filebeat") {
@@ -404,18 +354,18 @@ $(function() {
 
     /* If mode = LOG / Filebeat => Activate logging automatically */
     var log_enabled = $('#id_enable_logging').is(":checked");
-    if( (mode === "log" || mode === "filebeat" || mode === "impcap") && !log_enabled ) {
+    if( (mode === "log" || mode === "filebeat") && !log_enabled ) {
       $('#id_enable_logging').trigger('click');
       $('#id_enable_logging').prop("disabled", true);
       last_enable_log = log_enabled;
-    } else if ( mode !== "log" && mode !== "filebeat" && mode !== "impcap" ) {
+    } else if ( mode !== "log" && mode !== "filebeat" ) {
       if( mode === "http" ) {
         refresh_http();
         $('#id_enable_logging').prop("disabled", false);
         if( last_enable_log != log_enabled )
           $('#id_enable_logging').trigger('click');
       }
-    } else if ( mode === "log" || mode === "impcap") {
+    } else if ( mode === "log") {
       last_enable_log = log_enabled;
       $('#id_enable_logging').prop("disabled", true);
       if( $('#stock_logs_locally').is(':checked') ) {
@@ -424,12 +374,7 @@ $(function() {
 
       refresh_input_logs_type(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     }
-    if( mode === "impcap" ) {
-      load_impcap_filter_type();
-    }
-    if( mode == "impcap" || old_mode == "impcap" ) {
-      refresh_dashboard_forwarder(old_mode, mode);
-    }
+
     $('#id_enable_logging').trigger("change");
     refresh_ruleset($('#id_ruleset').val());
 
@@ -483,7 +428,7 @@ $(function() {
 
   /* Show log_condition_failure depending on mode and ruleset */
   function show_log_condition_failure() {
-    if( $('#id_mode').val() == "log" && ['raw_to_json', 'impcap'].indexOf($('#id_ruleset').val()) < 0 ) {
+    if( $('#id_mode').val() == "log" && ['raw_to_json'].indexOf($('#id_ruleset').val()) < 0 ) {
       $('.log-failure').show();
     } else {
       $('.log-failure').hide();
