@@ -204,9 +204,6 @@ def generate_workflow(workflow):
         for a in actions:
             data.append(a)
 
-    workflow_policy_id = str(uuid.uuid4())
-    parent = workflow_policy_id
-
     if workflow.authentication != None:
         user_authentication_id = str(uuid.uuid4())
         data.append({
