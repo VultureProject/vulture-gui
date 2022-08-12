@@ -316,13 +316,10 @@ class Backend(models.Model):
             result['status'] = dict(self.status)
         if not fields or "headers" in fields:
             """ Other attributes """
+            result['headers'] = []
             if self.mode == "http":
-                result['headers'] = []
                 for header in self.headers.all():
                     result['headers'].append(header.to_template())
-            ## set headers field anyway if requested
-            elif "headers" in fields:
-                result['headers'] = []
 
         return result
 
