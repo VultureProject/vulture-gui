@@ -11,3 +11,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if not Cluster.is_node_bootstrapped():
             raise CommandError('Error: Node is not bootstrapped')
+
+        self.stdout.write(self.style.SUCCESS('Node is bootstrapped'))
