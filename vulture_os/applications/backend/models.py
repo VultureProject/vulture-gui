@@ -447,7 +447,7 @@ class Backend(models.Model):
         return result
 
     def generate_conf(self, server_list=None, header_list=None):
-        """ Render the conf with Jinja template and self.to_template() method 
+        """ Render the conf with Jinja template and self.to_template() method
         :return     The generated configuration as string, or raise
         """
         # The following var is only used by error, do not forget to adapt if needed
@@ -489,7 +489,7 @@ class Backend(models.Model):
                           disabled=True)
 
     def get_test_filename(self):
-        """ Return test filename for test conf with haproxy 
+        """ Return test filename for test conf with haproxy
         """
         """ If object is not already saved : no id so default=test """
         return "backend_{}.conf".format(self.id or "test")
@@ -505,7 +505,7 @@ class Backend(models.Model):
 
     def get_unix_socket(self):
         """ Return filename of unix socket on which HAProxy send data
-         and on which Rsyslog listen 
+         and on which Rsyslog listen
         """
         return "{}/backend_{}.sock".format(UNIX_SOCKET_PATH, self.id)
 
