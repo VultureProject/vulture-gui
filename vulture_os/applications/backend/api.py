@@ -101,8 +101,8 @@ class BackendAPIv1(View):
     def get(self, request, object_id=None):
         try:
             name = request.GET.get('name')
-            fields = request.GET.getlist('fields[]') or None
-            mode = request.GET.getlist('mode[]', None)
+            fields = request.GET.getlist('fields') or None
+            mode = request.GET.getlist('mode') or None
             enabled = request.GET.get('enabled', None)
 
             filter= Q()

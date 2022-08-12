@@ -113,9 +113,9 @@ var workflow_vue = new Vue({
         } else {
             $.get(
                 workflow_api + workflow_id,
-                {
+                $.param({
                     fields: ["workflow_json"]
-                },
+                }, true),
 
                 function(response){
                     self.workflow = response.data.workflow_json;
@@ -174,7 +174,7 @@ var workflow_vue = new Vue({
                 data.mode = mode;
             return $.get(
                 frontend_services_api,
-                data,
+                $.param(data, true),
 
                 function(response){
                     if (!check_json_error(response))
@@ -194,7 +194,7 @@ var workflow_vue = new Vue({
                 data.mode = mode;
             return $.get(
                 backend_applications_api,
-                data,
+                $.param(data, true),
 
                 function(response){
                     if (!check_json_error(response))
@@ -213,7 +213,7 @@ var workflow_vue = new Vue({
             }
             return $.get(
                 authentication_portal_api,
-                data,
+                $.param(data, true),
                 function(response){
                     if (!check_json_error(response))
                         return;
@@ -228,9 +228,9 @@ var workflow_vue = new Vue({
             var self = this;
             return $.get(
                 authentication_filter_api,
-                {
+                $.param({
                     fields : ["id","name"]
-                },
+                }, true),
                 function(response){
                     if (!check_json_error(response))
                         return;
@@ -244,9 +244,9 @@ var workflow_vue = new Vue({
             var self = this;
             return $.get(
                 access_control_get,
-                {
+                $.param({
                     fields : ["id","name"]
-                },
+                }, true),
                 function(response){
                     if (!check_json_error(response))
                         return;

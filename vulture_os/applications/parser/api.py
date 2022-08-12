@@ -81,7 +81,7 @@ class ParserAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 try:
                     obj = Parser.objects.get(pk=object_id).to_dict(fields=fields)

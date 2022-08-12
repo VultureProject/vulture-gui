@@ -62,7 +62,7 @@ class DarwinFilterTypesAPIv1(View):
     def get(self, request):
         data = []
         try:
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             for filter_type in DarwinFilter.objects.all():
                 data.append(filter_type.to_dict(fields=fields))
         except Exception as e:
@@ -87,7 +87,7 @@ class DarwinFilterAPIv1(View):
     def get(self, request, filter_id=None):
         data = {}
         try:
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if not filter_id:
                 data = []
                 for policy_filter in FilterPolicy.objects.all():
@@ -124,7 +124,7 @@ class DarwinPolicyAPIv1(View):
     def get(self, request, object_id=None):
         try:
             name = request.GET.get('name')
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             try:
                 if object_id:
                     obj = DarwinPolicy.objects.get(pk=object_id).to_dict(fields=fields)

@@ -120,7 +120,7 @@ class NetworkAddressAPIv1(View):
         try:
             name = request.GET.get('name')
             ip = request.GET.get('ip')
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 obj = NetworkAddress.objects.get(pk=object_id).to_dict(fields=fields)
             elif name and ip:

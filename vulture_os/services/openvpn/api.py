@@ -44,7 +44,7 @@ class OpenvpnAPIv1(View):
     def get(self, request, object_id=None):
         try:
             remote_server = request.GET.get('remote_server')
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 obj = Openvpn.objects.get(pk=object_id).to_dict(fields=fields)
             elif remote_server:

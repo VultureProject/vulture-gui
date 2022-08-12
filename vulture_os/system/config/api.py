@@ -43,7 +43,7 @@ class ConfigAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request):
         try:
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             obj = [s.to_dict(fields=fields) for s in Config.objects.all()]
             return JsonResponse({
                 'data': obj

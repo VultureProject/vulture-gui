@@ -68,7 +68,7 @@ class PortalTemplateAPIv1(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 ret = PortalTemplate.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
@@ -186,7 +186,7 @@ class PortalImageAPIv1(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 ret = TemplateImage.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:

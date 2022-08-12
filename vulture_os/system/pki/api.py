@@ -84,7 +84,7 @@ class PKIView(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 ret = X509Certificate.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
@@ -118,7 +118,7 @@ class TLSProfileApiView(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 ret = TLSProfile.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:

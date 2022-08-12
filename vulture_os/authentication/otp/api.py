@@ -47,7 +47,7 @@ class OTPAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 otp = OTPRepository.objects.get(pk=ObjectId(object_id)).to_dict(fields=fields)
             elif request.GET.get('name'):

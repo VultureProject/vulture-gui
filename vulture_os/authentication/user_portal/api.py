@@ -53,7 +53,7 @@ class UserPortalApi(View):
     @api_need_key("cluster_api_key")
     def get(self, request, object_id=None):
         try:
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if request.GET.get('enable_external', None) :
                 enable_external = True if request.GET.get('enable_external') == "true" else False
             if object_id:

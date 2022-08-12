@@ -44,7 +44,7 @@ class LDAPApi(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 ldap_repository = LDAPRepository.objects.get(pk=object_id)
             elif request.GET.get('name'):

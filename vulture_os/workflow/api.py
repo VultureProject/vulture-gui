@@ -438,7 +438,7 @@ class WorkflowAPIv1(View):
     def get(self, request, object_id=None):
         try:
             name = request.GET.get('name')
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 res = Workflow.objects.get(pk=object_id).to_dict(fields=fields)
 

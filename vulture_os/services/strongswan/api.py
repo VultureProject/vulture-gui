@@ -45,7 +45,7 @@ class StrongswanAPIv1(View):
     def get(self, request, object_id=None):
         node_id = request.GET.get("node")
         try:
-            fields = request.GET.getlist('fields[]') or None
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 try:
                     obj = Strongswan.objects.get(pk=object_id).to_dict(fields=fields)
