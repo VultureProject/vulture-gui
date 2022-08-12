@@ -239,6 +239,7 @@ def backend_edit(request, object_id=None, api=False):
             return render_form(backend, save_error=["Error in Servers field : {}".format(e),
                                                     str.join('', format_exception(*exc_info()))])
         header_objs = []
+        httpchk_headers_dict = {}
         if form.data.get('mode') == "http":
             """ Handle JSON formatted request headers """
             try:
