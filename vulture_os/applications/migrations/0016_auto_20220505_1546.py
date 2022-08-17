@@ -2,7 +2,23 @@
 
 import django.core.validators
 from django.db import migrations, models
+from toolkit.mongodb.mongo_base import MongoBase
 
+
+def remove_server_target_port_unicity_constraint(apps, schema_editor):
+    # Manually delete all Darwin filters to prevent migration issue, they will be re-created in loaddata
+    m = MongoBase()
+    m.connect_primary()
+    # If the node is not yet installed, no need to drop collections
+    if m.db and m.db['vulture']:
+        coll = m.db['vulture']['applications_server']
+        if coll:
+            for index in coll.list_indexes():
+                # Unpack index key values
+                # we're searching for 'target' and 'port' keys defining the index
+                if ['target', 'port'] == index.get('key', {}).keys():
+                    print(f"Removing index {index.get('name')} in column 'applications_server'")
+                    coll.drop_index(index.get('name'))
 
 class Migration(migrations.Migration):
 
@@ -15,4 +31,5 @@ class Migration(migrations.Migration):
             name='server',
             unique_together=None,
         ),
+        migrations.RunPython(remove_server_target_port_unicity_constraint, migrations.RunPython.noop),
     ]
