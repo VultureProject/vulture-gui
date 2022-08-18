@@ -84,24 +84,24 @@ class TrendmicroWorryfreeParser(ApiParser):
         '''
         Generate x-signature
         '''
+        logger.info(f"[{__parser__}]:gen_x_signature: generating x-signature", extra={'frontend': str(self.frontend)})
         payload = x_posix_time + request_method.upper() + request_uri
         if body:
             payload += self.__get_content_md5(body)
-        logger.info(f"[{__parser__}]:gen_x_signature:Paylod :{payload}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:gen_x_signature:Payload :{payload}", extra={'frontend': str(self.frontend)})
         hm = hmac.new(self.trendmicro_worryfree_secret_key.encode("utf8"),
                       payload.encode("utf8"), hashlib.sha256)
         digest = hm.digest()
         digest = base64.b64encode(digest)
         return digest
 
-    def __get_auth_headers(self, method, request_uri, body):
+    def __gen_auth_headers(self, method, request_uri, body):
         '''
         Generate authentication headers
         '''
         posix_time = int(timezone.now().timestamp())
 
-        headers = {}
-        headers["content-type"] = "application/json"
+        headers = self.HEADERS
         headers["x-access-token"] = self.trendmicro_worryfree_access_token
         headers["x-signature"] = self.__gen_x_signature(str(posix_time),
                             method, request_uri, body)
@@ -119,31 +119,36 @@ class TrendmicroWorryfreeParser(ApiParser):
         '''
         retry_time = 0
         while retry_time < retry:
-            headers = self.__get_auth_headers(http_method, request_uri, body)
+            logger.info(f"[{__parser__}]:send_request: Sending request (try {retry_time + 1}/{retry})", extra={'frontend': str(self.frontend)})
+            headers = self.__gen_auth_headers(http_method, request_uri, body)
             url = "%s://%s%s" % (self.scheme, self.trendmicro_worryfree_server_name, request_uri)
             resp = self.session.request(http_method, url, data=body, headers=headers, proxies=self.proxies)
             if resp.status_code == 200:
                 break
             else:
+                logger.debug(f"[{__parser__}]:send_request: Did not get a valid answer, trying again...", extra={'frontend': str(self.frontend)})
                 retry_time += 1
-        return resp.status_code, resp.headers, resp.content
+        return resp.status_code, resp.content
 
     def close(self):
         self.session.close()
 
     def _run(self, method, uri, body=None):
         self.__connect()
+        res_status = 500
+        res_dict = {}
         try:
-            res_status, headers, res_data = self.send_request(method, uri, body=body)
+            res_status, res_data = self.send_request(method, uri, body=body)
             if res_status != 200:
-                logger.info(f"[{__parser__}]:run:Response status: {res_status}", extra={'frontend': str(self.frontend)})
-                logger.info(f"[{__parser__}]:run:Response data: {res_data}", extra={'frontend': str(self.frontend)})
+                logger.warning(f"[{__parser__}]:run:Response status: {res_status}", extra={'frontend': str(self.frontend)})
+                logger.warning(f"[{__parser__}]:run:Response data: {res_data}", extra={'frontend': str(self.frontend)})
+            else:
+                res_dict = json.loads(res_data)
+        except ValueError as e:
+            logger.error(f"[{__parser__}]:run: Could not load response data: {e}", extra={'frontend': str(self.frontend)})
         finally:
             self.close()
-        try:
-            res_dict = json.loads(res_data)
-        except ValueError as e:
-            res_dict = {}
+
         return res_status, res_dict
 
     def __execute_query(self, query=None, timeout=10):
