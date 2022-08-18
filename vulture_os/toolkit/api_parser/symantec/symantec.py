@@ -29,6 +29,7 @@ import logging
 import requests
 import time
 import zipfile
+import re
 
 from django.conf import settings
 from django.utils import timezone
@@ -56,6 +57,7 @@ class SymantecParser(ApiParser):
         self.start_console_uri = "https://portal.threatpulse.com/reportpod/logs/sync?"
         self.username = data['symantec_username']
         self.password = data['symantec_password']
+        self.token = data['symantec_token']
 
         self.HEADERS = {
             "X-APIUsername": self.username,
@@ -99,25 +101,20 @@ class SymantecParser(ApiParser):
                 'error': str(e)
             }
 
-    def execute(self, token="none"):
+    def execute(self):
         self.update_lock()
 
-        last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
-        now = timezone.now().replace(minute=0, second=0, microsecond=0)
-        if last_api_call > now - datetime.timedelta(hours=1):
-            return
-
-        # If we have less than one hour
-        if (now - last_api_call).total_seconds() <= 60*60 and timezone.now().minute < 30:
-            return
-
         try:
-            last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
-            # Begin date is in milisecond
-            begin_timestamp = int(last_api_call.timestamp() * 1000)
-            # End date = start date + 1h (in milisecond)
-            end_timestamp = int(last_api_call.timestamp() * 1000) + 3600000
-            params = f"startDate={begin_timestamp}&endDate={end_timestamp}&token={token}"
+            if self.token != "none":
+                begin_timestamp = 0
+                end_timestamp = 0
+            else:
+                last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
+                # Begin date is in milisecond
+                begin_timestamp = int(last_api_call.timestamp() * 1000)
+                # End date = start date + 1h (in milisecond)
+                end_timestamp = int(last_api_call.timestamp() * 1000) + 3600000
+            params = f"startDate={begin_timestamp}&endDate={end_timestamp}&token={self.token}"
             url = f"{self.start_console_uri}{params}"
             msg = f"Retrieving symantec logs from {url}"
             logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
@@ -165,15 +162,18 @@ class SymantecParser(ApiParser):
                         self.finish()
                     else:
                         try:
+                            tmp_file_data = tmp_file.readlines()
+                            new_token = re.search("X-TOKEN: (?P<token>.+)\r\n", tmp_file_data)
+                            self.frontend.token = new_token.group('token') if new_token else "none"
+
                             gzip_file = BytesIO()
                             data = []
                             with zipfile.ZipFile(tmp_file) as zip_file:
-                                # Pnly retrieve the DIRST
-                                gzip_filename = zip_file.namelist()[0]
-                                msg = f"Parsing archive {gzip_filename}"
-                                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-                                self.update_lock()
-                                gzip_file = BytesIO(zip_file.read(gzip_filename))
+                                for gzip_filename in zip_file.namelist():
+                                    msg = f"Parsing archive {gzip_filename}"
+                                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                                    self.update_lock()
+                                    gzip_file = BytesIO(zip_file.read(gzip_filename))
 
                             with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
                                 i = 0
