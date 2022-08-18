@@ -460,7 +460,7 @@ class FrontendForm(ModelForm):
             'sophos_cloud_tenant_id': TextInput(attrs={'class': 'form-control'}),
             'trendmicro_worryfree_access_token': TextInput(attrs={'class': 'form-control'}),
             'trendmicro_worryfree_secret_key': TextInput(attrs={'type': "password", 'class': 'form-control'}),
-            'trendmicro_worryfree_server_name': Textarea(attrs={'class': 'form-control'}),
+            'trendmicro_worryfree_server_name': TextInput(attrs={'class': 'form-control'}),
             'trendmicro_worryfree_server_port': TextInput(attrs={'class': 'form-control'}),
 }
 
