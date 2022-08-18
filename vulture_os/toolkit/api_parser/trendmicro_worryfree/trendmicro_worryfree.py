@@ -142,6 +142,9 @@ class TrendmicroWorryfreeParser(ApiParser):
             if res_status != 200:
                 logger.warning(f"[{__parser__}]:run:Response status: {res_status}", extra={'frontend': str(self.frontend)})
                 logger.warning(f"[{__parser__}]:run:Response data: {res_data}", extra={'frontend': str(self.frontend)})
+                if isinstance(res_data, bytes):
+                    res_data = res_data.decode('utf-8')
+                raise TrendmicroWorryfreeError(res_data)
             else:
                 res_dict = json.loads(res_data)
         except ValueError as e:
