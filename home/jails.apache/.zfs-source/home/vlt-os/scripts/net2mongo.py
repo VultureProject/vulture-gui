@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     """ Read system configuration """
     with open("/etc/rc.conf.d/network", "r") as f:
-        pattern_ifconfig = re.compile("^ifconfig_(.*)=(.*)")
+        pattern_ifconfig = re.compile('^ifconfig_(.*)="?(.*)"?')
         pattern_inet6 = re.compile("inet6 (.*)(( prefixlen )|(/))([0-9\.]+)")
         pattern_inet = re.compile("inet (.*)(( netmask )|(/))([0-9\.]+)")
         pattern_gateway = re.compile("^defaultrouter=(.*)")
@@ -113,7 +113,7 @@ if __name__ == "__main__":
                     logger.debug("Node::network_sync(): Detected NIC {}".format(nic))
 
 
-            if config in ("SYNCDHCP", "DHCP"):
+            if config.upper() in ("SYNCDHCP", "DHCP"):
                 try:
                     proc = subprocess.Popen([
                         '/usr/local/bin/sudo',
