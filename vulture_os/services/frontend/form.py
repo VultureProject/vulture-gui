@@ -234,7 +234,9 @@ class FrontendForm(ModelForm):
                            'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
                            'waf_cloudflare_apikey','waf_cloudflare_zoneid',
                            'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail',
-                           'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id'
+                           'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id',
+                           'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
+                           'trendmicro_worryfree_server_port'
                            ]:
             self.fields[field_name].required = False
 
@@ -316,7 +318,8 @@ class FrontendForm(ModelForm):
                   'waf_cloudflare_apikey', 'waf_cloudflare_zoneid',
                   'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail',
                   'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id',
-                  'darwin_mode')
+                  'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
+                  'trendmicro_worryfree_server_port', 'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -460,6 +463,10 @@ class FrontendForm(ModelForm):
             'sophos_cloud_client_id': TextInput(attrs={'class': 'form-control'}),
             'sophos_cloud_client_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'sophos_cloud_tenant_id': TextInput(attrs={'class': 'form-control'}),
+            'trendmicro_worryfree_access_token': TextInput(attrs={'class': 'form-control'}),
+            'trendmicro_worryfree_secret_key': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'trendmicro_worryfree_server_name': TextInput(attrs={'class': 'form-control'}),
+            'trendmicro_worryfree_server_port': TextInput(attrs={'class': 'form-control'}),
 }
 
     def clean_name(self):

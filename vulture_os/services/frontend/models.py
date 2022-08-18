@@ -1056,6 +1056,28 @@ class Frontend(models.Model):
         default="",
     )
 
+    # Trendmicro_worryfree attributes
+    trendmicro_worryfree_access_token = models.TextField(
+        verbose_name = _("Trendmicro Worryfree access token"),
+        help_text = _("Trendmicro Worryfree access token"),
+        default = "",
+    )
+    trendmicro_worryfree_secret_key = models.TextField(
+        verbose_name = _("Trendmicro Worryfree secret key"),
+        help_text = _("Trendmicro Worryfree secret key"),
+        default = "",
+    )
+    trendmicro_worryfree_server_name = models.TextField(
+        verbose_name = _("Trendmicro Worryfree server name"),
+        help_text = _("Trendmicro Worryfree server name"),
+        default = "cspi.trendmicro.com",
+    )
+    trendmicro_worryfree_server_port = models.TextField(
+        verbose_name = _("Trendmicro Worryfree server port"),
+        help_text = _("Trendmicro Worryfree server port"),
+        default = "443",
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
@@ -1300,6 +1322,12 @@ class Frontend(models.Model):
                     result['sophos_cloud_client_id'] = self.sophos_cloud_client_id
                     result['sophos_cloud_client_secret'] = self.sophos_cloud_client_secret
                     result['sophos_cloud_tenant_id'] = self.sophos_cloud_tenant_id
+
+                elif self.api_parser_type == "trendmicro_worryfree":
+                    result['trendmicro_worryfree_access_token'] = self.trendmicro_worryfree_access_token
+                    result['trendmicro_worryfree_secret_key'] = self.trendmicro_worryfree_secret_key
+                    result['trendmicro_worryfree_server_name'] = self.trendmicro_worryfree_server_name
+                    result['trendmicro_worryfree_server_port'] = self.trendmicro_worryfree_server_port
 
         if self.enable_logging_reputation:
             result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
