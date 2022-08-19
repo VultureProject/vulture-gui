@@ -57,7 +57,7 @@ class SymantecParser(ApiParser):
         self.start_console_uri = "https://portal.threatpulse.com/reportpod/logs/sync?"
         self.username = data['symantec_username']
         self.password = data['symantec_password']
-        self.token = data['symantec_token']
+        self.token = data.get('symantec_token', 'none')
 
         self.HEADERS = {
             "X-APIUsername": self.username,
@@ -81,21 +81,18 @@ class SymantecParser(ApiParser):
                 stream=True
             )
 
-            if "Retry-After" in r.headers.keys():
+            if "Retry-After" in r.headers.keys() or r.status_code != 200:
                 return {
                     "status": False,
                     "error": r.content.decode('UTF-8')
                 }
-
-            status = True
-            if r.status_code != 200:
-                status = False
-
-            return {
-                "status": status,
-                "data": "Response : {}".format("OK" if status else r.status_code)
-            }
+            else:
+                return {
+                    "status": True,
+                    "data": "Response : OK"
+                }
         except SymantecAPIError as e:
+            logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
             return {
                 'status': False,
                 'error': str(e)
@@ -108,16 +105,27 @@ class SymantecParser(ApiParser):
             if self.token != "none":
                 begin_timestamp = 0
                 end_timestamp = 0
+                msg = f"Get logs from startDate 0 to 0 with token {self.token}"
             else:
                 last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
                 # Begin date is in milisecond
                 begin_timestamp = int(last_api_call.timestamp() * 1000)
                 # End date = start date + 1h (in milisecond)
                 end_timestamp = int(last_api_call.timestamp() * 1000) + 3600000
+
+                startDate_human_readable = last_api_call.strftime("%Y-%m-%d %H:%M:%S")
+
+                endDate_epoch_to_date = datetime.datetime.fromtimestamp(end_timestamp / 1000)
+                endDate_human_readable = endDate_epoch_to_date.strftime("%Y-%m-%d %H:%M:%S")
+
+                msg = f"Get logs from startDate {startDate_human_readable} to {endDate_human_readable}"
+
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
             params = f"startDate={begin_timestamp}&endDate={end_timestamp}&token={self.token}"
             url = f"{self.start_console_uri}{params}"
-            msg = f"Retrieving symantec logs from {url}"
-            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+            msg = f"Retrieving symantec logs from {url}..."
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             r = requests.get(
                 url,
@@ -148,6 +156,9 @@ class SymantecParser(ApiParser):
                 self.execute()
             else:
                 if "filename" in r.headers['Content-Disposition']:
+                    logger.info(f"[{__parser__}]:execute filenames: {r.headers['Content-Disposition']}",
+                                extra={'frontend': str(self.frontend)})
+
                     tmp_file = BytesIO()
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
@@ -162,16 +173,20 @@ class SymantecParser(ApiParser):
                         self.finish()
                     else:
                         try:
-                            tmp_file_data = tmp_file.readlines()
-                            new_token = re.search("X-TOKEN: (?P<token>.+)\r\n", tmp_file_data)
+                            tmp_file.seek(-150, 2)
+                            logger.info(f"[{__parser__}]:execute Search new token", extra={'frontend': str(self.frontend)})
+                            new_token = re.search("X-sync-token: (?P<token>.+)'", str(tmp_file.readline().strip()))
                             self.frontend.token = new_token.group('token') if new_token else "none"
+
+                            msg = f"New token is: {self.frontend.token}"
+                            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
                             gzip_file = BytesIO()
                             data = []
                             with zipfile.ZipFile(tmp_file) as zip_file:
                                 for gzip_filename in zip_file.namelist():
                                     msg = f"Parsing archive {gzip_filename}"
-                                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                                    logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                                     self.update_lock()
                                     gzip_file = BytesIO(zip_file.read(gzip_filename))
 
@@ -205,6 +220,10 @@ class SymantecParser(ApiParser):
 
                         except zipfile.BadZipfile as err:
                             raise SymantecParseError(err)
+                        except Exception as e:
+                            logger.info(f"[{__parser__}]:RAISE EXCEPTION: {e}", extra={'frontend': str(self.frontend)})
+
+
 
                 else:
                     msg = f"No filename found in headers {r.headers}"
