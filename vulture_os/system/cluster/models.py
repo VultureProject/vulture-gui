@@ -333,51 +333,65 @@ class Node(models.Model):
     @property
     def get_forwarders_enabled(self):
         """ Return all tuples (family, proto, ip, port) for each LogForwarders """
-        from applications.logfwd.models import LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB
+        from applications.logfwd.models import LogOM, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB
         # !!! REQUIRED BY listener_set !
         from services.frontend.models import Listener
-        result = list()
+        result = set()
         """ Retrieve LogForwarders used in enabled Frontends """
+        """ First, retrieve LogForwarders that bind to the address of the node """
         addresses = self.addresses()
         """ For each address, retrieve the associated listeners having frontend enabled """
-        listener_addr = dict()
+        listener_ids = list()
         for a in addresses:
-            try:
-                listener_addr[a].append([l.id for l in a.listener_set.filter(frontend__enabled=True)])
-            except KeyError:
-                listener_addr[a] = [l.id for l in a.listener_set.filter(frontend__enabled=True)]
+            listener_ids.extend([l.id for l in a.listener_set.filter(frontend__enabled=True)])
 
-        """ Loop on each NetworkAddress to retrieve LogForwarder used by the frontend using listeners """
-        for network_address, listener_ids in listener_addr.items():
+        logfwds = list()
+        """ Retrieve LogForwarder used by the frontend using listeners """
+        # Log Forwarder RELP
+        logfwds.extend(list(LogOMRELP.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+
+        # Log Forwarder REDIS
+        logfwds.extend(list(LogOMHIREDIS.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+
+        # Log Forwarder Syslog
+        logfwds.extend(list(LogOMFWD.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+
+        # Log Forwarder ElasticSearch
+        logfwds.extend(list(LogOMElasticSearch.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+
+        # Log Forwarder MongoDB
+        logfwds.extend(list(LogOMMongoDB.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+
+        """Second, retrieve Log Forwarders directly associated with the node and not a listener eg. KAFKA and REDIS"""
+        logfwds.extend([LogOM().select_log_om(log_fwd) for log_fwds in self.frontend_set.values_list('log_forwarders', flat=True) for log_fwd in log_fwds])
+
+        """Add the protocol, destination ip and port of the log forwarder to the result"""
+        for logfwd in logfwds:
             # Log Forwarder RELP
-            for logfwd in LogOMRELP.objects.filter(enabled=True, frontend_set__listener__in=listener_ids):
-                if (network_address.family, "tcp", logfwd.target, logfwd.port) not in result:
-                    result.append((network_address.family, "tcp", logfwd.target, logfwd.port))  # TCP
+            if hasattr(logfwd, 'logomrelp'):
+                result.add(("tcp", logfwd.target, logfwd.port))  # TCP
 
             # Log Forwarder REDIS
-            for logfwd in LogOMHIREDIS.objects.filter(enabled=True, frontend_set__listener__in=listener_ids):
-                if (network_address.family, "tcp", logfwd.target, logfwd.port) not in result:
-                    result.append((network_address.family, "tcp", logfwd.target, logfwd.port))  # TCP
+            elif hasattr(logfwd, 'logomhiredis'):
+                result.add(("tcp", logfwd.target, logfwd.port))  # TCP
 
             # Log Forwarder Syslog
-            for logfwd in LogOMFWD.objects.filter(enabled=True, frontend_set__listener__in=listener_ids):
-                if (network_address.family, logfwd.protocol, logfwd.target, logfwd.port) not in result:
-                    result.append((network_address.family, logfwd.protocol, logfwd.target, logfwd.port))  # proto
+            elif hasattr(logfwd, 'logomfwd'):
+                result.add((logfwd.protocol, logfwd.target, logfwd.port))  # proto
 
             # Log Forwarder ElasticSearch
-            for logfwd in LogOMElasticSearch.objects.filter(enabled=True, frontend_set__listener__in=listener_ids):
+            elif hasattr(logfwd, 'logomelasticsearch'):
                 """ For elasticsearch, we need to parse the servers """
-                for ip, port in re_findall("https?://([^:]+):(\d+)", logfwd.server):
-                    if ("inet6" if ':' in ip else "inet", "tcp", ip, port) not in result:
-                        result.append(("inet6" if ':' in ip else "inet", "tcp", ip, port))
+                for ip, port in re_findall("https?://([^:]+):(\d+)", logfwd.servers):
+                    result.add(("tcp", ip, port))
 
             # Log Forwarder MongoDB
-            for logfwd in LogOMMongoDB.objects.filter(enabled=True, frontend_set__listener__in=listener_ids):
+            elif hasattr(logfwd, 'logommongodb'):
                 """ For OMMongoDB - parse uristr """
                 for ip, port in parse_uristr(logfwd.uristr):
-                    result.append((network_address.family, 'tcp', ip, port))
+                    result.add(('tcp', ip, port))
 
-        return result
+        return list(result)
 
     @property
     def get_backends_enabled(self):
@@ -644,7 +658,7 @@ class NetworkInterfaceCard(models.Model):
 
     @property
     def has_ipv4(self):
-        """ Check if there is at least one NetworkAddress IPv4 associated to this NetworkInterface 
+        """ Check if there is at least one NetworkAddress IPv4 associated to this NetworkInterface
         :return  True if there is, False otherwise
         """
         # NOT IN is not supported by djongo
