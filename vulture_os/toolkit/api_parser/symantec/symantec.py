@@ -219,7 +219,7 @@ class SymantecParser(ApiParser):
                         except zipfile.BadZipfile as err:
                             raise SymantecParseError(err)
                         except Exception as e:
-                            logger.info(f"[{__parser__}]:Unknown exception: {e}", extra={'frontend': str(self.frontend)})
+                            logger.exception(f"[{__parser__}]:Unknown exception {e}", extra={'frontend': str(self.frontend)})
 
 
 
