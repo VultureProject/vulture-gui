@@ -58,9 +58,9 @@ logger = logging.getLogger('gui')
 
 def backend_clone(request, object_id):
     """ Backend view used to clone a Backend object
-    N.B: Do not totally clone the object and save-it in MongoDB 
+    N.B: Do not totally clone the object and save-it in MongoDB
         because some attributes are unique constraints
- 
+
     :param request: Django request object
     :param object_id: MongoDB object_id of a Backend object
     """
@@ -90,11 +90,14 @@ def backend_clone(request, object_id):
     backend.name = 'Copy of {}'.format(backend.name)
     form = BackendForm(None, instance=backend, error_class=DivErrorList)
 
+    available_sockets = get_darwin_sockets()
+
     return render(request, 'apps/backend_edit.html',
                   {'form': form, 'servers': server_form_list, 'server_form': ServerForm(),
                    'headers': header_form_list, 'header_form': HeaderForm(),
                    'http_health_check_headers': httpchk_header_form_list,
                    'http_health_check_headers_form': HttpHealthCheckHeaderForm(),
+                   'sockets_choice': available_sockets,
                    'cloned': True})
 
 
