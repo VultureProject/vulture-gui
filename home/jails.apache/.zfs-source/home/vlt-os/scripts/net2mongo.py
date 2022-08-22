@@ -113,7 +113,7 @@ if __name__ == "__main__":
                     logger.debug("Node::network_sync(): Detected NIC {}".format(nic))
 
 
-            if config.upper() in ("SYNCDHCP", "DHCP"):
+            if config and config.upper() in ("SYNCDHCP", "DHCP"):
                 try:
                     proc = subprocess.Popen([
                         '/usr/local/bin/sudo',
