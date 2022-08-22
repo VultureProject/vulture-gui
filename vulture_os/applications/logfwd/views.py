@@ -128,6 +128,9 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
         form = LOGFWD_FORMS[fw_type](request.POST or None, instance=log_om, error_class=DivErrorList)
 
     if request.method in ("POST", "PUT"):
+        # Before validating form, if the name of the log forwarder is changed, save old name for replacement in the log_condition of associated frontends
+        log_om_old_name = log_om.name if "name" in form.changed_data else None
+
         # Impossible to edit the mongodb internal log forwarder
         if log_om.internal and fw_type == "MongoDB":
             if api:
@@ -146,17 +149,21 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
             """ For each node """
             for node in Node.objects.all():
                 """ If the LogForwarder is used by an enable frontend on this node """
-                frontends = []
+                frontends = set()
                 # FIXME : Add .distinct("frontend") when implemented in djongo
-                for listener in Listener.objects.filter(Q(frontend__log_forwarders=log_om.id) |
+                frontends.update([listener.frontend for listener in Listener.objects.filter(Q(frontend__log_forwarders=log_om.id) |
                                                         Q(frontend__log_forwarders_parse_failure=log_om.id),
-                                                        network_address__nic__node=node.id).distinct():
-                    if listener.frontend.id not in frontends:
-                        api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", listener.frontend.id)
-                        if not api_res.get('status'):
-                            raise ServiceConfigError("on node {}\n API request error.".format(node.name), "rsyslog",
-                                                     traceback=api_res.get('message'))
-                        frontends.append(listener.frontend.id)
+                                                        network_address__nic__node=node.id).distinct()])
+                frontends.update(Frontend.objects.filter(node=node.id, log_forwarders= log_om.id))
+                for frontend  in frontends:
+                    # If the name of the log forwarder is changed, update it in the log_condition of the frontend
+                    if log_om_old_name:
+                        frontend.log_condition = frontend.log_condition.replace(f"{{{{{log_om_old_name}}}}}", f"{{{{{log_om.name}}}}}")
+                        frontend.save()
+                    api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
+                    if not api_res.get('status'):
+                        raise ServiceConfigError("on node {}\n API request error.".format(node.name), "rsyslog",
+                                                    traceback=api_res.get('message'))
 
                 # If at least one frontend uses this log_forwarder
                 # Write logrotate config
