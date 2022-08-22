@@ -111,14 +111,14 @@ class SymantecParser(ApiParser):
                 # Begin date is in milisecond
                 begin_timestamp = int(last_api_call.timestamp() * 1000)
                 # End date = start date + 1h (in milisecond)
-                end_timestamp = int(last_api_call.timestamp() * 1000) + 3600000
-
-                startDate_human_readable = last_api_call.strftime("%Y-%m-%d %H:%M:%S")
-
-                endDate_epoch_to_date = datetime.datetime.fromtimestamp(end_timestamp / 1000)
-                endDate_human_readable = endDate_epoch_to_date.strftime("%Y-%m-%d %H:%M:%S")
-
-                msg = f"Get logs from startDate {startDate_human_readable} to {endDate_human_readable}"
+                end_time = last_api_call + datetime.timedelta(hours=1)
+                # If end_time > now, API returned 400
+                if end_time > timezone.now():
+                    end_timestamp = 0
+                    msg = f"Get logs from startDate {last_api_call} to now"
+                else:
+                    end_timestamp = int(last_api_call.timestamp() * 1000) + 3600000
+                    msg = f"Get logs from startDate {last_api_call} to {end_time}"
 
             logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
@@ -176,52 +176,50 @@ class SymantecParser(ApiParser):
                             tmp_file.seek(-150, 2)
                             logger.info(f"[{__parser__}]:execute Search new token", extra={'frontend': str(self.frontend)})
                             new_token = re.search("X-sync-token: (?P<token>.+)'", str(tmp_file.readline().strip()))
-                            self.frontend.token = new_token.group('token') if new_token else "none"
+                            self.frontend.symantec_token = new_token.group('token') if new_token else "none"
 
-                            msg = f"New token is: {self.frontend.token}"
+                            msg = f"New token is: {self.frontend.symantec_token}"
                             logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-                            gzip_file = BytesIO()
                             data = []
                             with zipfile.ZipFile(tmp_file) as zip_file:
                                 for gzip_filename in zip_file.namelist():
                                     msg = f"Parsing archive {gzip_filename}"
                                     logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                                     self.update_lock()
-                                    gzip_file = BytesIO(zip_file.read(gzip_filename))
 
-                            with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
-                                i = 0
-                                line = gzip_file_content.readline()
-                                while line:
-                                    i += 1
-                                    line = line.strip()
-                                    if not line[0] == "#":
-                                        data.append(b"<15>"+line)
-                                    
-                                    if i > self.CHUNK_SIZE:
-                                        self.write_to_file(data)
-                                        self.update_lock()
-                                        data = []
+                                    with gzip.GzipFile(fileobj=BytesIO(zip_file.read(gzip_filename)), mode="rb") as gzip_file_content:
                                         i = 0
+                                        line = gzip_file_content.readline()
+                                        while line:
+                                            i += 1
+                                            line = line.strip()
+                                            if not line[0] == "#":
+                                                data.append(b"<15>"+line)
 
-                                    line = gzip_file_content.readline()
+                                            if i > self.CHUNK_SIZE:
+                                                self.write_to_file(data)
+                                                self.update_lock()
+                                                data = []
+                                                i = 0
 
-                                self.write_to_file(data)
+                                            line = gzip_file_content.readline()
 
-                                try:
-                                    self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(hours=1)
-                                except:
-                                    self.last_api_call += datetime.timedelta(hours=1)
+                                        self.write_to_file(data)
 
-                                self.frontend.last_api_call = self.last_api_call
-                                self.frontend.save()
+                                        try:
+                                            self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(hours=1)
+                                        except:
+                                            self.last_api_call += datetime.timedelta(hours=1)
+
+                                        self.frontend.last_api_call = self.last_api_call
+                                        self.frontend.save()
                             self.finish()
 
                         except zipfile.BadZipfile as err:
                             raise SymantecParseError(err)
                         except Exception as e:
-                            logger.info(f"[{__parser__}]:RAISE EXCEPTION: {e}", extra={'frontend': str(self.frontend)})
+                            logger.info(f"[{__parser__}]:Unknown exception: {e}", extra={'frontend': str(self.frontend)})
 
 
 
