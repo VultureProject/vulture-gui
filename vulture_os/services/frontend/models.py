@@ -529,6 +529,11 @@ class Frontend(models.Model):
         default=""
     )
 
+    symantec_token = models.TextField(
+        help_text=_('Symantec Token'),
+        default="none"
+    )
+
     aws_access_key_id = models.TextField(
         help_text=_('AWS Access Key ID'),
         default=""
@@ -1148,6 +1153,7 @@ class Frontend(models.Model):
                 elif self.api_parser_type == "symantec":
                     result['symantec_username'] = self.symantec_username
                     result['symantec_password'] = self.symantec_password
+                    result['symantec_token'] = self.symantec_token
 
                 elif self.api_parser_type == "aws_bucket":
                     result['aws_access_key_id'] = self.aws_access_key_id
