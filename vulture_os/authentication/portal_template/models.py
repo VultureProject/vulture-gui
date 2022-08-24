@@ -271,9 +271,10 @@ class PortalTemplate(models.Model):
     def __str__(self):
         return str(self.name)
 
-    def to_dict(self):
-        data = model_to_dict(self)
-        data['id'] = str(self.pk)
+    def to_dict(self, fields=None):
+        data = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            data['id'] = str(self.pk)
         return data
 
     def to_template(self):
@@ -400,14 +401,15 @@ class TemplateImage(models.Model):
     image_type = models.TextField(default="")
     content = models.TextField(default="", help_text=_('Image you can use in the portal templates'))
 
-    def to_dict(self):
-        return {
-            "id": str(self.pk),
-            "name": self.name,
-            "image_type": self.image_type,
-            "create_preview_html": self.create_preview_html(),
-            "get_image_uri": self.get_image_uri()
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(self.pk)
+        if not fields or "create_preview_html" in fields:
+            result['create_preview_html'] = self.create_preview_html()
+        if not fields or "get_image_uri" in fields:
+            result['get_image_uri'] = self.get_image_uri()
+        return result
 
     def get_image_uri(self):
         """

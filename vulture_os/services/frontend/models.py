@@ -30,6 +30,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.template import Context, Template as JinjaTemplate
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -1079,255 +1080,62 @@ class Frontend(models.Model):
             exclude.append('log_forwarders')
         return super().clean_fields(exclude=exclude)
 
-    def to_dict(self):
+    def to_dict(self, fields=None):
         """ This method MUST be used in API instead of to_template() method
                 to prevent no-serialization of sub-models like Listeners
         :return     A JSON object
         """
-        result = {
-            'id': str(self.id),
-            'enabled': self.enabled,
-            'name': self.name,
-            'tags': self.tags,
-            'mode': self.mode,
-            'enable_logging': self.enable_logging,
-            'status': dict(self.status),  # It is an OrderedDict
-            'https_redirect': self.https_redirect,
-            'listeners': [],
-            'tenant_name': self.tenants_config.name,
-            "tenants_config": self.tenants_config.pk,
-            'timeout_connect': self.timeout_connect,
-            'timeout_client': self.timeout_client
-        }
-
-        """ Add listeners, except if listening_mode is file """
-        for listener in self.listener_set.all():
-            l = listener.to_template()
-            # Remove frontend to prevent infinite loop
-            del l['frontend']
-            result['listeners'].append(l)
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "tenant_name" in fields:
+            result['tenant_name'] = self.tenants_config.name
+        if not fields or "listeners" in fields:
+            result['listeners'] = []
+            """ Add listeners, except if listening_mode is file """
+            for listener in self.listener_set.all():
+                l = listener.to_template()
+                # Remove frontend to prevent infinite loop
+                del l['frontend']
+                result['listeners'].append(l)
+        if not fields or "backend" in fields:
+            result['backend'] = [b.to_dict() for b in self.backend.all()]
+        if not fields or "darwin_policies" in fields:
+            result['darwin_policies'] = list(self.darwin_policies.all())
+        if not fields or "darwin_policies" in fields:
+            result['darwin_policies'] = list(self.darwin_policies.all())
+        if not fields or "compression_algos" in fields:
+            result['compression_algos'] = self.compression_algos.split(' ')
 
         """ Other attributes """
-        if self.mode == "http":
-            result['log_level'] = self.log_level
+        if not fields or "headers" in fields:
             result['headers'] = []
-
-            for header in self.headers.all():
-                result['headers'].append(header.to_template())
-
-            result['enable_cache'] = self.enable_cache
-
-            if self.enable_cache:
-                result['cache_total_max_size'] = self.cache_total_max_size
-                result['cache_max_age'] = self.cache_max_age
-
-            result['enable_compression'] = self.enable_compression
-
-            if self.enable_compression:
-                result['compression_algos'] = self.compression_algos
-                result['compression_mime_types'] = self.compression_mime_types
-            result['error_template'] = self.error_template
-
-        if self.mode == "log":
-            result['listening_mode'] = self.listening_mode
-            result['enable_logging_geoip'] = self.enable_logging_geoip
-
-            if self.listening_mode == "api":
-                result['api_parser_type'] = self.api_parser_type
-                result['api_parser_use_proxy'] = self.api_parser_use_proxy
-                result['last_api_call'] = self.last_api_call
-
-                if self.api_parser_type == "forcepoint":
-                    result['forcepoint_host'] = self.forcepoint_host
-                    result['forcepoint_username'] = self.forcepoint_username
-                    result['forcepoint_password'] = self.forcepoint_password
-
-                elif self.api_parser_type == "elasticsearch":
-                    result['elasticsearch_host'] = self.elasticsearch_host
-                    result['elasticsearch_verify_ssl'] = self.elasticsearch_verify_ssl
-                    result['elasticsearch_auth'] = self.elasticsearch_auth
-                    result['elasticsearch_username'] = self.elasticsearch_username
-                    result['elasticsearch_password'] = self.elasticsearch_password
-                    result['elasticsearch_index'] = self.elasticsearch_index
-
-                elif self.api_parser_type == "symantec":
-                    result['symantec_username'] = self.symantec_username
-                    result['symantec_password'] = self.symantec_password
-                    result['symantec_token'] = self.symantec_token
-
-                elif self.api_parser_type == "aws_bucket":
-                    result['aws_access_key_id'] = self.aws_access_key_id
-                    result['aws_secret_access_key'] = self.aws_secret_access_key
-                    result['aws_bucket_name'] = self.aws_bucket_name
-
-                elif self.api_parser_type == "akamai":
-                    result['akamai_host'] = self.akamai_host
-                    result['akamai_client_secret'] = self.akamai_client_secret
-                    result['akamai_access_token'] = self.akamai_access_token
-                    result['akamai_client_token'] = self.akamai_client_token
-                    result['akamai_config_id'] = self.akamai_config_id
-
-                elif self.api_parser_type == "office_365":
-                    result['office365_tenant_id'] = self.office365_tenant_id
-                    result['office365_client_id'] = self.office365_client_id
-                    result['office365_client_secret'] = self.office365_client_secret
-
-                elif self.api_parser_type == "imperva":
-                    result['imperva_base_url'] = self.imperva_base_url
-                    result['imperva_api_id'] = self.imperva_api_id
-                    result['imperva_api_key'] = self.imperva_api_key
-                    result['imperva_private_key'] = self.imperva_private_key
-                    result['imperva_last_log_file'] = self.imperva_last_log_file
-
-                elif self.api_parser_type == "reachfive":
-                    result['reachfive_host'] = self.reachfive_host
-                    result['reachfive_client_id'] = self.reachfive_client_id
-                    result['reachfive_client_secret'] = self.reachfive_client_secret
-
-                elif self.api_parser_type == "mongodb":
-                    result['mongodb_api_user'] = self.mongodb_api_user
-                    result['mongodb_api_password'] = self.mongodb_api_password
-                    result['mongodb_api_group_id'] = self.mongodb_api_group_id
-
-                elif self.api_parser_type == "defender_atp":
-                    result['mdatp_api_tenant'] = self.mdatp_api_tenant
-                    result['mdatp_api_appid'] = self.mdatp_api_appid
-                    result['mdatp_api_secret'] = self.mdatp_api_secret
-
-                elif self.api_parser_type == "cortex_xdr":
-                    result['cortex_xdr_host'] = self.cortex_xdr_host
-                    result['cortex_xdr_apikey_id'] = self.cortex_xdr_apikey_id
-                    result['cortex_xdr_apikey'] = self.cortex_xdr_apikey
-                    result['cortex_xdr_alerts_timestamp'] = self.cortex_xdr_alerts_timestamp
-                    result['cortex_xdr_incidents_timestamp'] = self.cortex_xdr_incidents_timestamp
-
-                elif self.api_parser_type == "cybereason":
-                    result['cybereason_host'] = self.cybereason_host
-                    result['cybereason_username'] = self.cybereason_username
-                    result['cybereason_password'] = self.cybereason_password
-                    result['cybereason_malops_timestamp'] = self.cybereason_malops_timestamp
-                    result['cybereason_malwares_timestamp'] = self.cybereason_malwares_timestamp
-
-                elif self.api_parser_type == "cisco_meraki":
-                    result['cisco_meraki_apikey'] = self.cisco_meraki_apikey
-                    result['cisco_meraki_timestamp'] = self.cisco_meraki_timestamp
-
-                elif self.api_parser_type == "proofpoint_tap":
-                    result['proofpoint_tap_host'] = self.proofpoint_tap_host
-                    result['proofpoint_tap_endpoint'] = self.proofpoint_tap_endpoint
-                    result['proofpoint_tap_principal'] = self.proofpoint_tap_principal
-                    result['proofpoint_tap_secret'] = self.proofpoint_tap_secret
-
-                elif self.api_parser_type == "sentinel_one":
-                    result['sentinel_one_host'] = self.sentinel_one_host
-                    result['sentinel_one_apikey'] = self.sentinel_one_apikey
-
-                elif self.api_parser_type == "carbon_black":
-                    result['carbon_black_host'] = self.carbon_black_host
-                    result['carbon_black_orgkey'] = self.carbon_black_orgkey
-                    result['carbon_black_apikey'] = self.carbon_black_apikey
-
-                elif self.api_parser_type == "rapid7_idr":
-                    result['rapid7_idr_host'] = self.rapid7_idr_host
-                    result['rapid7_idr_apikey'] = self.rapid7_idr_apikey
-
-                elif self.api_parser_type == "netskope":
-                    result['netskope_host'] = self.netskope_host
-                    result['netskope_apikey'] = self.netskope_apikey
-
-                elif self.api_parser_type == "harfanglab":
-                    result['harfanglab_host'] = self.harfanglab_host
-                    result['harfanglab_apikey'] = self.harfanglab_apikey
-
-                elif self.api_parser_type == "vadesecure":
-                    result['vadesecure_host'] = self.vadesecure_host
-                    result['vadesecure_login'] = self.vadesecure_login
-                    result['vadesecure_password'] = self.vadesecure_password
-
-                elif self.api_parser_type == "defender":
-                    result['defender_token_endpoint'] = self.defender_token_endpoint
-                    result['defender_client_id'] = self.defender_client_id
-                    result['defender_client_secret'] = self.defender_client_secret
-
-                elif self.api_parser_type == "crowdstrike":
-                    result['crowdstrike_host'] = self.crowdstrike_host
-                    result['crowdstrike_client'] = self.crowdstrike_client
-                    result['crowdstrike_client_id'] = self.crowdstrike_client_id
-                    result['crowdstrike_client_secret'] = self.crowdstrike_client_secret
-
-                elif self.api_parser_type == "vadesecure_o365":
-                    result['vadesecure_o365_host'] = self.vadesecure_o365_host
-                    result['vadesecure_o365_tenant'] = self.vadesecure_o365_tenant
-                    result['vadesecure_o365_client_id'] = self.vadesecure_o365_client_id
-                    result['vadesecure_o365_client_secret'] = self.vadesecure_o365_client_secret
-                    result['vadesecure_o365_access_token'] = self.vadesecure_o365_access_token
-                    result['vadesecure_o365_access_token_expiry'] = self.vadesecure_o365_access_token_expiry
-
-                elif self.api_parser_type == "nozomi_probe":
-                    result['nozomi_probe_host'] = self.nozomi_probe_host
-                    result['nozomi_probe_login'] = self.nozomi_probe_login
-                    result['nozomi_probe_password'] = self.nozomi_probe_password
-
-                elif self.api_parser_type == "blackberry_cylance":
-                    result['blackberry_cylance_host'] = self.blackberry_cylance_host
-                    result['blackberry_cylance_tenant'] = self.blackberry_cylance_tenant
-                    result['blackberry_cylance_app_id'] = self.blackberry_cylance_app_id
-                    result['blackberry_cylance_app_secret'] = self.blackberry_cylance_app_secret
-
-                elif self.api_parser_type == "ms_sentinel":
-                    result['ms_sentinel_tenant_id'] = self.ms_sentinel_tenant_id
-                    result['ms_sentinel_appid'] = self.ms_sentinel_appid
-                    result['ms_sentinel_appsecret'] = self.ms_sentinel_appsecret
-                    result['ms_sentinel_subscription_id'] = self.ms_sentinel_subscription_id
-                    result['ms_sentinel_resource_group'] = self.ms_sentinel_resource_group
-                    result['ms_sentinel_workspace'] = self.ms_sentinel_workspace
-
-                elif self.api_parser_type == "proofpoint_pod":
-                    result['proofpoint_pod_uri'] = self.proofpoint_pod_uri
-                    result['proofpoint_pod_cluster_id'] = self.proofpoint_pod_cluster_id
-                    result['proofpoint_pod_token'] = self.proofpoint_pod_token
-
-                elif self.api_parser_type == "waf_cloudflare":
-                    result['waf_cloudflare_zoneid'] = self.waf_cloudflare_zoneid
-                    result['waf_cloudflare_apikey'] = self.waf_cloudflare_apikey
-
-                elif self.api_parser_type == "gsuite_alertcenter":
-                    result['gsuite_alertcenter_json_conf'] = self.gsuite_alertcenter_json_conf
-                    result['gsuite_alertcenter_admin_mail'] = self.gsuite_alertcenter_admin_mail
-
-                elif self.api_parser_type == "sophos_cloud":
-                    result['sophos_cloud_client_id'] = self.sophos_cloud_client_id
-                    result['sophos_cloud_client_secret'] = self.sophos_cloud_client_secret
-                    result['sophos_cloud_tenant_id'] = self.sophos_cloud_tenant_id
-
-                elif self.api_parser_type == "trendmicro_worryfree":
-                    result['trendmicro_worryfree_access_token'] = self.trendmicro_worryfree_access_token
-                    result['trendmicro_worryfree_secret_key'] = self.trendmicro_worryfree_secret_key
-                    result['trendmicro_worryfree_server_name'] = self.trendmicro_worryfree_server_name
-                    result['trendmicro_worryfree_server_port'] = self.trendmicro_worryfree_server_port
+            if self.mode == "http":
+                for header in self.headers.all():
+                    result['headers'].append(header.to_template())
 
         if self.enable_logging_reputation:
-            result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
-            result['enable_logging_reputation'] = self.enable_logging_reputation
-            if self.logging_reputation_database_v4:
-                result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
+            if not fields or "reputation_contexts" in fields:
+                result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
+            if not fields or "logging_reputation_database_v4" in fields:
+                if self.logging_reputation_database_v4:
+                    result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
 
-            if self.logging_reputation_database_v6:
-                result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
+            if not fields or "logging_reputation_database_v6" in fields:
+                if self.logging_reputation_database_v6:
+                    result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
 
-        if self.enable_logging_geoip:
-            result['logging_geoip_database'] = self.logging_geoip_database.to_template()
-        result['log_forwarders_parse_failure'] = [LogOM().select_log_om(log_fwd.id).to_template()
+        if not fields or "logging_geoip_database" in fields:
+            if self.enable_logging_geoip:
+                result['logging_geoip_database'] = self.logging_geoip_database.to_template()
+        if not fields or "log_forwarders_parse_failure" in fields:
+            result['log_forwarders_parse_failure'] = [LogOM().select_log_om(log_fwd.id).to_template()
                                                     for log_fwd in self.log_forwarders_parse_failure.all().only('id')]
 
-        if self.mode in ("http", "log", 'tcp'):
-            result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
+        if not fields or "log_forwarders" in fields:
+            if self.mode in ("http", "log", 'tcp'):
+                result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
                                         for log_fwd in self.log_forwarders.all().only('id')]
-
-            result['log_condition'] = self.log_condition
-
-        if not self.rsyslog_only_conf and not self.filebeat_only_conf :
-            result['custom_haproxy_conf'] = self.custom_haproxy_conf
 
         return result
 
@@ -2081,14 +1889,13 @@ class FrontendReputationContext(models.Model):
         help_text=_("Field name which will contains the searched value")
     )
 
-    def to_dict(self):
-        return {
-            "frontend": str(self.frontend.pk),
-            "reputation_ctx": str(self.reputation_ctx.pk),
-            "enabled": self.enabled,
-            "arg_field": self.arg_field,
-            "dst_field": self.dst_field
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "frontend" in fields:
+            result['frontend'] = str(result['frontend'])
+        if not fields or "reputation_ctx" in fields:
+            result['reputation_ctx'] = str(result['reputation_ctx'])
+        return result
 
 
 def ha_lt(criterion, key, value):

@@ -34,6 +34,7 @@ from django.utils.translation import ugettext as _
 from django.utils.module_loading import import_string
 from django.utils import timezone
 from django.conf import settings
+from django.forms.models import model_to_dict
 from djongo import models
 import subprocess
 import ipaddress
@@ -126,36 +127,30 @@ class Node(models.Model):
             "static_routes": self.static_routes
         }
 
-    def to_dict(self):
-        excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
-        intfs = [n.to_dict() for n in NetworkInterfaceCard.objects.filter(node=self).exclude(dev__in=excluded_intf)]
-
-        return {
-            "id": str(self.id),
-            "name": self.name,
-            'intfs': intfs,
-            "management_ip": self.management_ip,
-            "internet_ip": self.internet_ip,
-            "backends_outgoing_ip": self.backends_outgoing_ip,
-            "logom_outgoing_ip": self.logom_outgoing_ip,
-            "pf_limit_states": self.pf_limit_states,
-            "pf_limit_frags": self.pf_limit_frags,
-            "pf_limit_src": self.pf_limit_src,
-            "pf_custom_config": self.pf_custom_config,
-            "pf_custom_param_config": self.pf_custom_param_config,
-            "pf_custom_nat_config": self.pf_custom_nat_config,
-            "pf_custom_rdr_config": self.pf_custom_rdr_config,
-            "gateway": self.gateway,
-            "gateway_ipv6": self.gateway_ipv6,
-            "static_routes": self.static_routes,
-            "is_master_mongo": self.is_master_mongo,
-            "is_standalone": self.is_standalone,
-            'is_configured': self.is_configured,
-            "is_master_redis": self.is_master_redis,
-            'configured_forwarders': len(self.get_forwarders_enabled),  # TODO : Implement less consuming function
-            'configured_backends': len(self.get_backends_enabled),  # TODO : Implement less consuming function
-            'unix_timestamp': time.time()
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "intfs" in fields:
+            excluded_intf = ("lo0", "lo1", "lo2", "lo3", "lo4", "lo5", "lo6", "pflog0", "vm-public", "tap0", "tun0")
+            result['intfs'] = [n.to_dict() for n in NetworkInterfaceCard.objects.filter(node=self).exclude(dev__in=excluded_intf)]
+        if not fields or "is_master_mongo" in fields:
+            result['is_master_mongo'] = self.is_master_mongo
+        if not fields or "is_standalone" in fields:
+            result['is_standalone'] = self.is_standalone
+        if not fields or "is_configured" in fields:
+            result['is_configured'] = self.is_configured
+        if not fields or "is_master_redis" in fields:
+            result['is_master_redis'] = self.is_master_redis
+        if not fields or "configured_forwarders" in fields:
+            result['configured_forwarders'] = len(self.get_forwarders_enabled)
+        if not fields or "configured_backends" in fields:
+            result['configured_backends'] = len(self.get_backends_enabled)
+        if not fields or "unix_timestamp" in fields:
+            result['unix_timestamp'] = time.time()
+        if not fields or "pstats_forwarders" in fields:
+            result['pstats_forwarders'] = [p.to_dict() for p in self.pstats_forwarders.all()]
+        return result
 
     def api_request(self, action, config=None, internal=False):
         """
@@ -639,16 +634,15 @@ class NetworkInterfaceCard(models.Model):
         else:
             return []
 
-    def to_dict(self):
-        addresses = []
-        for address in NetworkAddress.objects.filter(nic=self):
-            addresses.append(address.to_dict())
-
-        return {
-            "id": str(self.id),
-            "dev": self.dev,
-            "addresses": addresses
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "addresses" in fields:
+            result['addresses'] = []
+            for address in NetworkAddress.objects.filter(nic=self):
+                result['addresses'].append(address.to_dict())
+        return result
 
     def to_template(self):
         return {
@@ -700,24 +694,17 @@ class NetworkAddress(models.Model):
     # Needed to make alambiquate mongodb queries
     objects = models.DjongoManager()
 
-    def to_dict(self):
-        nic_list = list()
-        addresses_nic = NetworkAddressNIC.objects.filter(network_address=self)
-        for address_nic in addresses_nic:
-            nic = address_nic.nic
-            nic_list.append(str(nic.pk))
-
-        return {
-            "id": str(self.id),
-            "name": self.name,
-            'ip': self.ip,
-            'is_system': self.is_system,
-            'prefix_or_netmask': self.prefix_or_netmask,
-            'carp_vhid': self.carp_vhid,
-            'vlan': self.vlan,
-            'fib': self.fib,
-            "nic": nic_list
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "nic" in fields:
+            result['nic'] = list()
+            addresses_nic = NetworkAddressNIC.objects.filter(network_address=self)
+            for address_nic in addresses_nic:
+                nic = address_nic.nic
+                result['nic'].append(str(nic.pk))
+        return result
 
     def to_template(self):
         """ Dictionary used to create configuration file related to the interface

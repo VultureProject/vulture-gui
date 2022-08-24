@@ -255,17 +255,17 @@ def backend_edit(request, object_id=None, api=False):
             """ Handle JSON formatted request Http-health-check-headers """
             try:
                 if api:
-                    httpchk_header_ids = request.JSON.get('http_health_check_headers', [])
-                    assert isinstance(httpchk_header_ids, list), "Health check headers field must be a list."
+                    httpchk_headers_dict = request.JSON.get('http_health_check_headers', {})
                 else:
-                    httpchk_header_ids = json_loads(request.POST.get('http_health_check_headers', "[]"))
+                    httpchk_headers_dict = json_loads(request.POST.get('http_health_check_headers', "{}"))
+                assert isinstance(httpchk_headers_dict, dict), "Health check headers field must be a dictionary."
             except Exception as e:
                 return render_form(backend, save_error=["Error in Http-health-check-headers field : {}".format(e),
                                                         str.join('', format_exception(*exc_info()))])
 
             """ For each Health check header in list """
-            for header in httpchk_header_ids:
-                httpchkform = HttpHealthCheckHeaderForm(header, error_class=DivErrorList)
+            for k,v in httpchk_headers_dict.items():
+                httpchkform = HttpHealthCheckHeaderForm({'check_header_name': k, 'check_header_value': v}, error_class=DivErrorList)
                 if not httpchkform.is_valid():
                     if api:
                         api_errors.append({"health_check": httpchkform.errors.get_json_data()})
@@ -275,7 +275,6 @@ def backend_edit(request, object_id=None, api=False):
 
                 # Save forms in case we re-print the page
                 httpchk_header_form_list.append(httpchkform)
-                httpchk_headers_dict[header.get('check_header_name')] = header.get('check_header_value')
 
             """ For each header in list """
             for header in header_ids:

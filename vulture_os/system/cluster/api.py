@@ -291,12 +291,13 @@ class NodeAPIv1(View):
     def get(self, request, object_id=None):
         try:
             name = request.GET.get("name")
+            fields = request.GET.getlist('fields') or None
             if object_id:
-                obj = Node.objects.get(pk=object_id).to_dict()
+                obj = Node.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
-                obj = Node.objects.get(name=name).to_dict()
+                obj = Node.objects.get(name=name).to_dict(fields=fields)
             else:
-                obj = [s.to_dict() for s in Node.objects.all()]
+                obj = [s.to_dict(fields=fields) for s in Node.objects.all()]
 
             return JsonResponse({
                 'data': obj

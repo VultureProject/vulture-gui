@@ -27,6 +27,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.template import Context, Template
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -159,6 +160,9 @@ class LogOM (models.Model):
     def to_html_template(self):
         return self.select_log_om(self.id).to_html_template()
 
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
+
 
 class LogOMFile(LogOM):
 
@@ -177,18 +181,14 @@ class LogOMFile(LogOM):
     def template(self):
         return 'om_file.tpl'
 
-    def to_dict(self):
-        return {
-            'id': str(self.id),
-            'internal': self.internal,
-            'name': self.name,
-            'type': 'File',
-            'file': self.file,
-            'flush_interval': self.flush_interval,
-            'async_writing': self.async_writing,
-            'enabled': self.enabled,
-            'stock_as_raw': self.stock_as_raw
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "type" in fields:
+            result['type'] = 'File'
+
+        return result
 
     def to_html_template(self):
         """ Returns only needed attributes for display in GUI """
@@ -269,16 +269,10 @@ class LogOMRELP(LogOM):
         null=True
     )
 
-    def to_dict(self):
-        result = {
-            'id': self.id,
-            'internal': self.internal,
-            'name': self.name,
-            'type': 'RELP',
-            'target': self.target,
-            'port': self.port,
-            'enabled': self.enabled,
-            }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "type" in fields:
+            result['type'] = 'RELP'
         if self.tls_enabled:
             result['tls_enabled'] = True
         if self.x509_certificate:
@@ -325,18 +319,16 @@ class LogOMHIREDIS(LogOM):
     pwd = models.TextField(blank=True, default=None)
     enabled = models.BooleanField(default=True)
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'internal': self.internal,
-            'name': self.name,
-            'type': 'Redis',
-            'target': self.target,
-            'port': self.port,
-            'key': self.key or "",
-            'pwd': self.pwd or "",
-            'enabled': self.enabled
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "type" in fields:
+            result['type'] = 'Redis'
+        if not fields or "key" in fields:
+            result['key'] = result['key'] or ""
+        if not fields or "pwd" in fields:
+            result['pwd'] = result['pwd'] or ""
+
+        return result
 
     def to_html_template(self):
         """ Returns only needed attributes for display in GUI """
@@ -390,19 +382,11 @@ class LogOMFWD(LogOM):
     )
     send_as_raw = models.BooleanField(default=False)
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'internal': self.internal,
-            'name': self.name,
-            'type': 'Syslog',
-            'target': self.target,
-            'port': self.port,
-            'protocol': self.protocol,
-            'enabled': self.enabled,
-            'zip_level': self.zip_level,
-            'send_as_raw': self.send_as_raw
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "type" in fields:
+            result['type'] = 'Syslog'
+        return result
 
     def to_html_template(self):
         """ Returns only needed attributes for display in GUI """
@@ -451,18 +435,15 @@ class LogOMElasticSearch(LogOM):
         null=True
     )
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'internal': self.internal,
-            'name': self.name,
-            'type': 'Elasticsearch',
-            'index_patern': self.index_pattern,
-            'servers': self.servers,
-            'uid': self.uid or "",
-            'pwd': self.pwd or "",
-            'enabled': self.enabled
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "type" in fields:
+            result['type'] = 'Elasticsearch'
+        if not fields or "uid" in fields:
+            result['uid'] = result['uid'] or ""
+        if not fields or "pwd" in fields:
+            result['pwd'] = result['pwd'] or ""
+        return result
 
     def to_html_template(self):
         """ Returns only needed attributes for display in GUI """
@@ -524,17 +505,11 @@ class LogOMMongoDB(LogOM):
         help_text=_("X509Certificate object to use.")
     )
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'internal': self.internal,
-            'name': self.name,
-            'type': 'MongoDB',
-            'db': self.db,
-            'collection': self.collection,
-            'uristr': self.uristr,
-            'enabled': self.enabled
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "type" in fields:
+            result['type'] = 'MongoDB'
+        return result
 
     def to_html_template(self):
         """ Returns only needed attributes for display in GUI """

@@ -84,13 +84,13 @@ class PKIView(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-
+            fields = request.GET.getlist('fields') or None
             if object_id:
-                ret = X509Certificate.objects.get(pk=object_id).to_dict()
+                ret = X509Certificate.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
-                ret = X509Certificate.objects.get(name=name).to_dict()
+                ret = X509Certificate.objects.get(name=name).to_dict(fields=fields)
             else:
-                ret = [p.to_dict() for p in X509Certificate.objects.all()]
+                ret = [p.to_dict(fields=fields) for p in X509Certificate.objects.all()]
             
             return JsonResponse({
                 "data": ret
@@ -118,13 +118,13 @@ class TLSProfileApiView(View):
         try:
             object_id = request.GET.get('object_id')
             name = request.GET.get('name')
-
+            fields = request.GET.getlist('fields') or None
             if object_id:
-                ret = TLSProfile.objects.get(pk=object_id).to_dict()
+                ret = TLSProfile.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
-                ret = TLSProfile.objects.get(name=name).to_dict()
+                ret = TLSProfile.objects.get(name=name).to_dict(fields=fields)
             else:
-                ret = [p.to_dict() for p in TLSProfile.objects.all()]
+                ret = [p.to_dict(fields=fields) for p in TLSProfile.objects.all()]
             
             return JsonResponse({
                 "data": ret

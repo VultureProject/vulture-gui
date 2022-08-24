@@ -30,6 +30,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
+from django.db.models import Q
 
 # Django project imports
 from gui.decorators.apicall import api_need_key
@@ -94,16 +95,30 @@ class FrontendAPIv1(View):
     def get(self, request, object_id=None):
         try:
             name = request.GET.get('name')
+            fields = request.GET.getlist('fields') or None
+            mode = request.GET.getlist('mode') or None
+            enabled = request.GET.get('enabled') or None
+
+            filter= Q()
+            if mode:
+                filter.add(Q(mode__in=mode), Q.AND)
+            if enabled:
+                filter.add(Q(enabled__exact= True if enabled == "true" else False), Q.AND)
+
             if object_id:
-                res = Frontend.objects.get(pk=object_id).to_dict()
+                res = Frontend.objects.get(pk=object_id).to_dict(fields=fields)
 
             elif name:
-                res = Frontend.objects.get(name=name).to_dict()
+                res = Frontend.objects.get(name=name).to_dict(fields=fields)
+
+            elif len(filter) > 0:
+                res = [f.to_dict(fields=fields) for f in Frontend.objects.filter(filter)]
 
             else:
-                res = [s.to_dict() for s in Frontend.objects.all()]
+                res = [s.to_dict(fields=fields) for s in Frontend.objects.all()]
 
             return JsonResponse({
+                'status': True,
                 'data': res
             })
 

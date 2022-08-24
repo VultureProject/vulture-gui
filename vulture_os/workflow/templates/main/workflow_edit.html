@@ -105,11 +105,17 @@
     var otp_logo = "{% static 'img/logos/otp.png' %}";
     var server_icon = "{% static 'plugins/visjs/img/network/server-icon.jpg' %}";
     var favicon = "{% static 'img/favicon.ico' %}";
+    var access_control_get = "{% url 'api.darwin.access_control.get' %}";
     var access_control_add_uri = "{% url 'darwin.access_control.edit' %}";
+    var frontend_services_api = "{% url 'services.frontend.api' %}";
     var frontend_add_uri = "{% url 'services.frontend.edit' %}";
+    var backend_applications_api = "{% url 'applications.backend.api' %}";
     var backend_add_uri = "{% url 'applications.backend.edit' %}";
+    var workflow_api = "{% url 'workflow.api' %}"
     var worflow_list_uri = "{% url 'workflow.list' %}";
+    var authentication_portal_api = "{% url 'api.portal.user_authentication' %}";
     var authentication_add_uri = "{% url 'portal.user_authentication.edit' %}";
+    var authentication_filter_api = "{% url 'api.portal.authentication_access_control' %}";
     var authentication_filter_add_uri = "{% url 'portal.authentication_access_control.edit' %}";
 
 {% endblock %}

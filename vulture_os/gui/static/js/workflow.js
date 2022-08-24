@@ -96,26 +96,29 @@ var workflow_vue = new Vue({
         last_node_append: null
     },
 
-    mounted(){
+    async mounted(){
         var self = this;
-
+        await self.get_frontends(mode=["http","tcp"])
         if (workflow_id === "None"){
-            self.get_dependencies();
+            self.frontend_choices = self.frontend_choices.filter(element => element.mode == "http" || element.mode == "tcp");
+            if(!self.workflow.length){
+                self.workflow.push({
+                    id: "#",
+                    label: gettext('Start'),
+                    data: {type: 'start'}
+                });
+                self.redraw_workflow();
+                self.init_toolbox_tree();
+            }
         } else {
             $.get(
-                '',
-                {
-                    action: 'get_workflow'
-                },
+                workflow_api + workflow_id,
+                $.param({
+                    fields: ["workflow_json"]
+                }, true),
 
                 function(response){
-                    self.workflow_mode = response.data.frontend.mode;
-                    self.workflow = JSON.parse(response.data.workflow_json);
-                    self.frontend_choices = response.frontends;
-                    self.backend_choices = response.backends;
-                    self.authentication_choices = response.authentications;
-                    self.authentication_filter_choices = response.authentication_filters;
-
+                    self.workflow = response.data.workflow_json;
                     for(node of self.workflow) {
                         switch(node.data.type) {
                             case "authentication":
@@ -124,14 +127,14 @@ var workflow_vue = new Vue({
                             case "authentication_filter":
                                 self.authentication_filter_set = true
                                 break;
+                            case "frontend":
+                                self.workflow_mode = node.data.mode;
                         }
                     }
-
+                    self.get_dependencies();
                     self.frontend_set = true;
                     self.backend_set = true;
                     self.policy_set = true;
-                    self.get_dependencies();
-                    self.redraw_workflow();
                 }
             )
         }
@@ -149,40 +152,106 @@ var workflow_vue = new Vue({
     methods: {
         get_dependencies(){
             var self = this;
+            return Promise.all([
+                self.get_authentications(),
+                self.get_authentication_filters(),
+                self.get_acls(),
+                self.get_backends(mode=[self.workflow_mode])
+            ]).then(function(response){
+                self.redraw_workflow();
+                self.init_toolbox_tree();
+            });
 
-            var data = {
-                action: 'dependencies'
+        },
+
+        get_frontends(mode=[],enabled=true){
+            var self = this;
+            var data ={
+                enabled : enabled,
+                fields : ["mode","type","id","name","listeners","enable_logging","log_forwarders"]
             }
+            if(mode)
+                data.mode = mode;
+            return $.get(
+                frontend_services_api,
+                $.param(data, true),
 
-            if (self.workflow_mode)
-                data.mode = self.workflow_mode
+                function(response){
+                    if (!check_json_error(response))
+                        return;
+                    self.frontend_choices = response.data;
+                }
+            )
+        },
 
-            $.get(
-                '',
-                data,
+        get_backends(mode=[], enabled=true){
+            var self = this;
+            var data ={
+                enabled : enabled,
+                fields : ["mode","type","id","name","servers"]
+            }
+            if(mode)
+                data.mode = mode;
+            return $.get(
+                backend_applications_api,
+                $.param(data, true),
 
                 function(response){
                     if (!check_json_error(response))
                         return;
 
-                    if (!self.workflow_mode){
-                        self.frontend_choices = response.data.frontends;
-                        if (workflow_id === "None" && !self.workflow.length){
-                            self.workflow.push({
-                                id: "#",
-                                label: gettext('Start'),
-                                data: {type: 'start'}
-                            })
-                        }
-                        self.redraw_workflow();
-                    } else {
-                        self.backend_choices = response.data.backends;
-                        self.access_control_choices = response.data.acls;
-                        self.authentication_choices = response.data.authentications;
-                        self.authentication_filter_choices = response.data.authentication_filters;
-                    }
+                    self.backend_choices = response.data;
+                }
+            )
+        },
 
-                    self.init_toolbox_tree();
+        get_authentications(enable_external=false){
+            var self = this;
+            var data ={
+                enable_external : enable_external,
+                fields : ["id","name","repositories"]
+            }
+            return $.get(
+                authentication_portal_api,
+                $.param(data, true),
+                function(response){
+                    if (!check_json_error(response))
+                        return;
+
+                    self.authentication_choices = response.data;
+
+                }
+            )
+        },
+
+        get_authentication_filters(){
+            var self = this;
+            return $.get(
+                authentication_filter_api,
+                $.param({
+                    fields : ["id","name"]
+                }, true),
+                function(response){
+                    if (!check_json_error(response))
+                        return;
+
+                    self.authentication_filter_choices = response.res;
+                }
+            )
+        },
+
+        get_acls(){
+            var self = this;
+            return $.get(
+                access_control_get,
+                $.param({
+                    fields : ["id","name"]
+                }, true),
+                function(response){
+                    if (!check_json_error(response))
+                        return;
+
+                    self.access_control_choices = response.data;
                 }
             )
         },
@@ -560,13 +629,12 @@ var workflow_vue = new Vue({
         append_frontend(frontend_node){
             var self = this;
 
-            function append_frontend_to_workflow(node){
+            async function append_frontend_to_workflow(node){
                 self.workflow.push(frontend_node)
                 self.frontend_set = true;
 
                 self.last_node_append = frontend_node.id;
-                self.get_dependencies();
-                self.redraw_workflow();
+                await self.get_dependencies();
             }
 
             if (frontend_node.data.mode === "http"){
@@ -710,7 +778,6 @@ var workflow_vue = new Vue({
                     self.workflow.push(tmp);
                     self.last_node_append = tmp.id;
                     self.authentication_set = true;
-                    self.get_dependencies();
                     self.redraw_workflow();
                     break;
 
@@ -719,7 +786,6 @@ var workflow_vue = new Vue({
                     self.workflow.push(tmp);
                     self.last_node_append = tmp.id;
                     self.authentication_filter_set = true;
-                    self.get_dependencies();
                     self.redraw_workflow();
                     break;
 

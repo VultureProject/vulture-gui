@@ -102,12 +102,13 @@ class ReputationContextAPIv1(View):
     @api_need_key('cluster_api_key')
     def get(self, request, object_id=None):
         try:
+            fields = request.GET.getlist('fields') or None
             if object_id:
-                obj = ReputationContext.objects.get(pk=object_id).to_dict()
+                obj = ReputationContext.objects.get(pk=object_id).to_dict(fields=fields)
             elif request.GET.get('name'):
-                obj = ReputationContext.objects.get(name=request.GET.get('name')).to_dict()
+                obj = ReputationContext.objects.get(name=request.GET.get('name')).to_dict(fields=fields)
             else:
-                obj = [s.to_dict() for s in ReputationContext.objects.all()]
+                obj = [s.to_dict(fields=fields) for s in ReputationContext.objects.all()]
 
             return JsonResponse({
                 'data': obj

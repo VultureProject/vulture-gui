@@ -570,11 +570,9 @@
                         'condition': condition});
         });
         $('#headers').val(JSON.stringify(headers));
-        let check_headers = new Array()
+        let check_headers = {}
         $('#http_health_check_headers_table tbody tr').each(function(index, tr){
-          let check_header_name = tr.children[0].children[0].value
-          let check_header_value = tr.children[1].children[0].value
-          check_headers.push({'check_header_name': check_header_name, 'check_header_value': check_header_value});
+          check_headers[tr.children[0].children[0].value] = tr.children[1].children[0].value
         })
         $('#http_health_check_headers').val(JSON.stringify(check_headers));
       }

@@ -84,8 +84,8 @@ class RadiusRepository(BaseRepository):
         help_text=_('Max timeout to contact Radius server')
     )
 
-    def to_dict(self):
-        return model_to_dict(self)
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
 
     def to_template(self):
         """  returns the attributes of the class """

@@ -25,6 +25,7 @@ __doc__ = 'User Access Control model'
 
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.forms.models import model_to_dict
 from djongo import models
 
 import logging
@@ -136,13 +137,11 @@ class AuthAccessControl(models.Model):
     def __str__(self):
         return f"Authentication ACL {self.name}"
 
-    def to_dict(self):
-        return {
-            "id": str(self.pk),
-            "name": self.name,
-            "rules": self.rules,
-            "enabled": self.enabled,
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(self.pk)
+        return result
 
     def to_template(self):
         return {

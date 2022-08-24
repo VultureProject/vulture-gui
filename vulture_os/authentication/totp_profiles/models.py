@@ -89,13 +89,11 @@ class TOTPProfile(models.Model):
     def store(self):
         self.save()
 
-    def to_dict(self):
-        return {
-            'id': str(self.id),
-            "auth_repository": str(self.auth_repository.id),
-            "totp_repository": str(self.totp_repository.id),
-            "login": str(self.login)
-        }
+    def to_dict(self, fields=None):
+        result =  model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        return result
 
     def to_template(self):
         """  returns the attributes of the class """

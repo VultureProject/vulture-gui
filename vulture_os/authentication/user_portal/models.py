@@ -583,14 +583,18 @@ class UserAuthentication(models.Model):
             'portal_template': self.portal_template.to_dict()
         }
 
-    def to_dict(self):
-        data = model_to_dict(self)
-        data['id'] = str(self.pk)
-        data['repositories'] = [r.to_dict() for r in self.repositories.all()]
-        data['portal_template'] = self.portal_template.to_dict()
-        data['user_scope'] = self.user_scope.to_dict() if self.user_scope else None
-        data['external_listener'] = self.external_listener.to_dict() if self.external_listener else None
-
+    def to_dict(self, fields=None):
+        data = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            data['id'] = str(self.pk)
+        if not fields or "repositories" in fields:
+            data['repositories'] = [r.to_dict() for r in self.repositories.all()]
+        if not fields or "portal_template" in fields:
+            data['portal_template'] = self.portal_template.to_dict() if self.portal_template else None
+        if not fields or "user_scope" in fields:
+            data['user_scope'] = self.user_scope.to_dict() if self.user_scope else None
+        if not fields or "external_listener" in fields:
+            data['external_listener'] = self.external_listener.to_dict() if self.external_listener else None
         return data
 
     @property

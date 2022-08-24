@@ -271,40 +271,6 @@ def workflow_edit(request, object_id=None, api=False):
         workflow_obj = Workflow()
 
     if request.method == "GET":
-        action = request.GET.get('action')
-        if action == "dependencies":
-            mode = request.GET.get('mode')
-
-            if not mode:
-                data = {
-                    'frontends': [f.to_dict() for f in Frontend.objects.filter(enabled=True, mode__in=('http', 'tcp'))]
-                }
-            else:
-                data = {
-                    'acls': [a.to_template() for a in AccessControl.objects.all()],
-                    'backends': [b.to_dict() for b in Backend.objects.filter(enabled=True, mode=mode)],
-                    'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)],
-                    'authentication_filters': [a.to_dict() for a in AuthAccessControl.objects.all()],
-                }
-
-            return JsonResponse({
-                'status': True,
-                'data': data
-            })
-
-        elif action == "get_workflow":
-            return JsonResponse({
-                'status': True,
-                'data': workflow_obj.to_dict(),
-                'frontends': [f.to_dict() for f in Frontend.objects.filter(enabled=True)],
-                'backends': [b.to_dict() for b in Backend.objects.filter(
-                    enabled=True,
-                    mode=workflow_obj.frontend.mode
-                )],
-                'authentications': [a.to_dict() for a in UserAuthentication.objects.filter(enable_external=False)],
-                'authentication_filters': [a.to_dict() for a in AuthAccessControl.objects.all()],
-            })
-
         return render(request, "main/workflow_edit.html", {
             'workflow': workflow_obj
         })
