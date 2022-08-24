@@ -49,12 +49,11 @@ def get_rc_config(logger, rc_args):
         filename, variable = rc_args
 
     try:
-        file_path = os.path.join(RC_PATH, filename)
-
-        command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc', '-f', file_path, '-n', variable]
-        # If there is not file specified, remove the '-f' option and the empty string(filename)
-        if not filename:
-            del command[2:4]
+        command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc']
+        if filename:
+          file_path = os.path.join(RC_PATH, filename)
+          command.extend(['-f', file_path])
+        command.extend(['-n', variable])
         result = subprocess.run(command, capture_output=True)
         return result.stdout.decode("utf8").strip()
 
@@ -76,11 +75,11 @@ def set_rc_config(logger, rc_args):
         filename, variable, value = rc_args
 
     try:
-        file_path = os.path.join(RC_PATH, filename)
-
-        command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc', '-f', file_path, '{}={}'.format(variable, value)]
-        if not filename:
-            del command[2:4]
+        command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc']
+        if filename:
+          file_path = os.path.join(RC_PATH, filename)
+          command.extend(['-f', file_path])
+        command.extend(['{}={}'.format(variable, value)])
         proc = subprocess.Popen(command,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         res, errors = proc.communicate()
         if not errors:
