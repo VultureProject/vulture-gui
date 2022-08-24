@@ -637,3 +637,13 @@ class Server(models.Model):
         if self.tls_profile:
             result += self.tls_profile.generate_conf(backend=True)
         return result
+
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+
+        if not fields or "backend" in fields:
+            result['backend'] = self.backend.to_dict() if result['backend'] else None
+        if not fields or "tls_profile" in fields:
+            result['tls_profile'] = self.tls_profile.to_dict() if result['tls_profile'] else ""
+
+        return result
