@@ -26,7 +26,7 @@ __doc__ = 'Listeners URLS'
 from django.urls import path, re_path
 
 # Django project imports
-from system.error_templates import views
+from system.error_templates import views, api
 
 
 # Required exceptions imports
@@ -44,4 +44,8 @@ urlpatterns = [
     re_path('^system/template/delete/(?P<object_id>[A-Fa-f0-9]+)$',
             views.template_delete,
             name="system.error_templates.delete"),
+
+    path("api/v1/system/template/", api.ErrorTemplateAPIv1.as_view(), name="system.error_templates.api"),
+    path("api/v1/system/template/<int:object_id>/", api.ErrorTemplateAPIv1.as_view(), name="system.error_templates.api"),
+
 ]
