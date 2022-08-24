@@ -79,7 +79,7 @@ def get_management_ip():
     """
     from toolkit.system.rc import get_rc_config
     management_ip = get_rc_config(logger,("network","management_ip"))
-    logger.critical(f"get_management_ip: {management_ip}")
+    logger.debug(f"get_management_ip: result is '{management_ip}'")
     if management_ip:
         return management_ip
 
