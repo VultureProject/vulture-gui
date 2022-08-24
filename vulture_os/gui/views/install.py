@@ -35,6 +35,7 @@ from toolkit.network.network import get_hostname, get_management_ip
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.system.secret_key import set_key
+from toolkit.system.rc import get_rc_config
 import logging
 import requests
 import subprocess
@@ -65,6 +66,7 @@ def cluster_create(admin_user=None, admin_password=None):
     cluster = Cluster()
 
     """ Create the local node """
+    RC_NETWORK_CONF = "network"
     node, new_node = Node.objects.get_or_create(
         name=get_hostname(),
         management_ip=get_management_ip()
@@ -72,9 +74,12 @@ def cluster_create(admin_user=None, admin_password=None):
 
     if new_node:
         logger.info("Registering new node '{}'".format(node.name))
-        node.internet_ip = node.management_ip
-        node.backends_outgoing_ip = node.management_ip
-        node.logom_outgoing_ip = node.management_ip
+        internet_ip = get_rc_config(logger,(RC_NETWORK_CONF, "internet_ip"))
+        node.internet_ip = internet_ip if internet_ip else node.management_ip
+        backends_outgoing_ip = get_rc_config(logger,(RC_NETWORK_CONF, "backends_outgoing_ip"))
+        node.backends_outgoing_ip = backends_outgoing_ip if backends_outgoing_ip else node.management_ip
+        logom_outgoing_ip = get_rc_config(logger,(RC_NETWORK_CONF, "logom_outgoing_ip"))
+        node.logom_outgoing_ip = logom_outgoing_ip if logom_outgoing_ip else node.management_ip
         node.save()
 
     """ Read network config and store it into mongo """

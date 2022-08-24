@@ -25,7 +25,7 @@ __doc__ = 'Cluster main models'
 
 from system.config.models import Config
 
-from toolkit.network.network import get_hostname, MANAGEMENT_IP_PATH
+from toolkit.network.network import get_hostname
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
@@ -271,17 +271,14 @@ class Node(models.Model):
         return False
 
     def write_management_ip(self):
-        """ Write self.management_ip in management.ip files (jails and host) """
-        """ First write on host's file """
-        api_res = self.api_request("system.config.models.write_conf",
-                                   [MANAGEMENT_IP_PATH, self.management_ip, "root:wheel", "644"])
-        """ Then, write into jails same path """
-        for jail in JAILS:
-            api_res = self.api_request("system.config.models.write_conf",
-                                       ["/zroot/{}{}".format(jail, MANAGEMENT_IP_PATH),
-                                        self.management_ip, "root:wheel", "644"])
-        """ Returns the last api request """
-        return api_res
+        """ Write self.management_ip in management_ip variable in /etc/rc.conf.d/network """
+        RC_FILENAME ="network"
+        api_res = self.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "management_ip", self.management_ip))
+        """ Returns the messagequeue status with an error message if failed """
+        return {
+            "status": api_res.get("status"),
+            "message": "" if api_res.get("status") else "Failed to write Management IP"
+        }
 
     def addresses(self, nic=None):
         """
@@ -509,7 +506,10 @@ class Cluster (models.Model):
         :param node:      The node to set the action to
         :param internal:  Is this request internal ? Means that it will not be shown to the admin
         :return:
-            { 'status': True, 'message': 'A meaningful message' }
+                for no node is specified:
+                { 'status': True, 'message': 'A meaningful message' }
+                for specific node:
+                { 'status': True, 'message': 'A meaningful message', instance: messagequeue_object_created }
             { 'status': False, 'message': 'A meaningful message' }
         """
 
@@ -531,7 +531,7 @@ class Cluster (models.Model):
                 except Exception as e:
                     logger.error("Cluster::api_request: {}".format(str(e)))
                     return {'status': False, 'message': str(e)}
-
+            return {'status': True, 'message': ''}
         else:
             m, created = MessageQueue.objects.get_or_create(
                 node=node,
@@ -549,7 +549,7 @@ class Cluster (models.Model):
                 logger.error("Cluster::api_request: {}".format(str(e)))
                 return {'status': False, 'message': str(e)}
 
-        return {'status': True, 'message': ''}
+            return {'status': True, 'message': '', 'instance': m}
 
 
 class MessageQueue (models.Model):
@@ -592,6 +592,36 @@ class MessageQueue (models.Model):
         self.modified = timezone.now()
         return super().save(*args, **kwargs)
 
+    def await_result(self, interval=2, max_tries=30):
+        """
+
+        :param interval:    Time interval to wait before checking status again
+        :param max_tries:   The maximum number of times to check status
+        :return:
+                The result of the messagequeue or an empty string with an exception raised when the status
+                is not done in the interval and maximum tries given
+        """
+        counter = 0
+        try:
+            while True:
+                message_instance = MessageQueue.objects.get(pk=self.id)
+                if message_instance.status == "done":
+                    break
+                counter += 1
+                if counter == max_tries:
+                    raise APISyncResultTimeOutException(f"MessageQueue:: Timeout on the result of {message_instance.action}. Config is {message_instance.config}")
+                time.sleep(interval)
+
+            return message_instance.result
+        except APISyncResultTimeOutException as e:
+            logger.error(e)
+            return ""
+        except Exception as e:
+            logger.error(e)
+            return ""
+
+class APISyncResultTimeOutException(Exception):
+    pass
 
 class NetworkInterfaceCard(models.Model):
     """
