@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Frontends & Listeners dedicated form classes'
 
 # Django system imports
+import ast
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
@@ -554,12 +555,16 @@ class FrontendForm(ModelForm):
         data = self.cleaned_data.get('kafka_brokers')
         if not data:
             return []
+        if "[" in data and "]" in data:
+            return ast.literal_eval(data)
         return data.split(',')
 
     def clean_kafka_options(self):
         data = self.cleaned_data.get('kafka_options')
         if not data:
             return []
+        if "[" in data and "]" in data:
+            return ast.literal_eval(data)
         return data.split(',')
 
     def clean(self):

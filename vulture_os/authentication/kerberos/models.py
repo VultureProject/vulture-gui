@@ -79,8 +79,8 @@ class KerberosRepository(BaseRepository):
         help_text=_('Keytab of the service used to contact KDC.')
     )
 
-    def to_dict(self):
-        return model_to_dict(self)
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
 
     def to_template(self):
         """  returns the attributes of the class """

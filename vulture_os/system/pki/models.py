@@ -182,8 +182,8 @@ class X509Certificate(models.Model):
     def __init__(self, *args, **kwargs):
         super(X509Certificate, self).__init__(*args, **kwargs)
 
-    def to_dict(self):
-        return model_to_dict(self)
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
 
     def get_base_filename(self):
         return "{}/{}-{}".format(CERT_PATH, self.name, self.id)
@@ -593,19 +593,15 @@ class TLSProfile(models.Model):
             'alpn': self.alpn
         }
 
-    def to_dict(self):
-        tmp = {
-            'id': str(self.id),
-            'name': self.name,
-            'x509_certificate': self.x509_certificate.to_dict(),
-            'protocols': self.protocols,
-            'cipher_suite': self.cipher_suite,
-            'alpn': self.alpn,
-            'verify_client': self.verify_client
-        }
-
-        if self.ca_cert:
-            tmp["ca_cert"] = self.ca_cert.to_dict()
+    def to_dict(self, fields=None):
+        tmp = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            tmp['id'] = str(tmp['id'])
+        if not fields or "x509_certificate" in fields:
+            tmp['x509_certificate'] = self.x509_certificate.to_dict()
+        if not fields or "ca_cert" in fields:
+            if self.ca_cert:
+                tmp["ca_cert"] = self.ca_cert.to_dict()
 
         return tmp
 

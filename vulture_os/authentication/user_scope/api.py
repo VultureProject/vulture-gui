@@ -48,12 +48,13 @@ class UserScopeApi(View):
     @api_need_key("cluster_api_key")
     def get(self, request, object_id=None):
         try:
+            fields = request.GET.getlist('fields') or None
             if object_id:
-                data = UserScope.objects.get(pk=object_id).to_dict()
+                data = UserScope.objects.get(pk=object_id).to_dict(fields=fields)
             elif request.GET.get('name'):
-                data = UserScope.objects.get(name=request.GET['name']).to_dict()
+                data = UserScope.objects.get(name=request.GET['name']).to_dict(fields=fields)
             else:
-                data = [ua.to_dict() for ua in UserScope.objects.all()]
+                data = [ua.to_dict(fields=fields) for ua in UserScope.objects.all()]
 
             return JsonResponse({
                 "data": data

@@ -27,6 +27,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -296,36 +297,30 @@ class Backend(models.Model):
     def __str__(self):
         return "{} Backend '{}'".format(self.mode.upper(), self.name)
 
-    def to_dict(self):
+    def to_dict(self, fields=None):
         """ This method MUST be used in API instead of to_template() method
                 to prevent no-serialization of sub-models like Listeners
         :return     A JSON object
         """
-        result = {
-            'id': str(self.id),
-            'enabled': self.enabled,
-            'name': self.name,
-            'mode': self.mode,
-            'balancing_mode': self.balancing_mode,
-            'timeout_connect': self.timeout_connect,
-            'timeout_server': self.timeout_server,
-            'balancing_param': self.balancing_param,
-            'status': dict(self.status),  # It is an OrderedDict
-            'servers': [],
-            'custom_haproxy_conf': self.custom_haproxy_conf,
-            'tags': self.tags
-        }
-        """ Add listeners """
-        for server in self.server_set.all():
-            s = server.to_template()
-            # Remove frontend to prevent infinite loop
-            del s['backend']
-            result['servers'].append(s)
-        """ Other attributes """
-        if self.mode == "http":
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "servers" in fields:
+            result['servers'] = []
+            """ Add listeners """
+            for server in self.server_set.all():
+                # Remove backend to prevent infinite loop
+                s = server.to_dict(fields=['id','target','port','mode','weight', 'tls_profile'])
+                result['servers'].append(s)
+        if not fields or "status" in fields:
+            result['status'] = dict(self.status)
+        if not fields or "headers" in fields:
+            """ Other attributes """
             result['headers'] = []
-            for header in self.headers.all():
-                result['headers'].append(header.to_template())
+            if self.mode == "http":
+                for header in self.headers.all():
+                    result['headers'].append(header.to_template())
+
         return result
 
     def to_html_template(self):
@@ -452,7 +447,7 @@ class Backend(models.Model):
         return result
 
     def generate_conf(self, server_list=None, header_list=None):
-        """ Render the conf with Jinja template and self.to_template() method 
+        """ Render the conf with Jinja template and self.to_template() method
         :return     The generated configuration as string, or raise
         """
         # The following var is only used by error, do not forget to adapt if needed
@@ -494,7 +489,7 @@ class Backend(models.Model):
                           disabled=True)
 
     def get_test_filename(self):
-        """ Return test filename for test conf with haproxy 
+        """ Return test filename for test conf with haproxy
         """
         """ If object is not already saved : no id so default=test """
         return "backend_{}.conf".format(self.id or "test")
@@ -510,7 +505,7 @@ class Backend(models.Model):
 
     def get_unix_socket(self):
         """ Return filename of unix socket on which HAProxy send data
-         and on which Rsyslog listen 
+         and on which Rsyslog listen
         """
         return "{}/backend_{}.sock".format(UNIX_SOCKET_PATH, self.id)
 

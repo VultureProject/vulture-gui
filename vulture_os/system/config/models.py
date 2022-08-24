@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Global Configuration main models'
 
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -70,25 +71,8 @@ class Config(models.Model):
                                                        "into cluster database"))
     internal_tenants = models.ForeignKey(to=Tenants, null=False, default=1, on_delete=models.PROTECT)
 
-    def to_dict(self):
-        result = {
-            'pf_ssh_restrict': self.pf_ssh_restrict,
-            'pf_admin_restrict': self.pf_admin_restrict,
-            'cluster_api_key': self.cluster_api_key,
-            'oauth2_header_name': self.oauth2_header_name,
-            'portal_cookie_name': self.portal_cookie_name,
-            'public_token': self.public_token,
-            'ldap_repository': self.ldap_repository.id if self.ldap_repository else None,
-            'branch': self.branch,
-            'smtp_server': self.smtp_server,
-            'pf_whitelist': self.pf_whitelist,
-            'pf_blacklist': self.pf_blacklist,
-            'ssh_authorized_key': self.ssh_authorized_key,
-            'rsa_encryption_key': self.rsa_encryption_key,
-            'logs_ttl': self.logs_ttl
-        }
-
-        return result
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
 
     class Meta:
         app_label = "system"

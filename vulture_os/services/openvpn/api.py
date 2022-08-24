@@ -44,12 +44,13 @@ class OpenvpnAPIv1(View):
     def get(self, request, object_id=None):
         try:
             remote_server = request.GET.get('remote_server')
+            fields = request.GET.getlist('fields') or None
             if object_id:
-                obj = Openvpn.objects.get(pk=object_id).to_dict()
+                obj = Openvpn.objects.get(pk=object_id).to_dict(fields=fields)
             elif remote_server:
-                obj = Openvpn.objects.get(remote_server=remote_server).to_dict()
+                obj = Openvpn.objects.get(remote_server=remote_server).to_dict(fields=fields)
             else:
-                obj = [s.to_dict() for s in Openvpn.objects.all()]
+                obj = [s.to_dict(fields=fields) for s in Openvpn.objects.all()]
 
             return JsonResponse({
                 'data': obj

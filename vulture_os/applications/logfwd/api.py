@@ -49,22 +49,23 @@ class LogOMAPIv1(View):
     def get(self, request, fw_type=None, object_id=None):
         try:
             name = request.GET.get('name')
+            fields = request.GET.getlist('fields') or None
             if object_id:
-                res = LogOM().select_log_om(object_id).to_dict()
+                res = LogOM().select_log_om(object_id).to_dict(fields=fields)
 
             elif name:
-                res = LogOM().select_log_om_by_name(name).to_dict()
+                res = LogOM().select_log_om_by_name(name).to_dict(fields=fields)
 
             elif fw_type:
                 try:
-                    res = [logOM.to_dict() for logOM in LOGFWD_MODELS[fw_type].objects.all()]
+                    res = [logOM.to_dict(fields=fields) for logOM in LOGFWD_MODELS[fw_type].objects.all()]
                 except KeyError:
                     return JsonResponse({
                         'error': _('Type does not exist')
                     }, status=404)
 
             else:
-                res = [LogOM().select_log_om(logom.pk).to_dict() for logom in LogOM.objects.all().only('pk')]
+                res = [LogOM().select_log_om(logom.pk).to_dict(fields=fields) for logom in LogOM.objects.all().only('pk')]
 
             return JsonResponse({
                 'data': res

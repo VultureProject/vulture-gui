@@ -274,13 +274,15 @@ class UserScope(models.Model):
         else:
             return [RepoAttribute(**r) for r in self.repo_attributes]
 
-    def to_dict(self):
-        data = model_to_dict(self)
-        data['id'] = str(self.pk)
-        data['repo_attributes'] = []
-        for repo_attr in self.repo_attributes:
-            repo_attr.pop('_id', None)
-            data['repo_attributes'].append(repo_attr)
+    def to_dict(self, fields=None):
+        data = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            data['id'] = str(self.pk)
+        if not fields or "repo_attributes" in fields:
+            data['repo_attributes'] = []
+            for repo_attr in self.repo_attributes:
+                repo_attr.pop('_id', None)
+                data['repo_attributes'].append(repo_attr)
         return data
 
     def to_html_template(self):

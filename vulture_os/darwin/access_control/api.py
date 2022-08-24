@@ -55,6 +55,7 @@ class ACLAPIv1(View):
                 acl = [a.to_template() for a in AccessControl.objects.all()]
 
             return JsonResponse({
+                'status': True,
                 'data': acl
             })
 

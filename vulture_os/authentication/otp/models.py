@@ -134,8 +134,8 @@ class OTPRepository(BaseRepository):
                 mail_service = service[1]
         return mail_service
 
-    def to_dict(self):
-        return model_to_dict(self)
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
 
     def to_template(self):
         """ Returns the attributes of the class """

@@ -28,6 +28,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from services.strongswan.models import Strongswan
+from system.cluster.models import Node
 from gui.decorators.apicall import api_need_key
 from django.http import JsonResponse
 from django.conf import settings
@@ -44,17 +45,18 @@ class StrongswanAPIv1(View):
     def get(self, request, object_id=None):
         node_id = request.GET.get("node")
         try:
+            fields = request.GET.getlist('fields') or None
             if object_id:
                 try:
-                    obj = Strongswan.objects.get(pk=object_id).to_dict()
+                    obj = Strongswan.objects.get(pk=object_id).to_dict(fields=fields)
                 except Strongswan.DoesNotExist:
                     return JsonResponse({
                         'error': _('Object does not exist')
                     }, status=404)
             elif node_id:
-                obj = Strongswan.objects.get(node__pk=node_id).to_dict()
+                obj = Strongswan.objects.get(node__pk=node_id).to_dict(fields=fields)
             else:
-                obj = [s.to_dict() for s in Strongswan.objects.all()]
+                obj = [s.to_dict(fields=fields) for s in Strongswan.objects.all()]
 
             return JsonResponse({
                 'data': obj

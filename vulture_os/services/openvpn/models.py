@@ -25,6 +25,7 @@ __doc__ = 'Openvpn model classes'
 # Django system imports
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -81,17 +82,17 @@ class Openvpn(models.Model):
         """
         return {'conf': self.to_html_template()}
 
-    def to_dict(self):
+    def to_dict(self, fields=None):
         """ Serialized version of object """
-        return {
-            'id': str(self.id),
-            'node': self.node.to_dict(),
-            'status': self.status,
-            'remote_server': self.remote_server,
-            'remote_port': self.remote_port,
-            'tls_profile': self.tls_profile.to_dict(),
-            'proto': self.proto
-        }
+        result = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            result['id'] = str(result['id'])
+        if not fields or "node" in fields:
+            result['node'] = self.node.to_dict()
+        if not fields or "tls_profile" in fields:
+            result['tls_profile'] = self.tls_profile.to_dict()
+        return result
+
 
     def get_status(self):
         return {

@@ -28,6 +28,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import MinValueValidator, RegexValidator
 from django.utils.translation import ugettext_lazy as _
+from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
@@ -283,16 +284,11 @@ class DarwinFilter(models.Model):
     def __str__(self):
         return self.name
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "longname": self.longname,
-            "description": self.description,
-            "is_internal": self.is_internal,
-            "is_launchable": self.is_launchable,
-            "can_be_buffered": self.can_be_buffered
-        }
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "is_launchable" in fields:
+            result['is_launchable'] = self.is_launchable
+        return result
 
     @property
     def exec_path(self):
@@ -324,17 +320,12 @@ class DarwinPolicy(models.Model):
         help_text=_("Whether this policy is a system one"),
     )
 
-    def to_dict(self):
-        return_data = {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "is_internal": self.is_internal,
-            "filters": []
-        }
-
-        for filt in self.filterpolicy_set.all():
-            return_data['filters'].append(filt.to_dict())
+    def to_dict(self, fields=None):
+        return_data = model_to_dict(self, fields=fields)
+        if not fields or "filters" in fields:
+            return_data['filters'] = []
+            for filt in self.filterpolicy_set.all():
+                return_data['filters'].append(filt.to_dict())
 
         return return_data
 
@@ -469,11 +460,8 @@ class DarwinBuffering(models.Model):
         on_delete=models.CASCADE
     )
 
-    def to_dict(self):
-        return {
-            "interval": self.interval,
-            "required_log_lines": self.required_log_lines
-        }
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)
 
 
 class FilterPolicy(models.Model):
@@ -603,29 +591,12 @@ class FilterPolicy(models.Model):
     def __str__(self):
         return "[{}] {}".format(self.policy.name, self.filter_type.name)
 
-    def to_dict(self):
-        ret = {
-            "id": self.id,
-            "status": self.status,
-            "filter_type": self.filter_type.id,
-            "policy": self.policy.id,
-            "enabled": self.enabled,
-            "nb_thread": self.nb_thread,
-            "log_level": self.log_level,
-            "threshold": self.threshold,
-            "mmdarwin_enabled": self.mmdarwin_enabled,
-            "mmdarwin_parameters": self.mmdarwin_parameters,
-            "enrichment_tags": self.enrichment_tags,
-            "weight": self.weight,
-            "cache_size": self.cache_size,
-            "output": self.output,
-            "next_filter": self.next_filter,
-            "config": self.config
-        }
-
-        buffering = DarwinBuffering.objects.filter(destination_filter=self).first()
-        if buffering:
-            ret['buffering'] = buffering.to_dict()
+    def to_dict(self, fields=None):
+        ret = model_to_dict(self, fields=fields)
+        if not fields or "buffering" in fields:
+            buffering = DarwinBuffering.objects.filter(destination_filter=self).first()
+            if buffering:
+                ret['buffering'] = buffering.to_dict()
 
         return ret
 
