@@ -144,7 +144,7 @@ def frontend_delete(request, object_id, api=False):
             # Delete frontend conf
             if rsyslog_filename:
                 Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', rsyslog_filename)
-            
+
             # Regenerate Rsyslog system conf and restart
             Cluster.api_request('services.rsyslogd.rsyslog.build_conf')
 
@@ -252,7 +252,7 @@ def frontend_edit(request, object_id=None, api=False):
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
         redis_fwd = LogOM.objects.filter(name="Internal_Dashboard").only('id').first()
-        
+
         if front and front.filebeat_module and front.filebeat_config:
             FILEBEAT_MODULE_CONFIG[front.filebeat_module]=front.filebeat_config
 
@@ -357,9 +357,8 @@ def frontend_edit(request, object_id=None, api=False):
                 """ And instantiate form with the object, or None """
                 listener_f = ListenerForm(listener, instance=instance_l)
                 if not listener_f.is_valid():
-                    if api:
-                        form.add_error("listeners", listener_f.errors.as_json() if api else
-                                                    listener_f.errors.as_ul())
+                    form.add_error("listeners", listener_f.errors.as_json() if api else [error for error_list in listener_f.errors.as_data().values() for error in error_list])
+
                     continue
                 listener_form_list.append(listener_f)
                 listener_obj = listener_f.save(commit=False)
@@ -431,7 +430,7 @@ def frontend_edit(request, object_id=None, api=False):
             # Listen on all nodes in case of a master mongo change for Vulture's API Parsers
             for node in Node.objects.all():
                 node_listeners[node] = []
-        
+
 
         try:
             """ For each node, the conf differs if listener chosen """
@@ -479,8 +478,8 @@ def frontend_edit(request, object_id=None, api=False):
 
                         # And reload of HAProxy service
                         Cluster.api_request('services.haproxy.haproxy.reload_service')
-                
-                
+
+
                 elif frontend.filebeat_only_conf:
 
                     """ And if it was not before saving """
