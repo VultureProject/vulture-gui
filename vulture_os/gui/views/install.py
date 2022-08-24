@@ -195,7 +195,7 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request("services.darwin.darwin.reload_all")
 
     logger.debug("API call to configure Apache GUI")
-    node.api_request("services.apache.apache.reload_conf")
+    node.api_request("services.apache.apache.reload_service")
 
     logger.debug("API call to configure Logrotate")
     node.api_request("services.logrotate.logrotate.reload_conf")
@@ -400,7 +400,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     # API call to while Cluster - to refresh Nodes list in conf
     logger.debug("API call to update configuration of Apache GUI")
-    Cluster.api_request("services.apache.apache.reload_conf")
+    Cluster.api_request("services.apache.apache.reload_service")
 
     """ The method configure restart rsyslog if needed """
     logger.debug("API call to configure rsyslog")
