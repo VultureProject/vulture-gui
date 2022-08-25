@@ -138,11 +138,13 @@ class HarfangLabParser(ApiParser):
         payload = {
             'offset': index,
             'limit': 100, # Mandatory
-            'from': since_utc,
-            'to': to_utc,
-            'ordering': '-last_seen',
+            'alert_time__gte': since_utc,
+            'alert_time__lt': to_utc,
+            'ordering': 'alert_time',
             'status': 'new,investigating,probable_false_positive'
         }
+        logger.debug(f"[{__parser__}]:get_logs: HarfangLab query parameters : {payload}",
+                     extra={'frontend': str(self.frontend)})
         return self.__execute_query("GET", alert_url, payload)
 
     def format_log(self, log):
@@ -188,13 +190,7 @@ class HarfangLabParser(ApiParser):
             self.update_lock()
 
             # increment by 1s (ms not supported) to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
-            try:
-                self.frontend.last_api_call = datetime.fromisoformat(logs[-1]['alert_time'].replace("Z", "+00:00")) \
-                                              + timedelta(seconds=1)
-                self.frontend.save()
-            except Exception as err:
-                logger.exception(f"[{__parser__}]:execute: {err}", extra={'frontend': str(self.frontend)})
-                msg = f"could not locate 'alert_time' key on: {logs[-1]}"
-                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+            self.frontend.last_api_call = to
+            self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
