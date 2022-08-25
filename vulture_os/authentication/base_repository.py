@@ -26,6 +26,7 @@ __doc__ = 'Repositories\' mother class'
 # Django system imports
 from django.conf import settings
 from django.contrib.auth import authenticate as django_authenticate
+from django.forms.models import model_to_dict
 from django.utils.translation import ugettext as _
 from djongo import models
 
@@ -100,9 +101,8 @@ class InternalRepository(BaseRepository):
     def to_template(self):
         return {'subtype': "internal"}
     
-    def to_dict(self):
-        return {
-            "id": str(self.pk),
-            "name": self.name,
-            "subtype": self.subtype
-        }
+    def to_dict(self, fields=None):
+        data = model_to_dict(self, fields=fields)
+        if not fields or "id" in fields:
+            data['id'] = str(self.pk)
+        return data
