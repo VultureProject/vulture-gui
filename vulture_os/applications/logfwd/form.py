@@ -135,7 +135,7 @@ class LogOMFWDForm(ModelForm):
 
     class Meta:
         model = LogOMFWD
-        fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level', 'send_as_raw')
+        fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level', 'ratelimit_interval', 'ratelimit_burst', 'send_as_raw')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -144,6 +144,8 @@ class LogOMFWDForm(ModelForm):
             'port': NumberInput(attrs={'class': 'form-control'}),
             'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'form-control select2'}),
             'zip_level': NumberInput(attrs={'class': 'form-control'}),
+            'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
+            'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
             'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
         }
 
@@ -156,12 +158,21 @@ class LogOMFWDForm(ModelForm):
             raise ValidationError("This field is required.")
         return field.replace(' ', '_')
 
+    def clean(self):
+        """ Verify needed fields - depending on mode chosen """
+        cleaned_data = super().clean()
+        """ if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank"""
+        if cleaned_data.get('ratelimit_interval') and not cleaned_data.get('ratelimit_burst'):
+            self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
+        if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):
+            self.add_error("ratelimit_interval", "This field cannot be left blank if rate-limiting burst is set")
+
 
 class LogOMElasticSearchForm(ModelForm):
 
     class Meta:
         model = LogOMElasticSearch
-        fields = ('name', 'enabled', 'index_pattern', 'servers', 'uid', 'pwd', 'x509_certificate')
+        fields = ('name', 'enabled', 'index_pattern', 'servers', 'uid', 'pwd', 'ratelimit_interval', 'ratelimit_burst', 'x509_certificate')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -170,6 +181,8 @@ class LogOMElasticSearchForm(ModelForm):
             'servers': TextInput(attrs={'class': 'form-control'}),
             'uid': TextInput(attrs={'class': 'form-control'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
+            'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
+            'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
             'x509_certificate': Select(attrs={'class': 'form-control'})
         }
 
@@ -183,6 +196,15 @@ class LogOMElasticSearchForm(ModelForm):
         if not field:
             raise ValidationError("This field is required.")
         return field.replace(' ', '_')
+
+    def clean(self):
+        """ Verify needed fields - depending on mode chosen """
+        cleaned_data = super().clean()
+        """ if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank"""
+        if cleaned_data.get('ratelimit_interval') and not cleaned_data.get('ratelimit_burst'):
+            self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
+        if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):
+            self.add_error("ratelimit_interval", "This field cannot be left blank if rate-limiting burst is set")
 
 
 class LogOMMongoDBForm(ModelForm):

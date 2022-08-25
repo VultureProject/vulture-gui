@@ -200,7 +200,8 @@ class FrontendForm(ModelForm):
                            'filebeat_config', 'headers', 'custom_haproxy_conf',
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
-                           'parser_tag', 'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
+                           'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst',
+                           'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'api_parser_type', 'api_parser_use_proxy',
                            'elasticsearch_host', 'elasticsearch_auth', 'elasticsearch_verify_ssl',
@@ -281,7 +282,8 @@ class FrontendForm(ModelForm):
                   'log_forwarders', 'tenants_config', 'enable_logging_reputation', 'logging_reputation_database_v4',
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
                   'timeout_keep_alive', 'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
-                  'file_path', 'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
+                  'ratelimit_interval', 'ratelimit_burst', 'file_path',
+                  'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                   'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                   'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
                   'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
@@ -351,6 +353,8 @@ class FrontendForm(ModelForm):
             'timeout_keep_alive': NumberInput(attrs={'class': 'form-control'}),
             'https_redirect': CheckboxInput(attrs={'class': 'js-switch'}),
             'parser_tag': TextInput(attrs={'class': 'form-control'}),
+            'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
+            'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
             'file_path': TextInput(attrs={'class': 'form-control'}),
             'kafka_brokers': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'kafka_topic': TextInput(attrs={'class': 'form-control'}),
@@ -690,6 +694,12 @@ class FrontendForm(ModelForm):
         if cleaned_data.get('darwin_policies'):
             if not cleaned_data.get("darwin_mode"):
                 self.add_error("darwin_mode", "This field is required when a darwin policy is set")
+
+        """ if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank """
+        if cleaned_data.get('ratelimit_interval') and not cleaned_data.get('ratelimit_burst'):
+            self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
+        if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):
+            self.add_error("ratelimit_interval", "This field cannot be left blank if rate-limiting burst is set")
 
         return cleaned_data
 
