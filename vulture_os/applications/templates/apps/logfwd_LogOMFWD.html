@@ -119,14 +119,47 @@
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="row">
+              <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
                     <label class="col-sm-4 control-label">{% trans "Send as raw" %}</label>
                     <div class="col-sm-5">
                       {{form.send_as_raw}}
                       {{form.send_as_raw.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Advanced tab -->
+              <div class="row">
+                <div class="col-sm-4 pull-right">
+                  <div class="form-group">
+                    <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
+                      <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="collapse advanced_options">
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{% trans "Rate-limiting interval (advanced)" %}</label>
+                      <div class="col-sm-5">
+                        {{form.ratelimit_interval}}
+                        {{form.ratelimit_interval.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{% trans "Rate-limiting burst (advanced)" %}</label>
+                      <div class="col-sm-5">
+                        {{form.ratelimit_burst}}
+                        {{form.ratelimit_burst.errors|safe}}
+                      </div>
                     </div>
                   </div>
                 </div>

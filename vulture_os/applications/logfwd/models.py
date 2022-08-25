@@ -96,8 +96,8 @@ class LogOM (models.Model):
 
     def select_log_om(self, object_id, only=None):
         """ Return a Log Output by object id
-        :param object_id: Id as string of object to retrieve  
-        :param only: List of attributes to only retrieve, None=all 
+        :param object_id: Id as string of object to retrieve
+        :param only: List of attributes to only retrieve, None=all
         :return:
         """
         attrs = only or []
@@ -382,6 +382,9 @@ class LogOMFWD(LogOM):
     )
     send_as_raw = models.BooleanField(default=False)
 
+    ratelimit_interval = models.PositiveIntegerField(null=True, blank=True)
+    ratelimit_burst = models.PositiveIntegerField(null=True, blank=True)
+
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)
         if not fields or "type" in fields:
@@ -414,6 +417,8 @@ class LogOMFWD(LogOM):
             'type': 'Syslog',
             'zip_level': self.zip_level,
             'send_as_raw': self.send_as_raw,
+            'ratelimit_interval': self.ratelimit_interval,
+            'ratelimit_burst': self.ratelimit_burst,
             'output': self.target + ':' + str(self.port) + ' ({})'.format(self.protocol)
         }
 
@@ -434,6 +439,9 @@ class LogOMElasticSearch(LogOM):
         default=None,
         null=True
     )
+
+    ratelimit_interval = models.PositiveIntegerField(null=True, blank=True)
+    ratelimit_burst = models.PositiveIntegerField(null=True, blank=True)
 
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)
@@ -472,6 +480,8 @@ class LogOMElasticSearch(LogOM):
             'template_id': self.template_id(),
             'mapping_id': self.mapping_id,
             'type': 'Elasticsearch',
+            'ratelimit_interval': self.ratelimit_interval,
+            'ratelimit_burst': self.ratelimit_burst,
             'output': self.servers + ' (index = {})'.format(self.index_pattern)
         }
         if self.x509_certificate:
