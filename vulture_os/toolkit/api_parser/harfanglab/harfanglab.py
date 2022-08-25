@@ -189,7 +189,6 @@ class HarfangLabParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-            # increment by 1s (ms not supported) to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             self.frontend.last_api_call = to
             self.frontend.save()
 
