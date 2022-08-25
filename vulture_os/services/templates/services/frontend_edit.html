@@ -1675,8 +1675,6 @@
   var listener_form_td = `{{listener_form.as_table_td|safe}}`;
   var log_om_table_td = `{{log_om_table.as_table_td|safe}}`;
   var reputationctx_form_td = `{{reputationctx_form.as_table_td|safe}}`;
-  var redis_forwarder = "{{redis_forwarder}}";
-  var redis_forwarder_added = false;
   var old_mode = $('id_mode').val();
 
   var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";

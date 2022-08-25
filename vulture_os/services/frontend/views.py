@@ -251,7 +251,6 @@ def frontend_edit(request, object_id=None, api=False):
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
-        redis_fwd = LogOM.objects.filter(name="Internal_Dashboard").only('id').first()
 
         if front and front.filebeat_module and front.filebeat_config:
             FILEBEAT_MODULE_CONFIG[front.filebeat_module]=front.filebeat_config
@@ -262,7 +261,6 @@ def frontend_edit(request, object_id=None, api=False):
                        'reputation_contexts': reputationctx_form_list,
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
-                       'redis_forwarder': redis_fwd.id if redis_fwd else 0,
                        'filebeat_module_config': FILEBEAT_MODULE_CONFIG,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 
