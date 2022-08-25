@@ -15,8 +15,6 @@
            {%- if ssl_key %}tls.myprivkey="{{ssl_key}}"{%- endif %}
         {%- if ratelimit_interval %}
            retryfailures="on"
-        {%- endif %}
-        {%- if ratelimit_interval %}
            RateLimit.Interval="{{ratelimit_interval}}"
         {%- endif %}
         {%- if ratelimit_burst %}
