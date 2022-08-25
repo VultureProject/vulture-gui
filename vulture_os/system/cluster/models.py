@@ -97,13 +97,6 @@ class Node(models.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.id:
-            try:
-                dashboard_fwd = LogOMHIREDIS.objects.get(name="Internal_Dashboard")
-            except:
-                pass
-            else:
-                self.pstats_forwarders.add(dashboard_fwd)
 
     def __str__(self):
         return self.name

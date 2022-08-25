@@ -358,7 +358,7 @@ class LogOMHIREDIS(LogOM):
             'pwd': self.pwd,
             'type': 'Redis',
             'output': self.target + ':' + str(self.port) + ' (key = {})'.format(self.key),
-            'mode': "publish" if self.name == "Internal_Dashboard" else "queue"
+            'mode': "queue"
         }
 
     def get_rsyslog_template(self):
