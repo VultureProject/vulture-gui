@@ -145,8 +145,8 @@ def template_edit(request, object_id=None):
                 nodes = set()
 
                 """ Write Frontend conf if needed """
-                if form.has_changed() and any(field.endswith("_mode") for field in form.changed_data):
-                    for frontend in frontends:
+                for frontend in frontends:
+                    if form.has_changed() and any(field.endswith("_mode") for field in form.changed_data):
                         frontend.configuration = {}
                         # Conf differs for nodes
                         for node in frontend.get_nodes():
@@ -155,10 +155,11 @@ def template_edit(request, object_id=None):
                                 frontend.save_conf(node)
                             except (ServiceError, VultureSystemError) as e:
                                 return render_form(save_error=[str(e), e.traceback])
-                            # Add node to nodes, it's a set
-                            nodes.add(node)
                         # Save the frontend because we maj the configuration attribute
                         frontend.save()
+                    # Add node to nodes, it's a set (do it even if frontend configuration wasn't updated
+                    # to reload haproxy with the new files)
+                    nodes.update(frontend.get_nodes())
 
                 """ And reload HAProxy """
                 for node in nodes:
