@@ -317,7 +317,7 @@ def build_conf(node_logger, frontend_id):
     try:
         frontend = models.Frontend.objects.get(pk=frontend_id)
         """ Generate ruleset conf of asked frontend """
-        tmp = frontend.generate_conf()
+        tmp = frontend.generate_conf(node=node)
         if frontend.configuration.get(node.name) != tmp:
             frontend.configuration[node.name] = tmp
             frontend.save()

@@ -164,7 +164,7 @@ class ErrorTemplateAPIv1(View):
                     try:
                         for node in frontend.get_nodes():
                             # Generate frontend conf with no error_template
-                            frontend.configuration[node.name] = frontend.generate_conf()
+                            frontend.configuration[node.name] = frontend.generate_conf(node=node)
                             # And write conf on disk
                             frontend.save_conf(node)
 
@@ -255,7 +255,7 @@ def template_edit(form):
                         # Conf differs for nodes
                         for node in frontend.get_nodes():
                             try:
-                                frontend.configuration[node.name] = frontend.generate_conf()
+                                frontend.configuration[node.name] = frontend.generate_conf(node=node)
                                 frontend.save_conf(node)
                             except (ServiceError, VultureSystemError) as e:
                                 logger.exception(e)

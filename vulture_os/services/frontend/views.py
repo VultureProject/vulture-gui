@@ -438,7 +438,8 @@ def frontend_edit(request, object_id=None, api=False):
                 for node, listeners in node_listeners.items():
                     # HAProxy conf does not use reputationctx_list, Rsyslog conf does
                     frontend.configuration[node.name] = frontend.generate_conf(listener_list=listeners,
-                                                                           header_list=header_objs)
+                                                                           header_list=header_objs,
+                                                                           node=node)
                     frontend.test_conf(node.name)
                     logger.info(f"FRONTEND::Edit: Configuration test ok on node {node.name}")
         except ServiceError as e:

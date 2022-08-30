@@ -151,7 +151,7 @@ def template_edit(request, object_id=None):
                         # Conf differs for nodes
                         for node in frontend.get_nodes():
                             try:
-                                frontend.configuration[node.name] = frontend.generate_conf()
+                                frontend.configuration[node.name] = frontend.generate_conf(node=node)
                                 frontend.save_conf(node)
                             except (ServiceError, VultureSystemError) as e:
                                 return render_form(save_error=[str(e), e.traceback])
@@ -206,7 +206,7 @@ def template_delete(request, object_id):
                 for node in frontend.get_nodes():
                     try:
                         # Generate frontend conf with no error_template
-                        frontend.configuration[node.name] = frontend.generate_conf()
+                        frontend.configuration[node.name] = frontend.generate_conf(node=node)
                         # And write conf on disk
                         frontend.save_conf(node)
                     except (ServiceError, VultureSystemError) as e:
