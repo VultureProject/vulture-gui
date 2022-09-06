@@ -182,6 +182,8 @@ class ImpervaParser(ApiParser):
             if self.imperva_last_log_file == "":
                 log_files = self._download_log_index()
                 for file in log_files:
+                    if self.evt_stop.is_set():
+                        break
                     self.update_lock()
                     logger.info(f"[{__parser__}]:execute: Downloading {file}", extra={'frontend': str(self.frontend)})
                     content = self.get_file(file)

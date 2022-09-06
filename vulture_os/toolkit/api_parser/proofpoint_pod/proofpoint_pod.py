@@ -56,11 +56,6 @@ class ProofpointPodParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        signal.signal(signal.SIGINT, self._handle_stop)
-        signal.signal(signal.SIGTERM, self._handle_stop)
-        signal.signal(signal.SIGHUP, self._handle_stop)
-
-        self.evt_stop = Event()
         self.ws = None
         self.last_timestamp = None
         self.buffer = list()
@@ -87,11 +82,6 @@ class ProofpointPodParser(ApiParser):
     def __del__(self):
         if self.ws:
             self.ws.close(timeout=1)
-
-
-    def _handle_stop(self, signum, frame):
-        logger.debug(f"[{__parser__}]:_handle_stop: caught signal {signum}, ordering to stop", extra={'frontend': str(self.frontend)})
-        self.evt_stop.set()
 
 
     def test(self):

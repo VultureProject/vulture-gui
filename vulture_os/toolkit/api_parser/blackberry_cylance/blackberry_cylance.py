@@ -256,13 +256,14 @@ class BlackberryCylanceParser(ApiParser):
         # the API gets data with a minimal precision of 10 milliseconds (from manual tests),
         # so avoid getting the same alert twice by incrementing start_time by 10 milliseconds
         start_time = self.last_api_call + timedelta(milliseconds=10)
-        end_time = datetime.now(tz=timezone.utc)
+        # Get at most a batch of 24h, to avoid running the parser for too long
+        end_time = min(datetime.now(tz=timezone.utc), start_time + timedelta(hours=24))
 
         number_of_logs = 0
         page = 0
         number_of_pages = 1
 
-        while page < number_of_pages:
+        while not self.evt_stop.is_set() and page < number_of_pages:
             page += 1
             number_of_pages, threats = self._get_complete_threats(start_time, end_time, page)
             data = [self._format_log(threat) for threat in threats]

@@ -142,18 +142,10 @@ class SymantecParser(ApiParser):
                 raise SymantecAPIError(err)
 
             if r.headers.get('Retry-After'):
-                retry = int(r.headers['Retry-After']) + 2
-                if retry > 300:
-                    raise SymantecAPIError(f"Retry After {r.headers['Retry-After']}")
-                msg = f"Waiting for {retry}s"
-                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                retry = int(r.headers['Retry-After'])
+                msg = f"Parser must retry after waiting for {retry}s"
+                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-                self.update_lock()
-                time.sleep(retry)
-                msg = f"Resuming API calls"
-                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
-                self.execute()
             else:
                 if "filename" in r.headers['Content-Disposition']:
                     logger.info(f"[{__parser__}]:execute filenames: {r.headers['Content-Disposition']}",

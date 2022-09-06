@@ -213,7 +213,7 @@ class ProofpointTAPParser(ApiParser):
                 else:
                     error += f"Could not get logs: {contents}"
             else:
-                while True:
+                while not self.evt_stop.is_set():
                     # do not go over current time
                     toTime = min(currentTime, fromTime + timedelta(hours=1))
                     try:

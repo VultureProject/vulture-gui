@@ -139,10 +139,14 @@ class CortexXDRParser(ApiParser):
 
     def execute(self):
         for kind in ["alerts", "incidents"]:
+
+            if self.evt_stop.is_set():
+                break
+
             logger.info(f"[{__parser__}]:execute: Getting {kind}", extra={'frontend': str(self.frontend)})
             cpt = 0
             total = 1
-            while cpt < total:
+            while not self.evt_stop.is_set() and cpt < total:
                 status, tmp_logs = self.get_logs(kind, nb_from=cpt, since=getattr(self, f"cortex_xdr_{kind}_timestamp"))
 
                 if not status:

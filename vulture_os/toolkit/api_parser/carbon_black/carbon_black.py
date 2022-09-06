@@ -150,7 +150,7 @@ class CarbonBlackParser(ApiParser):
 
         available = 0
         found = 0
-        while available <= found:
+        while not self.evt_stop.is_set() and available <= found:
 
             response = self.get_logs(available, since)
 

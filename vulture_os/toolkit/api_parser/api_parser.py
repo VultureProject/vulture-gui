@@ -24,7 +24,9 @@ __doc__ = 'API Parser'
 __parser__ = 'API PARSER'
 
 import logging
+import signal
 import socket
+from threading import Event
 import time
 
 from django.conf import settings
@@ -45,6 +47,10 @@ class NodeNotBootstraped(Exception):
 class ApiParser:
     def __init__(self, data):
         self.data = data
+
+        signal.signal(signal.SIGINT, self._handle_stop)
+        signal.signal(signal.SIGTERM, self._handle_stop)
+        self.evt_stop = Event()
 
         try:
             self.frontend = Frontend.objects.get(pk=self.data['id'])
@@ -127,6 +133,10 @@ class ApiParser:
                     time.sleep(0.05)
                     # So refresh lock
                     self.update_lock()
+
+    def _handle_stop(self, signum, frame):
+        logger.info(f"[{__parser__}]:_handle_stop: caught signal {signal.strsignal(signum)}({signum}), stopping...", extra={'frontend': str(self.frontend)})
+        self.evt_stop.set()
 
     def finish(self):
         """

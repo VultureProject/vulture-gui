@@ -225,8 +225,9 @@ class SentinelOneParser(ApiParser):
 
     def execute(self):
 
-        since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
-        to = datetime.now(timezone.utc)
+        since = self.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=24))
+        # Fetch at most 24h of logs to avoid the parser running for too long
+        to = min(datetime.now(timezone.utc), since + timedelta(hours=24))
 
         for event_kind in ['alert', 'activity']:
             first = True

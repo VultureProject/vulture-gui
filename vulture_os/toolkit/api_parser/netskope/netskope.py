@@ -113,7 +113,7 @@ class NetskopeParser(ApiParser):
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
         offset = 0
 
-        while offset%self.BULK_SIZE == 0:
+        while not self.evt_stop.is_set() and offset%self.BULK_SIZE == 0:
 
             response = self.get_logs(since, offset)
 
