@@ -1065,6 +1065,18 @@ class Frontend(models.Model):
         default = "443",
     )
 
+    # Safenet attributes
+    safenet_tenant_code = models.TextField(
+        verbose_name = _("Safenet Tenant Code"),
+        help_text = _("Your Safenet Tenant Code"),
+        default = "",
+    )
+    safenet_apikey = models.TextField(
+        verbose_name = _("Safenet API Key"),
+        help_text = _("Safenet Token API"),
+        default = "",
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
