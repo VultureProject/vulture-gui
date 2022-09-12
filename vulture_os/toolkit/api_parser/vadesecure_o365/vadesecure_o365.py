@@ -27,10 +27,9 @@ import json
 import logging
 import requests
 
-from datetime import timezone
 from datetime import datetime
 from django.conf import settings
-from django.utils import dateparse
+from django.utils import dateparse, timezone
 import time
 
 from toolkit.api_parser.api_parser import ApiParser
@@ -112,7 +111,7 @@ class VadesecureO365Parser(ApiParser):
 
 
     def _get_access_token(self):
-        if not self.expires_on or not self.access_token or datetime.now(timezone.utc) > self.expires_on:
+        if not self.expires_on or not self.access_token or timezone.now() > self.expires_on:
             logger.debug(f"[{__parser__}]:_get_access_token: existing access token expired, need to get a new one", extra={'frontend': str(self.frontend)})
             self.__connect()
         else:

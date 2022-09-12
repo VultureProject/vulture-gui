@@ -27,8 +27,9 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from django.conf import settings
+from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
 
@@ -160,8 +161,8 @@ class Rapid7IDRParser(ApiParser):
 
     def execute(self):
 
-        since = self.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=24))
-        to = min(datetime.now(timezone.utc), since + timedelta(hours=24))
+        since = self.last_api_call or (timezone.now() - timedelta(hours=24))
+        to = min(timezone.now(), since + timedelta(hours=24))
 
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})

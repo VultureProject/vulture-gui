@@ -28,8 +28,9 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from django.conf import settings
+from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 from django.utils.timezone import make_aware
 
@@ -225,9 +226,9 @@ class SentinelOneParser(ApiParser):
 
     def execute(self):
 
-        since = self.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=24))
+        since = self.last_api_call or (timezone.now() - timedelta(hours=24))
         # Fetch at most 24h of logs to avoid the parser running for too long
-        to = min(datetime.now(timezone.utc), since + timedelta(hours=24))
+        to = min(timezone.now(), since + timedelta(hours=24))
 
         for event_kind in ['alert', 'activity']:
             first = True
