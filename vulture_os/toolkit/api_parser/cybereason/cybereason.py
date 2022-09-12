@@ -497,10 +497,6 @@ class CybereasonParser(ApiParser):
             raise CybereasonAPIError("Failed to retrieve console version : {}".format(observer_version))
 
         for kind in ["malops", "malwares"]:
-
-            if self.evt_stop.is_set():
-                break
-
             # Default timestamp is 24 hours ago
             since = getattr(self.frontend, f"cybereason_{kind}_timestamp") or (timezone.now()-datetime.timedelta(days=30)).timestamp()
             tmp_logs = self.get_logs(kind, since=since)

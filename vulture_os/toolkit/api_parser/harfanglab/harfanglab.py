@@ -159,7 +159,7 @@ class HarfangLabParser(ApiParser):
 
         index = 0
         total = 1
-        while not self.evt_stop.is_set() and index < total:
+        while index < total:
 
             response = self.get_logs(since, to, index)
 

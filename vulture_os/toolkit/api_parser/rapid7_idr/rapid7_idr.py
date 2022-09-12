@@ -161,43 +161,38 @@ class Rapid7IDRParser(ApiParser):
     def execute(self):
 
         since = self.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=24))
-        to = since
-        current_time = datetime.now(timezone.utc)
+        to = min(datetime.now(timezone.utc), since + timedelta(hours=24))
 
-        while not self.evt_stop.is_set() and to != current_time:
-            # Get logs by batches of 1 hour
-            to = min(current_time, to + timedelta(hours=24))
-            msg = f"Parser starting from {since} to {to}"
-            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+        msg = f"Parser starting from {since} to {to}"
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-            index = 0
-            available = 1
-            retrieved = 0
-            while retrieved < available:
+        index = 0
+        available = 1
+        retrieved = 0
+        while retrieved < available:
 
-                response = self.get_logs(index, since, to)
+            response = self.get_logs(index, since, to)
 
-                # Downloading may take some while, so refresh token in Redis
-                self.update_lock()
+            # Downloading may take some while, so refresh token in Redis
+            self.update_lock()
 
-                logs = response['data']
+            logs = response['data']
 
-                available = int(response['metadata']['total_data'])
-                msg = f"got {available} lines available"
-                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+            available = int(response['metadata']['total_data'])
+            msg = f"got {available} lines available"
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-                retrieved += len(logs)
-                msg = f"retrieved {retrieved} lines"
-                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+            retrieved += len(logs)
+            msg = f"retrieved {retrieved} lines"
+            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-                index += 1
+            index += 1
 
-                self.write_to_file([self.format_log(l) for l in logs])
+            self.write_to_file([self.format_log(l) for l in logs])
 
-                # Writting may take some while, so refresh token in Redis
-                self.update_lock()
+            # Writting may take some while, so refresh token in Redis
+            self.update_lock()
 
-            # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
-            since = to + timedelta(microseconds=1000)
-            self.frontend.last_api_call = since
+        # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
+        self.frontend.last_api_call = to + timedelta(microseconds=1000)
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

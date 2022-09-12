@@ -190,7 +190,7 @@ class VadesecureO365Parser(ApiParser):
         start_from = self.last_api_call.isoformat().replace("+00:00", "Z")
         more_logs = 1
 
-        while not self.evt_stop.is_set() and more_logs:
+        while more_logs:
             data = []
             logs = self._get_emails_logs(start_from, limit=200)
 

@@ -114,7 +114,7 @@ class NozomiProbeParser(ApiParser):
 
         cpt = 0
         total = 1
-        while not self.evt_stop.is_set() and cpt < total:
+        while cpt < total:
             status, tmp_logs = self.get_logs(since=self.last_api_call or timezone.now()-timedelta(days=30))
 
             if not status:

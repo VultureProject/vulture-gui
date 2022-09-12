@@ -139,7 +139,7 @@ class ReachFiveParser(ApiParser):
         page = 1
         total = 1
         last_datetime = self.frontend.last_api_call.isoformat(timespec="milliseconds").replace("+00:00", "Z")
-        while not self.evt_stop.is_set() and cpt < total:
+        while cpt < total:
             status, tmp_logs = self.get_logs(page=page, since=self.last_api_call)
 
             if not status:

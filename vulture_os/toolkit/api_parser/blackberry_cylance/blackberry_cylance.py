@@ -263,7 +263,7 @@ class BlackberryCylanceParser(ApiParser):
         page = 0
         number_of_pages = 1
 
-        while not self.evt_stop.is_set() and page < number_of_pages:
+        while page < number_of_pages:
             page += 1
             number_of_pages, threats = self._get_complete_threats(start_time, end_time, page)
             data = [self._format_log(threat) for threat in threats]

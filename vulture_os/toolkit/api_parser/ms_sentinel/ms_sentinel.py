@@ -255,9 +255,6 @@ class MSSentinelParser(ApiParser):
             # For each incidents, retrieve comments and alerts
             for incident in incidents:
 
-                if self.evt_stop.is_set():
-                    break
-
                 logs = []
 
                 logger.info(f"[{__parser__}]:execute: {incident['properties']['additionalData']['commentsCount']} "

@@ -84,7 +84,7 @@ class NetskopeParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, since, cursor=0):
+    def get_logs(self, since, to=timezone.now(), cursor=0):
         self._connect()
 
         alert_url = f"https://{self.netskope_host}{self.ALERTS_ENDPOINT}"
@@ -92,10 +92,12 @@ class NetskopeParser(ApiParser):
         # Format timestamp for query, API wants a Z at the end
         if isinstance(since, datetime):
             since = int(since.timestamp())
+        if isinstance(to, datetime):
+            to = int(to.timestamp())
         query = {
             'starttime': since,
-            'endtime': int(timezone.now().timestamp()),
-            'limit': 1000,
+            'endtime': to,
+            'limit': self.BULK_SIZE,
             'offset': cursor
         }
         result = self.session.get(alert_url, params=query, proxies=self.proxies).json()
@@ -111,11 +113,12 @@ class NetskopeParser(ApiParser):
     def execute(self):
         self.upper_timestamp = int(self.frontend.last_api_call.timestamp()) if self.frontend.last_api_call else 0
         since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
+        to = min(timezone.now(), since + timedelta(hours=24))
         offset = 0
 
-        while not self.evt_stop.is_set() and offset%self.BULK_SIZE == 0:
+        while offset%self.BULK_SIZE == 0:
 
-            response = self.get_logs(since, offset)
+            response = self.get_logs(since, to, offset)
 
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
