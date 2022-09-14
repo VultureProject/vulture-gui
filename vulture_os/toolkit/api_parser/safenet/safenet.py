@@ -154,7 +154,7 @@ class SafenetParser(ApiParser):
         nbPages = response["page"]["totalPages"]
         if nbPages > 1:
             for i in range(nbPages - 1):
-                response = self.__execute_query(response["page"]["next"])
+                response = self.__execute_query(response["links"]["next"])
                 self.update_lock()
                 logs = response["page"]["items"]
                 self.write_to_file([self.format_logs(log) for log in logs])
