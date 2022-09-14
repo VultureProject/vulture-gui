@@ -25,12 +25,15 @@ __parser__ = 'SAFENET'
 
 import json
 import logging
+import time
+
 import requests
 
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -82,14 +85,19 @@ class SafenetParser(ApiParser):
             proxies=self.proxies
         )
 
-        if response.status_code != 200:
+        # handler rate limit exceeding
+        if response.status_code == 429:
+            logger.info(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...", extra={'frontend': str(self.frontend)})
+            time.sleep(10)
+            return self.__execute_query(url, query, timeout)
+        elif response.status_code != 200:
             raise SafenetAPIError(
                 f"Error at SafenetAPI Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
         return response.json()
 
     def test(self):
-        current_time = datetime.now(timezone.utc)
+        current_time = timezone.now()
         try:
             logs = self.get_logs(since=(current_time - timedelta(minutes=5)), to=(current_time))
 
@@ -132,8 +140,9 @@ class SafenetParser(ApiParser):
 
     def execute(self):
 
-        since = self.frontend.last_api_call or (datetime.now(timezone.utc) - timedelta(minutes=5))
-        to = datetime.now(timezone.utc)
+        since = self.frontend.last_api_call or (timezone.now() - timedelta(hours=24))
+        # fetch at most 24h of logs to avoid the process running for too long
+        to = min(timezone.now(), since + timedelta(hours=24))
 
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
@@ -151,14 +160,14 @@ class SafenetParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-        nbPages = response["page"]["totalPages"]
-        if nbPages > 1:
-            for i in range(nbPages - 1):
+        if response["page"].get("totalItems"):
+            while response["links"].get("next"):
                 response = self.__execute_query(response["links"]["next"])
                 self.update_lock()
                 logs = response["page"]["items"]
                 self.write_to_file([self.format_logs(log) for log in logs])
                 self.update_lock()
 
-        self.frontend.last_api_call = to
+            # update last_api_call only if logs are retrieved
+            self.frontend.last_api_call = to
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
