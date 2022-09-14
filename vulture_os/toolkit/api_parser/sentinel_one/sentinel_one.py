@@ -230,7 +230,6 @@ class SentinelOneParser(ApiParser):
         logger.info(f"[{__parser__}]:execute: ### Start collecting logs from {since} to {to} ###",
                     extra={'frontend': str(self.frontend)})
 
-        total_collected = {}
         for event_kind in ['alert', 'activity']:
             first = True
             cursor = None
