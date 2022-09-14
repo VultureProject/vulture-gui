@@ -1,0 +1,467 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+
+## [1.18.0] - 2022-08-05
+### Fixed
+- [HAPROXY][CONFIGURATION] Split spoe configuration directives to avoid configuration parse limits
+- [HAPROXY][CONFIG_GENERATION] Correctly order regeneration of Haproxy files when changing objects related to Authentication
+- [HAPROXY][CLEANUP] Silence most warnings, resolved minor problems and clarified frontends configuration files
+- [PORTAL] Credentials decoding error for BASIC authentication
+- [OPENID] Use system's proxy and `verify_certificate` option while fetching a token on an external IDP
+- [OPENID] [GUI] testing already configured OpenID returned an error
+- [API_PARSER] [SENTINEL_ONE] timestamp inconsistencies could cause holes or duplicates while fetching logs
+- [API_PARSER] [WAF_CLOUDFLARE] use timezone-aware timestamps, and correctly update last_api_call
+### Added
+- [OPENID] [GUI] Prevented suggestion of previous OpenID client secrets
+- [GITIGNORE] Python environments
+- [PORTAL] Allow authentication through Oauth2's PKCE validation, allowing direct authentication with single-page apps
+- [PORTAL] Allow authentication through `Authorization` with a Bearer token
+- [PORTAL] Allow authentication through `X-Vlt-Token` with a Bearer token
+- [UPDATE] [SCRIPT] New script to update haproxy configuration files
+
+
+## [1.17.0] - 2022-08-02
+### Added
+- [API PARSER] WAF Cloudflare proxy support
+- [API PARSER] Office365 proxy support
+- [API PARSER] Gsuite proxy support
+- [API PARSER] Sophos proxy support
+- [API PARSER] ProofpointPod proxy support
+
+
+## [1.16.1] - 2022-07-18
+### Fixed
+ - [FRONTEND] Fix syntax error in fields list, causing 500 error when creating/editing new listener
+
+
+## [1.16.0] - 2022-07-15
+### Added
+ - [FRONTEND][API_COLLECTOR] Add support for fetching SophosCloud events
+
+
+## [1.15.0] - 2022-07-07
+### Added
+ - [FRONTEND][API_COLLECTOR] Add support for fetching GSuite alerts
+### Fixed
+ - [FRONTEND][API_COLLECTOR][HARFANGLAB] Fix duplicated alerts collected
+
+
+## [1.14.0] - 2022-07-01
+### Fixed
+- [API][FRONTEND] Avoid errors while trying to create new header's objects on a Frontend
+- [FRONTEND][HEADERS] Handle headers' values with spaces, simple quotes and double quotes
+### Added
+- [API][PARSER] New api parser WAF Cloudflare
+
+
+## [1.13.0] - 2022-06-24
+### Added
+- [SSOForward] add configurable request timeout on SSOForward requests
+- [HTTPD CONF] Servers' timeouts are now in a separate timeouts.conf file
+- [PARSER] [API] new parser Proofpoint PoD
+- [GITIGNORE] python env files and folders
+- [PARSER] [UTILS] internal function to get an object in arbitrary-length leaf, or return default otherwise
+### Fixed
+- [PARSER] [API] messages weren't sent completely to Rsyslog when messages exceeded a certain size
+- [API_PARSER] [HARFANG] get correct field for timestamp extraction
+- [API_PARSER] [AKAMAI] Properly acquire data_lock during internal last_log_time updates
+
+
+## [1.12.1] - 2022-05-17
+### Fixed
+- [PORTAL] Create a new portal session value from safe generator if value taken from client cookies is not formatted correctly or is not present in current cache
+### Added
+- [UTILS][HASHES] validation function for hash digest's format (length and characters used)
+
+
+## [1.11.0] - 2022-03-31
+### Fixed
+- [HAPROXY][FRONTEND] ACLs generated were wrong on some conditions
+- [HAPROXY][BACKEND] ACLs generated were wrong on some conditions
+- [ACLS] patterns with spaces given on GUI weren't quoted in configuration
+- [CLUSTER INSTALLATION] wrong variable utilization in cluster_join()
+- [PORTAL] correctly set 'iat' field in token
+- [SELF_SERVICE] avoid errors during password change when user does not exist
+- [API_LOGGER][SENTINELONE] Use correct timestamp from 'activity' alerts to update last_api_call
+- [API_LOGGER][SENTINELONE] add a 'to' argument to fix queried intervals and avoid gaps between executions
+### Changed
+- [GUI][ACL] Print the correct boolean syntax for haproxy on the edition preview
+- [SERVICE] [HAPROXY] prefer reloading service instead of restarting (start a new process that cleanly takes over the old one)
+- [IDP] set reset password URL validity to 72 hours
+### Added
+- [PORTAL] ensure the session stays valid for at least 5 minutes when requesting double-authentication on a portal
+- [PORTAL] centralize portals haproxy load-balancing and add healthchecks to avoid errors while nodes/portals are unavailable
+- [API_LOGGER][SENTINELONE] better logging of parser execution
+
+
+## [1.10.0] - 2022-03-18
+### Added
+- [API_PARSER] Blackberry Cylance
+
+
+## [1.9.0] - 2022-03-07
+### Added
+ - [FRONTEND][API-PARSER] Add Nozomi (probe) alerts collect support
+
+
+## [1.8.0] - 2022-02-23
+### Added
+- [PARSER][API] New API parser Vadesecure for Microsoft O365
+
+
+## [1.7.1] - 2022-02-17
+### Fixed
+- [PORTAL] [GUNICORN CONF] service didn't listen on jail's IPv6 address (no connection from IPv6 networks)
+### Added
+- [API][URLS] uniformize URLs to work with and without the trailing '/'
+
+
+## [1.7.0] - 2022-02-03
+### Fixed
+ - [HAProxy][Frontend] Fix acl syntax according to last haproxy version
+### Changed
+ - [PORTAL] Use **[gunicorn](https://docs.gunicorn.org/en/stable/)** instead of **[apache wsgi](https://pypi.org/project/mod-wsgi/)** to host portal engine
+
+
+## [1.6.1] - 2022-02-03
+### Added
+ - [FRONTEND]
+   -  Add 'validate' boolean parameter to disable config testing
+   - Improve performances by reloading frontend config asynchronously
+   - Refactor jinja template haproxy_frontend for better performances
+ - [API][CLUSTER] Add supervision api endpoint to get tasks (*/api/v1/system/cluster/tasks/*)
+ - [API][CLUSTER] Add supervision api endpoint to get cluster/node status (pending tasks, frontend statuses) (*/api/v1/system/cluster/tasks/*)
+ - [IDP][API] Deny username changes on an existing user entry
+ - [DARWIN][API] Now possible to get a Policy by its name
+ - [CLUSTER][JOIN] Sync master's secret key between joining nodes to avoid encrypion/decryption problems between nodes of a same cluster
+### Fixed
+ - [VULTURED] Update status of task if an error occurred (status was let 'running' forever)
+ - [API-PARSER][ALL] Fix status update of frontend when an error occurs - "error" was never set
+ - [UPGRADE] Fix package upgrade failure due to conflicted versions of python package in environment
+- [PORTAL] URL link for 'lost password'
+- [PORTAL] Error while retrieving user from mail while loading 'lost password' URL
+- [PORTAL][SELF_SERVICE] Password reset email missed a '/' in the reset URL
+- [PORTAL] Avoid strange redirections during authentication (caused by previous queries)
+- [UTILS][AES] Padding errors
+- [TOTP] Various errors preventing TOTP to work properly
+- [PORTAL] Only allow user's session at the end of the whole process, permitting SSOForward to work as expected when Learning values are asked to the user
+- [SSOForward] Use response.text to avoid errors when getting and parsing forms
+- [SYNTAX] Code cleanup and syntax corrections
+- [TOTP] Avoid errors during disconnexion when portal has no OTP configured
+- [LDAP] Correctly create group in LDAP when IDP portal must add a new user to it
+- [LDAP] Don't apply sanitation on group enumerations in code
+- [PORTAL] Redirect user to workflow's public_dir instead of previous page in case of (re)authentication failure
+- [PORTAL] Captcha field now works as intended
+- [PORTAL] [SELF_SERVICE] reset password key is now hidden in 'password change' form
+- [LDAP] Avoid decoding errors when formatting data from user search (could result in 500)
+- [PORTAL] Correctly redirect client on successful authentication on a portal without SSOForward
+- [CLUSTER][JOIN] Correctly sync Redis between joining nodes of a same cluster
+### Removed
+- [SECADM] Obsolete 'node' rule
+### Changed
+- [PORTAL] [SELF_SERVICE] Don't make a difference when returning for a password reset request between a valid and an invalid email (prevent user enumeration via email)
+- [PORTAL] [SELF_SERVICE] Improve errors reporting during password reset request
+- [PORTAL] [SELF_SERVICE] Password reset URLs are now available for 3 days
+- [TOOLS] [LDAP] Cleaner errors
+- [PORTAL] [SELF_SERVICE] Refuse empty password when changing them
+- [OPENID] OpenID repositories can no longer have the same 'client_id' (duplicates will be deleted, and replaced with the remaining object when used)
+
+
+## [1.5.2] - 2022-01-05
+### Fixed
+- [API_PARSER][SENTINEL_ONE] Update last_api_call for all kinds of events
+
+
+## [1.5.1] - 2021-12-29
+### Fixed
+ - [API_PARSER][HARFANGLAB] Isoformat already setting timezone - prevent invalid timestamp format
+
+
+## [1.5.0] - 2021-12-08
+### Added
+-   [API PARSER] CROWDSTRIKE API parser
+
+
+## [1.4.1] - 2021-12-03
+### Fixed
+ - [API_PARSER] [DEFENDER] Use system proxy when available
+ - [API_PARSER] [DEFENDER] Add missing data to logging functions
+ - [API_PARSER] [FORCEPOINT] Fix error for long csv fields (larger than 131038 bytes)
+ - [SETTINGS] [LOGGERS] Use WatchedFileHandler instead of RotatingFileHandler -> rotation routine was conflicting with logrotate -> some logs where lost
+
+
+## [1.4.0] - 2021-11-24
+### Added
+- [FRONTEND][API][Defender] New Defender Antivirus parser
+### Fixed
+- [SECADM] Removed an outdated secadm rule that could prevent other rules from loading in Apache jail
+- [FRONTEND][API] Changed the logger of the base API Parser class to `api_parser` instead of `crontab`
+- [FRONTEND][API] Removed useless imports in almost all api parsers
+- [FRONTEND][API][Imperva] Removed useless log_downloader module from source
+- [FRONTEND][API] Fixed many uncatched exceptions in the following parsers : cortex_xdr, forcepoint, harfanglab, imperva,
+### Changed
+- [FRONTEND][API] Updated all loggers to handle logging in a more generic manner
+
+
+## [1.3.13] - 2021-11-16
+### Fixed
+- [FRONTEND][API][Cybereason] Parser not using proxy configuration while executing query on API
+- [FRONTEND][API][Cybereason] Malops comments format was dict instead of list
+
+
+## [1.3.11] - 2021-10-27
+### Added
+- [FRONTEND][API][SentinelOne] Retrieve activity events from SentinelOne api as well as alerts
+
+
+## [1.3.10] - 2021-10-20
+### Changed
+ - [DARWIN] Increase performance by setting number of threads of session filter to 30 (instead of 5)
+ - [PORTAL][LOGON] Change authentication error message to "Authentication Failure" instead of "Bad credentials"
+ - [PORTAL][SSO-FORWARD] Do not set sso-forward response cookies as cross-domain, just set property "Samesite:Lax"
+ - [PORTAL][CHANGE_PASSWORD] Show an 'Invalid link' message when trying to change a password with a forged/expired link
+### Fixed
+ - [WORKFLOW][EDIT] Reload haproxy spoe configuration when editing a workflow using authentication
+ - [PF] Prevent duplicated lines for backend whitelisting rules
+ - [HAPROXY][LOGS] Fix "time-utc" field format to %Y-%m-%dT%H:%M:%S%Z (instead of %Y-%m-%dT%H:%M:%S:%Z)
+ - [PORTAL] Fix "return to asked url" routine
+ - [API_CYBEREASON] Handle and remove None value from 'rootCauseElementNames' list
+### Added
+ - [PORTAL][SSO-FORWARD] Add option "Keep client cookies" to allow using clients' cookies for sso-forward requests
+ - [FRONTEND][API_PARSER] Add support for "Vadesecure" events collect via api (Big thks to @EmileDqy )
+
+
+## [1.3.8] - 2021-10-06
+### Added
+- [API-HARFANGLAB] Add missing proxy in http requests
+### Fixed
+- [API-HARFANGLAB] Fix last_api_call set on empty response
+
+
+## [1.3.7] - 2021-09-30
+### Added
+ - [FRONTEND][API-PARSER] Add HarfangLab alerts collect support
+ - [FRONTEND][FILEBEAT] Allow to configure proxy for filebeat api collect
+ - [MONITOR][FRONTEND] Show status of Rsyslog API frontends according to collect result
+### Modified
+ - [FRONTEND][FILEBEAT] Generate one filebeat conf file per frontend, and launch one instance per frontend, to allow multiple same module configuration
+
+
+## [1.3.6] - 2021-08-25
+### Fixed
+- [LOGAPI] [CORTEX XDR] Prevent getting last log line repeatedly
+- [LOGAPI] [REACHFIVE] Properly get most recent date from all logs received
+- [FRONTEND] [RSYSLOG CONF] Remove old ruleset file when ruleset is changed in 'filebeat' mode
+- [FRONTEND] [GUI] Allow selecting a ruleset when in mode 'filebeat' and type 'Vendor Specific API'
+
+
+## [1.3.5] - 2021-08-16
+### Fixed
+- [PF] wrong NAT rule from Haproxy to external nodes' portal
+- [HAPROXY] [CONF] portal id wasn't templated but was set with a constant value
+- [WORKFLOW] [CONF] don't generate configuration on a node to write it on each, but execute the configuration generation on each node
+### Changed
+- [UTILS] [AES] rework AESCipher implementation using 'cryptography' library
+- [IDP] [API] use 'username' instead of 'email' for account modification
+- [PORTAL] [TEMPLATE] allow 'username' field in some views and emails templates
+  - password view
+  - registration view
+  - email body
+  - email registration body
+### Security
+- [LDAP] add proper field escaping when building LDAP query filters with user input
+
+
+## [1.3.4] - 2021-08-07
+### Changed
+ - [PYTHON] Update from Python3.7 to **Python3.8**
+### Added
+ - [BACKEND][API] Return detailed reason of error
+ - [FRONTEND][API] Return detailed reason of error
+ - [FRONTEND][API-PARSERS] Add more detailed logger when an error occurs
+ - [PF] Allow portal jail to contact backends using backend_outgoing_ip (for sso-forward)
+ - [FRONTEND][LOGS] Add *http_request_host* field in HAProxy log format
+ - [FRONTEND][API-PARSER] Add **rapid7** alerts collect support
+ - [FRONTEND][API-PARSER] Enrich **cybereason** alerts with affected machines list
+ - [APACHE][GUI/PORTAL] Add processing time in access logs
+### Fixed
+ - [PORTAL] Fix error when deleting IDP portal with its connector already deleted
+ - [HAPROXY][SPOE] Add default session message when there is no workflow having authentication
+
+
+## [1.3.3] - 2021-07-27
+### Changed
+ - [PORTAL][HTTPD] Improve performances of portal httpd service, by increasing process related directives
+### Removed
+ - [PORTAL][HAPROXY] Remove check of haproxy backends (portal), to prevent portal overload with multiple authentication workflows
+
+
+## [1.3.1] - 2021-07-09
+### Added
+ - [IDP][API] : Check if SMTP server is configured and accessible before creating user
+### Fixed
+ - [FRONTEND][PORTAL] : Fix authentication error check handling
+### Removed
+ - [PORTAL][IDP] : Remove max length of FQDN
+
+
+## [1.2.11] - 2021-06-22
+### Added
+ - [AUTHENTICATION] : Add new menu for user's scope management
+ - [OPENID] : Add user's scope management field to create/modify/delete claims returned from OpenID service
+### Changed
+ - [PORTAL] : Replace user's scope table by selector to user's scope entries
+### Fixed
+ - [PORTAL] : Fix error when claim named "sub" or "name" is not a string
+
+
+## [1.2.10] - 2021-06-16
+## Fixed
+- [RSYSLOG] [DARWIN] [CONF] buffer inputs could contain too much entries
+- [DARWIN] [CONF] general Darwin configuration was incorrect when no filters were configured
+- [DARWIN] avoid recreating filters when editing policies in GUI or on APIs
+- [DARWIN] [GUI] Properly copy filters when copying a policy (don't reuse filters from copied one)
+- [FRONTEND] [FILEBEAT] [GUI] Show ruleset when selecting filebeat loggging mode and preselect according parser
+
+
+## [1.2.9_1] - 2021-06-15
+### Fixed
+ - [Frontend][API Netskope] :: Fix : Fix use of proxy + test get_logs from GUI
+
+
+## [1.2.8] - 2021-06-03
+### Added
+- [BACKEND] validate ipv6 format and unix path validity
+- [LOG FOWARDER] add 'send_as_raw' parameter to syslog Log Forwarder
+- [PORTAL] [GUI] add an 'always' condition for the scope builder
+- [FRONTEND] [GUI] add stricter validation of Frontend's name
+- [FRONTEND] [KAFKA] add possibility to configure kafka options
+- [IPSEC] [API] allow to get ipsec configuration with the corresponding node id
+### Changed
+- [PORTAL] [GUI] reformat scope builder's sentence for better clarity
+- [PORTAL] [OAUTH] extend verification of oauth2 token validity to all workflows containing the service used for authentication
+- [DARWIN] enrichment tags will always be present in alert and/or enrichment when set
+- [WORKFLOW] [GUI] do not refresh list view to prevent coming back to the first page
+### Deprecated
+- [IPSEC] [API] endpoint 'api/v1/services/strongswan/<int:object_id>' will be removed in next version, it has been replaced by 'api/v1/services/strongswan/<int:object_id>/'
+### Removed
+- [ACL] remove button to enable or disable an ACL in view (useless)
+### Fixed
+- [WORKFLOW] [API] fix configuration generation when creating a Workflow through API
+- [FRONTEND] [GUI] fix additional infos formatting
+- [TYPOS] various typos corrections in logs
+- [BACKEND] [GUI] fix servers disappearing when form contains errors
+- [LDAP] [GUI] fix port resetting during tests
+- [LDAP] [GUI] fix test routines
+- [API PARSER] fix Symantec test function
+- [SSO FORWARD] fix Learning on SSO Forward
+- [PORTAL] [GUI] 'enable Oauth2 provider' button did not show oauth2 options in some browsers
+- [INSTALL] fix Redis' configuration routine during cluster_join
+- [PORTAL] delete the temporary key used to reset a password after its use
+- [IPSEC] [GUI] fix error during creation
+- [IPSEC] [API] normalize API endpoint
+- [IPSEC] [GUI] don't keep obsolete statuses in status list after a refresh
+
+
+## [1.2.5] - 2021-04-26
+### Added
+- [API] [OpenID] Full api
+- [API] [Reputation Context] allow querying via name
+- [API] [ACLs] allow querying via name
+- [API] [ACLs] add DELETE
+- [API] [Network Address] allow querying via name and/or ip
+- [API] [Tenants] allow querying via name
+- [API] [Defender] full api
+- [API] [OTP] full api
+- [API] [PKI] GET api
+- [API] [TLS] full api
+- [API] [Auth Repositories] GET api
+- [API] [IDP] unicity constraint on Users
+- [API] [OpenVPN] allow querying via remote_server
+- [API] [Cluster] allow querying node via name
+- [Bootstrap] more info on "cluster_join" failure
+- [Portal] Disconnect url regex on authentication portal, to disconnect Vulture session on application disconnect action
+### Fixed
+- [API] [LDAP] wrong response on POST/PUT queries
+- [API] typo "exists" instead of "exist"
+- [GUI] [IDP] many fixes and improvements
+- [API] [Network Interface Card] required "node_name" with "dev" when not querying with id to prevent potential duplicates on clusters
+- [Portal] [Template] broken inclusion of URL vulture image in logout template
+- [Portal] 500 return if portal's workflow has a user scope
+- [GUI] [Workflow] 500 return on workflow edition without authentication
+- [Portal] wrong redirect to oauth2 entry point on URLs with subdirs in path
+
+
+## [1.2.4] - 2021-04-16
+### Fixed
+- [GUI WORKFLOW] unable to edit an existing Workflow with authentication
+- [CLUSTERING] wrong mongodb configuration, application could write on slave
+- [SSO FORWARD] properly check or ignore tls verification, on wizard and at execution, depending on 'Sso forward tls check' parameter
+- [SSO FORWARD] fix redirection post 'SSO forward' even when 'SSO forward follow redirect' is disabled
+- [OPENID] retrieve correct username field from different technologies ('name', 'sub'...)
+- [PORTAL] prevent errors on empty values in claims
+- [API SYMANTEC] don't wait for second half of current hour to download archives when the parser has to catch up more than an hour
+- [PORTAL TEMPLATE] Fix lostPassword link's excess "/"
+- [PORTAL] Fix Internal repo authentication failing on form submit
+- [PORTAL] fix 403 errors on ressources when loading a portal (especially /templates)
+- [LOGROTATE] remove wrong and duplicated .gz extension on rotated archives' filename
+### Added
+- [PORTAL] new advanced 'scope-builder' to conditionally create user scope
+- [PORTAL] add default vulture-logo to initial template images
+### Changed
+- [API SYMANTEC] decrease memory usage while unziping archive
+
+
+## [1.2.3] - 2021-04-13
+### Fixed
+- [Workflow] graph did not show/wasn't editable when an authentication portal was linked to it
+
+
+## [1.2.2] - 2021-04-02
+### Added
+ - Portal : Add API + automatically create OpenID service if IDP portal
+ - Darwin : Add vast/vaml darwin filters, with according Rsyslog configurations
+ - Portal templates : Add possibility to add custom images + improve edition dashboard
+ - Api Cybereason : Add more informational loggers
+ - OpenID : Add 'verify_certificate' and 'use_proxy' attributes for configuration downloading
+ - Reputation contexts : Add enable_hour_download config, to download database once
+### Changed
+ - Portal : Set external_listener as Frontend instead of listener, to permit IDP listening domain on existing frontend
+ - API Symantec : Improve parsing loop for very big amount of logs
+### Removed
+ - Ldap : Remove userPassword retrieve from ldap
+### Fixed
+ - Ldap client : Fix API
+ - Install : Fix migration error when bootstrapping Vulture
+ - HAProxy : Fix portal, workflow and frontend configuration templates
+ - Ldap client : Fix error in group_search method
+ - Error templates : Add http headers at beginning of templates, for Haproxy compatibility
+ - API SentinelOne : Use system proxy in api requests
+ - IDP : Fix IDP update/delete
+ - Frontend : Fix API for non-json post data
+ - Frontend : Fix custom http headers configuration
+ - Portal : Fix OpenID token creation in /oauth2/authorize endpoint
+ - Portal : Fix OpenID responders + SSO forward
+ - Portal : Fix custom scope re-edition
+ - Portal : Fix Apache configuration for Authorization header
+ - Portal : Fix 503 error for OAuth2 callback responder
+ - Haproxy : Remove X-Forwarded-* headers from frontend, set them in portal backends, to prevent conflict with custom headers
+
+
+## [1.1.3] - 2021-02-18
+### Added
+ - FRONTEND : Add support for `proofpoint_tap` API events collect
+### Fixed
+ - FRONTEND : Fix bug in kafka listening mode - could not save frontend
+
+
+## [1.1.2] - 2021-02-05
+### Added
+ - Frontend: Add new listening choice in log mode => Kafka input (See Rsyslog imkafka)
+ - Node : Add new PF custom configuration parameters for initial, nat and rdr rules (only in Advanced mode!)
+### Removed
+ - Frontend: Remove useless Darwin configuration reload when creating new listener

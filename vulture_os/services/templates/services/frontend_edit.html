@@ -1618,6 +1618,23 @@
                         </div>
                       </div>
 
+                        <div class="col-md-12 api_clients_row" id="api_safenet_row">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.safenet_tenant_code.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.safenet_tenant_code }}
+                            {{ form.safenet_tenant_code.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.safenet_apikey.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.safenet_apikey }}
+                            {{ form.safenet_apikey.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
