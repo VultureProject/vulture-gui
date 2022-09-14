@@ -27,9 +27,9 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 from django.conf import settings
-from django.utils import dateparse
+from django.utils import timezone
 import time
 
 from toolkit.api_parser.api_parser import ApiParser
@@ -96,10 +96,10 @@ class WAFCloudflareParser(ApiParser):
 
     def execute(self):
         # Aware UTC datetime
-        current_time = datetime.now(timezone.utc)
+        current_time = timezone.now()
         since = self.frontend.last_api_call
-        if (self.last_api_call is None) or (datetime.now(timezone.utc) - self.last_api_call >= timedelta(minutes=30)):
-            since = (datetime.now(timezone.utc) - timedelta(minutes=30))
+        if (self.last_api_call is None) or (timezone.now() - self.last_api_call >= timedelta(minutes=30)):
+            since = (timezone.now() - timedelta(minutes=30))
         #The API has a delay of 60 seconds
         to = current_time - timedelta(seconds=60)
         msg = f"Parser starting from {since} to {to}."
@@ -114,7 +114,7 @@ class WAFCloudflareParser(ApiParser):
 
 
     def test(self):
-        current_time = datetime.now(timezone.utc)
+        current_time = timezone.now()
         try:
             logs = self.get_logs(logs_from=(current_time - timedelta(seconds=62)), logs_to=(current_time - timedelta(seconds=61)))
 

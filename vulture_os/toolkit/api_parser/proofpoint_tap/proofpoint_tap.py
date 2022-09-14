@@ -26,7 +26,7 @@ __parser__ = 'PROOFPOINT'
 import logging
 import requests
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -112,7 +112,7 @@ class ProofpointTAPParser(ApiParser):
             if b"too far into the past" in response.content:
                 error = "ProofpointTAP API call: cannot query this far into the past, coming back 12 hours back from now"
                 logger.warning(f"[{__parser__}]:_get_logs: {error}", extra={'frontend': str(self.frontend)})
-                self.last_api_call = datetime.now(timezone.utc) - timedelta(hours=12)
+                self.last_api_call = timezone.now() - timedelta(hours=12)
                 raise ProofpointTAPAPITooFarError(error)
             error = f"Error at ProofpointTAP API Call: {response.content}"
             raise ProofpointTAPAPIError(error)
@@ -190,7 +190,7 @@ class ProofpointTAPParser(ApiParser):
 
     def execute(self):
         error = ""
-        currentTime = datetime.now(timezone.utc)
+        currentTime = timezone.now()
         fromTime = self.last_api_call
         parsed_lines = []
 

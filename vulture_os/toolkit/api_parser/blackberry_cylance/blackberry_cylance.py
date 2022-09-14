@@ -30,10 +30,9 @@ import requests
 import time
 import uuid
 
-from datetime import timedelta, timezone
-from datetime import datetime
+from datetime import timedelta
 from django.conf import settings
-from django.utils import dateparse
+from django.utils import dateparse, timezone
 
 from toolkit.api_parser.api_parser import ApiParser
 
@@ -256,7 +255,8 @@ class BlackberryCylanceParser(ApiParser):
         # the API gets data with a minimal precision of 10 milliseconds (from manual tests),
         # so avoid getting the same alert twice by incrementing start_time by 10 milliseconds
         start_time = self.last_api_call + timedelta(milliseconds=10)
-        end_time = datetime.now(tz=timezone.utc)
+        # Get at most a batch of 24h, to avoid running the parser for too long
+        end_time = min(timezone.now(), start_time + timedelta(hours=24))
 
         number_of_logs = 0
         page = 0
@@ -283,7 +283,7 @@ class BlackberryCylanceParser(ApiParser):
     def test(self):
         logger.info(f"[{__parser__}]:test: Launching test", extra={'frontend': str(self.frontend)})
 
-        end_time = datetime.now(tz=timezone.utc)
+        end_time = timezone.now()
         start_time = end_time - timedelta(days=30)
 
         logger.debug(f"[{__parser__}]:test: start_time: {start_time}, end_time: {end_time}", extra={'frontend': str(self.frontend)})

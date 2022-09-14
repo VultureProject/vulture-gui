@@ -32,8 +32,9 @@ from oauthlib.oauth2 import BackendApplicationClient
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 from requests_oauthlib import OAuth2Session
 
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 from django.conf import settings
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
 
@@ -155,9 +156,10 @@ class DefenderParser(ApiParser):
 
 
     def execute(self):
-        # Aware UTC datetime
-        current_time = datetime.now(timezone.utc)
-        logs = self.get_logs(logs_from=self.last_api_call, logs_to=current_time)
+        # Get a batch of 24h at most to avoid running the parser for too long
+        logs_from = self.last_api_call
+        logs_to = min(timezone.now(), logs_from + timedelta(hours=24))
+        logs = self.get_logs(logs_from=logs_from, logs_to=logs_to)
 
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
@@ -165,7 +167,7 @@ class DefenderParser(ApiParser):
         if len(logs) > 0:
 
             # All alerts are retrieved, reset timezone to now (+1ms to avoid repeating last log)
-            self.frontend.last_api_call = current_time + timedelta(milliseconds=1)
+            self.frontend.last_api_call = logs_to + timedelta(milliseconds=1)
 
             self.write_to_file([json.dumps(l) for l in logs])
             # Writting may take some while, so refresh token in Redis

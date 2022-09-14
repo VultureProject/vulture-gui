@@ -113,7 +113,9 @@ class GsuiteAlertcenterParser(ApiParser):
         self.get_creds()
         # Default timestamp is 24 hours ago
         since = (self.last_api_call or (timezone.now() - timedelta(days=5))).isoformat()
-        to = timezone.now().isoformat()
+        # Get batches of 24h at most, to avoid running the parser for too long
+        to = min(timezone.now(), since + timedelta(hours=24))
+        to = to.isoformat()
         have_logs, tmp_logs = self.get_alerts(since=since, to=to)
 
         # Downloading may take some while, so refresh token in Redis
