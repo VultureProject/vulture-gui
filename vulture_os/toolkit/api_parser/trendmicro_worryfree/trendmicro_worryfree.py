@@ -31,7 +31,7 @@ import base64
 import hashlib
 import uuid
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
@@ -207,8 +207,8 @@ class TrendmicroWorryfreeParser(ApiParser):
 
     def test(self):
 
-        since = datetime.now(timezone.utc) - timedelta(hours=1)
-        to = datetime.now(timezone.utc)
+        since = timezone.now() - timedelta(hours=1)
+        to = timezone.now()
         query = {'range_from': int(since.timestamp()), 'range_to': int(to.timestamp())}
 
         try:
@@ -227,8 +227,8 @@ class TrendmicroWorryfreeParser(ApiParser):
 
     def execute(self):
 
-        since = self.frontend.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=1))
-        to = datetime.now(timezone.utc)
+        since = self.frontend.last_api_call or (timezone.now() - timedelta(hours=1))
+        to = timezone.now()
         query = {'range_from': int(since.timestamp()), 'range_to': int(to.timestamp())}
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})

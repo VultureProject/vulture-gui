@@ -27,8 +27,9 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from django.conf import settings
+from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
 
@@ -110,6 +111,17 @@ class Rapid7IDRParser(ApiParser):
             }
 
     def get_logs(self, index=0, since=None, to=None):
+        """
+        Get logs from 'since' timestamp to 'to' created_time timestamp
+        events with create_time equal to 'since' or 'to' are included in the match
+        timestamp filtering precision is at the millisecond (microseconds ignored)
+
+        :param index: the index of the page to fetch (for multi-page results)
+        :param since: a valid and timezone-aware datetime object representing the first log when filtering through created_time
+        :param to: a valid and timezone-aware datetime object representing the last log when filtering through created_time
+        :returns: a json object containing the events in the 'data' list
+        :raises Rapid7IDRAPIError: in case the function could not connect or the reply's status code wasn't 200
+        """
         alert_url = self.rapid7_idr_host + self.INVESTIGATIONS_ENDPOINT
 
         # Format timestamp for query
@@ -149,8 +161,9 @@ class Rapid7IDRParser(ApiParser):
 
     def execute(self):
 
-        since = self.last_api_call or (datetime.now(timezone.utc) - timedelta(hours=24))
-        to = datetime.now(timezone.utc)
+        since = self.last_api_call or (timezone.now() - timedelta(hours=24))
+        to = min(timezone.now(), since + timedelta(hours=24))
+
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
@@ -165,7 +178,7 @@ class Rapid7IDRParser(ApiParser):
             self.update_lock()
 
             logs = response['data']
-            
+
             available = int(response['metadata']['total_data'])
             msg = f"got {available} lines available"
             logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})

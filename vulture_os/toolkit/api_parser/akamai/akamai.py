@@ -283,7 +283,7 @@ class AkamaiParser(ApiParser):
 
             self.offset = "a"
             try:
-                while self.last_log_time < (timezone.now()-datetime.timedelta(minutes=1)) and self.offset:
+                while not self.evt_stop.is_set() and self.last_log_time < (timezone.now()-datetime.timedelta(minutes=1)) and self.offset:
                     self.get_logs()
                     self.update_lock()
                     self.frontend.last_api_call = self.last_log_time

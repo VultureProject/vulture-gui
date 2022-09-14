@@ -24,12 +24,10 @@ __doc__ = 'Proofpoint POD API Parser'
 __parser__ = 'PROOFPOINT POD'
 
 
-from datetime import timezone, datetime, timedelta
+from datetime import timedelta
 import json
 import logging
-import signal
 import time
-from threading import Event
 from urllib.parse import urlparse
 import websocket
 
@@ -56,11 +54,6 @@ class ProofpointPodParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        signal.signal(signal.SIGINT, self._handle_stop)
-        signal.signal(signal.SIGTERM, self._handle_stop)
-        signal.signal(signal.SIGHUP, self._handle_stop)
-
-        self.evt_stop = Event()
         self.ws = None
         self.last_timestamp = None
         self.buffer = list()
@@ -89,14 +82,9 @@ class ProofpointPodParser(ApiParser):
             self.ws.close(timeout=1)
 
 
-    def _handle_stop(self, signum, frame):
-        logger.debug(f"[{__parser__}]:_handle_stop: caught signal {signum}, ordering to stop", extra={'frontend': str(self.frontend)})
-        self.evt_stop.set()
-
-
     def test(self):
         current_time = time.time()
-        sinceTime = datetime.now(timezone.utc) - timedelta(hours=2)
+        sinceTime = timezone.now() - timedelta(hours=2)
         msg = None
 
         try:
@@ -267,7 +255,7 @@ class ProofpointPodParser(ApiParser):
 
         current_time = time.time()
         if not self.frontend.last_api_call:
-            self.frontend.last_api_call = datetime.now(timezone.utc)
+            self.frontend.last_api_call = timezone.now()
         self.last_timestamp = self.frontend.last_api_call
 
         # stop parser after 1 hour when last call was more that an hour ago (need time to get bundle of logs for past hours, and will stop once it's done)
