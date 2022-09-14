@@ -151,10 +151,12 @@ class SafenetParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-        if response["page"]["totalPages"] > 1:
-            for i in range(response["page"]["totalPages"] - 1):
-                logs = self.__execute_query(response["page"]["links"]["next"])
+        nbPages = response["page"]["totalPages"]
+        if nbPages > 1:
+            for i in range(nbPages - 1):
+                response = self.__execute_query(response["page"]["next"])
                 self.update_lock()
+                logs = response["page"]["items"]
                 self.write_to_file([self.format_logs(log) for log in logs])
                 self.update_lock()
 
