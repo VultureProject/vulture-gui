@@ -31,7 +31,6 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
-from django.utils.timezone import now, make_aware
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -224,9 +223,9 @@ class SentinelOneParser(ApiParser):
 
     def execute(self):
 
-        since = self.last_api_call or (now() - timedelta(hours=24))
+        since = self.last_api_call or (timezone.now() - timedelta(hours=24))
         # Fetch at most 24h of logs to avoid the parser running for too long
-        to = min(now(), since + timedelta(hours=24))
+        to = min(timezone.now(), since + timedelta(hours=24))
 
         logger.info(f"[{__parser__}]:execute: ### Start collecting logs from {since} to {to} ###",
                     extra={'frontend': str(self.frontend)})
