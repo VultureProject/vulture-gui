@@ -5,6 +5,86 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.0.0] - 2022-09-15
+### Fixed
+- [VULTURED] [MONITOR] Avoid crashes when a new node joins a cluster
+- [STRONGSWAN] [CLEANUP] Remove unnecessary exception condition
+- [STATICS] Fixed static dirs definition in settings
+- [CTI] Use database relation to link tenant to a feed instead of its filename
+- [BACKEND] [CONSTRAINTS] Old Server target:port unicity has been manually and completely removed
+- [NET2MONGO] Find available external IPs more efficiently by searching different syntaxes in configuration files
+- [API_PARSER] [GUI] [SYMANTEC] errors not showing correctly when testing
+- [LOG_FORWARDER] [PF] Add missing NAT rules for log forwarders in some Frontend LOG modes (Redis, Kafka)
+- [LOG_FORWARDER] [CONF] Reload associated Frontends' configuration when changing a LogForwarder
+- [FRONTEND] [GUI] Return an error when a Frontend uses an already existing Listener (error on duplicates)
+- [BACKEND] [GUI] Avoid errors on backend copy
+- [SYSTEM] [APACHE] Change wrong apache config reloads to apache service reloads
+- [RSYSLOG] [TEMPLATES] Formatting errors on `generic_json` output template
+- [FRONTEND][API_COLLECTOR][HARFANGLAB] Prevent duplicated collected alerts by using advanced API parameters
+- [HAPROXY][CONF] Don't bind Listeners' ports configured for other nodes
+- [ERROR_TEMPLATE] Reload haproxy every time a template is rewritten (not only when related Frontends' conf has changed)
+- [FRONTEND][API_COLLECTOR][SENTINELONE] Prevent duplicated events by modifying last_api_call variable
+### Removed
+- [DEFENDER] Removed defender policies and rules
+- [BHYVE/VM] Removed VM functionalities
+- [GUI] [LOGVIEWER] Removed LogViewer
+- [YARA] Removed yara policies/rules
+- [GUI] [ZFS] Removed ZFS administration
+- [NETWORK] Removed vm-public/tap0 interfaces
+- [FRONTEND] [IMPCAP] Removed support for impcap Listeners (also remove existing listeners)
+- [PF] [BLACKLISTING] Removed blacklisting from default predator databases
+- [PF] [NAT] Removed useless RDR/NAT for DNS, netdata and dashboard
+- [DARWIN] [CLUSTER] Removed log <-> alert recontextualisation from Vulture code
+- [LOG_FORWARDERS] Removed 'Internal Dashboard' from available forwarders
+- [DOCUMENTATION] Removed in-GUI documentation
+- [RSS] Removed unused Predator news system
+- [CLEANUP] Removed obsolete/deprecated files
+### Changed
+- [JAIL] Differentiate 'apache' and 'portal' jails' secadm rules and gunicorn configuration
+- [PREDATOR] Disabled most Predaotr support : only some generic databases are downloaded (no tenant-specific DB)
+- [PF] [CONFIG] Only reload pf config when required
+- [SYSTEM] Check if the node is bootstrapped through database (and not through system files)
+- [API_PARSER] [SYMANTEC] make use of external API's 'token' information to get logs continuously while avoiding duplicates
+- [MODELS] Added fields option for filtering to ErrorTemplate's to_dict function
+- [MODELS] Changed to_dict to include frontends related to the Error Template in to_dict function
+- [PF] [CONF] Avoid creating duplicate NAT rules for log forwarders
+- [WORKFLOW] [GUI] Optimized how resources are gotten from APIs during workflow edition/creation
+- [BACKEND] [GUI] Optimized how http_health_check_headers are provided in forms
+- [SYSTEM] [DEPRECATED] use of management.ip file in favor of rc conf in /etc/rc.conf.d/network
+- [API_PARSER] [BASE] handle SIGINT/SIGTERM signals to ask parsers to stop
+- [API_PARSER][AKAMAI] Stop when a SIGINT/SIGTERM is received
+- [API_PARSER][BLACKBERRY_CYLANCE] process at most 24h of logs during an execution
+- [API_PARSER][CROWDSTRIKE] process at most 24h of logs during an execution
+- [API_PARSER][DEFENDER] process at most 24h of logs during an execution
+- [API_PARSER][GSUITE] process at most 24h of logs during an execution
+- [API_PARSER][NETSKOPE] process at most 24h of logs during an execution
+- [API_PARSER][RAPID7_IDR] process at most 24h of logs during an execution
+- [API_PARSER][SENTINEL_ONE] process at most 24h of logs during an execution
+- [API_PARSER][SYMANTEC] Don't wait for next execution when being rate-limited by the API, stop and let next execution handle the next fetch
+### Added
+- [DJANGO] [SETTINGS] Added 'serverSelectionTimeoutMS' for database(s) connection timeout
+- [UTILS] [MONGODB] New connect_with_retries() function to wait for a valid database connection with retries before returning
+- [MIGRATIONS] New model migrations for deletions and updates
+- [UPDATE_SCRIPTS] New migration scripts to remove obsoleted objects and configuration
+- [API_PARSER] New parser Trendmicro Worryfree
+- [API_PARSER] [MODEL] [SYMANTEC] new internal field 'token'
+- [API_PARSER] [SYMANTEC] support for multiple archives in file downloaded from API
+- [API] GET, POST, PUT, DELETE API methods for adding, modifying and deleting http messages
+- [MODELS] [TO_DICT] Ability to filter fields from objects with an optional `fields` parameter (related objects are still fully serialized)
+- [API] Ability to query object(s) and select the fields to return using the new `fields` optional parameter in the `to_dict()` function of models
+- [API] [FRONTEND] Ability to query frontends on their `mode` and/or `enabled` status
+- [API] [BACKEND] Ability to query backends on their `mode` and/or `enabled` status
+- [CLUSTER][MESSAGE_QUEUE] Ability to wait for message result in code
+- [UTILS] [RC] Toolkit functions to get/set rc variables in main or sub-files
+- [CLUSTER] [MESSAGE_QUEUE] message instance(s) returned from api_request() calls (to be able to wait on them and/or get result of execution
+- [RSYSLOG] [TEMPLATES] Missing elastic templates in built-in log types' output templates
+- [FRONTEND][LOG] add (advanced) parameters for rate-limiting on TCP log listeners
+- [LOG_FORWARDER][SYSLOG] add (advanced) parameters for output rate-limiting on syslog forwarder
+- [LOG_FORWARDER][ELASTICSEARCH] add (advanced) parameters for output rate-limiting on elasticsearch forwarder
+- [CHANGELOG] Missing file for past known releases
+- [API_PARSER] New safenet parser
+
+
 ## [1.18.0] - 2022-08-05
 ### Fixed
 - [HAPROXY][CONFIGURATION] Split spoe configuration directives to avoid configuration parse limits
