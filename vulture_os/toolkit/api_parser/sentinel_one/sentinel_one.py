@@ -23,7 +23,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Sentinel One EDR API Parser'
 __parser__ = 'SENTINEL ONE'
 
-
 import json
 import logging
 import requests
@@ -32,7 +31,6 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
-from django.utils.timezone import make_aware
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -69,13 +67,13 @@ class SentinelOneParser(ApiParser):
 
         self.session = None
 
-
     def _connect(self):
         try:
             if self.session is None:
                 self.session = requests.Session()
                 login_url = f"{self.sentinel_one_host}/{self.LOGIN_URI_TOKEN}"
-                logger.info(f"[{__parser__}]:_connect: connecting with endpoint '{login_url}'...", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}]:_connect: connecting with endpoint '{login_url}'...",
+                            extra={'frontend': str(self.frontend)})
 
                 payload = {
                     "data": {
@@ -89,21 +87,21 @@ class SentinelOneParser(ApiParser):
                     proxies=self.proxies
                 ).json()
 
-                assert response.get('data', {}).get('token'), "Cannot retrieve token from API : {}".format(
-                    response)
+                assert response.get('data', {}).get('token'), f"Cannot retrieve token from API : {response}"
                 self.session.headers.update({'Authorization': f"Token {response['data']['token']}"})
-                logger.info(f"[{__parser__}]:_connect: access token successfuly retrieved, ready to query", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}]:_connect: access token successfully retrieved, ready to query",
+                            extra={'frontend': str(self.frontend)})
 
             return True
 
         except Exception as err:
             raise SentinelOneAPIError(err)
 
-
     def __execute_query(self, method, url, query, timeout=10):
 
         self._connect()
-        logger.debug(f"[{__parser__}]:__execute_query: url: '{url}', query: '{query}', method: '{method}'", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:__execute_query: url: '{url}', query: '{query}', method: '{method}'",
+                     extra={'frontend': str(self.frontend)})
 
         if method == "GET":
             response = self.session.get(
@@ -125,16 +123,17 @@ class SentinelOneParser(ApiParser):
             raise SentinelOneAPIError(f"Request method unrecognized : {method}")
 
         if response.status_code != 200:
-            raise SentinelOneAPIError(f"Error at SentinelOne API Call URL: {url} Code: {response.status_code} Content: {response.content}")
+            raise SentinelOneAPIError(
+                f"Error at SentinelOne API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
-        logger.info(f"[{__parser__}]:__execute_query: query successful", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:__execute_query: query successful", extra={'frontend': str(self.frontend)})
         return response.json()
 
-
     def test(self):
-        logger.info(f"[{__parser__}]:test: launching test query (getting logs from 10 days ago)", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:test: launching test query (getting logs from 10 days ago)",
+                    extra={'frontend': str(self.frontend)})
         try:
-            logs = self.get_logs(since=(datetime.utcnow()-timedelta(days=10)).isoformat()+"Z")
+            logs = self.get_logs(since=(datetime.utcnow() - timedelta(days=10)).isoformat() + "Z")
 
             return {
                 "status": True,
@@ -174,8 +173,8 @@ class SentinelOneParser(ApiParser):
             time_field_name = "updatedAt"
             query = {}
 
-        #query = {'createdAt__gt': since, 'sortBy': "createdAt"} => activity
-        #query = {'updatedAt__gt': since, 'sortBy': "updatedAt"} => alerts
+        # query = {'createdAt__gt': since, 'sortBy': "createdAt"} => activity
+        # query = {'updatedAt__gt': since, 'sortBy': "updatedAt"} => alerts
         if since:
             query[f"{time_field_name}__gt"] = since
         if to:
@@ -188,12 +187,10 @@ class SentinelOneParser(ApiParser):
 
         return self.__execute_query("GET", alert_url, query)
 
-
     def getAlertComment(self, alertId):
         comment_url = f"{self.sentinel_one_host}/{self.THREATS}/{alertId}/notes"
         ret = self.__execute_query("GET", comment_url, {})
         return ret['data']
-
 
     def format_log(self, log, event_kind):
         if event_kind == "alert":
@@ -216,13 +213,13 @@ class SentinelOneParser(ApiParser):
                 techniques += [x['name'] for x in tech]
             log['mitre_techniques'] = list(set(techniques))
             log['needs_attention'] = not log['threatInfo']['automaticallyResolved']
-            log['threatInfo']['createdAt'] = datetime.fromisoformat(log['threatInfo']['createdAt'].replace("Z", "+00:00")).timestamp()
+            log['threatInfo']['createdAt'] = datetime.fromisoformat(
+                log['threatInfo']['createdAt'].replace("Z", "+00:00")).timestamp()
         else:
             log['createdAt'] = datetime.fromisoformat(log['createdAt'].replace("Z", "+00:00")).timestamp()
         log['observer_name'] = self.sentinel_one_host.replace("https://", "")
         log['event_kind'] = event_kind
         return json.dumps(log)
-
 
     def execute(self):
 
@@ -230,15 +227,16 @@ class SentinelOneParser(ApiParser):
         # Fetch at most 24h of logs to avoid the parser running for too long
         to = min(timezone.now(), since + timedelta(hours=24))
 
+        logger.info(f"[{__parser__}]:execute: ### Start collecting logs from {since} to {to} ###",
+                    extra={'frontend': str(self.frontend)})
+
         for event_kind in ['alert', 'activity']:
             first = True
             cursor = None
 
-            logger.info(f"[{__parser__}]:execute: getting '{event_kind}' logs", extra={'frontend': str(self.frontend)})
-
             while cursor or first:
 
-                response = self.get_logs(cursor=cursor, since=since, to=to, activity_logs=event_kind=='activity')
+                response = self.get_logs(cursor=cursor, since=since, to=to, activity_logs=event_kind == 'activity')
 
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
@@ -247,23 +245,17 @@ class SentinelOneParser(ApiParser):
                 cursor = response.get('pagination', {}).get('nextCursor')
                 first = False
 
+                logger.info(f"[{__parser__}]:execute: fetched {len(logs)} logs of '{event_kind}'",
+                            extra={'frontend': str(self.frontend)})
+
                 self.write_to_file([self.format_log(l, event_kind) for l in logs])
 
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
                 if len(logs) > 0:
-                    if event_kind == "alert":
-                        # timestamps compared by API have a 10ms precision (empiric observation)
-                        last_timestamp = datetime.fromisoformat(logs[-1]['threatInfo']['updatedAt'].replace("Z", "+00:00"))+timedelta(milliseconds=10)
-                    else:
-                        # timestamps compared by API have a 10ms precision (empiric observation)
-                        # need to use fromtimestamp() as value in log has been modified by previous format_log()
-                        last_timestamp = make_aware(datetime.fromtimestamp(logs[-1]['createdAt'])+timedelta(milliseconds=10))
+                    self.frontend.last_api_call = to
 
-                    if last_timestamp > self.frontend.last_api_call:
-                        self.frontend.last_api_call = last_timestamp
+        logger.info(f"[{__parser__}]:execute: update last_api_call to {self.frontend.last_api_call}",
+                    extra={'frontend': str(self.frontend)})
 
-            msg = f"events {event_kind} collected."
-            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
-        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: ### End of collect ###\r\n", extra={'frontend': str(self.frontend)})
