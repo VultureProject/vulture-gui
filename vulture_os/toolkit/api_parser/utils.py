@@ -58,6 +58,7 @@ from toolkit.api_parser.gsuite_alertcenter.gsuite_alertcenter import GsuiteAlert
 from toolkit.api_parser.sophos_cloud.sophos_cloud import SophosCloudParser
 
 from toolkit.api_parser.trendmicro_worryfree.trendmicro_worryfree import TrendmicroWorryfreeParser
+from toolkit.api_parser.safenet.safenet import SafenetParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -95,6 +96,7 @@ PARSER_LIST = {
     "gsuite_alertcenter": GsuiteAlertcenterParser,
     "sophos_cloud": SophosCloudParser,
     "trendmicro_worryfree": TrendmicroWorryfreeParser,
+    "safenet": SafenetParser
 }
 
 

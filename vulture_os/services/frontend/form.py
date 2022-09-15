@@ -237,7 +237,8 @@ class FrontendForm(ModelForm):
                            'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail',
                            'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id',
                            'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
-                           'trendmicro_worryfree_server_port'
+                           'trendmicro_worryfree_server_port',
+                            'safenet_tenant_code', 'safenet_apikey'
                            ]:
             self.fields[field_name].required = False
 
@@ -320,7 +321,7 @@ class FrontendForm(ModelForm):
                   'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail',
                   'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id',
                   'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
-                  'trendmicro_worryfree_server_port', 'darwin_mode')
+                  'trendmicro_worryfree_server_port', 'safenet_tenant_code', 'safenet_apikey', 'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -467,6 +468,8 @@ class FrontendForm(ModelForm):
             'trendmicro_worryfree_secret_key': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'trendmicro_worryfree_server_name': TextInput(attrs={'class': 'form-control'}),
             'trendmicro_worryfree_server_port': TextInput(attrs={'class': 'form-control'}),
+            'safenet_tenant_code': TextInput(attrs={'class': 'form-control'}),
+            'safenet_apikey': TextInput(attrs={'class': 'form-control'}),
 }
 
     def clean_name(self):
