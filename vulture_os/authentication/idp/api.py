@@ -64,7 +64,7 @@ class IDPApiView(View):
             if object_type == "users":
                 data = []
                 group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
-                tmp_data = tools.get_users(ldap_repo, group_name)
+                tmp_data = tools.get_users_in_group(ldap_repo, group_name)
 
                 for tmp in tmp_data:
                     tmp_user = {

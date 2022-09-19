@@ -49,8 +49,10 @@ class GroupDoesntExistError(Exception):
 
 def _find_user(ldap_repo, user_dn, attr_list):
     client = ldap_repo.get_client()
-    user = client.search_by_dn(user_dn, attr_list=attr_list)
-    dn, attrs = user[0]
+    dn, attrs = client.search_by_dn(user_dn, attr_list=attr_list)
+    if not dn:
+        return None
+
     user = {"dn": dn}
 
     for key in AVAILABLE_USER_KEYS:
@@ -75,9 +77,10 @@ def _find_user(ldap_repo, user_dn, attr_list):
 
 def _find_group(ldap_repo, group_dn, attr_list):
     client = ldap_repo.get_client()
-    group = client.search_by_dn(group_dn, attr_list=attr_list)
+    dn, attrs = client.search_by_dn(group_dn, attr_list=attr_list)
+    if not dn:
+        return None
 
-    dn, attrs = group[0]
     group = {"dn": dn}
 
     for key in AVAILABLE_GROUP_KEYS:
@@ -129,7 +132,7 @@ def search_users(ldap_repo, search, by_dn=False):
     return data
 
 
-def get_users(ldap_repository, group_name):
+def get_users_in_group(ldap_repository, group_name):
     group_dn = f"{group_name},{ldap_repository.get_client()._get_group_dn()}"
     group = _find_group(ldap_repository, group_dn, ['*'])
     if not group:

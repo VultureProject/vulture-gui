@@ -325,12 +325,12 @@ class LDAPClient(BaseAuth):
         self._bind_connection(self.user, self.password)
         try:
             result = self._get_connection().search_s(dn, ldap.SCOPE_SUBTREE, '(objectClass=*)', attr_list)
-            results = self._process_results(result)
+            dn, attrs = (result[0][0], self._process_results(result[0][1]))
         except ldap.NO_SUCH_OBJECT:
-            results = []
+            dn, attrs = (None, None)
 
         self.unbind_connection()
-        return results
+        return dn, attrs
 
     def search_user(self, username, attr_list=None):
         """ Method used to search for a user inside LDAP repository
