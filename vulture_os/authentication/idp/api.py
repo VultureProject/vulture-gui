@@ -33,7 +33,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
 from authentication.user_portal.models import UserAuthentication
 from authentication.totp_profiles.models import TOTPProfile
-from authentication.ldap.tools import NotUniqueError, UserNotExistError
+from authentication.ldap.tools import NotUniqueError, UserDoesntExistError, GroupDoesntExistError
 from authentication.idp.attr_tools import MAPPING_ATTRIBUTES
 from toolkit.portal.registration import perform_email_registration, perform_email_reset
 from toolkit.network.smtp import test_smtp_server
@@ -134,6 +134,12 @@ class IDPApiView(View):
                 "status": False,
                 "error": _("Portal does not exist")
             }, status=404)
+
+        except GroupDoesntExistError:
+            return JsonResponse({
+                "status": True,
+                "data": {}
+            }, status=204)
 
         except Exception as err:
             logger.critical(err, exc_info=1)
@@ -403,7 +409,7 @@ class IDPApiUserView(View):
                 "status": True
             })
 
-        except UserNotExistError:
+        except UserDoesntExistError:
             return JsonResponse({
                 "status": False,
                 "error": _("User not found")
