@@ -32,6 +32,7 @@ import copy
 import ldap
 import ldap.modlist as modlist
 from ldap.filter import escape_filter_chars
+from ldap.dn import escape_dn_chars
 
 
 # Required exceptions imports
@@ -338,7 +339,7 @@ class LDAPClient(BaseAuth):
         :return: An list with results if query match, None otherwise
         """
         # input sanitation
-        username = escape_filter_chars(username)
+        username = escape_dn_chars(username)
         logger.debug(f"Searching for user {username} and getting attributes {attr_list}")
         # Defining user search filter
         query_filter = "({}={})".format(self.user_attr, username)
