@@ -41,10 +41,22 @@ class NotUniqueError(Exception):
 
 
 class UserDoesntExistError(Exception):
-    pass
+    def __init__(self, dn=None):
+        self.user_dn = dn
+        if self.user_dn:
+            self.message = f"User {self.user_dn} does not exist"
+        else:
+            self.message = "User does not exist"
+        super().__init__(self.message)
 
 class GroupDoesntExistError(Exception):
-    pass
+    def __init__(self, dn=None):
+        self.group_dn = dn
+        if self.group_dn:
+            self.message = f"Group {self.group_dn} does not exist"
+        else:
+            self.message = "Group does not exist"
+        super().__init__(self.message)
 
 
 def _find_user(ldap_repo, user_dn, attr_list):
@@ -136,7 +148,7 @@ def get_users_in_group(ldap_repository, group_name):
     group_dn = f"{group_name},{ldap_repository.get_client()._get_group_dn()}"
     group = _find_group(ldap_repository, group_dn, ['*'])
     if not group:
-        raise GroupDoesntExistError(f"Group {group_name} doesn't exist")
+        raise GroupDoesntExistError(dn=group_dn)
     members  = []
     for member_dn in group['member']:
         members.append(_find_user(ldap_repository, member_dn, ["+", "*"]))
@@ -160,7 +172,7 @@ def find_user_email(ldap_repository, username):
     # No need to construct the scope, search_user does-it automatically...
     user = ldap_repository.get_client().search_user(username, attr_list=[ldap_repository.user_email_attr])
     if not user:
-        raise UserDoesntExistError()
+        raise UserDoesntExistError(dn=dn)
     dn = user[0][0]
     mail = user[0][1][ldap_repository.user_email_attr]
     return dn, mail[0] if isinstance(mail, list) else mail
@@ -178,7 +190,7 @@ def create_user(ldap_repository, username, userPassword, attrs, group=False):
 def lock_unlock_user(ldap_repository, user_dn, lock=True):
     user = _find_user(ldap_repository, user_dn, ["*"])
     if not user:
-        raise UserDoesntExistError()
+        raise UserDoesntExistError(dn=user_dn)
 
     if not lock:
         logger.debug(f"Unlocking user {user_dn}")
@@ -230,7 +242,7 @@ def delete_user(ldap_repository, user_dn):
 
     old_user = _find_user(ldap_repository, user_dn, ["*"])
     if not old_user:
-        raise UserDoesntExistError()
+        raise UserDoesntExistError(dn=user_dn)
 
     groups = [_find_group(ldap_repository, group_dn, ["*"]) for group_dn in client.search_user_groups_by_dn(user_dn)]
     r = client.delete_user(user_dn, groups)
