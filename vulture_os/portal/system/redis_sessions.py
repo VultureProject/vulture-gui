@@ -92,7 +92,6 @@ class REDISSession(object):
             self.handler.expire(key, timeout)
 
     def delete_in_redis(self, key):
-        logger.error(f"deleting {key} in redis")
         return self.handler.delete(key)
 
 
@@ -547,8 +546,8 @@ class RedisOpenIDSession(REDISSession):
 
         # This is a temporary token, used for redirection and access_token retrieve
         if not self.write_in_redis(30):
-            logger.error("REDIS::register: Error while writing portal_session in Redis")
-            raise REDISWriteError("REDISOauth2Session::register: Unable to write Oauth2 infos in REDIS")
+            logger.error("RedisOpenIDSession::register: Error while writing portal_session in Redis")
+            raise REDISWriteError("RedisOpenIDSession::register: Unable to write Oauth2 infos in REDIS")
 
         return self.key
 
