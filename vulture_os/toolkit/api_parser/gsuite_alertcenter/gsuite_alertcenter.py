@@ -115,7 +115,7 @@ class GsuiteAlertcenterParser(ApiParser):
         proxy = proxy_http or proxy_https
         if proxy:
             proxy = proxy.split('://')
-            if '[' in proxy:
+            if '[' in proxy[1]:
                 # ipv6
                 proxy_port = proxy[1].split(']:')[1]
                 proxy_host = proxy[1][proxy[1].find("[")+1:proxy[1].find("]")]
