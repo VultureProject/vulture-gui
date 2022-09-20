@@ -71,6 +71,9 @@ class REDISSession(object):
     def __getitem__(self, key):
         return self.keys.get(key)
 
+    def exists(self):
+        return self.handler.exists(self.key)
+
     def set_ttl(self, ttl):
         if self.handler.ttl(self.key) < ttl:
             return self.handler.expire(self.key, ttl)
