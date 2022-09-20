@@ -26,6 +26,8 @@ import logging
 import requests
 import time
 import uuid
+import httplib2
+import google_auth_httplib2
 
 from datetime import timedelta
 from datetime import datetime
@@ -58,7 +60,7 @@ class GsuiteAlertcenterParser(ApiParser):
         self.client_admin_mail = data['gsuite_alertcenter_admin_mail']
         self.default_scopes = ['https://www.googleapis.com/auth/apps.alerts']
         self.default_client_admin_mail = "me"
-
+        self.authorized_http = None
         self.alertcenter = None
         self.credentials = None
         self.get_alert_center = None
@@ -91,7 +93,6 @@ class GsuiteAlertcenterParser(ApiParser):
                 return False, ('Connection failed')
         return self.credentials
 
-
     def get_alerts(self, since, to):
 
         logger.info(f"[{__parser__}]:execute: Getting alerts from {since} to {to}",
@@ -100,7 +101,7 @@ class GsuiteAlertcenterParser(ApiParser):
         final_filter = "createTime >= \"{}\" AND createTime < \"{}\" ".format(since, to)
         orderfilter = "create_time asc"
 
-        self.alertcenter = build('alertcenter', 'v1beta1', credentials=self.credentials).alerts()
+        self.alertcenter = build('alertcenter', 'v1beta1', http=self.authorized_http).alerts()
         recent_alerts = self.alertcenter.list(orderBy=orderfilter, filter=final_filter).execute()
 
         if not recent_alerts:
@@ -108,9 +109,29 @@ class GsuiteAlertcenterParser(ApiParser):
         else:
             return True, recent_alerts
 
+    def get_http_client(self):
+        proxy_https = self.proxies.get('https', '')
+        proxy_http = self.proxies.get('http', '')
+        proxy = proxy_http or proxy_https
+        if proxy:
+            proxy_host = proxy.split('://')[1].split(':')[0]
+            proxy_port = proxy.split('://')[1].split(':')[1]
+            proxy_info = httplib2.ProxyInfo(
+                proxy_type=httplib2.socks.PROXY_TYPE_HTTP,
+                proxy_host=proxy_host,
+                proxy_port=proxy_port)
+            http_client = httplib2.Http(proxy_info=proxy_info)
+        else:
+            http_client = httplib2.Http()
+
+        self.authorized_http = google_auth_httplib2.AuthorizedHttp(self.credentials, http=http_client)
+
+        return self.authorized_http
+
     def execute(self):
 
         self.get_creds()
+        self.get_http_client()
         # Default timestamp is 24 hours ago
         since = (self.last_api_call or (timezone.now() - timedelta(days=5))).isoformat()
         # Get batches of 24h at most, to avoid running the parser for too long
@@ -142,6 +163,7 @@ class GsuiteAlertcenterParser(ApiParser):
     def test(self):
         try:
             self.get_creds()
+            self.get_http_client()
             since = (timezone.now() - timedelta(days=10)).isoformat()
             to = timezone.now().isoformat()
             have_logs, tmp_logs = self.get_alerts(since=since, to=to)
