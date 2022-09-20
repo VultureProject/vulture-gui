@@ -773,6 +773,18 @@ class REDISBase(object):
     def hscan(self, hash, cursor=0, match=None, count=None):
         return self.r.hscan(hash, cursor, match, count)
 
+    # Scan continuously to receive all keys matching parameters
+    def scan_all(self, pattern=None, type=None):
+        result = list()
+        partial_result = self.r.scan(0, match=pattern, _type=type)
+        cursor = partial_result[0]
+        result.extend(partial_result[1])
+        while cursor != 0:
+            partial_result = self.r.scan(cursor, match=pattern, _type=type)
+            cursor = partial_result[0]
+            result.extend(partial_result[1])
+
+        return result
 
     def keys(self, pattern):
         return self.r.keys(pattern)
