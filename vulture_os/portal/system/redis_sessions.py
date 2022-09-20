@@ -512,12 +512,15 @@ class REDISOauth2Session(REDISSession):
         else:
             if not self.keys.get('scope'):
                 self.keys['scope'] = {}
-            if not self.keys.get('token_ttl'):
-                self.keys['token_ttl'] = timeout
-                self.keys['iat'] = int(time.time())
-                self.keys['exp'] = int(time.time()) + timeout
             if not self.keys.get('repo'):
                 self.keys['repo'] = repo_id
+            if not self.keys.get('sub') and sub:
+                self.keys['sub'] = sub
+
+            self.keys['token_ttl'] = timeout
+            self.keys['iat'] = int(time.time())
+            self.keys['exp'] = int(time.time()) + timeout
+
             for key,item in oauth2_data.items():
                 self.keys['scope'][key] = item
         if not self.write_in_redis(timeout):
