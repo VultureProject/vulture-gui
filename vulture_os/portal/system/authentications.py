@@ -206,7 +206,7 @@ class Authentication(object):
         oauth2_scope = self.redis_portal_session.get_user_infos(backend_id)
 
         if self.workflow.authentication.enable_oauth:
-            logger.info(f"AUTH::register_user: Oauth enabled for {self.workflow.authentication.name}, creating oauth2 token")
+            logger.info(f"AUTH::register_sso: Oauth enabled for {self.workflow.authentication.name}, creating oauth2 token")
             self.write_oauth2_session(oauth2_scope)
 
         password = self.redis_portal_session.getAutologonPassword(self.workflow.id, backend_id, username)
