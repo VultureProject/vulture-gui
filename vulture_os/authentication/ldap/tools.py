@@ -144,6 +144,19 @@ def search_users(ldap_repo, search, by_dn=False):
     return data
 
 
+def get_user_by_dn(ldap_repo, dn, attrs_list=["+", "*"]):
+    user = _find_user(ldap_repo, dn, attrs_list)
+    if not user:
+        raise UserDoesntExistError(dn=dn)
+
+    # cleaning values to avoid lists of 1 element
+    for key, value in user.items():
+        if isinstance(value, list):
+            user[key] = value[0]
+
+    return user
+
+
 def get_users_in_group(ldap_repository, group_name):
     group_dn = f"{group_name},{ldap_repository.get_client()._get_group_dn()}"
     group = _find_group(ldap_repository, group_dn, ['*'])
