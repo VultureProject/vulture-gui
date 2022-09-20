@@ -499,6 +499,11 @@ class REDISOauth2Session(REDISSession):
 
         return ret
 
+    def delete(self):
+        if repo := self.keys.get('repo'):
+            self.delete_in_redis(f"{self.key}_{repo}")
+        self.delete_in_redis(self.key)
+
     def register_authentication(self, repo_id, oauth2_data, timeout):
         sub = oauth2_data.get('sub')
         data = {
