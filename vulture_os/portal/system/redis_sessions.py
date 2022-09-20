@@ -497,6 +497,7 @@ class REDISOauth2Session(REDISSession):
         return ret
 
     def register_authentication(self, repo_id, oauth2_data, timeout):
+        sub = oauth2_data.get('sub')
         data = {
             'token_ttl': timeout,
             'iat': int(time.time()),
@@ -504,6 +505,8 @@ class REDISOauth2Session(REDISSession):
             'scope': oauth2_data,
             'repo': str(repo_id)
         }
+        if sub:
+            data.update({'sub': sub})
         if not self.keys:
             self.keys = data
         else:
