@@ -202,6 +202,8 @@ class IDPApiUserView(View):
                 if portal.update_group_registration:
                     group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
 
+                logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Creating user {user} with attributes {attrs}")
+
                 ldap_response, user_id = tools.create_user(
                     ldap_repo, user, request.JSON.get('userPassword'),
                     attrs, group_name
@@ -216,7 +218,7 @@ class IDPApiUserView(View):
                     user = user.split('=')[1]
                 # We will need user' email for registration and reset
                 user_id, user_mail = tools.find_user_email(ldap_repo, user)
-                logger.info(f"User's email found : {user_mail}")
+                logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] User's email found : {user_mail}")
 
 
             if not action or action == "resend_registration":
@@ -228,11 +230,11 @@ class IDPApiUserView(View):
                                         user,
                                         repo_id=repo_id,
                                         expire=72 * 3600):
-                    logger.error(f"Failed to send registration email to '{user_mail}'")
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Failed to send registration email to '{user_mail}'")
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's registration email")}, status=500)
                 else:
-                    logger.info(f"Registration email re-sent to '{user_mail}'")
+                    logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Registration email sent to '{user_mail}' (user {user})")
 
             elif action == "reset_password":
                 if not perform_email_reset(logger,
@@ -243,32 +245,32 @@ class IDPApiUserView(View):
                                  user,
                                  repo_id=repo_id,
                                  expire=72 * 3600):
-                    logger.error(f"Failed to send reset password email to '{user_mail}'")
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Failed to send reset password email to '{user_mail}'")
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's reset password email")}, status=500)
                 else:
-                    logger.info(f"Reset password email sent to '{user_mail}'")
+                    logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Reset password email sent to '{user_mail}' (user {user})")
 
             elif action == "reset_otp":
                 try:
                     if not portal.otp_repository:
-                        logger.error(f"IDP::Reset_otp: TOTP not configured for portal {portal}")
+                        logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] TOTP not configured for portal")
                         return JsonResponse({'status': False, 'error': _("TOTP not configured on portal")})
                     otp_profile = TOTPProfile.objects.get(auth_repository=ldap_repo,
                                                           totp_repository=portal.otp_repository,
                                                           login=user)
                     otp_profile.delete()
                 except TOTPProfile.DoesNotExist:
-                    logger.error(f"TOTP Profile not found for repo='{ldap_repo}', "
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] TOTP Profile not found for "
                                  f"otp_repo='{portal.otp_repository}', user='{user}'")
                     return JsonResponse({'status': False,'error': _("TOTP Profile not found")}, status=404)
                 except Exception as e:
                     logger.exception(e)
-                    logger.error(f"Failed to reset otp for user '{user}'")
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Failed to reset otp for user '{user}'")
                     return JsonResponse({'status': False,
                                          'error': _("Fail to reset otp")}, status=500)
                 else:
-                    logger.info(f"Reset otp done for '{user}'")
+                    logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] TOTP reset for '{user}'")
 
             elif action in ("lock", "unlock"):
                 user_dn = request.JSON["id"]
@@ -276,8 +278,9 @@ class IDPApiUserView(View):
                 if ldap_repo.user_account_locked_attr and ldap_repo.get_user_account_locked_attr:
                     to_lock = action == "lock"
                     ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
+                    logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] user '{user}' {'locked' if to_lock else 'unlocked'}")
                 else:
-                    logger.error(f"Cannot lock user '{user_dn}' on repository '{ldap_repo}': no locking filter configured")
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Cannot lock user '{user_dn}': no locking filter configured")
                     return JsonResponse({
                         "status": False,
                         "error": _("Lock unavailable for Repository")
@@ -348,6 +351,8 @@ class IDPApiUserView(View):
             for key, value in MAPPING_ATTRIBUTES.items():
                 attrs[value["internal_key"]] = request.JSON.get(key)
 
+            logger.info(f"IDPApiUserView::PUT::[{portal.name}/{ldap_repo}] Changing user {user_dn} with new attributes {attrs}")
+
             status, user_dn = tools.update_user(ldap_repo, user_dn, attrs, request.JSON.get('userPassword'))
             if status is False:
                 return JsonResponse({
@@ -397,6 +402,7 @@ class IDPApiUserView(View):
             ldap_repo = get_repo(portal, repo_id)
 
             user_dn = request.JSON['id']
+            logger.info(f"IDPApiUserView::DELETE::[{portal.name}/{ldap_repo}] Request to remove user {user_dn}")
 
             status = tools.delete_user(ldap_repo, user_dn)
             if status is False:
@@ -404,6 +410,7 @@ class IDPApiUserView(View):
                     "status": False,
                     "error": _("User not found")
                 }, status=404)
+            logger.info(f"IDPApiUserView::DELETE::[{portal.name}/{ldap_repo}] Removed user {user_dn}")
 
             return JsonResponse({
                 "status": True
