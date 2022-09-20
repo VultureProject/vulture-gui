@@ -114,12 +114,20 @@ class GsuiteAlertcenterParser(ApiParser):
         proxy_http = self.proxies.get('http', '')
         proxy = proxy_http or proxy_https
         if proxy:
-            proxy_host = proxy.split('://')[1].split(':')[0]
-            proxy_port = proxy.split('://')[1].split(':')[1]
+            proxy = proxy.split('://')
+            if '[' in proxy:
+                # ipv6
+                proxy_port = proxy[1].split(']:')[1]
+                proxy_host = proxy[1][proxy[1].find("[")+1:proxy[1].find("]")]
+            else:
+                # ipv4
+                proxy_host = proxy[1].split(':')[0]
+                proxy_port = proxy[1].split(':')[1]
+
             proxy_info = httplib2.ProxyInfo(
                 proxy_type=httplib2.socks.PROXY_TYPE_HTTP,
                 proxy_host=proxy_host,
-                proxy_port=proxy_port)
+                proxy_port=int(proxy_port))
             http_client = httplib2.Http(proxy_info=proxy_info)
         else:
             http_client = httplib2.Http()
