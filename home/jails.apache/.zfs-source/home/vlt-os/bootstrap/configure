@@ -31,8 +31,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
 
-from system.config.models import Config
-
 try:
     django.setup()
     from django.core.management import call_command
@@ -42,6 +40,7 @@ except:
     print ("Error: This node is not bootstraped.")
     sys.exit(1)
 
+from system.config.models import Config
 config = Config.objects.get()
 
 if len(sys.argv) <= 1:
