@@ -168,11 +168,14 @@ class SymantecParser(ApiParser):
                             tmp_file.seek(-150, 2)
                             logger.info(f"[{__parser__}]:execute Search new token", extra={'frontend': str(self.frontend)})
                             new_token = re.search("X-sync-token: (?P<token>.+)'", str(tmp_file.readline().strip()))
-                            self.frontend.symantec_token = new_token.group('token') if new_token else "none"
+                            symantec_token = new_token.group('token') if new_token else "none"
 
-                            msg = f"New token is: {self.frontend.symantec_token}"
+                            msg = f"New token is: {symantec_token}"
                             logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
+                            if symantec_token == "none":
+                                raise Exception("Cannot find token in archive tail, aborting.")
+                            else:
+                                self.frontend.symantec_token = symantec_token
                             data = []
                             with zipfile.ZipFile(tmp_file) as zip_file:
                                 for gzip_filename in zip_file.namelist():
