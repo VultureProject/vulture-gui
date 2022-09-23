@@ -33,8 +33,8 @@ from services.haproxy.haproxy import TEST_CONF_PATH
 from services.haproxy.haproxy import test_haproxy_conf
 
 from bson import ObjectId
+from hashlib import sha1
 import logging
-import uuid
 import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -219,15 +219,8 @@ class AccessControl(models.Model):
         for i, rule in enumerate(self.rules):
             tmp_names = []
             for j, line in enumerate(rule['lines']):
-                acl_name = str(uuid.uuid4())
-                tmp_names.append(acl_name)
 
-                acl = ""
-                if j > 0 or i > 0:
-                    acl += "    "
-
-                acl += "acl {}".format(acl_name)
-                acl += " {}".format(make_criterion(line['criterion'], line.get('criterion_name')))
+                acl = "{}".format(make_criterion(line['criterion'], line.get('criterion_name')))
 
                 pattern = line.get('pattern', '')
                 # ensure quoting in haproxy conf when pattern contains spaces
@@ -243,6 +236,15 @@ class AccessControl(models.Model):
 
                 tmp_lst.insert(1, line.get('flags', ''))
                 acl += ''.join(" " + elem if (elem != "") else "" for elem in tmp_lst)
+
+                acl_hash = sha1(acl.encode('utf-8')).hexdigest()
+                acl_name = f"{self.name}_{acl_hash}"
+                tmp_names.append(acl_name)
+
+                acl = f"acl {acl_name} {acl}"
+                if j > 0 or i > 0:
+                    acl = f"    {acl}"
+
                 acls.append(acl)
 
             acls_name.append(tmp_names)
