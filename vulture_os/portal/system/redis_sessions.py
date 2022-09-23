@@ -71,6 +71,9 @@ class REDISSession(object):
     def __getitem__(self, key):
         return self.keys.get(key)
 
+    def exists(self):
+        return self.handler.exists(self.key)
+
     def set_ttl(self, ttl):
         if self.handler.ttl(self.key) < ttl:
             return self.handler.expire(self.key, ttl)
@@ -89,7 +92,6 @@ class REDISSession(object):
             self.handler.expire(key, timeout)
 
     def delete_in_redis(self, key):
-        logger.error(f"deleting {key} in redis")
         return self.handler.delete(key)
 
 
@@ -496,7 +498,13 @@ class REDISOauth2Session(REDISSession):
 
         return ret
 
+    def delete(self):
+        if repo := self.keys.get('repo'):
+            self.delete_in_redis(f"{self.key}_{repo}")
+        self.delete_in_redis(self.key)
+
     def register_authentication(self, repo_id, oauth2_data, timeout):
+        sub = oauth2_data.get('sub')
         data = {
             'token_ttl': timeout,
             'iat': int(time.time()),
@@ -504,17 +512,22 @@ class REDISOauth2Session(REDISSession):
             'scope': oauth2_data,
             'repo': str(repo_id)
         }
+        if sub:
+            data.update({'sub': sub})
         if not self.keys:
             self.keys = data
         else:
             if not self.keys.get('scope'):
                 self.keys['scope'] = {}
-            if not self.keys.get('token_ttl'):
-                self.keys['token_ttl'] = timeout
-                self.keys['iat'] = int(time.time())
-                self.keys['exp'] = int(time.time()) + timeout
             if not self.keys.get('repo'):
                 self.keys['repo'] = repo_id
+            if not self.keys.get('sub') and sub:
+                self.keys['sub'] = sub
+
+            self.keys['token_ttl'] = timeout
+            self.keys['iat'] = int(time.time())
+            self.keys['exp'] = int(time.time()) + timeout
+
             for key,item in oauth2_data.items():
                 self.keys['scope'][key] = item
         if not self.write_in_redis(timeout):
@@ -533,8 +546,8 @@ class RedisOpenIDSession(REDISSession):
 
         # This is a temporary token, used for redirection and access_token retrieve
         if not self.write_in_redis(30):
-            logger.error("REDIS::register: Error while writing portal_session in Redis")
-            raise REDISWriteError("REDISOauth2Session::register: Unable to write Oauth2 infos in REDIS")
+            logger.error("RedisOpenIDSession::register: Error while writing portal_session in Redis")
+            raise REDISWriteError("RedisOpenIDSession::register: Unable to write Oauth2 infos in REDIS")
 
         return self.key
 
@@ -764,6 +777,18 @@ class REDISBase(object):
     def hscan(self, hash, cursor=0, match=None, count=None):
         return self.r.hscan(hash, cursor, match, count)
 
+    # Scan continuously to receive all keys matching parameters
+    def scan_all(self, pattern=None, type=None):
+        result = list()
+        partial_result = self.r.scan(0, match=pattern, _type=type)
+        cursor = partial_result[0]
+        result.extend(partial_result[1])
+        while cursor != 0:
+            partial_result = self.r.scan(cursor, match=pattern, _type=type)
+            cursor = partial_result[0]
+            result.extend(partial_result[1])
+
+        return result
 
     def keys(self, pattern):
         return self.r.keys(pattern)

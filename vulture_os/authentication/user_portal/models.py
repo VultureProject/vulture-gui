@@ -631,11 +631,8 @@ class UserAuthentication(models.Model):
         return self.portal_template.render_template(tpl_name, **{**kwargs, **self.to_template()})
 
     def get_user_scope(self, claims, repo_attrs):
-        user_scope = {}
         if self.user_scope:
-            for u in self.user_scope.get_repo_attributes():
-                user_scope = u.get_scope(user_scope, claims, repo_attrs)
-            return user_scope
+            return self.user_scope.get_user_scope(claims, repo_attrs)
         else:
             return claims
 

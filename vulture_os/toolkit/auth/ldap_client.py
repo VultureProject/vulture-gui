@@ -32,6 +32,7 @@ import copy
 import ldap
 import ldap.modlist as modlist
 from ldap.filter import escape_filter_chars
+from ldap.dn import escape_dn_chars
 
 
 # Required exceptions imports
@@ -324,12 +325,12 @@ class LDAPClient(BaseAuth):
         self._bind_connection(self.user, self.password)
         try:
             result = self._get_connection().search_s(dn, ldap.SCOPE_SUBTREE, '(objectClass=*)', attr_list)
-            results = self._process_results(result)
+            dn, attrs = (result[0][0], self._process_results(result[0][1]))
         except ldap.NO_SUCH_OBJECT:
-            results = []
+            dn, attrs = (None, None)
 
         self.unbind_connection()
-        return results
+        return dn, attrs
 
     def search_user(self, username, attr_list=None):
         """ Method used to search for a user inside LDAP repository
@@ -338,7 +339,7 @@ class LDAPClient(BaseAuth):
         :return: An list with results if query match, None otherwise
         """
         # input sanitation
-        username = escape_filter_chars(username)
+        username = escape_dn_chars(username)
         logger.debug(f"Searching for user {username} and getting attributes {attr_list}")
         # Defining user search filter
         query_filter = "({}={})".format(self.user_attr, username)
@@ -671,26 +672,9 @@ class LDAPClient(BaseAuth):
     def _format_user_results(self, user_dn, user_attrs):
         res = {}
         user_groups = []
+        user_attrs = _DeepStringCoder("utf-8").decode(user_attrs)
         # Standardize attributes
         for key, val in user_attrs.items():
-            # decode all bytes entries
-            if isinstance(val, bytes):
-                try:
-                    val = val.decode('utf-8')
-                except UnicodeDecodeError:
-                    logger.warning(f"ldap_client::_format_user_results:: ignoring key {key} -> cannot decode")
-                    continue
-            if isinstance(val, list):
-                for subval in val:
-                    if isinstance(subval, bytes):
-                        try:
-                            i = val.index(subval)
-                            val.pop(i)
-                            val.insert(i, subval.decode('utf-8'))
-                        except UnicodeDecodeError:
-                            logger.warning(f"ldap_client::_format_user_results:: ignoring value in key {key} -> cannot decode")
-                            continue
-
             if key == "userPassword":
                 continue
             elif key == self.user_groups_attr:

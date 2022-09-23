@@ -169,16 +169,14 @@ class Authentication(object):
         logger.debug("AUTH::register_user: token successfuly created")
 
     def register_user(self, authentication_results, oauth2_scope):
+        if self.workflow.authentication.enable_oauth:
         # Mandatory claims for SSO-F, OTP, change password, etc
-        if self.workflow.authentication.enable_external:
-            if not oauth2_scope.get('name'):
-                oauth2_scope['name'] = self.credentials[0]
+            if not oauth2_scope.get('sub'):
+                oauth2_scope['sub'] = authentication_results.get('sub', authentication_results.get("dn", ""))
             if not oauth2_scope.get('user_email'):
                 oauth2_scope['user_email'] = authentication_results.get('user_email', "")
             if not oauth2_scope.get('user_phone'):
                 oauth2_scope['user_phone'] = authentication_results.get('user_phone', "")
-
-        if self.workflow.authentication.enable_oauth:
             logger.info(f"AUTH::register_user: Oauth enabled for {self.workflow.authentication.name}, creating oauth2 token")
             self.write_oauth2_session(oauth2_scope)
 
@@ -208,7 +206,7 @@ class Authentication(object):
         oauth2_scope = self.redis_portal_session.get_user_infos(backend_id)
 
         if self.workflow.authentication.enable_oauth:
-            logger.info(f"AUTH::register_user: Oauth enabled for {self.workflow.authentication.name}, creating oauth2 token")
+            logger.info(f"AUTH::register_sso: Oauth enabled for {self.workflow.authentication.name}, creating oauth2 token")
             self.write_oauth2_session(oauth2_scope)
 
         password = self.redis_portal_session.getAutologonPassword(self.workflow.id, backend_id, username)

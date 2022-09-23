@@ -24,7 +24,7 @@ __doc__ = 'IDP URLS'
 
 from django.urls import path, re_path
 
-from authentication.idp.api import IDPApiView, IDPApiUserView
+from authentication.idp.api import IDPApiView, IDPApiUserView, IDPApiUserTokenView, IDPApiUserTokenModificationView
 
 urlpatterns = [
    re_path('^api/v1/authentication/idp/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)/$', IDPApiView.as_view(), name="authentication.idp"),
@@ -33,5 +33,19 @@ urlpatterns = [
 
    path('api/v1/authentication/idp/users/<int:portal_id>/<int:repo_id>/<str:action>/',
         IDPApiUserView.as_view(),
-        name="authentication.idp.users.action")
+        name="authentication.idp.users.action"),
+
+   path('api/v1/authentication/idp/<int:portal_id>/repos/<int:repo_id>/users/<str:user_b64>/tokens/',
+        IDPApiUserTokenView.as_view(),
+        name="authentication.idp.users.token"),
+   path('api/v1/authentication/idp/<str:portal_name>/repos/<str:repo_name>/users/<str:user_b64>/tokens/',
+        IDPApiUserTokenView.as_view(),
+        name="authentication.idp.users.token"),
+
+   path('api/v1/authentication/idp/<int:portal_id>/repos/<int:repo_id>/users/<str:user_b64>/tokens/<uuid:token_key>/',
+        IDPApiUserTokenModificationView.as_view(),
+        name="authentication.idp.users.token"),
+   path('api/v1/authentication/idp/<str:portal_name>/repos/<str:repo_name>/users/<str:user_b64>/tokens/<uuid:token_key>/',
+        IDPApiUserTokenModificationView.as_view(),
+        name="authentication.idp.users.token"),
 ]

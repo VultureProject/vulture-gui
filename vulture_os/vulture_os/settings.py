@@ -142,6 +142,8 @@ DATABASES = {
     }
 }
 
+REDISIP = '127.0.0.1'
+REDISPORT = '6379'
 
 LOGIN_URL = "/login/"
 

@@ -23,20 +23,28 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'IDP API'
 
 import logging
+from authentication.idp.authentication import api_check_authorization
+from base64 import urlsafe_b64decode
+from datetime import timedelta
 from django.views import View
 from django.conf import settings
 from authentication.ldap import tools
 from django.http import JsonResponse
 from gui.decorators.apicall import api_need_key
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import ugettext_lazy as _
+from authentication.base_repository import BaseRepository
 from authentication.user_portal.models import UserAuthentication
 from authentication.totp_profiles.models import TOTPProfile
-from authentication.ldap.tools import NotUniqueError, UserNotExistError
+from authentication.ldap.tools import NotUniqueError, UserDoesntExistError, GroupDoesntExistError
 from authentication.idp.attr_tools import MAPPING_ATTRIBUTES
+from oauth2.tokengenerator import Uuid4
+from portal.system.redis_sessions import REDISOauth2Session, REDISBase
 from toolkit.portal.registration import perform_email_registration, perform_email_reset
 from toolkit.network.smtp import test_smtp_server
+from uuid import UUID
 
 from system.cluster.models import Cluster
 
@@ -45,8 +53,17 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
-def get_repo(portal, repo_id):
+def get_repo_by_id(portal, repo_id):
     return portal.repositories.get(subtype="LDAP", pk=repo_id).get_daughter()
+
+def get_repo_by_name(portal, repo_name):
+    return portal.repositories.get(subtype="LDAP", name=repo_name).get_daughter()
+
+
+class ActionForbiddenException(Exception):
+    def __init__(self, message="Forbidden"):
+        self.message = message
+        super().__init__(self.message)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -55,7 +72,7 @@ class IDPApiView(View):
     def get(self, request, portal_id, repo_id):
         try:
             portal = UserAuthentication.objects.get(pk=portal_id)
-            ldap_repo = get_repo(portal, repo_id)
+            ldap_repo = get_repo_by_id(portal, repo_id)
 
             object_type = request.GET["object_type"].lower()
             if object_type not in ("users", "search"):
@@ -64,7 +81,7 @@ class IDPApiView(View):
             if object_type == "users":
                 data = []
                 group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
-                tmp_data = tools.get_users(ldap_repo, group_name)
+                tmp_data = tools.get_users_in_group(ldap_repo, group_name)
 
                 for tmp in tmp_data:
                     tmp_user = {
@@ -135,6 +152,12 @@ class IDPApiView(View):
                 "error": _("Portal does not exist")
             }, status=404)
 
+        except GroupDoesntExistError:
+            return JsonResponse({
+                "status": True,
+                "data": {}
+            }, status=204)
+
         except Exception as err:
             logger.critical(err, exc_info=1)
             if settings.DEV_MODE:
@@ -152,7 +175,7 @@ class IDPApiUserView(View):
     def post(self, request, portal_id, repo_id, action=None):
         try:
             portal = UserAuthentication.objects.get(pk=portal_id)
-            ldap_repo = get_repo(portal, repo_id)
+            ldap_repo = get_repo_by_id(portal, repo_id)
 
             if action and action not in ("resend_registration", "reset_password", "lock", "unlock", "reset_otp"):
                 return JsonResponse({
@@ -196,6 +219,8 @@ class IDPApiUserView(View):
                 if portal.update_group_registration:
                     group_name = f"{ldap_repo.group_attr}={portal.group_registration}"
 
+                logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Creating user {user} with attributes {attrs}")
+
                 ldap_response, user_id = tools.create_user(
                     ldap_repo, user, request.JSON.get('userPassword'),
                     attrs, group_name
@@ -210,7 +235,7 @@ class IDPApiUserView(View):
                     user = user.split('=')[1]
                 # We will need user' email for registration and reset
                 user_id, user_mail = tools.find_user_email(ldap_repo, user)
-                logger.info(f"User's email found : {user_mail}")
+                logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] User's email found : {user_mail}")
 
 
             if not action or action == "resend_registration":
@@ -222,11 +247,11 @@ class IDPApiUserView(View):
                                         user,
                                         repo_id=repo_id,
                                         expire=72 * 3600):
-                    logger.error(f"Failed to send registration email to '{user_mail}'")
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Failed to send registration email to '{user_mail}'")
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's registration email")}, status=500)
                 else:
-                    logger.info(f"Registration email re-sent to '{user_mail}'")
+                    logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Registration email sent to '{user_mail}' (user {user})")
 
             elif action == "reset_password":
                 if not perform_email_reset(logger,
@@ -237,32 +262,32 @@ class IDPApiUserView(View):
                                  user,
                                  repo_id=repo_id,
                                  expire=72 * 3600):
-                    logger.error(f"Failed to send reset password email to '{user_mail}'")
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Failed to send reset password email to '{user_mail}'")
                     return JsonResponse({'status': False,
                                          'error': _("Fail to send user's reset password email")}, status=500)
                 else:
-                    logger.info(f"Reset password email sent to '{user_mail}'")
+                    logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Reset password email sent to '{user_mail}' (user {user})")
 
             elif action == "reset_otp":
                 try:
                     if not portal.otp_repository:
-                        logger.error(f"IDP::Reset_otp: TOTP not configured for portal {portal}")
+                        logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] TOTP not configured for portal")
                         return JsonResponse({'status': False, 'error': _("TOTP not configured on portal")})
                     otp_profile = TOTPProfile.objects.get(auth_repository=ldap_repo,
                                                           totp_repository=portal.otp_repository,
                                                           login=user)
                     otp_profile.delete()
                 except TOTPProfile.DoesNotExist:
-                    logger.error(f"TOTP Profile not found for repo='{ldap_repo}', "
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] TOTP Profile not found for "
                                  f"otp_repo='{portal.otp_repository}', user='{user}'")
                     return JsonResponse({'status': False,'error': _("TOTP Profile not found")}, status=404)
                 except Exception as e:
                     logger.exception(e)
-                    logger.error(f"Failed to reset otp for user '{user}'")
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Failed to reset otp for user '{user}'")
                     return JsonResponse({'status': False,
                                          'error': _("Fail to reset otp")}, status=500)
                 else:
-                    logger.info(f"Reset otp done for '{user}'")
+                    logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] TOTP reset for '{user}'")
 
             elif action in ("lock", "unlock"):
                 user_dn = request.JSON["id"]
@@ -270,8 +295,9 @@ class IDPApiUserView(View):
                 if ldap_repo.user_account_locked_attr and ldap_repo.get_user_account_locked_attr:
                     to_lock = action == "lock"
                     ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
+                    logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] user '{user}' {'locked' if to_lock else 'unlocked'}")
                 else:
-                    logger.error(f"Cannot lock user '{user_dn}' on repository '{ldap_repo}': no locking filter configured")
+                    logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Cannot lock user '{user_dn}': no locking filter configured")
                     return JsonResponse({
                         "status": False,
                         "error": _("Lock unavailable for Repository")
@@ -317,7 +343,7 @@ class IDPApiUserView(View):
     def put(self, request, portal_id, repo_id):
         try:
             portal = UserAuthentication.objects.get(pk=portal_id)
-            ldap_repo = get_repo(portal, repo_id)
+            ldap_repo = get_repo_by_id(portal, repo_id)
 
             user_dn = request.JSON['id']
 
@@ -341,6 +367,8 @@ class IDPApiUserView(View):
 
             for key, value in MAPPING_ATTRIBUTES.items():
                 attrs[value["internal_key"]] = request.JSON.get(key)
+
+            logger.info(f"IDPApiUserView::PUT::[{portal.name}/{ldap_repo}] Changing user {user_dn} with new attributes {attrs}")
 
             status, user_dn = tools.update_user(ldap_repo, user_dn, attrs, request.JSON.get('userPassword'))
             if status is False:
@@ -388,9 +416,11 @@ class IDPApiUserView(View):
     def delete(self, request, portal_id, repo_id):
         try:
             portal = UserAuthentication.objects.get(pk=portal_id)
-            ldap_repo = get_repo(portal, repo_id)
+            ldap_repo = get_repo_by_id(portal, repo_id)
+            redis_handler = REDISBase()
 
             user_dn = request.JSON['id']
+            logger.info(f"IDPApiUserView::DELETE::[{portal.name}/{ldap_repo}] Request to remove user {user_dn}")
 
             status = tools.delete_user(ldap_repo, user_dn)
             if status is False:
@@ -398,12 +428,25 @@ class IDPApiUserView(View):
                     "status": False,
                     "error": _("User not found")
                 }, status=404)
+            logger.info(f"IDPApiUserView::DELETE::[{portal.name}/{ldap_repo}] Removed user {user_dn}")
+
+            # Search and remove all related oauth2 tokens
+            logger.info(f"IDPApiUserView::DELETE::[{portal.name}/{ldap_repo}] Removing user {user_dn} related oauth tokens")
+            all_tokens = redis_handler.scan_all("oauth2_*", type="hash")
+            for token in all_tokens:
+                repo = redis_handler.hget(token, "repo")
+                sub = redis_handler.hget(token, "sub")
+
+                if repo == portal.oauth_client_id and sub == user_dn:
+                    logger.info(f"IDPApiUserView::DELETE::[{portal.name}/{ldap_repo}] Removing oauth token {token} from deleted user {user_dn}")
+                    redis_handler.delete(token)
+                    redis_handler.delete(f"{token}_{repo}")
 
             return JsonResponse({
                 "status": True
             })
 
-        except UserNotExistError:
+        except UserDoesntExistError:
             return JsonResponse({
                 "status": False,
                 "error": _("User not found")
@@ -431,3 +474,276 @@ class IDPApiUserView(View):
                 "status": False,
                 "error": str(err)
             }, status=500)
+
+
+def _validate_request(request, user_b64, portal_id=None, repo_id=None, portal_name=None, repo_name=None, token_key=None):
+    # parameters
+    if portal_id:
+        portal = UserAuthentication.objects.get(pk=portal_id)
+    elif portal_name:
+        portal = UserAuthentication.objects.get(name=portal_name)
+    else:
+        raise ValueError("Need a portal id or name to scope token on")
+
+    if repo_id:
+        repo = get_repo_by_id(portal, repo_id)
+    elif repo_name:
+        repo = get_repo_by_name(portal, repo_name)
+    else:
+        raise ValueError("Need a repo id or name to scope token on")
+
+    user_dn = urlsafe_b64decode(user_b64).decode("utf-8")
+    user = tools.get_user_by_dn(repo, user_dn)
+    scopes = portal.get_user_scope({}, user)
+    assert 'sub' in scopes, "Cannot create token: IDP's scoping doesn't define a valid 'sub'"
+
+    if token_key:
+        try:
+            UUID(token_key, version=4)
+        except ValueError:
+            raise ValueError("token's format is invalid")
+
+    # data
+    timeout = request.JSON.get("timeout", portal.oauth_timeout)
+
+    # Auth
+    auth_token = request.auth_token
+    sub = auth_token.keys.get("sub")
+    assert sub != None, "No 'sub' in authentication token, cannot establish user's identity"
+
+    if sub != user_dn:
+        logger.warning(f"User '{sub}' cannot create a token for user {user_dn}")
+        raise ActionForbiddenException("Cannot modify tokens for another user")
+
+    return portal, repo, user_dn, timeout, scopes
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class IDPApiUserTokenView(View):
+
+    @api_need_key('cluster_api_key')
+    @api_check_authorization()
+    def post(self, request, user_b64, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
+        try:
+            portal, repo, user_dn, timeout, scopes = _validate_request( request,
+                                                                        user_b64,
+                                                                        portal_id=portal_id,
+                                                                        repo_id=repo_id,
+                                                                        portal_name=portal_name,
+                                                                        repo_name=repo_name)
+            # All validation is done, creating token
+            token_key = Uuid4().generate()
+            token = REDISOauth2Session(REDISBase(), f"oauth2_{token_key}")
+            logger.info(f"IDPApiUserTokenView::POST::[{portal.name}/{repo}] Creating token {token_key} "
+                        f"with scopes {scopes}, expiring in {timeout}s, for user {user_dn}")
+            token.register_authentication(
+                portal.oauth_client_id,
+                scopes,
+                timeout
+            )
+            expireat = timezone.now() + timedelta(seconds=timeout)
+
+        except UserAuthentication.DoesNotExist:
+            logger.warning(f"IDPApiUserTokenView::POST:: Tried to access unknown resource: "
+                            f"portal {portal_id or portal_name}")
+            return JsonResponse({
+                "status": False,
+                "error": _("Portal does not exist")
+            }, status=404)
+        except BaseRepository.DoesNotExist:
+            logger.warning(f"IDPApiUserTokenView::POST:: "
+                            f"Tried to access unknown resource: repo {repo_id or repo_name}")
+            return JsonResponse({
+                "status": False,
+                "error": _("Repository does not exist")
+            }, status=404)
+        except UserDoesntExistError as e:
+            logger.warning(f"IDPApiUserTokenView::POST:: "
+                            f"Tried to access unknown resource: user {e.user_dn}")
+            return JsonResponse({
+                "status": False,
+                "error": _("User does not exist")
+            }, status=404)
+        except ActionForbiddenException as e:
+            logger.warning(f"IDPApiUserTokenView::POST:: {str(e)}")
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=403)
+        except (AssertionError, ValueError) as e:
+            logger.warning(f"IDPApiUserTokenView::POST:: {str(e)}")
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=400)
+        except Exception as e:
+            logger.exception(e)
+            return JsonResponse({
+                "status": False,
+                "error": _("An unknown error occured")
+            }, status=500)
+
+        return JsonResponse({
+            "status": True,
+            "expireat": int(expireat.timestamp()),
+            "token": token_key
+        }, status=201)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class IDPApiUserTokenModificationView(View):
+    @api_need_key('cluster_api_key')
+    @api_check_authorization()
+    def patch(self, request, user_b64, token_key, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
+        try:
+            token_key = str(token_key)
+            portal, repo, user_dn, timeout, scopes = _validate_request( request,
+                                                                        user_b64,
+                                                                        portal_id=portal_id,
+                                                                        repo_id=repo_id,
+                                                                        portal_name=portal_name,
+                                                                        repo_name=repo_name,
+                                                                        token_key=token_key)
+            # All validation is done, creating token
+            token = REDISOauth2Session(REDISBase(), f"oauth2_{token_key}")
+            if not token.exists():
+                logger.warning(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] User '{user_dn}' "
+                                f"Trying to refresh a token that doesn't exist '{token_key}'")
+                return JsonResponse({
+                    "status": False
+                }, status=404)
+            elif token.keys.get("sub") != user_dn:
+                logger.error(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] User '{user_dn}' "
+                                f"is trying to override token '{token_key}', owned by '{token.keys.get('sub')}'!")
+                return JsonResponse({
+                    "status": False
+                }, status=404)
+            logger.info(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] Updating token {token_key} "
+                        f"with scopes {scopes}, expiring in {timeout}s, for user {user_dn}")
+            token.register_authentication(
+                portal.oauth_client_id,
+                scopes,
+                timeout
+            )
+            expireat = timezone.now() + timedelta(seconds=timeout)
+
+        except UserAuthentication.DoesNotExist:
+            logger.warning(f"IDPApiUserTokenModificationView::PATCH:: Tried to access unknown resource: "
+                            f"portal {portal_id or portal_name}")
+            return JsonResponse({
+                "status": False,
+                "error": _("Portal does not exist")
+            }, status=404)
+        except BaseRepository.DoesNotExist:
+            logger.warning(f"IDPApiUserTokenModificationView::PATCH:: Tried to access unknown resource: "
+                            f"repo {repo_id or repo_name}")
+            return JsonResponse({
+                "status": False,
+                "error": _("Repository does not exist")
+            }, status=404)
+        except UserDoesntExistError as e:
+            logger.warning(f"IDPApiUserTokenModificationView::PATCH:: "
+                            f"Tried to access unknown resource: user {e.user_dn}")
+            return JsonResponse({
+                "status": False,
+                "error": _("User does not exist")
+            }, status=404)
+        except ActionForbiddenException as e:
+            logger.warning(f"IDPApiUserTokenModificationView::PATCH:: {str(e)}")
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=403)
+        except (AssertionError, ValueError) as e:
+            logger.warning(f"IDPApiUserTokenModificationView::PATCH:: {str(e)}")
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=400)
+        except Exception as e:
+            logger.exception(e)
+            return JsonResponse({
+                "status": False,
+                "error": _("An unknown error occured")
+            }, status=500)
+
+        return JsonResponse({
+            "status": True,
+            "expireat": int(expireat.timestamp()),
+            "token": token_key
+        }, status=201)
+
+
+    @api_need_key('cluster_api_key')
+    @api_check_authorization()
+    def delete(self, request, user_b64, token_key, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
+        try:
+            token_key = str(token_key)
+            portal, repo, user_dn, timeout, scopes = _validate_request( request,
+                                                                        user_b64,
+                                                                        portal_id=portal_id,
+                                                                        repo_id=repo_id,
+                                                                        portal_name=portal_name,
+                                                                        repo_name=repo_name,
+                                                                        token_key=token_key)
+            # All validation is done, creating token
+            token = REDISOauth2Session(REDISBase(), f"oauth2_{token_key}")
+            if not token.exists():
+                logger.warning(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] "
+                                f"User {user_dn} trying to delete token that doesn't exist '{token_key}'")
+                return JsonResponse({
+                    "status": False
+                }, status=404)
+            elif token.keys.get("sub") != user_dn:
+                logger.error(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] User '{user_dn}' "
+                                f"is trying to delete token '{token_key}', owned by '{token.keys.get('sub')}'!")
+                return JsonResponse({
+                    "status": False
+                }, status=404)
+            logger.info(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] "
+                            f"Deleting token {token_key} for user {user_dn}")
+            token.delete()
+
+        except UserAuthentication.DoesNotExist:
+            logger.warning(f"IDPApiUserTokenModificationView::DELETE:: "
+                            f"Tried to access unknown resource: portal {portal_id or portal_name}")
+            return JsonResponse({
+                "status": False,
+                "error": _("Portal does not exist")
+            }, status=404)
+        except BaseRepository.DoesNotExist:
+            logger.warning(f"IDPApiUserTokenModificationView::DELETE:: "
+                            f"Tried to access unknown resource: repo {repo_id or repo_name}")
+            return JsonResponse({
+                "status": False,
+                "error": _("Repository does not exist")
+            }, status=404)
+        except UserDoesntExistError as e:
+            logger.warning(f"IDPApiUserTokenModificationView::DELETE:: "
+                            f"Tried to access unknown resource: user {e.user_dn}")
+            return JsonResponse({
+                "status": False,
+                "error": _("User does not exist")
+            }, status=404)
+        except ActionForbiddenException as e:
+            logger.warning(f"IDPApiUserTokenModificationView::DELETE:: {str(e)}")
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=403)
+        except (AssertionError, ValueError) as e:
+            logger.warning(f"IDPApiUserTokenModificationView::DELETE:: {str(e)}")
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=400)
+        except Exception as e:
+            logger.exception(e)
+            return JsonResponse({
+                "status": False,
+                "error": _("An unknown error occured")
+            }, status=500)
+
+        return JsonResponse({
+            "status": True,
+        }, status=204)
