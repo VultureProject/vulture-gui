@@ -392,22 +392,25 @@ def openid_token(request, portal_id):
             client_id = request.POST.get('client_id')
             client_secret = request.POST.get('client_secret')
 
-        session = RedisOpenIDSession(REDISBase(), f"token_{request.POST.get('code')}")
+        session_token = RedisOpenIDSession(REDISBase(), f"token_{request.POST.get('code')}")
+        session = RedisOpenIDSession(REDISBase(), f"oauth2_{session_token['access_token']}")
+
+        assert session.exists(), f"Could not find token '{session_token['access_token']}' in redis"
 
         assert client_id == portal.oauth_client_id
         # Allow public Single-Page Apps to ommit client_secret if initial authorization request used PKCE
         # So if code_verifier is absent, the client_secret is still required
-        if not session.keys.get('code_challenge'):
+        if not session_token.keys.get('code_challenge'):
             assert client_secret, "Missing client_secret in request"
             assert client_secret == portal.oauth_client_secret
         else:
             assert code_verifier, "Missing code_verifier"
-            assert validate_pkce_code_identifier(code_verifier, session.keys.get('code_challenge')), "Could not validate code verifier"
+            assert validate_pkce_code_identifier(code_verifier, session_token.keys.get('code_challenge')), "Could not validate code verifier"
 
-        assert session['client_id'] == client_id, "Invalid client_id."
-        assert session['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
+        assert session_token['client_id'] == client_id, "Invalid client_id."
+        assert session_token['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
         return JsonResponse({
-            'access_token': session['access_token'],
+            'access_token': session_token['access_token'],
             'token_type': "Bearer",
             'scope': ["openid"],
             'iat': session['iat'],
