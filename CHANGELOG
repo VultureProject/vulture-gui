@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+### Fixed
+- [LDAP_CLIENT] Use escape_dn_chars() instead of escape_filter_chars() in search_user() for sanitation
+- [OAUTH] Ensure 'sub' is present in oauth2 tokens
+- [BOOTSTRAP] [CONFIGURE.SH] wrong order of imports in script
+- [API_PARSER] [SYMANTEC] Handle cases where the token is not in archive
+- [OUAUTH] [TOKEN] exp and iat from /token are correctly set when returning an oauth token
+- [ACLS] Avoid multiple declarations of the same set of rules in generated Haproxy configurations
+### Changed
+- [IDP_API] Improved logging to include systematic portal, repo, user (when available) and action
+### Added
+- [IDP] [API] New APIs to manage oauth2 tokens creation
+  - Create a new token for a specific user, on a specific portal and repository
+  - User must authenticate themselves with a valid oauth token
+  - Claims will be created using internal repository data and IDP scope filtering
+  - Expiration time can be overridden during POST/PATCH
+  - Tokens can be deleted by user, they will be removed if user is removed
+- [LDAP] [TOOLS] Utility function to get a user by its full DN
+- [REDIS] [TOKENS] Utility function to check if a key exists in Redis
+- [REDISOAUTH2SESSION] Utility function to delete an existing key and its subordinate(s)
+- [REDIS] [BASE] New scan_all() utility function to get all keys with possible matching pattern and type
+- [API_PARSER] [GSUITE] Add ipv4/ipv6 proxy support for api parser
+
 ## [2.0.0] - 2022-09-15
 ### Fixed
 - [VULTURED] [MONITOR] Avoid crashes when a new node joins a cluster
