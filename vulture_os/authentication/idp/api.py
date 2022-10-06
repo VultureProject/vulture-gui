@@ -69,10 +69,21 @@ class ActionForbiddenException(Exception):
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiView(View):
     @api_need_key("cluster_api_key")
-    def get(self, request, portal_id, repo_id):
+    def get(self, request, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
         try:
-            portal = UserAuthentication.objects.get(pk=portal_id)
-            ldap_repo = get_repo_by_id(portal, repo_id)
+            if portal_id:
+                portal = UserAuthentication.objects.get(pk=portal_id)
+            elif portal_name:
+                portal = UserAuthentication.objects.get(name=portal_name)
+            else:
+                raise ValueError("Need a portal id or name to scope token on")
+
+            if repo_id:
+                ldap_repo = get_repo_by_id(portal, repo_id)
+            elif repo_name:
+                ldap_repo = get_repo_by_name(portal, repo_name)
+            else:
+                raise ValueError("Need a repo id or name to scope token on")
 
             object_type = request.GET["object_type"].lower()
             if object_type not in ("users", "search"):
@@ -146,6 +157,12 @@ class IDPApiView(View):
                 "error": _("Invalid call")
             }, status=400)
 
+        except ValueError as e:
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=400)
+
         except UserAuthentication.DoesNotExist:
             return JsonResponse({
                 "status": False,
@@ -172,10 +189,21 @@ class IDPApiView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class IDPApiUserView(View):
     @api_need_key('cluster_api_key')
-    def post(self, request, portal_id, repo_id, action=None):
+    def post(self, request, portal_id=None, repo_id=None, portal_name=None, repo_name=None, action=None):
         try:
-            portal = UserAuthentication.objects.get(pk=portal_id)
-            ldap_repo = get_repo_by_id(portal, repo_id)
+            if portal_id:
+                portal = UserAuthentication.objects.get(pk=portal_id)
+            elif portal_name:
+                portal = UserAuthentication.objects.get(name=portal_name)
+            else:
+                raise ValueError("Need a portal id or name to scope token on")
+
+            if repo_id:
+                ldap_repo = get_repo_by_id(portal, repo_id)
+            elif repo_name:
+                ldap_repo = get_repo_by_name(portal, repo_name)
+            else:
+                raise ValueError("Need a repo id or name to scope token on")
 
             if action and action not in ("resend_registration", "reset_password", "lock", "unlock", "reset_otp"):
                 return JsonResponse({
@@ -316,6 +344,12 @@ class IDPApiUserView(View):
                 "error": _("Invalid call")
             }, status=400)
 
+        except ValueError as e:
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=400)
+
         except NotUniqueError as e:
             return JsonResponse({
                 "status": False,
@@ -340,10 +374,21 @@ class IDPApiUserView(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def put(self, request, portal_id, repo_id):
+    def put(self, request, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
         try:
-            portal = UserAuthentication.objects.get(pk=portal_id)
-            ldap_repo = get_repo_by_id(portal, repo_id)
+            if portal_id:
+                portal = UserAuthentication.objects.get(pk=portal_id)
+            elif portal_name:
+                portal = UserAuthentication.objects.get(name=portal_name)
+            else:
+                raise ValueError("Need a portal id or name to scope token on")
+
+            if repo_id:
+                ldap_repo = get_repo_by_id(portal, repo_id)
+            elif repo_name:
+                ldap_repo = get_repo_by_name(portal, repo_name)
+            else:
+                raise ValueError("Need a repo id or name to scope token on")
 
             user_dn = request.JSON['id']
 
@@ -396,6 +441,12 @@ class IDPApiUserView(View):
                 "error": _("Invalid call")
             }, status=400)
 
+        except ValueError as e:
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
+            }, status=400)
+
         except UserAuthentication.DoesNotExist:
             return JsonResponse({
                 "status": False,
@@ -413,10 +464,21 @@ class IDPApiUserView(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def delete(self, request, portal_id, repo_id):
+    def delete(self, request, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
         try:
-            portal = UserAuthentication.objects.get(pk=portal_id)
-            ldap_repo = get_repo_by_id(portal, repo_id)
+            if portal_id:
+                portal = UserAuthentication.objects.get(pk=portal_id)
+            elif portal_name:
+                portal = UserAuthentication.objects.get(name=portal_name)
+            else:
+                raise ValueError("Need a portal id or name to scope token on")
+
+            if repo_id:
+                ldap_repo = get_repo_by_id(portal, repo_id)
+            elif repo_name:
+                ldap_repo = get_repo_by_name(portal, repo_name)
+            else:
+                raise ValueError("Need a repo id or name to scope token on")
             redis_handler = REDISBase()
 
             user_dn = request.JSON['id']
@@ -457,6 +519,12 @@ class IDPApiUserView(View):
             return JsonResponse({
                 "status": False,
                 "error": _("Invalid call")
+            }, status=400)
+
+        except ValueError as e:
+            return JsonResponse({
+                "status": False,
+                "error": _(str(e))
             }, status=400)
 
         except UserAuthentication.DoesNotExist:

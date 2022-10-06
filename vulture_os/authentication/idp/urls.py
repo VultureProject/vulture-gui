@@ -27,11 +27,24 @@ from django.urls import path, re_path
 from authentication.idp.api import IDPApiView, IDPApiUserView, IDPApiUserTokenView, IDPApiUserTokenModificationView
 
 urlpatterns = [
+   # TODO this path is replaced by the next 2 paths, will be DEPRECATED soon
    re_path('^api/v1/authentication/idp/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)/$', IDPApiView.as_view(), name="authentication.idp"),
+   path('api/v1/authentication/idp/<int:portal_id>/repos/<int:repo_id>/', IDPApiView.as_view(), name="authentication.idp"),
+   path('api/v1/authentication/idp/<str:portal_name>/repos/<str:repo_name>/', IDPApiView.as_view(), name="authentication.idp"),
 
+   # TODO this path is replaced by the next 2 paths, will be DEPRECATED soon
    re_path('^api/v1/authentication/idp/users/(?P<portal_id>[A-Fa-f0-9]+)/(?P<repo_id>[A-Fa-f0-9]+)/$', IDPApiUserView.as_view(), name="authentication.idp.users"),
+   path('api/v1/authentication/idp/<int:portal_id>/repos/<int:repo_id>/users/', IDPApiUserView.as_view(), name="authentication.idp.users"),
+   path('api/v1/authentication/idp/<str:portal_name>/repos/<str:repo_name>/users/', IDPApiUserView.as_view(), name="authentication.idp.users"),
 
+   # TODO this path is replaced by the next 2 paths, will be DEPRECATED soon
    path('api/v1/authentication/idp/users/<int:portal_id>/<int:repo_id>/<str:action>/',
+        IDPApiUserView.as_view(),
+        name="authentication.idp.users.action"),
+   path('api/v1/authentication/idp/<int:portal_id>/repos/<int:repo_id>/users/<str:action>/',
+        IDPApiUserView.as_view(),
+        name="authentication.idp.users.action"),
+   path('api/v1/authentication/idp/<str:portal_name>/repos/<str:repo_name>/users/<str:action>/',
         IDPApiUserView.as_view(),
         name="authentication.idp.users.action"),
 
