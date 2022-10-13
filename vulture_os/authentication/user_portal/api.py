@@ -54,8 +54,8 @@ class UserPortalApi(View):
     def get(self, request, object_id=None):
         try:
             fields = request.GET.getlist('fields') or None
-            if request.GET.get('enable_external', None) :
-                enable_external = True if request.GET.get('enable_external') == "true" else False
+            enable_external = True if request.GET.get('enable_external') == "true" else False
+
             if object_id:
                 data = UserAuthentication.objects.get(pk=object_id).to_dict(fields=fields)
             elif request.GET.get('name'):
