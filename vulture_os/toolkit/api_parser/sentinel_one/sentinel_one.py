@@ -252,7 +252,7 @@ class SentinelOneParser(ApiParser):
 
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
-                if len(logs) > 0:
+                if len(logs) > 0 or (to - since) == timedelta(hours=24):
                     self.frontend.last_api_call = to
 
         logger.info(f"[{__parser__}]:execute: update last_api_call to {self.frontend.last_api_call}",
