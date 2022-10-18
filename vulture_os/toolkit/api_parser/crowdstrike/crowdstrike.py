@@ -246,17 +246,18 @@ class CrowdstrikeParser(ApiParser):
 
         self.kind = "details"
         # Default timestamp is 24 hours ago
-        since = (self.last_api_call or (timezone.now() - datetime.timedelta(days=7))).strftime("%Y-%m-%dT%H:%M:%SZ")
+        since = self.last_api_call or (timezone.now() - datetime.timedelta(days=7))
         # Get a batch of 24h at most, to avoid running the parser for too long
         to = min(timezone.now(), since + timedelta(hours=24))
         to = to.strftime("%Y-%m-%dT%H:%M:%SZ")
+        since = since.strftime("%Y-%m-%dT%H:%M:%SZ")
         tmp_logs = self.get_logs(self.kind, since=since, to=to)
-        
+
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
 
         total = len(tmp_logs)
-        
+
         if total > 0:
             logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
 
