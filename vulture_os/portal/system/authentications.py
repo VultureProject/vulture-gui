@@ -193,10 +193,15 @@ class Authentication(object):
         return portal_cookie, self.oauth2_token
 
     def allow_user(self):
-        logger.debug(f"Authentication::allow_user: allowing session to {self.workflow.name} with authentication backend {self.backend_id}")
+        if self.workflow.authentication.enable_oauth:
+            # Take smallest timeout for authorisation key: will allow to refresh the oauth_token in case of expiration before the session expires
+            timeout = min(self.workflow.authentication.auth_timeout, self.workflow.authentication.oauth_timeout)
+        else:
+            timeout = self.workflow.authentication.auth_timeout
+        logger.debug(f"Authentication::allow_user: allowing session to {self.workflow.name} with authentication backend {self.backend_id} for {timeout} seconds")
         self.redis_portal_session.allow_access_to_app(
             self.workflow.id,
-            self.workflow.authentication.auth_timeout
+            timeout
         )
 
     def register_sso(self, backend_id):
@@ -212,7 +217,9 @@ class Authentication(object):
         password = self.redis_portal_session.getAutologonPassword(self.workflow.id, backend_id, username)
         logger.debug("AUTH::register_sso: Password successfully retrieved from Redis portal session")
 
-        portal_cookie = self.redis_portal_session.register_sso(self.workflow.authentication.auth_timeout,
+        timeout = self.workflow.authentication.auth_timeout if self.workflow.authentication.enable_timeout_restart else None
+
+        portal_cookie = self.redis_portal_session.register_sso(timeout,
                                                                backend_id, str(self.workflow.id),
                                                                self.workflow.authentication.otp_repository.id if self.workflow.authentication.otp_repository else None,
                                                                username,

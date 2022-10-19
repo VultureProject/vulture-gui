@@ -808,7 +808,9 @@ def log_in(request, workflow_id=None):
             logger.debug(f"redirect_url is {redirect_url}")
             redis_portal_session.set_redirect_url(workflow.id, redirect_url)
             # force write in redis to set expiration on session key
-            redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
+            if not redis_portal_session.exists() or workflow.authentication.enable_timeout_restart:
+                logger.error(f"refreshing session token expiration by rewriting infos")
+                redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
         else:
             # reset potentially existing redirect url to avoid wrong redirection
             redis_portal_session.del_redirect_url(workflow.id)
