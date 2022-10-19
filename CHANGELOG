@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.1.1] - 2022-10-19
+### Fixed
+- [PORTAL] [SSO] SSO could fail when portal have no oauth2 activated
+- [PORTAL] Correctly refresh session timeout only when necessary
+- [APACHE] [CONFIGURATION] Update Apache WSGI's configuration to allow code to read 'Authorization' header
+- [API_PARSER] [SENTINEL_ONE] Avoid parser getting stuck after not having received any logs for more than 24h
+- [API_PARSER] [GSUITE] Parser failure caused by wrong 'since' variable type
+- [API_PARSER] [CROWDSTRIKE] Parser failure caused by wrong 'since' variable type
+- [USER_PORTAL] [API] Could not get all portals through API when no ID/name was specified
+- [PORTAL] Validate session Cookies, then Vulture Headers, then 'Authorization' Header during session validation
+   - Allows protected applications to use 'Authorization' Headers when a user browses it with a web session
+### Added
+- [UPGRADE] Added bash script to uninstall python 3.8 and install generic python in apache and portal jail
+- [IDP_USERS] Support for new API paths
+  - Added paths for uniformization with new /tokens endpoints
+  - Ability to use portal/repo names in queries
+### Changed
+- [PORTAL] [LOGGING] Improved logging and details in case of errors
+- [DEPENDENCY] Changed uses of python 3.8 to generic python3 to use the default python version for the system (ie python 3.8 for HBSD12 and 3.9 for HBSD13)
+### Removed
+- [PKG_UPGRADE] Don't rebuild python env using `virtualenv`, binaries are no longer symlinked
+
+
 ## [2.1.0] - 2022-09-27
 ### Fixed
 - [LDAP_CLIENT] Use escape_dn_chars() instead of escape_filter_chars() in search_user() for sanitation
@@ -27,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [REDISOAUTH2SESSION] Utility function to delete an existing key and its subordinate(s)
 - [REDIS] [BASE] New scan_all() utility function to get all keys with possible matching pattern and type
 - [API_PARSER] [GSUITE] Add ipv4/ipv6 proxy support for api parser
+
 
 ## [2.0.0] - 2022-09-15
 ### Fixed
