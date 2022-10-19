@@ -547,14 +547,14 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
                 # If the user is already authenticated (retrieved with RedisPortalSession ) => SSO
                 else:
+                    logger.info(f"Applying SSO with connected user on backend {backend_id}")
                     portal_cookie, oauth2_token = authentication.register_sso(backend_id)
-                    logger.info("PORTAL::log_in: User {} successfully SSO-powered ! "
-                                "OAuth2 session = {}".format(authentication.credentials[0],
-                                                             authentication.redis_oauth2_session.keys))
+                    logger.info(f"PORTAL::log_in: User {authentication.credentials[0]} successfully SSO-powered !")
+                    if oauth2_token:
+                        logger.debug(f"OAuth2 session = {oauth2_token}")
 
             except AssertionError as e:
-                logger.exception(e)
-                logger.error("PORTAL::log_in: Bad captcha input for username '{}' : {}"
+                logger.exception("PORTAL::log_in: Bad captcha input for username '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(public_token=token_name, request=request, error="Bad captcha")
 
@@ -569,7 +569,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 return authentication.ask_credentials_response(public_token=token_name, request=request, error="Authentication Failure")
 
             except (DBAPIError, PyMongoError, LDAPError) as e:
-                logger.error("PORTAL::log_in: Repository driver Error while trying to authenticate user '{}' : {}"
+                logger.exception("PORTAL::log_in: Repository driver Error while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(public_token=token_name, request=request,
                                                                error="Authentication Failure")
@@ -577,7 +577,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
                 # vltprtlsrnm is always empty during the initial redirection. Don't log that
                 if str(e) != "vltprtlsrnm":
-                    logger.error("PORTAL::log_in: Error while trying to authenticate user '{}' : {}"
+                    logger.exception("PORTAL::log_in: Error while trying to authenticate user '{}' : {}"
                                  .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(public_token=token_name, request=request)
 

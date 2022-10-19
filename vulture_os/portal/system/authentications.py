@@ -206,7 +206,7 @@ class Authentication(object):
 
     def register_sso(self, backend_id):
         username = self.redis_portal_session.keys['login_' + backend_id]
-        self.oauth2_token = self.redis_portal_session.keys['oauth2_' + backend_id]
+        self.oauth2_token = self.redis_portal_session.keys.get('oauth2_' + backend_id)
         # Get current user_infos for this backend
         oauth2_scope = self.redis_portal_session.get_user_infos(backend_id)
 
