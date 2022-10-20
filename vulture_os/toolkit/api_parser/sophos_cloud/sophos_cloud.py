@@ -155,7 +155,8 @@ class SophosCloudParser(ApiParser):
 
     def execute(self):
         default_last_api_call = timezone.now() - timedelta(hours=23)
-        since = self.last_api_call or default_last_api_call
+        # Fetch max last 24h
+        since = max(self.last_api_call, default_last_api_call)
         msg = f"Parser starting from {since} to now"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
