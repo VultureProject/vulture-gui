@@ -37,6 +37,7 @@ from .exceptions                     import TokenNotFoundError, REDISWriteError
 from redis                          import Redis, ConnectionError as RedisConnectionError, ResponseError as RedisResponseError
 
 # Extern modules imports
+from datetime import datetime, timedelta
 from hashlib                        import sha1
 import json
 import time
@@ -75,9 +76,12 @@ class REDISSession(object):
         return self.handler.exists(self.key)
 
     def set_ttl(self, ttl):
-        if self.handler.ttl(self.key) < ttl:
-            return self.handler.expire(self.key, ttl)
-        return True
+        if isinstance(ttl, datetime):
+            return self.handler.expireat(self.key, ttl)
+        else:
+            if self.handler.ttl(self.key) < ttl:
+                return self.handler.expire(self.key, ttl)
+            return True
 
     def write_in_redis(self, timeout=None):
         # Do NOT write user_infos in Redis, it has already be done  in set_user_infos
@@ -86,10 +90,13 @@ class REDISSession(object):
         else:
             return False
 
-    def set_in_redis(self, key, value, timeout=0):
+    def set_in_redis(self, key, value, timeout=None):
         self.handler.set(key, value)
-        if timeout != 0:
-            self.handler.expire(key, timeout)
+        if timeout:
+            if isinstance(timeout, datetime):
+                self.handler.expireat(key, timeout)
+            else:
+                self.handler.expire(key, timeout)
 
     def delete_in_redis(self, key):
         return self.handler.delete(key)
@@ -504,11 +511,18 @@ class REDISOauth2Session(REDISSession):
         self.delete_in_redis(self.key)
 
     def register_authentication(self, repo_id, oauth2_data, timeout):
+        iat = int(time.time())
+        if isinstance(timeout, datetime):
+            exp = int(timeout.timestamp())
+        elif isinstance(timeout, timedelta):
+            exp = int(time.time()) + timeout.seconds
+        else:
+            exp = int(time.time()) + timeout
         sub = oauth2_data.get('sub')
         data = {
-            'token_ttl': timeout,
-            'iat': int(time.time()),
-            'exp': int(time.time()) + timeout,
+            'token_ttl': exp - iat,
+            'iat': iat,
+            'exp': exp,
             'scope': oauth2_data,
             'repo': str(repo_id)
         }
@@ -524,9 +538,9 @@ class REDISOauth2Session(REDISSession):
             if not self.keys.get('sub') and sub:
                 self.keys['sub'] = sub
 
-            self.keys['token_ttl'] = timeout
-            self.keys['iat'] = int(time.time())
-            self.keys['exp'] = int(time.time()) + timeout
+            self.keys['token_ttl'] = exp - iat
+            self.keys['iat'] = iat
+            self.keys['exp'] = exp
 
             for key,item in oauth2_data.items():
                 self.keys['scope'][key] = item
@@ -701,6 +715,30 @@ class REDISBase(object):
             self.r = r_backup
         else:  # If current cluster is Master
             result = self.r.expire(key, ttl)
+        return result
+
+
+    # Write function : need master Redis
+    def expireat(self, key, ttl):
+        result = None
+        # Get role of current cluster
+        cluster_info = self.r.info()
+        # If current cluster isn't master: get the master
+        if "master" not in cluster_info['role']:
+            # backup current cluster
+            r_backup = self.r
+            # And connect to master
+            try:
+                self.r = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], db=0)
+                result = self.r.expireat(key, ttl)
+            except Exception as e:
+                self.logger.info("REDISSession: Redis connexion issue")
+                self.logger.exception(e)
+                result = None
+            # Finally restore the backuped cluster
+            self.r = r_backup
+        else:  # If current cluster is Master
+            result = self.r.expireat(key, ttl)
         return result
 
 
