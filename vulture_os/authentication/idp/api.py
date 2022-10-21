@@ -25,7 +25,7 @@ __doc__ = 'IDP API'
 import logging
 from authentication.idp.authentication import api_check_authorization
 from base64 import urlsafe_b64decode
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.views import View
 from django.conf import settings
 from authentication.ldap import tools
@@ -572,7 +572,13 @@ def _validate_request(request, user_b64, portal_id=None, repo_id=None, portal_na
             raise ValueError("token's format is invalid")
 
     # data
-    timeout = request.JSON.get("timeout", portal.oauth_timeout)
+    # Get either a datetime object (expire_at) or an int (expire)
+    timeout = request.JSON.get("expire_at")
+    if timeout:
+        timeout = datetime.fromtimestamp(timeout, tz=timezone.utc)
+        assert timeout > timezone.now(), "'expire_at' cannot be in the past"
+    else:
+        timeout = portal.oauth_timeout
 
     # Auth
     auth_token = request.auth_token
@@ -603,13 +609,17 @@ class IDPApiUserTokenView(View):
             token_key = Uuid4().generate()
             token = REDISOauth2Session(REDISBase(), f"oauth2_{token_key}")
             logger.info(f"IDPApiUserTokenView::POST::[{portal.name}/{repo}] Creating token {token_key} "
-                        f"with scopes {scopes}, expiring in {timeout}s, for user {user_dn}")
+                        f"with scopes {scopes}, for user {user_dn}, expiration: {timeout}")
             token.register_authentication(
                 portal.oauth_client_id,
                 scopes,
                 timeout
             )
-            expireat = timezone.now() + timedelta(seconds=timeout)
+
+            if isinstance(timeout, int):
+                expireat = timezone.now() + timedelta(seconds=timeout)
+            else:
+                expireat = timeout
 
         except UserAuthentication.DoesNotExist:
             logger.warning(f"IDPApiUserTokenView::POST:: Tried to access unknown resource: "
@@ -653,7 +663,7 @@ class IDPApiUserTokenView(View):
 
         return JsonResponse({
             "status": True,
-            "expireat": int(expireat.timestamp()),
+            "expire_at": int(expireat.timestamp()),
             "token": token_key
         }, status=201)
 
