@@ -192,33 +192,35 @@ class ImpervaParser(ApiParser):
                     self.imperva_last_log_file = file
 
             else:
-                # Try to download the next file
-                last_log_index = int(self.imperva_last_log_file.split('.')[0].split('_')[1])
-                next_log_index = last_log_index + 1
-                next_log_file = f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index}.log"
-                try:
-                    content = self.get_file(next_log_file)
-                    data.extend(content.split(b'\n'))
-                    self.write_to_file(data)
-                    self.imperva_last_log_file = next_log_file
-                except Exception as e:
-                    logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
-
-                    # Download log files index
-                    log_files = self._download_log_index()
-                    first_log_id_in_index = int(log_files[0].split('.')[0].split('_')[1])
-                    if next_log_index < first_log_id_in_index:
-                        msg = f"Current downloaded file is not in the index file any more. This is probably due to a long delay in downloading. Attempting to recover"
-                        logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
-                        self.imperva_last_log_file = ""
-                    elif f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index+1}.log" in log_files:
-                        msg = f"Skipping file {next_log_file}"
-                        logger.warning(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                while not self.evt_stop.is_set():
+                    # Try to download the next file
+                    last_log_index = int(self.imperva_last_log_file.split('.')[0].split('_')[1])
+                    next_log_index = last_log_index + 1
+                    next_log_file = f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index}.log"
+                    try:
+                        content = self.get_file(next_log_file)
+                        data.extend(content.split(b'\n'))
+                        self.write_to_file(data)
                         self.imperva_last_log_file = next_log_file
-                    else:
-                        msg = f"Next file {next_log_file} still does not exist."
-                        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                    except Exception as e:
+                        logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+
+                        # Download log files index
+                        log_files = self._download_log_index()
+                        first_log_id_in_index = int(log_files[0].split('.')[0].split('_')[1])
+                        if next_log_index < first_log_id_in_index:
+                            msg = f"Current downloaded file is not in the index file any more. This is probably due to a long delay in downloading. Attempting to recover"
+                            logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
+                            self.imperva_last_log_file = ""
+                        elif f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index+1}.log" in log_files:
+                            msg = f"Skipping file {next_log_file}"
+                            logger.warning(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                            self.imperva_last_log_file = next_log_file
+                        else:
+                            msg = f"Next file {next_log_file} still does not exist."
+                            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                        break
 
             self.frontend.imperva_last_log_file = self.imperva_last_log_file
             self.frontend.last_api_call = self.last_api_call
