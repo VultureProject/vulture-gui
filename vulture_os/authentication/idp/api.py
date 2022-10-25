@@ -747,7 +747,7 @@ class IDPApiUserTokenModificationView(View):
 
         return JsonResponse({
             "status": True,
-            "expireat": int(expireat.timestamp()),
+            "expire_at": int(expireat.timestamp()),
             "token": token_key
         }, status=201)
 
