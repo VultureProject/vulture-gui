@@ -102,7 +102,9 @@ class SymantecParser(ApiParser):
         self.update_lock()
 
         try:
-            if self.token != "none":
+            # If token is defined AND not older than 24h
+            # Otherwise token seems to be too old
+            if self.token != "none" and not (self.last_api_call < timezone.now()-datetime.timedelta(hours=24)):
                 begin_timestamp = 0
                 end_timestamp = 0
                 msg = f"Get logs from startDate 0 to 0 with token {self.token}"
@@ -206,6 +208,9 @@ class SymantecParser(ApiParser):
                                             self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(hours=1)
                                         except:
                                             self.last_api_call += datetime.timedelta(hours=1)
+                                            logger.error(f"[{__parser__}]:execute: Fail to parse {gzip_filename} to set last_api_call, "
+                                                         f"setting it to {self.last_api_call}",
+                                                         extra={'frontend': str(self.frontend)})
 
                                         self.frontend.last_api_call = self.last_api_call
                                         self.frontend.save()
