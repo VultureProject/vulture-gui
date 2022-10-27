@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.1.2] - 2022-10-27
+### Changed
+- [INTERNAL] [REDIS_SESSIONS] Allow key's expiration to be set using a datetime object
+- [IDP] [API] token's APIs now take an 'expire_at' parameter instead of a 'timeout' parameter
+### Fixed
+- [API_PARSER] [SOPHOS_CLOUD] Api return 400 http_code if trying to fetch more than 24h
+- [API_PARSER] [IMPERVA] Download multiple files at once, to prevent delay increasing
+- [API_PARSER] [SYMANTEC]  Don't use token if it's older than 24h, seems to be expired
+- [API_PARSER] [CROWDSTRIKE] Prevent last_api_call stagnation if no events where retrieved during the last 24h
+
+
 ## [2.1.1] - 2022-10-19
 ### Fixed
 - [PORTAL] [SSO] SSO could fail when portal have no oauth2 activated
