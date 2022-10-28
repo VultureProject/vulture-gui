@@ -182,14 +182,18 @@ class ImpervaParser(ApiParser):
             if self.imperva_last_log_file == "":
                 log_files = self._download_log_index()
                 for file in log_files:
-                    self.update_lock()
-                    logger.info(f"[{__parser__}]:execute: Downloading {file}", extra={'frontend': str(self.frontend)})
-                    content = self.get_file(file)
-                    data.extend(content.split(b'\n'))
+                    try:
+                        self.update_lock()
+                        logger.info(f"[{__parser__}]:execute: Downloading {file}", extra={'frontend': str(self.frontend)})
+                        content = self.get_file(file)
+                        data.extend(content.split(b'\n'))
 
-                    self.write_to_file(data)
-                    data = []
-                    self.imperva_last_log_file = file
+                        self.write_to_file(data)
+                        data = []
+                        self.imperva_last_log_file = file
+                    except Exception as e:
+                        logger.exception(f"[{__parser__}]:execute: Cannot retrieve & decode file {file} : {e}",
+                                         extra={'frontend': str(self.frontend)})
 
             else:
                 while not self.evt_stop.is_set():
@@ -198,6 +202,8 @@ class ImpervaParser(ApiParser):
                     next_log_index = last_log_index + 1
                     next_log_file = f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index}.log"
                     try:
+                        logger.info(f"[{__parser__}]:execute: Downloading {file}",
+                                    extra={'frontend': str(self.frontend)})
                         content = self.get_file(next_log_file)
                         data.extend(content.split(b'\n'))
                         self.write_to_file(data)
