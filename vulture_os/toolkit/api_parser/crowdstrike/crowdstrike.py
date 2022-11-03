@@ -238,6 +238,7 @@ class CrowdstrikeParser(ApiParser):
     def format_log(self, log):
         log['kind'] = self.kind
         log['observer_version'] = self.observer_version
+        log['url'] = self.api_host
         return json.dumps(log)
 
     def execute(self):
