@@ -109,6 +109,8 @@ class SymantecParser(ApiParser):
                 end_timestamp = 0
                 msg = f"Get logs from startDate 0 to 0 with token {self.token}"
             else:
+                # Flush token
+                self.token = "none"
                 last_api_call = self.last_api_call.replace(minute=0, second=0, microsecond=0)
                 # Begin date is in milisecond
                 begin_timestamp = int(last_api_call.timestamp() * 1000)
@@ -169,7 +171,7 @@ class SymantecParser(ApiParser):
                         try:
                             tmp_file.seek(-150, 2)
                             logger.info(f"[{__parser__}]:execute Search new token", extra={'frontend': str(self.frontend)})
-                            new_token = re.search("X-sync-token: (?P<token>.+)'", str(tmp_file.readline().strip()))
+                            new_token = re.search("X-sync-token: (?P<token>.+)'", str(tmp_file.read()))
                             symantec_token = new_token.group('token') if new_token else "none"
 
                             msg = f"New token is: {symantec_token}"
