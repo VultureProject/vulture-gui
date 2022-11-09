@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.1.3] - 2022-11-09
+### Fixed
+- [API_PARSER] [IMPERVA] Prevent infinite download loop when a file cannot be decoded
+- [API_PARSER] [SYMANTEC] Fix retrieve of token from downloaded archive tail
+### Added
+- [API_PARSER] [CROWDSTRIKE] Add api_host to 'url' event log field
+
+
 ## [2.1.2] - 2022-10-27
 ### Changed
 - [INTERNAL] [REDIS_SESSIONS] Allow key's expiration to be set using a datetime object
