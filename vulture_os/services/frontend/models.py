@@ -1077,6 +1077,20 @@ class Frontend(models.Model):
         default = "",
     )
 
+    # Proofpoint CASB attributes
+    proofpoint_casb_api_key = models.TextField(
+        help_text=_("Proofpoint CASB API KEY"),
+        default=""
+    )
+    proofpoint_casb_client_id = models.TextField(
+        help_text=_('Proofpoint CASB Client ID'),
+        default=""
+    )
+    proofpoint_casb_client_secret = models.TextField(
+        help_text=_('Proofpoint CASB Client Secret'),
+        default=""
+    )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
