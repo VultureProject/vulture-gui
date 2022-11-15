@@ -195,7 +195,7 @@ class ImpervaParser(ApiParser):
                     next_log_index = last_log_index + 1
                     next_log_file = f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index}.log"
                     try:
-                        logger.info(f"[{__parser__}]:execute: Downloading {file}",
+                        logger.info(f"[{__parser__}]:execute: Downloading {next_log_file}",
                                     extra={'frontend': str(self.frontend)})
                         content = self.get_file(next_log_file)
                         data.extend(content.split(b'\n'))
