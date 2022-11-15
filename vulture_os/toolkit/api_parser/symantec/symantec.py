@@ -171,7 +171,7 @@ class SymantecParser(ApiParser):
                         try:
                             tmp_file.seek(-150, 2)
                             logger.info(f"[{__parser__}]:execute Search new token", extra={'frontend': str(self.frontend)})
-                            new_token = re.search("X-sync-token: (?P<token>.+)'", str(tmp_file.read()))
+                            new_token = re.search("X-sync-token: (?P<token>[A-Z]+)", str(tmp_file.read()))
                             symantec_token = new_token.group('token') if new_token else "none"
 
                             msg = f"New token is: {symantec_token}"
