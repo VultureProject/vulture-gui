@@ -572,13 +572,15 @@ def _validate_request(request, user_b64, portal_id=None, repo_id=None, portal_na
             raise ValueError("token's format is invalid")
 
     # data
-    # Get either a datetime object (expire_at) or an int (expire)
-    timeout = request.JSON.get("expire_at")
-    if timeout:
-        timeout = datetime.fromtimestamp(timeout, tz=timezone.utc)
-        assert timeout > timezone.now(), "'expire_at' cannot be in the past"
+    expire_at = request.JSON.get("expire_at")
+    if expire_at:
+        try:
+            expire_at = datetime.fromtimestamp(expire_at, tz=timezone.utc)
+        except TypeError:
+            raise ValueError("'expire_at' field should be a valid unix timestamp")
+        assert expire_at > timezone.now(), "'expire_at' cannot be in the past"
     else:
-        timeout = portal.oauth_timeout
+        expire_at = timezone.now() + timedelta(seconds=portal.oauth_timeout)
 
     # Auth
     auth_token = request.auth_token
@@ -589,7 +591,7 @@ def _validate_request(request, user_b64, portal_id=None, repo_id=None, portal_na
         logger.warning(f"User '{sub}' cannot create a token for user {user_dn}")
         raise ActionForbiddenException("Cannot modify tokens for another user")
 
-    return portal, repo, user_dn, timeout, scopes
+    return portal, repo, user_dn, expire_at, scopes
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -599,7 +601,7 @@ class IDPApiUserTokenView(View):
     @api_check_authorization()
     def post(self, request, user_b64, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
         try:
-            portal, repo, user_dn, timeout, scopes = _validate_request( request,
+            portal, repo, user_dn, expire_at, scopes = _validate_request( request,
                                                                         user_b64,
                                                                         portal_id=portal_id,
                                                                         repo_id=repo_id,
@@ -608,18 +610,14 @@ class IDPApiUserTokenView(View):
             # All validation is done, creating token
             token_key = Uuid4().generate()
             token = REDISOauth2Session(REDISBase(), f"oauth2_{token_key}")
-            logger.info(f"IDPApiUserTokenView::POST::[{portal.name}/{repo}] Creating token {token_key} "
-                        f"with scopes {scopes}, for user {user_dn}, expiration: {timeout}")
+            logger.info(f"IDPApiUserTokenView::POST::[{portal.name}/{repo}] Creating token "
+                        f"with scopes {scopes}, for user {user_dn}, expiration: {expire_at}")
+            logger.debug(f"IDPApiUserTokenView::POST::[{portal.name}/{repo}] New token is {token_key}")
             token.register_authentication(
                 portal.oauth_client_id,
                 scopes,
-                timeout
+                expire_at
             )
-
-            if isinstance(timeout, int):
-                expireat = timezone.now() + timedelta(seconds=timeout)
-            else:
-                expireat = timeout
 
         except UserAuthentication.DoesNotExist:
             logger.warning(f"IDPApiUserTokenView::POST:: Tried to access unknown resource: "
@@ -663,7 +661,7 @@ class IDPApiUserTokenView(View):
 
         return JsonResponse({
             "status": True,
-            "expire_at": int(expireat.timestamp()),
+            "expire_at": int(expire_at.timestamp()),
             "token": token_key
         }, status=201)
 
@@ -675,7 +673,7 @@ class IDPApiUserTokenModificationView(View):
     def patch(self, request, user_b64, token_key, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
         try:
             token_key = str(token_key)
-            portal, repo, user_dn, timeout, scopes = _validate_request( request,
+            portal, repo, user_dn, expire_at, scopes = _validate_request( request,
                                                                         user_b64,
                                                                         portal_id=portal_id,
                                                                         repo_id=repo_id,
@@ -686,24 +684,26 @@ class IDPApiUserTokenModificationView(View):
             token = REDISOauth2Session(REDISBase(), f"oauth2_{token_key}")
             if not token.exists():
                 logger.warning(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] User '{user_dn}' "
-                                f"Trying to refresh a token that doesn't exist '{token_key}'")
+                                f"Trying to refresh a token that doesn't exist")
+                logger.debug(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] token is {token_key}")
                 return JsonResponse({
                     "status": False
                 }, status=404)
             elif token.keys.get("sub") != user_dn:
                 logger.error(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] User '{user_dn}' "
-                                f"is trying to override token '{token_key}', owned by '{token.keys.get('sub')}'!")
+                                f"is trying to override a token owned by '{token.keys.get('sub')}'!")
+                logger.debug(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] token is {token_key}")
                 return JsonResponse({
                     "status": False
                 }, status=404)
-            logger.info(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] Updating token {token_key} "
-                        f"with scopes {scopes}, expiring in {timeout}s, for user {user_dn}")
+            logger.info(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] Updating token "
+                        f"with scopes {scopes}, for user {user_dn}, expiration: {expire_at}")
+            logger.debug(f"IDPApiUserTokenModificationView::PATCH::[{portal.name}/{repo}] token is {token_key}")
             token.register_authentication(
                 portal.oauth_client_id,
                 scopes,
-                timeout
+                expire_at
             )
-            expireat = timezone.now() + timedelta(seconds=timeout)
 
         except UserAuthentication.DoesNotExist:
             logger.warning(f"IDPApiUserTokenModificationView::PATCH:: Tried to access unknown resource: "
@@ -747,7 +747,7 @@ class IDPApiUserTokenModificationView(View):
 
         return JsonResponse({
             "status": True,
-            "expire_at": int(expireat.timestamp()),
+            "expire_at": int(expire_at.timestamp()),
             "token": token_key
         }, status=201)
 
@@ -757,7 +757,7 @@ class IDPApiUserTokenModificationView(View):
     def delete(self, request, user_b64, token_key, portal_id=None, repo_id=None, portal_name=None, repo_name=None):
         try:
             token_key = str(token_key)
-            portal, repo, user_dn, timeout, scopes = _validate_request( request,
+            portal, repo, user_dn, _, _ = _validate_request( request,
                                                                         user_b64,
                                                                         portal_id=portal_id,
                                                                         repo_id=repo_id,
@@ -768,18 +768,21 @@ class IDPApiUserTokenModificationView(View):
             token = REDISOauth2Session(REDISBase(), f"oauth2_{token_key}")
             if not token.exists():
                 logger.warning(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] "
-                                f"User {user_dn} trying to delete token that doesn't exist '{token_key}'")
+                                f"User {user_dn} trying to delete token that doesn't exist")
+                logger.debug(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] token is {token_key}")
                 return JsonResponse({
                     "status": False
                 }, status=404)
             elif token.keys.get("sub") != user_dn:
                 logger.error(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] User '{user_dn}' "
-                                f"is trying to delete token '{token_key}', owned by '{token.keys.get('sub')}'!")
+                                f"is trying to delete a token owned by '{token.keys.get('sub')}'!")
+                logger.debug(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] token is {token_key}")
                 return JsonResponse({
                     "status": False
                 }, status=404)
             logger.info(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] "
-                            f"Deleting token {token_key} for user {user_dn}")
+                            f"Deleting a token for user {user_dn}")
+            logger.debug(f"IDPApiUserTokenModificationView::DELETE::[{portal.name}/{repo}] token is {token_key}")
             token.delete()
 
         except UserAuthentication.DoesNotExist:
