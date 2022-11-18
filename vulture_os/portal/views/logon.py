@@ -742,7 +742,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
             # If learning credentials cannot be retrieved : ask them
             except CredentialsMissingError as e:
-                logger.error("PORTAL::log_in: Learning credentials missing : asking-them")
+                logger.info(f"PORTAL::log_in: Learning credentials missing : ({e.fields_missing}) asking-them")
                 return authentication.ask_learning_credentials(request=request,
                                                                fields=e.fields_missing)
 
@@ -809,7 +809,7 @@ def log_in(request, workflow_id=None):
             redis_portal_session.set_redirect_url(workflow.id, redirect_url)
             # force write in redis to set expiration on session key
             if not redis_portal_session.exists() or workflow.authentication.enable_timeout_restart:
-                logger.error(f"refreshing session token expiration by rewriting infos")
+                logger.info(f"refreshing session token expiration by rewriting infos")
                 redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
         else:
             # reset potentially existing redirect url to avoid wrong redirection
