@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.1.4] - 2022-11-18
+### Fixed
+- [IDP] [API] Don't fail on token updates with explicit expire_at
+- [API_PARSER] [IMPERVA] Use requests' auth object instead of manually created Authorization header
+- [API_PARSER] [IMPERVA] Typo in logger made the process crash
+- [API_PARSER] [SYMANTEC] Correctly extracting token from downloaded archive 
+- [SSO_FORWARD] Missing variable in logger
+- [PORTAL] Various logger levels and message corrections
+
+
 ## [2.1.3] - 2022-11-09
 ### Fixed
 - [API_PARSER] [IMPERVA] Prevent infinite download loop when a file cannot be decoded
