@@ -59,13 +59,6 @@ class ImpervaParser(ApiParser):
         self.imperva_private_key = data['imperva_private_key']
         self.imperva_last_log_file = data.get('imperva_last_log_file')
 
-        authorization = bytes(f"{self.imperva_api_id}:{self.imperva_api_key}", "utf-8")
-        authorization = base64.encodestring(authorization).decode("utf-8").replace("\n", "")
-
-        self.headers = {
-            "Authorization": f"Basic {authorization}"
-        }
-
     def validate_checksum(self, checksum, uncompressed_and_decrypted_file_content):
         m = hashlib.md5()
         m.update(uncompressed_and_decrypted_file_content)
@@ -114,14 +107,17 @@ class ImpervaParser(ApiParser):
 
         return uncompressed_and_decrypted_file_content
 
+    def __execute_query(self, url):
+        return requests.get(
+            url,
+            proxies=self.proxies,
+            auth=(self.imperva_api_id, self.imperva_api_key)
+        )
+
     def _download_log_index(self):
         url = f"{self.imperva_base_url}logs.index"
 
-        r = requests.get(
-            url,
-            proxies=self.proxies,
-            headers=self.headers
-        )
+        r = self.__execute_query(url)
 
         r.raise_for_status()
         log_files = [l for l in r.text.split('\n') if l]
@@ -129,11 +125,8 @@ class ImpervaParser(ApiParser):
 
     def get_file(self, filename):
         url = f"{self.imperva_base_url}{filename}"
-        r = requests.get(
-            url,
-            proxies=self.proxies,
-            headers=self.headers
-        )
+
+        r = self.__execute_query(url)
 
         r.raise_for_status()
 
