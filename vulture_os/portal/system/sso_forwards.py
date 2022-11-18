@@ -225,7 +225,7 @@ class SSOForwardPOST(SSOForward):
         learning_name = kwargs['learning_name']
         for key, item in kwargs['request'].POST.items():
             if learning_name in key.split(';vlt;'):
-                logger.debug("SSOForwardPOST::get_learn_and_secret: Learning field '{}' successfully retrieved in POST")
+                logger.debug(f"SSOForwardPOST::get_learn_and_secret: Learning field '{learning_name}' successfully retrieved in POST")
                 return True, item
         try:
             profile_value = self.retrieve_sso_field(self.credentials[0], learning_name)
