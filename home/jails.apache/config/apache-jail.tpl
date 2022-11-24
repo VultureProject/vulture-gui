@@ -12,6 +12,6 @@ apache {                                                            #APACHE24JAI
         allow.set_hostname = 0;                                     #APACHE24JAIL
         allow.sysvipc = 0;                                          #APACHE24JAIL
         enforce_statfs = "2";                                       #APACHE24JAIL
-	    devfs_ruleset = "4";    #devfsrules_jail                    #APACHE24JAIL
+        devfs_ruleset = "4";    #devfsrules_jail                    #APACHE24JAIL
     	mount.devfs;                                                #APACHE24JAIL
 }                                                                   #APACHE24JAIL
