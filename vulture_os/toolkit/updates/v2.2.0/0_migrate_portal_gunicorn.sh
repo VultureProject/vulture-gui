@@ -12,11 +12,3 @@ echo "[*] done"
 
 /bin/echo 'gunicorngui_enable="YES"' > /zroot/apache/etc/rc.conf.d/gunicorngui
 /bin/echo 'nginx_enable="YES"' > /zroot/apache/etc/rc.conf.d/nginx
-
-echo "[+] Starting service : gunicorn"
-/usr/sbin/jexec apache /usr/sbin/service gunicorngui start
-echo "[*] done"
-
-echo "[+] Starting service : nginx"
-/usr/sbin/jexec apache /usr/sbin/service nginx start
-echo "[*] done"
