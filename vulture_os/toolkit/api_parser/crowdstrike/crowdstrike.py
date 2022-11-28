@@ -268,7 +268,7 @@ class CrowdstrikeParser(ApiParser):
         elif self.last_api_call < timezone.now()-timedelta(hours=24):
             # If no logs where retrieved during the last 24hours,
             # move forward 1h to prevent stagnate ad vitam eternam
-            self.last_api_call += timedelta(hours=1)
+            self.frontend.last_api_call += timedelta(hours=1)
 
         self.write_to_file([self.format_log(l) for l in tmp_logs])
 
