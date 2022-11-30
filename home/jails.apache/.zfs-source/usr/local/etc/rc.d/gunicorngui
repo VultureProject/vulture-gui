@@ -26,7 +26,7 @@ command="/home/vlt-os/env/bin/python3"
 : ${gunicorn_enable:="NO"}
 : ${gunicorn_pid_file:="/var/run/gunicorngui.pid"}
 : ${gunicorn_conf_file:="/usr/local/etc/gunicorn.d/gui.conf.py"}
-: ${gunicorn_workers:="5"}
+: ${gunicorn_workers:="4"}
 load_rc_config $name
 
 command_args="/home/vlt-os/env/bin/gunicorn vulture_os.wsgi -D -w ${gunicorn_workers} -c ${gunicorn_conf_file} -p ${gunicorn_pid_file}"
