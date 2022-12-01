@@ -10,5 +10,9 @@ echo "[+] Installation of nginx into apache jail"
 /usr/sbin/pkg -j apache install -y nginx || (/bin/echo "Fail to install nginx!" ; exit 1)
 echo "[*] done"
 
-/bin/echo 'gunicorngui_enable="YES"' > /zroot/apache/etc/rc.conf.d/gunicorngui
+/bin/mkdir -p /zroot/apache/var/sockets/gui/
+chmod 770 /zroot/apache/var/sockets/gui
+chown root:vlt-web /zroot/apache/var/sockets/gui
+
+/bin/echo 'gunicorn_enable="YES"' > /zroot/apache/etc/rc.conf.d/gunicorn
 /bin/echo 'nginx_enable="YES"' > /zroot/apache/etc/rc.conf.d/nginx

@@ -1,7 +1,7 @@
 # Gunicorn configuration file for gui
-bind=["unix:/tmp/gunicorn.sock"]
-accesslog="/var/log/vulture/os/gunicorngui-access.log"
-errorlog="/var/log/vulture/os/gunicorngui-error.log"
+bind=["unix:/var/sockets/gui/gunicorn.sock"]
+accesslog="/var/log/vulture/os/gunicorn-access.log"
+errorlog="/var/log/vulture/os/gunicorn-error.log"
 worker_connections=1000
 workers=4
 keyfile="/var/db/pki/node.key"

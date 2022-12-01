@@ -18,13 +18,13 @@
 #               Set to the full path of the config file
 . /etc/rc.subr
 
-name="gunicorngui"
-rcvar=gunicorngui_enable
+name="gunicorn"
+rcvar=gunicorn_enable
 gunicorn_group="vlt-web"
 command="/home/vlt-os/env/bin/python3"
 
 : ${gunicorn_enable:="NO"}
-: ${gunicorn_pid_file:="/var/run/gunicorngui.pid"}
+: ${gunicorn_pid_file:="/var/run/gunicorn.pid"}
 : ${gunicorn_conf_file:="/usr/local/etc/gunicorn.d/gui.conf.py"}
 : ${gunicorn_workers:="4"}
 load_rc_config $name
