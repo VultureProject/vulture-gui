@@ -57,6 +57,10 @@ logger = logging.getLogger('gui')
 JAILS = ("apache", "mongodb", "redis", "rsyslog", "haproxy")
 
 
+class APISyncResultTimeOutException(Exception):
+    pass
+
+
 class Node(models.Model):
     """
     A vulture Node
@@ -585,36 +589,31 @@ class MessageQueue (models.Model):
         self.modified = timezone.now()
         return super().save(*args, **kwargs)
 
-    def await_result(self, interval=2, max_tries=30):
+    def await_result(self, interval=2, tries=10):
         """
 
         :param interval:    Time interval to wait before checking status again
         :param max_tries:   The maximum number of times to check status
         :return:
-                The result of the messagequeue or an empty string with an exception raised when the status
-                is not done in the interval and maximum tries given
+                A tuple representing
+                    The status of the request (True for status done, False on error or job failure)
+                    the result string of the message (in case of failure, the error details)
         """
         counter = 0
         try:
-            while True:
+            for _ in range(0, tries):
                 message_instance = MessageQueue.objects.get(pk=self.id)
                 if message_instance.status == "done":
-                    break
-                counter += 1
-                if counter == max_tries:
-                    raise APISyncResultTimeOutException(f"MessageQueue:: Timeout on the result of {message_instance.action}. Config is {message_instance.config}")
+                    return True, message_instance.result
+                if message_instance.status == "failure":
+                    return False, message_instance.result
                 time.sleep(interval)
 
-            return message_instance.result
-        except APISyncResultTimeOutException as e:
-            logger.error(e)
-            return ""
+            raise APISyncResultTimeOutException(f"MessageQueue:: Timeout on the result of {message_instance.action}. Config is {message_instance.config}")
         except Exception as e:
-            logger.error(e)
-            return ""
+            logger.exception(e)
+            return False, ""
 
-class APISyncResultTimeOutException(Exception):
-    pass
 
 class NetworkInterfaceCard(models.Model):
     """
