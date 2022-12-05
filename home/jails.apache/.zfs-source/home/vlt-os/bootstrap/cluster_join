@@ -41,7 +41,7 @@ try:
     with open(os.devnull, 'w') as f:
         call_command('check', stdout = f)
 except:
-    print ("Error: This node is not bootstraped.")
+    print ("Error: This node is not bootstrapped.")
     sys.exit(1)
 
 from gui.views.install import cluster_join

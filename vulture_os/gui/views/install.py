@@ -219,6 +219,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     """ We are coming from the CLI interface """
     try:
+        logger.info("[+] Getting distant cluster information")
         response = requests.get(
             "https://{}:8000/api/v1/system/cluster/info".format(master_ip),
             headers={'Cluster-api-key': secret_key},
@@ -238,12 +239,15 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             logger.info('Nodes not at the same date. Please sync with NTP Server')
             print('Nodes not at the same date. Please sync with NTP Server')
             return False
+        
+        logger.info("[-] OK!")
 
     except Exception as e:
         logger.error("Error at API Request Cluster Info: {} Invalid API KEY ?".format(e), exc_info=1)
         return False
 
     try:
+        logger.info("[+] Getting cluster existing secret key")
         response = requests.get(
             "https://{}:8000/api/v1/system/cluster/key".format(master_ip),
             headers={'Cluster-api-key': secret_key},
@@ -259,11 +263,15 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         encryption_key = keys_info['data']
         set_key(settings.SETTINGS_DIR, secret_key=encryption_key)
 
+        logger.info("[-] OK!")
+
     except Exception as e:
         logger.error("Error at API Request Cluster Key: {}".format(e), exc_info=1)
         return False
 
     if not ca_cert:
+        logger.info("[+] Getting ca certificate")
+
         try:
             infos = requests.post(
                 "https://{}:8000/api/system/pki/get_ca".format(master_ip),
@@ -276,8 +284,12 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             logger.error("Unable to retrieve CA certificate: {}".format(e))
             return False
 
+        logger.info("[-] OK!")
+
     """ We are coming from the CLI interface """
     if not cert or not key:
+        logger.info("[+] Getting certificate and key")
+
         try:
             infos = requests.post(
                 "https://{}:8000/api/system/pki/get_cert/".format(master_ip),
@@ -291,6 +303,8 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         except Exception as e:
             logger.error("Unable to retrieve Node certificate: {}".format(e))
             return False
+
+        logger.info("[-] OK!")
 
     if cert and key:
         bundle = cert + key
@@ -319,12 +333,15 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     """ At this point, certificates have been overwritten
         => We need to destroy replicaset & restart mongoDB
     """
-    logger.info("replDestroy: Restart Mongodb with new certificates")
+    logger.info("[+] replDestroy: Restarting Mongodb with new certificates")
     mongo = MongoBase()
     mongo.repl_destroy()
+    logger.info("[+] Ok!")
 
     """ Ask primary to join us on our management IP """
     try:
+        logger.info("[+] Asking master to add us in the cluster")
+
         infos = requests.post(
             "https://{}:8000/api/system/cluster/add/".format(master_ip),
             headers={'Cluster-api-key': secret_key},
@@ -338,79 +355,40 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             logger.error("Error during API Call to add node to cluster: {}".format(infos.get('message')))
             return False
 
+        logger.info("[-] Ok!")
+
     except Exception:
         logger.error("Error at API Call on /system/cluster/add/ Response code: {}".format(infos.status_code))
         return False
 
     try:
         """ Join our redis server to the redis master """
+        logger.info("[+] Making local Redis join the existing cluster")
         c = RedisBase()
-        redis_master_node = c.get_master(master_ip)
+        redis_master_node = None
+        retries = 0
+        while not redis_master_node and retries < 5:
+            logger.info("Getting current redis master from main node...")
+            redis_master_node = c.get_master(master_ip)
+            if not redis_master_node:
+                time.sleep(5)
+
+        logger.info(f"Current Redis master is {redis_master_node}, linking local redis to it")
         c.slave_of(redis_master_node, 6379)
 
         """ Tell local sentinel to monitor local redis server """
         c = RedisBase(get_management_ip(), 26379)
         c.sentinel_monitor(node=redis_master_node)
 
+        logger.info("[-] Ok!")
+
     except Exception as e:
         logger.error(f"Could not synchronize Redis instances: {e}")
         return False
 
-
     """ Sleep a few seconds in order for the replication to occur """
     time.sleep(3)
-
-    """ Create the local node """
-    try:
-        node = Node.objects.get(
-            name=get_hostname(),
-            management_ip=get_management_ip()
-        )
-    except Exception:
-        logger.error("cluster_join:: Unable to find slave node !")
-        return False
-
-    """ Write other slaves into /etc/hosts """
-    for node_name, node_infos in cluster_infos['data'].items():
-        if node_name not in (get_hostname(), master_hostname):
-            node.api_request("toolkit.network.network.make_hostname_resolvable", (node_name, node_infos['management_ip']))
-
-    """ Update uri of internal Log Forwarder """
-    logfwd = LogOMMongoDB.objects.get()
-    logfwd.uristr = mongo.get_replicaset_uri()
-    logfwd.save()
-
-    """ Save certificates on new node """
-    for cert in X509Certificate.objects.exclude(is_vulture_ca=True):
-        cert.save_conf()
-
-    """ Read network config and store it into mongo """
-    """ No rights to do that in jail - API request """
-    node.api_request('toolkit.network.network.refresh_nic')
-
-    """ Download reputation databases before crontab """
-    node.api_request("gui.crontab.feed.security_update")
-
-    logger.debug("API call to configure HAProxy")
-    Cluster.api_request("services.haproxy.haproxy.build_portals_conf")
-    node.api_request("services.haproxy.haproxy.configure_node")
-
-    logger.debug("API call to reload whole darwin configuration")
-    node.api_request("services.darwin.darwin.reload_all")
-
-    # API call to while Cluster - to refresh Nodes list in conf
-    logger.debug("API call to update configuration of Apache GUI")
-    Cluster.api_request("services.apache.apache.reload_service")
-
-    """ The method configure restart rsyslog if needed """
-    logger.debug("API call to configure rsyslog")
-    # API call to whole Cluster - to refresh mongodb uri in pf logs
-    Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
-
-    logger.debug("API call to configure logrotate")
-    node.api_request("services.logrotate.logrotate.reload_conf")
-
-    logger.debug("API call to update PF")
-    Cluster.api_request ("services.pf.pf.gen_config")
+    logger.info("Finished!")
 
     return True
+

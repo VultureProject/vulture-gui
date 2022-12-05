@@ -33,12 +33,17 @@ from django.conf import settings
 from django.views import View
 
 # Django project imports
+from applications.backend.models import Backend
+from applications.logfwd.models import LogOMMongoDB
+from authentication.user_portal.models import UserAuthentication
 from gui.decorators.apicall import api_need_key
-from system.cluster.models import Node, MessageQueue
+from system.cluster.models import Node, MessageQueue, APISyncResultTimeOutException
 from system.cluster.views import COMMAND_LIST, cluster_edit
 from system.cluster.models import Cluster
+from system.pki.models import X509Certificate
 from toolkit.mongodb.mongo_base import MongoBase
 from services.frontend.models import Frontend
+from workflow.models import Workflow
 
 # Required exceptions imports
 
@@ -57,6 +62,8 @@ def cluster_add(request):
     slave_ip = request.POST.get('slave_ip')
     slave_name = request.POST.get('slave_name')
 
+    current_node = Cluster.get_current_node()
+
     # FIXME: improve security check (valid IPv4 / IPv6 and valid name)
     if not slave_name or not slave_ip:
         return JsonResponse({
@@ -65,30 +72,67 @@ def cluster_add(request):
         })
 
     """ Make the slave_name resolvable on all Cluster nodes """
-    Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
+    new_node_is_resolvable = current_node.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
+    if not new_node_is_resolvable.get('status', False) or 'instance' not in new_node_is_resolvable:
+        logger.error(f"Error while creating new 'network.make_hostname_resolvable' task: {new_node_is_resolvable.get('message')}")
+        return JsonResponse({
+            'status': False,
+            'message': 'Error during repl_add. Check logs'
+        })
+    new_node_is_resolvable = new_node_is_resolvable.get('instance', None)
 
     """ Now the slave should be in the cluster: Add it's management IP """
-    node = Node()
-    node.name = slave_name
-    node.management_ip = slave_ip
-    node.internet_ip = slave_ip
-    node.backends_outgoing_ip = slave_ip
-    node.logom_outgoing_ip = slave_ip
-    node.save()
+    new_node = Node()
+    new_node.name = slave_name
+    new_node.management_ip = slave_ip
+    new_node.internet_ip = slave_ip
+    new_node.backends_outgoing_ip = slave_ip
+    new_node.logom_outgoing_ip = slave_ip
+    new_node.save()
 
     """ Ask cluster to reload PF Conf and wait for it """
     logger.info("Call cluster-wide services.pf.pf.gen_config()...")
-    Cluster.api_request ("services.pf.pf.gen_config")
+    pf_conf_generated = current_node.api_request("services.pf.pf.gen_config")
+    if not pf_conf_generated.get('status', False) or 'instance' not in pf_conf_generated:
+        logger.error(f"Error while creating new 'pf.gen_config' task: {pf_conf_generated.get('message')}")
+        return JsonResponse({
+            'status': False,
+            'message': 'Error during repl_add. Check logs'
+        })
+    pf_conf_generated = pf_conf_generated.get('instance', None)
+
+    try:
+        action_result, message = new_node_is_resolvable.await_result()
+        if not action_result:
+            logger.error(f"Could not make new node resolvable : {message}")
+            return JsonResponse({
+                'status': False,
+                'message': 'Error during repl_add. Check logs'
+            })
+        action_result, message = pf_conf_generated.await_result()
+        if not action_result:
+            logger.error(f"Could not regenerate pf configuration : {message}")
+            return JsonResponse({
+                'status': False,
+                'message': 'Error during repl_add. Check logs'
+            })    
+    except APISyncResultTimeOutException as e:
+        logger.error(f"Did not get a result for the action in time")
+        logger.exception(e)
+        return JsonResponse({
+            'status': False,
+            'message': 'Error during repl_add. Check logs'
+        })
 
     """ Add NEW node into the REPLICASET, as a pending member """
-    c = MongoBase()
+    mongo = MongoBase()
     response = None
-    if c.connect_with_retries(retries=10, timeout=2):
+    if mongo.connect_with_retries(retries=10, timeout=2):
         cpt = 0
         while not response:
             try:
                 logger.debug("Adding {} to replicaset".format(slave_name))
-                response = c.repl_add(slave_name + ':9091')
+                response = mongo.repl_add(slave_name + ':9091')
             except Exception as e:
                 logger.error("Cannot connect to slave for the moment : {}".format(e))
                 cpt += 1
@@ -104,7 +148,55 @@ def cluster_add(request):
         logger.error("Could not connect to the MongoDB replicaset")
 
     if response:
-        node.api_request('toolkit.network.network.refresh_nic')
+        Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
+        Cluster.api_request ("services.pf.pf.gen_config")
+        new_node.api_request('toolkit.network.network.refresh_nic')
+
+        """ Update uri of internal Log Forwarder """
+        logfwd = LogOMMongoDB.objects.get()
+        logfwd.uristr = mongo.get_replicaset_uri()
+        logfwd.save()
+
+        """ Save certificates on new node """
+        for cert in X509Certificate.objects.all():
+            cert.save_conf()
+
+        """ Download reputation databases before crontab """
+        new_node.api_request("gui.crontab.feed.security_update")
+
+        logger.debug("API call to configure HAProxy")
+        # Reload/Build portals configurations
+        Cluster.api_request("services.haproxy.haproxy.build_portals_conf")
+        # Reload/Build backend configurations
+        for backend in Backend.objects.all():
+            backend.save_conf()
+        # Reload/Build backend configurations
+        for workflow in Workflow.objects.all():
+            new_node.api_request("workflow.workflow.build_conf", workflow.pk)
+        # Reload/Build IDP configurations
+        for idp in UserAuthentication.objects.filter(enable_external = True):
+            new_node.api_request("authentication.user_portal.api.write_templates", idp.id)
+            idp.save_conf()
+        # Reload/Build global haproxy configurations and reload service
+        new_node.api_request("services.haproxy.haproxy.configure_node")
+
+        logger.debug("API call to reload whole darwin configuration")
+        new_node.api_request("services.darwin.darwin.reload_all")
+
+        # API call to while Cluster - to refresh Nodes list in conf---
+        logger.debug("API call to update configuration of Apache GUI")
+        Cluster.api_request("services.apache.apache.reload_service")
+
+        """ The method configure restart rsyslog if needed """
+        logger.debug("API call to configure rsyslog")
+        # API call to whole Cluster - to refresh mongodb uri in pf logs
+        Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
+
+        logger.debug("API call to configure logrotate")
+        new_node.api_request("services.logrotate.logrotate.reload_conf")
+
+        logger.debug("API call to update PF")
+        Cluster.api_request ("services.pf.pf.gen_config")
 
         return JsonResponse({
             'status': True,
