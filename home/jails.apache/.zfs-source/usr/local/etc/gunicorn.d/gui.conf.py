@@ -4,6 +4,7 @@ accesslog="/var/log/vulture/os/gunicorn-access.log"
 errorlog="/var/log/vulture/os/gunicorn-error.log"
 worker_connections=1000
 workers=4
+limit_request_line=8192
 keyfile="/var/db/pki/node.key"
 certfile="/var/db/pki/node.cert"
 ca_certs="/var/db/pki/ca.pem"
