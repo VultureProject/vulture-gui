@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CROWDSTRIKE] last_api_call was not properly updated
 - [SYSTEM] [CERTIFICATES] Ensure correct rights and ownerships to imported node's certificate files
 - [CLUSTER] [CLUSTER_JOIN] Numerous improvements to cluster_join script, for both new node and called master
+- [SYSTEM] [NET2MONGO] Allow to get network configuration from /etc/rc.conf AND /etc/rc.conf.d/network, and accept more ifconfig formats
 ### Added
 - [OAUTH] Add 'Access-Control-Allow-Origin' header to oauth2 endpoints for API requests through SPAs
 
