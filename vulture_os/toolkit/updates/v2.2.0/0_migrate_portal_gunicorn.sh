@@ -7,6 +7,11 @@ echo "[*] done"
 /bin/rm /zroot/apache/etc/rc.conf.d/apache24
 
 echo "[+] Installation of nginx into apache jail"
+/usr/sbin/pkg -j apache remove -y www/apache24 || (/bin/echo "apache24 already removed!" ; exit 1)
+/usr/sbin/pkg -j apache remove -y www/mod_wsgi4 || (/bin/echo "mod_wsgi4 already removed!" ; exit 1)
+/usr/sbin/pkg -j apache autoremove -y
+# Ensure python is installed (can be removed through mod_wsgi4)
+/usr/sbin/pkg -j apache install -y lang/python || (/bin/echo "Fail to install python!" ; exit 1)
 /usr/sbin/pkg -j apache install -y nginx || (/bin/echo "Fail to install nginx!" ; exit 1)
 echo "[*] done"
 
