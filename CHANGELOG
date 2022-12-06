@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [NET2MONGO] Allow to get network configuration from /etc/rc.conf AND /etc/rc.conf.d/network, and accept more ifconfig formats
 ### Added
 - [OAUTH] Add 'Access-Control-Allow-Origin' header to oauth2 endpoints for API requests through SPAs
+- [GUI] [SYSTEM] Add nginx in the apache jail to work as proxy and serve static files for gunicorn
+### Changed
+- [GUI] [SYSTEM] Replace apache's WSGI with gunicorn to serve GUI
+### Removed
+- [APACHE] Completely remove apache package and logic in code (service, handling, etc...)
 
 
 ## [2.1.4] - 2022-11-18
