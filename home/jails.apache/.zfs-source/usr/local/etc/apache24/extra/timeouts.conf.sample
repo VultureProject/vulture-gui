@@ -1,3 +1,0 @@
-Timeout 15
-KeepAliveTimeout 20
-RequestReadTimeout header=20-40,MinRate=500 body=20,MinRate=500
