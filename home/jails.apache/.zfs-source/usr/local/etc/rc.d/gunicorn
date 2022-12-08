@@ -20,6 +20,7 @@
 
 name="gunicorn"
 rcvar=gunicorn_enable
+gunicorn_user="vlt-os"
 gunicorn_group="vlt-web"
 command="/home/vlt-os/env/bin/python3"
 
