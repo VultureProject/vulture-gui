@@ -6,9 +6,8 @@ secadm {
         prefer_acl: true
     },
     pax {
-        path: "/usr/local/sbin/httpd",
-        mprotect: false,
-        pageexec: false
+        path: "/usr/local/sbin/nginx",
+        pageexec: false,
         prefer_acl: true
     }
 }
