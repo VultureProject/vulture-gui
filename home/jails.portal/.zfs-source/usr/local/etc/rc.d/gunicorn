@@ -25,7 +25,7 @@ gunicorn_group="vlt-web"
 command="/home/vlt-os/env/bin/python3"
 
 : ${gunicorn_enable:="NO"}
-: ${gunicorn_pid_file:="/var/run/gunicorn.pid"}
+: ${gunicorn_pid_file:="/var/run/gui/gunicorn.pid"}
 : ${gunicorn_conf_file:="/usr/local/etc/gunicorn.d/portal.conf.py"}
 : ${gunicorn_workers:="5"}
 load_rc_config $name
