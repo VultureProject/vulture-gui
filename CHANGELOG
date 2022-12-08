@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [PROOFPOINT_CASB] New api parser Proofpoint CASB
 ### Changed
 - [GUI] [SYSTEM] Replace apache's WSGI with gunicorn to serve GUI
+- [PORTAL] [SYSTEM] Run portal as non-root
 ### Removed
 - [APACHE] Completely remove apache package and logic in code (service, handling, etc...)
 
