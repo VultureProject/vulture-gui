@@ -15,6 +15,12 @@ echo "[+] Installation of nginx into apache jail"
 /usr/sbin/pkg -j apache install -y nginx || (/bin/echo "Fail to install nginx!" ; exit 1)
 echo "[*] done"
 
+echo "[+] Ensure correct file rights"
+/usr/sbin/chown -R vlt-os:vlt-web /zroot/apache/var/log/vulture/os/*
+/usr/sbin/chown -R vlt-os:vlt-web /zroot/portal/var/log/vulture/os/*
+/usr/sbin/chown -R vlt-os:vlt-web /zroot/portal/var/log/vulture/portal/*
+echo "[*] done"
+
 echo "[+] Mounting new folders in apache jail"
 mount_path="/var/sockets/gui /zroot/apache/var/sockets/gui"
 if [ "$(/usr/bin/grep "$mount_path" "/etc/fstab" 2> /dev/null)" == "" ]  ; then
