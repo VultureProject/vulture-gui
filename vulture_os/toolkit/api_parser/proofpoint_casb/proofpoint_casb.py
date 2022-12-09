@@ -114,6 +114,7 @@ class ProofpointCASBParser(ApiParser):
         try:
             msg = self.get_logs(since=since)
         except Exception as e:
+            logger.error(f"[{__parser__}]:test: Could not get logs for the last 2 hours -> {e}", extra={'frontend': str(self.frontend)})
             return {
                 'status': False,
                  'error': f'Error while fetching sample message from API: {e}'
@@ -135,11 +136,9 @@ class ProofpointCASBParser(ApiParser):
         # Download logs starting from last_api_call
         logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}", extra={'frontend': str(self.frontend)})
 
-        first = True
         nb_logs = 0
-        page = -1
-        while(nb_logs == 50 or first):
-            page += 1
+        page = 0
+        while(nb_logs == 50 or page == 0):
             try:
                 response = self.get_logs(since, to, page=page)
 
@@ -156,18 +155,20 @@ class ProofpointCASBParser(ApiParser):
                 # Writing may take some while, so refresh token in Redis
                 self.update_lock()
 
-                if first:
-                    # Events are sorted in descending order by event timestamp (epoch milliseconds) and page 0 contains the most recent logs
-                    # so store last log time in DB
-                    self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(logs[0]['timestamp']/1000)) if nb_logs > 0 else self.frontend.last_api_call
-                    first = False
+                if page == 0 and nb_logs > 0:
+                    # We got logs, update last_api_call
+                    self.last_api_call = to
+
+                page += 1
+                logger.info(f"[{__parser__}]:parse_log: processed {nb_logs}", extra={'frontend': str(self.frontend)})
 
             except (json.JSONDecodeError, KeyError, ValueError) as e:
-                logger.warning(f"[{__parser__}]:parse_log: could not parse a log line -> {e}", extra={'frontend': str(self.frontend)})
-                logger.debug(f"[{__parser__}]:parse_log: log is {response}", extra={'frontend': str(self.frontend)})
-                return None
+                logger.error(f"[{__parser__}]:parse_log: could not parse a log line -> {e}", extra={'frontend': str(self.frontend)})
+                logger.debug(f"[{__parser__}]:parse_log: response is {response}", extra={'frontend': str(self.frontend)})
 
             except Exception as err:
+                logger.critical(f"[{__parser__}]:parse_log: unknown error during parser execution -> {err}", extra={'frontend': str(self.frontend)})
                 raise ProofPointCASBAPIError(err)
 
+        self.frontend.last_api_call = self.last_api_call
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
