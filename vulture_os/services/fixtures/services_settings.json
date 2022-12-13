@@ -24,12 +24,6 @@
     }
   },
   {
-    "model": "services.ApacheSettings",
-    "pk": 1,
-    "fields": {
-    }
-  },
-  {
     "model": "services.LogRotateSettings",
     "pk": 1,
     "fields": {
