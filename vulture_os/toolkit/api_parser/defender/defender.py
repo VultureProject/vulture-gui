@@ -125,11 +125,11 @@ class DefenderParser(ApiParser):
         if response.status_code == 401:
             logger.error(f"{[__parser__]}:get_logs: Authentication failure while trying to get logs", extra={'frontend': str(self.frontend)})
             logger.debug(f"{[__parser__]}:get_logs: API parameters: {str(self)}, request parameters: {params}", extra={'frontend': str(self.frontend)})
-            return DefenderAPIError("Authentication failed")
+            raise DefenderAPIError("Authentication failed (401): {response.body}")
         elif response.status_code == 403:
             logger.error(f"{[__parser__]}:get_logs: Authorization error, domain(s) might not be managed by the tenant administrator", extra={'frontend': str(self.frontend)})
             logger.debug(f"{[__parser__]}:get_logs: API parameters: {str(self)}, request parameters: {params}", extra={'frontend': str(self.frontend)})
-            return DefenderAPIError("Unauthorized, check Defender application parameters")
+            raise DefenderAPIError("Unauthorized, check Defender application parameters")
         elif response.status_code != 200:
             logger.error(f"{[__parser__]}:get_logs: Could not get Defender logs : status code is {response.status_code} with message '{response.text}'", extra={'frontend': str(self.frontend)})
             raise DefenderAPIError("Could not get Defender logs")
@@ -145,7 +145,7 @@ class DefenderParser(ApiParser):
 
             return {
                 "status": True,
-                "data": _('Success')
+                "data": logs
             }
         except Exception as e:
             logger.exception(f"{[__parser__]}:test: {str(e)}", extra={'frontend': str(self.frontend)})
