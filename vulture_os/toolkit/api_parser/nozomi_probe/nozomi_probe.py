@@ -59,7 +59,6 @@ class NozomiProbeParser(ApiParser):
             if self.session is None:
                 self.session = requests.Session()
                 self.session.auth = (self.nozomi_probe_login, self.nozomi_probe_password)
-                self.session.headers['Cookie'] = "f4KtYUth=534b64e7832e54c3b142a8800946c207d6de1bd4c80c6e2588338837f75bb23d; SRVNAME=advensfr3; csrftk=32daKb2mp1L0jCU2OXEwa6QRabKR8K5R; ev5yh6Hn=kkKZm8R1z9fK315uyabVBPO2PthqNUoSsdtlGpf0dLMU65PWwFLu4M0KKOIrCzf4; _n2os-webconsole_session-97be1908c2970a9b31d03e0d2bd37758f726890cb6d794629d7cb3398e3e5ff9=b90863cc76775e03e9f90bb6de0bd789; XSRF-TOKEN-a0d5c94c-51dc-4417-93ff-af4ac4a6f5a7=4%2BaDzUvHU5KzBOYHTjI7qztISmrFiTu89OudTeloAF36KjkpX4zIFq32%2FJ52ruwOpJ16WTURgkIUUBbbBmbqfA%3D%3D; NG_TRANSLATE_LANG_KEY=en"
             return True
 
         except Exception as err:
