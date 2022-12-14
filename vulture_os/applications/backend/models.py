@@ -575,7 +575,7 @@ class Server(models.Model):
         TLSProfile,
         null=True,
         default="",
-        on_delete=models.SET_DEFAULT
+        on_delete=models.PROTECT
     )
     """ Weight of the server """
     weight = models.PositiveIntegerField(

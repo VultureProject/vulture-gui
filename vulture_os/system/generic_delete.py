@@ -38,6 +38,8 @@ from system.pki.models import TLSProfile, X509Certificate
 from system.users.models import User
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
+from services.frontend.models import Frontend
+from applications.backend.models import Backend
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -89,6 +91,37 @@ class DeleteTLSProfile(DeleteView):
     obj = TLSProfile
     redirect_url = "/system/tls_profile/"
     delete_url = "/system/tls_profile/delete/"
+    used_by = []
+
+    def get(self, request, object_id, **kwargs):
+        try:
+            obj_inst = self.obj.objects.get(pk=object_id)
+        except ObjectDoesNotExist:
+            return HttpResponseForbidden('Injection detected.')
+            
+        for frontend in Frontend.objects.filter(mode="http"):
+            for listener in frontend.listener_set.all():
+                for tlsprofile in listener.tls_profiles.all():
+                    # Compare tls profiles between the listener and the request
+                    if tlsprofile != None and tlsprofile.name == obj_inst.name:
+                        logger.info(f"This TLS Profile is used by {frontend}")
+                        self.used_by.append(frontend.name)
+
+        for backend in Backend.objects.filter(mode="http"):
+            for server in backend.server_set.all():
+                # Compare tls profile between the server and the request
+                if server.tls_profile != None and server.tls_profile.name == obj_inst.name:
+                    logger.info(f"This TLS Profile is used by {backend}")
+                    self.used_by.append(backend.name)
+
+        return render(request, self.template_name, {
+            'object_id': object_id,
+            'menu_name': self.menu_name,
+            'delete_url': self.delete_url,
+            'redirect_url': self.redirect_url,
+            'obj_inst': obj_inst,
+            'used_by': self.used_by
+        })
 
     # get and post methods herited from mother class
 
