@@ -149,7 +149,7 @@ class ProofpointTRAPParser(ApiParser):
 
         current_time = timezone.now()
         try:
-            logs = self.get_logs(since=(current_time - timedelta(hours=12)), to=(current_time))
+            logs = self.get_logs(since=(current_time - timedelta(hours=12)), to=current_time)
 
             return {
                 "status": True,
