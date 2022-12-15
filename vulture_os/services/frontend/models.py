@@ -466,7 +466,7 @@ class Frontend(models.Model):
         verbose_name=_("Redis password")
     )
 
-    """ Node is mandatory for KAFKA and FILE modes """
+    """ Node is mandatory for KAFKA, FILE and REDIS modes """
     node = models.ForeignKey(
         to=Node,
         null=True,
@@ -1694,8 +1694,10 @@ class Frontend(models.Model):
         """
         :return: Return the node where the frontend has been declared
         """
-        if self.listening_mode == "file" or self.listening_mode == "kafka" or self.filebeat_listening_mode == "file" :
+        if self.listening_mode in ["file", "kafka", "redis"] or self.filebeat_listening_mode == "file" :
             return {self.node}
+        elif self.listening_mode == "api":
+            return set(Node.objects.all())
         else:
             return set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.id))
 
