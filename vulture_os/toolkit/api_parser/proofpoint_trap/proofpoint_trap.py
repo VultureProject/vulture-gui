@@ -100,50 +100,7 @@ class ProofpointTRAPParser(ApiParser):
             raise ProofpointTRAPAPIError(
                 f"Error at Proofpoint TRAP API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
-        result = response.json()
-
-        for incident in result:
-            for alert in incident['events']:
-                alert['incidentId'] = incident['id']
-                alert['users'] = incident['users']
-                alert['score'] = incident['score']
-                alert['hosts'] = incident['hosts']
-                alert['domain'] = self.proofpoint_trap_host
-
-                for email in alert['emails']:
-
-                    # Choose the right email
-                    if email['recipient']['email'].startswith('trapclear'):
-                        continue
-
-                    original_email = email
-
-                    tmp_header = {}
-
-                    if 'headers' in original_email:
-                        # Keep useful Headers
-                        if "Authentication-Results-Original" in original_email['headers']:
-                            tmp_header["Authentication-Results"] = original_email['headers']["Authentication-Results-Original"]
-
-                        elif "Authentication-Results" in original_email['headers']:
-                            tmp_header["Authentication-Results"] = original_email['headers']["Authentication-Results"]
-
-                        if "Return-Path" in original_email['headers']:
-                            tmp_header["Return-Path"] = original_email['headers']["Return-Path"]
-
-                    original_email['headers'] = tmp_header
-
-                    # Drop useless parts
-                    original_email['body'] = ""
-                    original_email['mimeContent'] = ""
-                    original_email['urls'] = ""
-
-                    # Save the chosen email in new field 'email'
-                    alert['email'] = original_email
-
-                alert['emails'] = ""
-
-        return result
+        return response.json() 
 
     def test(self):
 
@@ -185,9 +142,51 @@ class ProofpointTRAPParser(ApiParser):
 
         return self.__execute_query(alert_url, query)
 
-    def format_logs(self, log):
-        return json.dumps(log)
+    def format_incidents_logs(self, incident_log):
 
+        for alert in incident_log['events']:
+            alert['incidentId'] = incident_log['id']
+            alert['users'] = incident_log['users']
+            alert['score'] = incident_log['score']
+            alert['hosts'] = incident_log['hosts']
+            alert['domain'] = self.proofpoint_trap_host
+
+        return incident_log
+
+    def format_alerts_logs(self, alert_log):
+
+        for email in alert_log['emails']:
+            # Choose the right email
+            if email['recipient']['email'].startswith('trapclear'):
+                continue
+
+            original_email = email
+            tmp_header = {}
+
+            if 'headers' in original_email:
+                # Keep useful Headers
+                if "Authentication-Results-Original" in original_email['headers']:
+                    tmp_header["Authentication-Results"] = original_email['headers']["Authentication-Results-Original"]
+
+                elif "Authentication-Results" in original_email['headers']:
+                    tmp_header["Authentication-Results"] = original_email['headers']["Authentication-Results"]
+
+                if "Return-Path" in original_email['headers']:
+                    tmp_header["Return-Path"] = original_email['headers']["Return-Path"]
+
+            original_email['headers'] = tmp_header
+
+            # Drop useless parts
+            original_email['body'] = ""
+            original_email['mimeContent'] = ""
+            original_email['urls'] = ""
+
+            # Save the chosen email in new field 'email'
+            alert_log['email'] = original_email
+
+        alert_log['emails'] = ""
+
+        return json.dumps(alert_log)
 
     def execute(self):
 
@@ -207,13 +206,16 @@ class ProofpointTRAPParser(ApiParser):
         logger.info(f"[{__parser__}]: GET LOG OK", extra={'frontend': str(self.frontend)})
 
         for incident_log in response:
-            alert_logs = incident_log['events']
-            self.write_to_file([self.format_logs(log) for log in alert_logs])
 
+            formated_incident_log = self.format_incidents_logs(incident_log)
+            alert_logs = formated_incident_log['events']
+
+            self.write_to_file([self.format_alerts_logs(log) for log in alert_logs])
+            
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
         # update last_api_call only if logs are retrieved
-        self.frontend.last_api_call = to
+        self.frontend.last_api_call = to + timedelta(seconds=1)
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
