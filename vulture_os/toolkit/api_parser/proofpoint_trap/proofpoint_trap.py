@@ -206,8 +206,8 @@ class ProofpointTRAPParser(ApiParser):
 
         logger.info(f"[{__parser__}]: GET LOG OK", extra={'frontend': str(self.frontend)})
 
-        for incendent_log in response:
-            alert_logs = incendent_log['events']
+        for incident_log in response:
+            alert_logs = incident_log['events']
             self.write_to_file([self.format_logs(log) for log in alert_logs])
 
             # Writting may take some while, so refresh token in Redis
