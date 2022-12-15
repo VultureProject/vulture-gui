@@ -54,7 +54,7 @@ class ProofpointTRAPParser(ApiParser):
         super().__init__(data)
 
         self.proofpoint_trap_host = data["proofpoint_trap_host"]
-        if not "https://" in self.proofpoint_trap_host:
+        if not self.proofpoint_trap_host.startswith('https://') or not self.proofpoint_trap_host.startswith('http://'):
             self.proofpoint_trap_host = "https://" + self.proofpoint_trap_host
 
         self.proofpoint_trap_apikey = data["proofpoint_trap_apikey"]
