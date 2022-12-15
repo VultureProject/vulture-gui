@@ -191,9 +191,6 @@ class ProofpointTRAPParser(ApiParser):
 
     def execute(self):
 
-        # self.frontend.last_api_call = timezone.now() - timedelta(days=30)
-
-
         since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
 
         # fetch at most 24h of logs to avoid the process running for too long
