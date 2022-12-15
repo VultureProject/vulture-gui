@@ -1091,6 +1091,19 @@ class Frontend(models.Model):
         default=""
     )
 
+    # Proofpoint TRAP attributes
+    proofpoint_trap_host = models.TextField(
+        verbose_name = _("ProofPoint TRAP host"),
+        help_text = _("ProofPoint API root url"),
+        default = "",
+    )
+    proofpoint_trap_apikey = models.TextField(
+        verbose_name = _("ProofPoint TRAP API key"),
+        help_text = _("ProofPoint TRAP API key"),
+        default = "",
+    )
+
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)

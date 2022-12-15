@@ -55,10 +55,10 @@ from toolkit.api_parser.proofpoint_pod.proofpoint_pod import ProofpointPodParser
 from toolkit.api_parser.waf_cloudflare.waf_cloudflare import WAFCloudflareParser
 from toolkit.api_parser.gsuite_alertcenter.gsuite_alertcenter import GsuiteAlertcenterParser
 from toolkit.api_parser.sophos_cloud.sophos_cloud import SophosCloudParser
-
 from toolkit.api_parser.trendmicro_worryfree.trendmicro_worryfree import TrendmicroWorryfreeParser
 from toolkit.api_parser.safenet.safenet import SafenetParser
 from toolkit.api_parser.proofpoint_casb.proofpoint_casb import ProofpointCASBParser
+from toolkit.api_parser.proofpoint_trap.proofpoint_trap import ProofpointTRAPParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -96,7 +96,8 @@ PARSER_LIST = {
     "sophos_cloud": SophosCloudParser,
     "trendmicro_worryfree": TrendmicroWorryfreeParser,
     "safenet": SafenetParser,
-    "proofpoint_casb": ProofpointCASBParser
+    "proofpoint_casb": ProofpointCASBParser,
+    "proofpoint_trap": ProofpointTRAPParser,
 }
 
 

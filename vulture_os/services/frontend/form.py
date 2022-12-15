@@ -239,7 +239,8 @@ class FrontendForm(ModelForm):
                            'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
                            'trendmicro_worryfree_server_port',
                            'safenet_tenant_code', 'safenet_apikey',
-                           'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret'
+                           'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
+                           'proofpoint_trap_host', 'proofpoint_trap_apikey',
                            ]:
             self.fields[field_name].required = False
 
@@ -323,7 +324,9 @@ class FrontendForm(ModelForm):
                   'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id',
                   'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
                   'trendmicro_worryfree_server_port', 'safenet_tenant_code', 'safenet_apikey',
-                  'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret', 'darwin_mode')
+                  'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
+                  'proofpoint_trap_host', 'proofpoint_trap_apikey',
+                  'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -475,6 +478,8 @@ class FrontendForm(ModelForm):
             'proofpoint_casb_api_key': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_casb_client_id': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_casb_client_secret': TextInput(attrs={'type': 'password','class': 'form-control'}),
+            'proofpoint_trap_host': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_trap_apikey': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
