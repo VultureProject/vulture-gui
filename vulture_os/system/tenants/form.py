@@ -60,3 +60,9 @@ class TenantsForm(ModelForm):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
         self = bootstrap_tooltips(self)
+
+    def clean_name(self):
+        field = self.cleaned_data.get('name')
+        if not field:
+            raise ValidationError("This field is required.")
+        return field.replace(' ', '_')

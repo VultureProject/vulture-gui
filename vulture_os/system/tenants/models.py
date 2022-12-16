@@ -39,7 +39,7 @@ class Tenants(models.Model):
     """
     Tenants vulture Configuration class
     """
-    name = models.TextField(default="ACME Corporation", unique=True)
+    name = models.TextField(default="ACME_Corporation", unique=True)
     chameleon_apikey = models.TextField(default="", blank=True)
 
     """ Use DjongoManager to use mongo_find() & Co """
