@@ -204,9 +204,26 @@ LOG_SETTINGS = {
             'format': '%(asctime)s %(module)s:%(lineno)d [%(levelname)s][%(frontend)s] %(message)s'
         }
     },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+    },
     'handlers': {
+        # By default, only output ERROR+ logs to stdout/stderr
+        'console-errors': {
+            'class': 'logging.StreamHandler',
+            'level': 'ERROR',
+            'filters': ['require_debug_false']
+        },
+        # When DEBUG is True, log level to stdout/stderr is chosen through LOG_LEVEL
         'console': {
             'class': 'logging.StreamHandler',
+            'level': LOG_LEVEL,
+            'filters': ['require_debug_true']
         },
         'debug': {
             'level': LOG_LEVEL,
@@ -279,6 +296,10 @@ LOG_SETTINGS = {
             'mode': 'a'
         }
     },
+    'root': {
+        'handlers': ['console-errors'],
+        'level': 'ERROR',
+    },
     'loggers': {
         'debug': {
             'handlers': ('debug', 'database', 'console'),
@@ -306,27 +327,27 @@ LOG_SETTINGS = {
             'propagate': True
         },
         'daemon': {
-            'handlers': ('daemon', 'database'),
+            'handlers': ('daemon', 'database', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'crontab': {
-            'handlers': ('crontab', 'database'),
+            'handlers': ('crontab', 'database', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'api_parser': {
-            'handlers': ('api_parser', 'database'),
+            'handlers': ('api_parser', 'database', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'authentication': {
-            'handlers': ('authentication', 'database'),
+            'handlers': ('authentication', 'database', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'system': {
-            'handlers': ['system'],
+            'handlers': ('system', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },

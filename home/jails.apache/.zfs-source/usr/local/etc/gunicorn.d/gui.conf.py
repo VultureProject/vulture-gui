@@ -1,7 +1,7 @@
 # Gunicorn configuration file for gui
 bind=["unix:/var/sockets/gui/gunicorn.sock"]
-accesslog="/var/log/vulture/os/gunicorn-access.log"
 errorlog="/var/log/vulture/os/gunicorn-error.log"
+capture_output=True
 worker_connections=1000
 workers=4
 threads=4

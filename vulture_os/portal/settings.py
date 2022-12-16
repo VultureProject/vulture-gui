@@ -18,7 +18,7 @@ except ImportError:
     SECRET_KEY = set_key(SETTINGS_DIR)
 
 
-
+LOG_LEVEL = 'INFO'
 
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
@@ -137,18 +137,35 @@ LOG_SETTINGS = {
             'format': '%(levelname)s %(message)s'
         },
     },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+    },
     'handlers': {
+        # By default, only output ERROR+ logs to stdout/stderr
+        'console-errors': {
+            'class': 'logging.StreamHandler',
+            'level': 'ERROR',
+            'filters': ['require_debug_false']
+        },
+        # When DEBUG is True, log level to stdout/stderr is chosen through LOG_LEVEL
         'console': {
             'class': 'logging.StreamHandler',
+            'level': LOG_LEVEL,
+            'filters': ['require_debug_true']
         },
         'database': {
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
             'class': 'toolkit.log.log_utils.DatabaseHandler',
             'type_logs': 'vulture',
         },
         'file_portal_authentication': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'formatter': 'verbose',
             'filename': '/var/log/vulture/portal/portal_authentication.log',
             'mode': 'a',
@@ -157,7 +174,7 @@ LOG_SETTINGS = {
         },
         'file_redis_events': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
             'formatter': 'verbose',
             'filename': '/var/log/vulture/portal/redis_events.log',
             'mode': 'a',
@@ -166,7 +183,7 @@ LOG_SETTINGS = {
         },
         'debug': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'formatter': 'verbose',
             'filename': '/var/log/vulture/portal/debug.log',
             'mode': 'a',
@@ -174,21 +191,25 @@ LOG_SETTINGS = {
             'backupCount': 5,
         },
     },
+    'root': {
+        'handlers': ['console-errors'],
+        'level': 'ERROR',
+    },
     'loggers': {
         'portal_authentication': {
-            'handlers': ['file_portal_authentication', 'database'],
+            'handlers': ['file_portal_authentication', 'database', 'console'],
             'propagate': True,
-            'level': 'INFO',
+            'level': LOG_LEVEL,
         },
         'redis_events': {
-            'handlers': ['file_redis_events', 'database'],
+            'handlers': ['file_redis_events', 'database', 'console'],
             'propagate': True,
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
         },
         'debug': {
-            'handlers': ['debug', 'database'],
+            'handlers': ['debug', 'database', 'console'],
             'propagate': True,
-            'level': 'INFO',
+            'level': LOG_LEVEL,
         },
     }
 }

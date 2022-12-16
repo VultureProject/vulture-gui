@@ -2,6 +2,7 @@
 bind=["127.0.0.7:9000","[fd00::207]:9000"]
 accesslog="/var/log/vulture/os/gunicorn-access.log"
 errorlog="/var/log/vulture/os/gunicorn-error.log"
+capture_output=True
 worker_connections=1000
 workers=4
 threads=4
