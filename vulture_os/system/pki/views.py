@@ -38,8 +38,8 @@ from system.pki.form import TLSProfileForm, X509ExternalCertificateForm, X509Int
 from system.pki.models import CIPHER_SUITES, PROTOCOLS_HANDLER, TLSProfile, X509Certificate
 from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
-from services.frontend.models import Frontend
-from applications.backend.models import Backend
+from services.frontend.models import Listener
+from applications.backend.models import Server
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -267,21 +267,13 @@ def tls_profile_edit(request, object_id=None, api=False):
                 logger.error("Current node not found. Maybe the cluster has not been initiated yet.")
             else:
                 try:
-                    for frontend in Frontend.objects.filter(mode="http"):
-                        for listener in frontend.listener_set.all():
-                            for tlsprofile in listener.tls_profiles.all():
-                                # Compare tls profiles between the listener and the form
-                                if tlsprofile != None and tlsprofile.name == tls_profile.name:
-                                    #frontend.reload_conf()
-                                    frontend.reload_haproxy_conf()
-                                    logger.info("Frontend confs reloaded")
+                    for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
+                        frontend.reload_haproxy_conf()
+                        logger.info("Frontend confs reloaded")
 
-                    for backend in Backend.objects.filter(mode="http"):
-                        for server in backend.server_set.all():
-                            # Compare tls profile between the server and the form
-                            if server.tls_profile != None and server.tls_profile.name == tls_profile.name:
-                                backend.reload_conf()
-                                logger.info("Backend confs reloaded")
+                    for backend in set(server.backend for server in tls_profile.server_set.all()):
+                        backend.reload_conf()
+                        logger.info("Backend confs reloaded")
 
                     node.api_request("services.haproxy.haproxy.restart_service")
 

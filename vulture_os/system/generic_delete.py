@@ -91,39 +91,31 @@ class DeleteTLSProfile(DeleteView):
     obj = TLSProfile
     redirect_url = "/system/tls_profile/"
     delete_url = "/system/tls_profile/delete/"
-    used_by = []
 
     def get(self, request, object_id, **kwargs):
         try:
             obj_inst = self.obj.objects.get(pk=object_id)
         except ObjectDoesNotExist:
             return HttpResponseForbidden('Injection detected.')
-            
-        for frontend in Frontend.objects.filter(mode="http"):
-            for listener in frontend.listener_set.all():
-                for tlsprofile in listener.tls_profiles.all():
-                    # Compare tls profiles between the listener and the request
-                    if tlsprofile != None and tlsprofile.name == obj_inst.name:
-                        logger.info(f"This TLS Profile is used by {frontend}")
-                        self.used_by.append(frontend.name)
 
-        for backend in Backend.objects.filter(mode="http"):
-            for server in backend.server_set.all():
-                # Compare tls profile between the server and the request
-                if server.tls_profile != None and server.tls_profile.name == obj_inst.name:
-                    logger.info(f"This TLS Profile is used by {backend}")
-                    self.used_by.append(backend.name)
-
+        used_by = self.used_by(obj_inst)
+        
         return render(request, self.template_name, {
             'object_id': object_id,
             'menu_name': self.menu_name,
             'delete_url': self.delete_url,
             'redirect_url': self.redirect_url,
             'obj_inst': obj_inst,
-            'used_by': self.used_by
+            'used_by': used_by
         })
+    
+    def used_by(self, object):
+        """ Retrieve all listerners and servers that use the current TLSProfile
+        Return a list of strings, printed in template as "Used by this object:"
+        """
+        return set(listener.frontend for listener in object.listener_set.all()).union(set(server.backend for server in object.server_set.all()))
 
-    # get and post methods herited from mother class
+    # post methods herited from mother class
 
 
 class DeleteNode(DeleteView):
