@@ -62,7 +62,6 @@ JAIL_SERVICES = {
     'sentinel': "redis",  # sentinel is running into redis jail
     'mongod': "mongodb",
     'haproxy': "haproxy",
-    'apache24': "apache",
 }
 
 
