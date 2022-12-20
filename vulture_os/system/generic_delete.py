@@ -67,12 +67,15 @@ class DeleteView(View):
         except ObjectDoesNotExist:
             return HttpResponseForbidden('Injection detected.')
 
+        used_by = self.used_by(obj_inst)
+
         return render(request, self.template_name, {
             'object_id': object_id,
             'menu_name': self.menu_name,
             'delete_url': self.delete_url,
             'redirect_url': self.redirect_url,
-            'obj_inst': obj_inst
+            'obj_inst': obj_inst,
+            'used_by': used_by
         })
 
     def post(self, request, object_id, **kwargs):
@@ -85,37 +88,26 @@ class DeleteView(View):
             obj_inst.delete()
         return HttpResponseRedirect(self.redirect_url)
 
+    def used_by(self, object):
+        """ Retrieve all objects that use the current view
+        Return an empty list, printed in template as "Used by this object:"
+        """
+        return []
+
 
 class DeleteTLSProfile(DeleteView):
     menu_name = _("System -> TLS Profile -> Delete")
     obj = TLSProfile
     redirect_url = "/system/tls_profile/"
     delete_url = "/system/tls_profile/delete/"
-
-    def get(self, request, object_id, **kwargs):
-        try:
-            obj_inst = self.obj.objects.get(pk=object_id)
-        except ObjectDoesNotExist:
-            return HttpResponseForbidden('Injection detected.')
-
-        used_by = self.used_by(obj_inst)
-        
-        return render(request, self.template_name, {
-            'object_id': object_id,
-            'menu_name': self.menu_name,
-            'delete_url': self.delete_url,
-            'redirect_url': self.redirect_url,
-            'obj_inst': obj_inst,
-            'used_by': used_by
-        })
     
     def used_by(self, object):
         """ Retrieve all listerners and servers that use the current TLSProfile
-        Return a list of strings, printed in template as "Used by this object:"
+        Return a set of strings, printed in template as "Used by this object:"
         """
         return set(listener.frontend for listener in object.listener_set.all()).union(set(server.backend for server in object.server_set.all()))
 
-    # post methods herited from mother class
+    # get and post methods herited from mother class
 
 
 class DeleteNode(DeleteView):
