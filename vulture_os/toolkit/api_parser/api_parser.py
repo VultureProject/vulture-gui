@@ -26,7 +26,7 @@ __parser__ = 'API PARSER'
 import logging
 import signal
 import socket
-from threading import Event
+from threading import Event, current_thread, main_thread
 import time
 
 from django.conf import settings
@@ -48,8 +48,9 @@ class ApiParser:
     def __init__(self, data):
         self.data = data
 
-        signal.signal(signal.SIGINT, self._handle_stop)
-        signal.signal(signal.SIGTERM, self._handle_stop)
+        if current_thread() is main_thread():
+            signal.signal(signal.SIGINT, self._handle_stop)
+            signal.signal(signal.SIGTERM, self._handle_stop)
         self.evt_stop = Event()
 
         try:
