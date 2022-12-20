@@ -462,6 +462,31 @@ class UserAuthentication(models.Model):
         verbose_name=_("OAuth2 tokens timeout"),
         help_text=_("Time in seconds after which oauth2 tokens will expire")
     )
+    enable_refresh = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable OAuth2 refresh token"),
+        help_text=_("Enable refresh token provider")
+    )
+    refresh_timeout = models.PositiveIntegerField(
+        default=600,
+        verbose_name=_("Refresh tokens timeout"),
+        help_text=_("Time in seconds after which refresh tokens will expire")
+    )
+    enable_rotation = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable refresh token rotation"),
+        help_text=_("Rotate refresh token at every successful request")
+    )
+    enable_replay = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable refresh token replay"),
+        help_text=_("Allow refresh token to be replayed if a request fail")
+    )
+    replay_timeout = models.PositiveIntegerField(
+        default=10,
+        verbose_name=_("Replay permission timeout"),
+        help_text=_("Time in seconds to permit replay of refresh token")
+    )
     enable_sso_forward = models.BooleanField(
         default=False,
         help_text=_('Forward credentials to backend')

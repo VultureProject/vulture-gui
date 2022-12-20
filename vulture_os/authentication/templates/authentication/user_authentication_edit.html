@@ -397,6 +397,63 @@
                             </div>
                           </div>
                         </div> <!-- /.row -->
+                        <div class="row oauth">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.enable_refresh.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.enable_refresh}}
+                                {{form.enable_refresh.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row -->
+                        <div id="tab-refresh">
+                          <div class="row oauth">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.refresh_timeout.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.refresh_timeout}}
+                                  {{form.refresh_timeout.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row oauth">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.enable_rotation.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_rotation}}
+                                  {{form.enable_rotation.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row oauth">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.enable_replay.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.enable_replay}}
+                                  {{form.enable_replay.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row oauth">
+                            <div class="col-md-12" id="replay_timeout">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{ form.replay_timeout.label }}</label>
+                                <div class="col-sm-5">
+                                  {{form.replay_timeout}}
+                                  {{form.replay_timeout.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                        </div> <!-- /.tab-refresh -->
                       </div> <!-- /.tab-pane -->
                       <div class="tab-pane" id="tab_sso_forward">
                         <div class="row">
@@ -778,7 +835,7 @@
     $('.kerberos-auth').hide();
     if( $('.'+auth_type+'-auth') ) {
       $('.'+auth_type+'-auth').show();
-}
+    }
   }
   $('#id_auth_type').on('change', toggle_auth_type);
   toggle_auth_type("");
@@ -806,6 +863,37 @@
   toggle_disconnect();
 
 
+  /* Show or hide oauth2 fields */
+  function toggle_oauth(event) {
+    /*if( $('#id_enable_oauth).is(":checked") )
+      $('.oauth').hide();
+    else
+      $('.oauth').show();*/
+  }
+
+
+  /* Show or hide oauth2 refresh token fields */
+  const refresh_token_toggle_fields = {
+    'id_enable_refresh': ["tab-refresh"],
+    'id_enable_replay': ["replay_timeout"]
+  };
+  function toggle_refresh(toggle_name) {
+    for( field of refresh_token_toggle_fields[toggle_name] ) {
+      if( $('#'+toggle_name).is(":checked") )
+        $('#'+field).show();
+      else
+        $('#'+field).hide();
+    }
+  }
+  for( const key of Object.keys(refresh_token_toggle_fields)) {
+    $('#'+key).on("change", function(e) {
+        toggle_refresh(key);
+    });
+    toggle_refresh(key);
+  }
+  toggle_class("refresh");
+
+
   const sso_forward_toggle_fields = {
     'id_sso_forward_enable_capture': ["sso_forward_capture_content"],
     'id_sso_forward_enable_replace': ["sso_forward_replace_pattern","sso_forward_replace_content"],
@@ -826,7 +914,7 @@
 
   function toggle_sso_forward_url() {
     if( $('#id_sso_forward_url').val().startsWith("https://") ) {
-     $('.sso_forward_tls').show();
+    $('.sso_forward_tls').show();
     } else {
       $('.sso_forward_tls').hide();
     }
@@ -834,7 +922,7 @@
 
   function toggle_sso_forward_type() {
     if( $('#id_sso_forward_type').find(":selected").val() == "form" ) {
-     $('.sso_forward_tls').show();
+    $('.sso_forward_tls').show();
     } else {
       $('.sso_forward_tls').hide();
     }
@@ -902,18 +990,12 @@
   }
 
   /* Show attributes depending on chosen options */
-  //for( classe of ['registration', 'oauth', 'external', 'sso_forward']) {
   $('#id_enable_oauth').on("change", function(e){ toggle_class("oauth", e); });
   toggle_class("oauth");
   $('#id_enable_external').on("change", function(e){ toggle_class("external", e); });
   toggle_class("external");
   $('#id_enable_sso_forward').on("change", function(e){ toggle_class("sso_forward", e); });
   toggle_class("sso_forward");
-  //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
-  //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
-  //$('#id_enable_'+classe).on("change", function(e){ console.log(classe);toggle_class(classe); });
-  //}
-
 
   $('#btn_sso_wizard').on('click', function(e) {
     var res = [];

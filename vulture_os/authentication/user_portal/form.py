@@ -95,8 +95,8 @@ class UserAuthenticationForm(ModelForm):
                   'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'otp_repository', 'otp_max_retry',
                   'disconnect_url', 'enable_disconnect_message', 'enable_disconnect_portal', 'enable_registration',
                   'group_registration', 'update_group_registration', 'enable_external', 'external_fqdn',
-                  'external_listener', 'enable_oauth', 'oauth_client_id', 'oauth_client_secret',
-                  'oauth_redirect_uris', 'oauth_timeout',
+                  'external_listener', 'enable_oauth', 'oauth_client_id', 'oauth_client_secret', 'oauth_redirect_uris',
+                  'oauth_timeout', 'enable_refresh', 'refresh_timeout', 'enable_rotation', 'enable_replay', 'replay_timeout',
                   'enable_sso_forward','sso_forward_type','sso_forward_timeout','sso_forward_direct_post','sso_forward_get_method',
                   'sso_forward_follow_redirect_before','sso_forward_follow_redirect','sso_forward_return_post',
                   'sso_forward_content_type','sso_forward_url','sso_forward_user_agent','sso_forward_content',
@@ -133,6 +133,11 @@ class UserAuthenticationForm(ModelForm):
             'oauth_client_secret': TextInput(attrs={'readonly': ''}),
             'oauth_redirect_uris': Textarea(attrs={'class': 'form-control'}),
             'oauth_timeout': NumberInput(attrs={'class': 'form-control'}),
+            'enable_refresh': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'refresh_timeout': NumberInput(attrs={'class': 'form-control'}),
+            'enable_rotation': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'enable_replay': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'replay_timeout': NumberInput(attrs={'class': 'form-control'}),
             'enable_sso_forward': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'sso_forward_direct_post': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'sso_forward_get_method': CheckboxInput(attrs={'class': "form-control js-switch"}),
@@ -166,8 +171,8 @@ class UserAuthenticationForm(ModelForm):
         self.fields['user_scope'].queryset = UserScope.objects.all()
         self.fields['otp_repository'].empty_label = "No double authentication"
         # Set fields as non required in POST data
-        for field in ['portal_template', 'otp_repository', 'otp_max_retry', 'group_registration', "user_scope",
-                      'update_group_registration', "sso_forward_direct_post", "sso_forward_get_method",
+        for field in ["portal_template", "otp_repository", "otp_max_retry", "group_registration", "user_scope",
+                      "update_group_registration", "refresh_timeout", "replay_timeout", "sso_forward_direct_post", "sso_forward_get_method",
                       "sso_forward_follow_redirect_before", "sso_forward_follow_redirect", "sso_forward_return_post",
                       "sso_forward_enable_capture", "sso_forward_enable_replace", "sso_forward_enable_additionnal",
                       "sso_forward_type", "sso_forward_timeout", "sso_forward_content_type", "sso_forward_tls_proto", "sso_forward_url",
