@@ -271,10 +271,14 @@ class BlackberryCylanceParser(ApiParser):
             self.update_lock()
             self.write_to_file([json.dumps(line) for line in data])
 
-            # Get most recent threat from first log recovered (logs are sorted by 'last_found' in descending order)
-            if data and page == 1:
-                self.frontend.last_api_call = dateparse.parse_datetime(data[0]["last_found"]).replace(tzinfo=timezone.utc)
-                self.frontend.save()
+        if number_of_logs != 0:
+            self.frontend.last_api_call = end_time
+            self.frontend.save()
+        elif self.last_api_call < timezone.now()-timedelta(hours=24):
+            # If no logs where retrieved during the last 24hours,
+            # move forward 1h to prevent stagnate ad vitam eternam
+            self.frontend.last_api_call += timedelta(hours=1)
+            self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Got {number_of_logs} lines", extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
