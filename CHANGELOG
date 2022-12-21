@@ -7,10 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
-- [TLS] Once the TLS profile form is received, all Listners and Applications are scanned to verify if the profile is related to them and reload the config files when needed to match the update.
-- [FRONTEND] [GUI] When selecting plain text for a frontend, it is handled as http
+- [TLS] When a TLS profile is updated, all Listeners and Applications using it are also reloaded and underlying configurations are reloaded
+- [FRONTEND] [GUI] When selecting plain text for a frontend, it is correctly handled as http
+- [FRONTEND] [CONFIGURATION] Correctly list related Nodes of a modified Frontend (some types were not handled correctly)
+- [TENANTS] [GUI] Prevent whitespaces in tenants' name
+- [API_PARSER] [BLACKBERRY_CYLANCE] last_api_call was not correctly updated
+- [API_PARSER] [BLACKBERRY_CYLANCE] Prevent last_api_call from getting stuck more thant 24h in the past
+- [API_PARSER] [THREADS] Don't handle signals when code is not ran in main thread (GUI w/ gunicorn case)
+### Added
+- [API_PARSER] [PROOFPOINT_TRAP] New API parser Proofpoint TRAP
 ### Changed
 - [GUI] [TLS] It's now impossible to delete a TLS profile used in a frontend or a backend (will list where it is used)
+- [GUI] [SETTINGS] Improved logging configuration for GUI
+- [PORTAL] [SETTINGS] Improved logging configuration for portal
 
 
 ## [2.2.1] - 2022-12-13
