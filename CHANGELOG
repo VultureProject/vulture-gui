@@ -5,15 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [2.2.2] - 2022-12-21
 ### Fixed
 - [TLS] When a TLS profile is updated, all Listeners and Applications using it are also reloaded and underlying configurations are reloaded
 - [FRONTEND] [GUI] When selecting plain text for a frontend, it is correctly handled as http
 - [FRONTEND] [CONFIGURATION] Correctly list related Nodes of a modified Frontend (some types were not handled correctly)
 - [TENANTS] [GUI] Prevent whitespaces in tenants' name
-- [API_PARSER] [BLACKBERRY_CYLANCE] last_api_call was not correctly updated
 - [API_PARSER] [BLACKBERRY_CYLANCE] Prevent last_api_call from getting stuck more thant 24h in the past
-- [API_PARSER] [THREADS] Don't handle signals when code is not ran in main thread (GUI w/ gunicorn case)
+- [API_PARSER] [THREADS] Don't handle signals when code is not run in main thread (GUI w/ gunicorn case)
 - [API_PARSER] [NETSKOPE] Correctly handle non-2xx status codes returned by API
 - [REPUTATION_CTX] [GUI] Correctly show POST body parameter when selecting POST method
 ### Added
