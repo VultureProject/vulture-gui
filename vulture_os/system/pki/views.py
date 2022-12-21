@@ -262,23 +262,16 @@ def tls_profile_edit(request, object_id=None, api=False):
             tls_profile.save_conf()
             logger.info("TLSProfile '{}' write on disk requested.".format(tls_profile.name))
 
-            node = Cluster.get_current_node()
-            if not node:
-                logger.error("Current node not found. Maybe the cluster has not been initiated yet.")
-            else:
-                try:
-                    for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
-                        frontend.reload_haproxy_conf()
-                        logger.info("Frontend confs reloaded")
+            for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
+                frontend.reload_haproxy_conf()
+                logger.info("Frontend confs reloaded")
 
-                    for backend in set(server.backend for server in tls_profile.server_set.all()):
-                        backend.reload_conf()
-                        logger.info("Backend confs reloaded")
+            for backend in set(server.backend for server in tls_profile.server_set.all()):
+                backend.reload_conf()
+                logger.info("Backend confs reloaded")
 
-                    node.api_request("services.haproxy.haproxy.restart_service")
-
-                except Exception as e:
-                    logger.error(f"Failed to update TLS profiles configurations: {e}")
+            if tls_profile.server_set.exists():
+                Cluster.api_request("services.haproxy.haproxy.reload_service")
 
         except VultureSystemConfigError as e:
             """ If we get here, problem occurred during save_conf, after save """
