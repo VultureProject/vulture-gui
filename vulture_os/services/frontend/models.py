@@ -1816,8 +1816,9 @@ class Listener(models.Model):
     """ TLSProfile to use when listening """
     tls_profiles = models.ArrayReferenceField(
         TLSProfile,
+        null=True,
         default=[],
-        on_delete=models.SET_DEFAULT
+        on_delete=models.PROTECT
     )
     """ List of ip to allow traffic from, or 'any' """
     whitelist_ips = models.TextField(

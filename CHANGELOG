@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+### Fixed
+- [TLS] Once the TLS profile form is received, all Listners and Applications are scanned to verify if the profile is related to them and reload the config files when needed to match the update.
+- [FRONTEND] [GUI] When selecting plain text for a frontend, it is handled as http
+### Changed
+- [GUI] [TLS] It's now impossible to delete a TLS profile used in a frontend or a backend (will list where it is used)
+
+
 ## [2.2.1] - 2022-12-13
 ### Fixed
 - [GUNICORN] [CONF] Timeout increased to 60 seconds

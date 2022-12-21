@@ -354,6 +354,10 @@ def frontend_edit(request, object_id=None, api=False):
 
                 """ And instantiate form with the object, or None """
                 listener_f = ListenerForm(listener, instance=instance_l)
+                
+                if listener_f.data.get('tls_profiles') == ['']:
+                    listener_f.data['tls_profiles'] = None
+
                 if not listener_f.is_valid():
                     form.add_error("listeners", listener_f.errors.as_json() if api else [error for error_list in listener_f.errors.as_data().values() for error in error_list])
 

@@ -36,7 +36,10 @@ from gui.forms.form_utils import DivErrorList
 from system.exceptions import VultureSystemConfigError
 from system.pki.form import TLSProfileForm, X509ExternalCertificateForm, X509InternalCertificateForm
 from system.pki.models import CIPHER_SUITES, PROTOCOLS_HANDLER, TLSProfile, X509Certificate
+from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
+from services.frontend.models import Listener
+from applications.backend.models import Server
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -258,6 +261,17 @@ def tls_profile_edit(request, object_id=None, api=False):
             """ Then save certificates on disk """
             tls_profile.save_conf()
             logger.info("TLSProfile '{}' write on disk requested.".format(tls_profile.name))
+
+            for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
+                frontend.reload_haproxy_conf()
+                logger.info("Frontend confs reloaded")
+
+            for backend in set(server.backend for server in tls_profile.server_set.all()):
+                backend.reload_conf()
+                logger.info("Backend confs reloaded")
+
+            if tls_profile.server_set.exists():
+                Cluster.api_request("services.haproxy.haproxy.reload_service")
 
         except VultureSystemConfigError as e:
             """ If we get here, problem occurred during save_conf, after save """
