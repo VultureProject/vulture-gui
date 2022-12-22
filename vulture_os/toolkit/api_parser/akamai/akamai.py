@@ -33,7 +33,7 @@ import queue
 import requests
 import urllib.parse
 
-from threading import Thread, Event, Lock
+from multiprocessing import Process, Event, Lock, Queue, Value
 from akamai.edgegrid import EdgeGridAuth
 from django.conf import settings
 from django.utils import timezone
@@ -45,8 +45,8 @@ logger = logging.getLogger('api_parser')
 
 event_parse = Event()
 event_write = Event()
-queue_parse = queue.Queue(maxsize=100000)
-queue_write = queue.Queue(maxsize=100000)
+queue_parse = Queue(maxsize=100000)
+queue_write = Queue(maxsize=100000)
 data_lock = Lock()
 
 
@@ -91,12 +91,12 @@ def akamai_parse(akamai):
     while not event_parse.is_set() or not queue_parse.empty():
         try:
             # Wait max 2 seconds for a log
-            log = queue_parse.get(block=True, timeout=2)
+            log = json.loads(queue_parse.get(block=True, timeout=2).decode('utf-8'))
         except:
             continue
 
-        timestamp = int(log['httpMessage']['start'])
-        timestamp = timezone.make_aware(datetime.datetime.utcfromtimestamp(timestamp))
+        timestamp_epoch = int(log['httpMessage']['start'])
+        timestamp = timezone.make_aware(datetime.datetime.utcfromtimestamp(timestamp_epoch))
 
         tmp = {
             'time': timestamp.isoformat(),
@@ -154,13 +154,13 @@ def akamai_parse(akamai):
 
         # Update the last log time
         with data_lock:
-            if timestamp > akamai.last_log_time:
-                akamai.last_log_time = timestamp
+            if timestamp_epoch > akamai.last_log_time.value:
+                akamai.last_log_time.value = timestamp_epoch
 
 
 class AkamaiParser(ApiParser):
     ATTACK_KEYS = ["rules", "ruleMessages", "ruleTags", "ruleActions", "ruleData"]
-    NB_THREAD = 4
+    NB_THREAD = 8
 
     def __init__(self, data):
         super().__init__(data)
@@ -179,7 +179,7 @@ class AkamaiParser(ApiParser):
         if not self.akamai_host.startswith('https'):
             self.akamai_host = f"https://{self.akamai_host}"
 
-        self.last_log_time = self.last_api_call
+        self.last_log_time = Value('q', int(self.last_api_call.timestamp()))
         self.session = None
 
     def _connect(self):
@@ -207,7 +207,7 @@ class AkamaiParser(ApiParser):
         if self.offset != "a":
             params['offset'] = self.offset
         else:
-            params['from'] = int(self.last_log_time.timestamp())
+            params['from'] = int(self.last_log_time.value)
 
         if test:
             params['limit'] = 1
@@ -222,27 +222,26 @@ class AkamaiParser(ApiParser):
                 if not line:
                     continue
 
-                try:
-                    line = json.loads(line.decode('utf-8'))
-                except json.decoder.JSONDecodeError:
-                    continue
-
-                if "httpMessage" in line.keys():
+                if b"\"httpMessage\"" in line:
                     queue_parse.put(line)
                     i = i + 1
                 else:
-                    msg = f"{line}"
-                    logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
-                    self.offset = line['offset']
+                    try:
+                        line = json.loads(line.decode('utf-8'))
+                        msg = f"{line}"
+                        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+                        self.offset = line['offset']
+                    except:
+                        continue
             
             logger.info(f"[{__parser__}]:get_logs: Fetched {i} lines", extra={'frontend': str(self.frontend)})
 
     def test(self):
         try:
-            t_parse = Thread(target=akamai_parse, args=(self,))
+            t_parse = Process(target=akamai_parse, args=(self,))
             t_parse.start()
             data = []
-            self.last_log_time = timezone.now() - datetime.timedelta(minutes=15)
+            self.last_log_time.value = (timezone.now() - datetime.timedelta(minutes=15)).timestamp()
             self.get_logs(test=True)
             cpt = 0
             while cpt < 5:
@@ -269,25 +268,26 @@ class AkamaiParser(ApiParser):
         try:
             threads = []
             for i in range(self.NB_THREAD):
-                t_parse = Thread(target=akamai_parse, args=(self,))
+                t_parse = Process(target=akamai_parse, args=(self,))
                 t_parse.start()
                 threads.append(t_parse)
 
-            t_write_1 = Thread(target=akamai_write, args=(self,))
+            t_write_1 = Process(target=akamai_write, args=(self,))
             t_write_1.start()
             threads.append(t_write_1)
 
-            t_write_2 = Thread(target=akamai_write, args=(self,))
+            t_write_2 = Process(target=akamai_write, args=(self,))
             t_write_2.start()
             threads.append(t_write_2)
 
             self.offset = "a"
             try:
-                while not self.evt_stop.is_set() and self.last_log_time < (timezone.now()-datetime.timedelta(minutes=1)) and self.offset:
+                while not self.evt_stop.is_set() and self.last_log_time.value < (timezone.now()-datetime.timedelta(minutes=1)).timestamp() and self.offset:
                     self.get_logs()
                     self.update_lock()
-                    self.frontend.last_api_call = self.last_log_time
-                    msg = f"{self.last_log_time}"
+                    self.frontend.last_api_call = timezone.make_aware(datetime.datetime.utcfromtimestamp(self.last_log_time.value))
+                    self.frontend.save()
+                    msg = f"{self.last_log_time.value}"
                     logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
             except Exception as e:
                 msg = f"Fail to download/update akamai logs: {e}"
