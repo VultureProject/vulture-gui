@@ -132,7 +132,6 @@ class ProofpointTRAPParser(ApiParser):
             to = to[:-13] + "Z"
 
         query = {}
-        query['state'] = "open"
 
         # logs with 'since' or 'to' values are included in return
         if since:
@@ -206,6 +205,9 @@ class ProofpointTRAPParser(ApiParser):
         logger.info(f"[{__parser__}]: GET LOG OK", extra={'frontend': str(self.frontend)})
 
         for incident_log in response:
+
+            if incident_log['state'] == 'Closed' or incident_log['state'] == 'Ignored':
+                continue
 
             formated_incident_log = self.format_incidents_logs(incident_log)
             alert_logs = formated_incident_log['events']
