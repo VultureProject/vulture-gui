@@ -136,7 +136,14 @@ class NetskopeParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-            if len(logs) > 0:
-                self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(self.upper_timestamp)+timedelta(seconds=1))
+        if offset > 0:
+            logger.info(f"[{__parser__}][execute]: Total logs fetched : {offset}",
+                        extra={'frontend': str(self.frontend)})
+            self.frontend.last_api_call = to
+
+        elif self.last_api_call < timezone.now() - timedelta(hours=24):
+            # If no logs where retrieved during the last 24hours,
+            # move forward 1h to prevent stagnate ad vitam eternam
+            self.frontend.last_api_call += timedelta(hours=1)
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
