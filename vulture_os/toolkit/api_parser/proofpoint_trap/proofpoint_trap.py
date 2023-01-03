@@ -206,9 +206,6 @@ class ProofpointTRAPParser(ApiParser):
 
         for incident_log in response:
 
-            if incident_log['state'] == 'Closed' or incident_log['state'] == 'Ignored':
-                continue
-
             formated_incident_log = self.format_incidents_logs(incident_log)
             alert_logs = formated_incident_log['events']
 
