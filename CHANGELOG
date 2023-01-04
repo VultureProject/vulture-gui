@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.2.3] - 2023-01-04
+### Fixed
+- [API_PARSER] [NETSKOPE] last_api_call was not correctly updated + prevent stagnation
+### Removed
+- [API_PARSER] [PROOFPOINT_TRAP] Removed filtering on 'open' alerts
+
 ## [2.2.2] - 2022-12-21
 ### Fixed
 - [TLS] When a TLS profile is updated, all Listeners and Applications using it are also reloaded and underlying configurations are reloaded
