@@ -467,15 +467,15 @@ class UserAuthentication(models.Model):
         verbose_name=_("Enable OAuth2 refresh token"),
         help_text=_("Enable refresh token provider")
     )
-    refresh_timeout = models.PositiveIntegerField(
-        default=600,
-        verbose_name=_("Refresh tokens timeout"),
-        help_text=_("Time in seconds after which refresh tokens will expire")
-    )
     enable_rotation = models.BooleanField(
         default=False,
         verbose_name=_("Enable refresh token rotation"),
         help_text=_("Rotate refresh token at every successful request")
+    )
+    max_nb_refresh = models.PositiveIntegerField(
+        default=10,
+        verbose_name=_("Maximum number of token"),
+        help_text=_("Number of token allowed to replay of refresh token")
     )
     enable_replay = models.BooleanField(
         default=False,
