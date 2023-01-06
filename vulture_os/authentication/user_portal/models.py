@@ -764,6 +764,7 @@ class UserAuthentication(models.Model):
                 "query"
             ],
             "grant_types_supported" : [
-                "authorization_code"
+                "authorization_code",
+                "refresh_token"
             ]
         }
