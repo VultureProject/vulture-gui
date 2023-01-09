@@ -1102,7 +1102,37 @@ class Frontend(models.Model):
         help_text = _("ProofPoint TRAP API key"),
         default = "",
     )
-
+    # WAF Cloud Protector attributes
+    waf_cloud_protector_host = models.TextField(
+        verbose_name = _("WAF Cloud Protector host"),
+        help_text = _("WAF Cloud Protector host"),
+        default = "",
+    )
+    waf_cloud_protector_api_key_pub = models.TextField(
+        verbose_name = _("WAF Cloud Protector public API key"),
+        help_text = _("WAF Cloud Protector public API key"),
+        default = "",
+    )
+    waf_cloud_protector_api_key_priv = models.TextField(
+        verbose_name = _("WAF Cloud Protector private API key"),
+        help_text = _("WAF Cloud Protector private API key"),
+        default = "",
+    )
+    waf_cloud_protector_provider = models.TextField(
+        verbose_name = _("WAF Cloud Protector provider"),
+        help_text = _("WAF Cloud Protector provider"),
+        default = "",
+    )
+    waf_cloud_protector_tenant = models.TextField(
+        verbose_name = _("WAF Cloud Protector tenant"),
+        help_text = _("WAF Cloud Protector tenant"),
+        default = "",
+    )
+    waf_cloud_protector_servers = models.TextField(
+        verbose_name = _("WAF Cloud Protector servers"),
+        help_text = _("WAF Cloud Protector servers"),
+        default = "",
+    )
 
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
