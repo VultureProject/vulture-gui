@@ -132,7 +132,6 @@ class ProofpointTRAPParser(ApiParser):
             to = to[:-13] + "Z"
 
         query = {}
-        query['state'] = "open"
 
         # logs with 'since' or 'to' values are included in return
         if since:
