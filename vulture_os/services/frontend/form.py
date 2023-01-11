@@ -241,7 +241,8 @@ class FrontendForm(ModelForm):
                            'safenet_tenant_code', 'safenet_apikey',
                            'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
                            'proofpoint_trap_host', 'proofpoint_trap_apikey',
-                           'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv', 'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
+                           'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv', 
+                           'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                            ]:
             self.fields[field_name].required = False
 
@@ -327,7 +328,8 @@ class FrontendForm(ModelForm):
                   'trendmicro_worryfree_server_port', 'safenet_tenant_code', 'safenet_apikey',
                   'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
                   'proofpoint_trap_host', 'proofpoint_trap_apikey',
-                  'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv', 'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
+                  'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv', 
+                  'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                   'darwin_mode')
 
         widgets = {
