@@ -76,8 +76,6 @@ class WAFCloudProtectorParser(ApiParser):
                 self.session = requests.Session()
 
                 headers = self.HEADERS
-                # headers.update({'Authorization': self.proofpoint_trap_apikey})
-
                 self.session.headers.update(headers)
 
             return True
