@@ -267,7 +267,7 @@ class WAFCloudProtectorParser(ApiParser):
                             # Use mapping to convert lines to json format 
                             json_lines.append(self.parse_line(mapping, line.strip()))
                         else:
-                            logger.info(f"[VVVV]: date_log {date_log}, last {last_api_call_without_tz}, since{since_without_tz} ", extra={'frontend': str("OOOO")})
+                            # If the date is passed, we stop the loop, because the rest of lines are older
                             break
 
                     # Send those lines to Rsyslog
@@ -276,7 +276,7 @@ class WAFCloudProtectorParser(ApiParser):
                     self.update_lock()
 
                 except Exception as e:
-                    msg = f"Failed to server {server} on log type {log_type} : {e}"
+                    msg = f"Failed to server {server} on log type {log_type}, between time of {since_without_tz} and {last_api_call_without_tz} : {e} "
                     logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
