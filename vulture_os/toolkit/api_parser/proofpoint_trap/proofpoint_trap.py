@@ -143,12 +143,21 @@ class ProofpointTRAPParser(ApiParser):
 
     def format_incidents_logs(self, incident_log):
 
+        incident_details = {}
+
+        for item in incident_log["incident_field_values"]:
+
+            key_name = item["name"].replace(" ", "_").lower()
+            incident_details[key_name] = item["value"]
+
         for alert in incident_log['events']:
+
             alert['incidentId'] = incident_log['id']
             alert['users'] = incident_log['users']
             alert['score'] = incident_log['score']
             alert['hosts'] = incident_log['hosts']
             alert['domain'] = self.proofpoint_trap_host
+            alert['incident_details'] = incident_details
 
         return incident_log
 
@@ -193,6 +202,9 @@ class ProofpointTRAPParser(ApiParser):
 
         # fetch at most 24h of logs to avoid the process running for too long
         to = min(timezone.now(), since + timedelta(hours=24))
+
+        # delay the times of 15 minutes, to get the "updated" event
+        to = to - timedelta(minutes=15)
 
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
