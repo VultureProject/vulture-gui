@@ -23,7 +23,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Akamai API Parser'
 __parser__ = 'AKAMAI'
 
-
 import base64
 import datetime
 import json
@@ -41,7 +40,6 @@ from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
-
 
 event_parse = Event()
 event_write = Event()
@@ -61,7 +59,7 @@ class AkamaiAPIError(Exception):
 def akamai_write(akamai):
     def get_bulk(size):
         res = []
-        while len(res) < size and not queue_write.empty():
+        while len(res) < size and (not event_write.is_set() or queue_write.qsize() > 0):
             try:
                 # Wait max 2 seconds for a log
                 log = queue_write.get(block=True, timeout=2)
@@ -76,19 +74,19 @@ def akamai_write(akamai):
                 msg = f"Line {log} is not json formated"
                 logger.info(f"[{__parser__}]:{get_bulk.__name__}: {msg}", extra={'frontend': str(akamai.frontend)})
                 pass
-#            queue_write.task_done()
+                #            queue_write.task_done()
         return res
 
-    while not event_write.is_set() or not queue_write.empty():
+    while not event_write.is_set() or queue_write.qsize() > 0:
         akamai.write_to_file(get_bulk(10000))
         akamai.update_lock()
 
-    msg = f"Writting thread finished"
+    msg = f"Writting worker finished"
     logger.info(f"[{__parser__}]:{akamai_write.__name__}: {msg}", extra={'frontend': str(akamai.frontend)})
 
 
 def akamai_parse(akamai):
-    while not event_parse.is_set() or not queue_parse.empty():
+    while not event_parse.is_set() or queue_parse.qsize() > 0:
         try:
             # Wait max 2 seconds for a log
             log = json.loads(queue_parse.get(block=True, timeout=2).decode('utf-8'))
@@ -157,10 +155,13 @@ def akamai_parse(akamai):
             if timestamp_epoch > akamai.last_log_time.value:
                 akamai.last_log_time.value = timestamp_epoch
 
+    logger.info(f"[{__parser__}]:{akamai_write.__name__}: Worker parse finished",
+                extra={'frontend': str(akamai.frontend)})
+
 
 class AkamaiParser(ApiParser):
     ATTACK_KEYS = ["rules", "ruleMessages", "ruleTags", "ruleActions", "ruleData"]
-    NB_THREAD = 8
+    NB_WORKER = 8
 
     def __init__(self, data):
         super().__init__(data)
@@ -233,7 +234,7 @@ class AkamaiParser(ApiParser):
                         self.offset = line['offset']
                     except:
                         continue
-            
+
             logger.info(f"[{__parser__}]:get_logs: Fetched {i} lines", extra={'frontend': str(self.frontend)})
 
     def test(self):
@@ -266,23 +267,23 @@ class AkamaiParser(ApiParser):
 
     def execute(self):
         try:
-            threads = []
-            for i in range(self.NB_THREAD):
+            workers = []
+            for i in range(self.NB_WORKER):
                 t_parse = Process(target=akamai_parse, args=(self,))
                 t_parse.start()
-                threads.append(t_parse)
+                workers.append(t_parse)
 
             t_write_1 = Process(target=akamai_write, args=(self,))
             t_write_1.start()
-            threads.append(t_write_1)
+            workers.append(t_write_1)
 
-            t_write_2 = Process(target=akamai_write, args=(self,))
-            t_write_2.start()
-            threads.append(t_write_2)
+            # t_write_2 = Process(target=akamai_write, args=(self,))
+            # t_write_2.start()
+            # workers.append(t_write_2)
 
             self.offset = "a"
             try:
-                while not self.evt_stop.is_set() and self.last_log_time.value < (timezone.now()-datetime.timedelta(minutes=1)).timestamp() and self.offset:
+                while not self.evt_stop.is_set() and self.last_log_time.value < (timezone.now() - datetime.timedelta(minutes=1)).timestamp() and self.offset:
                     self.get_logs()
                     self.update_lock()
                     self.frontend.last_api_call = timezone.make_aware(datetime.datetime.utcfromtimestamp(self.last_log_time.value))
@@ -296,13 +297,14 @@ class AkamaiParser(ApiParser):
             event_parse.set()
             event_write.set()
 
-            # Wait for threads to finish
-            for t in threads:
+            for t in workers:
+                logger.info(f"[{__parser__}]:execute: Joining workers {t}", extra={'frontend': str(self.frontend)})
                 t.join()
+                logger.info(f"[{__parser__}]:execute: Workers joined {t}", extra={'frontend': str(self.frontend)})
 
             # Do not join because there can still be something in queues
-            #queue_parse.join()
-            #queue_write.join()
+            # queue_parse.join()
+            # queue_write.join()
 
             logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
