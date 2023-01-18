@@ -28,7 +28,6 @@ import datetime
 import json
 import logging
 import time
-import queue
 import requests
 import urllib.parse
 
