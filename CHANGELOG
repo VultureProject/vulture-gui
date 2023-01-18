@@ -5,11 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.2.4] - 1223-01-18
+### Fixed
+- [API_PARSER] [IMPERVA] Prevent downloading same files
+### Changed
+- [RSYSLOG] [PSTATS-SEC] Disable rsyslog stat generation every second
+- [API_PARSER] [AKAMAI] Improve parser's performances
+- [API_PARSER] [PROOFPOINT_TRAP] Add treatment delay of 15 minutes to have the alerts after their update
+- [API_PARSER] [PROOFPOINT_TRAP] Get more incident information, including incident severity
+
+
 ## [2.2.3] - 2023-01-04
 ### Fixed
 - [API_PARSER] [NETSKOPE] last_api_call was not correctly updated + prevent stagnation
 ### Removed
 - [API_PARSER] [PROOFPOINT_TRAP] Removed filtering on 'open' alerts
+
 
 ## [2.2.2] - 2022-12-21
 ### Fixed
