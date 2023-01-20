@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.4] - 1223-01-18
 ### Fixed
 - [API_PARSER] [IMPERVA] Prevent downloading same files
+- [CRONTABS] [SECURITY_UPDATE] Script could fail to save new Geolite MMDBs due to filename inconsistency in DB
 ### Changed
 - [RSYSLOG] [PSTATS-SEC] Disable rsyslog stat generation every second
 - [API_PARSER] [AKAMAI] Improve parser's performances
