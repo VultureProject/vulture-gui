@@ -1104,34 +1104,40 @@ class Frontend(models.Model):
     )
     # WAF Cloud Protector attributes
     waf_cloud_protector_host = models.TextField(
-        verbose_name = _("WAF Cloud Protector host"),
-        help_text = _("WAF Cloud Protector host"),
-        default = "",
+        verbose_name = _("WAF CloudProtector host"),
+        help_text = _("Hostname (without scheme or path) of the CloudProtector server"),
+        default = "api-region.cloudprotector.com",
     )
     waf_cloud_protector_api_key_pub = models.TextField(
-        verbose_name = _("WAF Cloud Protector public API key"),
-        help_text = _("WAF Cloud Protector public API key"),
-        default = "",
+        verbose_name = _("WAF CloudProtector public key"),
+        help_text = _("base64 encodid public key to contact CloudProtector API"),
+        default = "base64",
     )
     waf_cloud_protector_api_key_priv = models.TextField(
-        verbose_name = _("WAF Cloud Protector private API key"),
-        help_text = _("WAF Cloud Protector private API key"),
-        default = "",
+        verbose_name = _("WAF CloudProtector private key"),
+        help_text = _("base64 encodid private key to contact CloudProtector API"),
+        default = "base64",
     )
     waf_cloud_protector_provider = models.TextField(
         verbose_name = _("WAF Cloud Protector provider"),
-        help_text = _("WAF Cloud Protector provider"),
+        help_text = _("Provider used to retrieve event from"),
         default = "",
     )
     waf_cloud_protector_tenant = models.TextField(
         verbose_name = _("WAF Cloud Protector tenant"),
-        help_text = _("WAF Cloud Protector tenant"),
+        help_text = _("Tenant used to retrieve event from"),
         default = "",
     )
     waf_cloud_protector_servers = models.TextField(
         verbose_name = _("WAF Cloud Protector servers"),
-        help_text = _("WAF Cloud Protector servers"),
-        default = "",
+        help_text = _("Servers to for wich to retrieve traffic and alert events"),
+        default = "www.example.com",
+    )
+    waf_cloud_protector_timestamps = models.JSONField(
+        default={
+            "alert": {},
+            "traffic": {},
+        }
     )
 
     def reload_haproxy_conf(self):

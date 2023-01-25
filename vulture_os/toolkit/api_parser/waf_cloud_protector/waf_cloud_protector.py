@@ -83,14 +83,14 @@ class WAFCloudProtectorParser(ApiParser):
         except Exception as err:
             raise WAFCloudProtectorAPIError(err)
 
-    def __execute_query(self, host_url, log_type, server, query=None, timeout=20):
+    def __execute_query(self, host_url, log_type, server, query=None, timeout=20, count=0):
 
         self._connect()
 
         query_encoded = urllib.parse.urlencode(query)
         url, headers = self.make_request(host_url, log_type, server, query_encoded)
 
-        msg = "URL : " + url + " Query : " + str(query) + " Headers : " + str(headers) 
+        msg = "URL : " + url + " Query : " + str(query)
         logger.info(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
@@ -110,16 +110,18 @@ class WAFCloudProtectorParser(ApiParser):
         # Epoch out of range
         if response.status_code == 401:
             if 'Epoch out of range' in response.text:
-                logger.info(f"[{__parser__}]:execute: API Epoch out of range, waiting 1 seconds...", extra={'frontend': str(self.frontend)})
-                time.sleep(1)
-                return self.__execute_query(host_url=host_url, log_type=log_type, server=server, query=query, timeout=timeout)
+                if count < 5:
+                    logger.info(f"[{__parser__}]:execute: API Epoch out of range, waiting 0.1 seconds...", extra={'frontend': str(self.frontend)})
+                    time.sleep(0.1)
+                    return self.__execute_query(host_url=host_url, log_type=log_type, server=server, query=query, timeout=timeout, count=count+1)
+                else:
+                    raise WAFCloudProtectorAPIError(
+                        f"API Epoch out of range, too many retries, API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
         # Other error
         if response.status_code != 200:
             raise WAFCloudProtectorAPIError(
                 f"Error at WAF CloudProtector API Call URL: {url} Code: {response.status_code} Content: {response.content}")
-
-        return response.json()
 
     def make_request(self, host_url, log_type, server, query_encoded=""):
 
@@ -148,7 +150,7 @@ class WAFCloudProtectorParser(ApiParser):
             "Authorization": f'DAAUTH apikey="{self.waf_cloud_protector_api_key_pub}", epoch="{epoch}", signature="{signature}"'    
         }
         return url, headers
-
+     
     def test(self):
 
         current_time = timezone.now()
@@ -176,11 +178,36 @@ class WAFCloudProtectorParser(ApiParser):
 
         return self.__execute_query(host_url, log_type, server, query)
 
-    def parse_file(self, file_content):
+    def read_reversed_lines(self, buffer, cursor_first_line):
+        """Take a csv file in bytes, read and yield line by line in reverse order without take the first line of csv file, the lines are not sorted"""
+        # Go to the end of the file
+        buffer.seek(0, 2)
+        line = ""
+        cursor = 0
+        # ASSUMING THAT A LINE CANNOT BE LARGER THAN 2000bytes !!!
+        cpt = 2000
+        while buffer.tell()-(len(line) + 2 + (cpt-2)) > 0:
 
-        gzip_file = BytesIO(file_content)
-        with gzip.GzipFile(fileobj=gzip_file, mode="rb") as gzip_file_content:
-            return gzip_file_content.readlines()
+            buffer.seek(-(len(line) + 2 + (cpt-2)), 1)
+            # Read 2000 bytes minus last 2 bytes \r\n
+            tmp = buffer.read(cpt-2)
+            # Search for last \r\n (beginning of last line in tmp)
+            cursor = tmp.rfind("\r\n".encode('utf-8')) + 2
+            line = tmp[cursor:]
+            yield line
+
+        # Cursor equals 0 when the file is smaller than 2000 bytes
+        if cursor != 0:
+
+            # Skip the first line
+            buffer.seek(cursor_first_line, 0)
+            buffer_end = cursor - (len(line) + 2 + cursor_first_line)               
+            tmp = buffer.read(buffer_end)
+
+            # Yield from the last line to the first line
+            for line in reversed(tmp.split("\r\n".encode('utf-8'))):
+                yield line
+
 
     def parse_line(self, mapping, orig_line):
 
@@ -189,7 +216,7 @@ class WAFCloudProtectorParser(ApiParser):
         stream_line = StringIO(orig_line.decode('utf-8'))
 
         # Needed to prevent error : _csv.Error: field larger than field limit (131072)
-        csv.field_size_limit(sys_maxsize)
+        csv.field_size_limit(sys_maxsize)   
         r = csv.reader(stream_line, delimiter=",", doublequote=True, lineterminator="\n", quoting=csv.QUOTE_ALL)
         # Loop other the fields of the only line
         try:
@@ -226,57 +253,76 @@ class WAFCloudProtectorParser(ApiParser):
 
     def execute(self):
 
-        # Set datetime to take old logs, and new logs between a time scope
-        since = self.frontend.last_api_call or (timezone.now() - timedelta(days=2))
-        to = min(timezone.now(), since + timedelta(hours=24))
-        delta = ((to - since) + timedelta(days=1)).days
+        # Init the dict of timestamps if not exist
+        if self.frontend.waf_cloud_protector_timestamps.get('alert') is None:
+            self.frontend.waf_cloud_protector_timestamps = { 'alert': {}, 'traffic': {} }
+            self.frontend.save()
 
-        # Update last_api_call time to have ONE time for all servers
-        self.frontend.last_api_call = to
+        for server in self.waf_cloud_protector_servers.split(','):
 
-        # Récup log
-        for server in self.waf_cloud_protector_servers.split(','):            
+            # Init the timestamp for the server if not exist
+            if server not in self.frontend.waf_cloud_protector_timestamps.get('alert'):                
+                self.frontend.waf_cloud_protector_timestamps['alert'][server] = ""
+                self.frontend.waf_cloud_protector_timestamps['traffic'][server] = ""                
+                self.frontend.save()
+
             for log_type in ['alert', 'traffic']:
-                try: 
+                try:
+                    
+                    ## GET LOGS ##
+                    since = self.frontend.waf_cloud_protector_timestamps[log_type].get(f"{server}") or (timezone.now() - timedelta(days=2))
+                    to = min(timezone.now(), since + timedelta(hours=24))
+                    delta = ((to - since) + timedelta(days=1)).days
+
                     file_content = self.get_logs(since, delta, log_type, server)
                     self.update_lock()
-                    lines_byte = self.parse_file(file_content)
-                    # Extract mapping in first line
-                    ## Keys of json must be string, not bytes
-                    ## Remove quotes and spaces in keys + split by comma
-                    ## Remove '&' in keys, not valid for Rsyslog
-                    mapping = [line.replace('"','').replace(' ','').replace('&','').replace('.','').replace('/','') for line in lines_byte.pop(0).decode('utf8').strip().split(',')]
                     
-                    json_lines = []
-                    # Start from the end, leave when the date is passed
-                    for line in reversed(lines_byte):
+                    ## DECOMPRESS LOGS ##
+                    gzip_file = BytesIO(file_content)
+                    buffer_file = gzip.GzipFile(fileobj=gzip_file, mode="rb")
 
-                        # Get datetime to find logs in the time scope
+                    ## GET MAPPING : The first line ##
+                    first_line = buffer_file.readline()
+                    cursor_first_line = buffer_file.tell()
+                    mapping = [column.replace('"','').replace(' ','').replace('&','').replace('.','').replace('/','') for column in first_line.decode('utf8').strip().split(',')]
+
+                    json_lines = []
+                    
+                    since_without_tz = since.replace(tzinfo=None).replace(microsecond=0)
+                    to_without_tz = to.replace(tzinfo=None).replace(microsecond=0)
+
+                    ## FOR EACH LINE : start from the end ##
+                    for line_byte in self.read_reversed_lines(buffer_file, cursor_first_line):
+                        
+                        line = line_byte.decode('utf8')
+
+                        # Choose the right column to take the date
                         date_log = ""
                         if log_type == 'alert':
-                            date_log = datetime.strptime(line.decode().split(',')[1], '%Y-%m-%dT%H:%M:%S.%fZ')
-                        elif log_type == 'traffic':
-                            date_log = datetime.strptime(line.decode().split(',')[2], '%Y-%m-%dT%H:%M:%S.%fZ')
-
-                        # Time scope : Between time of old "getlogs" (last execution) and time of first "getlogs" (current execution)
-                        # It's to have one scope for all servers
-                        last_api_call_without_tz = self.frontend.last_api_call.replace(tzinfo=None).replace(microsecond=0)
-                        since_without_tz = since.replace(tzinfo=None).replace(microsecond=0)
-
-                        if date_log < last_api_call_without_tz and date_log > since_without_tz:
-                            # Use mapping to convert lines to json format 
-                            json_lines.append(self.parse_line(mapping, line.strip()))
+                            date_log = datetime.strptime(line.split(',')[1], '%Y-%m-%dT%H:%M:%S.%fZ')
                         else:
-                            # If the date is passed, we stop the loop, because the rest of lines are older
+                            date_log = datetime.strptime(line.split(',')[2], '%Y-%m-%dT%H:%M:%S.%fZ')
+
+                        # The line of log is too yound for our request
+                        if date_log > to_without_tz:
+                            continue
+                        
+                        # The line of log is too old for our request, and it's same for the rest of the file
+                        if date_log < since_without_tz:
                             break
+
+                        # Use mapping to convert lines to json format 
+                        json_lines.append(self.parse_line(mapping, line.strip().encode('utf8')))
 
                     # Send those lines to Rsyslog
                     self.write_to_file(json_lines)
                     # And update lock after sending lines to Rsyslog
                     self.update_lock()
+                    self.frontend.waf_cloud_protector_timestamps[log_type][server] = to
+                    self.frontend.save()
 
                 except Exception as e:
-                    msg = f"Failed to server {server} on log type {log_type}, between time of {since_without_tz} and {last_api_call_without_tz} : {e} "
+                    msg = f"Failed to server {server} on log type {log_type}, between time of {since} and {to} : {e} "
                     logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
