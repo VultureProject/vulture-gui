@@ -254,25 +254,25 @@ class WAFCloudProtectorParser(ApiParser):
     def execute(self):
 
         # Init the dict of timestamps if not exist
-        if self.frontend.waf_cloud_protector_timestamps.get('alert') is None:
-            self.frontend.waf_cloud_protector_timestamps = { 'alert': {}, 'traffic': {} }
-            self.frontend.save()
+        # if self.frontend.waf_cloud_protector_timestamps.get('alert') is None:
+        # self.frontend.waf_cloud_protector_timestamps = { 'alert': {}, 'traffic': {} }
+        self.frontend.save()
 
         for server in self.waf_cloud_protector_servers.split(','):
 
             # Init the timestamp for the server if not exist
             if server not in self.frontend.waf_cloud_protector_timestamps.get('alert'):                
                 self.frontend.waf_cloud_protector_timestamps['alert'][server] = ""
-                self.frontend.waf_cloud_protector_timestamps['traffic'][server] = ""                
+                self.frontend.waf_cloud_protector_timestamps['traffic'][server] = ""
                 self.frontend.save()
 
             for log_type in ['alert', 'traffic']:
                 try:
-                    
-                    ## GET LOGS ##
-                    since = self.frontend.waf_cloud_protector_timestamps[log_type].get(f"{server}") or (timezone.now() - timedelta(days=2))
-                    to = min(timezone.now(), since + timedelta(hours=24))
-                    delta = ((to - since) + timedelta(days=1)).days
+
+                    ## GET LOGS ##   
+                    since = self.frontend.waf_cloud_protector_timestamps[log_type].get(server) or (timezone.now() - timedelta(days=2))
+                    to = min(timezone.now().replace(tzinfo=timezone.utc), since.replace(tzinfo=timezone.utc) + timedelta(hours=24))
+                    delta = ((to.replace(tzinfo=None) - since.replace(tzinfo=None)) + timedelta(days=1)).days
 
                     file_content = self.get_logs(since, delta, log_type, server)
                     self.update_lock()
