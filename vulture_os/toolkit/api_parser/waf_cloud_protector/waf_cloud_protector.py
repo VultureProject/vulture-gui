@@ -178,8 +178,13 @@ class WAFCloudProtectorParser(ApiParser):
 
         return self.__execute_query(host_url, log_type, server, query)
 
-    def read_reversed_lines(self, buffer, cursor_first_line):
-        """Take a csv file in bytes, read and yield line by line in reverse order without take the first line of csv file, the lines are not sorted"""
+    def read_reversed_lines(self, buffer):
+        """
+        Take a csv file in bytes, read and yield line by line in reverse order without take the first line of csv file, the lines are not sorted.
+        It's optimize for big file, not for small file and not lastest lines of file, not the goal
+        """
+        # Keep the cursor end of first line
+        cursor_first_line = buffer.tell()
         # Go to the end of the file
         buffer.seek(0, 2)
         line = ""
@@ -196,18 +201,14 @@ class WAFCloudProtectorParser(ApiParser):
             line = tmp[cursor:]
             yield line
 
-        # Cursor equals 0 when the file is smaller than 2000 bytes
-        if cursor != 0:
+        # Lastest lines and skip the first line        
+        rest = buffer.tell()
+        buffer.seek(cursor_first_line, 0)
 
-            # Skip the first line
-            buffer.seek(cursor_first_line, 0)
-            buffer_end = cursor - (len(line) + 2 + cursor_first_line)               
-            tmp = buffer.read(buffer_end)
+        for line in buffer.read(rest - cursor_first_line).split("\r\n".encode('utf-8')):
 
-            # Yield from the last line to the first line
-            for line in reversed(tmp.split("\r\n".encode('utf-8'))):
+            if line.strip() != b"":
                 yield line
-
 
     def parse_line(self, mapping, orig_line):
 
@@ -253,11 +254,6 @@ class WAFCloudProtectorParser(ApiParser):
 
     def execute(self):
 
-        # Init the dict of timestamps if not exist
-        # if self.frontend.waf_cloud_protector_timestamps.get('alert') is None:
-        # self.frontend.waf_cloud_protector_timestamps = { 'alert': {}, 'traffic': {} }
-        self.frontend.save()
-
         for server in self.waf_cloud_protector_servers.split(','):
 
             # Init the timestamp for the server if not exist
@@ -269,11 +265,13 @@ class WAFCloudProtectorParser(ApiParser):
             for log_type in ['alert', 'traffic']:
                 try:
 
-                    ## GET LOGS ##   
-                    since = self.frontend.waf_cloud_protector_timestamps[log_type].get(server) or (timezone.now() - timedelta(days=2))
-                    to = min(timezone.now().replace(tzinfo=timezone.utc), since.replace(tzinfo=timezone.utc) + timedelta(hours=24))
-                    delta = ((to.replace(tzinfo=None) - since.replace(tzinfo=None)) + timedelta(days=1)).days
+                    ## GET LOGS ##
+                    # datetime.now() : because we don't have timezone in the timestamp in mongodb (not supported by mongo)
+                    since = timezone.make_aware(self.frontend.waf_cloud_protector_timestamps[log_type].get(server) or (datetime.now() - timedelta(days=2)))
+                    to = min(timezone.now(), since + timedelta(hours=24))
+                    delta = ((to - since) + timedelta(days=1)).days
 
+                    logger.info(f"[{__parser__}]: get_logs from {server} of type {log_type} since {since} to {to}", extra={'frontend': str(self.frontend)})
                     file_content = self.get_logs(since, delta, log_type, server)
                     self.update_lock()
                     
@@ -283,32 +281,27 @@ class WAFCloudProtectorParser(ApiParser):
 
                     ## GET MAPPING : The first line ##
                     first_line = buffer_file.readline()
-                    cursor_first_line = buffer_file.tell()
                     mapping = [column.replace('"','').replace(' ','').replace('&','').replace('.','').replace('/','') for column in first_line.decode('utf8').strip().split(',')]
 
                     json_lines = []
                     
-                    since_without_tz = since.replace(tzinfo=None).replace(microsecond=0)
-                    to_without_tz = to.replace(tzinfo=None).replace(microsecond=0)
-
                     ## FOR EACH LINE : start from the end ##
-                    for line_byte in self.read_reversed_lines(buffer_file, cursor_first_line):
+                    for line_byte in self.read_reversed_lines(buffer_file):
                         
                         line = line_byte.decode('utf8')
-
                         # Choose the right column to take the date
                         date_log = ""
                         if log_type == 'alert':
-                            date_log = datetime.strptime(line.split(',')[1], '%Y-%m-%dT%H:%M:%S.%fZ')
+                            date_log = timezone.make_aware(datetime.strptime((line.split(',')[1]), '%Y-%m-%dT%H:%M:%S.%fZ'))
                         else:
-                            date_log = datetime.strptime(line.split(',')[2], '%Y-%m-%dT%H:%M:%S.%fZ')
+                            date_log = timezone.make_aware(datetime.strptime((line.split(',')[2]), '%Y-%m-%dT%H:%M:%S.%fZ'))                            
 
                         # The line of log is too yound for our request
-                        if date_log > to_without_tz:
+                        if date_log > to:
                             continue
                         
                         # The line of log is too old for our request, and it's same for the rest of the file
-                        if date_log < since_without_tz:
+                        if date_log < since:
                             break
 
                         # Use mapping to convert lines to json format 
