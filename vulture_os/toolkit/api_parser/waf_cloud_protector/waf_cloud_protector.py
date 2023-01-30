@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
 __author__ = "Julien Pollet"
-__credits__ = []
+__credits__ = ["Kevin Guillemot"]
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
@@ -99,7 +99,6 @@ class WAFCloudProtectorParser(ApiParser):
             headers=headers,
             timeout=timeout,
             proxies=self.proxies,
-            verify=False
         )
 
         # Get gzip file
@@ -128,7 +127,7 @@ class WAFCloudProtectorParser(ApiParser):
         uri = "/logs/"+ log_type + "/" + self.waf_cloud_protector_provider + "/" + self.waf_cloud_protector_tenant + '/' + server
         url = host_url + uri
 
-        epoch = str(datetime.now().timestamp()).replace(".", "")[:-3]
+        epoch = str(datetime.now().timestamp()).replace(".", "")[:-3]   
 
         payload = 'GET' + '\n' \
         + self.waf_cloud_protector_host + '\n' \
@@ -223,7 +222,9 @@ class WAFCloudProtectorParser(ApiParser):
         try:
             for cpt, value in enumerate(list(r)[0]):
                 field = mapping[cpt]
+                result[field] = value
                 if field in self.TO_SPLIT_FIELDS:
+                    field = f"{field}_dict"
                     result[field] = {}
                     for under_field in value.split(' and '):
                         # Change the format of the field to be able to use it in the json 
@@ -244,8 +245,7 @@ class WAFCloudProtectorParser(ApiParser):
                         # If the field is not a key value pair, we just add the value to the key                           
                         else:
                             result[field][under_field_values[0]] = under_field_values[0]
-                else :
-                    result[field] = value
+
             return json_dumps(result)
         except Exception as e:
             msg = f"Failed to parse line: {r}"
@@ -255,13 +255,6 @@ class WAFCloudProtectorParser(ApiParser):
     def execute(self):
 
         for server in self.waf_cloud_protector_servers.split(','):
-
-            # Init the timestamp for the server if not exist
-            if server not in self.frontend.waf_cloud_protector_timestamps.get('alert'):                
-                self.frontend.waf_cloud_protector_timestamps['alert'][server] = ""
-                self.frontend.waf_cloud_protector_timestamps['traffic'][server] = ""
-                self.frontend.save()
-
             for log_type in ['alert', 'traffic']:
                 try:
 

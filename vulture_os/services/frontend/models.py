@@ -1134,10 +1134,7 @@ class Frontend(models.Model):
         default = "www.example.com",
     )
     waf_cloud_protector_timestamps = models.JSONField(
-        default={
-            "alert": {},
-            "traffic": {},
-        }
+        default={ "alert": {}, "traffic": {} }
     )
 
     def reload_haproxy_conf(self):
