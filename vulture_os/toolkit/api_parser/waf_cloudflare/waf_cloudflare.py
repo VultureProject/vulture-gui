@@ -85,30 +85,55 @@ class WAFCloudflareParser(ApiParser):
 
         logger.debug(f"{[__parser__]}:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
 
+        cpt = 0
+        bulk = []
+        with self.session.get(url, params=query, proxies=self.proxies, stream=True) as r:
+            if r.status_code != 200:
+                logger.error(f"{[__parser__]}:get_logs: Status code = {r.status_code}, Error = {r.text}",
+                             extra={'frontend': str(self.frontend)})
+                return
+            for line in r.iter_lines():
+                if not line:
+                    continue
+                try:
+                    bulk.append(line.decode('utf8'))
+                except:
+                    pass
+                cpt += 1
+                if len(bulk) == 10000:
+                    yield bulk
+                    bulk = []
 
-        response = self.session.get(url, params=query)
-        response.raise_for_status()
-        content = response.text.split("\n")[:-1]
-
-        logger.info(f"{[__parser__]}:get_logs: got {len(content)} new lines", extra={'frontend': str(self.frontend)})
-        return content
+        logger.info(f"{[__parser__]}:get_logs: got {cpt} new lines", extra={'frontend': str(self.frontend)})
+        yield bulk
 
 
     def execute(self):
         # Aware UTC datetime
         current_time = timezone.now()
-        since = self.frontend.last_api_call
-        if (self.last_api_call is None) or (timezone.now() - self.last_api_call >= timedelta(minutes=30)):
-            since = (timezone.now() - timedelta(minutes=30))
-        #The API has a delay of 60 seconds
-        to = current_time - timedelta(seconds=60)
+        since = self.frontend.last_api_call or (timezone.now() - timedelta(hours=24))
+
+        # Start cannot exceed a time in the past greater than seven days.
+        if since < (current_time-timedelta(hours=168)):
+            logger.info(f"[{__parser__}]:execute: Since is older than 168h, resetting-it", extra={'frontend': str(self.frontend)})
+            since = current_time-timedelta(hours=168)
+        # Difference between start and end must be not greater than one hour.
+        to = since + timedelta(hours=1)
+        # end must be at least five (ONE (doc is invalid) minutes earlier than now
+        if to > (current_time-timedelta(minutes=1)):
+            to = current_time-timedelta(minutes=1)
+
         msg = f"Parser starting from {since} to {to}."
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-        logs = self.get_logs(logs_from=since, logs_to=to)
-        self.update_lock()
-        # from is inclusive, to is exclusive
-        self.frontend.last_api_call = to
-        self.write_to_file(logs)
+
+        try:
+            for logs in self.get_logs(logs_from=since, logs_to=to):
+                self.update_lock()
+                self.write_to_file(logs)
+            # from is inclusive, to is exclusive
+            self.frontend.last_api_call = to
+        except Exception as e:
+            logger.exception(f"{[__parser__]}:execute: {str(e)}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"{[__parser__]}:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
@@ -116,7 +141,7 @@ class WAFCloudflareParser(ApiParser):
     def test(self):
         current_time = timezone.now()
         try:
-            logs = self.get_logs(logs_from=(current_time - timedelta(seconds=62)), logs_to=(current_time - timedelta(seconds=61)))
+            logs = list(self.get_logs(logs_from=(current_time - timedelta(seconds=62)), logs_to=(current_time - timedelta(seconds=61))))
 
             return {
                 "status": True,
