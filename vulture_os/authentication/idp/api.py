@@ -300,7 +300,7 @@ class IDPApiUserView(View):
                 try:
                     if not portal.otp_repository:
                         logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] TOTP not configured for portal")
-                        return JsonResponse({'status': False, 'error': _("TOTP not configured on portal")})
+                        return JsonResponse({'status': False, 'error': _("TOTP not configured on portal")}, status=400)
                     otp_profile = TOTPProfile.objects.get(auth_repository=ldap_repo,
                                                           totp_repository=portal.otp_repository,
                                                           login=user)
