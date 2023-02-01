@@ -206,4 +206,5 @@ def pf_whitelist_blacklist(request, list_type=None):
         return JsonResponse({'status': False, 'error': str(e)}, status=500)
 
     config_model.save()
+    Cluster.api_request("services.pf.pf.gen_config")
     return JsonResponse({'status': True, "data": ""})
