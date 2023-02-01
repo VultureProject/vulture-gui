@@ -6,8 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [2.3.0] - Unreleased
+### Fixed
+- [HAPROXY] [PORTAL] redirect request to portal whenever authentication validation couldn't be done
+- [IDP] [API] Correct return code 400 when User without TOTP has a request for TOTP reset
+- [SYSTEM] [BLACKLIST/WHITELIST] Reload pf configuration when adding/removing whitelist/blacklist IPs to cluster 
+- [API_PARSER] [CLOUDFLARE] Fix ram explosion + improve resilience by downloading by bulks
+- [API_PARSER] [AKAMAI] Fix HBSD13 SemLock error when loading GUI code
 ### Added
 - [IDP] [API] When locking/unlocking a user, also disable/enable its access tokens
+- [API_PARSER] [WAF_CLOUD_PTORECTOR] New API parser WAF Cloud Protector
+### Changed
+- [HAPROXY] [PORTAL] Deny requests with Authorization header, instead of redirecting them to the portal
 
 
 ## [2.2.4] - 1223-01-18
