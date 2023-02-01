@@ -490,15 +490,36 @@ class REDISOauth2Session(REDISSession):
         else:
             self.keys['scope'] = {}
 
+    def enable_token(self):
+        if repo := self.keys.get('repo'):
+            if exp := int(self.keys.get('exp', 0)):
+                timeout = exp - int(time.time())
+                if timeout > 0:
+                    self.set_in_redis(f"{self.key}_{repo}", 1, timeout)
+                    return True
+                else:
+                    logger.warning("REDISOauth2Session::enable_token: did not enable token, already expired")
+
+        logger.error("REDISOauth2Session::enable_token: Could not register token, missing 'repo' and/or 'exp'!")
+        logger.debug(f"REDISOauth2Session::enable_token: token {self.key}: {self.keys}")
+        return False
+
+    def disable_token(self):
+        if repo := self.keys.get('repo'):
+            self.delete_in_redis(f"{self.key}_{repo}")
+            return True
+        else:
+            logger.error("REDISOauth2Session::disable_token: Cannot disable token, 'repo' missing!")
+        return False
+
     def write_in_redis(self, timeout):
         backup_scope = deepcopy(self.keys['scope'])
         # Do not insert json into Redis
         self.keys['scope'] = json.dumps(self.keys['scope'])
         ret = super().write_in_redis(timeout)
 
-        # set additional keys for API calls use and validation
-        if repo := self.keys.get('repo'):
-            self.set_in_redis(f"{self.key}_{repo}", 1, timeout)
+        # Token will be accepted by Haproxy
+        self.enable_token()
 
         # Restore dict in case of re-use
         self.keys['scope'] = backup_scope
@@ -506,8 +527,7 @@ class REDISOauth2Session(REDISSession):
         return ret
 
     def delete(self):
-        if repo := self.keys.get('repo'):
-            self.delete_in_redis(f"{self.key}_{repo}")
+        self.disable_token()
         self.delete_in_redis(self.key)
 
     def register_authentication(self, repo_id, oauth2_data, timeout):

@@ -321,9 +321,35 @@ class IDPApiUserView(View):
                 user_dn = request.JSON["id"]
                 # Check if a proper filter was configured in GUI before trying to lock
                 if ldap_repo.user_account_locked_attr and ldap_repo.get_user_account_locked_attr:
+                    redis_handler = REDISBase()
                     to_lock = action == "lock"
                     ldap_response, user_id = tools.lock_unlock_user(ldap_repo, user_dn, lock=to_lock)
                     logger.info(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] user '{user}' {'locked' if to_lock else 'unlocked'}")
+
+                    # Search and enable/disable all related oauth2 tokens
+                    logger.info(f"IDPApiUserView::POST::[{portal.name}/{ldap_repo}] locking/unlocking {user_dn} related oauth tokens")
+                    all_tokens = redis_handler.scan_all("oauth2_*", type="hash")
+                    for token in all_tokens:
+                        repo = redis_handler.hget(token, "repo")
+                        sub = redis_handler.hget(token, "sub")
+
+                        if repo == portal.oauth_client_id and sub == user_dn:
+                            logger.debug(f"IDPApiUserView::POST::[{portal.name}/{ldap_repo}] token is {token}")
+                            if to_lock:
+                                logger.info(f"IDPApiUserView::POST::[{portal.name}/{ldap_repo}] disabling token for locked user {user_dn}")
+                                oauth_token = REDISOauth2Session(redis_handler, token)
+                                if oauth_token.disable_token():
+                                    logger.info(f"IDPApiUserView::POST::[{portal.name}/{ldap_repo}] token disabled for user {user_dn}")
+                                else:
+                                    logger.warning(f"IDPApiUserView::POST::[{portal.name}/{ldap_repo}] could not disable token for user {user_dn} !")
+                            else:
+                                logger.info(f"IDPApiUserView::POST::[{portal.name}/{ldap_repo}] enabling token for locked user {user_dn}")
+                                oauth_token = REDISOauth2Session(redis_handler, token)
+                                if oauth_token.enable_token():
+                                    logger.info(f"IDPApiUserView::POST::[{portal.name}/{ldap_repo}] token enabled for user {user_dn}")
+                                else:
+                                    logger.warning(f"IDPApiUserView::POST::[{portal.name}/{ldap_repo}] could not enable token for user {user_dn} !")
+
                 else:
                     logger.error(f"IDPApiUserView::POST:[{portal.name}/{ldap_repo}] Cannot lock user '{user_dn}': no locking filter configured")
                     return JsonResponse({
