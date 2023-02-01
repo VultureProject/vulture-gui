@@ -1672,9 +1672,52 @@
                             {{ form.proofpoint_trap_apikey }}
                             {{ form.proofpoint_trap_apikey.errors|safe }}
                           </div>
+                        </div>                        
+                      </div>
+                      <div class="col-md-12 api_clients_row" id="api_waf_cloud_protector_row">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.waf_cloud_protector_host }}
+                            {{ form.waf_cloud_protector_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_api_key_pub.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.waf_cloud_protector_api_key_pub }}
+                            {{ form.waf_cloud_protector_api_key_pub.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_api_key_priv.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.waf_cloud_protector_api_key_priv }}
+                            {{ form.waf_cloud_protector_api_key_priv.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_provider.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.waf_cloud_protector_provider }}
+                            {{ form.waf_cloud_protector_provider.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_tenant.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.waf_cloud_protector_tenant }}
+                            {{ form.waf_cloud_protector_tenant.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.waf_cloud_protector_servers.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.waf_cloud_protector_servers }}
+                            {{ form.waf_cloud_protector_servers.errors|safe }}
+                          </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
