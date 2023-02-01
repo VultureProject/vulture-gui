@@ -40,12 +40,6 @@ from toolkit.api_parser.api_parser import ApiParser
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
-event_parse = Event()
-event_write = Event()
-queue_parse = Queue(maxsize=100000)
-queue_write = Queue(maxsize=100000)
-data_lock = Lock()
-
 
 class AkamaiParseError(Exception):
     pass
@@ -58,10 +52,10 @@ class AkamaiAPIError(Exception):
 def akamai_write(akamai):
     def get_bulk(size):
         res = []
-        while len(res) < size and (not event_write.is_set() or queue_write.qsize() > 0):
+        while len(res) < size and (not akamai.event_write.is_set() or akamai.queue_write.qsize() > 0):
             try:
                 # Wait max 2 seconds for a log
-                log = queue_write.get(block=True, timeout=2)
+                log = akamai.queue_write.get(block=True, timeout=2)
             except:
                 msg = f"Exception in queue_write.get()"
                 logger.info(f"[{__parser__}]:{get_bulk.__name__}: {msg}", extra={'frontend': str(akamai.frontend)})
@@ -76,7 +70,7 @@ def akamai_write(akamai):
                 #            queue_write.task_done()
         return res
 
-    while not event_write.is_set() or queue_write.qsize() > 0:
+    while not akamai.event_write.is_set() or akamai.queue_write.qsize() > 0:
         akamai.write_to_file(get_bulk(10000))
         akamai.update_lock()
 
@@ -85,10 +79,10 @@ def akamai_write(akamai):
 
 
 def akamai_parse(akamai):
-    while not event_parse.is_set() or queue_parse.qsize() > 0:
+    while not akamai.event_parse.is_set() or akamai.queue_parse.qsize() > 0:
         try:
             # Wait max 2 seconds for a log
-            log = json.loads(queue_parse.get(block=True, timeout=2).decode('utf-8'))
+            log = json.loads(akamai.queue_parse.get(block=True, timeout=2).decode('utf-8'))
         except:
             continue
 
@@ -147,10 +141,10 @@ def akamai_parse(akamai):
 
             tmp['attackData'][key] = values
 
-        queue_write.put(tmp)
+        akamai.queue_write.put(tmp)
 
         # Update the last log time
-        with data_lock:
+        with akamai.data_lock:
             if timestamp_epoch > akamai.last_log_time.value:
                 akamai.last_log_time.value = timestamp_epoch
 
@@ -179,7 +173,12 @@ class AkamaiParser(ApiParser):
         if not self.akamai_host.startswith('https'):
             self.akamai_host = f"https://{self.akamai_host}"
 
-        self.last_log_time = Value('q', int(self.last_api_call.timestamp()))
+        self.last_log_time = None
+        self.event_parse = None
+        self.event_write = None
+        self.queue_parse = None
+        self.queue_write = None
+        self.data_lock = None
         self.session = None
 
     def _connect(self):
@@ -196,7 +195,7 @@ class AkamaiParser(ApiParser):
         except Exception as err:
             raise AkamaiAPIError(err)
 
-    def get_logs(self, test=False):
+    def get_logs(self, test=False, since=None):
         self._connect()
 
         url = f"{self.akamai_host}/siem/{self.version}/configs/{self.akamai_config_id}"
@@ -207,7 +206,7 @@ class AkamaiParser(ApiParser):
         if self.offset != "a":
             params['offset'] = self.offset
         else:
-            params['from'] = int(self.last_log_time.value)
+            params['from'] = since or int(self.last_log_time.value)
 
         if test:
             params['limit'] = 1
@@ -218,12 +217,16 @@ class AkamaiParser(ApiParser):
         with self.session.get(url, params=params, proxies=self.proxies, stream=True) as r:
             r.raise_for_status()
             i = 0
+
+            if test:
+                return list(r.iter_lines())[-1].decode('utf-8')
+
             for line in r.iter_lines():
                 if not line:
                     continue
 
                 if b"\"httpMessage\"" in line:
-                    queue_parse.put(line)
+                    self.queue_parse.put(line)
                     i = i + 1
                 else:
                     try:
@@ -238,20 +241,8 @@ class AkamaiParser(ApiParser):
 
     def test(self):
         try:
-            t_parse = Process(target=akamai_parse, args=(self,))
-            t_parse.start()
-            data = []
-            self.last_log_time.value = (timezone.now() - datetime.timedelta(minutes=15)).timestamp()
-            self.get_logs(test=True)
-            cpt = 0
-            while cpt < 5:
-                log = queue_write.get()
-                if log:
-                    data.append(log)
-                    break
-                else:
-                    time.sleep(1)
-                    cpt += 1
+            since = (timezone.now() - datetime.timedelta(minutes=15)).timestamp()
+            data = self.get_logs(test=True, since=since)
 
             return {
                 'status': True,
@@ -265,6 +256,12 @@ class AkamaiParser(ApiParser):
             }
 
     def execute(self):
+        self.event_parse = Event()
+        self.event_write = Event()
+        self.queue_parse = Queue(maxsize=100000)
+        self.queue_write = Queue(maxsize=100000)
+        self.data_lock = Lock()
+        self.last_log_time = Value('q', int(self.last_api_call.timestamp()))
         try:
             workers = []
             for i in range(self.NB_WORKER):
@@ -293,8 +290,8 @@ class AkamaiParser(ApiParser):
                 msg = f"Fail to download/update akamai logs: {e}"
                 logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-            event_parse.set()
-            event_write.set()
+            self.event_parse.set()
+            self.event_write.set()
 
             for t in workers:
                 logger.info(f"[{__parser__}]:execute: Joining workers {t}", extra={'frontend': str(self.frontend)})
