@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [2.3.0] - Unreleased
+## [2.3.0] - 2023-02-02
 ### Fixed
 - [HAPROXY] [PORTAL] redirect request to portal whenever authentication validation couldn't be done
 - [IDP] [API] Correct return code 400 when User without TOTP has a request for TOTP reset
@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [HAPROXY] [PORTAL] Deny requests with Authorization header, instead of redirecting them to the portal
 
 
-## [2.2.4] - 1223-01-18
+## [2.2.4] - 2023-01-18
 ### Fixed
 - [API_PARSER] [IMPERVA] Prevent downloading same files
 - [CRONTABS] [SECURITY_UPDATE] Script could fail to save new Geolite MMDBs due to filename inconsistency in DB
