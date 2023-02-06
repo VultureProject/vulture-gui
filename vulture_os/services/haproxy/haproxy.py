@@ -66,7 +66,7 @@ JINJA_PATH = "/home/vlt-os/vulture_os/services/haproxy/config/"
 JINJA_TEMPLATE = "spoe_session.txt"
 
 JINJA_PORTAL_PATH = "/home/vlt-os/vulture_os/services/config/"
-JINJA_PORTAL_TEMPLATE = "haproxy_internal_portals.conf"
+JINJA_PORTAL_TEMPLATE = "haproxy_internals.cfg"
 
 
 class HaproxyService(Service):
@@ -371,7 +371,7 @@ def generate_portals_conf(node_logger, node):
 
 
 def get_portals_filename():
-    return f"{HAPROXY_PATH}/internal_portals.cfg"
+    return f"{HAPROXY_PATH}/haproxy_internals.cfg"
 
 
 def build_portals_conf(node_logger):
