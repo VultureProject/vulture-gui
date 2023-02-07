@@ -711,12 +711,6 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("Cybereason password for authentication")
     )
-    cybereason_malwares_timestamp = models.FloatField(
-        default=0.0
-    )
-    cybereason_malops_timestamp = models.FloatField(
-        default=0.0
-    )
     # Cisco-Meraki API events attributes
     cisco_meraki_apikey = models.TextField(
         verbose_name=_("Cisco Meraki API key"),
