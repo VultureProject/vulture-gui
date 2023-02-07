@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.4.0] - Unreleased
 ### Changed
 - [IDP] [API] Return a generic 400 when the requested portal/repo/user doesn't exist
+### Removed
+- [FILES] Obsolete files (owned and used on vulture-base)
 
 
 ## [2.3.0] - 2023-02-02
