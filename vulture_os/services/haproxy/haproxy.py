@@ -133,7 +133,9 @@ def test_haproxy_conf(filename, conf, disabled=False):
     try:
         """ Test haproxy config file with -c option """
         # check_call raise CallProcessError if return code is not 0
-        return check_output(['/usr/local/sbin/haproxy', '-c', '-f', HAPROXY_PATH,
+        return check_output(['/usr/local/sbin/haproxy', '-c',
+                             '-f', "/home/vlt-os/vulture_os/services/config/haproxy.conf",
+                             '-f', HAPROXY_PATH,
                              '-f', "{}/{}".format(TEST_CONF_PATH, filename)],
                             stderr=PIPE).decode('utf8')
 
