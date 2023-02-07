@@ -69,7 +69,6 @@ if __name__ == "__main__":
     # Update node name in services config
     Cluster.api_request("services.apache.apache.reload_service")
     Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
-    Cluster.api_request("services.haproxy.haproxy.build_portals_conf")
     Cluster.api_request("services.haproxy.haproxy.configure_node")
 
     # Update Internal mongodb forwarder config in concerned frontends

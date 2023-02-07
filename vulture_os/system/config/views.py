@@ -26,6 +26,7 @@ __doc__ = 'Config View'
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.translation import gettext as _
 from gui.forms.form_utils import DivErrorList
+from services.frontend.models import Frontend
 from system.config.form import ConfigForm
 from system.config.models import write_conf
 from system.cluster.models import Cluster, Node
@@ -112,9 +113,9 @@ def config_edit(request, api=False, update=False):
         if has_internal_tenants_changed:
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
         if has_portal_cookie_name_changed:
-            api_res = Cluster.api_request("services.haproxy.haproxy.configure_node")
-            if not api_res.get('status'):
-                error = api_res.get('message')
+            # Reload Frontends with authenticated Workflows: session checks must be updated with the new cookie's name
+            for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():
+                frontend.reload_conf()
         if logs_ttl_changed:
             res, mess = config_model.set_logs_ttl()
             if not res:

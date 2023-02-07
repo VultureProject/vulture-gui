@@ -187,7 +187,6 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request("services.rsyslogd.rsyslog.restart_service")
 
     logger.debug("API call to configure HAProxy")
-    node.api_request("services.haproxy.haproxy.build_portals_conf")
     node.api_request("services.haproxy.haproxy.configure_node")
 
     logger.debug("API call to reload whole darwin configuration")

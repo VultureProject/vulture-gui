@@ -382,13 +382,9 @@ def workflow_edit(request, object_id, action=None):
 
             nodes = workflow.frontend.get_nodes()
             for node in nodes:
-                # We need to rebuild spoe configuration in case authentication is involved
-                # BEFORE reloading Frontend/backend conf
-                if workflow.authentication is not None or had_authentication:
-                    api_res = node.api_request("services.haproxy.haproxy.build_spoe_conf")
                 node.api_request("workflow.workflow.build_conf", workflow.pk)
 
-            # THEN reload backend/frontend configuration files (SPOE conf needs to be up-to-date)
+            # THEN reload backend/frontend configuration files
             workflow.backend.reload_conf()
             workflow.frontend.reload_conf()
 

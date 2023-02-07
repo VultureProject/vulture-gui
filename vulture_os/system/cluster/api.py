@@ -165,8 +165,6 @@ def cluster_add(request):
         new_node.api_request("gui.crontab.feed.security_update")
 
         logger.debug("API call to configure HAProxy")
-        # Reload/Build portals configurations
-        Cluster.api_request("services.haproxy.haproxy.build_portals_conf")
         # Reload/Build backend configurations
         for backend in Backend.objects.all():
             backend.save_conf()
