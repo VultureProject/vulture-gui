@@ -198,6 +198,7 @@ class Workflow(models.Model):
             'frontend': self.frontend,
             'backend': self.backend,
             'authentication': self.authentication.to_template() if self.authentication else None,
+            'openid_client_ids': [repo.get_daughter().client_id for repo in self.authentication.repositories.filter(subtype="openid")] if self.authentication else [],
             'disconnect_url': self.get_disconnect_url()
         }
 

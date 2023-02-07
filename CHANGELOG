@@ -6,16 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [2.4.0] - Unreleased
-### Changed
-- [IDP] [API] Return a generic 400 when the requested portal/repo/user doesn't exist
 ### Removed
 - [FILES] Obsolete files (owned and used on vulture-base)
 - [HAPROXY] [CONFIG] Obsolete Frontend defender policy SPOE
 ### Added
 - [HAPROXY] [CONFIG] Added Redis main node proxying
 ### Changed
+- [IDP] [API] Return a generic 400 when the requested portal/repo/user doesn't exist
 - [HAPROXY] [TESTS] Improve validation tests by using a mock global file
-### Changed
+- [PORTAL] [SESSION_VALIDATION] Complete rework of session validation and simplification of underlying code
 - [PORTAL] [CONFIG] Improve URL rewriting logic on authenticated workflows when user is not connected
 
 

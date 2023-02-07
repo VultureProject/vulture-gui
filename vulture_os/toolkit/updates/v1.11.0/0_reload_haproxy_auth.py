@@ -34,7 +34,8 @@ import django
 from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster, Node
+from services.frontend.models import Frontend
+from system.cluster.models import Cluster
 from workflow.models import Workflow
 from authentication.user_portal.models import UserAuthentication
 
@@ -53,9 +54,10 @@ if __name__ == "__main__":
                 node.api_request("workflow.workflow.build_conf", workflow.pk)
                 print("Workflow {} conf reload asked".format(workflow))
 
-            print("Reloading static Haproxy portal configuration")
-            node.api_request("services.haproxy.haproxy.build_portals_conf")
-            node.api_request("services.haproxy.haproxy.reload_service")
+            print("Reloading Haproxy authentication configuration files")
+            for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():
+                frontend.reload_conf()
+            node.api_request("services.haproxy.haproxy.configure_node")
 
         except Exception as e:
             print("Failed to update authentication related configurations: {}".format(e))

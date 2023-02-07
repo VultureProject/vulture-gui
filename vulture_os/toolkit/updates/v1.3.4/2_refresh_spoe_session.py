@@ -34,7 +34,8 @@ import django
 from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster, Node
+from services.frontend.models import Frontend
+from system.cluster.models import Cluster
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
@@ -47,6 +48,9 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
         try:
+            # Reload all frontends with authenticated workflows
+            for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():
+                frontend.reload_conf()
             node.api_request("services.haproxy.haproxy.configure_node")
             print("Reload of spoe session configuration asked.")
         except Exception as e:

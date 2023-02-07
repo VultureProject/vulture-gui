@@ -48,8 +48,6 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            node.api_request("services.haproxy.haproxy.build_spoe_conf")
-
             # reload all Frontends with an Haproxy configuration
             for frontend in Frontend.objects.filter(mode__in=["http", "tcp"]):
                 node.api_request("services.haproxy.haproxy.build_conf", frontend.id)

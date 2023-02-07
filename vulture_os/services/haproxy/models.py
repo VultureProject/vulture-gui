@@ -27,7 +27,7 @@ from django.conf import settings
 from djongo import models
 
 # Django project imports
-from system.cluster.models import Cluster
+from system.cluster.models import Cluster, Node
 
 # Required exceptions imports
 
@@ -54,29 +54,22 @@ class HAProxySettings(models.Model):
         endpoints = list()
 
         for workflow in Workflow.objects.filter(authentication__isnull=False):
-            endpoint = {
+            endpoints.append({
                 "id": workflow.id,
                 "name": workflow.name,
                 "fqdn": workflow.fqdn,
                 "public_dir": workflow.public_dir,
-                "auth_timeout": workflow.authentication.auth_timeout if workflow.authentication.enable_timeout_restart else 0,
-                "oauth_repositories_id": list()
-            }
+                "auth_timeout": workflow.authentication.auth_timeout if workflow.authentication.enable_timeout_restart else 0
+            })
 
-            # Add openid repositories' client_id for validation of oauth token from those repositories on this endpoint
-            for repo in workflow.authentication.repositories.filter(subtype="openid"):
-                repo = repo.get_daughter()
-                endpoint['oauth_repositories_id'].append(repo.client_id)     
-
-            # Add the endpoint's portal to the authorized sources of oauth token (if oauth is enabled on it)
-            if workflow.authentication.enable_oauth:
-                endpoint['oauth_repositories_id'].append(workflow.authentication.oauth_client_id)
-
-            endpoints.append(endpoint)
+        my_node = Cluster.get_current_node()
+        other_nodes = Node.objects.exclude(name=my_node.name)
 
         return {
             'global_config': Cluster.get_global_config(),
-            'endpoints': endpoints
+            'endpoints': endpoints,
+            'my_node': my_node,
+            'other_nodes': other_nodes
         }
 
     def __str__(self):
