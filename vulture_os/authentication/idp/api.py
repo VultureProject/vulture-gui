@@ -651,21 +651,21 @@ class IDPApiUserTokenView(View):
             return JsonResponse({
                 "status": False,
                 "error": _("Portal does not exist")
-            }, status=404)
+            }, status=400)
         except BaseRepository.DoesNotExist:
             logger.warning(f"IDPApiUserTokenView::POST:: "
                             f"Tried to access unknown resource: repo {repo_id or repo_name}")
             return JsonResponse({
                 "status": False,
                 "error": _("Repository does not exist")
-            }, status=404)
+            }, status=400)
         except UserDoesntExistError as e:
             logger.warning(f"IDPApiUserTokenView::POST:: "
                             f"Tried to access unknown resource: user {e.user_dn}")
             return JsonResponse({
                 "status": False,
                 "error": _("User does not exist")
-            }, status=404)
+            }, status=400)
         except ActionForbiddenException as e:
             logger.warning(f"IDPApiUserTokenView::POST:: {str(e)}")
             return JsonResponse({
@@ -737,21 +737,21 @@ class IDPApiUserTokenModificationView(View):
             return JsonResponse({
                 "status": False,
                 "error": _("Portal does not exist")
-            }, status=404)
+            }, status=400)
         except BaseRepository.DoesNotExist:
             logger.warning(f"IDPApiUserTokenModificationView::PATCH:: Tried to access unknown resource: "
                             f"repo {repo_id or repo_name}")
             return JsonResponse({
                 "status": False,
                 "error": _("Repository does not exist")
-            }, status=404)
+            }, status=400)
         except UserDoesntExistError as e:
             logger.warning(f"IDPApiUserTokenModificationView::PATCH:: "
                             f"Tried to access unknown resource: user {e.user_dn}")
             return JsonResponse({
                 "status": False,
                 "error": _("User does not exist")
-            }, status=404)
+            }, status=400)
         except ActionForbiddenException as e:
             logger.warning(f"IDPApiUserTokenModificationView::PATCH:: {str(e)}")
             return JsonResponse({
@@ -817,21 +817,21 @@ class IDPApiUserTokenModificationView(View):
             return JsonResponse({
                 "status": False,
                 "error": _("Portal does not exist")
-            }, status=404)
+            }, status=400)
         except BaseRepository.DoesNotExist:
             logger.warning(f"IDPApiUserTokenModificationView::DELETE:: "
                             f"Tried to access unknown resource: repo {repo_id or repo_name}")
             return JsonResponse({
                 "status": False,
                 "error": _("Repository does not exist")
-            }, status=404)
+            }, status=400)
         except UserDoesntExistError as e:
             logger.warning(f"IDPApiUserTokenModificationView::DELETE:: "
                             f"Tried to access unknown resource: user {e.user_dn}")
             return JsonResponse({
                 "status": False,
                 "error": _("User does not exist")
-            }, status=404)
+            }, status=400)
         except ActionForbiddenException as e:
             logger.warning(f"IDPApiUserTokenModificationView::DELETE:: {str(e)}")
             return JsonResponse({
