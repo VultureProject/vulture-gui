@@ -115,10 +115,10 @@ class CybereasonParser(ApiParser):
 
             try:
                 response = self.session.request(
-                    method=method, 
-                    url=url, 
-                    json=query, 
-                    headers=header, 
+                    method=method,
+                    url=url,
+                    json=query,
+                    headers=header,
                     data=data,
                     proxies=self.proxies
                 )
@@ -146,10 +146,10 @@ class CybereasonParser(ApiParser):
     def test(self):
         try:
             status, observer_version = self.get_appliance_version()
-            # Assert status is True, otherwize return error
+            # Assert status is True, otherwise return error
             assert status, observer_version
-            
-            # Get logs from last 7 days            
+
+            # Get logs from last 7 days
             to = timezone.now()
             since = (to - timedelta(days=7))
 
@@ -215,7 +215,7 @@ class CybereasonParser(ApiParser):
                 "domain": devices.get("fqdn", '-'),
                 "domainFqdn": devices.get("organization", '-')
             }]
-        
+
         return alert
 
     def get_appliance_version(self):
@@ -337,7 +337,7 @@ class CybereasonParser(ApiParser):
         status, observer_version = self.get_appliance_version()
         if not status:
             raise CybereasonAPIError("Failed to retrieve console version : {}".format(observer_version))
-        
+
         # Default timestamp is 24 hours ago
         since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
         to = min(timezone.now(), since + timedelta(hours=24))
@@ -345,11 +345,11 @@ class CybereasonParser(ApiParser):
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        logs = self.get_logs(since, to)  
+        logs = self.get_logs(since, to)
 
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
-        
+
         enriched_logs = [self.format_log(self.addEnrichment(log)) for log in logs['malops']]
 
         self.write_to_file(enriched_logs)
