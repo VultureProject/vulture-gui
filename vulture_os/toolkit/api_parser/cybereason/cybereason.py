@@ -112,8 +112,16 @@ class CybereasonParser(ApiParser):
         retry = 3
         while (retry > 0):
             retry -= 1
+
             try:
-                response = self.session.request(method=method, url=url, json=query, headers=header, data=data)
+                response = self.session.request(
+                    method=method, 
+                    url=url, 
+                    json=query, 
+                    headers=header, 
+                    data=data,
+                    proxies=self.proxies
+                )
             except requests.exceptions.ReadTimeout:
                 time.sleep(timeout)
                 continue
@@ -125,7 +133,6 @@ class CybereasonParser(ApiParser):
                 continue
             break  # no error we break from the loop
 
-        # response.raise_for_status()
         if response == None or response.status_code != 200:
             if (response == None):
                 msg = f"Error Cybereason API Call URL: {url} [TIMEOUT]"
@@ -144,14 +151,15 @@ class CybereasonParser(ApiParser):
             # Get logs from last 7 days
             
             to = timezone.now()
-            since = (to - timedelta(days=7))
+            since = (to - timedelta(days=1))
 
             logs = self.get_logs(since, to)
             msg = f"{len(logs)} alert(s) retrieved"
             logger.info(f"[{__parser__}]:test: {msg}", extra={'frontend': str(self.frontend)})
+
             return {
                 "status": True,
-                "data": logs
+                "data": json.dumps(logs)
             }
         except Exception as e:
             logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
@@ -332,7 +340,7 @@ class CybereasonParser(ApiParser):
         
         # Default timestamp is 24 hours ago
         since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
-        to = min(timezone.now(), since + timedelta(hours=24))
+        to = min(timezone.now(), since + timedelta(hours=72))
 
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
