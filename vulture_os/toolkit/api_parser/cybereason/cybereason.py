@@ -148,10 +148,10 @@ class CybereasonParser(ApiParser):
             status, observer_version = self.get_appliance_version()
             # Assert status is True, otherwize return error
             assert status, observer_version
-            # Get logs from last 7 days
             
+            # Get logs from last 7 days            
             to = timezone.now()
-            since = (to - timedelta(days=1))
+            since = (to - timedelta(days=7))
 
             logs = self.get_logs(since, to)
             msg = f"{len(logs)} alert(s) retrieved"
@@ -340,7 +340,7 @@ class CybereasonParser(ApiParser):
         
         # Default timestamp is 24 hours ago
         since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
-        to = min(timezone.now(), since + timedelta(hours=72))
+        to = min(timezone.now(), since + timedelta(hours=24))
 
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
