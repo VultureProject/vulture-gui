@@ -145,10 +145,6 @@ class CybereasonParser(ApiParser):
 
     def test(self):
         try:
-            status, observer_version = self.get_appliance_version()
-            # Assert status is True, otherwise return error
-            assert status, observer_version
-
             # Get logs from last 7 days
             to = timezone.now()
             since = (to - timedelta(days=7))
@@ -217,14 +213,6 @@ class CybereasonParser(ApiParser):
             }]
 
         return alert
-
-    def get_appliance_version(self):
-        version_url = f"{self.host}/{self.APP_VERSION_URI}"
-        try:
-            ret = self.execute_query("GET", version_url, {})
-            return True, ret['data']['version']
-        except Exception as e:
-            return False, str(e)
 
     def getComments(self, alertMalopId):
 
@@ -333,11 +321,6 @@ class CybereasonParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-        # Retrieve version of cybereason console
-        status, observer_version = self.get_appliance_version()
-        if not status:
-            raise CybereasonAPIError("Failed to retrieve console version : {}".format(observer_version))
-
         # Default timestamp is 24 hours ago
         since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
         to = min(timezone.now(), since + timedelta(hours=24))
