@@ -105,7 +105,7 @@ class CybereasonParser(ApiParser):
         except Exception as err:
             raise CybereasonAPIError(err)
 
-    def execute_query(self, method, url, query=None, header=HEADERS, data=None, timeout=10):
+    def execute_query(self, method, url, query=None, header=HEADERS, data=None, sleepretry=10):
         self._connect()
 
         response = None
@@ -123,13 +123,13 @@ class CybereasonParser(ApiParser):
                     proxies=self.proxies
                 )
             except requests.exceptions.ReadTimeout:
-                time.sleep(timeout)
+                time.sleep(sleepretry)
                 continue
             except requests.exceptions.ConnectionError:
-                time.sleep(timeout)
+                time.sleep(sleepretry)
                 continue
             if response.status_code != 200:
-                time.sleep(timeout)
+                time.sleep(sleepretry)
                 continue
             break  # no error we break from the loop
 
