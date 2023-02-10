@@ -110,7 +110,7 @@ class CybereasonParser(ApiParser):
 
         response = None
         retry = 3
-        while (retry > 0):
+        while (retry > 0 and not self.event_stop.is_set()):
             retry -= 1
 
             try:
