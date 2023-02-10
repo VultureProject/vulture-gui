@@ -151,9 +151,9 @@ class CybereasonParser(ApiParser):
 
     def test(self):
         try:
-            # Get logs from last 7 days
+            # Get logs from last 2 days
             to = timezone.now()
-            since = (to - timedelta(days=7))
+            since = (to - timedelta(days=2))
 
             logs = self.get_logs(since, to)
             msg = f"{len(logs)} alert(s) retrieved"
@@ -194,18 +194,16 @@ class CybereasonParser(ApiParser):
         alert['url'] = self.host
         alert['suspicion_list'] = self.suspicions(alert['id'])
         devicesNames = [machine['displayName'] for machine in alert['machines']]
+        # Keep only 100 devices
+        devicesNames = devicesNames[:100]
         alertDevicesDetails = self.getDevicesDetails(devicesNames)
 
         alert['devices'] = []
         for devices in alertDevicesDetails:
             alert['devices'] += [{
-                "nat": {
-                    "ip": devices.get("internalIpAddress", '-'),
-                },
+                "nat_ip": devices.get("internalIpAddress", '-'),
                 "hostname": devices.get("machineName", '-'),
-                "os": {
-                    "full": devices.get("osVersionType", '-')
-                },
+                "os_full": devices.get("osVersionType", '-'),
                 "ip": devices.get("externalIpAddress", '-'),
                 "id": devices.get("sensorId", '-'),
                 "policy": devices.get("policyName", '-'),
@@ -217,6 +215,8 @@ class CybereasonParser(ApiParser):
                 "domain": devices.get("fqdn", '-'),
                 "domainFqdn": devices.get("organization", '-')
             }]
+
+        alert['machines'] = []
 
         return alert
 
@@ -335,11 +335,12 @@ class CybereasonParser(ApiParser):
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         logs = self.get_logs(since, to)
-
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
 
         enriched_logs = [self.format_log(self.addEnrichment(log)) for log in logs['malops']]
+        # Enriching may take some while, so refresh token in Redis
+        self.update_lock()
 
         self.write_to_file(enriched_logs)
         # Writting may take some while, so refresh token in Redis
