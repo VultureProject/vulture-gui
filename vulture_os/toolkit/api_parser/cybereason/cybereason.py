@@ -123,12 +123,18 @@ class CybereasonParser(ApiParser):
                     proxies=self.proxies
                 )
             except requests.exceptions.ReadTimeout:
+                msg = f"ReadTimeout, waiting {sleepretry}s before retrying"
+                logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleepretry)
                 continue
             except requests.exceptions.ConnectionError:
+                msg = f"ConnectionError, waiting {sleepretry}s before retrying"
+                logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleepretry)
                 continue
             if response.status_code != 200:
+                msg = f"Status Code {response.status_code}, waiting {sleepretry}s before retrying"
+                logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleepretry)
                 continue
             break  # no error we break from the loop
