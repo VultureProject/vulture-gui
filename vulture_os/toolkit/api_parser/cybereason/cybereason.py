@@ -229,17 +229,17 @@ class CybereasonParser(ApiParser):
         }
         return self.execute_query(method="POST", url=url_alert_malop_comments, data=alertMalopId, header=header)
 
-    def suspicions(self, malop_id):
+    def suspicions(self, alertId):
 
         if not (len(self.DESC_TRANSLATION) > 0):
             url = self.host + "/" + self.DESCRIPTION_URI
             self.DESC_TRANSLATION = self.execute_query("GET", url)
 
-        status, suspicions_process = self.suspicionsProcess(malop_id)
+        status, suspicions_process = self.suspicionsProcess(alertId)
         if not status:
             return []
 
-        status, suspicions_network = self.suspicionsNetwork(malop_id)
+        status, suspicions_network = self.suspicionsNetwork(alertId)
         if not status:
             return []
 
@@ -247,12 +247,12 @@ class CybereasonParser(ApiParser):
         suspicions.extend([key for key in suspicions_network['data']['suspicionsMap'].keys()])
         return suspicions
 
-    def suspicionsProcess(self, malopId):
+    def suspicionsProcess(self, alertId):
         # cyb.suspicions('11.-2981478659050288999')
         query = {
             "queryPath": [{
                 "requestedType": "MalopProcess",
-                "guidList": [malopId],
+                "guidList": [alertId],
                 "connectionFeature": {
                     "elementInstanceType": "MalopProcess",
                     "featureName": "suspects"
@@ -275,12 +275,12 @@ class CybereasonParser(ApiParser):
             return False, data['message']
         return True, data
 
-    def suspicionsNetwork(self, malopId):
+    def suspicionsNetwork(self, alertId):
         query = {
             "queryPath": [{
                 "requestedType": "MalopProcess",
                 "filters": [],
-                "guidList": [malopId],
+                "guidList": [alertId],
                 "connectionFeature": {
                     "elementInstanceType": "MalopProcess",
                     "featureName": "suspects"
@@ -310,13 +310,13 @@ class CybereasonParser(ApiParser):
             return False, data['message']
         return True, data
 
-    def getDevicesDetails(self, devices_ids):
+    def getDevicesDetails(self, devicesIds):
         sensors_url = f"{self.host}/{self.SENSOR_URI}"
         query = {
             'sortDirection': 'ASC',
             'sortingFieldName': 'machineName',
             'filters': [
-                {'fieldName': "machineName", 'operator': "ContainsIgnoreCase", 'values': devices_ids},
+                {'fieldName': "machineName", 'operator': "ContainsIgnoreCase", 'values': devicesIds},
                 {"fieldName": "status", "operator":"NotEquals", "values":["Archived"]}
             ]
         }
