@@ -105,7 +105,7 @@ class CybereasonParser(ApiParser):
         except Exception as err:
             raise CybereasonAPIError(err)
 
-    def execute_query(self, method, url, query=None, header=HEADERS, data=None, sleepretry=10):
+    def execute_query(self, method, url, query=None, header=HEADERS, data=None, sleepretry=10, timeout=10):
         self._connect()
 
         response = None
@@ -120,7 +120,8 @@ class CybereasonParser(ApiParser):
                     json=query,
                     headers=header,
                     data=data,
-                    proxies=self.proxies
+                    proxies=self.proxies,
+                    timeout=timeout
                 )
             except requests.exceptions.ReadTimeout:
                 msg = f"ReadTimeout, waiting {sleepretry}s before retrying"
@@ -191,12 +192,22 @@ class CybereasonParser(ApiParser):
         else:
             alert['kind'] = 'malwares'
 
+        # Requesting may take some while, so refresh token in Redis
+        self.update_lock()
+
         alert['url'] = self.host
         alert['suspicion_list'] = self.suspicions(alert['id'])
         devicesNames = [machine['displayName'] for machine in alert['machines']]
+
+        # Requesting may take some while, so refresh token in Redis
+        self.update_lock()
+
         # Keep only 100 devices
         devicesNames = devicesNames[:100]
         alertDevicesDetails = self.getDevicesDetails(devicesNames)
+
+        # Requesting may take some while, so refresh token in Redis
+        self.update_lock()
 
         alert['devices'] = []
         for devices in alertDevicesDetails:
