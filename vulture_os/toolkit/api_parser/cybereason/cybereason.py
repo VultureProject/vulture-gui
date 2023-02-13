@@ -180,7 +180,7 @@ class CybereasonParser(ApiParser):
             "endTime": int(to.timestamp()) * 1000
         }
 
-        return self.execute_query("POST", url_alert, query)
+        return self.execute_query("POST", url_alert, query, timeout=30)
 
     def addEnrichment(self, alert):
 
@@ -338,8 +338,9 @@ class CybereasonParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-        # Default timestamp is 24 hours ago
+        # Get last api call or 30 days ago
         since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
+        # 24h max per request
         to = min(timezone.now(), since + timedelta(hours=24))
 
         msg = f"Parser starting from {since} to {to}"
