@@ -174,13 +174,10 @@ def cluster_edit(request, object_id, api=False, update=False):
         if ip_changed:
             Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (node.name, node.management_ip))
             RC_FILENAME = "network"
-            node.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "internet_ip", node.internet_ip))
-            node.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "backends_outgoing_ip", node.backends_outgoing_ip))
-            node.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "logom_outgoing_ip", node.logom_outgoing_ip))
-            node.api_request("services.apache.apache.reload_service")
-            res = node.write_management_ip()
-            if not res.get('status'):
-                return render_form(save_error=res.get('message'))
+            node.api_request('toolkit.system.rc.call_set_rc_config', (RC_FILENAME, "management_ip", node.management_ip))
+            node.api_request('toolkit.system.rc.call_set_rc_config', (RC_FILENAME, "internet_ip", node.internet_ip))
+            node.api_request('toolkit.system.rc.call_set_rc_config', (RC_FILENAME, "backends_outgoing_ip", node.backends_outgoing_ip))
+            node.api_request('toolkit.system.rc.call_set_rc_config', (RC_FILENAME, "logom_outgoing_ip", node.logom_outgoing_ip))
 
         if pstats_forwarders_changed:
             node.api_request("services.rsyslogd.rsyslog.configure_pstats")

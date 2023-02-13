@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'System rc configuration manipulation'
 
 import os
+import re
 from ast import literal_eval
 
 # External modules imports
@@ -30,49 +31,62 @@ import subprocess
 
 RC_PATH ="/etc/rc.conf.d/"
 
-def get_rc_config(logger, rc_args):
+def get_rc_config(variable=None, filename=None, flags=[]):
     """Retrieve the value of a variable in rc configuration. If no file
     is specified, /etc/rc.conf is checked.
 
-    :param logger:      API logger (to be called by an API request)
-    :param rc_args:     A tuple containing filename, variable
+    :param  variable:       The name of the variable to get from sysrc
+                            If none is specified (default), the command will return all non-default values
+            filename:       The file to fetch with sysrc in the /etc/rc.conf.d/ directory (don't specify path)
+                            by default, sysrc fetches in /etc/rc.conf
+            flags:          an optional set of flags and instructions to pass to sysrc
+                            by default, '-n' is set to only return value
+                            see 'man sysrc' to get details on availabe flags and modifiers
 
-    :return: The value of the variable in rc configuration. If the
-    file specified or the variable does not exist, an empty string is returned.
+    :return:    a Tuple with
+                    - The status of the query (True if successful, False otherwise)
+                    - a string representing the direct result of sysrc's stdout
 
     Note: If used over node API request, use await_result function
     on the instance return in the API response to get the response
     """
-    if isinstance(rc_args, str):
-        filename, variable = literal_eval(rc_args)
+
+    command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc']
+    if filename:
+        command.extend(['-f', os.path.join(RC_PATH, filename)])
+
+    if flags:
+        command.extend(flags)
     else:
-        filename, variable = rc_args
+        command.append('-n')
+
+    if variable:
+        command.append(variable)
 
     try:
-        command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc']
-        if filename:
-          file_path = os.path.join(RC_PATH, filename)
-          command.extend(['-f', file_path])
-        command.extend(['-n', variable])
         result = subprocess.run(command, capture_output=True)
-        return result.stdout.decode("utf8").strip()
-
+        result = result.stdout.decode('utf8')
+        return True, result.strip()
     except Exception as e:
-        logger.error("set_rc_config: {}".format(e))
-        return False
+        return False, str(e)
 
-def set_rc_config(logger, rc_args):
+
+def set_rc_config(variable, value, filename=None):
     """Set or update value of a variable in rc configuration. If no file
     is specified, it is put in /etc/rc.conf. If the file specified does not
     exist, it is created by sysrc.
-    :param logger:      API logger (to be called by an API request)
-    :param rc_args:     A tuple containing file name, variable and value
-    :return: True for success and False for a fail
+
+    :param  variable:       The name of the variable to set
+            value:          The value to give to the variable
+            filename:       The file to use with sysrc in the /etc/rc.conf.d/ directory (don't specify path)
+                            by default, sysrc writes in /etc/rc.conf
+
+    :return: a tuple with
+                - True for success and False on failure
+                - an empty string on success, the error string on failure
     """
-    if isinstance(rc_args, str):
-        filename, variable, value = literal_eval(rc_args)
-    else:
-        filename, variable, value = rc_args
+
+
 
     try:
         command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc']
@@ -83,11 +97,72 @@ def set_rc_config(logger, rc_args):
         proc = subprocess.Popen(command,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         res, errors = proc.communicate()
         if not errors:
-            return True
+            return True, ""
         else:
-            logger.error("set_rc_config: Failed to call script {} : {}".format(command, errors))
-            return False
+            return False, "Failed to call script {} : {}".format(command, errors)
 
     except Exception as e:
-        logger.error("set_rc_config: {}".format(e))
+        return False, str(e)
+
+
+def remove_rc_config(variable_regexp, filename=None):
+    """Remove variable(s) in an rc configuration. the parameter is a regex that will be used to filter
+            existing variables in the pointed file. Default file used is /etc/rc.conf
+
+    :param  variable_regexp:    The regexp of the variable(s) to remove/unset from the file
+            filename:       The file to use with sysrc in the /etc/rc.conf.d/ directory (don't specify path)
+                            by default, sysrc uses in /etc/rc.conf
+
+    :return: a Tuple with the results of the operation
+                - True and a list of removed parameters in case of success
+                - False and an error string in case of error
+    """
+
+    pattern = re.compile(variable_regexp)
+
+    if filename:
+        fullpath = os.path.join(RC_PATH, filename)
+    else:
+        fullpath = "/etc/rc.conf"
+    list_command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc', '-aN', '-f', fullpath]
+
+    try:
+        result = subprocess.run(list_command, capture_output=True)
+        result = result.stdout.decode('utf8')
+        # Get a clean list of set parameters in the file
+        params = result.strip().split()
+    except Exception as e:
+        return False, f"Failed to list existing variables in file {fullpath}: {str(e)}"
+
+    # Filter raw data to get only variables matching regexp
+    filtered_params = list(filter(lambda param: pattern.match(param), params))
+
+    remove_command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc', '-f', fullpath, '-ix']
+    remove_command.extend(filtered_params)
+    try:
+        result = subprocess.check_output(remove_command)
+    except Exception as e:
+        return False, f"Failed to remove existing variables in file {fullpath}: {str(e)}"
+
+    return True, filtered_params
+
+
+def call_set_rc_config(logger, rc_args):
+    """Made to be called by a Cluster/Node api_request()
+        Will call set_rc_config
+
+    :param logger:      API logger
+    :param rc_args:     A tuple containing file name, variable and value
+    :return: True for success and False for a fail
+    """
+    if isinstance(rc_args, str):
+        filename, variable, value = literal_eval(rc_args)
+    else:
+        filename, variable, value = rc_args
+
+    status, result = set_rc_config(variable=variable, value=value, filename=filename)
+    if status:
+        return True
+    else:
+        logger.error(f"set_rc_config: Failed to call script: {result}")
         return False

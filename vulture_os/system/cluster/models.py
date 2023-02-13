@@ -267,15 +267,6 @@ class Node(models.Model):
 
         return False
 
-    def write_management_ip(self):
-        """ Write self.management_ip in management_ip variable in /etc/rc.conf.d/network """
-        RC_FILENAME ="network"
-        api_res = self.api_request('toolkit.system.rc.set_rc_config', (RC_FILENAME, "management_ip", self.management_ip))
-        """ Returns the messagequeue status with an error message if failed """
-        return {
-            "status": api_res.get("status"),
-            "message": "" if api_res.get("status") else "Failed to write Management IP"
-        }
 
     def addresses(self, nic=None):
         """

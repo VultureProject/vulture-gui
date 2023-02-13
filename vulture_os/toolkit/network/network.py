@@ -23,6 +23,8 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'System Utils Network Toolkit'
 
 
+from toolkit.system.rc import get_rc_config
+
 from iptools.ipv4 import netmask2prefix
 from ast import literal_eval
 import subprocess
@@ -77,13 +79,13 @@ def get_management_ip():
 
     :return: The Management IP address of the node, as defined during bootstrap
     """
-    from toolkit.system.rc import get_rc_config
-    management_ip = get_rc_config(logger,("network","management_ip"))
+
+    success, management_ip = get_rc_config(filename="network", variable="management_ip")
     logger.debug(f"get_management_ip: result is '{management_ip}'")
-    if management_ip:
+    if success:
         return management_ip
 
-    return False
+    return None
 
 
 def get_proxy(openvpn_format=False):

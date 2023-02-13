@@ -74,12 +74,12 @@ def cluster_create(admin_user=None, admin_password=None):
 
     if new_node:
         logger.info("Registering new node '{}'".format(node.name))
-        internet_ip = get_rc_config(logger,(RC_NETWORK_CONF, "internet_ip"))
-        node.internet_ip = internet_ip if internet_ip else node.management_ip
-        backends_outgoing_ip = get_rc_config(logger,(RC_NETWORK_CONF, "backends_outgoing_ip"))
-        node.backends_outgoing_ip = backends_outgoing_ip if backends_outgoing_ip else node.management_ip
-        logom_outgoing_ip = get_rc_config(logger,(RC_NETWORK_CONF, "logom_outgoing_ip"))
-        node.logom_outgoing_ip = logom_outgoing_ip if logom_outgoing_ip else node.management_ip
+        success, internet_ip = get_rc_config(filename=RC_NETWORK_CONF, variable="internet_ip")
+        node.internet_ip = internet_ip if success else node.management_ip
+        success, backends_outgoing_ip = get_rc_config(filename=RC_NETWORK_CONF, variable="backends_outgoing_ip")
+        node.backends_outgoing_ip = backends_outgoing_ip if success else node.management_ip
+        success, logom_outgoing_ip = get_rc_config(filename=RC_NETWORK_CONF, variable="logom_outgoing_ip")
+        node.logom_outgoing_ip = logom_outgoing_ip if success else node.management_ip
         node.save()
 
     """ Read network config and store it into mongo """
