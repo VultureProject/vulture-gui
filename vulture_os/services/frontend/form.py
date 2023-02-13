@@ -419,7 +419,7 @@ class FrontendForm(ModelForm):
             'cortex_xdr_apikey': TextInput(attrs={'class': 'form-control'}),
             'cybereason_host': TextInput(attrs={'class': 'form-control'}),
             'cybereason_username': TextInput(attrs={'class': 'form-control'}),
-            'cybereason_password': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'cisco_meraki_apikey': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_tap_host': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_tap_endpoint': Select(attrs={'class': 'form-control select2'}),
