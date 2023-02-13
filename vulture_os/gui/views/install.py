@@ -193,9 +193,6 @@ def cluster_create(admin_user=None, admin_password=None):
     DarwinPolicy.update_buffering()
     node.api_request("services.darwin.darwin.reload_all")
 
-    logger.debug("API call to configure Apache GUI")
-    node.api_request("services.apache.apache.reload_service")
-
     logger.debug("API call to configure Logrotate")
     node.api_request("services.logrotate.logrotate.reload_conf")
 

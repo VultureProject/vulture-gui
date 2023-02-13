@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - [FILES] Obsolete files (owned and used on vulture-base)
 - [HAPROXY] [CONFIG] Obsolete Frontend defender policy SPOE
+- [APACHE] Obsolete remaining functions relative to Apache
 ### Added
 - [HAPROXY] [CONFIG] Added Redis main node proxying
 ### Changed

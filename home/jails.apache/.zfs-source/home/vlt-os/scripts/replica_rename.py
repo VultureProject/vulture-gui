@@ -67,7 +67,6 @@ if __name__ == "__main__":
     logfwd.save()
 
     # Update node name in services config
-    Cluster.api_request("services.apache.apache.reload_service")
     Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
     Cluster.api_request("services.haproxy.haproxy.configure_node")
 
