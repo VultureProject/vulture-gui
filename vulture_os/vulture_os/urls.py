@@ -16,6 +16,12 @@ Including another URLconf
 
 from django.urls import path, re_path, include
 from django.conf.urls.i18n import i18n_patterns
+from django.views.defaults import bad_request as default_bad_request
+from django.views.defaults import permission_denied as default_permission_denied
+from django.views.defaults import page_not_found as default_page_not_found
+from django.views.defaults import server_error as default_server_error
+from django.http import JsonResponse
+from django.utils.translation import ugettext_lazy as _
 from django.views.i18n import JavaScriptCatalog
 from django.conf import settings
 
@@ -35,6 +41,47 @@ def get_urls(path):
 
     return urls
 
+
+def custom400(request, exception=None):
+    api_url = request.get_full_path().startswith("/api/")
+    if api_url:
+        return JsonResponse({
+            "error": _("Bad request")
+        }, status= 400)
+    else:
+        return default_bad_request(request, exception)
+
+def custom403(request, exception=None):
+    api_url = request.get_full_path().startswith("/api/")
+    if api_url:
+        return JsonResponse({
+            "error": _("Permission denied")
+        }, status= 403)
+    else:
+        return default_permission_denied(request, exception)
+
+def custom404(request, exception=None):
+    api_url = request.get_full_path().startswith("/api/")
+    if api_url:
+        return JsonResponse({
+            "error": _("Resource not found")
+        }, status= 404)
+    else:
+        return default_page_not_found(request, exception)
+
+def custom500(request):
+    api_url = request.get_full_path().startswith("/api/")
+    if api_url:
+        return JsonResponse({
+            "error": _("Server error")
+        }, status= 500)
+    else:
+        return default_server_error(request)
+
+handler400 = custom400
+handler403 = custom403
+handler404 = custom404
+handler500 = custom500
 
 urlpatterns = []
 

@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.http import HttpResponseForbidden
+from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from functools import wraps
 from system.cluster.models import Cluster
@@ -23,7 +23,7 @@ def api_need_key(key_name):
             if not isinstance(cls_or_request, HttpRequest):
                 if not isinstance(args[0], HttpRequest):
                     logger.error("API Call without request object : {} and {}".format(cls_or_request, request))
-                    return HttpResponseForbidden()
+                    raise PermissionDenied()
                 else:
                     request = args[0]
             else:
@@ -44,7 +44,7 @@ def api_need_key(key_name):
                 'API Call without valid API key. Method (%s): %s', request.method, request.path,
                 extra={'status_code': 405, 'request': request}
             )
-            return HttpResponseForbidden()
+            raise PermissionDenied()
 
         return inner
     return decorator

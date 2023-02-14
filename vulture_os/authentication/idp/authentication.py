@@ -25,7 +25,8 @@ __doc__ = 'IDP API AUTHENTICATION'
 import logging
 
 from django.conf import settings
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.core.exceptions import PermissionDenied
+from django.http import HttpRequest, JsonResponse
 from functools import wraps
 from django.utils.translation import ugettext_lazy as _
 from portal.system.redis_sessions import REDISOauth2Session, REDISBase
@@ -33,9 +34,9 @@ from portal.system.redis_sessions import REDISOauth2Session, REDISBase
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
-class HttpResponseUnauthorized(HttpResponse):
+class JsonResponseUnauthorized(JsonResponse):
     def __init__(self):
-        super().__init__('401 Unauthorized', status=401)
+        super().__init__({'error': 'Unauthorized'}, status=401)
         # if not hasattr(self, 'headers'):
         #     self.headers = {}
         self["WWW-Authenticate"] = "Please provide an 'Authorization' header with a valid token"
@@ -55,7 +56,7 @@ def api_check_authorization():
             if not isinstance(cls_or_request, HttpRequest):
                 if not isinstance(args[0], HttpRequest):
                     logger.error("API Call without request object : {} and {}".format(cls_or_request, request))
-                    return HttpResponseUnauthorized()
+                    return JsonResponseUnauthorized()
                 else:
                     request = args[0]
             else:
@@ -67,14 +68,14 @@ def api_check_authorization():
                     "API Call without valid 'Authorization' header. Method (%s): %s", request.method, request.path,
                     extra={'status_code': 401, 'request': request}
                 )
-                return HttpResponseUnauthorized()
+                return JsonResponseUnauthorized()
 
             api_key = api_key.replace("Bearer ", "")
 
             token = REDISOauth2Session(REDISBase(), f"oauth2_{api_key}")
             if not token.exists():
                 logger.warning(f"Invalid token in API call: {api_key}")
-                return HttpResponseForbidden()
+                raise PermissionDenied()
 
             request.auth_token = token
 
