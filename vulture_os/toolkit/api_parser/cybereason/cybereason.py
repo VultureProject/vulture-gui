@@ -340,6 +340,8 @@ class CybereasonParser(ApiParser):
 
     def format_log(self, log):
 
+        log['iconBase64'] = ""
+
         flattened_ip = []
         flattened_hostname = []
         flattened_domain = []
@@ -355,8 +357,9 @@ class CybereasonParser(ApiParser):
                flattened_domain.append(device['domain'])
 
         for user in log['users']:
-            if user['domain'] not in flattened_domain:
-                flattened_domain.append(user['domain'])
+            domain = (user['displayName']).split('\\')[0]
+            if domain not in flattened_domain:
+                flattened_domain.append(domain)
 
         log['flattened_ip'] = flattened_ip
         log['flattened_hostname'] = flattened_hostname
