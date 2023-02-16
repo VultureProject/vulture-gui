@@ -267,6 +267,19 @@ class Node(models.Model):
 
         return False
 
+    @property
+    def parsed_static_routes(self):
+        rc_pattern = re_compile(r"^([a-zA-Z0-9_-]+)\s?=\s?('|\")([^'\"]+)\2$")
+        for line in self.static_routes.split('\n'):
+            # Remove all commented parts
+            line = line.split('#')[0].strip()
+            if not line:
+                # Drop empty lines
+                continue
+            matched = rc_pattern.match(line)
+            if matched:
+                yield matched.group(1), matched.group(3)
+
 
     def addresses(self, nic=None):
         """
@@ -808,7 +821,10 @@ class NetworkAddress(models.Model):
         :param: force_dev: Optional NIC device. DO NOT USE except
                             you known what you are doing
         :param: is_system: If True, "alias" keyword is not present
-        :return: The rc.conf configuration line for this Network Address
+        :return: A Tuple containing
+                    - the name of the key to set/reset in rc.conf
+                    - its associated value to set
+
         """
 
         dev = None
@@ -834,7 +850,6 @@ class NetworkAddress(models.Model):
                 device = "{}".format(dev)
             else:
                 device = "{}_alias".format(dev)
-                device += '{}'
             inet = "{} {} vhid {} advskew {} pass {}".format(
                 self.family, self.ip_cidr,
                 self.carp_vhid, carp_priority, carp_passwd)
@@ -843,7 +858,6 @@ class NetworkAddress(models.Model):
                 device = "{}".format(dev)
             else:
                 device = "{}_alias".format(dev)
-                device += '{}'
 
             inet = "{} {}".format(self.family, self.ip_cidr)
             if self.fib and self.fib !=0:
@@ -854,7 +868,7 @@ class NetworkAddress(models.Model):
         if self.family == 'inet6':
             device += "_ipv6"
 
-        return 'ifconfig_{}="{}"'.format(device, inet)
+        return f'ifconfig_{device}', f'{inet}'
 
     def __str__(self):
         return "'{}' : {}/{}".format(

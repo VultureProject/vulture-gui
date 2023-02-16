@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'System Utils Network Toolkit'
 
 
-from toolkit.system.rc import get_rc_config
+from toolkit.system.rc import get_rc_config, set_rc_config, remove_rc_config
 
 from iptools.ipv4 import netmask2prefix
 from ast import literal_eval
@@ -337,27 +337,6 @@ def address_cleanup(logger):
                     logger.error(
                         "Node::address_cleanup(): {}".format(str(error)))
 
-                """ Delete the permanent configuration file """
-                for conf in glob.glob("/etc/rc.conf.d/netaliases*"):
-                    with open(conf, 'r') as f:
-                        delete = False
-                        for line in f:
-                            if nic.dev in line and str(ip) + "/" + str(prefix) in line and family in line:
-                                delete = True
-                                logger.debug("Node::address_cleanup(): Line to delete {}".format(line))
-
-                    if delete:
-                        logger.info("Node::address_cleanup(): Deleting {}".format(conf))
-                        proc = subprocess.Popen(['/usr/local/bin/sudo', '/bin/rm', conf],
-                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        success, error = proc.communicate()
-                        if error:
-                            logger.error("Node::address_cleanup(): {}".format(str(error)))
-                            ret = False
-                            continue
-                        else:
-                            logger.info("Node::address_cleanup() {}: Ok".format(conf))
-
     return ret
 
 
@@ -375,94 +354,75 @@ def write_network_config(logger):
 
     ret = True
 
-    i = 0
-    has_system = False
     for nic in NetworkInterfaceCard.objects.filter(node=node):
-        j = 0
+        # Remove all past aliases for interface before setting new ones in system confs
+        status, removed = remove_rc_config(f"ifconfig_{nic.dev}_alias")
+        logger.info(f"Node::write_network_config(): removed old aliases {removed} for interface {nic.dev}")
+        alias_num = 0
         for address_nic in NetworkAddressNIC.objects.filter(nic=nic):
             address = address_nic.network_address
 
             # Aliases address
             if address.is_system is False:
-                config = address.rc_config(nic.dev).format(j)
-                args = 'netaliases{}{}'.format(i, j)
-                loop = "0"
+                key, value = address.rc_config(nic.dev)
+                key = key + str(alias_num) # Append an index, as key defines an alias that must be numbered (ifconfig_<if>_alias<number>)
             else:
                 # System address
-                config = address.rc_config(nic.dev, True)
-                args = 'network'
-                if not has_system:
-                    loop = "0"
-                    has_system = True
-                else:
-                    loop = str(i + j)
-
-            try:
-                proc = subprocess.Popen([
-                    '/usr/local/bin/sudo', '/home/vlt-os/scripts/write_netconfig.sh',
-                    config,
-                    args,
-                    loop
-                ],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                success, error = proc.communicate()
-
-                if error:
-                    logger.error(
-                        "Node::write_network_config() {}:{}: {}".format(
-                            nic.dev, address.ip_cidr, str(error))
-                    )
-                    ret = False
-                    continue
-                else:
-                    j = j + 1
-                    logger.info(
-                        "Node::write_network_config() {}:{}: Ok".format(
-                            nic.dev, address.ip_cidr)
-                    )
-                    continue
-
-            except Exception as e:
-                logger.error("Node::write_network_config(): {}".format(str(e)))
+                key, value = address.rc_config(nic.dev, True)
+            
+            status, error = set_rc_config(variable=key, value=value)
+            if not status:
+                logger.error(
+                    "Node::write_network_config() {}:{}: {}".format(
+                        nic.dev, address.ip_cidr, str(error))
+                )
                 ret = False
                 continue
+            else:
+                alias_num += 1
+                logger.info(
+                    "Node::write_network_config() {}:{}: Ok".format(
+                        nic.dev, address.ip_cidr)
+                )
+                continue
 
-        i = i + 1
 
-    """ Network IP address are configured: Handle routing """
-    config = "_EOL"
-    config += "gateway_enable=\"YES\" _EOL"
-    config += "ipv6_gateway_enable=\"YES\" _EOL"
+    """ Network IP addresses are configured: Handle routing """
+    # Enable gateways
+    configs = [
+        ("gateway_enable", "YES"),
+        ("ipv6_gateway_enable", "YES"),
+    ]
+
+    # Set default routers
     if node.gateway:
-        config += "defaultrouter=\"{}\" _EOL".format(node.gateway)
-
+        configs.append(("defaultrouter", node.gateway))
     if node.gateway_ipv6:
-        config += "ipv6_defaultrouter=\"{}\" _EOL".format(node.gateway_ipv6)
+        configs.append(("ipv6_defaultrouter", node.gateway_ipv6))
 
-    if node.static_routes:
-        config += "{}_EOL".format(node.static_routes.replace("\n", "_EOL"))
+    # Get parsed static routes
+    for static_route in node.parsed_static_routes:
+        configs.append(static_route)
 
-    try:
-        proc = subprocess.Popen([
-            '/usr/local/bin/sudo', '/home/vlt-os/scripts/write_netconfig.sh',
-            config,
-            'routing',
-            str(0)
-        ],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        success, error = proc.communicate()
+    # Remove all past routing config
+    status, removed = remove_rc_config(f".*route.*")
+    logger.info(f"Node::write_network_config(): removed old routing configurations {removed}")
 
-        if error:
+    # Apply configurations
+    logger.info(f"Node::write_network_config(): setting new routing configuration {configs}")
+    for config in configs:
+        status, error = set_rc_config(variable=config[0], value=config[1])
+        if not status:
             logger.error(
-                "Node::write_network_config(routing) : {}".format(str(error))
+                f"Node::write_network_config(routing): {config[0]} -> {str(error)}"
             )
             ret = False
+            continue
         else:
-            logger.info("Node::write_network_config(routing) : Ok")
-
-    except Exception as e:
-        logger.error("Node::write_network_config(routing): {}".format(str(e)))
-        ret = False
+            logger.info(
+                f"Node::write_network_config(routing): {config[0]} -> Ok"
+            )
+            continue
 
     return ret
 

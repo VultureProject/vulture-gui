@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PORTAL] [CONFIG] Improve URL rewriting logic on authenticated workflows when user is not connected
 - [SYSTEM] [RC] rework/simplify rc scripts to get/set values from rc.conf
 - [DJANGO] [API] Override error responses to ensure API endpoints ('/api/*') return 'application/json' content
+- [SYSTEM] [NETWORK] Set/get IP/routing system configurations from /etc/rc.conf instead of /etc/rc.conf.d/network
 
 
 ## [2.3.0] - 2023-02-02
