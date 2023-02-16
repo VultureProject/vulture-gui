@@ -212,9 +212,13 @@ class CybereasonParser(ApiParser):
         alert['devices'] = []
         for devices in alertDevicesDetails:
             alert['devices'] += [{
-                "nat_ip": devices.get("internalIpAddress", '-'),
+                "nat": {
+                    "ip": devices.get("internalIpAddress", '-'),
+                },
                 "hostname": devices.get("machineName", '-'),
-                "os_full": devices.get("osVersionType", '-'),
+                "os": {
+                    "full": devices.get("osVersionType", '-')
+                },
                 "ip": devices.get("externalIpAddress", '-'),
                 "id": devices.get("sensorId", '-'),
                 "policy": devices.get("policyName", '-'),
@@ -335,6 +339,32 @@ class CybereasonParser(ApiParser):
         return data.get('sensors', [])
 
     def format_log(self, log):
+
+        log['iconBase64'] = ""
+
+        flattened_ip = []
+        flattened_hostname = []
+        flattened_domain = []
+
+        for device in log['devices']:
+            if device['ip'] not in flattened_ip:
+                flattened_ip.append(device['ip'])
+            if device['nat']['ip'] not in flattened_ip:
+                flattened_ip.append(device['nat']['ip'])
+            if device['hostname'] not in flattened_hostname:
+                flattened_hostname.append(device['hostname'])
+            if device['domain'] not in flattened_domain:
+               flattened_domain.append(device['domain'])
+
+        for user in log['users']:
+            domain = (user['displayName']).split('\\')[0]
+            if domain not in flattened_domain:
+                flattened_domain.append(domain)
+
+        log['flattened_ip'] = flattened_ip
+        log['flattened_hostname'] = flattened_hostname
+        log['flattened_domain'] = flattened_domain
+
         return json.dumps(log)
 
     def execute(self):
