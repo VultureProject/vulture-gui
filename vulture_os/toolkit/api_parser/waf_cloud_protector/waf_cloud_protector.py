@@ -300,6 +300,9 @@ class WAFCloudProtectorParser(ApiParser):
                         # Use mapping to convert lines to json format 
                         json_lines.append(self.parse_line(mapping, line.strip().encode('utf8')))
 
+                        # Refresh lock for each line
+                        self.update_lock()
+
                     # Send those lines to Rsyslog
                     self.write_to_file(json_lines)
                     # And update lock after sending lines to Rsyslog
