@@ -5,21 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [2.4.0] - Unreleased
+## [2.4.0] - 2023-02-16
 ### Removed
 - [FILES] Obsolete files (owned and used on vulture-base)
 - [HAPROXY] [CONFIG] Obsolete Frontend defender policy SPOE
 - [APACHE] Obsolete remaining functions relative to Apache
 ### Added
 - [HAPROXY] [CONFIG] Added Redis main node proxying
+- [API_PARSER] [CYBEREASON] New flattened fields (ips, hostnames, domains...)
+### Fixed
+- [API_PARSER] [CLOUDPROTECTOR] Prevent concurent executions of parser on system
 ### Changed
 - [IDP] [API] Return a generic 400 when the requested portal/repo/user doesn't exist
 - [HAPROXY] [TESTS] Improve validation tests by using a mock global file
 - [PORTAL] [SESSION_VALIDATION] Complete rework of session validation and simplification of underlying code
 - [PORTAL] [CONFIG] Improve URL rewriting logic on authenticated workflows when user is not connected
-- [SYSTEM] [RC] rework/simplify rc scripts to get/set values from rc.conf
+- [SYSTEM] [RC] rework/simplify rc scripts to get/set/remove values from rc.conf
 - [DJANGO] [API] Override error responses to ensure API endpoints ('/api/*') return 'application/json' content
 - [SYSTEM] [NETWORK] Set/get IP/routing system configurations from /etc/rc.conf instead of /etc/rc.conf.d/network
+- [API_PARSER] [CYBEREASON] Rework of parser for new API version
 
 
 ## [2.3.0] - 2023-02-02
