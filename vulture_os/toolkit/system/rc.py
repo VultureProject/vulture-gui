@@ -137,12 +137,13 @@ def remove_rc_config(variable_regexp, filename=None):
     # Filter raw data to get only variables matching regexp
     filtered_params = list(filter(lambda param: pattern.match(param), params))
 
-    remove_command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc', '-f', fullpath, '-ix']
-    remove_command.extend(filtered_params)
-    try:
-        result = subprocess.check_output(remove_command)
-    except Exception as e:
-        return False, f"Failed to remove existing variables in file {fullpath}: {str(e)}"
+    if filtered_params:
+        remove_command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc', '-f', fullpath, '-ix']
+        remove_command.extend(filtered_params)
+        try:
+            result = subprocess.check_output(remove_command)
+        except Exception as e:
+            return False, f"Failed to remove existing variables in file {fullpath}: {str(e)}"
 
     return True, filtered_params
 
