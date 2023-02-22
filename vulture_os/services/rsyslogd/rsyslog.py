@@ -106,7 +106,7 @@ def configure_node(node_logger):
     """ PF configuration for Rsyslog """
     pf_template = jinja2_env.get_template("pf.conf")
     write_conf(node_logger, ["{}/pf.conf".format(RSYSLOG_PATH),
-                             pf_template.render({'mongodb_uri': MongoBase.get_replicaset_uri()}),
+                             pf_template.render(),
                              RSYSLOG_OWNER, RSYSLOG_PERMS])
     result += "Rsyslog configuration 'pf.conf' written.\n"
 

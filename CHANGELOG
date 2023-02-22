@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [API_PARSER] Regularly scan processes to join to avoid accumulating zombies
+### Changed
+- [LOGGING] [PF] Don't send PF logs to mongodb anymore, log to /var/log/pf/parsed.log instead
 
 
 ## [2.4.0] - 2023-02-16
