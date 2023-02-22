@@ -20,14 +20,14 @@ old_version="$(/bin/cat /home/vlt-os/vulture_os/gui_old_version)"
 if [ -z "$old_version" ] ; then
     exit 0
 fi
-for update_dir in $(ls /home/vlt-os/vulture_os/toolkit/updates)
+for update_dir in /home/vlt-os/vulture_os/toolkit/updates/v*
 do
-    dir_version=$(echo "$update_dir" | cut -d 'v' -f 2)
+    dir_version=$(basename "$update_dir" | cut -d 'v' -f 2)
     # If old_version < dir_version && dir_version <= current_version
     if [ "$(pkg version --test-version "$old_version" "$dir_version")" == "<" -a "$(pkg version --test-version "$dir_version" "$(pkg query "%v" vulture-gui)" | grep -E "<|=")" ]
     then
-        /bin/chmod u+x /home/vlt-os/vulture_os/toolkit/updates/${update_dir}/*
+        /bin/chmod u+x /home/vlt-os/vulture_os/toolkit/updates/v${dir_version}/*
         # Use ls to sort files and execute them orderly
-        /bin/ls -1 /home/vlt-os/vulture_os/toolkit/updates/${update_dir}/* | while read line ; do echo "[+] Executing $line..." ; $line ; done
+        /bin/ls -1 /home/vlt-os/vulture_os/toolkit/updates/v${dir_version}/* | while read line ; do echo "[+] Executing $line..." ; $line ; done
     fi
 done
