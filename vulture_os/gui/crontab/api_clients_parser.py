@@ -27,6 +27,7 @@ from django.conf import settings
 from toolkit.api_parser.utils import get_api_parser
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
+from time import sleep
 from multiprocessing import Process
 
 import logging
@@ -83,9 +84,22 @@ def api_clients_parser():
 
     processes = []
     for frontend in api_clients_parser:
-        p = Process(target=execute_parser, args=(frontend.to_dict(),))
+        p = Process(target=execute_parser, name=frontend.name, args=(frontend.to_dict(),))
         p.start()
         processes.append(p)
 
-    for p in processes:
-        p.join()
+    some_alive = True
+    while some_alive:
+        finished = []
+        some_alive = False
+
+        sleep(1)
+
+        for p in processes:
+            p.join(0)
+            if p.is_alive():
+                some_alive = True
+            else:
+                finished.append(p)
+
+        processes = list(set(processes) - set(finished))
