@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ -f /etc/host-hostname ] ; then
+if /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vulture_os/manage.py check >/dev/null 2>&1; then
     /usr/sbin/service vultured status && /bin/kill -9 $(/bin/cat /var/run/vulture/vultured.pid)
     echo "[38;5;196m! WARNING ! - Please start vultured at the end of the upgrade[0m"
 
