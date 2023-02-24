@@ -201,7 +201,7 @@ LOG_SETTINGS = {
             'format': '%(levelname)s %(message)s'
         },
         'api_parser': {
-            'format': '%(asctime)s %(module)s:%(lineno)d [%(levelname)s][%(frontend)s] %(message)s'
+            'format': '%(asctime)s %(module)s:%(lineno)d [%(levelname)s][%(frontend)s][PID:%(process)d] %(message)s'
         }
     },
     'filters': {
