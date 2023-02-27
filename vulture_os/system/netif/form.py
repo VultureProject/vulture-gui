@@ -126,8 +126,8 @@ class NetIfForm(ModelForm):
             'ip': TextInput(attrs={'class': 'form-control'}),
             'carp_vhid': NumberInput(attrs={'class': 'form-control'}),
             'prefix_or_netmask': TextInput(attrs={'class': 'form-control'}),
-            'fib': TextInput(attrs={'class': 'form-control'}),
-            'vlan': TextInput(attrs={'class': 'form-control'})
+            'fib': NumberInput(attrs={'class': 'form-control'}),
+            'vlan': NumberInput(attrs={'class': 'form-control'})
         }
 
     def clean_prefix_or_netmask(self):

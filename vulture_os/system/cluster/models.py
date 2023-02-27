@@ -708,14 +708,14 @@ class NetworkAddress(models.Model):
     ip = models.GenericIPAddressField()
     prefix_or_netmask = models.TextField()
     is_system = models.BooleanField(default=False)
-    carp_vhid = models.SmallIntegerField(default=0)
-    vlan = models.SmallIntegerField(default=0)
+    carp_vhid = models.PositiveSmallIntegerField(default=0)
+    vlan = models.PositiveSmallIntegerField(default=0)
     vlandev = models.ForeignKey(to="NetworkInterfaceCard", null=True, blank=True,
                                 related_name='%(class)s_vlandev',
                                 on_delete=models.SET_NULL,
                                 help_text=_("Underlying NIC for VLAN"),
                                 verbose_name=_("Vlan device"))
-    fib = models.SmallIntegerField(default=0)
+    fib = models.PositiveSmallIntegerField(default=0)
 
     # Needed to make alambiquate mongodb queries
     objects = models.DjongoManager()
@@ -767,12 +767,6 @@ class NetworkAddress(models.Model):
     @property
     def is_carp(self):
         if self.carp_vhid > 0:
-            return True
-        return False
-
-    @property
-    def is_vlan(self):
-        if self.is_vlan > 0:
             return True
         return False
 
