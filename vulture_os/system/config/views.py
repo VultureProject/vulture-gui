@@ -77,12 +77,6 @@ def config_edit(request, api=False, update=False):
     else:
         request_data = request.POST
 
-    # Verify if attribute has changed HERE, config_model will be modified after (at form.is_valid())
-    has_portal_cookie_name_changed = request_data.get('portal_cookie_name') != config_model.portal_cookie_name
-    ssh_authorized_key_changed = request_data.get('ssh_authorized_key') != config_model.ssh_authorized_key
-    logs_ttl_changed = request_data.get('logs_ttl') != config_model.logs_ttl
-    has_internal_tenants_changed = request_data.get('internal_tenants') != config_model.internal_tenants.pk
-
     form = ConfigForm(request_data or None, instance=config_model, error_class=DivErrorList)
 
     def render_form(**kwargs):
@@ -99,7 +93,7 @@ def config_edit(request, api=False, update=False):
         config.save()
 
         """ Write .ssh/authorized_keys if any change detected """
-        if ssh_authorized_key_changed:
+        if "ssh_authorized_key" in form.changed_data:
             params = [ "/usr/home/vlt-adm/.ssh/authorized_keys", request_data.get('ssh_authorized_key'), 'vlt-adm:wheel', '600' ]
             for node in Node.objects.all():
                 try:
@@ -110,16 +104,19 @@ def config_edit(request, api=False, update=False):
         """ If customer name has changed, rewrite rsyslog templates """
         error = ""
         # If the internal Tenants config has changed, reload Rsyslog configuration of pstats
-        if has_internal_tenants_changed:
+        if "internal_tenants" in form.changed_data:
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
-        if has_portal_cookie_name_changed:
+        if "portal_cookie_name" in form.changed_data:
             # Reload Frontends with authenticated Workflows: session checks must be updated with the new cookie's name
             for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():
                 frontend.reload_conf()
-        if logs_ttl_changed:
+        if "logs_ttl" in form.changed_data:
             res, mess = config_model.set_logs_ttl()
             if not res:
                 return render_form(save_error=mess)
+        if any(value in form.changed_data for value in ["pf_whitelist", "pf_blacklist"]):
+            Cluster.api_request("services.pf.pf.gen_config")
+
         if error:
             return render_form(save_error=error)
         if api:
