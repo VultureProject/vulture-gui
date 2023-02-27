@@ -62,8 +62,13 @@ def netif_edit(request, object_id=None, api=False):
                 return JsonResponse({'error': _("Object does not exist.")}, status=404)
             return HttpResponseForbidden("Injection detected")
 
+    # Netif already exists and is a system interface
     if netif_model and netif_model.is_system is True:
-        form = NetIfSystemForm(request.POST or None, instance=netif_model)
+        if hasattr(request, 'JSON') and api:
+            form = NetIfSystemForm(request.JSON or None, instance=netif_model)
+        else:
+            form = NetIfSystemForm(request.POST or None, instance=netif_model)
+    # Netif doesn't exist or is not a system interface
     else:
         if hasattr(request, 'JSON') and api:
             if request.JSON.get('is_system') is True:

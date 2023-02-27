@@ -47,7 +47,7 @@ class NetIfSystemForm(ModelForm):
 
     class Meta:
         model = NetworkAddress
-        fields = ('name', 'nic', 'ip', 'prefix_or_netmask', 'fib', 'vlan', 'vlandev')
+        fields = ('name', 'nic', 'ip', 'prefix_or_netmask', 'fib', 'vlan', 'vlandev', 'is_system')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
@@ -116,6 +116,10 @@ class NetIfForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        for field_name in ["fib", "vlan"]:
+            self.fields[field_name].required = False
+
 
     class Meta:
         model = NetworkAddress

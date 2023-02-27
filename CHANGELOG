@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [API_PARSER] Regularly scan processes to join to avoid accumulating zombies
 - [CONFIG] [PF] Update PF configurations when whitelist/blacklist entries are changed on GUI
+- [GUI/API] [NETWORK] API configuration didn't work as expected
 - [GUI/API] [NETWORK] Small corrections to internal functions and data types
 ### Changed
 - [LOGGING] [PF] Don't send PF logs to mongodb anymore, log to /var/log/pf/parsed.log instead
