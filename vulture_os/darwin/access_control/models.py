@@ -24,7 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Access Control model'
 
 # Django system imports
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from djongo import models
 from django.template.loader import render_to_string

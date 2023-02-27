@@ -25,7 +25,7 @@ __doc__ = 'Services main models'
 # Django system imports
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 # Django project imports
 from system.cluster.models import Cluster

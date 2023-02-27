@@ -98,7 +98,7 @@ def haproxy_clone(request, object_id):
 
 
 def reload(request):
-    if not request.is_ajax():
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     error_nodes = {}

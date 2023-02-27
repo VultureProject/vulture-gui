@@ -27,7 +27,7 @@ from django.conf import settings
 from django.forms import ModelForm, TextInput, Textarea, Form
 from django.forms.fields import CharField
 from django.forms.widgets import FileInput
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 # Django project imports
 from authentication.portal_template.models import PortalTemplate

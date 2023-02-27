@@ -25,7 +25,7 @@ __doc__ = 'Django models dedicated to portal templates'
 # Django system imports
 from django.conf import settings
 from django.template import Context, Template
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
 

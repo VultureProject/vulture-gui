@@ -28,7 +28,7 @@ from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbi
                          HttpResponseNotAllowed)
 from django.shortcuts import render
 from django.urls import reverse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 # Django project imports
 from gui.forms.form_utils import DivErrorList
@@ -444,7 +444,7 @@ def backend_edit(request, object_id=None, api=False):
 
 
 def backend_start(request, object_id, api=False):
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -465,7 +465,7 @@ def backend_start(request, object_id, api=False):
 
 
 def backend_pause(request, object_id, api=False):
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:

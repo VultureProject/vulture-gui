@@ -26,7 +26,7 @@ __doc__ = 'Frontends API'
 # Django system imports
 from django.conf import settings
 from django.http import JsonResponse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils.crypto import get_random_string
 from django.views import View
 from django.views.decorators.http import require_http_methods

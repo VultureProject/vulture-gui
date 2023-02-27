@@ -57,12 +57,12 @@ class ListView(View):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, **kwargs):
-        if not request.is_ajax():
+        if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return render(request, self.template_name)
         return HttpResponseBadRequest()
 
     def post(self, request, **kwargs):
-        if not request.is_ajax():
+        if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return HttpResponseBadRequest()
 
         order = {
@@ -131,7 +131,7 @@ class ListTLSProfile(ListView):
 
     # get method herited from mother class
     def post(self, request, **kwargs):
-        if not request.is_ajax():
+        if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return HttpResponseBadRequest()
 
         order = {

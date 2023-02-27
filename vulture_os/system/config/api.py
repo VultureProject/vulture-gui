@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Global config API'
 
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views import View
 from system.config.models import Config
 from gui.decorators.apicall import api_need_key

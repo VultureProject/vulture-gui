@@ -21,7 +21,7 @@ from django.views.defaults import permission_denied as default_permission_denied
 from django.views.defaults import page_not_found as default_page_not_found
 from django.views.defaults import server_error as default_server_error
 from django.http import JsonResponse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.i18n import JavaScriptCatalog
 from django.conf import settings
 

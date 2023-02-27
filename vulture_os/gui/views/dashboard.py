@@ -35,7 +35,7 @@ logger = logging.getLogger('debug')
 
 
 def dashboard_services(request):
-    if request.is_ajax():
+    if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         try:
             monitor = {}
             for tmp_node in Node.objects.all():

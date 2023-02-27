@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 
 # Django system imports
 from django.conf import settings
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 # Django project imports
 

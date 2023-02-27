@@ -26,7 +26,7 @@ __doc__ = 'Network View'
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from system.cluster.models import NetworkAddress, NetworkAddressNIC, Cluster
 from system.netif.form import NetIfForm, NetIfSystemForm
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.crypto import get_random_string
 from toolkit.api.responses import build_response

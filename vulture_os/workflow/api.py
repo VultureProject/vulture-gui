@@ -28,7 +28,7 @@ from bson.objectid import ObjectId
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from darwin.access_control.models import AccessControl
 from bson.errors import InvalidId
 from django.views import View

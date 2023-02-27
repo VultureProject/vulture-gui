@@ -28,7 +28,7 @@ import logging
 
 from botocore.config import Config
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
 
 

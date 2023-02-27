@@ -28,7 +28,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, JsonResponse
 from functools import wraps
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from portal.system.redis_sessions import REDISOauth2Session, REDISBase
 
 logging.config.dictConfig(settings.LOG_SETTINGS)

@@ -26,7 +26,7 @@ __doc__ = 'Authentication dedicated views of VultureOS GUI'
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.conf import settings

@@ -26,7 +26,7 @@ __doc__ = 'Frontends & Listeners model classes'
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.crypto import get_random_string
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
 

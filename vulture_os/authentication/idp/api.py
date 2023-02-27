@@ -34,7 +34,7 @@ from gui.decorators.apicall import api_need_key
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from authentication.base_repository import BaseRepository
 from authentication.user_portal.models import UserAuthentication
 from authentication.totp_profiles.models import TOTPProfile

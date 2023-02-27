@@ -25,7 +25,7 @@ __doc__ = "User's scopes API"
 # Django system imports
 from django.conf import settings
 from django.http import JsonResponse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.utils.decorators import method_decorator
 

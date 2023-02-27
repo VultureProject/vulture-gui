@@ -25,7 +25,7 @@ __doc__ = 'PKI main models'
 
 from django.conf import settings
 from django.forms.models import model_to_dict
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from M2Crypto import X509
 from djongo import models
 import logging

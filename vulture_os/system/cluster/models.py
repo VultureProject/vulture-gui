@@ -30,7 +30,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
 
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.utils.module_loading import import_string
 from django.utils import timezone
 from django.conf import settings

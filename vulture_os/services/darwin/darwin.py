@@ -28,7 +28,7 @@ from django.conf import settings
 # Django project imports
 from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from services.rsyslogd.rsyslog import build_conf as rsyslog_build_conf
 from services.service import Service
 from services.darwin.models import DarwinSettings

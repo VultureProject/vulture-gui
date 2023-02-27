@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'LogForwarder main models'
 
 
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 

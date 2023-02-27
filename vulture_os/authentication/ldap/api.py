@@ -31,7 +31,7 @@ from gui.decorators.apicall import api_need_key
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from authentication.ldap.models import LDAPRepository
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from authentication.ldap.views import ldap_edit
 from authentication.generic_delete import DeleteLDAPRepository
 from authentication.ldap import tools
