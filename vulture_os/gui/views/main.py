@@ -35,6 +35,7 @@ logger = logging.getLogger('gui')
 
 
 def process_queue_state(request):
+
     """
         Fetch 10 last messages in queue
     """
@@ -54,8 +55,16 @@ def process_queue_state(request):
 
     max_objs = 50
     # Do NOT send internal MessageQueues
-    for message in MessageQueue.objects.filter(internal=False).order_by(col_order)[:max_objs]:
-        objs.append(message.to_template())
+    try:
+        for message in MessageQueue.objects.filter(internal=False).order_by(col_order)[:max_objs]:
+            objs.append(message.to_template())
+    except:
+        return JsonResponse({
+            "status": True,
+            "iTotalRecords": 0,
+            "iTotalDisplayRecords": 0,
+            "aaData": objs
+        })
 
     return JsonResponse({
         "status": True,
@@ -71,9 +80,15 @@ def rss(request):
         ordered by date
     """
     if request.method == "GET":
-        rss = [r.to_template() for r in
+        try: 
+            rss = [r.to_template() for r in
                RSS.objects.filter(ack=False).order_by('-date')]
-
+        except:
+            return JsonResponse({
+                'status': True,
+                'rss': []
+            })
+            
         return JsonResponse({
             'status': True,
             'rss': rss
