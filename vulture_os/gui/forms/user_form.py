@@ -24,7 +24,7 @@ __email__ = ""
 __doc__ = 'User Form for Installation View'
 
 from django.contrib.auth.forms import UserCreationForm
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django import forms
 
 from system.users.models import User

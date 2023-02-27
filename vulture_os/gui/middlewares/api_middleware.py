@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Middleware for PUT and DELETE methods'
 
 from django.utils.deprecation import MiddlewareMixin
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.http import HttpResponseBadRequest, JsonResponse
 import json
 

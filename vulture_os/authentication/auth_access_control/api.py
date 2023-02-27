@@ -26,7 +26,7 @@ from authentication.auth_access_control.form import AuthAccessControlRuleForm
 from authentication.auth_access_control.form import AuthAccessControlForm
 from authentication.auth_access_control.models import AuthAccessControl
 from django.views.decorators.http import require_http_methods
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.crypto import get_random_string

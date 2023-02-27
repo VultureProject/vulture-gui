@@ -64,7 +64,7 @@ class OsMiddleware:
             return self.get_response(request)
 
         if not request.user.is_authenticated:
-            if request.is_ajax():
+            if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
                 return JsonResponse({
                     'status': False,
                     'error': 'need_login'
@@ -82,7 +82,7 @@ class OsMiddleware:
             if settings.DEV_MODE:
                 raise
 
-            if request.is_ajax():
+            if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
                 return JsonResponse({
                     "status": False,
                     "error": "Please check the troubleshooting documentation <a target=\"blank\" href=\"https://www.vultureproject.org/doc/troubleshooting/troubleshooting.html\">here</a>"

@@ -22,7 +22,7 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Perimeter Configuration main models'
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
 from applications.reputation_ctx.models import ReputationContext

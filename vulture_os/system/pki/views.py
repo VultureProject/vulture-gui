@@ -28,7 +28,7 @@ from django.conf import settings
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.http.response import HttpResponseNotFound
 from django.shortcuts import render, HttpResponse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 
 # Django project imports

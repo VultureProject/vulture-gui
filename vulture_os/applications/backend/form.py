@@ -26,7 +26,7 @@ __doc__ = 'Backends & Servers dedicated form classes'
 from django.conf import settings
 from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInput, Textarea, Form, \
     ChoiceField, CharField, HiddenInput, ValidationError
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 # Django project imports
 from gui.forms.form_utils import NoValidationField

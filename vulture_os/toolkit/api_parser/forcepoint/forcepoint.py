@@ -33,7 +33,7 @@ import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from io import BytesIO, StringIO
 from json import dumps as json_dumps
 from toolkit.api_parser.api_parser import ApiParser

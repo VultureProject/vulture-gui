@@ -24,7 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Strongswan API'
 
 from services.strongswan import views as strongswan_view
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from services.strongswan.models import Strongswan

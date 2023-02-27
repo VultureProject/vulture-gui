@@ -24,7 +24,7 @@ __doc__ = 'Response API toolkit functions'
 
 # Django system imports
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.forms import CheckboxInput, ModelForm, Select, TextInput, Form, ChoiceField, CharField
 from djongo import models
 

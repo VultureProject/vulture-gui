@@ -33,7 +33,7 @@ import json
 
 
 def users_list(request):
-    if not request.is_ajax():
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return render(request, "system/users.html")
 
     order = {

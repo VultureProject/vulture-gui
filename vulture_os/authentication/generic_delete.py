@@ -29,7 +29,7 @@ from django.http import HttpResponseNotFound, HttpResponseRedirect
 from django.http.response import JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 # Django project imports

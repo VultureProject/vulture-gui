@@ -27,7 +27,7 @@ from django.conf import settings
 from django.core.validators import URLValidator
 from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
                           SelectMultiple, TextInput, Textarea)
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 # Django project imports
 from authentication.portal_template.models import PortalTemplate
