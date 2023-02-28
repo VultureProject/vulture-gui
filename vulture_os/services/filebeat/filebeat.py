@@ -144,5 +144,15 @@ def start_service(node_logger):
 
 
 def delete_conf(node_logger, filename):
-    """ Useless for filebeat, but mandatory by the model """
-    
+    try:
+        check_output(["/bin/rm", "{}/{}".format(FILEBEAT_PATH, filename)], stderr=PIPE).decode('utf8')
+        # Return message to API request, that will be saved into MessageQueue result
+        return "'{}' successfully deleted.".format(filename)
+
+    except CalledProcessError as e:
+        """ Command raise if permission denied or file does not exists """
+        stdout = e.stdout.decode('utf8')
+        stderr = e.stderr.decode('utf8')
+        logger.exception("Failed to delete frontend filename '{}': {}".format(filename, stderr or stdout))
+        raise ServiceError("'{}' : {}".format(filename, (stderr or stdout)), "filebeat",
+                           "delete filebeat conf file")

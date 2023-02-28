@@ -124,7 +124,7 @@ def frontend_delete(request, object_id, api=False):
 
         # Save filebeat conf filename
         # Whatever the type, delete the file because its name is its id
-        filebeat_filename = frontend.get_filebeat_base_filename()  # if frontend.mode != "tcp" else ""
+        filebeat_filename = frontend.get_filebeat_base_filename()  if frontend.mode == "filebeat" else ""
 
         # Check if darwin buffering should be reloaded
         # that is, if the frontend is associated with a policy with at least one filter with buffering configured
@@ -148,8 +148,10 @@ def frontend_delete(request, object_id, api=False):
             # Regenerate Rsyslog system conf and restart
             Cluster.api_request('services.rsyslogd.rsyslog.build_conf')
 
-            # Regenerate Filebeat system conf and restart
-            Cluster.api_request('services.filebeat.filebeat.build_conf')
+            # Delete Filebeat conf and restart if concerned
+            if filebeat_filename:
+                Cluster.api_request('services.filebeat.filebeat.delete_conf', filebeat_filename)
+                Cluster.api_request('services.filebeat.filebeat.reload_service')
 
             # Reload darwin buffering if necessary
             if was_darwin_buffered:
