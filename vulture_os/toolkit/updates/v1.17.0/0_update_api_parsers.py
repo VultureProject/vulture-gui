@@ -49,7 +49,12 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
         if len(UPDATED_API_PARSERS) > 0:
+            restart_rsyslog = False
             for frontend in Frontend.objects.filter(mode="log", api_parser_type__in=UPDATED_API_PARSERS).only(*Frontend.str_attrs(),
                                                                                                    'ruleset'):
+                restart_rsyslog = True
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 print("Reload configuration of listener {}({}) asked.".format(frontend, frontend.ruleset))
+
+            if restart_rsyslog:
+                node.api_request("services.rsyslogd.rsyslog.restart_service")

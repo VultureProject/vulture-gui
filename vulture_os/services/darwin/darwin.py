@@ -30,6 +30,7 @@ from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter
 from django.utils.translation import ugettext_lazy as _
 from services.rsyslogd.rsyslog import build_conf as rsyslog_build_conf
+from services.rsyslogd.rsyslog import restart_service as rsyslog_restart_service
 from services.service import Service
 from services.darwin.models import DarwinSettings
 from system.cluster.models import Cluster
@@ -174,6 +175,10 @@ def reload_all(node_logger):
         except VultureSystemError as e:
             logger.error("Darwin::reload_all:: error while reloading policy {} : {}".format(policy.id, e))
             continue
+
+    # Restart Rsyslog
+    logger.info("Darwin::reload_all:: Restarting Rsyslog")
+    rsyslog_restart_service(node_logger)
 
     # Reload the main Darwin configuration (don't update filters yet)
     logger.info("Darwin::reload_all:: rewriting main configuration file")

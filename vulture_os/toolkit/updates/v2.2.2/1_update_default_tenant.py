@@ -63,6 +63,9 @@ if __name__ == "__main__":
                 print(f"Updating Frontend '{frontend.name}'")
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
 
+            if len(frontends_to_reload) > 0:
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
+
         except Exception as e:
             print("Failed to update frontends related to tenant: {}".format(e))
             print("Please relaunch this script after solving the issue.")

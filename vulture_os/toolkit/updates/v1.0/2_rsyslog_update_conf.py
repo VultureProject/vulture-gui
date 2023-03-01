@@ -46,10 +46,17 @@ if __name__ == "__main__":
     if not node:
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
+        restart_rsyslog = False
         for frontend in Frontend.objects.filter(enabled=True, enable_logging=True):
             if node in frontend.get_nodes():
+                restart_rsyslog = True
                 api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 if not api_res.get("status"):
                     print("Error while updating rsyslog configuration of frontend '{}': "
                           "{}.".format(frontend.name, api_res.get("message")))
+        if restart_rsyslog:
+            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
+            if not api_res.get("status"):
+                print(f"Error while restarting rsyslog: "
+                        "{}.".format(api_res.get("message")))
         print("2_rsyslog_update_conf done.")

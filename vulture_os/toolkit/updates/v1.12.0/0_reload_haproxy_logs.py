@@ -58,6 +58,9 @@ if __name__ == "__main__":
                     print("Error while updating rsyslog configuration of frontend '{}': "
                         "{}.".format(frontend.name, api_res.get("message")))
 
+            print("Restarting Rsyslog service")
+            node.api_request("services.rsyslogd.rsyslog.restart_service")
+
             print("Restarting Haproxy service")
             node.api_request("services.haproxy.haproxy.restart_service")
 

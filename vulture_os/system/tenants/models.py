@@ -79,6 +79,11 @@ class Tenants(models.Model):
         app_label = "system"
 
     def reload_frontends_conf(self):
+        updated_nodes = set()
         for frontend in self.frontend_set.filter(enabled=True, enable_logging=True):
             for node in frontend.get_nodes():
+                updated_nodes.add(node)
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
+
+        for node in updated_nodes:
+            node.api_request("services.rsyslogd.rsyslog.restart_service")

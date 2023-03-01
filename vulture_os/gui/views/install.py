@@ -184,7 +184,6 @@ def cluster_create(admin_user=None, admin_password=None):
     logger.debug("API call to configure rsyslog")
     node.api_request("services.rsyslogd.rsyslog.build_conf")
     node.api_request("services.rsyslogd.rsyslog.configure_node")
-    node.api_request("services.rsyslogd.rsyslog.restart_service")
 
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")

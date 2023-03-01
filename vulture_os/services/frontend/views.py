@@ -147,6 +147,7 @@ def frontend_delete(request, object_id, api=False):
 
             # Regenerate Rsyslog system conf and restart
             Cluster.api_request('services.rsyslogd.rsyslog.build_conf')
+            Cluster.api_request('services.rsyslogd.rsyslog.restart_service')
 
             # Delete Filebeat conf and restart if concerned
             if filebeat_filename:
@@ -591,6 +592,7 @@ def frontend_edit(request, object_id=None, api=False):
                 if not api_res.get('status'):
                     raise ServiceConfigError("on node {}:  API request error.".format(node.name), "rsyslog",
                                              traceback=api_res.get('message'))
+                api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
 
                 """ We need to configure Filebeat, it will check if conf has changed """
                 if frontend.mode == "filebeat":

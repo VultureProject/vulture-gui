@@ -46,6 +46,7 @@ if __name__ == "__main__":
     if not node:
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
+        restart_rsyslog = False
         for api_parser_type in ["cortex_xdr", "reachfive"]:
             try:
                 frontends = Frontend.objects.filter(mode="log", listening_mode="api", api_parser_type=api_parser_type)
@@ -55,9 +56,16 @@ if __name__ == "__main__":
 
             for frontend in frontends:
                 print("Asking reload of frontend {}".format(frontend.name))
+                restart_rsyslog = True
                 api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 if not api_res.get("status"):
                     print("Error while updating rsyslog configuration of frontend '{}': "
                         "{}.".format(frontend.name, api_res.get("message")))
+
+        if restart_rsyslog:
+            node.api_request("services.rsyslogd.rsyslog.restart_service")
+            if not api_res.get("status"):
+                print("Error while restarting rsyslog: "
+                    "{}.".format(api_res.get("message")))
 
         print("Done.")
