@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [LOGGING] Add Process PID to parsers' logs
 ### Fixed
 - [API_PARSER] Regularly scan processes to join to avoid accumulating zombies
 - [CONFIG] [PF] Update PF configurations when whitelist/blacklist entries are changed on GUI
@@ -14,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CONFIG] [FILEBEAT] Correctly remove filebeat configuration files when removing a filebeat Frontend
 ### Changed
 - [LOGGING] [PF] Don't send PF logs to mongodb anymore, log to /var/log/pf/parsed.log instead
-- [PKG_UPGRADE] Better filtering of update scripts' folders during upgrades
+- [UPGRADE] [PKG] Better filtering of update scripts' folders during upgrades
+- [UPGRADE] [SCRIPTS] Only launch some post-upgrade scripts when node was bootstrapped and is able to receive them
 - [PORTAL] Return a 401 instead of a 403 when refusing a header-authenticated request
 
 
