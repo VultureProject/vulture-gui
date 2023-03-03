@@ -189,6 +189,10 @@ class Workflow(models.Model):
         """
         """ Retrieve list/custom objects """
         """ And returns the attributes of the class """
+        client_ids = []
+        if self.authentication:
+            client_ids = [repo.get_daughter().client_id for repo in self.authentication.repositories.filter(subtype="openid")]
+            client_ids.append(self.authentication.oauth_client_id)
         return {
             'id': str(self.id),
             'name': self.name,
@@ -198,7 +202,7 @@ class Workflow(models.Model):
             'frontend': self.frontend,
             'backend': self.backend,
             'authentication': self.authentication.to_template() if self.authentication else None,
-            'openid_client_ids': [repo.get_daughter().client_id for repo in self.authentication.repositories.filter(subtype="openid")] if self.authentication else [],
+            'openid_client_ids': client_ids,
             'disconnect_url': self.get_disconnect_url()
         }
 
