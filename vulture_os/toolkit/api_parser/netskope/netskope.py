@@ -129,6 +129,9 @@ class NetskopeParser(ApiParser):
             self.update_lock()
 
             logs = response['result']
+            if len(logs) == 0:
+                self.frontend.last_api_call = to
+                break
             offset += len(logs)
 
             self.write_to_file([self.parse_log(l) for l in logs])
