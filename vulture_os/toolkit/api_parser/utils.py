@@ -60,7 +60,7 @@ from toolkit.api_parser.safenet.safenet import SafenetParser
 from toolkit.api_parser.proofpoint_casb.proofpoint_casb import ProofpointCASBParser
 from toolkit.api_parser.proofpoint_trap.proofpoint_trap import ProofpointTRAPParser
 from toolkit.api_parser.waf_cloud_protector.waf_cloud_protector import WAFCloudProtectorParser
-
+from toolkit.api_parser.trendmicro_visionone.trendmicro_visionone import TrendmicroVisiononeParser
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -100,6 +100,7 @@ PARSER_LIST = {
     "proofpoint_casb": ProofpointCASBParser,
     "proofpoint_trap": ProofpointTRAPParser,
     "waf_cloud_protector": WAFCloudProtectorParser,
+    "trendmicro_visionone": TrendmicroVisiononeParser,
 }
 
 class ParserDoesNotExist(Exception):

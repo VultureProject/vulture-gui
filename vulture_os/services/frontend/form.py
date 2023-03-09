@@ -243,6 +243,7 @@ class FrontendForm(ModelForm):
                            'proofpoint_trap_host', 'proofpoint_trap_apikey',
                            'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv', 
                            'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
+                           'trendmicro_visionone_token',
                            ]:
             self.fields[field_name].required = False
 
@@ -490,6 +491,7 @@ class FrontendForm(ModelForm):
             'waf_cloud_protector_provider': TextInput(attrs={'class': 'form-control'}),
             'waf_cloud_protector_tenant': TextInput(attrs={'class': 'form-control'}),
             'waf_cloud_protector_servers': TextInput(attrs={'class': 'form-control'}),
+            'trendmicro_visionone_token': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
