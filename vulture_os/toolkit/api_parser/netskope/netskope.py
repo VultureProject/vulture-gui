@@ -130,7 +130,6 @@ class NetskopeParser(ApiParser):
 
             logs = response['result']
             if len(logs) == 0:
-                self.frontend.last_api_call = to
                 break
             offset += len(logs)
 
