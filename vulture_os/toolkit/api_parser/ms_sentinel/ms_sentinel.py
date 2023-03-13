@@ -50,6 +50,7 @@ class MSSentinelParser(ApiParser):
     OAUTH_URL = "https://login.microsoftonline.com/{}/oauth2/token"
     API_BASE_URL = "https://management.azure.com"
     INCIDENTS_URI = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}/providers/Microsoft.SecurityInsights/incidents"
+    ENTITIES_URI = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}/providers/Microsoft.SecurityInsights/incidents/{incidentId}/entities"
     API_VERSION = "2021-10-01"
 
     def __init__(self, data):
@@ -106,6 +107,39 @@ class MSSentinelParser(ApiParser):
                 "status": False,
                 "error": str(e)
             }
+
+    def get_entities(self, incident_id):
+        self._connect()
+
+        url = self.API_BASE_URL + self.ENTITIES_URI.format(subscriptionId=self.subscription_id,
+                                                            resourceGroupName=self.resource_group_name,
+                                                            workspaceName=self.workspace_name, incidentId=incident_id)
+
+        params = {
+            'api-version': self.API_VERSION
+        }
+
+        msg = f"Get entities request params: {params}"
+        logger.debug(f"[{__parser__}]:get_entities: {msg}", extra={'frontend': str(self.frontend)})
+
+        response = self.session.post(
+            url,
+            params=params,
+            proxies=self.proxies
+        )
+
+        if response.status_code != 200:
+            msg = f"Error at API Call: {response.content}"
+            logger.error(f"[{__parser__}]:get_incidents: {msg}", extra={'frontend': str(self.frontend)})
+            return False, {}
+
+        content = response.json()
+
+        msg = f"Content retrieved"
+        logger.debug(f"[{__parser__}]:get_incidents: {msg}", extra={'frontend': str(self.frontend)})
+
+        return True, content
+
 
     def get_incidents(self, test=False):
         self._connect()
@@ -252,10 +286,19 @@ class MSSentinelParser(ApiParser):
 
             new_last_api_call = self.last_api_call
 
-            # For each incidents, retrieve comments and alerts
+            # For each incident, retrieve comments, entities and alerts
             for incident in incidents:
 
                 logs = []
+
+                # Get incidents' entities
+                status, result = self.get_incident_entities(incident['id'])
+                if status:
+                    entities = result['value']
+                    incident['entities'] = entities
+                else:
+                    logger.info(f"[{__parser__}]:execute: Fail to retrieve entities for incident {incident['name']}",
+                                extra={'frontend': str(self.frontend)})
 
                 logger.info(f"[{__parser__}]:execute: {incident['properties']['additionalData']['commentsCount']} "
                              f"comments found for incident {incident['name']}",
