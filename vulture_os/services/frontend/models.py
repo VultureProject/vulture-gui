@@ -1136,6 +1136,9 @@ class Frontend(models.Model):
         help_text=_("Trendmicro visionone token"),
         default="none",
     )
+    trendmicro_visionone_timestamps = models.JSONField(
+        default={"alerts": {}, "audit": {}, "oat": {}}
+    )
 
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
