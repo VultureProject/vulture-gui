@@ -130,6 +130,8 @@ class NetskopeParser(ApiParser):
 
             logs = response['result']
             if len(logs) == 0:
+                logger.info(f"[{__parser__}][execute]: No more log to fetch. End of the parsing",
+                            extra={'frontend': str(self.frontend)})
                 break
             offset += len(logs)
 
