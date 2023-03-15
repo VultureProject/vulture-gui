@@ -58,7 +58,7 @@ class TrendmicroVisiononeParser(ApiParser):
         self.trendmicro_visionone_oat_timestamp = data.get("trendmicro_visionone_oat_timestamp")
 
 
-    def _get_alerts(self, since=None, to=None):
+    def _get_alerts(self, since=None, to=None, timeout=10):
 
         url_path = '/v3.0/workbench/alerts'
 
@@ -68,26 +68,27 @@ class TrendmicroVisiononeParser(ApiParser):
                         'orderBy': 'createdDateTime desc'}
         headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token, 'TMV1-Filter': ""}
 
-        result = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers)
+        result = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers,
+            proxies=self.proxies, timeout=timeout)
         if result.status_code != 200:
             raise TrendmicroVisionOneAPIError(
                 f"Error on URL: {self.URL_BASE + url_path} Status: {result.status_code} Reason/Content: {result.content}")
 
         return result.json()['items']
 
-    def _get_auditlogs(self, since=None, to=None):
+    def _get_auditlogs(self, since=None, to=None, timeout=10):
         url_path = '/v3.0/audit/logs'
 
         query_params = {'startDateTime': since,
                         'endDateTime': to,
                         'orderBy': 'createdDateTime desc',
-                        'top': 50,
                         'labels': 'all'}
         headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token,
                    'Accept': 'application/json',
                    'TMV1-Filter': ''}
 
-        r = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers)
+        r = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers,
+            proxies=self.proxies, timeout=timeout)
 
         if r.status_code != 200:
             raise TrendmicroVisionOneAPIError(
@@ -95,20 +96,21 @@ class TrendmicroVisiononeParser(ApiParser):
 
         return r.json()['items']
 
-    def _get_OAT(self, since=None, to=None):
+    def _get_OAT(self, since=None, to=None, timeout=10):
 
         url_path = '/v3.0/audit/logs'
 
         query_params = {'detectedStartDateTime': since,
                         'detectedEndDateTime': to,
                         'ingestedStartDateTime': since,
-                        'ingestedEndDateTime': to,
-                        'top': 50}
+                        'ingestedEndDateTime': to
+                        }
         headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token,
                    'Accept': 'application/json',
                    'TMV1-Filter': ''}
 
-        r = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers)
+        r = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers,
+            proxies=self.proxies, timeout=timeout)
 
         if r.status_code != 200:
             raise TrendmicroVisionOneAPIError(
@@ -125,7 +127,7 @@ class TrendmicroVisiononeParser(ApiParser):
         for kind in ["alerts", "oat", "audit"]:
 
             try:
-                since = getattr(self, f"trendmicro_visionone_{kind}_timestamp") or (datetime.now() - timedelta(days=2))
+                since = getattr(self, f"trendmicro_visionone_{kind}_timestamp") or (timezone.now() - timedelta(days=2))
                 to = min(timezone.now(), since + timedelta(hours=24))
 
                 msg = f"Parser gets {kind} logs from {since} to {to}"
