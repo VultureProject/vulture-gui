@@ -53,6 +53,9 @@ class TrendmicroVisiononeParser(ApiParser):
         super().__init__(data)
 
         self.trendmicro_visionone_token = data["trendmicro_visionone_token"]
+        self.trendmicro_visionone_alerts_timestamp = data.get("trendmicro_visionone_alerts_timestamp")
+        self.trendmicro_visionone_audit_timestamp = data.get("trendmicro_visionone_audit_timestamp")
+        self.trendmicro_visionone_oac_timestamp = data.get("trendmicro_visionone_oac_timestamp")
 
 
     def _get_alerts(self, since=None, to=None):
@@ -119,69 +122,35 @@ class TrendmicroVisiononeParser(ApiParser):
 
     def execute(self):
 
-        try:
-            since = timezone.make_aware(self.frontend.trendmicro_visionone_timestamps["alerts"] or (datetime.now() - timedelta(days=1)))
-            to = min(timezone.now(), since + timedelta(hours=24))
+        for kind in ["alerts", "oat", "audit"]:
 
-            msg = f"Parser gets alerts from {since} to {to}"
-            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-            start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
-            result = self._get_alerts(start_time, end_time)
+            try:
+                since = getattr(self, f"trendmicro_visionone_{kind}_timestamp") or (datetime.now() - timedelta(days=2))
+                to = min(timezone.now(), since + timedelta(hours=24))
 
-            self.write_to_file(result)
-            self.update_lock()
-            self.frontend.trendmicro_visionone_timestamps["alerts"] = to
+                msg = f"Parser gets {kind} logs from {since} to {to}"
+                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+                end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
+                if kind == "alerts":
+                    logs = self._get_alerts(start_time, end_time)
+                    self.write_to_file(logs)
+                elif kind == "audit":
+                    logs = self._get_auditlogs(start_time, end_time)
+                    self.write_to_file(logs)
+                elif kind == "oat":
+                    logs = self._get_OAT(start_time, end_time)
+                    self.write_to_file([self._format_OAT_log(log) for log in logs])
+
+                self.update_lock()
+
+            except Exception as e:
+                msg = f"Failed on {kind} logs, between time of {since} and {to} : {e} "
+                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+
+            setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to, tz=timezone.utc))
             self.frontend.save()
-
-        except Exception as e:
-            msg = f"Failed on alerts, between time of {since} and {to} : {e} "
-            logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-            logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
-
-        try:
-
-            since = timezone.make_aware(self.frontend.trendmicro_visionone_timestamps["audit"] or (datetime.now() - timedelta(days=1)))
-            to = min(timezone.now(), since + timedelta(hours=24))
-
-            msg = f"Parser gets audit logs from {since} to {to}"
-            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-            start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-            result = self._get_auditlogs(start_time, end_time)
-
-            self.write_to_file(result)
-            self.update_lock()
-            self.frontend.trendmicro_visionone_timestamps["audit"] = to
-            self.frontend.save()
-
-        except Exception as e:
-            msg = f"Failed on audit logs, between time of {since} and {to} : {e} "
-            logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-            logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
-
-        try:
-
-            since = timezone.make_aware(self.frontend.trendmicro_visionone_timestamps["oat"] or (datetime.now() - timedelta(days=1)))
-            to = min(timezone.now(), since + timedelta(hours=24))
-
-            msg = f"Parser gets OAT from {since} to {to}"
-            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-            start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-            result = self._get_OAT(start_time, end_time)
-
-            self.write_to_file([self._format_OAT_log(log) for log in result])
-            self.update_lock()
-            self.frontend.trendmicro_visionone_timestamps["oat"] = to
-            self.frontend.save()
-
-        except Exception as e:
-            msg = f"Failed on OAT logs, between time of {since} and {to} : {e} "
-            logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-            logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
