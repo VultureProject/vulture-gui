@@ -1142,7 +1142,7 @@ class Frontend(models.Model):
     trendmicro_visionone_audit_timestamp = models.DateTimeField(
         default=None
     )
-    trendmicro_visionone_oac_timestamp = models.DateTimeField(
+    trendmicro_visionone_oat_timestamp = models.DateTimeField(
         default=None
     )
 
