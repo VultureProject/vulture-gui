@@ -108,7 +108,7 @@ class MSSentinelParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_entities(self, incident_id):
+    def get_incident_entities(self, incident_id):
         self._connect()
 
         url = self.API_BASE_URL + self.ENTITIES_URI.format(subscriptionId=self.subscription_id,
@@ -120,7 +120,7 @@ class MSSentinelParser(ApiParser):
         }
 
         msg = f"Get entities request params: {params}"
-        logger.debug(f"[{__parser__}]:get_entities: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_incident_entities: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.session.post(
             url,
@@ -297,7 +297,7 @@ class MSSentinelParser(ApiParser):
                     entities = result['value']
                     incident['entities'] = entities
                 else:
-                    logger.info(f"[{__parser__}]:execute: Fail to retrieve entities for incident {incident['name']}",
+                    logger.warning(f"[{__parser__}]:execute: Fail to retrieve entities for incident {incident['name']}",
                                 extra={'frontend': str(self.frontend)})
 
                 logger.info(f"[{__parser__}]:execute: {incident['properties']['additionalData']['commentsCount']} "
