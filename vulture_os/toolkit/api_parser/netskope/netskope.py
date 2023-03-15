@@ -129,6 +129,10 @@ class NetskopeParser(ApiParser):
             self.update_lock()
 
             logs = response['result']
+            if len(logs) == 0:
+                logger.info(f"[{__parser__}][execute]: No more log to fetch. End of the parsing",
+                            extra={'frontend': str(self.frontend)})
+                break
             offset += len(logs)
 
             self.write_to_file([self.parse_log(l) for l in logs])
