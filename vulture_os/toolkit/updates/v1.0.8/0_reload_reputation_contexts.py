@@ -54,13 +54,21 @@ if __name__ == "__main__":
         # Reload configuration of Rsyslog templates
         node.api_request("services.rsyslogd.rsyslog.configure_node")
         # And, considering the filenames has changed, reload Rsyslog configuration of frontends
+        restart_rsyslog = False
         for frontend in Frontend.objects.filter(enabled=True, enable_logging=True):
-            print("Reloading Rsyslog conf of frontend {}".format(frontend.name))
             if node in frontend.get_nodes():
+                restart_rsyslog = True
+                print("Reloading Rsyslog conf of frontend {}".format(frontend.name))
                 api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 if not api_res.get("status"):
                     print("Error while updating rsyslog configuration of frontend '{}': "
                           "{}.".format(frontend.name, api_res.get("message")))
+
+        if restart_rsyslog:
+            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
+            if not api_res.get("status"):
+                print("Error while restarting rsyslog: "
+                        "{}.".format(api_res.get("message")))
 
         # Delete old Reputation Contexts
         for r in ReputationContext.objects.filter(filename__in=old_reputation_contexts):

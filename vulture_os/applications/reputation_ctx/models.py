@@ -335,6 +335,7 @@ class ReputationContext(models.Model):
         from services.frontend.models import Listener
         from system.cluster.models import Cluster, NetworkAddress, Node
         res = []
+        updated_nodes = set()
         # Loop on Nodes
         for node in Node.objects.all():
             frontends = []
@@ -343,10 +344,15 @@ class ReputationContext(models.Model):
                                                     frontend__reputation_ctxs=self.id,
                                                     network_address__nic__node=node.id).distinct():
                 if listener.frontend.id not in frontends:
+                    updated_nodes.add(node)
                     api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", listener.frontend.id)
                     if not api_res:
                         raise ServiceConfigError("on node '{}' \n API request error.".format(node.name), "rsyslog",
                                                  traceback=api_res.get('message'))
                     frontends.append(listener.frontend.id)
                     res.append(node)
+
+        for node in updated_nodes:
+            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
+
         return res

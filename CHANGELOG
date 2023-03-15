@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI/API] [NETWORK] API configuration didn't work as expected
 - [GUI/API] [NETWORK] Small corrections to internal functions and data types
 - [CONFIG] [FILEBEAT] Correctly remove filebeat configuration files when removing a filebeat Frontend
+- [RSYSLOG] Only restart service once after modifying configuration files
 ### Changed
 - [LOGGING] [PF] Don't send PF logs to mongodb anymore, log to /var/log/pf/parsed.log instead
 - [UPGRADE] [PKG] Better filtering of update scripts' folders during upgrades

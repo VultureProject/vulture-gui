@@ -147,6 +147,7 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
 
             """ After saving, reload the Rsyslog conf of all Frontends that uses this LogForwarder """
             """ For each node """
+            updated_nodes = set()
             for node in Node.objects.all():
                 """ If the LogForwarder is used by an enable frontend on this node """
                 frontends = set()
@@ -160,6 +161,7 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                     if log_om_old_name:
                         frontend.log_condition = frontend.log_condition.replace(f"{{{{{log_om_old_name}}}}}", f"{{{{{log_om.name}}}}}")
                         frontend.save()
+                    updated_nodes.add(node)
                     api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                     if not api_res.get('status'):
                         raise ServiceConfigError("on node {}\n API request error.".format(node.name), "rsyslog",
@@ -169,6 +171,9 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                 # Write logrotate config
                 if len(frontends) > 0:
                     node.api_request("services.logrotate.logrotate.reload_conf")
+
+            for node in updated_nodes:
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
 
             """ Reload cluster PF configuration """
             Cluster.api_request ("services.pf.pf.gen_config")

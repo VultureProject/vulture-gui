@@ -106,6 +106,7 @@ def config_edit(request, api=False, update=False):
         # If the internal Tenants config has changed, reload Rsyslog configuration of pstats
         if "internal_tenants" in form.changed_data:
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
+            Cluster.api_request("services.rsyslogd.rsyslog.restart_service")
         if "portal_cookie_name" in form.changed_data:
             # Reload Frontends with authenticated Workflows: session checks must be updated with the new cookie's name
             for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():

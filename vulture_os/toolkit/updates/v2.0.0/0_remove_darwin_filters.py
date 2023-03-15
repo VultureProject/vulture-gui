@@ -94,11 +94,15 @@ if __name__ == "__main__":
             # No need to udpate buffering : content_inspection and yara filter types does not allow buffering
 
             print("[+] Reloading dependent frontends...")
+            updated_nodes = set()
             for frontend in reload_frontends_set:
                 print(f"-> Reloading frontend {frontend.name}")
                 frontend.darwin_policies.clear()
                 for frontend_node in frontend.get_nodes():
                     frontend_node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
+                    updated_nodes.add(frontend_node)
+            for node in updated_nodes:
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
             print("[-] Reloaded dependent frontends")
 
             print("[+] Removing empty policies...")

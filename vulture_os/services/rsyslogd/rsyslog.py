@@ -163,8 +163,7 @@ def build_conf(node_logger, frontend_id=None):
      and if reload_conf is True, conf has changed so restart service
     """
     if service.reload_conf() or frontend_id:
-        result += "Rsyslog conf updated. Restarting service."
-        result += service.restart()
+        result += "Rsyslog conf updated."
     else:
         result += "Rsyslog conf hasn't changed."
     return result

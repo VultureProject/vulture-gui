@@ -50,12 +50,19 @@ if __name__ == "__main__":
             frontends = Frontend.objects.filter(mode__in=["impcap", "log"], darwin_policy__isnull=False)
         except Exception as e:
             print("Failed to get Frontends with a darwin policy: {}".format(str(e)))
+
+        restart_rsyslog = False
         for frontend in frontends:
-            print("reloading frontend {}".format(frontend.name))
             if node in frontend.get_nodes():
+                print("reloading frontend {}".format(frontend.name))
+                restart_rsyslog = True
                 api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 if not api_res.get("status"):
                     print("Error while updating rsyslog configuration of frontend '{}': "
                           "{}.".format(frontend.name, api_res.get("message")))
-
+        if restart_rsyslog:
+            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
+            if not api_res.get("status"):
+                print("Error while restarting rsyslog: "
+                        "{}.".format(api_res.get("message")))
         print("Done.")

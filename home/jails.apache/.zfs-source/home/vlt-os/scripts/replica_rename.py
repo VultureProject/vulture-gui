@@ -71,9 +71,14 @@ if __name__ == "__main__":
     Cluster.api_request("services.haproxy.haproxy.configure_node")
 
     # Update Internal mongodb forwarder config in concerned frontends
+    update_nodes = set()
     for frontend in Frontend.objects.filter(Q(log_forwarders_id=1) | Q(mode="http")):
         for node in frontend.get_nodes():
             node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
+            update_nodes.add(node)
+
+    for node in update_nodes:
+        node.api_request("services.rsyslogd.rsyslog.restart_service")
 
     if not res[0]:
         print("Replica_rename::Error : Rename failure : {}".format(res[1]))

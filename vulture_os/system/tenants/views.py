@@ -107,15 +107,16 @@ def tenants_edit(request, object_id=None, api=False, update=False):
         tenant = form.save(commit=False)
         tenant.save()
 
-        # If name changed
-        if name_changed:
-            # Reload Rsyslog conf of each frontends using this tenant
-            tenant.reload_frontends_conf()
-
         # If name has changed, and if it is used in Global config
         if name_changed and tenant.config_set.count() > 0:
             # Reload pstats configuration of Cluster
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
+
+        # If name changed
+        if name_changed:
+            # Reload Rsyslog conf of each frontends using this tenant
+            # This function also restarts Rsyslog at the end
+            tenant.reload_frontends_conf()
 
         if api:
             return build_response(tenant.id, "system.tenants.api", COMMAND_LIST)

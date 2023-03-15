@@ -53,3 +53,9 @@ if __name__ == "__main__":
             print("Error while updating rsyslog configuration: {}.".format(api_res.get("message")))
         else:
             print("Successfully updated rsyslog configuration.")
+
+        api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
+        if not api_res.get("status"):
+            print("Error while restarting rsyslog: {}.".format(api_res.get("message")))
+        else:
+            print("Successfully restarted rsyslog.")

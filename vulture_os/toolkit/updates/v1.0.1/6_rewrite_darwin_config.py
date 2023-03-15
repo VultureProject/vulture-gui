@@ -63,12 +63,19 @@ if __name__ == "__main__":
 
             node.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
 
+        restart_rsyslog = False
         for frontend in rebuild_frontends:
             if node in frontend.get_nodes():
+                restart_rsyslog = True
                 api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 if not api_res.get("status"):
                     print("Error while updating rsyslog configuration of frontend '{}': "
                           "{}.".format(frontend.name, api_res.get("message")))
+        if restart_rsyslog:
+            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
+            if not api_res.get("status"):
+                print("Error while restarting rsyslog: "
+                        "{}.".format(api_res.get("message")))
 
         node.api_request("services.darwin.darwin.reload_conf")
 
