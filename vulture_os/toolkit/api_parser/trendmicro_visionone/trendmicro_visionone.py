@@ -55,7 +55,7 @@ class TrendmicroVisiononeParser(ApiParser):
         self.trendmicro_visionone_token = data["trendmicro_visionone_token"]
         self.trendmicro_visionone_alerts_timestamp = data.get("trendmicro_visionone_alerts_timestamp")
         self.trendmicro_visionone_audit_timestamp = data.get("trendmicro_visionone_audit_timestamp")
-        self.trendmicro_visionone_oac_timestamp = data.get("trendmicro_visionone_oac_timestamp")
+        self.trendmicro_visionone_oat_timestamp = data.get("trendmicro_visionone_oat_timestamp")
 
 
     def _get_alerts(self, since=None, to=None):
@@ -149,7 +149,7 @@ class TrendmicroVisiononeParser(ApiParser):
                 logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                 logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
-            setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to, tz=timezone.utc))
+            setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to, tz=timezone.utc)
             self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
