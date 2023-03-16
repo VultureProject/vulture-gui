@@ -255,7 +255,8 @@ class WAFCloudProtectorParser(ApiParser):
     def execute(self):
 
         # LIMIT TO 6 EXECUTION PER HOUR
-        if timezone.now() % 10 != 0:
+        if (timezone.now() % 10) != 0:            
+            logger.info(f"[{__parser__}]:execute: Parsing bypassed, latest was too reccently ", extra={'frontend': str(self.frontend)})
             return
 
         for server in self.waf_cloud_protector_servers.split(','):
