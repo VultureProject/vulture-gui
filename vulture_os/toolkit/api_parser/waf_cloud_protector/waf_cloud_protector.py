@@ -266,7 +266,15 @@ class WAFCloudProtectorParser(ApiParser):
                     ## GET LOGS ##
                     # datetime.now() : because we don't have timezone in the timestamp in mongodb (not supported by mongo)
                     since = timezone.make_aware(self.frontend.waf_cloud_protector_timestamps[log_type].get(server) or (datetime.now() - timedelta(days=2)))
-                    to = min(timezone.now(), since + timedelta(hours=24))
+
+                    # Calculate the time before since to end of the day of since
+                    since_diff_hour = 23 - since.hour
+                    since_diff_minute = 59 - since.minute
+                    since_diff_second = 59 - since.second
+
+                    # The difference between since and to is : MIN 00h00m00s and MAX 23h59m59s
+                    to = min(timezone.now(), since + timedelta(hours=since_diff_hour, minutes=since_diff_minute, seconds=since_diff_second))
+
                     delta = ((to - since) + timedelta(days=1)).days
 
                     logger.info(f"[{__parser__}]: get_logs from {server} of type {log_type} since {since} to {to}", extra={'frontend': str(self.frontend)})
