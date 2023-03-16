@@ -145,14 +145,16 @@ class TrendmicroVisiononeParser(ApiParser):
                     self.write_to_file([self._format_OAT_log(log) for log in logs])
 
                 self.update_lock()
+                setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to, tz=timezone.utc)
+                self.frontend.save()
 
             except Exception as e:
                 msg = f"Failed on {kind} logs, between time of {since} and {to} : {e} "
                 logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                 logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
-            setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to, tz=timezone.utc)
-            self.frontend.save()
+            
+            
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
