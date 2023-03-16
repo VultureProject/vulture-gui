@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.5.0]
+### Added
+- [API_PARSER] New parser Trendmicro Visionone
+- [API_PARSER] [MS_SENTINEL] Add 'entities' to the logs
+### Fixed
+- [API_PARSER] [NETSKOPE] Fix infinite loop when there is no log
+- [SYSTEM] [RSYSLOG] Only restart Rsyslog when everything has been (re)built
+
+
 ## [2.4.2] - 2023-03-03
 ### Fixed
 - [PORTAL] Allow tokens obtained from an application portal to pass the portal when token is supplied through headers
