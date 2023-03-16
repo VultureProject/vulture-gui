@@ -254,6 +254,10 @@ class WAFCloudProtectorParser(ApiParser):
 
     def execute(self):
 
+        # LIMIT TO 6 EXECUTION PER HOUR
+        if timezone.now() % 10 != 0:
+            return
+
         for server in self.waf_cloud_protector_servers.split(','):
             for log_type in ['alert', 'traffic']:
                 try:
