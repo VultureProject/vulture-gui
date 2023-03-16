@@ -267,7 +267,7 @@ class WAFCloudProtectorParser(ApiParser):
                     # datetime.now() : because we don't have timezone in the timestamp in mongodb (not supported by mongo)
                     since = timezone.make_aware(self.frontend.waf_cloud_protector_timestamps[log_type].get(server) or (datetime.now() - timedelta(days=2)))
 
-                    # Calculate the time before since to end of the day of since
+                    # Calculate the time between since to end of the day of since
                     since_diff_hour = 23 - since.hour
                     since_diff_minute = 59 - since.minute
                     since_diff_second = 59 - since.second
