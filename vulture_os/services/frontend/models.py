@@ -1130,6 +1130,21 @@ class Frontend(models.Model):
     waf_cloud_protector_timestamps = models.JSONField(
         default={ "alert": {}, "traffic": {} }
     )
+    # Trendmicro visionone attributes
+    trendmicro_visionone_token = models.TextField(
+        verbose_name=_("Trendmicro visionone token"),
+        help_text=_("Trendmicro visionone token"),
+        default="none",
+    )
+    trendmicro_visionone_alerts_timestamp = models.DateTimeField(
+        default=None
+    )
+    trendmicro_visionone_audit_timestamp = models.DateTimeField(
+        default=None
+    )
+    trendmicro_visionone_oat_timestamp = models.DateTimeField(
+        default=None
+    )
 
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
