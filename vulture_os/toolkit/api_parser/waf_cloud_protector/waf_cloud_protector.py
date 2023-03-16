@@ -320,6 +320,8 @@ class WAFCloudProtectorParser(ApiParser):
                     self.write_to_file(json_lines)
                     # And update lock after sending lines to Rsyslog
                     self.update_lock()
+                    if to.hour == 23 and to.minute == 59 and to.second == 59:
+                        to = to + timedelta(seconds=1)
                     self.frontend.waf_cloud_protector_timestamps[log_type][server] = to
                     self.frontend.save()
 
