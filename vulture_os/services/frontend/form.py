@@ -331,7 +331,7 @@ class FrontendForm(ModelForm):
                   'proofpoint_trap_host', 'proofpoint_trap_apikey',
                   'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv', 
                   'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
-                  'darwin_mode')
+                  'trendmicro_visionone_token', 'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
