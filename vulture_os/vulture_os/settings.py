@@ -150,6 +150,8 @@ DATABASES = {
     }
 }
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 REDISIP = '127.0.0.1'
 REDISPORT = '6379'
 
