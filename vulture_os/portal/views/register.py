@@ -50,7 +50,6 @@ from portal.system.exceptions        import RedirectionNeededError, UserAlreadyE
 from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError
 from smtplib                         import SMTPException
-from sqlalchemy.exc                  import DBAPIError
 from toolkit.auth.exceptions import UserNotFound
 
 # Extern modules imports
@@ -319,7 +318,7 @@ def registration(request, token_name, proxy_app_id=None):
     except SMTPException as e:
         return registration.ask_credentials_response(request, registrk, str(e))
 
-    except (LDAPError, PyMongoError, DBAPIError) as e:
+    except (LDAPError, PyMongoError) as e:
         logger.error("REGISTER::step2: Error contacting the database : ")
         logger.exception(e)
         return registration.ask_credentials_response(request, registrk, "Error contacting the database <br> <b> Please contact your administrator </b>")

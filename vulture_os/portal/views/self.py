@@ -50,7 +50,6 @@ from portal.views.responses          import error_response
 from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError
 from smtplib                         import SMTPException
-from sqlalchemy.exc                  import DBAPIError
 
 # Extern modules imports
 
@@ -138,7 +137,7 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         logger.error("SELF::self: AssertionError while trying to create Authentication : '{}'".format(e))
         return error_response(portal, error="Invalid link")
 
-    except (DBAPIError, LDAPError, PyMongoError) as e:
+    except (LDAPError, PyMongoError) as e:
         logger.error("SELF::self: Failed to update password :")
         logger.exception(e)
         return Action.ask_credentials_response(request, action, "<b> Database error </b> <br> Please contact your administrator")

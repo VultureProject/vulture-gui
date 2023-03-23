@@ -44,7 +44,6 @@ from authentication.portal_template.models import INPUT_OTP_KEY, INPUT_OTP_RESEN
 from portal.system.exceptions import RedirectionNeededError, CredentialsError, ACLError, TwoManyOTPAuthFailure
 from ldap import LDAPError
 from pymongo.errors import PyMongoError
-from sqlalchemy.exc import DBAPIError
 from toolkit.auth.exceptions import AuthenticationError, RegisterAuthenticationError, OTPError
 
 # Extern modules imports
@@ -146,7 +145,7 @@ class Authentication(object):
                             .format(self.credentials[0], backend))
                 return authentication_results
 
-            except (AuthenticationError, ACLError, DBAPIError, PyMongoError, LDAPError) as e:
+            except (AuthenticationError, ACLError, PyMongoError, LDAPError) as e:
                 logger.error("AUTH::authenticate: Authentication failure for username '{}' on backend '{}'"
                              " : '{}'".format(self.credentials[0], str(backend), str(e)))
                 logger.exception(e)

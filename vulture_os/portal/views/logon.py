@@ -55,7 +55,6 @@ from OpenSSL.SSL                     import Error as OpenSSLError
 from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError, RedisError
 from requests.exceptions             import ConnectionError as RequestsConnectionError
-from sqlalchemy.exc                  import DBAPIError
 from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeededError, CredentialsMissingError,
                                              CredentialsError, REDISWriteError, TwoManyOTPAuthFailure, ACLError)
 from toolkit.auth.exceptions import AuthenticationError, OTPError
@@ -568,7 +567,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(public_token=token_name, request=request, error="Authentication Failure")
 
-            except (DBAPIError, PyMongoError, LDAPError) as e:
+            except (PyMongoError, LDAPError) as e:
                 logger.exception("PORTAL::log_in: Repository driver Error while trying to authenticate user '{}' : {}"
                              .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(public_token=token_name, request=request,

@@ -12,7 +12,6 @@ python-ldap~=3.3
 authy
 pyotp
 qrcode
-sqlalchemy
 captcha
 bs4
 robobrowser

@@ -42,7 +42,6 @@ from django.utils.datastructures     import MultiValueDictKeyError
 from ldap                            import LDAPError
 from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError
-from sqlalchemy.exc                  import DBAPIError
 from portal.system.exceptions        import ACLError, TokenNotFoundError
 from toolkit.auth.exceptions import AuthenticationError
 
@@ -96,7 +95,7 @@ def log_in(request):
     except ACLError as e:
         logger.error("OAUTH2::log_in: ACLError while trying to authenticate user '{}' : {}".format(request.POST.get('username',None), e))
 
-    except (DBAPIError, PyMongoError, LDAPError) as e:
+    except (PyMongoError, LDAPError) as e:
         logger.error("OAUTH2::log_in: Repository driver Error while trying to authenticate user '{}' : {}".format(request.POST.get('username',None), e))
 
     except (MultiValueDictKeyError, AttributeError, KeyError) as e:
