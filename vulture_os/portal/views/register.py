@@ -59,9 +59,9 @@ from captcha.image                   import ImageCaptcha
 from email.mime.multipart            import MIMEMultipart
 from email.mime.text                 import MIMEText
 from jinja2                          import Environment, FileSystemLoader
-from oauth2.tokengenerator           import Uuid4
 from re                              import match as re_match
 from smtplib                         import SMTP
+from uuid                            import uuid4
 
 # Logger configuration
 import logging
@@ -148,7 +148,7 @@ class STEP1Registration(Registration):
 
     def perform_action(self, request, email, token):
         # """ Generate an UUID64 and store it in redis """
-        reset_key = Uuid4().generate()
+        reset_key = str(uuid4())
 
         redis_key = 'registration_' + reset_key
 

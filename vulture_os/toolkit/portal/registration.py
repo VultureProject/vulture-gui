@@ -23,12 +23,12 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Users registration toolkit'
 
 from toolkit.redis.redis_base import RedisBase
-from oauth2.tokengenerator import Uuid4
 from system.cluster.models import Cluster
 from email.mime.multipart            import MIMEMultipart
 from email.mime.text                 import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
+from uuid import uuid4
 
 
 def perform_email_registration(logger, base_url, app_name, template, user_email, user_name, expire=72*3600, repo_id=None):
@@ -90,7 +90,7 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, user_n
 
 
 def create_redis_reset(user_email, user_name, expire, repo_id=None):
-    reset_key = Uuid4().generate()
+    reset_key = str(uuid4())
 
     redis_key = 'password_reset_' + reset_key
 

@@ -12,7 +12,6 @@ python-ldap~=3.3
 authy
 pyotp
 qrcode
-python-oauth2
 sqlalchemy
 captcha
 bs4
