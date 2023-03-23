@@ -1,0 +1,35 @@
+django~=3.2
+djongo[json]~=1.3
+jinja2
+iptools
+django-crontab
+requests
+pyOpenSSL
+redis==4.5.1
+cryptography~=3.4
+python-ldap~=3.3
+authy
+pyotp
+qrcode
+python-oauth2
+sqlalchemy
+captcha
+bs4
+robobrowser
+python-magic
+kerberos
+pyrad
+maxminddb
+validators
+
+# API parsers dependencies
+boto3 # Can be removed if AWS API parser is removed (this parser seems useless, like elasticsearch was)
+edgegrid-python
+meraki
+requests-oauthlib
+gunicorn
+pyjwt ~= 2.3
+websocket-client ~= 1.3.2
+google-auth
+google-api-python-client
+https://github.com/VultureProject/Sophos-Central-SIEM-Integration/archive/refs/heads/add_setup-py.zip

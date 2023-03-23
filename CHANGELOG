@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.5.2] - 2023-03-24
 ### Fixed
 - [PORTAL] Include URL's query parameters during portal redirections
+### Added
+- [REQUIREMENTS] New files requirements.in (application requirements) and requirements.txt (fixed version requirements)
 
 
 ## [2.5.1] - 2023-03-17
