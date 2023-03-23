@@ -143,8 +143,8 @@ DATABASES = {
             'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
             'SSL': True,
-            'SSL_CERTFILE': '/var/db/pki/node.pem',
-            'SSL_CA_CERTS': '/var/db/pki/ca.pem',
+            'tlsCertificateKeyFile': '/var/db/pki/node.pem',
+            'tlsCAFile': '/var/db/pki/ca.pem',
             'READPREFERENCE': "primaryPreferred"
         },
     }
