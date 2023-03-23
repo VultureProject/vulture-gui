@@ -51,7 +51,6 @@ from jinja2 import Environment, FileSystemLoader
 from re import search as re_search
 from requests import post
 import glob
-import yaml
 
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
