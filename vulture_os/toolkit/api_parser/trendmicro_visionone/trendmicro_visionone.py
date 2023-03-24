@@ -119,7 +119,7 @@ class TrendmicroVisiononeParser(ApiParser):
         return r.json()['items']
 
     def _format_OAT_log(self, log):
-        return log["detail"]
+        return log["details"]
 
 
     def execute(self):
@@ -145,7 +145,7 @@ class TrendmicroVisiononeParser(ApiParser):
                     self.write_to_file([self._format_OAT_log(log) for log in logs])
 
                 self.update_lock()
-                setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to, tz=timezone.utc)
+                setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to)
                 self.frontend.save()
 
             except Exception as e:
