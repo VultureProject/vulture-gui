@@ -373,6 +373,9 @@ class CybereasonParser(ApiParser):
         # 24h max per request
         to = min(timezone.now(), since + timedelta(hours=24))
 
+        # delay the times of 5 minutes, to let the times at the API to have all logs
+        to = to - timedelta(minutes=5)
+
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
