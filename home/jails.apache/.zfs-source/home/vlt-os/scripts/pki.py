@@ -41,12 +41,23 @@ if __name__ == "__main__":
     """ Nothing to do if PKI is already set up """
     if os.path.isfile("/var/db/pki/ca.key"):
         print("Warning: CA certificate already exists... ignoring CA creation")
+        try:
+            with open("/var/db/pki/ca.pem", "rb") as cert_file:
+                cacert_pem = cert_file.read()
+        except Exception as e:
+            print(f"Could not read CA certificate: {e}")
+        try:
+            with open("/var/db/pki/ca.key", "rb") as key_file:
+                cakey_pem = key_file.read()
+        except Exception as e:
+            print(f"Could not read CA key: {e}")
+
     else:
 
         """ Build CA Certificate """
         print("Creating CA certificate and private key")
         ca_name = "Vulture_PKI_" + get_random_string(16, 'abcdef0123456789')
-        cacert, cakey = mk_ca_cert_files(
+        cacert_pem, cakey_pem = mk_ca_cert_files(
             ca_name,
             pki["country"],
             pki["state"],
@@ -57,14 +68,17 @@ if __name__ == "__main__":
 
     """ Build node certificate (overwrite if it exist) """
     hostname = subprocess.check_output(['hostname']).strip().decode('utf-8')
-    cert, key = mk_signed_cert_files(
+    # TODO give ca_cert and ca_key
+    _, _ = mk_signed_cert_files(
         hostname,
         pki["country"],
         pki["state"],
         pki["city"],
         pki["organization"],
         pki["organizational_unit"],
-        2
+        2,
+        cacert_pem,
+        cakey_pem
     )
 
     """ Generate Diffie hellman configuration """

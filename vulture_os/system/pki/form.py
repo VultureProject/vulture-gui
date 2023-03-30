@@ -30,7 +30,7 @@ from system.pki.models import (ALPN_CHOICES, BROWSER_CHOICES, PROTOCOL_CHOICES, 
                                VERIFY_CHOICES)
 
 from ast import literal_eval
-from M2Crypto import X509
+from cryptography import x509
 from ssl import PROTOCOL_SSLv23, SSLContext, SSLError
 
 # Logger configuration imports
@@ -82,8 +82,9 @@ class X509ExternalCertificateForm(ModelForm):
 
         if cert:
             try:
-                X509.load_cert_string(cert)
-            except:
+                x509.load_pem_x509_certificate(cert.encode())
+            except Exception as e:
+                logger.error(e)
                 self.add_error('cert', "Invalid PEM X509 certificate")
         else:
             self.add_error('cert', "This field is required.")
