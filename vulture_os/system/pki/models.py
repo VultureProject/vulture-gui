@@ -311,7 +311,7 @@ class X509Certificate(models.Model):
             'issuer': cert.get_issuer().as_text(),
             'status': self.status,
             'validfrom': str(cert.get_not_before()),
-            'validtill': str(cert.get_not_after()),
+            'validuntil': str(cert.get_not_after()),
             'is_vulture_ca': self.is_vulture_ca,
             'is_ca': self.is_ca,
             'is_external': self.is_external,
