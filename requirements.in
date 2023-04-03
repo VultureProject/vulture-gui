@@ -6,7 +6,7 @@ iptools
 django-crontab
 requests
 pyOpenSSL
-redis==4.5.1
+redis~=4.5
 cryptography~=3.4
 python-ldap~=3.3
 authy
