@@ -29,7 +29,7 @@ import requests
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from json import dumps as json_dumps
 from json import loads as json_loads
 from json import JSONDecodeError

@@ -53,7 +53,6 @@ from bson import ObjectId
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from jinja2 import Environment, FileSystemLoader
-from oauth2.tokengenerator import Uuid4
 from re import match as re_match
 from smtplib import SMTP, SMTPException
 

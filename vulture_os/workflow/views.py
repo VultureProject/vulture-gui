@@ -25,7 +25,7 @@ __doc__ = 'Listeners View'
 
 # Django system imports
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponseNotFound
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.shortcuts import render
 from django.conf import settings
 from django.urls import reverse

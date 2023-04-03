@@ -43,9 +43,7 @@ from authentication.portal_template.models import INPUT_OTP_KEY, INPUT_OTP_RESEN
 # Required exceptions imports
 from portal.system.exceptions import RedirectionNeededError, CredentialsError, ACLError, TwoManyOTPAuthFailure
 from ldap import LDAPError
-from oauth2.tokengenerator import Uuid4
 from pymongo.errors import PyMongoError
-from sqlalchemy.exc import DBAPIError
 from toolkit.auth.exceptions import AuthenticationError, RegisterAuthenticationError, OTPError
 
 # Extern modules imports
@@ -53,6 +51,7 @@ from base64 import b64encode, urlsafe_b64decode
 from bson import ObjectId
 from captcha.image import ImageCaptcha
 from smtplib import SMTPException
+from uuid import uuid4
 
 # Logger configuration imports
 import logging
@@ -146,7 +145,7 @@ class Authentication(object):
                             .format(self.credentials[0], backend))
                 return authentication_results
 
-            except (AuthenticationError, ACLError, DBAPIError, PyMongoError, LDAPError) as e:
+            except (AuthenticationError, ACLError, PyMongoError, LDAPError) as e:
                 logger.error("AUTH::authenticate: Authentication failure for username '{}' on backend '{}'"
                              " : '{}'".format(self.credentials[0], str(backend), str(e)))
                 logger.exception(e)
@@ -157,7 +156,7 @@ class Authentication(object):
     def write_oauth2_session(self, scopes):
         logger.debug(f"AUTH::write_oauth2_session: Redis oauth2 session scopes are {scopes}")
         if not self.oauth2_token:
-            self.oauth2_token = Uuid4().generate()
+            self.oauth2_token = str(uuid4())
 
         self.redis_oauth2_session = REDISOauth2Session(self.redis_base, "oauth2_" + self.oauth2_token)
         # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
@@ -232,7 +231,7 @@ class Authentication(object):
     def register_openid(self, openid_token, **kwargs):
         # Generate a new OAuth2 token
         if not self.oauth2_token:
-            self.oauth2_token = Uuid4().generate()
+            self.oauth2_token = str(uuid4())
         # Register it into session
         self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
         # Create a new temporary token containing oauth2_token + kwargs
@@ -567,7 +566,7 @@ class OAUTH2Authentication(Authentication):
             logger.debug("OAUTH2_AUTH::authenticate: Oauth2 attributes : {}"
                          .format(str(authentication_results['data'])))
             if authentication_results['data'].get('oauth2', None) is not None:
-                self.oauth2_token = Uuid4().generate()
+                self.oauth2_token = str(uuid4())
                 self.register_authentication(authentication_results['data']['oauth2'])
                 authentication_results = authentication_results['data']['oauth2']
             elif self.application.enable_oauth2:
@@ -576,7 +575,7 @@ class OAUTH2Authentication(Authentication):
                     'token_ttl': self.application.auth_timeout,
                     'scope': '{}'
                 }
-                self.oauth2_token = Uuid4().generate()
+                self.oauth2_token = str(uuid4())
                 self.register_authentication(authentication_results)
             else:
                 raise AuthenticationError(

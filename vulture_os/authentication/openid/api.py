@@ -29,7 +29,7 @@ from django.http import JsonResponse
 from gui.decorators.apicall import api_need_key
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from authentication.openid.views import edit as openid_edit
 from authentication.openid.models import OpenIDRepository
 from authentication.generic_delete import DeleteOpenIDRepository

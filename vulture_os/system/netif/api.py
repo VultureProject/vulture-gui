@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Network API'
 
 from system.cluster.models import Cluster, NetworkInterfaceCard, NetworkAddress, Node
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from gui.decorators.apicall import api_need_key

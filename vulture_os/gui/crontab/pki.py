@@ -24,7 +24,7 @@ __doc__ = 'Jobs related to PKI'
 
 from system.pki.models import X509Certificate
 from system.cluster.models import Cluster
-from M2Crypto import X509
+from cryptography import x509
 import subprocess
 import os.path
 
@@ -49,8 +49,10 @@ def acme_update():
     """ Now update certificate database"""
     need_restart = False
     for cert in X509Certificate.objects.filter(is_vulture_ca=False, is_external=True):
-        tmp_crt = X509.load_cert_string(cert.cert)
-        cn = str(tmp_crt.get_subject()).replace("/CN=", "")
+        crypto_cert = x509.load_pem_x509_certificate(cert.cert.encode())
+        subject = crypto_cert.subject
+        common_name_obj = subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0]
+        cn = common_name_obj.value
         if os.path.isfile("/var/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)):
             with open("/var/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)) as file_cert:
                 pem_cert = file_cert.read()

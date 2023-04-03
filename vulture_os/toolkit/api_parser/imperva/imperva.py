@@ -28,12 +28,15 @@ import base64
 import hashlib
 import io
 import logging
-import M2Crypto
 import requests
 import zlib
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -83,20 +86,20 @@ class ImpervaParser(ApiParser):
 
         checksum = file_header_content.split("checksum:")[1].splitlines()[0]
 
-        rsa_private_key = M2Crypto.RSA.load_key_string(bytes(self.imperva_private_key, 'utf-8'))
+        rsa_private_key = serialization.load_pem_private_key(bytes(self.imperva_private_key, 'utf-8'))
 
-        content_decrypted_sym_key = rsa_private_key.private_decrypt(
+        content_decrypted_sym_key = rsa_private_key.decrypt(
             base64.b64decode(bytearray(content_encrypted_sym_key, 'utf-8')),
-            M2Crypto.RSA.pkcs1_padding
+            padding.PKCS1v15()
         ).decode('utf-8')
 
         aes_key = base64.b64decode(bytearray(content_decrypted_sym_key, "utf-8"))
         # aes_keysize = 8 * len(aes_key)
 
         iv = b'\x00' * 16
-        cipher = M2Crypto.EVP.Cipher(alg='aes_128_cbc', key=aes_key, iv=iv, op=0)
-        v = cipher.update(file_log_content)
-        file_content_decrypted = v + cipher.final()
+        cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))
+        decryptor = cipher.decryptor()
+        file_content_decrypted = decryptor.update(file_log_content) + decryptor.finalize()
 
         uncompressed_and_decrypted_file_content = zlib.decompressobj().decompress(
             file_content_decrypted

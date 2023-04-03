@@ -24,7 +24,7 @@ __doc__ = 'Authentication main class'
 
 # Django system imports
 from django.conf import settings
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 # Django project imports
 

@@ -25,16 +25,16 @@ __doc__ = 'PKI main models'
 
 from django.conf import settings
 from django.forms.models import model_to_dict
-from django.utils.translation import ugettext_lazy as _
-from M2Crypto import X509
+from django.utils.translation import gettext_lazy as _
 from djongo import models
 import logging
 import OpenSSL
 import urllib.request
 import datetime
 
+from cryptography import x509
 from system.exceptions import VultureSystemConfigError
-from toolkit.system.x509 import mk_signed_cert
+from toolkit.system.x509 import mk_signed_cert, get_cert_PEM, get_key_PEM
 
 import subprocess
 from ssl import TLSVersion
@@ -226,7 +226,7 @@ class X509Certificate(models.Model):
                 with open("/var/db/acme/.acme.sh/{}/fullchain.cer".format(cn)) as pem_chain:
 
                     try:
-                        tmp_crt = X509.load_cert_string(pem_cert)
+                        x509.load_pem_x509_certificate(pem_cert.encode())
                     except Exception as e:
                         logger.error("X509Certificate::gen_letsencrypt(): {}".format(e))
                         return False
@@ -269,13 +269,14 @@ class X509Certificate(models.Model):
         attributes = internal_ca.explose_dn()
 
         try:
-            crt, pk2 = mk_signed_cert(cn, attributes['C'], attributes['ST'], attributes[
-                                      'L'], attributes['O'], attributes['OU'], next_serial)
+            crt, pk2 = mk_signed_cert(cn, attributes['C'], attributes['ST'], attributes['L'],
+                                      attributes['O'], attributes['OU'], next_serial,
+                                      internal_ca.cert.encode(), internal_ca.key.encode())
 
             # Store the certificate
             self.name = name
-            self.cert = crt.as_pem().decode('utf-8')
-            self.key = pk2.as_pem(cipher=None).decode('utf-8')
+            self.cert = get_cert_PEM(crt).decode('utf-8')
+            self.key = get_key_PEM(pk2).decode('utf-8')
             self.status = 'V'
             self.is_vulture_ca = False
             self.is_external = False
@@ -303,15 +304,19 @@ class X509Certificate(models.Model):
         """ Dictionary used to create configuration file related to the node
         :return     Dictionnary of configuration parameters
         """
-        cert = X509.load_cert_string(str(self.cert))
+        try:
+            cert = x509.load_pem_x509_certificate(self.cert.encode())
+        except ValueError as e:
+            logger.error(f"X509Certificate::to_template: could not load the certificate: {e}")
+
         conf = {
             'id': str(self.id),
             'name': self.name,
-            'subject': cert.get_subject().as_text(),
-            'issuer': cert.get_issuer().as_text(),
+            'subject': cert.subject.rfc4514_string(),
+            'issuer': cert.issuer.rfc4514_string(),
             'status': self.status,
-            'validfrom': str(cert.get_not_before()),
-            'validtill': str(cert.get_not_after()),
+            'validfrom': str(cert.not_valid_before.strftime("%c UTC")),
+            'validuntil': str(cert.not_valid_after.strftime("%c UTC")),
             'is_vulture_ca': self.is_vulture_ca,
             'is_ca': self.is_ca,
             'is_external': self.is_external,
@@ -326,8 +331,8 @@ class X509Certificate(models.Model):
         :return: A dictionary with the explosed subject
         """
         attributes = dict()
-        cert = X509.load_cert_string(self.cert)
-        for attr in cert.get_subject().as_text().split(", "):
+        cert = x509.load_pem_x509_certificate(self.cert.encode())
+        for attr in cert.subject.rfc4514_string().split(","):
             k, v = attr.split("=")
             attributes[k] = v
 
@@ -344,10 +349,13 @@ class X509Certificate(models.Model):
         """
         :return: True if the certificate is a Certificate Authority
         """
-        cert = X509.load_cert_string(self.cert)
-        if cert.check_ca() == 1:
-            return True
-        return False
+        cert = x509.load_pem_x509_certificate(self.cert.encode())
+        # try to get basic constraints (oid 2.5.29.19) from certificate
+        try:
+            constraint = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.BASIC_CONSTRAINTS)
+            return constraint.value.ca
+        except x509.ExtensionNotFound:
+            return False
 
     def gen_crl(self):
         """ Build and return the CRL associated to the Vulture's internal ROOT CA

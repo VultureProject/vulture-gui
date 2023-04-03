@@ -32,6 +32,12 @@ except ImportError:
     # Generate a key in the settings' folder
     SECRET_KEY = set_key(SETTINGS_DIR)
 
+# Applying custom patches to code
+try:
+    from toolkit.patches import *
+except ImportError:
+    pass
+
 LOG_LEVEL = "INFO"
 
 DEBUG = False
@@ -137,12 +143,14 @@ DATABASES = {
             'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
             'SSL': True,
-            'SSL_CERTFILE': '/var/db/pki/node.pem',
-            'SSL_CA_CERTS': '/var/db/pki/ca.pem',
+            'tlsCertificateKeyFile': '/var/db/pki/node.pem',
+            'tlsCAFile': '/var/db/pki/ca.pem',
             'READPREFERENCE': "primaryPreferred"
         },
     }
 }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 REDISIP = '127.0.0.1'
 REDISPORT = '6379'

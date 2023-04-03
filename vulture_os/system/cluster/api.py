@@ -26,7 +26,7 @@ __doc__ = 'Cluster API'
 # Django system imports
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings

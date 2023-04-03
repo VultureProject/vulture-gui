@@ -27,7 +27,7 @@ __doc__ = 'Repositories\' mother class'
 from django.conf import settings
 from django.contrib.auth import authenticate as django_authenticate
 from django.forms.models import model_to_dict
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from djongo import models
 
 # Django project imports

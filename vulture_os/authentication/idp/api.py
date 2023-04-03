@@ -34,17 +34,16 @@ from gui.decorators.apicall import api_need_key
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from authentication.base_repository import BaseRepository
 from authentication.user_portal.models import UserAuthentication
 from authentication.totp_profiles.models import TOTPProfile
 from authentication.ldap.tools import NotUniqueError, UserDoesntExistError, GroupDoesntExistError
 from authentication.idp.attr_tools import MAPPING_ATTRIBUTES
-from oauth2.tokengenerator import Uuid4
 from portal.system.redis_sessions import REDISOauth2Session, REDISBase
 from toolkit.portal.registration import perform_email_registration, perform_email_reset
 from toolkit.network.smtp import test_smtp_server
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from system.cluster.models import Cluster
 
@@ -634,7 +633,7 @@ class IDPApiUserTokenView(View):
                                                                         portal_name=portal_name,
                                                                         repo_name=repo_name)
             # All validation is done, creating token
-            token_key = Uuid4().generate()
+            token_key = str(uuid4())
             token = REDISOauth2Session(REDISBase(), f"oauth2_{token_key}")
             logger.info(f"IDPApiUserTokenView::POST::[{portal.name}/{repo}] Creating token "
                         f"with scopes {scopes}, for user {user_dn}, expiration: {expire_at}")

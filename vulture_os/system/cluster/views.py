@@ -29,7 +29,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 from django.shortcuts import render
 from system.cluster.models import Cluster, Node
 from gui.forms.form_utils import DivErrorList
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from toolkit.api.responses import build_response
 from subprocess import CalledProcessError
 from services.pf.pf import test_config as test_pf_config
@@ -46,7 +46,7 @@ def cluster_stepdown(request, object_id, api=False):
     :param api:
     :return:
     """
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -72,7 +72,7 @@ def cluster_remove(request, object_id, api=False):
     """ Remove a node from the MongoDB replicaset
     This is an API request
     """
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -93,7 +93,7 @@ def cluster_join(request, object_id, api=False):
     """ Join a node into the MongoDB replicaset
     This is an API request
     """
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:

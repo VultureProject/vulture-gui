@@ -29,7 +29,7 @@ from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbi
                          HttpResponseNotAllowed)
 from django.shortcuts import render
 from django.urls import reverse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 # Django project imports
 from services.openvpn.form import OpenvpnForm
@@ -265,7 +265,7 @@ def openvpn_edit(request, object_id=None, api=False, update=False):
 
 
 def openvpn_start(request, object_id, api=False):
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -301,7 +301,7 @@ def openvpn_start(request, object_id, api=False):
 
 
 def openvpn_restart(request, object_id, api=False):
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -337,7 +337,7 @@ def openvpn_restart(request, object_id, api=False):
 
 
 def openvpn_stop(request, object_id, api=False):
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -373,7 +373,7 @@ def openvpn_stop(request, object_id, api=False):
 
 
 def openvpn_reload(request, object_id, api=False):
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -409,7 +409,7 @@ def openvpn_reload(request, object_id, api=False):
 
 
 def openvpn_status(request, object_id, api=False):
-    if not request.is_ajax() and not api:
+    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:

@@ -28,7 +28,7 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
                           ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 # Django project imports
 from applications.logfwd.models import LogOM
