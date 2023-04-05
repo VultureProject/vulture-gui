@@ -271,15 +271,18 @@ class WAFCloudProtectorParser(ApiParser):
                     ## DECOMPRESS LOGS ##
                     gzip_file = BytesIO(file_content)
                     buffer_file = gzip.GzipFile(fileobj=gzip_file, mode="rb")
-
+                    # Decompress all archive in memory to prevent seek, tell, read to take too long
+                    file = BytesIO()
+                    file.write(buffer_file.read())
+                    file.seek(0, 0)
                     ## GET MAPPING : The first line ##
-                    first_line = buffer_file.readline()
+                    first_line = file.readline()
                     mapping = [column.replace('"','').replace(' ','').replace('&','').replace('.','').replace('/','') for column in first_line.decode('utf8').strip().split(',')]
 
                     json_lines = []
                     
                     ## FOR EACH LINE : start from the end ##
-                    for line_byte in self.read_reversed_lines(buffer_file):
+                    for line_byte in self.read_reversed_lines(file):
                         
                         line = line_byte.decode('utf8')
                         # Choose the right column to take the date
@@ -311,7 +314,7 @@ class WAFCloudProtectorParser(ApiParser):
                     self.frontend.save()
 
                 except Exception as e:
-                    msg = f"Failed to server {server} on log type {log_type}, between time of {since} and {to} : {e} "
+                    msg = f"Failed to server {server} on log type {log_type}: {e} "
                     logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
