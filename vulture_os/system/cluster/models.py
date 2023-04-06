@@ -804,11 +804,14 @@ class NetworkAddress(models.Model):
         """
         :return: inet or inet6, depending of the IP address
         """
-        ip = ipaddress.ip_address(self.ip)
-        if ip.version == 4:
-            return "inet"
-        else:
-            return "inet6"
+        try:
+            ip = ipaddress.ip_address(self.ip)
+            if ip.version == 4:
+                return "inet"
+            else:
+                return "inet6"
+        except ValueError:
+            return ""
 
     def rc_config(self, force_dev=None, is_system=False):
         """

@@ -64,7 +64,7 @@ if __name__ == "__main__":
     """ Read system configuration """
     with open("/etc/rc.conf", "r") as f:
         # logger.debug(f"reading configuration in {filepath}")
-        pattern_ifconfig = re.compile('^ifconfig_(.*)="?(.*)"?')
+        pattern_ifconfig = re.compile('^ifconfig_(.*)="?\'?([^"\']*)"?\'?')
         pattern_inet6 = re.compile("(inet6 )?(.*)(( prefixlen )|(/))([0-9\.]+)")
         pattern_inet = re.compile("(inet )?(.*)(( netmask )|(/))([0-9\.]+)")
         pattern_gateway = re.compile("^defaultrouter=(.*)")
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
             if m:
                 tmp = m.group(1)
-                config = m.group(2).replace('"', "")
+                config = m.group(2)
                 if "ipv6" in tmp and len(tmp.split("_")) == 2:
                     nic, ipv6 = tmp.split("_")
                     ipv6 = True
