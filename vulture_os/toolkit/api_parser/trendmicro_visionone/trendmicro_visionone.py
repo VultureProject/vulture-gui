@@ -117,9 +117,15 @@ class TrendmicroVisiononeParser(ApiParser):
                 f"Error on URL: {self.URL_BASE + url_path} Status: {r.status_code} Reason/Content: {r.content}")
 
         return r.json()['items']
+    
+    def _format_alert(self, log):
+        return json.dumps(log)
+    
+    def _format_auditlog(self, log):
+        return json.dumps(log)
 
     def _format_OAT_log(self, log):
-        return log["details"]
+        return json.dumps(log["details"])
 
 
     def execute(self):
@@ -136,10 +142,10 @@ class TrendmicroVisiononeParser(ApiParser):
                 end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
                 if kind == "alerts":
                     logs = self._get_alerts(start_time, end_time)
-                    self.write_to_file(logs)
+                    self.write_to_file([self._format_alert(log) for log in logs])
                 elif kind == "audit":
                     logs = self._get_auditlogs(start_time, end_time)
-                    self.write_to_file(logs)
+                    self.write_to_file([self._format_auditlog(log) for log in logs])
                 elif kind == "oat":
                     logs = self._get_OAT(start_time, end_time)
                     self.write_to_file([self._format_OAT_log(log) for log in logs])
