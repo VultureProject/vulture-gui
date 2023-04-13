@@ -154,6 +154,10 @@ class HarfangLabParser(ApiParser):
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
         to = timezone.now()
+
+        # delay the times of 2 minutes, to let the times at the API to have all logs
+        to = to - timedelta(minutes=2)
+
         msg = f"Parser starting from {since} to {to}."
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
