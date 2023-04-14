@@ -1223,10 +1223,16 @@ class Frontend(models.Model):
                                                     for log_fwd in self.log_forwarders_parse_failure.all().only('id')]
 
         if not fields or "log_forwarders" in fields:
-            if self.mode in ("http", "log", 'tcp'):
-                result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
-                                        for log_fwd in self.log_forwarders.all().only('id')]
+            result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
+                                    for log_fwd in self.log_forwarders.all().only('id')]
 
+        for field, value in result.items():
+            if isinstance(value, set):
+                result[field] = list(value)
+            if isinstance(value, datetime.datetime):
+                result[field] = value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+        logger.info(result)
         return result
 
     def to_html_template(self):
