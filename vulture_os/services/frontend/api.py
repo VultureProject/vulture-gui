@@ -109,7 +109,7 @@ class FrontendAPIv1(View):
                 res = Frontend.objects.get(pk=object_id).to_dict(fields=fields)
 
             elif name:
-                res = Frontend.objects.get(name=name).to_dict(fields=fields)
+                res = Frontend.objects.get(name=name.replace(' ', '_')).to_dict(fields=fields)
 
             elif len(filter) > 0:
                 res = [f.to_dict(fields=fields) for f in Frontend.objects.filter(filter)]

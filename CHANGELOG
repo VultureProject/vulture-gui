@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PYTHON] [REQUIREMENTS] replace python-oauth2's uuid generation with built-in uuid lib
 - [PYTHON] [REQUIREMENTS] Completely remove sqlalchemy from requirements and code
 ### Fixed
+- [API] [FRONTEND] Correctly search Frontend by name when it contains spaces
 - [NETWORK] Avoid rc.conf parsing errors on interface entries when values are enclosed in single quotes
 
 ## [2.5.3] - 2023-04-03
