@@ -172,4 +172,4 @@ class ReachFiveParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 # No need to make_aware, date already contains timezone
                 self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
-        logger.error(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
