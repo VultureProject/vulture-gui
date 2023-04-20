@@ -123,7 +123,7 @@ class ListWorkflow(ListView):
 
         s = Q()
         if search:
-            s = Q(fqdn__icontains=search)
+            s = Q(name__icontains=search) | Q(fqdn__icontains=search)
 
         objs = []
         max_objs = self.obj.objects.filter(s).count()
