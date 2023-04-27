@@ -238,7 +238,7 @@ class ProofpointTAPParser(ApiParser):
                         except ProofpointTAPParseError as e:
                             error += "parse error: {}\n".format(e)
                     else:
-                        error += "{}\n".format(e)
+                        error += f"\nCould not get logs: {contents}"
                         break
 
                     fromTime = toTime
