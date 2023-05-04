@@ -227,6 +227,9 @@ class SentinelOneParser(ApiParser):
         # Fetch at most 24h of logs to avoid the parser running for too long
         to = min(timezone.now(), since + timedelta(hours=24))
 
+        # delay the times of 5 minutes, to let the times at the API to have all logs
+        to = to - timedelta(minutes=5)
+
         logger.info(f"[{__parser__}]:execute: ### Start collecting logs from {since} to {to} ###",
                     extra={'frontend': str(self.frontend)})
 
