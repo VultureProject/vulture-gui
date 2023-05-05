@@ -101,9 +101,7 @@ class TrendmicroVisiononeParser(ApiParser):
         url_path = '/v3.0/audit/logs'
 
         query_params = {'detectedStartDateTime': since,
-                        'detectedEndDateTime': to,
-                        'ingestedStartDateTime': since,
-                        'ingestedEndDateTime': to
+                        'detectedEndDateTime': to
                         }
         headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token,
                    'Accept': 'application/json',
@@ -180,7 +178,7 @@ class TrendmicroVisiononeParser(ApiParser):
 
             return {
                 "status": True,
-                "data": (alerts + auditlogs + detection_logs)
+                "data": ([self._format_alert(log) for log in alerts] + [self._format_auditlog(log) for log in auditlogs] + [self._format_OAT_log(log) for log in detection_logs])
             }
         except Exception as e:
             logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
