@@ -1144,7 +1144,25 @@ class Frontend(models.Model):
     trendmicro_visionone_oat_timestamp = models.DateTimeField(
         default=None
     )
-
+    # Cisco Duo attributes
+    cisco_duo_host = models.TextField(
+        verbose_name=_("Cisco Duo API hostname"),
+        help_text=_("Cisco Duo API hostname"),
+        default="api-XXXXXXXX.duosecurity.com",
+    )
+    cisco_duo_ikey = models.TextField(
+        verbose_name=_("Cisco Duo API ikey"),
+        help_text=_("Cisco Duo API integration key"),
+        default="DIWJ8X6AEYOR5OMC6TQ1",
+    )
+    cisco_duo_skey = models.TextField(
+        verbose_name=_("Cisco Duo API skey"),
+        help_text=_("Cisco Duo API secret key"),
+        default="Zh5eGmUq9zpfQnyUIu5OL9iWoMMv5ZNmk3zLJ4Ep",
+    )
+    cisco_duo_offsets = models.JSONField(
+        default={}
+    )
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)

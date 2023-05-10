@@ -241,9 +241,10 @@ class FrontendForm(ModelForm):
                            'safenet_tenant_code', 'safenet_apikey',
                            'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
                            'proofpoint_trap_host', 'proofpoint_trap_apikey',
-                           'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv', 
+                           'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv',
                            'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                            'trendmicro_visionone_token',
+                           'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
                            ]:
             self.fields[field_name].required = False
 
@@ -329,9 +330,11 @@ class FrontendForm(ModelForm):
                   'trendmicro_worryfree_server_port', 'safenet_tenant_code', 'safenet_apikey',
                   'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
                   'proofpoint_trap_host', 'proofpoint_trap_apikey',
-                  'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv', 
+                  'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv',
                   'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
-                  'trendmicro_visionone_token', 'darwin_mode')
+                  'trendmicro_visionone_token',
+                  'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
+                  'darwin_mode')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -492,6 +495,9 @@ class FrontendForm(ModelForm):
             'waf_cloud_protector_tenant': TextInput(attrs={'class': 'form-control'}),
             'waf_cloud_protector_servers': TextInput(attrs={'class': 'form-control'}),
             'trendmicro_visionone_token': TextInput(attrs={'class': 'form-control'}),
+            'cisco_duo_host': TextInput(attrs={'class': 'form-control'}),
+            'cisco_duo_ikey': Textarea(attrs={'class': 'form-control'}),
+            'cisco_duo_skey': Textarea(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
