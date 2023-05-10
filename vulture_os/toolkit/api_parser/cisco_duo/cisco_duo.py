@@ -57,7 +57,7 @@ class CiscoDuoParser(ApiParser):
 
     ENDPOINTS = ["authentication"]
     UNUSED_ENDPOINTS = ["activity", "telephony"]
-    LIMIT = 10
+    LIMIT = 1000
 
     PATH = "/admin/v2/logs/"
 
