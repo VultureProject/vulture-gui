@@ -575,7 +575,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
             except (MultiValueDictKeyError, AttributeError, KeyError) as e:
                 # vltprtlsrnm is always empty during the initial redirection. Don't log that
-                if str(e) != "vltprtlsrnm":
+                if str(e) != "'vltprtlsrnm'":
                     logger.exception("PORTAL::log_in: Error while trying to authenticate user '{}' : {}"
                                  .format(authentication.credentials[0], e))
                 return authentication.ask_credentials_response(public_token=token_name, request=request)
