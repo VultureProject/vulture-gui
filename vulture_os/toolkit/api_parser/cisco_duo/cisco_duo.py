@@ -23,19 +23,13 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'CISCO DUO API'
 __parser__ = 'CISCO DUO'
 
-from json import dumps as json_dumps
 import json
 import logging
-import time
 import hmac
 import hashlib
 import urllib.parse
 import base64
-import gzip
-from io import BytesIO, StringIO
 import requests
-import csv
-from sys import maxsize as sys_maxsize
 
 from datetime import datetime, timedelta
 from django.utils import timezone
