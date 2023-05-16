@@ -205,8 +205,7 @@ class ImpervaParser(ApiParser):
                         self.write_to_file(data)
                         self.imperva_last_log_file = next_log_file
                     except Exception as e:
-                        logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
-
+                        logger.debug(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
                         try:
                             # Download log files index
                             log_files = self._download_log_index()
