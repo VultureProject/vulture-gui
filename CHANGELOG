@@ -4,15 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [2.6.0] - 2023-05-05
 ### Removed
 - [PYTHON] [IMPORTS] useless 'yaml' import in frontend's models.py
 - [PYTHON] [REQUIREMENTS] replace python-oauth2's uuid generation with built-in uuid lib
 - [PYTHON] [REQUIREMENTS] Completely remove sqlalchemy from requirements and code
+### Added
+- [REQUIREMENTS] New files requirements.in (application requirements) and requirements.txt (fixed version requirements)
 ### Fixed
 - [API] [FRONTEND] Correctly search Frontend by name when it contains spaces
 - [FRONTEND] Correctly serialize object's data (for APIs and GUI)
 - [NETWORK] Avoid rc.conf parsing errors on interface entries when values are enclosed in single quotes
+- [API_PARSER] [WAF_CLOUD_PROTECTOR] Gargantually increase performance by decompressing in memory
+- [API_PARSER] [TRENDMICRO_VISIONONE] Fix logs formatting
+- [API_PARSER] [REACHFIVE] Fix logger
+- [API_PARSER] [PROOFPOINT_TAP] Fix logger
+### Changed
+- [SETTINGS] Adapt pymongo database settings to v3.13
+- [API_PARSER] [HARFANGLAB] Add a 2-minute delay on techno fetches
+- [API_PARSER] [SENTINEL_ONE] Add a 5-minute delay on techno fetches
+- [GUI] [WORKFLOW] Allow to search/filter Workflows on their name OR FQDN
+
 
 ## [2.5.3] - 2023-04-03
 ### Fixed
@@ -23,10 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.5.2] - 2023-03-24
 ### Fixed
 - [PORTAL] Include URL's query parameters during portal redirections
-### Changed
-- [SETTINGS] Adapt pymongo database settings to v3.13
-### Added
-- [REQUIREMENTS] New files requirements.in (application requirements) and requirements.txt (fixed version requirements)
 
 
 ## [2.5.1] - 2023-03-17
