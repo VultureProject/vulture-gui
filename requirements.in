@@ -7,7 +7,7 @@ django-crontab
 requests
 pyOpenSSL
 redis~=4.5
-cryptography~=3.4
+cryptography~=39.0
 python-ldap~=3.3
 authy
 pyotp
