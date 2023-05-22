@@ -1226,12 +1226,6 @@ class Frontend(models.Model):
             result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
                                     for log_fwd in self.log_forwarders.all().only('id')]
 
-        for field, value in result.items():
-            if isinstance(value, set):
-                result[field] = list(value)
-            if isinstance(value, datetime.datetime):
-                result[field] = value.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-
         logger.info(result)
         return result
 
