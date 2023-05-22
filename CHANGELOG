@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DEPENDENCIES] Remove constraint on cryptography lib, upgrade cryptography to v40.0.2 and pyopenssl to v23.1.1
 
 
+## [2.6.1] - 2023-05-22
+### Fixed
+- [FRONTEND] [MODELS] Wrong fields' type when trying to use API parsers due to inappropriate conversions
+
+
 ## [2.6.0] - 2023-05-05
 ### Removed
 - [PYTHON] [IMPORTS] useless 'yaml' import in frontend's models.py
