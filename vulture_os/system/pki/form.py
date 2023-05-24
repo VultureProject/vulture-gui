@@ -31,7 +31,7 @@ from system.pki.models import (ALPN_CHOICES, BROWSER_CHOICES, PROTOCOL_CHOICES, 
 
 from ast import literal_eval
 from cryptography import x509
-from ssl import PROTOCOL_SSLv23, SSLContext, SSLError
+from ssl import PROTOCOL_TLS, SSLContext, SSLError
 
 # Logger configuration imports
 import logging
@@ -147,7 +147,7 @@ class TLSProfileForm(ModelForm):
         """ Verify cipher suite format """
         value = self.cleaned_data['cipher_suite']
         """ Test cipher with ssl library """
-        c = SSLContext(PROTOCOL_SSLv23)  # FIXME : Associate with selected protocol
+        c = SSLContext(PROTOCOL_TLS)
         try:
             c.set_ciphers(value)
         except SSLError:
