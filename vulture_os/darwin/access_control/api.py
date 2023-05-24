@@ -50,7 +50,7 @@ class ACLAPIv1(View):
             if object_id:
                 acl = AccessControl.objects.get(pk=ObjectId(object_id)).to_template()
             elif request.GET.get('name'):
-                acl = AccessControl.objects.get(name=request.GET['name']).to_template()
+                acl = AccessControl.objects.get(name=request.GET['name'].replace(' ', '_')).to_template()
             else:
                 acl = [a.to_template() for a in AccessControl.objects.all()]
 

@@ -48,7 +48,7 @@ class LDAPApi(View):
             if object_id:
                 ldap_repository = LDAPRepository.objects.get(pk=object_id)
             elif request.GET.get('name'):
-                ldap_repository = LDAPRepository.objects.get(name=request.GET['name'])
+                ldap_repository = LDAPRepository.objects.get(name=request.GET['name'].replace(' ', '_'))
             else:
                 ldap_repos = [ld.to_dict(fields=fields) for ld in LDAPRepository.objects.all()]
                 return JsonResponse({

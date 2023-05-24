@@ -51,7 +51,7 @@ class OTPAPIv1(View):
             if object_id:
                 otp = OTPRepository.objects.get(pk=ObjectId(object_id)).to_dict(fields=fields)
             elif request.GET.get('name'):
-                otp = OTPRepository.objects.get(name=request.GET['name']).to_dict(fields=fields)
+                otp = OTPRepository.objects.get(name=request.GET['name'].replace(' ', '_')).to_dict(fields=fields)
             else:
                 otp = [a.to_dict(fields=fields) for a in OTPRepository.objects.all()]
 

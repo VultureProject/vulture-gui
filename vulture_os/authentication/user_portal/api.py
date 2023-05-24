@@ -59,7 +59,7 @@ class UserPortalApi(View):
             if object_id:
                 data = UserAuthentication.objects.get(pk=object_id).to_dict(fields=fields)
             elif request.GET.get('name'):
-                data = UserAuthentication.objects.get(name=request.GET['name']).to_dict(fields=fields)
+                data = UserAuthentication.objects.get(name=request.GET['name'].replace(' ', '_')).to_dict(fields=fields)
             elif enable_external:
                 data = [a.to_dict(fields=fields) for a in UserAuthentication.objects.filter(enable_external=enable_external)]
             else:
