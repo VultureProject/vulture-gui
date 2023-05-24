@@ -4,11 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.7.0] - 2023-05-24
+### Added
+- [API_PARSER] New API parser CISCO DUO
 ### Changed
 - [DEPENDENCIES] Remove constraint on cryptography lib, upgrade cryptography to v40.0.2 and pyopenssl to v23.1.1
 ### Fixed
+- [LOGGING] [PORTAL] Don't log exceptions when a user connects to a Portal for the first time!
 - [PKI] [FORM] Use a safer SSL context for fields' validation
+- [API_PARSER] [GSUITE_ALERTCENTER] prevent last_api_call stagnation
+- [API_PARSER] [IMPERVA] Don't log exceptions on 404 errors
+- [API] Correctly search objects by name for
+  - LDAP repositories
+  - OTP Repositories
+  - Portals
+  - ACLs
 
 
 ## [2.6.1] - 2023-05-22
