@@ -207,7 +207,6 @@ def self_ask_passwords(request, portal, action, rdm=None, error="", **kwargs):
 	reset_password_key = rdm
 
 	redirect_url = request.GET.get('redirect_url') or request.META.get('HTTP_REFERER')
-	print(redirect_url)
 	if redirect_url:
 		kwargs['form_action'] = f"?redirect_url={quote_plus(redirect_url)}"
 
@@ -241,7 +240,7 @@ def self_message_main(request, portal, main_url, token_name, app_list, username,
 
 	error_msg = error or ""
 
-	return HttpResponse(portal.render_template("html_self", error_message=error,
+	return HttpResponse(portal.render_template("html_self", error_message=error_msg,
 											   username=username, application_list=app_list,
 											   changePassword=change_password_url, logout=logout_url))
 
