@@ -167,7 +167,7 @@ class SELFService(object):
 
     def retrieve_credentials(self, request):
         """ Get portal_cookie name and application_cookie name from cluster """
-        portal_cookie_name = self.config.portal_cookie_name
+        portal_cookie_name = self.workflow.authentication.auth_cookie_name or self.config.portal_cookie_name
         """ Get portal cookie value (if exists) """
         portal_cookie = request.COOKIES.get(portal_cookie_name, None)
         assert portal_cookie, "SELF:: Portal cookie not found"

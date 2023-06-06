@@ -134,7 +134,7 @@ def openid_start(request, workflow_id, repo_id):
         global_config = Cluster.get_global_config()
         """ Retrieve token and cookies to instantiate Redis wrapper objects """
         # Retrieve cookies required for authentication
-        portal_cookie_name = global_config.portal_cookie_name
+        portal_cookie_name = workflow.authentication.auth_cookie_name or global_config.portal_cookie_name
         portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
         # We must store the state into Redis
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
@@ -180,7 +180,7 @@ def openid_callback(request, workflow_id, repo_id):
     token_name = global_config.public_token
     """ Retrieve token and cookies to instantiate Redis wrapper objects """
     # Retrieve cookies required for authentication
-    portal_cookie_name = global_config.portal_cookie_name
+    portal_cookie_name = workflow.authentication.auth_cookie_name or global_config.portal_cookie_name
 
     try:
         code = request.GET['code']
@@ -330,7 +330,7 @@ def openid_authorize(request, portal_id):
 
         """ Retrieve token and cookies to instantiate Redis wrapper objects """
         # Retrieve cookies required for authentication
-        portal_cookie_name = global_config.portal_cookie_name
+        portal_cookie_name = portal.auth_cookie_name or global_config.portal_cookie_name
         token_name = global_config.public_token
         portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
     except Exception as e:
@@ -797,7 +797,7 @@ def log_in(request, workflow_id=None):
 
         """ Retrieve token and cookies to instantiate Redis wrapper objects """
         # Retrieve cookies required for authentication
-        portal_cookie_name = global_config.portal_cookie_name
+        portal_cookie_name = workflow.authentication.auth_cookie_name or global_config.portal_cookie_name
         token_name = global_config.public_token
         portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
         redirect_url = request.GET.get('redirect_url')

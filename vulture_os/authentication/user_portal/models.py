@@ -25,6 +25,7 @@ __doc__ = 'LDAP Repository model'
 # Django system imports
 from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
@@ -87,6 +88,10 @@ SSO_CONTENT_TYPE_CHOICES = (
     ('multipart', 'multipart/form-data'),
     ('json', 'application/json')
 )
+
+
+def get_random_cookie_name():
+    return get_random_string(8, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
 
 
 #    enable_oauth2 = models.BooleanField(
@@ -364,6 +369,12 @@ class UserAuthentication(models.Model):
         verbose_name=_("User's scope"),
         help_text=_("Scope of user to construct")
     )
+    auth_cookie_name = models.TextField(
+        blank=True,
+        null=False,
+        verbose_name=_("Session cookie name"),
+        help_text=_("Name of the cookie used to keep the portal session, overrides the Cluster's portal_cookie_name value"),
+    )
     auth_timeout = models.PositiveIntegerField(
         default=900,
         verbose_name=_("Disconnection timeout"),
@@ -556,6 +567,13 @@ class UserAuthentication(models.Model):
 
     def __str__(self):
         return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])
+
+    def save(self, *args, **kwargs):
+        if self.enable_external and not self.auth_cookie_name:
+            self.auth_cookie_name = get_random_cookie_name()
+        if not self.enable_external:
+            self.auth_cookie_name = ""
+        super(UserAuthentication, self).save(*args, **kwargs)
 
     @staticmethod
     def str_attrs():

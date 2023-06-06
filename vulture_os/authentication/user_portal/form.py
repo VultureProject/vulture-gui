@@ -91,7 +91,7 @@ class UserAuthenticationForm(ModelForm):
     class Meta:
         model = UserAuthentication
         fields = ('name', 'enable_tracking', 'auth_type', 'portal_template', 'repositories', 'not_openid_repositories',
-                  'lookup_ldap_repo', 'lookup_ldap_attr', 'lookup_claim_attr', 'user_scope',
+                  'lookup_ldap_repo', 'lookup_ldap_attr', 'lookup_claim_attr', 'user_scope', 'auth_cookie_name',
                   'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'otp_repository', 'otp_max_retry',
                   'disconnect_url', 'enable_disconnect_message', 'enable_disconnect_portal', 'enable_registration',
                   'group_registration', 'update_group_registration', 'enable_external', 'external_fqdn',
@@ -115,6 +115,7 @@ class UserAuthenticationForm(ModelForm):
             'lookup_claim_attr': TextInput(attrs={'class': 'form-control'}),
             'portal_template': Select(choices=PortalTemplate.objects.all().only(*PortalTemplate.str_attrs()),
                                       attrs={'class': 'form-control select2'}),
+            'auth_cookie_name': TextInput(attrs={'class': 'form-control'}),
             'auth_timeout': NumberInput(attrs={'class': 'form-control'}),
             'enable_timeout_restart': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'enable_captcha': CheckboxInput(attrs={'class': 'form-control js-switch'}),
