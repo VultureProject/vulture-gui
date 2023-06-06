@@ -473,19 +473,9 @@ class UserAuthentication(models.Model):
         help_text=_("Rotate refresh token at every successful request")
     )
     max_nb_refresh = models.PositiveIntegerField(
-        default=10,
-        verbose_name=_("Maximum number of token"),
-        help_text=_("Number of token allowed to replay of refresh token")
-    )
-    enable_replay = models.BooleanField(
-        default=False,
-        verbose_name=_("Enable refresh token replay"),
-        help_text=_("Allow refresh token to be replayed if a request fail")
-    )
-    replay_timeout = models.PositiveIntegerField(
-        default=10,
-        verbose_name=_("Replay permission timeout"),
-        help_text=_("Time in seconds to permit replay of refresh token")
+        default=0,
+        verbose_name=_("History of expired tokens"),
+        help_text=_("Number of old refresh token kept in memory")
     )
     enable_sso_forward = models.BooleanField(
         default=False,
@@ -748,7 +738,7 @@ class UserAuthentication(models.Model):
         return "Workflow configuration written."
 
     def generate_openid_config(self, issuer):
-        return {
+        config = {
             "issuer": issuer,
             "authorization_endpoint": f"{issuer}/oauth2/authorize",
             "token_endpoint": f"{issuer}/oauth2/token",
@@ -764,7 +754,9 @@ class UserAuthentication(models.Model):
                 "query"
             ],
             "grant_types_supported" : [
-                "authorization_code",
-                "refresh_token"
+                "authorization_code"
             ]
         }
+        if self.enable_refresh:
+            config['grant_types_supported'].append('refresh_token')
+        return config

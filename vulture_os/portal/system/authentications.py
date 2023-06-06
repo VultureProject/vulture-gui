@@ -103,7 +103,6 @@ class Authentication(object):
                 return str(backend.id)
         return ""
 
-
     def set_authentication_params(self, repo, authentication_results):
         if authentication_results:
             result = {}
@@ -175,13 +174,10 @@ class Authentication(object):
     def write_refresh_session(self, scopes):
         logger.info(f"AUTH::write_refresh_session: Redis oauth2 session scopes are {scopes}")
         if not self.refresh_token:
-            self.refresh_token = Uuid4().generate()
+            self.refresh_token = str(uuid4())
 
         self.redis_refresh_session = REDISRefreshSession(self.redis_base, "refresh_" + self.refresh_token)
-        if self.workflow.authentication.enable_replay:
-            timeout = (self.workflow.authentication.oauth_timeout * self.workflow.authentication.max_nb_refresh) + 10
-        else:
-            timeout = self.workflow.authentication.oauth_timeout + 10
+        timeout = self.workflow.authentication.oauth_timeout * (self.workflow.authentication.max_nb_refresh + 1) + 60
 
         # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
         self.redis_refresh_session.register_authentication(
@@ -281,16 +277,15 @@ class Authentication(object):
     def register_openid_refresh(self, openid_token, **kwargs):
         # Generate a new OAuth2 token
         if not self.oauth2_token:
-            self.oauth2_token = Uuid4().generate()
+            self.oauth2_token = str(uuid4())
         if not self.refresh_token:
-            self.refresh_token = Uuid4().generate()
+            self.refresh_token = str(uuid4())
         # Register it into session
         self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
         self.redis_portal_session.set_refresh_token(self.backend_id, self.refresh_token)
         # Create a new temporary token containing oauth2_token + refresh_token + kwargs
         RedisOpenIDSessionRefresh(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, self.refresh_token, **kwargs)
         logger.info(f"AUTH::register_openid_refresh: openid_token, self.oauth2_token, self.refresh_token {openid_token, self.oauth2_token, self.refresh_token}") # delete me
-
 
     def get_redirect_uri(self, backend_id):
         # Grab callback uri used to issue the access_token
@@ -303,6 +298,9 @@ class Authentication(object):
             self.redirect_uri = refresh_uri
         self.redis_portal_session.set_redirect_uri(self.backend_id, self.redirect_uri)
 
+    def del_redirect_uri(self):
+        self.redis_portal_session.del_redirect_uri(self.workflow.id)
+
     def get_redirect_url(self):
         # Get custom redirect_url if present, or default workflow redirect url
         return self.redis_portal_session.get_redirect_url(self.workflow.id) or self.workflow.get_redirect_uri()
@@ -312,7 +310,7 @@ class Authentication(object):
         # self.redis_portal_session['url_{}'.format(self.workflow.id)] = redirect_url
 
     def del_redirect_url(self):
-        self.redis_portal_session.delete_key('url_{}'.format(self.workflow.id))
+        self.redis_portal_session.del_redirect_url(self.workflow.id)
 
     def get_url_portal(self):
         try:
@@ -353,7 +351,6 @@ class Authentication(object):
             logger.error("Failed to render learning fields response : ")
             logger.exception(e)
             return error_response(self.workflow.authentication, "An error occured")
-
 
     def generate_response(self):
         return HttpResponseRedirect(self.get_redirect_url())

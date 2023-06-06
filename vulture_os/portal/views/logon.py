@@ -66,6 +66,7 @@ from oauthlib.oauth2 import OAuth2Error
 # Extern modules imports
 from requests_oauthlib import OAuth2Session
 from base64 import b64decode
+from uuid import uuid4
 
 # Logger configuration imports
 import logging
@@ -269,11 +270,11 @@ def openid_callback(request, workflow_id, repo_id):
             session = RedisOpenIDSessionRefresh(REDISBase(), f"oauth2_{oauth2_token}")
             return JsonResponse({
                     'access_token': oauth2_token,
+                    'refresh_token': refresh_token,
                     'token_type': "Bearer",
                     'scope': ["openid"],
                     'iat': session['iat'],
                     'exp': session['exp'],
-                    'refresh_token': refresh_token
                 })
         else:
             session = RedisOpenIDSession(REDISBase(), f"oauth2_{oauth2_token}")
@@ -326,10 +327,10 @@ def openid_authorize(request, portal_id):
         assert response_type == "code", "The requested response_type is invalid."
         if code_challenge:
             assert code_challenge_method, "No code challenge method specified."
-            assert code_challenge_method.upper() == "S256", "unsupported code challenge method (should be S256)"
+            assert code_challenge_method.upper() == "S256", "unsupported code challenge method (should be S256)."
         if code_challenge_method:
-            assert code_challenge, "No provided code challenge, even though the code challenge method is provided"
-            assert len(code_challenge) > 0, "Code challenge shouldn't be zero"
+            assert code_challenge, "No provided code challenge, even though the code challenge method is provided."
+            assert len(code_challenge) > 0, "Code challenge shouldn't be zero."
     except AssertionError as e:
         logger.exception(e)
         return error_response(portal, str(e))
@@ -372,10 +373,10 @@ def openid_token(request, portal_id):
         portal_configuration = portal.generate_openid_config(f"{scheme}://{fqdn}")
         logger.debug(f"PORTAL::openid_token:: portal_configuration is {portal_configuration}")
     except UserAuthentication.DoesNotExist:
-        logger.error("PORTAL::openid_token: could not find a portal with id {}".format(portal_id))
+        logger.error(f"PORTAL::openid_token: could not find a portal with id {portal_id}")
         return HttpResponseServerError()
     except Exception as e:
-        logger.error("PORTAL::openid_token: an unknown error occurred while searching for portal with id {}: {}".format(portal_id, e))
+        logger.error(f"PORTAL::openid_token: an unknown error occurred while searching for portal with id {portal_id}: {e}")
         return HttpResponseServerError()
 
     try:
@@ -390,14 +391,10 @@ def openid_token(request, portal_id):
         return JsonResponse({'error':"invalid_request", "error_description": str(e)},
                             status=400)
 
-    # Get optional parameters
-    # This is for PKCE validation
-    code_verifier = request.POST.get('code_verifier')
-
     # Check mandatory URI parameters and conditionss
     try:
         if not request.POST.get('client_id'):
-            assert request.headers.get("Authorization"), "Credentials required parameter"
+            assert request.headers.get("Authorization"), "Credentials required parameter."
             client_id, client_secret = b64decode(request.headers.get("Authorization").replace("Basic ", "")).decode('utf8').split(':')
         else:
             # Some clients (such as Single-Page Apps) might prefer to include all data as request parameters
@@ -405,9 +402,9 @@ def openid_token(request, portal_id):
             client_secret = request.POST.get('client_secret')
 
         logger.info(f"PORTAL::openid_token: client_match {client_id == portal.oauth_client_id, client_secret == portal.oauth_client_secret}") # delete me
-        
-        refresh_token_POST = request.POST.get('refresh_token')
-        if request.POST.get('grant_type') != "refresh_token":
+
+        if request.POST.get('grant_type') == "authorization_code":
+            assert client_id == portal.oauth_client_id
             if portal.enable_refresh:
                 session_token = RedisOpenIDSessionRefresh(REDISBase(), f"token_{request.POST.get('code')}")
             else:
@@ -415,91 +412,133 @@ def openid_token(request, portal_id):
             session = REDISOauth2Session(REDISBase(), f"oauth2_{session_token['access_token']}")
             logger.info(f"PORTAL::openid_token: session_token {session_token['access_token'], session_token['refresh_token']}") # delete me
 
-            assert session.exists(), f"Could not find token '{session_token['access_token']}' in redis"
+            assert session.exists(), f"Could not find token '{request.POST.get('code')}' in redis."
 
-        else:
-            # session_token is the refresh_token in this case for compatibility
-            session_token = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token_POST}")
-            logger.info(f"PORTAL::openid_token: session_refresh {refresh_token_POST}") # delete me
-
-            assert session_token.exists(), f"Could not find refresh_token '{refresh_token_POST}' in redis"
-
-        assert client_id == portal.oauth_client_id
-        # Allow public Single-Page Apps to ommit client_secret if initial authorization request used PKCE
-        # So if code_verifier is absent, the client_secret is still required
-        if not session_token.keys.get('code_challenge'):
-            assert client_id, "Missing client_id in request"
-            assert client_secret, "Missing client_secret in request"
-            assert client_secret == portal.oauth_client_secret
-        else:
-            assert code_verifier, "Missing code_verifier"
-            assert validate_pkce_code_identifier(code_verifier, session_token.keys.get('code_challenge')), "Could not validate code verifier"
-            
-        # repo is used as client_id in the refresh_token
-        assert session_token['client_id'] == client_id or session_token['repo'] == client_id, "Invalid client_id."
-        assert session_token['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
-
-
-
-        # This is where we reissue an access_token by providing a correct refresh_token
-        if request.POST.get('grant_type') == "refresh_token":
-            # TODO : Check if scopes in the access_token and redirect_uri are the same than the previous one
-            #        Don't forget to reenable the portal cookie
-            logger.info(f"PORTAL::openid_token: Refreshing the session") # delete me
-        
-            # This variables are available to use :
-            # 'enable_refresh', 'enable_rotation', 'max_nb_refresh', 'enable_replay', 'replay_timeout',
-
-            # Delete current oauth2_token and reissue one
-            # REDISOauth2Session(REDISBase(), f"oauth2_{session_token['access_token']}").delete() # or invalidate
-            
-            # Reissue an access_token
-            # authentication.redis_portal_session.set_oauth2_token(self.backend_id, Uuid4().generate())
-
-            # Write the new tokens in redis
-            # authentication.write_oauth2_session(oauth2_scope)
-            # authentication.write_refresh_session(oauth2_scope, redirect_uri) # REDISRefreshSession.register_authentication
-
-            # if authentication.workflow.authenticate.enable_rotation:
-            #     TODO : Find a way to loop on refresh_tokens and count the active ones
-            #     # Delete current refresh_token (or update with overriden_by key) and reissue one if rotation enabled
-            #     authentication.redis_portal_session.set_refresh_token(authentication.backend_id, authentication.refresh_token)
-            #     refresh_token.delete()
-
-            # Grab the new access_token
-            session = REDISOauth2Session(REDISBase(), f"oauth2_{session_token['access_token']}")
-
-        if portal.enable_refresh:
-            logger.info(f"{portal.enable_refresh, portal.oauth_timeout * portal.max_nb_refresh + 10, portal.enable_rotation, portal.max_nb_refresh, portal.enable_replay, portal.replay_timeout}")
-            if request.POST.get('grant_type') != "refresh_token":
-                return JsonResponse({
-                    'access_token': session_token['access_token'],
-                    'token_type': "Bearer",
-                    'scope': ["openid"],
-                    'iat': session['iat'],
-                    'exp': session['exp'],
-                    'expire_in': session['token_ttl'],
-                    'refresh_token': session_token['refresh_token']
-                })
+            # Allow public Single-Page Apps to ommit client_secret if initial authorization request used PKCE
+            # So if code_verifier is absent, the client_secret is still required
+            if not session_token.keys.get('code_challenge'):
+                assert client_id, "Missing client_id in request."
+                assert client_secret, "Missing client_secret in request."
+                assert client_secret == portal.oauth_client_secret
             else:
-                return JsonResponse({
-                    'access_token': session_token['access_token'],
-                    'token_type': "Bearer",
-                    'scope': ["openid"],
-                    'iat': session['iat'],
-                    'exp': session['exp'],
-                    'expire_in': session['token_ttl'],
-                    'refresh_token': refresh_token_POST
-                })
-        else:
-            return JsonResponse({
+                # Get optional parameters
+                # This is for PKCE validation
+                code_verifier = request.POST.get('code_verifier')
+                assert code_verifier, "Missing code_verifier."
+                assert validate_pkce_code_identifier(code_verifier, session_token.keys.get('code_challenge')), "Could not validate code verifier."
+
+            # repo is used as client_id in the refresh_token
+            assert session_token['client_id'] == client_id, "Invalid client_id."
+            assert session_token['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
+
+            resp = {
                 'access_token': session_token['access_token'],
                 'token_type': "Bearer",
                 'scope': ["openid"],
                 'iat': session['iat'],
                 'exp': session['exp'],
                 'expire_in': session['token_ttl'],
+            }
+            if portal.enable_refresh:
+                resp['refresh_token'] = session_token['refresh_token'] 
+            return JsonResponse(resp)
+
+        elif request.POST.get('grant_type') == "refresh_token":
+            assert client_id, "Missing client_id in request."
+            # assert client_secret, "Missing client_secret in request." # not requiered
+            # assert client_secret == portal.oauth_client_secret
+
+            refresh_token_POST = request.POST.get('refresh_token')
+            session = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token_POST}")
+            logger.info(f"PORTAL::openid_token: session_refresh {refresh_token_POST}") # delete me
+            logger.info(f"PORTAL::openid_token: session {session.keys}") # delete me
+
+            assert session.exists(), f"Could not find refresh_token '{refresh_token_POST}' in redis."
+            assert session['repo'] == client_id, "Invalid client_id."
+            try:
+                logger.info(f"PORTAL::openid_token: overridden by {session['overridden_by'], session['overridden_by'] == None}") # delete me
+                assert session['overridden_by'] == None, "The refresh token provided has been expired."
+            except AssertionError as e:
+                logger.exception(e)
+                refresh_token = refresh_token_POST
+                while True:
+                    logger.info(f"PORTAL::openid_token: disabling tokens {refresh_token, session['access_token']}") # delete me
+
+                    REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete()
+                    session.delete()
+
+                    refresh_token = session['overridden_by']
+                    session = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
+
+                    if session['overridden_by'] == None:
+                        logger.info(f"PORTAL::openid_token: disabling tokens {refresh_token, session['access_token']}") # delete me
+
+                        REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete()
+                        session.delete()
+
+                        return JsonResponse({'error':"invalid_request", "error_description": str(e)},
+                                            status=400)
+
+            # This is where we reissue an access_token by providing a correct refresh_token
+            assert session['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
+            logger.info(f"PORTAL::openid_token: Refreshing the session") # delete me
+        
+            # Delete current access_token and reissue one
+            REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete() # or invalidate
+
+            scope = session["scope"]
+            logger.info(f"PORTAL::openid_token: redis refresh session scopes are {scope}") # change me
+
+            oauth2_token = str(uuid4())
+            oauth2_session = REDISOauth2Session(REDISBase(), "oauth2_" + oauth2_token)
+            # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
+            oauth2_session.register_authentication(
+                str(portal.oauth_client_id),
+                scope,
+                portal.oauth_timeout,
+            )
+ 
+            logger.info(f"PORTAL::openid_token: access token successfuly created : {oauth2_token}") # change me
+            logger.info(f"PORTAL::openid_token: redis oauth2 session scopes are {oauth2_session['scope']}")
+
+            if portal.enable_rotation:
+                refresh_token_POST = str(uuid4())
+                session['overridden_by'] = refresh_token_POST
+                session.write_in_redis(int(session['token_ttl']))
+                logger.info(f"PORTAL::openid_token: new refresh token created : {refresh_token_POST}") # change me
+                session.disable_token()
+                logger.info(f"PORTAL::openid_token: old token deactivated : {session.keys}") # change me
+
+
+                # Grab the new refresh token
+                session = REDISRefreshSession(REDISBase(), "refresh_" + refresh_token_POST)
+
+                timeout = portal.oauth_timeout * (portal.max_nb_refresh + 1) + 60
+
+                # Write the new tokens in redis
+                # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
+                session.register_authentication(
+                    str(portal.oauth_client_id),
+                    scope,
+                    timeout,
+                    oauth2_token,
+                    request.POST.get('redirect_uri'),
+                )
+            else:
+                session['access_token'] = oauth2_token
+                session.write_in_redis(session['token_ttl'])
+
+            logger.info(f"PORTAL::openid_token: {portal.enable_refresh, portal.oauth_timeout * portal.max_nb_refresh + 60, portal.enable_rotation, portal.max_nb_refresh}")
+            return JsonResponse({
+                'access_token': session['access_token'],
+                'refresh_token': refresh_token_POST,
+                'token_type': "Bearer",
+                'scope': ["openid"],
+                'iat': oauth2_session['iat'],
+                'exp': oauth2_session['exp'],
+                'expire_in': oauth2_session['token_ttl'],
             })
+
     except RedisError as e:
         logger.exception(e)
         return JsonResponse({"error": "internal_error", "error_description": "Session error"}, status=500)
@@ -512,6 +551,7 @@ def openid_token(request, portal_id):
 
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
+    logger.info(f"PORTAL::openid_userinfo: request.headers {request.headers}") # delete me
     try:
         scheme = request.META['HTTP_X_FORWARDED_PROTO']
     except KeyError:
@@ -519,6 +559,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         return HttpResponseServerError()
 
     try:
+        logger.info(f"PORTAL::openid_userinfo: request.headers {request.headers}") # delete me
         if portal_id:
             assert UserAuthentication.objects.filter(pk=portal_id).exists()
         elif workflow_id:
@@ -533,23 +574,24 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         return HttpResponseServerError()
 
     try:
-        assert request.headers.get('Authorization')
-        assert request.headers.get('Authorization').startswith("Bearer ")
+        logger.info(f"PORTAL::openid_userinfo: request.headers {request.headers}") # delete me
+        assert request.headers.get('Authorization'), "No Bearer token provided."
+        assert request.headers.get('Authorization').startswith("Bearer "), "No Bearer token provided."
 
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
         logger.info(f"PORTAL::openid_userinfo: oauth2_token {oauth2_token}") # delete me
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
-        assert session, "Session not found"
-        assert session['scope'], "Session does not contain any scope"
+        assert session, "Session not found."
+        assert session['scope'], "Session does not contain any scope."
         # Add internal Oauth2 attributes
         session['scope'].update({'exp': session['exp']})
         session['scope'].update({'iat': session['iat']})
         return JsonResponse(session['scope'])
     except AssertionError as e:
-        logger.info(e)
+        logger.info(f"PORTAL::openid_userinfo: {e}")
         return HttpResponse(status=401)
     except Exception as e:
-        logger.exception(e)
+        logger.exception(f"PORTAL::openid_userinfo: {e}")
         return HttpResponse(status=401)
 
 
@@ -640,9 +682,9 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     portal = workflow.authentication
                     if portal.enable_sso_forward:
                         portal_cookie, oauth2_token, refresh_token = authentication.register_sso(backend_id)
+                        if oauth2_token:
+                            logger.info(f"OAuth2 session = {oauth2_token, refresh_token}") # change me
                     logger.info(f"PORTAL::log_in: User {authentication.credentials[0]} successfully SSO-powered !")
-                    if oauth2_token:
-                        logger.info(f"OAuth2 session = {oauth2_token, refresh_token}") # change me
 
             except AssertionError as e:
                 logger.exception("PORTAL::log_in: Bad captcha input for username '{}' : {}"

@@ -304,6 +304,9 @@ class REDISPortalSession(REDISSession):
         self.keys[f'refresh_uri{backend_id}'] = refresh_uri
         return self.handler.hset(self.key, f'refresh_uri{backend_id}', refresh_uri)
 
+    def del_redirect_uri(self, backend_id):
+        return self.delete_key(f'refresh_uri{backend_id}')
+
     def get_redirect_url(self, workflow_id):
         return self.handler.hget(self.key, f'url_{workflow_id}')
 
@@ -600,7 +603,28 @@ class REDISRefreshSession(REDISSession): # ça c'est la classe pour stocker le r
             self.keys['scope'] = json.loads(self.keys['scope'])
         else:
             self.keys['scope'] = {}
-        logger.info(f"REDISRefreshSession::__init__: self.keys {self.keys}") # delete me
+
+    def enable_token(self):
+        if repo := self.keys.get('repo'):
+            if exp := int(self.keys.get('exp', 0)):
+                timeout = exp - int(time.time())
+                if timeout > 0:
+                    self.set_in_redis(f"{self.key}_{repo}", 1, timeout)
+                    return True
+                else:
+                    logger.warning("REDISRefreshSession::enable_token: did not enable token, already expired")
+
+        logger.error("REDISRefreshSession::enable_token: Could not register token, missing 'repo' and/or 'exp'!")
+        logger.debug(f"REDISRefreshSession::enable_token: token {self.key}: {self.keys}")
+        return False
+
+    def disable_token(self):
+        if repo := self.keys.get('repo'):
+            self.delete_in_redis(f"{self.key}_{repo}")
+            return True
+        else:
+            logger.error("REDISRefreshSession::disable_token: Cannot disable token, 'repo' missing!")
+        return False
 
     def write_in_redis(self, timeout):
         backup_scope = deepcopy(self.keys['scope'])
@@ -608,9 +632,8 @@ class REDISRefreshSession(REDISSession): # ça c'est la classe pour stocker le r
         self.keys['scope'] = json.dumps(self.keys['scope'])
         ret = super().write_in_redis(timeout)
 
-        # set additional keys for API calls use and validation
-        if repo := self.keys.get('repo'):
-            self.set_in_redis(f"{self.key}_{repo}", 1, timeout)
+        # Token will be accepted by Haproxy
+        self.enable_token()
 
         # Restore dict in case of re-use
         self.keys['scope'] = backup_scope
@@ -618,13 +641,10 @@ class REDISRefreshSession(REDISSession): # ça c'est la classe pour stocker le r
         return ret
 
     def delete(self):
-        if repo := self.keys.get('repo'):
-            self.delete_in_redis(f"{self.key}_{repo}")
+        self.disable_token()
         self.delete_in_redis(self.key)
-        session_token = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
-        session_token.delete
 
-    def register_authentication(self, repo_id, oauth2_data, timeout, oauth2_token, redirect_uri, valid = True, overridden_by = None):
+    def register_authentication(self, repo_id, oauth2_data, timeout, oauth2_token, redirect_uri, overridden_by = None):
         iat = int(time.time())
         if isinstance(timeout, datetime):
             exp = int(timeout.timestamp())
@@ -639,10 +659,9 @@ class REDISRefreshSession(REDISSession): # ça c'est la classe pour stocker le r
             'scope': oauth2_data,
             'repo': str(repo_id),
             'access_token': oauth2_token,
-            'redirect_uri': redirect_uri
+            'redirect_uri': redirect_uri,
+            'overridden_by': overridden_by,
         }
-            # 'valid': valid
-            # 'overridden_by': overridden_by
         if not self.keys:
             self.keys = data
         else:
@@ -656,14 +675,13 @@ class REDISRefreshSession(REDISSession): # ça c'est la classe pour stocker le r
             self.keys['exp'] = exp
             self.keys['access_token'] = oauth2_token
             self.keys['redirect_uri'] = redirect_uri
-            # self.keys['valid'] = valid
-            # self.keys['overridden_by'] = overridden_by
+            self.keys['overridden_by'] = overridden_by
 
             for key,item in oauth2_data.items():
                 self.keys['scope'][key] = item
         if not self.write_in_redis(timeout):
             logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")
-            raise REDISWriteError("REDISOauth2Session::register_authentication: Unable to write Oauth2 infos in REDIS")
+            raise REDISWriteError("REDISRefreshSession::register_authentication: Unable to write Oauth2 infos in REDIS")
 
         logger.info(f"REDISRefreshSession::register_authentication: self.keys {self.keys}") # delete me
         return self.key

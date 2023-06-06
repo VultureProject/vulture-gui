@@ -431,28 +431,6 @@
                               </div>
                             </div>
                           </div> <!-- /.row -->
-                          <div class="row oauth">
-                            <div class="col-md-12">
-                              <div class="form-group">
-                                <label class="col-sm-4 control-label">{{ form.enable_replay.label }}</label>
-                                <div class="col-sm-5">
-                                  {{form.enable_replay}}
-                                  {{form.enable_replay.errors|safe}}
-                                </div>
-                              </div>
-                            </div>
-                          </div> <!-- /.row -->
-                          <div class="row oauth">
-                            <div class="col-md-12" id="replay_timeout">
-                              <div class="form-group">
-                                <label class="col-sm-4 control-label">{{ form.replay_timeout.label }}</label>
-                                <div class="col-sm-5">
-                                  {{form.replay_timeout}}
-                                  {{form.replay_timeout.errors|safe}}
-                                </div>
-                              </div>
-                            </div>
-                          </div> <!-- /.row -->
                         </div> <!-- /.tab-refresh -->
                       </div> <!-- /.tab-pane -->
                       <div class="tab-pane" id="tab_sso_forward">
@@ -875,8 +853,7 @@
   /* Show or hide oauth2 refresh token fields */
   const refresh_token_toggle_fields = {
     'id_enable_refresh': ["tab-refresh"],
-    'id_enable_rotation': ["replay_timeout"],
-    'id_enable_replay': ["max_nb_refresh"]
+    'id_enable_rotation': ["max_nb_refresh"],
   };
   function toggle_refresh(toggle_name) {
     for( field of refresh_token_toggle_fields[toggle_name] ) {
