@@ -468,7 +468,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
 
 
-def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=False, sso_forward=True, openid=False):
+def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=False, sso_forward=True, openid=False, keep_method=False):
 
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
 
@@ -774,7 +774,10 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                                                      state=request.GET.get('state', ""),
                                                      code=token))
     else:
-        return HttpResponseTemporaryRedirect(authentication.get_redirect_url() or workflow.public_dir)
+        if keep_method:
+            return HttpResponseTemporaryRedirect(authentication.get_redirect_url() or workflow.public_dir)
+        else:
+            return HttpResponseRedirect(authentication.get_redirect_url() or workflow.public_dir)
 
 
 def log_in(request, workflow_id=None):
@@ -817,7 +820,7 @@ def log_in(request, workflow_id=None):
         logger.error("PORTAL::log_in: an unknown error occurred while retrieving global config : {}".format(e))
         return HttpResponseServerError()
 
-    response = authenticate(request, workflow, portal_cookie, token_name)
+    response = authenticate(request, workflow, portal_cookie, token_name, keep_method=True)
 
     try:
         kerberos_token_resp = authentication_results['data']['token_resp']

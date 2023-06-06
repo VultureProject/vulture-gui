@@ -41,7 +41,7 @@ from authentication.openid.models import OpenIDRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_scope.models import UserScope
 from services.frontend.models import Frontend
-from toolkit.http.utils import build_url
+from toolkit.http.utils import build_url, build_url_params
 from toolkit.system.hashes import random_sha256
 from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
 from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
@@ -640,6 +640,22 @@ class UserAuthentication(models.Model):
             base_url = req_scheme + "://" + workflow_host + workflow_path
         base_url += '/' if base_url[-1] != '/' else ''
         return base_url+"oauth2/callback/{}".format(repo_id)
+
+    def get_openid_start_url(self, req_scheme, workflow_host, workflow_path, repo_id):
+        if self.enable_external:
+            base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
+        else:
+            base_url = req_scheme + "://" + workflow_host + workflow_path
+        base_url += '/' if base_url[-1] != '/' else ''
+        return build_url_params(base_url + "oauth2/start/", repo=repo_id)
+
+    def get_openid_authorize_url(self, **kwargs):
+        if self.enable_external:
+            base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
+            full_url = build_url_params(base_url + "oauth2/authorize/", kwargs)
+            return full_url
+        else:
+            return ""
 
     def write_login_template(self):
         """ Write templates as static, to serve them without rendering """
