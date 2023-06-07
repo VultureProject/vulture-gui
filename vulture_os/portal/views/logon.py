@@ -461,23 +461,22 @@ def openid_token(request, portal_id):
             except AssertionError as e:
                 logger.exception(e)
                 refresh_token = refresh_token_POST
-                while True:
-                    logger.info(f"PORTAL::openid_token: disabling tokens {refresh_token, session['access_token']}") # delete me
 
-                    REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete()
-                    session.delete()
+                # delete this token pair
+                logger.info(f"PORTAL::openid_token: disabling tokens {refresh_token, session['access_token']}") # delete me
+                REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete()
+                session.delete()
 
+                while session['overridden_by'] != None: # delete every token pair in the chain
                     refresh_token = session['overridden_by']
                     session = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
 
-                    if session['overridden_by'] == None:
-                        logger.info(f"PORTAL::openid_token: disabling tokens {refresh_token, session['access_token']}") # delete me
+                    logger.info(f"PORTAL::openid_token: disabling tokens {refresh_token, session['access_token']}") # delete me
+                    REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete()
+                    session.delete()
 
-                        REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete()
-                        session.delete()
-
-                        return JsonResponse({'error':"invalid_request", "error_description": str(e)},
-                                            status=400)
+                return JsonResponse({'error':"invalid_request", "error_description": str(e)},
+                                    status=400)
 
             # This is where we reissue an access_token by providing a correct refresh_token
             assert session['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
@@ -526,7 +525,7 @@ def openid_token(request, portal_id):
                 )
             else:
                 session['access_token'] = oauth2_token
-                session.write_in_redis(session['token_ttl'])
+                session.write_in_redis(int(session['token_ttl']))
 
             logger.info(f"PORTAL::openid_token: {portal.enable_refresh, portal.oauth_timeout * portal.max_nb_refresh + 60, portal.enable_rotation, portal.max_nb_refresh}")
             return JsonResponse({
