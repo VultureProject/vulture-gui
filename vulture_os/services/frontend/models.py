@@ -1161,7 +1161,7 @@ class Frontend(models.Model):
         default="Zh5eGmUq9zpfQnyUIu5OL9iWoMMv5ZNmk3zLJ4Ep",
     )
     cisco_duo_offsets = models.JSONField(
-        default={}
+        default=dict
     )
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
