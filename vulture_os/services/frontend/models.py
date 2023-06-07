@@ -464,6 +464,19 @@ class Frontend(models.Model):
         help_text=_("Optional password to use via the 'AUTH' redis command when connecting to redis"),
         verbose_name=_("Redis password")
     )
+    """ Performance settings """
+    nb_workers = models.PositiveIntegerField(
+        default=8,
+        null=True,
+        help_text=_("Maximum number of workers for rsyslog ruleset"),
+        verbose_name=_("Maximum parser workers")
+    )
+    mmdb_cache_size = models.PositiveIntegerField(
+        default=0,
+        null=True,
+        help_text=_("Number of entries of the LFU cache for mmdblookup."),
+        verbose_name=_("mmdblookup LFU cache size")
+    )
 
     """ Node is mandatory for KAFKA, FILE and REDIS modes """
     node = models.ForeignKey(
@@ -1420,6 +1433,8 @@ class Frontend(models.Model):
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
+            'nb_workers': self.nb_workers,
+            'mmdb_cache_size': self.mmdb_cache_size,
             'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
             'darwin_mode': self.darwin_mode,
