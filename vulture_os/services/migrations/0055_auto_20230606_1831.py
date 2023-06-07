@@ -25,5 +25,15 @@ class Migration(migrations.Migration):
             name='cisco_duo_offsets',
             field=djongo.models.fields.JSONField(default=dict),
         ),
+        migrations.AlterField(
+            model_name='frontend',
+            name='cisco_duo_ikey',
+            field=models.TextField(default='', help_text='Cisco Duo API integration key', verbose_name='Cisco Duo API ikey'),
+        ),
+        migrations.AlterField(
+            model_name='frontend',
+            name='cisco_duo_skey',
+            field=models.TextField(default='', help_text='Cisco Duo API secret key', verbose_name='Cisco Duo API skey'),
+        ),
         migrations.RunPython(add_default_cisco_duo_offsets, migrations.RunPython.noop),
     ]

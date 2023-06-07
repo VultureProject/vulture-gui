@@ -1153,12 +1153,12 @@ class Frontend(models.Model):
     cisco_duo_ikey = models.TextField(
         verbose_name=_("Cisco Duo API ikey"),
         help_text=_("Cisco Duo API integration key"),
-        default="DIWJ8X6AEYOR5OMC6TQ1",
+        default="",
     )
     cisco_duo_skey = models.TextField(
         verbose_name=_("Cisco Duo API skey"),
         help_text=_("Cisco Duo API secret key"),
-        default="Zh5eGmUq9zpfQnyUIu5OL9iWoMMv5ZNmk3zLJ4Ep",
+        default="",
     )
     cisco_duo_offsets = models.JSONField(
         default=dict
