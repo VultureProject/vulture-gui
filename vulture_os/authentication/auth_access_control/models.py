@@ -60,55 +60,55 @@ def check_not_exists(scope, key, value):
 
 def check_equals(scope, key, value):
     if key not in scope:
-        return false
+        return False
     else:
         return scope[key] == value
 
 def check_not_equals(scope, key, value):
     if key not in scope:
-        return false
+        return False
     else:
         return scope[key] != value
 
 def check_contains(scope, key, value):
     if key not in scope:
-        return false
+        return False
     else:
         return value in scope[key]
 
 def check_no_contains(scope, key, value):
     if key not in scope:
-        return false
+        return False
     else:
         return value not in scope[key]
 
 def check_starts_with(scope, key, value):
     if key not in scope or type(scope[key]) != str:
-        return false
+        return False
     else:
         return scope[key].startswith(value)
 
 def check_no_start_with(scope, key, value):
     if key not in scope or type(scope[key]) != str:
-        return false
+        return False
     else:
         return not scope[key].startswith(value)
 
 def check_ends_with(scope, key, value):
     if key not in scope or type(scope[key]) != str:
-        return false
+        return False
     else:
         return scope[key].endswith(value)
 
 def check_no_end_with(scope, key, value):
     if key not in scope or type(scope[key]) != str:
-        return false
+        return False
     else:
         return not scope[key].endswith(value)
 
 def check_regex(scope, key, value):
     if key not in scope or type(scope[key]) != str:
-        return false
+        return False
     else:
         return re.match(value, scope[key]) != None
 
@@ -157,6 +157,8 @@ class AuthAccessControl(models.Model):
             for line in or_group['lines']:
                 try:
                     if not OPERATOR_FUNCTION[line['operator']](scope, line['variable_name'], line.get('value', '')):
+                        logger.warning(f"AuthAccessControl:: user unauthorized -> variable '{line['variable_name']}' " 
+                                    f"did not match value '{line.get('value', '')}' for operator '{line['operator']}'")
                         match = False
                         break
                 except Exception as e:

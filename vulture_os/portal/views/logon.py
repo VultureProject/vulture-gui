@@ -246,7 +246,7 @@ def openid_callback(request, workflow_id, repo_id):
     except ACLError as e:
         logger.error("PORTAL::openid_callback: ACLError while trying to authenticate user '{}' : {}"
                         .format(authentication.credentials[0], e))
-        return authentication.ask_credentials_response(request=request, error="Authentication Failure")
+        return authentication.ask_credentials_response(request=request, error="User Unauthorized")
 
     except OAuth2Error as e:
         logger.exception(e)

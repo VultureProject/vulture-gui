@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ###  Fixed
 - [PORTAL] [VIEWS] Correctly print error messages on self-service page
 - [PORTAL] [SELF_SERVICE] Repair and improve self-service page
+- [PORTAL] [AUTH_FILTERS] Authentication filters could not check conditions properly
 
 
 ## [2.7.1] - 2023-06-07
