@@ -816,12 +816,6 @@
                     </div>
                   </div> <!-- /.tab-pane tab_custom -->
                   <div class="tab-pane" id="tab_performance">
-                    <span>Here you can define various custom settings to enhance default performance. <br/><br/>
-                      <ul>
-                        <li><b>nb_workers</b>: Define how many workers to use for parsing (defaults to '8')</li>
-                        <li><b>cache_size</b>: Define the size of the LFU cache for mmdblookup (default is '0', which means cache is disabled)</li>
-                      </ul>
-                    </span>
                     <div class="row nb_worker">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -829,6 +823,17 @@
                           <div class="col-sm-8">
                             {{form.nb_workers}}
                             {{form.nb_workers.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row redis_batch_size">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{% trans "Size of batch for imhiredis pipeline *POP" %}</label>
+                          <div class="col-sm-8">
+                            {{form.redis_batch_size}}
+                            {{form.redis_batch_size.errors|safe}}
                           </div>
                         </div>
                       </div>
