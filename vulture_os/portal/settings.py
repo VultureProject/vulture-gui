@@ -181,6 +181,13 @@ LOG_SETTINGS = {
             'maxBytes': 10485760,
             'backupCount': 5,
         },
+        'authentication': {
+            'class': 'logging.handlers.WatchedFileHandler',
+            'level': LOG_LEVEL,
+            'formatter': 'verbose',
+            'filename': '/var/log/vulture/portal/authentication.log',
+            'mode': 'a'
+        },
         'debug': {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
@@ -203,6 +210,11 @@ LOG_SETTINGS = {
         },
         'redis_events': {
             'handlers': ['file_redis_events', 'database', 'console'],
+            'propagate': True,
+            'level': LOG_LEVEL,
+        },
+        'authentication': {
+            'handlers': ('authentication', 'database', 'console'),
             'propagate': True,
             'level': LOG_LEVEL,
         },

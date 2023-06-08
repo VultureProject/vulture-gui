@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - [PORTAL] [IDP] Define a new custom cookie name for IDP portal sessions
+- [SETTINGS] [LOGGING] Add correct logging for some code shared between GUI and Portal
 ###  Fixed
 - [PORTAL] [VIEWS] Correctly print error messages on self-service page
 - [PORTAL] [SELF_SERVICE] Repair and improve self-service page

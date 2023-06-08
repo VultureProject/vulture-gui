@@ -40,7 +40,7 @@ from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, Us
 
 # Logger configuration imports
 import logging
-logger = logging.getLogger('portal_authentication')
+logger = logging.getLogger('authentication')
 
 
 class LDAPClient(BaseAuth):

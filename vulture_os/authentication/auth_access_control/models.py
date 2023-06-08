@@ -34,7 +34,7 @@ import json
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
-logger = logging.getLogger('gui')
+logger = logging.getLogger('authentication')
 
 
 OPERATOR_CHOICES = [
