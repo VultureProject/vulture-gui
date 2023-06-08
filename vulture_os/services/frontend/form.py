@@ -609,8 +609,8 @@ class FrontendForm(ModelForm):
 
     def clean_mmdb_cache_size(self):
         data = self.cleaned_data.get('mmdb_cache_size')
-        if data and data !=0 and data < 2:
-            self.add_error('mmdb_cache_size', "MMDB Cache size needs to be zero or greater than 2 (recommanded value is 10000)")
+        if data and data !=0 and data % 2 != 0:
+            self.add_error('mmdb_cache_size', "MMDB Cache size needs to be zero or a multiple of 2 (recommended value is 10000)")
         return data
 
     def clean_redis_batch_size(self):
