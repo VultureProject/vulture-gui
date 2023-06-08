@@ -683,6 +683,8 @@ class LDAPClient(BaseAuth):
                 continue
             if isinstance(val, list) and len(val) == 1:
                 val = val[0]
+            if isinstance(val, bytes):
+                val = val.hex()
             res[key] = val
             # Add user_email and user_phone keys for OTP + SSO compatibility
             if key == self.user_mobile_attr:
