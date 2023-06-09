@@ -239,7 +239,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row -->
-                  <div class="row">
+                    <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{form.enable_http_keep_alive.label}}</label>
@@ -310,6 +310,17 @@
                           <div class="col-sm-4">
                             {{form.http_health_check_expect_pattern}}
                             {{form.http_health_check_expect_pattern.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row http-health-check">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.http_health_check_interval.label}}</label>
+                          <div class="col-sm-4">
+                            {{form.http_health_check_interval}}
+                            {{form.http_health_check_interval.errors|safe}}
                           </div>
                         </div>
                       </div>

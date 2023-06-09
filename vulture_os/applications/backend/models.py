@@ -71,7 +71,8 @@ LOG_LEVEL_CHOICES = (
 # Modes choices of HAProxy HTTP Backend
 HEALTH_CHECK_VERSION_CHOICES = (
     ('HTTP/1.0\\r\\n', 'HTTP/1.0'),
-    ('HTTP/1.1\\r\\n', 'HTTP/1.1')
+    ('HTTP/1.1\\r\\n', 'HTTP/1.1'),
+    ('HTTP/2', 'HTTP/2')
 )
 
 HEALTH_CHECK_METHOD_CHOICES = (
@@ -150,7 +151,7 @@ class Backend(models.Model):
     configuration = models.TextField(
         default="{}"
     )
-    """ Status of frontend for each nodes """
+    """ Status of backend for each nodes """
     status = models.JSONField(
         default={}
     )
@@ -242,6 +243,13 @@ class Backend(models.Model):
         default="200",
         help_text=_("Type of pattern to match to expect"),
         verbose_name=_("HTTP Health Check expected pattern")
+    )
+    """ Health check interval """
+    http_health_check_interval = models.PositiveIntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(3600)],
+        help_text=_("HTTP Health Check interval"),
+        verbose_name=_("HTTP Health Check interval")
     )
     """ Enable or disable HTTP keep-alive from client to server """
     enable_http_keep_alive = models.BooleanField(
@@ -424,6 +432,7 @@ class Backend(models.Model):
             'http_health_check_uri': self.http_health_check_uri,
             'http_health_check_version': self.http_health_check_version,
             'http_health_check_headers': self.http_health_check_headers,
+            'http_health_check_interval': self.http_health_check_interval,
             'enable_http_keep_alive': self.enable_http_keep_alive,
             'http_keep_alive_timeout': self.http_keep_alive_timeout,
             'access_controls_list': set(access_controls_list),
@@ -442,8 +451,7 @@ class Backend(models.Model):
             # Same for headers
             result['headers'] = header_list or self.headers.all()
             if self.enable_http_health_check and self.http_health_check_expect_match:
-                result['http_health_check_expect'] = "{} {}".format(self.http_health_check_expect_match,
-                                                                    self.http_health_check_expect_pattern)
+                result['http_health_check_expect'] = f"{self.http_health_check_expect_match} {self.http_health_check_expect_pattern}"
         return result
 
     def generate_conf(self, server_list=None, header_list=None):

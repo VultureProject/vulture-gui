@@ -100,7 +100,7 @@ class BackendForm(ModelForm):
                   'enable_http_health_check', 'http_health_check_method', 'http_health_check_uri',
                   'http_health_check_version', 'enable_http_keep_alive', 'http_keep_alive_timeout',
                   'balancing_mode', 'balancing_param', 'http_health_check_expect_match',
-                  'http_health_check_expect_pattern', 'tags', 'http_backend_dir')
+                  'http_health_check_expect_pattern', 'http_health_check_interval', 'tags', 'http_backend_dir')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -119,6 +119,7 @@ class BackendForm(ModelForm):
             'http_health_check_uri': TextInput(attrs={'class': 'form-control'}),
             'http_health_check_version': Select(choices=HEALTH_CHECK_VERSION_CHOICES, attrs={'class': 'form-control select2'}),
             'http_health_check_expect_match': Select(choices=HEALTH_CHECK_EXPECT_CHOICES, attrs={'class': 'form-control select2'}),
+            'http_health_check_interval': NumberInput(attrs={'class': 'form-control'}),
             'http_health_check_expect_pattern': TextInput(attrs={'class': 'form-control'}),
             'enable_http_keep_alive': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'http_keep_alive_timeout': NumberInput(attrs={'class': 'form-control'}),
@@ -137,7 +138,7 @@ class BackendForm(ModelForm):
         for field_name in ['headers', 'custom_haproxy_conf', 'http_health_check_method',
                            'http_health_check_uri', 'http_health_check_version', 'http_keep_alive_timeout',
                            'balancing_param', 'http_health_check_expect_match', 'http_health_check_expect_pattern',
-                           'tags', 'http_backend_dir']:
+                           'http_health_check_expect_pattern', 'tags', 'http_backend_dir']:
             self.fields[field_name].required = False
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
