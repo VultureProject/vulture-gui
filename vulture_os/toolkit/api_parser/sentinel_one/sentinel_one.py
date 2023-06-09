@@ -255,8 +255,16 @@ class SentinelOneParser(ApiParser):
 
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
-                if len(logs) > 0 or (to - since) == timedelta(hours=24):
+                if len(logs) > 0:
                     self.frontend.last_api_call = to
+
+                elif self.last_api_call < timezone.now() - timedelta(hours=24):
+                    # If no logs where retrieved during the last 24hours,
+                    # move forward 1h to prevent stagnate ad vitam eternam
+                    self.frontend.last_api_call += timedelta(hours=1)
+                    logger.info(f"[{__parser__}]:execute: No recent alert found and last_api_call too old - "
+                                f"setting it to {self.frontend.last_api_call}",
+                                extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: update last_api_call to {self.frontend.last_api_call}",
                     extra={'frontend': str(self.frontend)})
