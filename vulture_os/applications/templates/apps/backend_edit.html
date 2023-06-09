@@ -59,6 +59,7 @@
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
                   <li><a href="#tab_servers" data-toggle="tab">{% trans "Servers" %}</a></li>
+                  <li><a href="#tab_tcp" data-toggle="tab" class="tcp-mode">{% trans "TCP Options" %}</a></li>
                   <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% trans "HTTP Options" %}</a></li>
                   <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% trans "HTTP Headers" %}</a></li>
                   <li><a href="#tab_custom" data-toggle="tab">{% trans "Custom conf" %}</a></li>
@@ -137,35 +138,33 @@
                         </div>
                       </div>
                     </div> <!-- /.row  -->
-                  </div> <!-- /.tab-pane -->
+                  </div> <!-- /.tab-pane tab_general -->
                   <div class="tab-pane" id="tab_servers">
-
-                      <div class="row">
-                        <div class="col-md-12">
-                          <div class="form-group"><br/>
-                            <label class="col-sm-4 control-label">{{ form.balancing_mode.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.balancing_mode}}
-                              {{form.balancing_mode.errors|safe}}
-                            </div>
-                          </div>
-                          <div class="form-group http-mode">
-                            <label class="col-sm-4 control-label">{{ form.http_backend_dir.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.http_backend_dir}}
-                              {{form.http_backend_dir.errors|safe}}
-                            </div>
-                          </div>
-                          <div class="form-group" id="balancing_param">
-                            <label id="balancing_param_label" class="col-sm-4 control-label">{{ form.balancing_param.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.balancing_param}}
-                              {{form.balancing_param.errors|safe}}
-                            </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group"><br/>
+                          <label class="col-sm-4 control-label">{{ form.balancing_mode.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.balancing_mode}}
+                            {{form.balancing_mode.errors|safe}}
                           </div>
                         </div>
-                      </div> <!-- /.row  -->
-
+                        <div class="form-group http-mode">
+                          <label class="col-sm-4 control-label">{{ form.http_backend_dir.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.http_backend_dir}}
+                            {{form.http_backend_dir.errors|safe}}
+                          </div>
+                        </div>
+                        <div class="form-group" id="balancing_param">
+                          <label id="balancing_param_label" class="col-sm-4 control-label">{{ form.balancing_param.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.balancing_param}}
+                            {{form.balancing_param.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row  -->
                     <fieldset class="col-lg-12 sol-sm-12">
                       <legend>{% trans "Backend Net servers" %}</legend>
                       <div class="row">
@@ -209,7 +208,85 @@
                         </div>
                       </div>
                     </fieldset>
-                  </div>
+                  </div> <!-- /.tab-pane tab_servers -->
+                  <div class="tab-pane" id="tab_tcp">
+                  <br/>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{form.enable_tcp_keep_alive.label}}</label>
+                          <div class="col-sm-3">
+                            {{form.enable_tcp_keep_alive}}
+                            {{form.enable_tcp_keep_alive.errors|safe}}
+                          </div>
+                        </div>
+                        <div class="form-group tcp-keep-alive">
+                          <label class="col-sm-3 control-label">{{form.tcp_keep_alive_timeout.label}}</label>
+                          <div class="col-sm-3">
+                            {{form.tcp_keep_alive_timeout}}
+                            {{form.tcp_keep_alive_timeout.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{form.enable_tcp_health_check.label}}</label>
+                          <div class="col-sm-1">
+                            {{form.enable_tcp_health_check}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row tcp-health-check">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.tcp_health_check_linger.label}}</label>
+                          <div class="col-sm-4">
+                            {{form.tcp_health_check_linger}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row tcp-health-check">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.tcp_health_check_send.label}}</label>
+                          <div class="col-sm-4">
+                            {{form.tcp_health_check_send}}
+                            {{form.tcp_health_check_send.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row tcp-health-check">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.tcp_health_check_expect_match.label}}</label>
+                          <div class="col-sm-2">
+                            {{form.tcp_health_check_expect_match}}
+                            {{form.tcp_health_check_expect_match.errors|safe}}
+                          </div>
+                          <div class="col-sm-6">
+                            {{form.tcp_health_check_expect_pattern}}
+                            {{form.tcp_health_check_expect_pattern.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                    <div class="row tcp-health-check">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.tcp_health_check_interval.label}}</label>
+                          <div class="col-sm-4">
+                            {{form.tcp_health_check_interval}}
+                            {{form.tcp_health_check_interval.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane tab_tcp -->
                   <div class="tab-pane" id="tab_http">
                   <br/>
                     <div class="row">
@@ -325,7 +402,6 @@
                         </div>
                       </div>
                     </div> <!-- /.row -->
-
                   </div> <!-- /.tab-pane tab_http -->
                   <div class="tab-pane" id="tab_headers"><br/>
                     <div class="row http-mode">
@@ -474,6 +550,24 @@
     $('#id_balancing_mode').on('change', toggle_balancing_mode);
     toggle_balancing_mode();
 
+
+    /* Show TCP fields depending on switches state */
+    function tcp_health_check_toggle(){
+      if( document.querySelector('#id_enable_tcp_health_check').checked )
+        $('.tcp-health-check').show();
+      else
+        $('.tcp-health-check').hide();
+    }
+    function tcp_keep_alive_toggle(){
+      if( document.querySelector('#id_enable_tcp_keep_alive').checked )
+        $('.tcp-keep-alive').show();
+      else
+        $('.tcp-keep-alive').hide();
+    }
+    $('#id_enable_tcp_health_check').on('change', tcp_health_check_toggle);
+    $('#id_enable_tcp_keep_alive').on('change', tcp_keep_alive_toggle);
+    tcp_health_check_toggle();
+    tcp_keep_alive_toggle();
 
     /* Show HTTP fields depending on switches state */
     function http_health_check_toggle(){

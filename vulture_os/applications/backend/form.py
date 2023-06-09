@@ -30,7 +30,7 @@ from django.utils.translation import gettext as _
 
 # Django project imports
 from gui.forms.form_utils import NoValidationField
-from applications.backend.models import (Backend, Server, LOG_LEVEL_CHOICES, MODE_CHOICES, BALANCING_CHOICES,
+from applications.backend.models import (Backend, Server, LOG_LEVEL_CHOICES, MODE_CHOICES, BALANCING_CHOICES, HEALTH_CHECK_TCP_EXPECT_CHOICES,
                                          HEALTH_CHECK_EXPECT_CHOICES, HEALTH_CHECK_METHOD_CHOICES, HEALTH_CHECK_VERSION_CHOICES)
 from system.pki.models import TLSProfile
 
@@ -95,12 +95,16 @@ class BackendForm(ModelForm):
 
     class Meta:
         model = Backend
-        fields = ('enabled', 'name', 'mode', 'timeout_connect', 'timeout_server', 'custom_haproxy_conf',
-                  'accept_invalid_http_response', 'http_forwardfor_header', 'http_forwardfor_except',
+        fields = ('enabled', 'name', 'mode', 'timeout_connect', 'timeout_server',
+                  'custom_haproxy_conf', 'balancing_mode', 'balancing_param', 'tags',
+                  'enable_tcp_health_check', 'tcp_health_check_linger', 'tcp_health_check_send',
+                  'tcp_health_check_expect_match', 'tcp_health_check_expect_pattern',
+                  'tcp_health_check_interval', 'enable_tcp_keep_alive', 'tcp_keep_alive_timeout',
+                  'http_backend_dir', 'accept_invalid_http_response', 'http_forwardfor_header', 'http_forwardfor_except',
                   'enable_http_health_check', 'http_health_check_method', 'http_health_check_uri',
-                  'http_health_check_version', 'enable_http_keep_alive', 'http_keep_alive_timeout',
-                  'balancing_mode', 'balancing_param', 'http_health_check_expect_match',
-                  'http_health_check_expect_pattern', 'http_health_check_interval', 'tags', 'http_backend_dir')
+                  'http_health_check_version', 'http_health_check_expect_match',
+                  'http_health_check_expect_pattern', 'http_health_check_interval',
+                  'enable_http_keep_alive', 'http_keep_alive_timeout')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -109,7 +113,17 @@ class BackendForm(ModelForm):
             'timeout_connect': NumberInput(attrs={'class': 'form-control'}),
             'timeout_server': NumberInput(attrs={'class': 'form-control'}),
             'custom_haproxy_conf': Textarea(attrs={'class': 'form-control'}),
-
+            'balancing_mode': Select(choices=BALANCING_CHOICES, attrs={'class': 'form-control select2'}),
+            'balancing_param': TextInput(attrs={'class': 'form-control'}),
+            'tags': TextInput(attrs={'class': 'form-control'}),
+            'enable_tcp_health_check': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'tcp_health_check_linger': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'tcp_health_check_send': TextInput(attrs={'class': 'form-control'}),
+            'tcp_health_check_expect_match': Select(choices=HEALTH_CHECK_TCP_EXPECT_CHOICES, attrs={'class': 'form-control select2'}),
+            'tcp_health_check_expect_pattern': TextInput(attrs={'class': 'form-control'}),
+            'tcp_health_check_interval': NumberInput(attrs={'class': 'form-control'}),
+            'enable_tcp_keep_alive': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'tcp_keep_alive_timeout': NumberInput(attrs={'class': 'form-control'}),
             'http_backend_dir': TextInput(attrs={'class': "form-control"}),
             'accept_invalid_http_response': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'http_forwardfor_header': TextInput(attrs={'class': 'form-control', 'placeholder': 'header name'}),
@@ -119,26 +133,26 @@ class BackendForm(ModelForm):
             'http_health_check_uri': TextInput(attrs={'class': 'form-control'}),
             'http_health_check_version': Select(choices=HEALTH_CHECK_VERSION_CHOICES, attrs={'class': 'form-control select2'}),
             'http_health_check_expect_match': Select(choices=HEALTH_CHECK_EXPECT_CHOICES, attrs={'class': 'form-control select2'}),
-            'http_health_check_interval': NumberInput(attrs={'class': 'form-control'}),
             'http_health_check_expect_pattern': TextInput(attrs={'class': 'form-control'}),
+            'http_health_check_interval': NumberInput(attrs={'class': 'form-control'}),
             'enable_http_keep_alive': CheckboxInput(attrs={'class': "form-control js-switch"}),
-            'http_keep_alive_timeout': NumberInput(attrs={'class': 'form-control'}),
-            'balancing_mode': Select(choices=BALANCING_CHOICES, attrs={'class': 'form-control select2'}),
-            'balancing_param': TextInput(attrs={'class': 'form-control'}),
-            'tags': TextInput(attrs={'class': 'form-control'})
+            'http_keep_alive_timeout': NumberInput(attrs={'class': 'form-control'})
         }
 
     def __init__(self, *args, **kwargs):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
         # Remove the blank input generated by django
-        for field_name in ['mode', 'balancing_mode']:
+        for field_name in ['mode', 'balancing_mode', 'tcp_health_check_expect_match']:
             self.fields[field_name].empty_label = None
         # Set required in POST data to False
-        for field_name in ['headers', 'custom_haproxy_conf', 'http_health_check_method',
-                           'http_health_check_uri', 'http_health_check_version', 'http_keep_alive_timeout',
-                           'balancing_param', 'http_health_check_expect_match', 'http_health_check_expect_pattern',
-                           'http_health_check_expect_pattern', 'tags', 'http_backend_dir']:
+        for field_name in ['headers', 'custom_haproxy_conf', 'balancing_param', 'tags',
+                           'tcp_health_check_send', 'tcp_health_check_expect_match', 'tcp_health_check_expect_pattern',
+                           'tcp_health_check_interval', 'tcp_keep_alive_timeout',
+                           'http_backend_dir', 'http_health_check_method',
+                           'http_health_check_uri', 'http_health_check_version',
+                           'http_health_check_expect_match', 'http_health_check_expect_pattern',
+                           'http_health_check_interval', 'http_keep_alive_timeout']:
             self.fields[field_name].required = False
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
@@ -165,20 +179,26 @@ class BackendForm(ModelForm):
 
     def clean(self, *args, **kwargs):
         cleaned_data = super().clean()
-        is_hc_enable = cleaned_data.get('enable_http_health_check')
-        if is_hc_enable and not cleaned_data.get('http_health_check_method'):
+
+        is_tcp_hc_enable = cleaned_data.get('enable_tcp_health_check')
+        if cleaned_data.get('enable_tcp_keep_alive') and not cleaned_data.get('tcp_keep_alive_timeout'):
+            self.add_error('tcp_keep_alive_timeout', "Timeout field is required")
+
+        is_http_hc_enable = cleaned_data.get('enable_http_health_check')
+        if is_http_hc_enable and not cleaned_data.get('http_health_check_method'):
             self.add_error('http_health_check_method', 'Method field is required')
-        if is_hc_enable and not cleaned_data.get('http_health_check_uri'):
+        if is_http_hc_enable and not cleaned_data.get('http_health_check_uri'):
             self.add_error('http_health_check_uri', 'URI field is required')
-        if is_hc_enable and not cleaned_data.get('http_health_check_version'):
+        if is_http_hc_enable and not cleaned_data.get('http_health_check_version'):
             self.add_error('http_health_check_version', 'Version field is required')
         if cleaned_data.get('enable_http_keep_alive') and not cleaned_data.get('http_keep_alive_timeout'):
             self.add_error('http_keep_alive_timeout', "Timeout field is required")
+
         """ For some balancing modes, a parameter is required """
         if cleaned_data.get('balancing_mode') in ("url_param", "hdr", "rdp-cookie") and \
                 not cleaned_data.get('balancing_param'):
             self.add_error('balancing_param', "This field is required in '{}' balancing mode ".format(cleaned_data.get('balancing_mode')))
-        if cleaned_data.get('mode') == "http" and is_hc_enable \
+        if cleaned_data.get('mode') == "http" and is_http_hc_enable \
                 and not cleaned_data.get('http_health_check_expect_match'):
             self.add_error('http_health_check_expect_pattern', "This field is required.")
         return cleaned_data
