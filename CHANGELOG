@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [PORTAL] [IDP] Define a new custom cookie name for IDP portal sessions
 - [SETTINGS] [LOGGING] Add correct logging for some code shared between GUI and Portal
+- [GUI] [HAPROXY_TEST_CONF] Remove nbproc (deprecation) and use nbthread instead
 ###  Fixed
 - [PORTAL] [VIEWS] Correctly print error messages on self-service page
 - [PORTAL] [SELF_SERVICE] Repair and improve self-service page
