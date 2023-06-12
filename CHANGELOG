@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PORTAL] [AUTH_FILTERS] Authentication filters could not check conditions properly
 - [AUTH] [LDAP] Encode binary fields in hexadecimal before handling them as claims
 - [PORTAL] [HAPROXY_CONF] Correctly check CORS condition for IDPs
+- [NET2MONGO] Fix vlan interfaces detection
 
 
 ## [2.7.1] - 2023-06-07

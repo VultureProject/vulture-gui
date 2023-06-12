@@ -176,7 +176,7 @@ if __name__ == "__main__":
                 if m:
                     vlan = m.group(1)
 
-                m = re.search(pattern_vlan, config)
+                m = re.search(pattern_vlandev, config)
                 if m:
                     vlandev = m.group(1)
 
@@ -228,7 +228,7 @@ if __name__ == "__main__":
                     logger.info("Node::network_sync(): Creating new IP address on NIC {} : {}/{}".format(d.dev, ip, prefix_or_netmask))
                     if vlandev:
                         try:
-                            vd = NetworkInterfaceCard.objects.get(dev="vlan"+str(vlandev), node=this_node)
+                            vd = NetworkInterfaceCard.objects.get(dev=str(vlandev), node=this_node)
                         except NetworkInterfaceCard.DoesNotExist as e:
                             logger.error("Node::network_sync(): Unable to find nic related to '{}'".format(vlandev))
                             continue
