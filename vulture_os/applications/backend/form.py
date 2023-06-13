@@ -205,46 +205,6 @@ class BackendForm(ModelForm):
         return cleaned_data
 
 
-class HttpHealthCheckHeaderForm(Form):
-    labels = ("Header select", "Header name")
-
-    check_header_name = ChoiceField(
-        choices=HTTP_HEADER_CHOICES,
-        widget=Select(attrs={
-            'class': 'form-control select2'
-        })
-    )
-
-    check_header_value = CharField(
-        widget=TextInput(attrs={
-            'class': 'form-control'
-        })
-    )
-
-    def __init__(self, *args, **kwargs):
-        """ Initialisation of fields method """
-        # Do not set id of html fields, that causes issues in JS/JQuery
-        kwargs['auto_id'] = False
-        super().__init__(*args, **kwargs)
-
-    def as_table_headers(self):
-        """ Format field names as table head """
-        result = "<tr>"
-        for field in self.labels:
-            result += "<th>{}</th>\n".format(field)
-        result += "<th>Delete</th></tr>\n"
-        return result
-
-    def as_table_td(self):
-        """ Format fields as a table with <td></td> """
-        result = "<tr>"
-        for field in self:
-            result += "<td>{}</td>\n".format(field)
-        result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
-                  "class='fas fa-trash-alt'></i></a></td></tr>\n"
-        return result
-
-
 class ServerForm(ModelForm):
     class Meta:
         model = Server
