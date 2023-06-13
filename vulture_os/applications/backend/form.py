@@ -101,8 +101,8 @@ class BackendForm(ModelForm):
                   'tcp_health_check_expect_match', 'tcp_health_check_expect_pattern',
                   'tcp_health_check_interval', 'enable_tcp_keep_alive', 'tcp_keep_alive_timeout',
                   'http_backend_dir', 'accept_invalid_http_response', 'http_forwardfor_header', 'http_forwardfor_except',
-                  'enable_http_health_check', 'http_health_check_method', 'http_health_check_uri',
-                  'http_health_check_version', 'http_health_check_expect_match',
+                  'enable_http_health_check', 'http_health_check_linger', 'http_health_check_method',
+                  'http_health_check_uri', 'http_health_check_version', 'http_health_check_expect_match',
                   'http_health_check_expect_pattern', 'http_health_check_interval',
                   'enable_http_keep_alive', 'http_keep_alive_timeout')
 
@@ -129,6 +129,7 @@ class BackendForm(ModelForm):
             'http_forwardfor_header': TextInput(attrs={'class': 'form-control', 'placeholder': 'header name'}),
             'http_forwardfor_except': TextInput(attrs={'class': 'form-control', 'placeholder': 'this IP address'}),
             'enable_http_health_check': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'http_health_check_linger': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'http_health_check_method': Select(choices=HEALTH_CHECK_METHOD_CHOICES, attrs={'class': 'form-control select2'}),
             'http_health_check_uri': TextInput(attrs={'class': 'form-control'}),
             'http_health_check_version': Select(choices=HEALTH_CHECK_VERSION_CHOICES, attrs={'class': 'form-control select2'}),

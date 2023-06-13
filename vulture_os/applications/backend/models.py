@@ -210,7 +210,7 @@ class Backend(models.Model):
         verbose_name=_("TCP Health Check expected")
     )
     tcp_health_check_expect_pattern = models.TextField(
-        default="200",
+        default="",
         help_text=_("Type of pattern to match to expect"),
         verbose_name=_("TCP Health Check expected pattern")
     )
@@ -268,6 +268,12 @@ class Backend(models.Model):
         default=False,
         help_text=_("Enable HTTP protocol health checker"),
         verbose_name=_("HTTP health check")
+    )
+    """ Enable HTTP linger to close cleanly the connection instead of sending RST """
+    http_health_check_linger = models.BooleanField(
+        default=True,
+        help_text=_("Enable linger to close cleanly the TCP tunnel"),
+        verbose_name=_("Close the connection cleanly")
     )
     """ The optional HTTP method used with the requests """
     http_health_check_method = models.TextField(
@@ -502,6 +508,7 @@ class Backend(models.Model):
             'http_forwardfor_header': self.http_forwardfor_header,
             'http_forwardfor_except': self.http_forwardfor_except,
             'enable_http_health_check': self.enable_http_health_check,
+            'http_health_check_linger': self.http_health_check_linger,
             'http_health_check_method': self.http_health_check_method,
             'http_health_check_uri': self.http_health_check_uri,
             'http_health_check_version': self.http_health_check_version,
