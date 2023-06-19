@@ -66,6 +66,7 @@ class AWSBucketParser(ApiParser):
                 's3',
                 aws_access_key_id=self.aws_access_key_id,
                 aws_secret_access_key=self.aws_secret_access_key,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl,
                 config=Config(proxies=self.proxies)
             )
 

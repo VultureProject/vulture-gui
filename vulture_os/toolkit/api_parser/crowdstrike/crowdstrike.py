@@ -87,8 +87,9 @@ class CrowdstrikeParser(ApiParser):
                 auth_url,
                 data=payload,
                 timeout=10,
-                proxies=self.proxies
-                )
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            )
         except requests.exceptions.ConnectionError as e:
             self.session = None
             logger.error(f'[{__parser__}][login]: Connection failed (ConnectionError)', exc_info=True, extra={'frontend': str(self.frontend)})
@@ -119,7 +120,9 @@ class CrowdstrikeParser(ApiParser):
             try:
                 if(method == "GET"):
                     response = self.session.get(
-                        url, params=query, timeout=timeout, proxies=self.proxies)
+                        url, params=query, timeout=timeout, proxies=self.proxies,
+                        verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                    )
                 elif(method == "POST"):
                     headers = {'Content-Type': 'application/json'}
                     response = self.session.post(url, data=json.dumps(

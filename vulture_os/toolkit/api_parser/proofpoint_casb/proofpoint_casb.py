@@ -71,7 +71,8 @@ class ProofpointCASBParser(ApiParser):
                     'client_id' : self.proofpoint_casb_client_id,
                     'client_secret' : self.proofpoint_casb_client_secret
                 },
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             ).json()
             assert response.get('auth_token') is not None, "Cannot retrieve token from API : {}".format(response)
 

@@ -48,6 +48,9 @@ class ApiParser:
     def __init__(self, data):
         self.data = data
 
+        self.api_parser_verify_ssl = data["api_parser_verify_ssl"]
+        self.api_parser_custom_certificate = data.get("api_parser_custom_certificate", None)
+
         if current_thread() is main_thread():
             signal.signal(signal.SIGINT, self._handle_stop)
             signal.signal(signal.SIGTERM, self._handle_stop)

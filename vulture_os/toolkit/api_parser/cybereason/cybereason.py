@@ -94,7 +94,8 @@ class CybereasonParser(ApiParser):
                 response = self.session.post(
                     login_url,
                     data=auth,
-                    proxies=self.proxies
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                 )
                 response.raise_for_status()
                 if "app-login" in response.content.decode('utf-8'):
@@ -123,6 +124,7 @@ class CybereasonParser(ApiParser):
                     headers=header,
                     data=data,
                     proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl,
                     timeout=timeout
                 )
             except requests.exceptions.ReadTimeout:

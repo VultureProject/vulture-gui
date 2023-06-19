@@ -112,7 +112,8 @@ class ForcepointParser(ApiParser):
             auth=(self.forcepoint_username, self.forcepoint_password),
             allow_redirects=allow_redirects,
             headers=self.user_agent,
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:
@@ -169,7 +170,8 @@ class ForcepointParser(ApiParser):
                     file_url,
                     auth=(self.forcepoint_username, self.forcepoint_password),
                     headers=self.user_agent,
-                    proxies=self.proxies
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                 )
 
                 response.raise_for_status()

@@ -136,7 +136,8 @@ class VadesecureO365Parser(ApiParser):
                 json=query,
                 headers=headers,
                 timeout=timeout,
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         else:
             raise VadesecureO365APIError(f"Error at Vadesecure request, unknown method : {method}")

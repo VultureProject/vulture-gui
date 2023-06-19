@@ -80,7 +80,8 @@ class CarbonBlackParser(ApiParser):
                 params=query,
                 headers=self.HEADERS,
                 timeout=timeout,
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         elif method == "POST":
             response = self.session.post(
@@ -88,7 +89,8 @@ class CarbonBlackParser(ApiParser):
                 json=query,
                 headers=self.HEADERS,
                 timeout=timeout,
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         else:
             raise CarbonBlackAPIError(f"Request method unrecognized : {method}")

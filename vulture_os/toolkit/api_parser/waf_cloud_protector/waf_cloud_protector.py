@@ -99,6 +99,7 @@ class WAFCloudProtectorParser(ApiParser):
             headers=headers,
             timeout=timeout,
             proxies=self.proxies,
+            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
 
         # Get gzip file

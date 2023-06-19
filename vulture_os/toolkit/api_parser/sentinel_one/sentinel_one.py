@@ -114,7 +114,8 @@ class SentinelOneParser(ApiParser):
                 params=query,
                 headers=self.HEADERS,
                 timeout=timeout,
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         elif method == "POST":
             response = self.session.post(
@@ -122,7 +123,8 @@ class SentinelOneParser(ApiParser):
                 data=query,
                 headers=self.HEADERS,
                 timeout=timeout,
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         else:
             raise SentinelOneAPIError(f"Request method unrecognized : {method}")
