@@ -41,7 +41,7 @@ from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_P
 from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, NetworkInterfaceCard, Node
 from applications.backend.models import Backend
-from system.pki.models import TLSProfile
+from system.pki.models import TLSProfile, X509Certificate
 from toolkit.network.network import JAIL_ADDRESSES
 from toolkit.http.headers import Header
 from system.tenants.models import Tenants
@@ -201,7 +201,6 @@ class Frontend(models.Model):
         verbose_name=_("Redirect HTTP to HTTPS")
     )
 
-
     """ *** DARWIN OPTIONS *** """
     """ Darwin policy """
     darwin_policies = models.ArrayReferenceField(
@@ -218,6 +217,7 @@ class Frontend(models.Model):
         choices=DARWIN_MODE_CHOICES,
         help_text=_("Ways to call Darwin: 'enrich' will wait for a score and add it to the data, 'alert' will simply pass the data for Darwin to process and will rely on its configured alerting methods")
     )
+
     """ *** LOGGING OPTIONS *** """
     """ Enable logging to Rsyslog """
     enable_logging = models.BooleanField(
@@ -294,7 +294,6 @@ class Frontend(models.Model):
         default="",
         help_text=_("Conditional configuration of log forwarders")
     )
-
     """ Generated configuration depending on Node listening on """
     configuration = models.JSONField(
         default={}
@@ -349,6 +348,7 @@ class Frontend(models.Model):
         default=False,
         help_text=_("Enable option 'SupportOctetCountedFraming' in rsyslog (advanced).")
     )
+
     """ *** HTTP OPTIONS *** """
     """ Log forwarder - File """
     headers = models.ArrayReferenceField(
@@ -493,126 +493,124 @@ class Frontend(models.Model):
         help_text=_("Vulture node")
     )
 
+    """ *** VENDOR API OPTIONS *** """
+    # General attributes
     api_parser_type = models.TextField(
         help_text=_("API Parser Type"),
         default=""
     )
-
     api_parser_use_proxy = models.BooleanField(
         help_text=_("Use Proxy"),
         default=False
     )
+    api_parser_verify_ssl = models.BooleanField(
+        help_text=_("Verify SSL"),
+        verbose_name=_("Verify certificate"),
+        default=True
+    )
+    api_parser_custom_certificate = models.ForeignKey(
+        to=X509Certificate,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="certificate_of",
+        verbose_name=_("Custom certificate"),
+        help_text=_("Custom certificate to use.")
+    )
+    # Forcepoint attributes
     forcepoint_host = models.TextField(
         help_text=_('Forcepoint URL'),
         default=""
     )
-
     forcepoint_username = models.TextField(
         help_text=_('Forcepoint Username'),
         default=""
     )
-
     forcepoint_password = models.TextField(
         help_text=_('Forcepoint Password'),
         default=""
     )
-
+    # Symantec attributes
     symantec_username = models.TextField(
         help_text=_('Symantec Username'),
         default=""
     )
-
     symantec_password = models.TextField(
         help_text=_('Symantec Password'),
         default=""
     )
-
     symantec_token = models.TextField(
         help_text=_('Symantec Token'),
         default="none"
     )
-
+    # AWS attributes
     aws_access_key_id = models.TextField(
         help_text=_('AWS Access Key ID'),
         default=""
     )
-
     aws_secret_access_key = models.TextField(
         help_text=_("AWS Secret Access Key"),
         default=""
     )
-
     aws_bucket_name = models.TextField(
         help_text=_("AWS Bucket Name"),
         default=""
     )
-
+    # Akamai attributes
     akamai_host = models.TextField(
         help_text=_('Akamai Host'),
         default=""
     )
-
     akamai_client_secret = models.TextField(
         help_text=_('Akamai Client Secret'),
         default=""
     )
-
     akamai_access_token = models.TextField(
         help_text=_('Akamai Access Token'),
         default=""
     )
-
     akamai_client_token = models.TextField(
         help_text=_('Akamai Client Token'),
         default=""
     )
-
     akamai_config_id = models.TextField(
         help_text=_('Akamai Config Id'),
         default=""
     )
-
+    # Office365 attributes
     office365_tenant_id = models.TextField(
         help_text=_('Office 365 Tenant ID'),
         default=""
     )
-
     office365_client_id = models.TextField(
         help_text=_('Office 365 Client ID'),
         default=""
     )
-
     office365_client_secret = models.TextField(
         help_text=_('Office 365 Client Secret'),
         default=""
     )
-
+    # Imperva attributes
     imperva_base_url = models.TextField(
         help_text=_("Imperva Base URL"),
         default=""
     )
-
     imperva_api_id = models.TextField(
         help_text=_("Imperva API ID"),
         default=""
     )
-
     imperva_api_key = models.TextField(
         help_text=_("Imperva API KEY"),
         default=""
     )
-
     imperva_private_key = models.TextField(
         help_text=_("Imperva Private KEY"),
         default=""
     )
-
     imperva_last_log_file = models.TextField(
         help_text=_("Imperva Last Log File"),
         default=""
     )
-
-    # ReachFive API events attributes
+    # ReachFive attributes
     reachfive_host = models.TextField(
         help_text=_("ReachFive host"),
         default="reachfive.domain.com",
@@ -628,7 +626,7 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("ReachFive client secret for authentication")
     )
-    # MongoDB API logs attributes
+    # MongoDB attributes
     mongodb_api_user = models.TextField(
         help_text=_("MongoDB API user"),
         default="",
@@ -644,7 +642,7 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("MongoDB API group ID to retrieve log events from")
     )
-    # Defender ATP API logs attributes
+    # Defender ATP attributes
     mdatp_api_tenant = models.TextField(
         help_text=_("Microsoft Defender ATP Tenant ID"),
         default="",
@@ -660,7 +658,7 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("Microsoft Defender ATP App secret")
     )
-    # Cortex XDR API events attributes
+    # Cortex XDR attributes
     cortex_xdr_host = models.TextField(
         verbose_name=_("Cortex XDR FQDN"),
         default="xdr.domain.com",
@@ -682,7 +680,7 @@ class Frontend(models.Model):
     cortex_xdr_incidents_timestamp = models.DateTimeField(
         default=None
     )
-    # CyberReason API events attributes
+    # CyberReason attributes
     cybereason_host = models.TextField(
         help_text=_("Cybereason host"),
         default="domain.cybereason.net",
@@ -698,7 +696,7 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("Cybereason password for authentication")
     )
-    # Cisco-Meraki API events attributes
+    # Cisco-Meraki attributes
     cisco_meraki_apikey = models.TextField(
         verbose_name=_("Cisco Meraki API key"),
         help_text=_("API key used to retrieve logs - as configured in Meraki settings"),
@@ -780,7 +778,6 @@ class Frontend(models.Model):
         help_text = _("API key used to retrieve logs"),
         default = "",
     )
-
     # Rapid7 IDR attributes
     rapid7_idr_host = models.TextField(
         verbose_name = _("rapid7 IDR Host"),
@@ -792,7 +789,6 @@ class Frontend(models.Model):
         help_text = _("API key used to retrieve logs"),
         default = "",
     )
-
     # HarfangLab attributes
     harfanglab_host = models.TextField(
         verbose_name = _("HarfangLab Host"),
@@ -804,7 +800,6 @@ class Frontend(models.Model):
         help_text = _("API key to use to contact HarfangLab api"),
         default = "",
     )
-
     # Vadesecure attributes
     vadesecure_host = models.TextField(
         verbose_name = _("Vadesecure Host"),
@@ -821,7 +816,6 @@ class Frontend(models.Model):
         help_text = _("Password used to fetch the token for the Vadesecure API"),
         default = "",
     )
-
     # Defender attributes
     defender_token_endpoint = models.TextField(
         verbose_name = _("Defender token endpoint"),
@@ -838,7 +832,6 @@ class Frontend(models.Model):
         help_text = _("Client secret of the OAuth endpoint to get an OAuth token before requesting Microsoft's APIs"),
         default = "",
     )
-
     # CrowdStrike attributes
     crowdstrike_host = models.TextField(
         verbose_name = _("CrowdStrike Host"),
@@ -860,7 +853,6 @@ class Frontend(models.Model):
         help_text = _("Client's secret used for authentication"),
         default = "",
     )
-
     # Vadesecure 0365 attributes
     vadesecure_o365_host = models.TextField(
         verbose_name = _("Vadesecure O365 Host"),
@@ -891,7 +883,6 @@ class Frontend(models.Model):
     vadesecure_o365_access_token_expiry = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
-
     # Nozomi Probe attributes
     nozomi_probe_host = models.TextField(
         verbose_name = _("Nozomi Probe Host"),
@@ -908,7 +899,6 @@ class Frontend(models.Model):
         help_text=_("Password to use to contact Nozomi probe api"),
         default="",
     )
-
     # Blackberry Cylance attributes
     blackberry_cylance_host = models.TextField(
         verbose_name = _("Blackberry Cylance Host"),
@@ -930,7 +920,6 @@ class Frontend(models.Model):
         help_text = _("Client's secret used for authentication"),
         default = "",
     )
-
     # Microsoft Sentinel attributes
     ms_sentinel_tenant_id = models.TextField(
         verbose_name = _("Microsoft Sentinel Tenant ID"),
@@ -962,7 +951,6 @@ class Frontend(models.Model):
         help_text=_("Workspace name"),
         default="",
     )
-
     # Proofpoint PoD Attributes
     proofpoint_pod_uri = models.TextField(
         verbose_name=_("Proofpoint PoD URI"),
@@ -979,11 +967,9 @@ class Frontend(models.Model):
         help_text=_("Authentication token"),
         default="",
     )
-
     last_api_call = models.DateTimeField(
         default=datetime.datetime.utcnow
     )
-
     keep_source_fields = models.JSONField(
         default={}
     )
@@ -998,20 +984,17 @@ class Frontend(models.Model):
         help_text = _("Netskope API token"),
         default = "",
     )
-
     # WAF Cloudflare attributes
     waf_cloudflare_apikey = models.TextField(
         verbose_name = _("WAF Cloudflare API token"),
         help_text = _("WAF Cloudflare  API token"),
         default = "",
     )
-
     waf_cloudflare_zoneid = models.TextField(
         verbose_name = _("WAF Cloudflare zone ID"),
         help_text = _("WAF Cloudflare zone ID"),
         default = "",
     )
-
     # Google worspace alertcenter attributes
     gsuite_alertcenter_json_conf = models.TextField(
         verbose_name = _("Google Alertcenter JSON Conf"),
@@ -1023,7 +1006,6 @@ class Frontend(models.Model):
         help_text = _("Google Alertcenter Admin email"),
         default = "",
     )
-
     # Sophos Cloud attributes
     sophos_cloud_client_id = models.TextField(
         verbose_name=_("Sophos Cloud - Client ID"),
@@ -1040,7 +1022,6 @@ class Frontend(models.Model):
         help_text=_("Tenant ID"),
         default="",
     )
-
     # Trendmicro_worryfree attributes
     trendmicro_worryfree_access_token = models.TextField(
         verbose_name = _("Trendmicro Worryfree access token"),
@@ -1062,7 +1043,6 @@ class Frontend(models.Model):
         help_text = _("Trendmicro Worryfree server port"),
         default = "443",
     )
-
     # Safenet attributes
     safenet_tenant_code = models.TextField(
         verbose_name = _("Safenet Tenant Code"),
@@ -1074,7 +1054,6 @@ class Frontend(models.Model):
         help_text = _("Safenet Token API"),
         default = "",
     )
-
     # Proofpoint CASB attributes
     proofpoint_casb_api_key = models.TextField(
         help_text=_("Proofpoint CASB API KEY"),
@@ -1088,7 +1067,6 @@ class Frontend(models.Model):
         help_text=_('Proofpoint CASB Client Secret'),
         default=""
     )
-
     # Proofpoint TRAP attributes
     proofpoint_trap_host = models.TextField(
         verbose_name = _("ProofPoint TRAP host"),
@@ -1179,6 +1157,7 @@ class Frontend(models.Model):
         help_text=_("Sentinel One Mobile API integration key"),
         default="",
     )
+
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)

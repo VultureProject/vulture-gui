@@ -43,7 +43,7 @@ from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
 from system.error_templates.models import ErrorTemplate
 from toolkit.api_parser.utils import get_available_api_parser
-from system.pki.models import TLSProfile
+from system.pki.models import TLSProfile, X509Certificate
 from system.cluster.models import Node
 from system.tenants.models import Tenants
 
@@ -204,7 +204,7 @@ class FrontendForm(ModelForm):
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'nb_workers','mmdb_cache_size','redis_batch_size',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
-                           'node', 'api_parser_type', 'api_parser_use_proxy',
+                           'node', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
                            'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
@@ -294,7 +294,8 @@ class FrontendForm(ModelForm):
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                   'nb_workers','mmdb_cache_size','redis_batch_size',
                   'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
-                  'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 
+                  'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy',
+                  'api_parser_verify_ssl', 'api_parser_custom_certificate',
                   'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
                   "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
@@ -387,6 +388,8 @@ class FrontendForm(ModelForm):
             'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
             'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
+            'api_parser_verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
+            'api_parser_custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': "form-control select2"}),
             'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
             'forcepoint_password': TextInput(attrs={'class': 'form-control'}),
             'symantec_username': TextInput(attrs={'class': 'form-control'}),

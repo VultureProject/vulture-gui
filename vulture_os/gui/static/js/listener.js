@@ -13,8 +13,13 @@ if (!String.prototype.endsWith) {
 function get_api_parser_data(type_){
   var data = {
     api_parser_type: $('#id_api_parser_type').val(),
-    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked')
+    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked'),
+    api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked')
   };
+
+  if ($('#id_api_parser_verify_ssl').is(':checked')) {
+    data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val()
+  }
 
   $("#api_" + type_ + "_row input").each(function(){
     var name = $(this).attr('name');
@@ -130,7 +135,6 @@ function refresh_api_parser_type(type_){
   })
 }
 
-
 $(function() {
 
   /* All events to refresh (re-apply) after a table is modified */
@@ -223,6 +227,7 @@ $(function() {
       $('.redis-mode').hide();
       // ALWAYS put show at last
       $('.api-mode').show();
+      $('#id_api_parser_verify_ssl').trigger('change');
     } else if (mode === "log" && listening_mode === "kafka"){
       $('.network-mode').hide();
       $('.file-mode').hide();
@@ -302,6 +307,13 @@ $(function() {
     refresh_api_parser_type($(this).val());
   }).trigger('change');
 
+  $('#id_api_parser_verify_ssl').on('change', function(e){
+    if ($(this).is(':checked')) {
+      $('#api_parser_custom_certificate').show();
+    } else {
+      $('#api_parser_custom_certificate').hide();
+    }
+  }).trigger('change');;
 
   /* Refresh http sub-class attributes show/hide */
   function refresh_http() {

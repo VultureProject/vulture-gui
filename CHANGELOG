@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- [GUI] [FRONTEND] Selector of a custom certificate to use with an api parser
 - [LOG_FORWARDER] [HIREDIS] Ability to specify that the destination key is a dynamic template
 ### Changed
 - [LOG_FORWARDER] [HIREDIS] Use updated templates <name>_json

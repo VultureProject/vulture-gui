@@ -459,7 +459,7 @@
                       </div> <!-- /.row log-mode -->
                     </div> <!-- /advanced_options -->
                     </div> <!-- /.row -->
-                  </div> <!-- /.tab-pane -->
+                  </div> <!-- /.tab-pane tab_general -->
                   <div class="tab-pane" id="tab_network">
 
                     <div class="panel-heading">
@@ -539,7 +539,7 @@
                         </div>
                       </div> <!-- /.row -->
                     </fieldset>
-                  </div>
+                  </div> <!-- /.tab-pane tab_network -->
                   <div class="tab-pane" id="tab_http">
                     <div class="row http-mode">
                      <div class="col-md-12">
@@ -833,7 +833,7 @@
                         </div>
                       {% endif %}
                     </div>
-                  </div>
+                  </div> <!-- /.tab-pane tab_enrichment -->
                   <div class="tab-pane" id="tab_custom">
                     <div class="row haproxy-conf">
                       <div class="col-md-12">
@@ -858,7 +858,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api-mode filebeat-api-mode">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{% trans "Use proxy" %}</label>
@@ -868,7 +867,24 @@
                           </div>
                         </div>
                       </div>
-
+                      <div class="col-md-12 api-mode filebeat-api-mode">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.api_parser_verify_ssl.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.api_parser_verify_ssl }}
+                            {{ form.api_parser_verify_ssl.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-12 api-mode filebeat-api-mode" id="api_parser_custom_certificate">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.api_parser_custom_certificate.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.api_parser_custom_certificate}}
+                            {{form.api_parser_custom_certificate.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api_clients_row" id="api_office_365_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.office365_tenant_id.label }}</label>
@@ -892,7 +908,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_akamai_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.akamai_host.label }}</label>
@@ -930,7 +945,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_forcepoint_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.forcepoint_host.label }}</label>
@@ -954,7 +968,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_imperva_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.imperva_base_url.label }}</label>
@@ -1001,7 +1014,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_reachfive_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.reachfive_host.label }}</label>
@@ -1025,7 +1037,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_mongodb_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.mongodb_api_user.label }}</label>
@@ -1049,7 +1060,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_defender_atp_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.mdatp_api_tenant.label }}</label>
@@ -1073,7 +1083,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_cortex_xdr_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.cortex_xdr_host.label }}</label>
@@ -1097,7 +1106,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_cisco_meraki_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.cisco_meraki_apikey.label }}</label>
@@ -1107,7 +1115,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_cybereason_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.cybereason_host.label }}</label>
@@ -1131,7 +1138,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_aws_bucket_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.aws_access_key_id.label }}</label>
@@ -1162,7 +1168,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_proofpoint_tap_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.proofpoint_tap_host.label }}</label>
@@ -1193,7 +1198,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_sentinel_one_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.sentinel_one_host.label }}</label>
@@ -1217,7 +1221,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_carbon_black_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.carbon_black_host.label }}</label>
@@ -1241,7 +1244,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_rapid7_idr_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.rapid7_idr_host.label }}</label>
@@ -1258,7 +1260,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_harfanglab_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.harfanglab_host.label }}</label>
@@ -1275,7 +1276,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_vadesecure_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.vadesecure_host.label }}</label>
@@ -1299,7 +1299,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_nozomi_probe_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.nozomi_probe_host.label }}</label>
@@ -1323,24 +1322,6 @@
                           </div>
                         </div>
                       </div>
-
-                      <div class="col-md-12 api_clients_row" id="api_csc_domainmanager_row">
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.csc_domainmanager_apikey.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.csc_domainmanager_apikey }}
-                            {{ form.csc_domainmanager_apikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.csc_domainmanager_authorization.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.csc_domainmanager_authorization }}
-                            {{ form.csc_domainmanager_authorization.errors|safe }}
-                          </div>
-                        </div>
-                      </div>
-
                       <div class="col-md-12 api_clients_row" id="api_netskope_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.netskope_host.label }}</label>
@@ -1357,7 +1338,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_defender_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.defender_token_endpoint.label }}</label>
@@ -1381,7 +1361,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_crowdstrike_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.crowdstrike_host.label }}</label>
@@ -1412,7 +1391,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_vadesecure_o365_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.vadesecure_o365_host.label }}</label>
@@ -1625,7 +1603,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_safenet_row">
                         <div class="form-group">
                             <label class="col-sm-3 control-label">{{ form.safenet_tenant_code.label }}</label>
@@ -1642,7 +1619,6 @@
                           </div>
                         </div>
                       </div>
-
                       <div class="col-md-12 api_clients_row" id="api_proofpoint_casb_row">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.proofpoint_casb_api_key.label }}</label>
@@ -1774,6 +1750,22 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-12 api_clients_row" id="api_csc_domainmanager_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.csc_domainmanager_apikey.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.csc_domainmanager_apikey }}
+                            {{ form.csc_domainmanager_apikey.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.csc_domainmanager_authorization.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.csc_domainmanager_authorization }}
+                            {{ form.csc_domainmanager_authorization.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
@@ -1782,8 +1774,8 @@
                           <input type="hidden" name="api_parser_has_been_tested" id="id_api_parser_has_been_tested" value="{% if object_id %}1{% else %}0{% endif %}"/>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </div> <!-- /.row -->
+                  </div> <!-- /.tab-pane tab_api_client -->
                 </div>
               </div>
             </div>
