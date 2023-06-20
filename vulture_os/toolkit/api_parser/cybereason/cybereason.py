@@ -221,11 +221,9 @@ class CybereasonParser(ApiParser):
                 logs = self.get_malwares(since)
             else:
                 raise ValueError(f"Unknown kind {kind}")
-        except Exception as e:
-            msg = f"Error querying {kind} logs"
-            logger.error(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
-            logger.exception(f"[{__parser__}]:get_logs: {e}", extra={'frontend': str(self.frontend)})
-            return []
+        except Exception as err:
+            msg = f"Error querying {kind} logs : {err}"
+            raise CybereasonAPIError(msg)
         else:
             return logs
 
