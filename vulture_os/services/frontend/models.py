@@ -512,7 +512,7 @@ class Frontend(models.Model):
         to=X509Certificate,
         null=True,
         on_delete=models.SET_NULL,
-        related_name="certificate_of",
+        related_name="certificate_used_by_api_parser",
         verbose_name=_("Custom certificate"),
         help_text=_("Custom certificate to use.")
     )
@@ -1239,7 +1239,9 @@ class Frontend(models.Model):
             result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
                                     for log_fwd in self.log_forwarders.all().only('id')]
 
-        logger.info(result)
+        if result['api_parser_custom_certificate'] == None:
+            result['api_parser_custom_certificate'] = {}
+
         return result
 
     def to_html_template(self):

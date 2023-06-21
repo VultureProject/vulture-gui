@@ -183,7 +183,9 @@ class X509Certificate(models.Model):
         super(X509Certificate, self).__init__(*args, **kwargs)
 
     def to_dict(self, fields=None):
-        return model_to_dict(self, fields=fields)
+        result = model_to_dict(self, fields=fields)
+        result['bundle_filename'] = self.bundle_filename
+        return result
 
     def get_base_filename(self):
         return "{}/{}-{}".format(CERT_PATH, self.name, self.id)

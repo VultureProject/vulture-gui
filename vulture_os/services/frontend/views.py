@@ -715,7 +715,7 @@ def frontend_test_apiparser(request):
             data[k] = v
 
         if data.get('api_parser_verify_ssl', True) and data.get('api_parser_custom_certificate', None):
-            data['api_parser_custom_certificate'] = X509Certificate.objects.get(pk=data['api_parser_custom_certificate']).ca_filename()
+            data['api_parser_custom_certificate'] = X509Certificate.objects.get(pk=data['api_parser_custom_certificate']).bundle_filename
         parser = get_api_parser(type_parser)(data)
         return JsonResponse(parser.test())
 
