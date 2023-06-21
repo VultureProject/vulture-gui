@@ -128,15 +128,6 @@ function refresh_api_parser_type(type_){
       $(btn).html(txt);
     })
   })
-
-  if (type_ === "elasticsearch"){
-    $('#id_elasticsearch_auth').on('change', function(){
-      if ($(this).is(':checked'))
-        $('.elasticsearch_auth').show();
-      else
-        $('.elasticsearch_auth').hide();
-    }).trigger('change')
-  }
 }
 
 
