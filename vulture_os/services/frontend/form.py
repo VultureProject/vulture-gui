@@ -607,6 +607,12 @@ class FrontendForm(ModelForm):
             return ast.literal_eval(data)
         return data.split(',')
 
+    def clean_nb_workers(self):
+        data = self.cleaned_data.get('nb_workers')
+        if data == 0:
+            self.add_error('nb_workers', "Number of workers should be strictly positive")
+        return data
+
     def clean_mmdb_cache_size(self):
         data = self.cleaned_data.get('mmdb_cache_size')
         if data and data !=0 and data % 2 != 0:
