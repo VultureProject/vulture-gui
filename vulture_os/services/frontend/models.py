@@ -499,37 +499,6 @@ class Frontend(models.Model):
         help_text=_("Use Proxy"),
         default=False
     )
-
-    elasticsearch_host = models.TextField(
-        help_text=_('Elasticsearch URL'),
-        default=""
-    )
-
-    elasticsearch_verify_ssl = models.BooleanField(
-        help_text=_("Verify SSL"),
-        default=True
-    )
-
-    elasticsearch_auth = models.BooleanField(
-        help_text=_('Authentication Elasticsearch'),
-        default=False
-    )
-
-    elasticsearch_username = models.TextField(
-        help_text=_('Elasticsearch username'),
-        default=""
-    )
-
-    elasticsearch_password = models.TextField(
-        help_text=_('Elasticsearch password'),
-        default=""
-    )
-
-    elasticsearch_index = models.TextField(
-        help_text=_('Index to poll'),
-        default=""
-    )
-
     forcepoint_host = models.TextField(
         help_text=_('Forcepoint URL'),
         default=""
