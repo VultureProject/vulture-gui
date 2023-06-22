@@ -13,12 +13,14 @@ if (!String.prototype.endsWith) {
 function get_api_parser_data(type_){
   var data = {
     api_parser_type: $('#id_api_parser_type').val(),
-    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked'),
-    api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked')
+    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked')
   };
 
-  if ($('#id_api_parser_verify_ssl').is(':checked')) {
-    data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val()
+  if (!api_parser_blacklist.includes($('#id_api_parser_type').val())) {
+    data['api_parser_verify_ssl'] = $('#id_api_parser_verify_ssl').is(':checked');
+    if ($('#id_api_parser_verify_ssl').is(':checked')) {
+      data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val();
+    }
   }
 
   $("#api_" + type_ + "_row input").each(function(){
@@ -305,15 +307,20 @@ $(function() {
 
   $('#id_api_parser_type').on('change', function(){
     refresh_api_parser_type($(this).val());
+    $('#id_api_parser_verify_ssl').trigger('change');
   }).trigger('change');
 
-  $('#id_api_parser_verify_ssl').on('change', function(e){
-    if ($(this).is(':checked')) {
+  function api_parser_ssl_options(checked) {
+    if (checked && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
       $('#api_parser_custom_certificate').show();
     } else {
       $('#api_parser_custom_certificate').hide();
     }
-  }).trigger('change');;
+  }
+
+  $('#id_api_parser_verify_ssl').on('change', function(e){
+    api_parser_ssl_options($(this).is(':checked'));
+  }).trigger('change');
 
   /* Refresh http sub-class attributes show/hide */
   function refresh_http() {

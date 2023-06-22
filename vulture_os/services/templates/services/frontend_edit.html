@@ -1827,5 +1827,6 @@
 
   var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";
   var fetch_frontend_api_parser_data_uri = "{% url 'services.frontend.fetch_apiparser_data' %}";
+  var api_parser_blacklist = ["cisco_meraki", "defender", "gsuite_alertcenter", "proofpoint_pod", "sophos_cloud"];
 
 {% endblock %}
