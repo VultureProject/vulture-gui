@@ -315,32 +315,10 @@
                     <div class="row log-mode redis-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{{ form.redis_use_lpop.label }}</label>
-                          <div class="col-sm-5">
-                            {{form.redis_use_lpop}}
-                            {{form.redis_use_lpop.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode redis-mode">
-                      <div class="col-md-12">
-                        <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.redis_key.label }}</label>
                           <div class="col-sm-5">
                             {{form.redis_key}}
                             {{form.redis_key.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode redis-mode">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label class="col-sm-4 control-label">{{ form.redis_password.label }}</label>
-                          <div class="col-sm-5">
-                            {{form.redis_password}}
-                            {{form.redis_password.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -378,7 +356,7 @@
                         </div>
                       </div> <!-- /.row darwin-mode -->
                     <!-- Advanced tab -->
-                    <div class="row">
+                    <div class="row log-mode">
                       <div class="col-sm-4 pull-right">
                         <div class="form-group">
                           <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
@@ -388,10 +366,65 @@
                       </div>
                     </div>
                     <div class="form-group collapse advanced_options">
+                      <div class="row log-mode redis-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.redis_password.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.redis_password}}
+                              {{form.redis_password.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row log-mode redis-mode redis-queue-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.redis_use_lpop.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.redis_use_lpop}}
+                              {{form.redis_use_lpop.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row log-mode redis-mode redis-queue-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.redis_batch_size.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.redis_batch_size}}
+                              {{form.redis_batch_size.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row log-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Max. number of rsyslog workers" %}</label>
+                            <div class="col-sm-5">
+                              {{form.nb_workers}}
+                              {{form.nb_workers.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row log-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% trans "Size of mmdblookup cache" %}</label>
+                            <div class="col-sm-5">
+                              {{form.mmdb_cache_size}}
+                              {{form.mmdb_cache_size.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       <div class="row log-mode listening-tcp no-filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Disable 'Octet-counted framing' (advanced) :" %}</label>
+                            <label class="col-sm-4 control-label">{% trans "Disable 'Octet-counted framing'" %}</label>
                             <div class="col-sm-5">
                               {{form.disable_octet_counting_framing}}
                               {{form.disable_octet_counting_framing.errors|safe}}
@@ -402,7 +435,7 @@
                       <div class="row log-mode listening-tcp no-filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "rate-limiting interval (advanced) :" %}</label>
+                            <label class="col-sm-4 control-label">{% trans "rate-limiting interval" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_interval}}
                               {{form.ratelimit_interval.errors|safe}}
@@ -416,7 +449,7 @@
                       <div class="row log-mode listening-tcp no-filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "rate-limiting burst (advanced) :" %}</label>
+                            <label class="col-sm-4 control-label">{% trans "rate-limiting burst" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_burst}}
                               {{form.ratelimit_burst.errors|safe}}
@@ -814,7 +847,6 @@
                       </div>
                     </div>
                   </div> <!-- /.tab-pane tab_custom -->
-
                   <div class="tab-pane" id="tab_api_client">
                     <div class="row">
                       <div class="col-md-12 api-mode">

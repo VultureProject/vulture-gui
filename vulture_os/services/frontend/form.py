@@ -202,6 +202,7 @@ class FrontendForm(ModelForm):
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
+                           'nb_workers','mmdb_cache_size','redis_batch_size',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'api_parser_type', 'api_parser_use_proxy',
                            'elasticsearch_host', 'elasticsearch_auth', 'elasticsearch_verify_ssl',
@@ -291,6 +292,7 @@ class FrontendForm(ModelForm):
                   'timeout_keep_alive', 'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'ratelimit_interval', 'ratelimit_burst', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
+                  'nb_workers','mmdb_cache_size','redis_batch_size',
                   'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                   'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
                   'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
@@ -380,6 +382,9 @@ class FrontendForm(ModelForm):
             'redis_port': TextInput(attrs={'class': 'form-control'}),
             'redis_key': TextInput(attrs={'class': 'form-control'}),
             'redis_password': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'nb_workers': NumberInput(attrs={'class': 'form-control'}),
+            'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
+            'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
             'elasticsearch_host': TextInput(attrs={
                 'class': 'form-control',
@@ -601,6 +606,24 @@ class FrontendForm(ModelForm):
         if "[" in data and "]" in data:
             return ast.literal_eval(data)
         return data.split(',')
+
+    def clean_nb_workers(self):
+        data = self.cleaned_data.get('nb_workers')
+        if data == 0:
+            self.add_error('nb_workers', "Number of workers should be strictly positive")
+        return data
+
+    def clean_mmdb_cache_size(self):
+        data = self.cleaned_data.get('mmdb_cache_size')
+        if data and data !=0 and data % 2 != 0:
+            self.add_error('mmdb_cache_size', "MMDB Cache size needs to be zero or a multiple of 2 (recommended value is 10000)")
+        return data
+
+    def clean_redis_batch_size(self):
+        data = self.cleaned_data.get('redis_batch_size')
+        if data and data < 10:
+            self.add_error('redis_batch_size', "Redis dequeue size should be greater than 10")
+        return data
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
