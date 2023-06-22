@@ -88,6 +88,9 @@ class SentinelOneMobileParser(ApiParser):
                     proxies=self.proxies,
                     timeout=timeout
                 )
+
+                if response.status_code != 200:
+                    raise requests.exceptions.HTTPError()
             except requests.exceptions.ReadTimeout:
                 msg = f"ReadTimeout, waiting {sleep_retry}s before retrying"
                 logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
@@ -98,21 +101,18 @@ class SentinelOneMobileParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleep_retry)
                 continue
-            if response.status_code != 200:
+            except requests.exceptions.HTTPError:
                 msg = f"Status Code {response.status_code}, waiting {sleep_retry}s before retrying"
                 logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleep_retry)
                 continue
-            break  # no error we break from the loop
-
-        if response is None or response.status_code != 200:
-            if response is None:
-                msg = f"Error Cybereason API Call URL: {url} [TIMEOUT]"
-                logger.error(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
             else:
-                msg = f"Error Cybereason API Call URL: {url} [TIMEOUT], Code: {response.status_code}"
-                logger.error(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
-            return {}
+                break  # no error we break from the loop
+
+        if response is None:
+            msg = f"[{__parser__}]:execute_query: Error Cybereason API Call URL: {url} [TIMEOUT]"
+            raise Exception(msg)
+
         return response.json()
 
     def get_logs(self, since, to):
