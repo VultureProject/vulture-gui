@@ -244,6 +244,7 @@ class FrontendForm(ModelForm):
                            'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                            'trendmicro_visionone_token',
                            'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
+                           'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey'
                            ]:
             self.fields[field_name].required = False
 
@@ -333,6 +334,7 @@ class FrontendForm(ModelForm):
                   'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                   'trendmicro_visionone_token',
                   'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
+                  'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                   'darwin_mode')
 
         widgets = {
@@ -491,6 +493,8 @@ class FrontendForm(ModelForm):
             'cisco_duo_host': TextInput(attrs={'class': 'form-control'}),
             'cisco_duo_ikey': Textarea(attrs={'class': 'form-control'}),
             'cisco_duo_skey': Textarea(attrs={'class': 'form-control'}),
+            'sentinel_one_mobile_host': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_mobile_apikey': TextInput(attrs={'type': 'password','class': 'form-control'})
         }
 
     def clean_name(self):

@@ -1148,6 +1148,17 @@ class Frontend(models.Model):
     cisco_duo_offsets = models.JSONField(
         default=dict
     )
+    # Sentinel One Mobile attributes
+    sentinel_one_mobile_host = models.TextField(
+        verbose_name=_("Sentinel One Mobile API hostname"),
+        help_text=_("Sentinel One Mobile API hostname"),
+        default="https://xxx.mobile.sentinelone.net",
+    )
+    sentinel_one_mobile_apikey = models.TextField(
+        verbose_name=_("Sentinel One Mobile API ikey"),
+        help_text=_("Sentinel One Mobile API integration key"),
+        default="",
+    )
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
