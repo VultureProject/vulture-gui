@@ -4,11 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.8.0] - 2023-06-28
+### Added
+- [API_PARSER] [CYBEREASON] Add support for 'malware' URI
+- [FRONTEND] [GUI] Allow to configure the maximum number of workers for LOG Listeners
+- [FRONTEND] [GUI] Allow to configure/activate new mmdblookup cache size parameter for LOG Listeners
+- [FRONTEND] [GUI] Allow to configure redis LOG input dequeue batch size
+### Removed
+- [API_PARSER] [ELASTICSEARCH] Last code traces related to the parser
 ### Changed
 - [PORTAL] [IDP] Define a new custom cookie name for IDP portal sessions
 - [SETTINGS] [LOGGING] Add correct logging for some code shared between GUI and Portal
 - [GUI] [HAPROXY_TEST_CONF] Remove nbproc (deprecation) and use nbthread instead
+- [FRONTEND] [GUI] Put most of advanced LOG parameters in the 'Advanced' drop-down
 ###  Fixed
 - [PORTAL] [VIEWS] Correctly print error messages on self-service page
 - [PORTAL] [SELF_SERVICE] Repair and improve self-service page
@@ -16,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [AUTH] [LDAP] Encode binary fields in hexadecimal before handling them as claims
 - [PORTAL] [HAPROXY_CONF] Correctly check CORS condition for IDPs
 - [NET2MONGO] Fix vlan interfaces detection
+- [HAPROXY] [CONF] IDPs wouldn't work on Frontends without any Workflow assigned
+- [API_PARSER] [SENTINELONE] Avoid query date stagnation
 
 
 ## [2.7.1] - 2023-06-07
