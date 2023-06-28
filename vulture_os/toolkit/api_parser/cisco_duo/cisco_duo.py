@@ -183,11 +183,11 @@ class CiscoDuoParser(ApiParser):
                 logs = self.get_logs(since=since, to=to, endpoint=endpoint)
                 
                 ## UPDATE LAST API CALL IF LOGS ALWAYS PRESENT IN RANGE ##
-                
-                if logs['metadata']['total_objects'] >= self.LIMIT:
+
+                if logs['metadata']['total_objects'] >= self.LIMIT and logs['metadata']['next_offset']:
                     offset = int(logs['metadata']['next_offset'][0]) + 1
                     new_to = datetime.fromtimestamp(offset/1000, tz=timezone.now().astimezone().tzinfo)
-                    logger.info(f"[{__parser__}]:Logs alway present in range since: {since} to : {to}, update last_api_call in {new_to}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}]:Logs always present in range since: {since} to : {to}, update last_api_call in {new_to}", extra={'frontend': str(self.frontend)})
                     to = new_to
 
                 self.update_lock()
