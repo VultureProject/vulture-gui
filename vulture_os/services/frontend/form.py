@@ -245,6 +245,7 @@ class FrontendForm(ModelForm):
                            'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                            'trendmicro_visionone_token',
                            'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
+                           'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
                            ]:
             self.fields[field_name].required = False
 
@@ -334,6 +335,7 @@ class FrontendForm(ModelForm):
                   'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                   'trendmicro_visionone_token',
                   'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
+                  'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
                   'darwin_mode')
 
         widgets = {
@@ -498,6 +500,8 @@ class FrontendForm(ModelForm):
             'cisco_duo_host': TextInput(attrs={'class': 'form-control'}),
             'cisco_duo_ikey': Textarea(attrs={'class': 'form-control'}),
             'cisco_duo_skey': Textarea(attrs={'class': 'form-control'}),
+            'csc_domainmanager_apikey':TextInput(attrs={'class': 'form-control'}),
+            'csc_domainmanager_authorization':TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         }
 
     def clean_name(self):
