@@ -86,7 +86,7 @@ class CscDomainManagerParser(ApiParser):
             logger.error(f"[{__parser__}]:connect: Exception while creating session -- {e}", extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
 
-    def get_logs(self, since, page=1, timeout=10) -> list: #to
+    def get_logs(self, since, page=1, timeout=10) -> list:
         """
         Send a query to csc domainmanager api to get logs
         """
@@ -137,7 +137,7 @@ class CscDomainManagerParser(ApiParser):
 
     def test(self):
         try:
-            logs = self.get_logs(since=(datetime.now() - timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%M:%S"))
+            logs = self.get_logs(since=(datetime.now() - timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S"))
 
             return {
                 "status": True,
@@ -190,9 +190,9 @@ class CscDomainManagerParser(ApiParser):
                     self.last_api_call = date_parse(datetime.fromtimestamp(self.last_log_time).isoformat())
                     self.update_conf_file(type_="last_api_call", last_api_call=self.last_api_call)
 
-        self.session = None
+            self.session = None
 
-        logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
             logger.error(f"[{__parser__}]:execute: Could not get results from logs -- {e}", extra={'frontend': str(self.frontend)})
