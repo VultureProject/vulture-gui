@@ -30,10 +30,13 @@ from os import path, remove
 from sys import path as sys_path
 import logging
 
-from requests import Session as requests_session
+from requests import Session
 from urllib.parse import quote,unquote
 
+from json import dumps
+
 from django.conf import settings
+from django.utils import timezone
 
 from toolkit.api_parser.api_parser import ApiParser
 
@@ -75,7 +78,7 @@ class CscDomainManagerParser(ApiParser):
         """
         try:
             if (self.session is None):
-                self.session = requests_session()
+                self.session = Session()
 
                 self.session.headers['apikey'] = self.csc_domainmanager_apikey
                 self.session.headers['Authorization'] = self.csc_domainmanager_authorization
@@ -94,9 +97,9 @@ class CscDomainManagerParser(ApiParser):
             self._connect()
 
             params = {
-                "size": 1,
+                "size": 1000,
                 "page": page,
-                "filter": f"eventDate=ge={since}",
+                "filter": f"eventDate=gt={since.isoformat().replace(' ','T')}",
                 "sort": "eventDate,asc"
             }
 
@@ -114,7 +117,7 @@ class CscDomainManagerParser(ApiParser):
                 raise CscDomainManagerAPIError(f"Error while formatting json -- {e}")
 
         except Exception as e:
-            logger.error(f"[{__parser__}]:get_logs: Exception while getting logs on {url} -- {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: Exception while getting logs -- {e}", extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
 
 
@@ -137,7 +140,7 @@ class CscDomainManagerParser(ApiParser):
 
     def test(self):
         try:
-            logs = self.get_logs(since=(datetime.now() - timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S"))
+            logs = self.get_logs(since=(timezone.now() - timedelta(hours=12)))
 
             return {
                 "status": True,
@@ -155,28 +158,25 @@ class CscDomainManagerParser(ApiParser):
         Central function to fetch logs
         """
         try:
-            if self.last_api_call < datetime.now() - timedelta(hours=24):
-                self.last_api_call += timedelta(hours=1)
-
             page = 1
-            logs = self.get_logs(page=page, since=str(self.last_api_call).replace(" ","T"))
+            logs = self.get_logs(page=page, since=self.last_api_call or timezone.now() - timedelta(hours=1))
             self.update_lock()
 
-            if not logs['links'].get('next') and logs['events'] and self.last_log_time != self.last_api_call.timestamp():
+            if not logs['links'].get('next') and logs['events']:
                 self.write_to_file([self._format_log(event) for event in logs['events']])
                 self.update_lock()
                 if self.last_log_time != 0:
-                    self.last_api_call = date_parse(datetime.fromtimestamp(self.last_log_time).isoformat())
-                    self.update_conf_file(type_="last_api_call", last_api_call=self.last_api_call)
+                    self.last_api_call = datetime.fromtimestamp(self.last_log_time)
+                    self.frontend.last_api_call = self.last_api_call
 
-            elif logs['links'].get('next') and logs['events'] and self.last_log_time != self.last_api_call.timestamp():
+            elif logs['links'].get('next') and logs['events']:
                 self.write_to_file([self._format_log(event) for event in logs['events']])
                 self.update_lock()
                 page = page + 1
                 self.session = None
                 lock = True
                 while lock:
-                    logs = self.get_logs(page=page, since=str(self.last_api_call).replace(" ","T"))
+                    logs = self.get_logs(page=page, since=self.last_api_call or timezone.now() - timedelta(hours=1))
                     self.update_lock()
                     self.write_to_file([self._format_log(event) for event in logs['events']])
                     self.update_lock()
@@ -187,8 +187,11 @@ class CscDomainManagerParser(ApiParser):
                         lock = False
 
                 if self.last_log_time != 0:
-                    self.last_api_call = date_parse(datetime.fromtimestamp(self.last_log_time).isoformat())
-                    self.update_conf_file(type_="last_api_call", last_api_call=self.last_api_call)
+                    self.last_api_call = datetime.fromtimestamp(self.last_log_time)
+                    self.frontend.last_api_call = self.last_api_call
+
+            if self.last_api_call.timestamp() < (timezone.now() - timedelta(hours=24)).timestamp():
+                self.last_api_call += timedelta(hours=1)
 
             self.session = None
 
@@ -196,4 +199,4 @@ class CscDomainManagerParser(ApiParser):
 
         except Exception as e:
             logger.error(f"[{__parser__}]:execute: Could not get results from logs -- {e}", extra={'frontend': str(self.frontend)})
-            CscDomainManagerAPIError(e)
+            raise CscDomainManagerAPIError(e)
