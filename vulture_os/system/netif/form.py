@@ -24,7 +24,7 @@ __doc__ = 'Haproxy dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, SelectMultiple, Select, NumberInput, ModelMultipleChoiceField, ValidationError, ModelChoiceField
+from django.forms import ModelForm, TextInput, SelectMultiple, Select, NumberInput, ModelMultipleChoiceField, ValidationError, ModelChoiceField, BooleanField
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
 
 # External libraries
@@ -45,9 +45,13 @@ class NetIfSystemForm(ModelForm):
         widget=SelectMultiple(attrs={'class': 'form-control select2'}),
     )
 
+    is_system = BooleanField(
+        disabled=True,
+        initial=True)
+
     class Meta:
         model = NetworkAddress
-        fields = ('name', 'nic', 'ip', 'prefix_or_netmask', 'fib', 'vlan', 'vlandev', 'is_system')
+        fields = ('name', 'nic', 'ip', 'prefix_or_netmask', 'fib', 'vlan', 'vlandev')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),

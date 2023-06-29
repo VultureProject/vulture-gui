@@ -40,6 +40,7 @@
                           {{form.nic.errors}}
                         </div>
                       </div>
+                      {{ form.is_system.as_hidden }}
                       {% if not is_system %}
                       <div class="form-group" id="carp_info">
                         <label class="col-sm-4 control-label">{% trans "CARP vhid" %}</label>

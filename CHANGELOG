@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [NET2MONGO] Fix vlan interfaces detection
 - [HAPROXY] [CONF] IDPs wouldn't work on Frontends without any Workflow assigned
 - [API_PARSER] [SENTINELONE] Avoid query date stagnation
+- [NETWORK] [GUI] Don't change network interface type when saving it
 
 
 ## [2.7.1] - 2023-06-07
