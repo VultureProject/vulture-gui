@@ -84,9 +84,15 @@ class LogOM (models.Model):
     internal = models.BooleanField(default=False, help_text=_("Is this LogForwarder internal"))
     queue_size = models.PositiveIntegerField(
         default=10000,
-        help_text=_("Size of the queue when failure occurs"),
+        help_text=_("Size of the queue in nb of message"),
         verbose_name=_("Size of the queue in nb of message"),
         validators=[MinValueValidator(100)]
+    )
+    dequeue_size = models.PositiveIntegerField(
+        default=300,
+        help_text=_("Size of the batch to dequeue"),
+        verbose_name=_("Size of the batch to dequeue"),
+        validators=[MinValueValidator(1)]
     )
     enable_retry = models.BooleanField(
         default=False,
@@ -100,26 +106,28 @@ class LogOM (models.Model):
     )
     high_watermark = models.PositiveIntegerField(
         default=8000,
+        null=True,
         help_text=_("Target of the high watermark"),
         verbose_name=_("High watermark target"),
         validators=[MinValueValidator(100)]
     )
     low_watermark = models.PositiveIntegerField(
         default=6000,
+        null=True,
         help_text=_("Set the value of the low watermark"),
         verbose_name=_("Low watermark target"),
         validators=[MinValueValidator(100)]
         )
     max_file_size = models.IntegerField(
         default=256,
-        null=False,
+        null=True,
         help_text=_("Set the value of the queue in MB"),
         verbose_name=_("Max file size of the queue in MB"),
         validators=[MinValueValidator(1)]
     )
     max_disk_space = models.IntegerField(
         default=1024,
-        null=False,
+        null=True,
         help_text=_("Limit the maximum disk space used by the queue in MB"),
         verbose_name=_("Max disk space used by the queue in MB"),
         validators=[MinValueValidator(1)]
@@ -256,6 +264,7 @@ class LogOMFile(LogOM):
             'output': self.file,
             'stock_as_raw': self.stock_as_raw,
             'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
             'enable_disk_assist': self.enable_disk_assist,
             'high_watermark': self.high_watermark,
@@ -353,6 +362,7 @@ class LogOMRELP(LogOM):
             'type': 'RELP',
             'tls': self.tls_enabled,
             'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
             'enable_disk_assist': self.enable_disk_assist,
             'high_watermark': self.high_watermark,
@@ -414,6 +424,7 @@ class LogOMHIREDIS(LogOM):
             'pwd': self.pwd,
             'type': 'Redis',
             'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
             'enable_disk_assist': self.enable_disk_assist,
             'high_watermark': self.high_watermark,
@@ -481,6 +492,7 @@ class LogOMFWD(LogOM):
             'zip_level': self.zip_level,
             'send_as_raw': self.send_as_raw,
             'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
             'enable_disk_assist': self.enable_disk_assist,
             'high_watermark': self.high_watermark,
@@ -509,9 +521,6 @@ class LogOMElasticSearch(LogOM):
         default=None,
         null=True
     )
-
-    ratelimit_interval = models.PositiveIntegerField(null=True, blank=True)
-    ratelimit_burst = models.PositiveIntegerField(null=True, blank=True)
 
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)
@@ -551,14 +560,13 @@ class LogOMElasticSearch(LogOM):
             'mapping_id': self.mapping_id,
             'type': 'Elasticsearch',
             'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
             'enable_disk_assist': self.enable_disk_assist,
             'high_watermark': self.high_watermark,
             'low_watermark': self.low_watermark,
             'max_file_size': self.max_file_size,
             'max_disk_space': self.max_disk_space,
-            'ratelimit_interval': self.ratelimit_interval,
-            'ratelimit_burst': self.ratelimit_burst,
             'output': self.servers + ' (index = {})'.format(self.index_pattern)
         }
         if self.x509_certificate:
@@ -625,6 +633,7 @@ class LogOMMongoDB(LogOM):
             'internal': self.internal,
             'type': 'MongoDB',
             'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
             'enable_disk_assist': self.enable_disk_assist,
             'high_watermark': self.high_watermark,

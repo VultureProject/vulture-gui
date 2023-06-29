@@ -45,6 +45,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='logom',
             name='queue_size',
-            field=models.PositiveIntegerField(default=10000, help_text='Size of the queue when failure occurs', validators=[django.core.validators.MinValueValidator(100)], verbose_name='Size of the queue in nb of message'),
+            field=models.PositiveIntegerField(default=10000, help_text='Size of the queue in nb of message', validators=[django.core.validators.MinValueValidator(100)], verbose_name='Size of the queue in nb of message'),
+        ),
+        migrations.AddField(
+            model_name='logom',
+            name='dequeue_size',
+            field=models.PositiveIntegerField(default=300, help_text='Size of the batch to dequeue', validators=[django.core.validators.MinValueValidator(1)], verbose_name='Size of the batch to dequeue'),
+        ),
+        migrations.RemoveField(
+            model_name='logomelasticsearch',
+            name='ratelimit_burst',
+        ),
+        migrations.RemoveField(
+            model_name='logomelasticsearch',
+            name='ratelimit_interval',
         ),
     ]

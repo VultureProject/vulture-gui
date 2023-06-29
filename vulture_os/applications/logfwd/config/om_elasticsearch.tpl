@@ -12,18 +12,11 @@
             {%- if ssl_ca %}tls.cacert="{{ssl_ca}}"{%- endif %}
             {%- if ssl_cert %}tls.mycert="{{ssl_cert}}"{%- endif %}
             {%- if ssl_key %}tls.myprivkey="{{ssl_key}}"{%- endif %}
-            {%- if ratelimit_interval %}
-            retryfailures="on"
-            RateLimit.Interval="{{ratelimit_interval}}"
-            {%- endif %}
-            {%- if ratelimit_burst %}
-            RateLimit.Burst="{{ratelimit_burst}}"
-            {%- endif %}
             bulkmode="on"
             maxbytes="100m"
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
-            queue.dequeuebatchsize="300"
+            queue.dequeuebatchsize="{{dequeue_size}}"
             {%- if enable_retry %}
             action.ResumeRetryCount = "-1"
             {%- if enable_disk_assist %}

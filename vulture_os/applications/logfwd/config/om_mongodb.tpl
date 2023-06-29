@@ -8,6 +8,7 @@
             collection="{{collection}}"
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
+            queue.dequeuebatchsize="{{dequeue_size}}"
             {%- if enable_retry %}
             action.ResumeRetryCount = "-1"
             {%- if enable_disk_assist %}
