@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [HAPROXY] [CONF] IDPs wouldn't work on Frontends without any Workflow assigned
 - [API_PARSER] [SENTINELONE] Avoid query date stagnation
 - [NETWORK] [GUI] Don't change network interface type when saving it
+- [LOGFORWARDER] [ELASTICSEARCH] remove deprecated option for ELS>=7 compatibility
 
 
 ## [2.7.1] - 2023-06-07
