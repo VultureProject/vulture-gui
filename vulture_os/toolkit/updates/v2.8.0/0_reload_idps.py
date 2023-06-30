@@ -36,6 +36,7 @@ django.setup()
 
 from system.cluster.models import Cluster
 from authentication.user_portal.models import UserAuthentication
+from workflow.models import Workflow
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
@@ -47,9 +48,16 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
+            for workflow in Workflow.objects.filter(authentication__isnull=False):
+                node.api_request("workflow.workflow.build_conf", workflow.pk)
+                print("Workflow {} conf reload asked".format(workflow))
             for idp_portal in UserAuthentication.objects.filter(enable_external=True):
+                idp_portal.save_conf()
+                print("IDP portal {} conf reload asked".format(idp_portal))
                 # the save() function has been overriden to generate a new cookie name for IDPs only
                 idp_portal.save()
+
+            node.api_request("services.haproxy.haproxy.reload_service")
 
         except Exception as e:
             print("Failed to update IDP portals: {}".format(e))
