@@ -36,6 +36,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from django.conf import settings
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
 
@@ -174,65 +175,41 @@ class ImpervaParser(ApiParser):
 
     def execute(self):
         try:
-            data = []
-            if self.imperva_last_log_file == "":
-                log_files = self._download_log_index()
-                for file in log_files:
-                    try:
-                        self.update_lock()
-                        logger.info(f"[{__parser__}]:execute: Downloading {file}", extra={'frontend': str(self.frontend)})
-                        content = self.get_file(file)
-                        data.extend(content.split(b'\n'))
+            self.imperva_last_log_file = self.frontend.imperva_last_log_file
 
-                        self.write_to_file(data)
-                        data = []
-                        self.imperva_last_log_file = file
-                    except Exception as e:
-                        logger.exception(f"[{__parser__}]:execute: Cannot retrieve & decode file {file} : {e}",
-                                         extra={'frontend': str(self.frontend)})
+            # Download log files index
+            log_files = self._download_log_index()
 
+            logger.info(f"[{__parser__}]:execute: Get logs from {self.imperva_last_log_file or 'the beginning of log index'}",
+                        extra={'frontend': str(self.frontend)})
+
+            # Get next file position
+            if self.imperva_last_log_file in log_files:
+                start_pos = log_files.index(self.imperva_last_log_file) + 1
             else:
-                while not self.evt_stop.is_set():
-                    # Try to download the next file
-                    last_log_index = int(self.imperva_last_log_file.split('.')[0].split('_')[1])
-                    next_log_index = last_log_index + 1
-                    next_log_file = f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index}.log"
-                    try:
-                        logger.info(f"[{__parser__}]:execute: Downloading {next_log_file}",
-                                    extra={'frontend': str(self.frontend)})
-                        content = self.get_file(next_log_file)
-                        data.extend(content.split(b'\n'))
-                        self.write_to_file(data)
-                        self.imperva_last_log_file = next_log_file
-                    except Exception as e:
-                        if not "404" in str(e):
-                            logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+                start_pos = 0
+
+            # Download files
+            if files_to_download := log_files[start_pos:]:
+                logger.info(f"[{__parser__}]:execute: {len(files_to_download)} files to download", extra={'frontend': str(self.frontend)})
+
+                for file in files_to_download:
+                    if not self.evt_stop.is_set():
                         try:
-                            # Download log files index
-                            log_files = self._download_log_index()
+                            self.update_lock()
+                            logger.info(f"[{__parser__}]:execute: Downloading {file}", extra={'frontend': str(self.frontend)})
+                            content = self.get_file(file)
+                            data = content.split(b'\n')
+                            self.write_to_file(data)
                         except Exception as e:
-                            logger.exception(f"[{__parser__}]:execute: Cannot download log index ! Details : {e}", extra={'frontend': str(self.frontend)})
-                            break
-                        else:
-                            first_log_id_in_index = int(log_files[0].split('.')[0].split('_')[1])
-                            if next_log_index < first_log_id_in_index:
-                                msg = f"Current downloaded file is not in the index file any more. This is probably due to a long delay in downloading. Attempting to recover"
-                                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
-                                self.imperva_last_log_file = ""
-                            elif f"{self.imperva_last_log_file.split('_')[0]}_{next_log_index+1}.log" in log_files:
-                                msg = f"Skipping file {next_log_file}"
-                                logger.warning(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-                                self.imperva_last_log_file = next_log_file
-                            else:
-                                msg = f"Next file {next_log_file} still does not exist."
-                                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-                            break
-
-
-            self.frontend.imperva_last_log_file = self.imperva_last_log_file
-            self.frontend.last_api_call = self.last_api_call
-            self.finish()
-
+                            logger.exception(f"[{__parser__}]:execute: Cannot retrieve & decode file {file} : {e}",
+                                             extra={'frontend': str(self.frontend)})
+                        finally:
+                            self.frontend.imperva_last_log_file = file
+                            self.frontend.last_api_call = timezone.now()
+                            self.frontend.save()
+            else:
+                logger.info(f"[{__parser__}]:execute: No file to download",
+                            extra={'frontend': str(self.frontend)})
         except Exception as err:
             raise ImpervaParseError(err)
