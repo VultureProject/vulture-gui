@@ -744,6 +744,11 @@ class Frontend(models.Model):
         help_text = _("API key used to retrieve logs - as configured in SentinelOne settings"),
         default = "",
     )
+    sentinel_one_account_type = models.TextField(
+        verbose_name = _("Sentinel One Account type"),
+        help_text = _("Type of account : console or user service"),
+        default = "console",
+    )
     # CarbonBlack attributes
     carbon_black_host = models.TextField(
         verbose_name = _("CarbonBlack Host"),

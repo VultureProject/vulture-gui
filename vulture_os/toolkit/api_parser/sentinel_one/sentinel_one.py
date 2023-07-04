@@ -64,6 +64,7 @@ class SentinelOneParser(ApiParser):
             self.sentinel_one_host = f"https://{self.sentinel_one_host}"
 
         self.sentinel_one_apikey = data["sentinel_one_apikey"]
+        self.sentinel_one_account_type = data["sentinel_one_account_type"]
 
         self.session = None
 
@@ -88,7 +89,10 @@ class SentinelOneParser(ApiParser):
                 ).json()
 
                 assert response.get('data', {}).get('token'), f"Cannot retrieve token from API : {response}"
-                self.session.headers.update({'Authorization': f"Token {response['data']['token']}"})
+                if self.sentinel_one_account_type == "service user" or self.sentinel_one_account_type == "user service":
+                    self.session.headers.update({'Authorization': f"Apitoken {response['data']['token']}"})
+                else:
+                    self.session.headers.update({'Authorization': f"Token {response['data']['token']}"})
                 logger.info(f"[{__parser__}]:_connect: access token successfully retrieved, ready to query",
                             extra={'frontend': str(self.frontend)})
 
