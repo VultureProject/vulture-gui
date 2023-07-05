@@ -31,6 +31,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
 from django.conf import settings
+from django.db.models import Q
 django.setup()
 
 from system.cluster.models import (Cluster, Node, NetworkInterfaceCard,
@@ -45,217 +46,304 @@ logger = logging.getLogger('daemon')
 import re
 import subprocess
 
+PATTERN_IFCONFIG = re.compile('^ifconfig_(.*)="?\'?([^"\']*)"?\'?')
+PATTERN_GATEWAY = re.compile("^defaultrouter=(.*)")
+PATTERN_GATEWAY6 = re.compile("^ipv6_defaultrouter=(.*)")
+PATTERN_INET6 = re.compile("(inet6 )?(.*)(( prefixlen )|(/))([0-9\.]+)")
+PATTERN_INET = re.compile("(inet )?(.*)(( netmask )|(/))([0-9\.]+)")
+PATTERN_IFACE_NAME = re.compile("([a-z]+)([0-9]+)")
+PATTERN_VLAN = re.compile("vlan ([0-9]+)")
+PATTERN_VLANDEV = re.compile("vlandev ([a-z0-9\.]+)")
+PATTERN_LAGGPROTO = re.compile("laggproto ([a-z]+)")
+PATTERN_LAGGPORT = re.compile("laggport ([a-z0-9]+)")
+PATTERN_FIB = re.compile("fib ([0-9])")
+
+def refresh_physical_NICs(node):
+    """ Get physical NICs """
+    # Remove all 'unused' interfaces (may be reimported with the next for loop)
+    deletion_list = NetworkInterfaceCard.objects.filter(networkaddressnic=None, networkaddress=None)
+    for to_delete in deletion_list:
+        iface_name_match = re.search(PATTERN_IFACE_NAME, to_delete.dev)
+        if iface_name_match:
+            name = iface_name_match.group(1)
+            iface_id = iface_name_match.group(2)
+            # Only remove interfaces that cannot represent a NetworkAddress
+            if not NetworkAddress.objects.filter(type=name, iface_id=iface_id).exists():
+                logger.info(f"Node::refresh_physical_NICs: Deleting obsolete interface {to_delete.dev}")
+                to_delete.delete()
+
+    # Now, (re)import found interfaces
+    for nic in NetworkInterfaceCard().get_list():
+        """ Check if the Network NIC exists """
+        try:
+            d, created = NetworkInterfaceCard.objects.get_or_create(
+                dev=nic,
+                node=node)
+            if created:
+                logger.debug("Node::refresh_physical_NICs: NIC {} exists in database".format(d.dev))
+            else:
+                logger.info("Node::refresh_physical_NICs: Creating NIC {}".format(nic))
+        except Exception as e:
+            logger.error(f"Node::refresh_physical_NICs: Could not create physical NICs ->  {e}")
+            logger.exception(e)
+
+
+def parse_ifconfig_key(line, config):
+    split = line.split("_")
+
+    if len(split) > 3:
+        logger.error(f"Node::parse_ifconfig_key: could not parse line '{line}',"
+                        " problem is on '{tmp}' (too many '_', don't know how to read)")
+        return False
+
+    if "ipv6" in split:
+        split.remove('ipv6')
+        config['ipv6'] = True
+        config['family'] = 'inet6'
+    else:
+        config['family'] = 'inet'
+
+    if "alias" in split[-1]:
+        logger.debug("Node::parse_ifconfig_key: line is an alias")
+        config['nic'] = [split[0]]
+        config['type'] = 'alias'
+
+    iface_name_match = re.search(PATTERN_IFACE_NAME, split[-1])
+    if not iface_name_match:
+        return False
+
+    config['name'] = iface_name_match.group(1)
+    config['iface_id'] = iface_name_match.group(2)
+    if config['name'] == 'vlan':
+        logger.debug("Node::parse_ifconfig_key: line is a vlan configuration")
+        config['type'] = 'vlan'
+    if config['name'] == 'lagg':
+        logger.debug("Node::parse_ifconfig_key: line is a lagg configuration")
+        config['type'] = 'lagg'
+
+    return True
+
+
+def parse_ifconfig_values(line, config):
+    parse_success = False
+
+    if line.upper() in ['DHCP', 'SYNCDHCP']:
+        logger.debug("Node::parse_ifconfig_values: interface is configured for DHCP")
+        config['dhcp'] = True
+        return True
+
+    if config.get('ipv6'):
+        pattern = PATTERN_INET6
+    else:
+        pattern = PATTERN_INET
+
+    inet_match = re.search(pattern, line)
+    if inet_match:
+        logger.debug("Node::parse_ifconfig_values: interface is configured with static IP")
+        parse_success = True
+        config['ip'] = inet_match.group(2)
+        config['prefix_or_netmask'] = inet_match.group(6)
+        if 'type' not in config:
+            config['type'] = 'system'
+
+    fib_match = re.search(PATTERN_FIB, line)
+    if fib_match:
+        logger.debug("Node::parse_ifconfig_values: interface has specific fib")
+        config['fib'] = fib_match.group(1)
+
+    vlan_match = re.search(PATTERN_VLAN, line)
+    vlandev_match = re.search(PATTERN_VLANDEV, line)
+    if vlan_match and vlandev_match:
+        logger.debug("Node::parse_ifconfig_values: interface has vlan parameters")
+        parse_success = True
+        config['vlan'] = vlan_match.group(1)
+        config['nic'] = [vlandev_match.group(1)]
+
+    laggproto_match = re.search(PATTERN_LAGGPROTO, line)
+    laggport_matches = re.findall(PATTERN_LAGGPORT, line)
+    if laggproto_match and laggport_matches:
+        logger.debug("Node::parse_ifconfig_values: interface is a Link Aggregation")
+        parse_success = True
+        config['lagg_proto'] = laggproto_match.group(1)
+        config['nic'] = laggport_matches
+        logger.debug("line does not define network configuration: configurations are "
+                     f"laggproto = {config['lagg_proto']}, laggports = {config['nic']}")
+
+    return parse_success
+
+
+def parse_gateway_config(line, config):
+    gateway_match = re.search(PATTERN_GATEWAY, line)
+    have_gateway = False
+    if gateway_match:
+        logger.debug("Node::parse_gateway_config: this is a gateway (ipv4) configuration line")
+        config['defaultgateway'] = gateway_match.group(1)
+        have_gateway = True
+
+    gateway6_match = re.search(PATTERN_GATEWAY6, line)
+    if gateway6_match:
+        logger.debug("Node::parse_gateway_config: this is a gateway (ipv6) configuration line")
+        config['defaultgateway_ipv6'] = gateway6_match.group(1)
+        have_gateway = True
+
+    return have_gateway
+
+
 if __name__ == "__main__":
 
     this_node = Cluster.get_current_node()
 
-    """ Get physical NICs """
-    for nic in NetworkInterfaceCard().get_list():
-        """ Check if the Network NIC exists """
-        try:
-            d = NetworkInterfaceCard.objects.get(dev=nic, node=this_node)
-            logger.debug("Node::network_sync(): NIC {} exists in database".format(d.dev))
-        except NetworkInterfaceCard.DoesNotExist:
-            """ New Network NIC: Add it to the system """
-            logger.info("Node::network_sync(): Creating NIC {}".format(nic))
-            d = NetworkInterfaceCard.objects.create(dev=nic, node=this_node)
-
+    refresh_physical_NICs(this_node)
 
     """ Read system configuration """
     with open("/etc/rc.conf", "r") as f:
-        # logger.debug(f"reading configuration in {filepath}")
-        pattern_ifconfig = re.compile('^ifconfig_(.*)="?\'?([^"\']*)"?\'?')
-        pattern_inet6 = re.compile("(inet6 )?(.*)(( prefixlen )|(/))([0-9\.]+)")
-        pattern_inet = re.compile("(inet )?(.*)(( netmask )|(/))([0-9\.]+)")
-        pattern_gateway = re.compile("^defaultrouter=(.*)")
-        pattern_gateway6 = re.compile("^ipv6_defaultrouter=(.*)")
-        pattern_vlan = re.compile("vlan ([0-9]+)")
-        pattern_vlandev = re.compile("vlandev ([a-z0-9\.]+)")
-        pattern_fib = re.compile("fib ([0-9])")
 
         defaultgateway = None
         defaultgateway_ipv6 = None
 
         for line in f:
-            have_gateway = False
-            line = line.rstrip()
-            m = re.search(pattern_ifconfig, line)
-            nic = None
-            ip = None
-            vlan = None
-            vlandev = None
-            fib = None
-            prefix_or_netmask = None
-            gw = None
-            ipv6 = False
-            config = None
-            family = None
+            config = dict()
+            line = line.strip()
+            ifconfig_match = re.search(PATTERN_IFCONFIG, line)
+            ifconfig_parsed = False
 
-            if m:
-                tmp = m.group(1)
-                config = m.group(2)
-                if "ipv6" in tmp and len(tmp.split("_")) == 2:
-                    nic, ipv6 = tmp.split("_")
-                    ipv6 = True
-                else:
-                    nic = tmp
-                    if "inet6" in config:
-                        ipv6 = True
-                    else:
-                        ipv6 = False
+            if ifconfig_match:
+                key = ifconfig_match.group(1)
+                value = ifconfig_match.group(2)
 
-                if not nic:
-                    logger.error("Node::network_sync(): Unable to retrieve config: Unknown NIC !")
+                key_parsed = parse_ifconfig_key(key, config)
+
+                if not key_parsed:
+                    logger.error(f"Node::network_sync: Could not parse interface name/ID in '{key}'")
+                    logger.debug(config)
                     continue
-                elif nic in ("lo0", "pflog0"):
-                    logger.debug("Node::network_sync(): Internal NIC ({}), passing.".format(nic))
+                elif config['name'] in ("lo", "pflog"):
+                    logger.debug(f"Node::network_sync: Internal NIC ({config['name']}), passing.")
                     continue
-                elif "_alias" in tmp:
-                    logger.info(f"Found an alias configuration for interface {nic}, ignoring")
+
+                logger.debug(f"Node::network_sync: Detected NIC {config['name']}{config['iface_id']}")
+
+                ifconfig_parsed = parse_ifconfig_values(value, config)
+                if not ifconfig_parsed:
+                    logger.error("Node::network_sync: Could not read configuration value, ignoring")
+                    logger.debug(f"Node::network_sync: line was {value}")
                     continue
-                else:
-                    logger.debug("Node::network_sync(): Detected NIC {}".format(nic))
+                if 'type' not in config:
+                    logger.error("Node::network_sync: Could not read interface type, ignoring")
+                    logger.debug(f"Node::network_sync: line was {value}")
+                    continue
+                if 'nic' not in config:
+                    config['nic'] = [config['name'] + config['iface_id']]
 
+                if config.get('dhcp'):
+                    try:
+                        proc = subprocess.Popen([
+                            '/usr/local/bin/sudo',
+                            '/home/vlt-os/scripts/get_dhcp_address.sh',
+                            config['nic']],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        success, error = proc.communicate()
+                        if error:
+                            logger.error("Node::network_sync: {}".format(str(error)))
+                            continue
+                        else:
+                            tmp = success.rstrip().decode('utf-8')
+                            config['ip'], config['prefix_or_netmask'], gw = tmp.split(",")
+                            logger.debug("Node::network_sync: Found DHCP ip: {}".format(config['ip']))
+                            logger.debug("Node::network_sync: Found DHCP netmask/prefix: {}".format(config['prefix_or_netmask']))
+                            logger.debug("Node::network_sync: Found DHCP gateway: {}".format(gw))
 
-            if config and config.upper() in ("SYNCDHCP", "DHCP"):
-                try:
-                    proc = subprocess.Popen([
-                        '/usr/local/bin/sudo',
-                        '/home/vlt-os/scripts/get_dhcp_address.sh',
-                        nic],
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    success, error = proc.communicate()
-                    if error:
-                        logger.error("Node::network_sync(): {}".format(str(error)))
+                        if ":" in config['ip']:
+                            config['ipv6'] = True
+                            if not defaultgateway_ipv6:
+                                defaultgateway_ipv6 = gw
+                        else:
+                            if not defaultgateway:
+                                defaultgateway = gw
+
+                    except Exception as e:
+                        logger.error("Node::network_sync: {}".format(str(e)))
                         continue
-                    else:
-                        tmp = success.rstrip().decode('utf-8')
-                        ip, prefix_or_netmask, gw = tmp.split(",")
-                        logger.debug("Node::network_sync(): Found DHCP ip: {}".format(ip))
-                        logger.debug("Node::network_sync(): Found DHCP netmask/prefix: {}".format(prefix_or_netmask))
-                        logger.debug("Node::network_sync(): Found DHCP gateway: {}".format(gw))
-
-                    if ":" in ip:
-                        ipv6 = True
-                        family = "inet6"
-                        if not defaultgateway_ipv6:
-                            defaultgateway_ipv6 = gw
-                    else:
-                        ipv6 = False
-                        family = "inet"
-                        if not defaultgateway:
-                            defaultgateway = gw
-
-                except Exception as e:
-                    logger.error("Node::network_sync(): {}".format(str(e)))
-                    continue
-
-            elif config:
-
-                if ipv6 is True:
-                    pattern = pattern_inet6
-                    family = "inet6"
-                else:
-                    pattern = pattern_inet
-                    family = "inet"
-
-                m = re.search(pattern, config)
-                if m:
-                    ip = m.group(2)
-                    prefix_or_netmask = m.group(6)
-
-                if not ip:
-                    logger.info("Node::network_sync(): Warning: No IP address associated to {}".format(nic))
-                    continue
-
-                if not prefix_or_netmask:
-                    logger.error("Node::network_sync(): Unable to retrieve prefix_or_netmask !")
-                    continue
-
-                m = re.search(pattern_vlan, config)
-                if m:
-                    vlan = m.group(1)
-
-                m = re.search(pattern_vlandev, config)
-                if m:
-                    vlandev = m.group(1)
-
-                m = re.search(pattern_fib, config)
-                if m:
-                    fib = m.group(1)
 
             else:
-                m = re.search(pattern_gateway, line)
-                if m:
-                    defaultgateway = m.group(1)
-                    logger.debug("Node::network_sync(): Found default gateway: {}".format(defaultgateway))
-                    have_gateway = True
+                found_gateway = parse_gateway_config(line, config)
 
-                m = re.search(pattern_gateway6, line)
-                if m:
-                    defaultgateway_ipv6 = m.group(1)
-                    logger.debug("Node::network_sync(): Found default IPV6 gateway: {}".format(defaultgateway_ipv6))
-                    have_gateway = True
-
-                if not have_gateway:
-                    logger.info("Node::network_sync(): line does not define gateway configuration, ignoring")
+                if not found_gateway:
+                    logger.info("Node::network_sync: line does not define network configuration, ignoring")
                     continue
 
-            """ If the current line is not a gateway """
-            if not have_gateway:
+            """ If the current line is interface configuration """
+            if ifconfig_parsed:
+                interfaces = []
+                address = None
                 try:
-                    d = NetworkInterfaceCard.objects.get(dev=nic, node=this_node)
-                except NetworkInterfaceCard.DoesNotExist as e:
+                    for nic in config['nic']:
+                        iface, _ = NetworkInterfaceCard.objects.get_or_create(
+                            dev=nic,
+                            node=this_node
+                        )
+                        interfaces.append(iface)
+                except Exception as e:
+                    logger.exception(e)
                     continue
 
-                # Prevent None insertion into Mongo
-                if not ip:
-                    logger.error("Node::network_sync(): IP address found is NULL.")
-                    continue
+                if config['type'] == "system":
+                    logger.info("Node::network_sync: Handling system interface configuration...")
+                    link = NetworkAddressNIC.objects.filter(
+                        network_address__type='system',
+                        nic=interfaces[0]
+                    ).first()
 
-                """ Check if the ip / netmask have changed """
-                have_one = False
-                for address_nic in NetworkAddressNIC.objects.filter(nic=d):
-                    if address_nic.network_address.is_system and address_nic.network_address.family == family:
-                        have_one = True
-                        existing_address = address_nic.network_address
+                    if not link:
+                        logger.info(f"Node::network_sync: Creating new IP address on NIC {interfaces[0].dev} : "
+                                    f"{config['ip']}/{config['prefix_or_netmask']}")
 
-                """ No existing IP address on this NIC
-                    This is a first call => Just create the IP Address
-                """
+                        address = NetworkAddress(
+                            name="System",
+                            type="system",
+                            ip=config.get('ip'),
+                            prefix_or_netmask=config.get('prefix_or_netmask'),
+                            fib=config.get('fib', 0)
+                        )
+                        address.save()
+                    else:
+                        logger.info(f"Node::network_sync: Updating IP address on NIC {interfaces[0].dev} : "
+                                    f"{config['ip']}/{config['prefix_or_netmask']}")
+                        address = link.network_address
+                        address.ip = config.get('ip')
+                        address.prefix_or_netmask = config.get('prefix_or_netmask')
+                        address.fib = config.get('fib', 0)
+                        address.save()
+                elif config['type'] in ['alias', 'vlan', 'lagg']:
+                    logger.info(f"Node::network_sync: Handling {config['type']}{config['iface_id']} configuration...")
+                    address, created = NetworkAddress.objects.update_or_create(
+                        type=config['type'],
+                        iface_id=config['iface_id'],
+                        defaults={
+                            'name': config['name'] + config['iface_id'],
+                            'ip': config.get('ip'),
+                            'prefix_or_netmask': config.get('prefix_or_netmask'),
+                            'fib': config.get('fib', 0), 
+                            'carp_vhid': config.get('carp_vhid', 0),
+                            'vlan': config.get('vlan', 0),
+                            'lagg_proto': config.get('lagg_proto', ''),
+                        })
+                    
+                    logger.info("Node::network_sync: {} Network Address configuration {}".format("created" if created else "updated", address))
 
-                if not have_one:
-                    logger.info("Node::network_sync(): Creating new IP address on NIC {} : {}/{}".format(d.dev, ip, prefix_or_netmask))
-                    if vlandev:
-                        try:
-                            vd = NetworkInterfaceCard.objects.get(dev=str(vlandev), node=this_node)
-                        except NetworkInterfaceCard.DoesNotExist as e:
-                            logger.error("Node::network_sync(): Unable to find nic related to '{}'".format(vlandev))
-                            continue
 
-                        vlandev = vd
 
-                    existing_address = NetworkAddress(
-                        name="System",
-                        ip=ip,
-                        prefix_or_netmask=prefix_or_netmask,
-                        is_system=True,
-                        carp_vhid=0,
-                        vlan=vlan,
-                        vlandev=vlandev,
-                        fib=fib
-                    )
-                    existing_address.save()
-                    NetworkAddressNIC.objects.create(nic=d, network_address=existing_address)
-
-                elif existing_address.ip != ip or existing_address.prefix_or_netmask != prefix_or_netmask:
-                    logger.info("Node::network_sync(): Updating IP address on NIC {} : {}/{} {} {} {}".format(d.dev, ip, prefix_or_netmask, vlan, vlandev, fib))
-                    existing_address.ip = ip
-                    existing_address.prefix_or_netmask = prefix_or_netmask
-                    existing_address.vlan = vlan
-                    existing_address.vlandev = vlandev
-                    existing_address.fib = fib
-                    existing_address.save()
+                for iface in interfaces:
+                    try:
+                        logger.info(f"Node::network_sync: creating/updating interface {iface}")
+                        address_nic, created = NetworkAddressNIC.objects.get_or_create(
+                            nic=iface,
+                            network_address=address)
+                        logger.info("Node::network_sync: {} link {}".format("created" if created else "updated", address_nic))
+                    except Exception as e:
+                        logger.error(f"Node::network_sync: Could not create link {address} -> {iface}")
+                        logger.exception(e)
+                        continue
 
         """ Update node with default gateways, if any """
         if defaultgateway or defaultgateway_ipv6:
@@ -267,5 +355,3 @@ if __name__ == "__main__":
 
             this_node.save()
 
-        """ Garbage collector: Delete from mongodb interfaces that may not exists anymore """
-        # FIXME

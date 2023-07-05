@@ -30,6 +30,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
 
+from django.db.models import Q
 from django.utils.translation import gettext as _
 from django.utils.module_loading import import_string
 from django.utils import timezone
@@ -55,6 +56,22 @@ logger = logging.getLogger('gui')
 
 
 JAILS = ("apache", "mongodb", "redis", "rsyslog", "haproxy")
+
+NET_ADDR_TYPES = (
+    ('system', 'System'),
+    ('alias', 'Alias'),
+    ('vlan', 'Vlan'),
+    ('lagg', 'Link Aggregation'),
+)
+
+LAGG_PROTO_TYPES = (
+    ('failover', 'Failover'),
+    ('lacp', 'LACP'),
+    ('loadbalance', 'Load Balance'),
+    ('roundrobin', 'RoundRobin'),
+    ('broadcast', 'Broadcast'),
+    ('none', 'Disabled'),
+)
 
 
 class APISyncResultTimeOutException(Exception):
@@ -399,7 +416,7 @@ class Node(models.Model):
         listener_addr = dict()
         for a in addresses:
             try:
-                listener_addr[a].append([l.id for l in a.listener_set.filter(frontend__enabled=True)])
+                listener_addr[a].extend([l.id for l in a.listener_set.filter(frontend__enabled=True)])
             except KeyError:
                 listener_addr[a] = [l.id for l in a.listener_set.filter(frontend__enabled=True)]
 
@@ -682,8 +699,9 @@ class NetworkInterfaceCard(models.Model):
         :return  True if there is, False otherwise
         """
         # NOT IN is not supported by djongo
-        for addr in self.networkaddress_set.all():
-            if ":" not in addr.ip:
+        # exclude lagg/vlan addresses as NICs do not hold the address
+        for addr in self.networkaddress_set.exclude(type__in=["lagg", "vlan"]):
+            if addr.ip and ":" not in addr.ip:
                 return True
         return False
 
@@ -693,7 +711,8 @@ class NetworkInterfaceCard(models.Model):
         :return True if there is, False otherwise
         """
         # self.networkaddress_set.mongo_find({"ip": re_compile(":")}).count() > 0
-        return self.networkaddress_set.filter(ip__contains=":").count() > 0
+        # exclude lagg/vlan addresses as NICs do not hold the address
+        return self.networkaddress_set.exclude(type__in=["lagg", "vlan"]).filter(ip__contains=":").count() > 0
 
 
 class NetworkAddress(models.Model):
@@ -701,21 +720,30 @@ class NetworkAddress(models.Model):
     This is a generic IPv[4|6] Address
     """
     name = models.TextField(default=_('Friendly name'))
+    type = models.TextField(
+        default="system",
+        choices=NET_ADDR_TYPES,
+        verbose_name=_("Interface type"),
+    )
     nic = models.ManyToManyField(
         NetworkInterfaceCard,
         through='NetworkAddressNIC'
     )
-    ip = models.GenericIPAddressField()
-    prefix_or_netmask = models.TextField()
-    is_system = models.BooleanField(default=False)
+
+    ip = models.GenericIPAddressField(blank=True, null=True)
+    prefix_or_netmask = models.TextField(blank=True)
     carp_vhid = models.PositiveSmallIntegerField(default=0)
     vlan = models.PositiveSmallIntegerField(default=0)
-    vlandev = models.ForeignKey(to="NetworkInterfaceCard", null=True, blank=True,
-                                related_name='%(class)s_vlandev',
-                                on_delete=models.SET_NULL,
-                                help_text=_("Underlying NIC for VLAN"),
-                                verbose_name=_("Vlan device"))
     fib = models.PositiveSmallIntegerField(default=0)
+    iface_id = models.SmallIntegerField(
+        default=-1,
+        null=True,
+        verbose_name=_("virtual Interface number (for ALIAS/VLAN/LAGG)"))
+    lagg_proto = models.TextField(
+        blank=True,
+        choices=LAGG_PROTO_TYPES,
+        verbose_name=_("Link aggregation protocol type"),
+    )
 
     # Needed to make alambiquate mongodb queries
     objects = models.DjongoManager()
@@ -744,22 +772,18 @@ class NetworkAddress(models.Model):
             nic = address_nic.nic
             nic_list.append(str(nic))
 
-        if self.vlandev:
-            vlandev = self.vlandev.dev
-        else:
-            vlandev = None
-
         conf = {
             'id': str(self.id),
             'name': self.name,
+            'type': self.type,
             'nic': ', '.join(nic_list),
             'ip': self.ip,
-            'is_system': self.is_system,
             'prefix_or_netmask': self.prefix_or_netmask,
             'carp_vhid': self.carp_vhid,
             'vlan': self.vlan,
-            'vlandev': vlandev,
-            'fib': self.fib
+            'fib': self.fib,
+            'iface_id': self.iface_id,
+            'lagg_proto': self.lagg_proto
         }
 
         return conf
@@ -776,6 +800,8 @@ class NetworkAddress(models.Model):
 
         :return: 4 or 6
         """
+        if not self.ip:
+            return ''
 
         if ":" in self.ip:
             return 6
@@ -788,6 +814,9 @@ class NetworkAddress(models.Model):
 
         :return: String with ip/cidr notation
         """
+
+        if not self.ip:
+            return ''
 
         ip = ipaddress.ip_address(self.ip)
         if ip.version == 6:
@@ -804,6 +833,9 @@ class NetworkAddress(models.Model):
         """
         :return: inet or inet6, depending of the IP address
         """
+        if not self.ip:
+            return ''
+
         try:
             ip = ipaddress.ip_address(self.ip)
             if ip.version == 4:
@@ -813,59 +845,89 @@ class NetworkAddress(models.Model):
         except ValueError:
             return ""
 
-    def rc_config(self, force_dev=None, is_system=False):
+    @property
+    def main_iface(self):
         """
-        :param: force_dev: Optional NIC device. DO NOT USE except
-                            you known what you are doing
-        :param: is_system: If True, "alias" keyword is not present
-        :return: A Tuple containing
-                    - the name of the key to set/reset in rc.conf
-                    - its associated value to set
-
+        :return: A string representing the name of the interface(s) linked with this configuration element
         """
-
-        dev = None
-        first = True
-
-        addresses = NetworkAddressNIC.objects.filter(network_address=self)
-        for address_nic in addresses:
-            if first and address_nic.nic.node == Cluster.get_current_node():
-                if force_dev:
-                    dev = force_dev
-                else:
-                    dev = address_nic.nic.dev
-                    first = False
-
-                carp_priority = address_nic.carp_priority
-                carp_passwd = address_nic.carp_passwd
-
-            elif (not force_dev) and (address_nic.nic.node == Cluster.get_current_node()):
-                logger.error("Node::NetworkAddress: Inconsistent configuration: SAME IP on MULTIPLE NIC !!! {}".format(self.ip))
-
-        if self.is_carp:
-            if is_system:
-                device = "{}".format(dev)
-            else:
-                device = "{}_alias".format(dev)
-            inet = "{} {} vhid {} advskew {} pass {}".format(
-                self.family, self.ip_cidr,
-                self.carp_vhid, carp_priority, carp_passwd)
+        if self.type in ['vlan', 'lagg']:
+            return f"{self.type}{str(self.iface_id)}"
+        elif self.type == 'alias':
+            return f"{self.nic.first().dev}_alias{str(self.iface_id)}"
         else:
-            if is_system:
-                device = "{}".format(dev)
-            else:
-                device = "{}_alias".format(dev)
+            return self.nic.first().dev
 
-            inet = "{} {}".format(self.family, self.ip_cidr)
-            if self.fib and self.fib !=0:
-                inet = inet + " fib " + str(self.fib)
-            if self.vlan and self.vlan !=0 and self.vlandev:
-                inet = inet + " vlan " + str(self.vlan) + " vlandev " + self.vlandev.dev
 
-        if self.family == 'inet6':
-            device += "_ipv6"
+    def rc_config(self, node_id=None):
+        """
+        :param: node_id: Optional Node id to limit configuration generation
+        :return: A Dict containing:
+                    - The id of each node (or specified node) as key
+                    - A tuple of rc config key and value as value
+        :return: if node_id is specified, will simply return:
+                    - A tuple of rc config key and value as value
+        """
 
-        return f'ifconfig_{device}', f'{inet}'
+        nodes_config = dict()
+
+        filter = Q()
+        if node_id:
+            filter = Q(id=node_id)
+
+        for node in Node.objects.filter(filter):
+            nodes_config.update(
+                {node.id: list()}
+            )
+            addresses = NetworkAddressNIC.objects.filter(network_address=self, nic__node=node)
+            if addresses.exists():
+                if self.type == 'vlan':
+                    # Add vlan interface to the list of cloned interfaces
+                    nodes_config[node.id].append({
+                        'variable': "cloned_interfaces",
+                        'value': f"vlan{self.iface_id}",
+                        'filename': "network",
+                        'operation': "+="
+                    })
+                    key = f"ifconfig_vlan{self.iface_id}"
+                    value = f"{self.family} {self.ip_cidr} vlan {str(self.vlan)} vlandev {addresses[0].nic.dev}"
+                elif self.type == 'lagg':
+                    # Add vlan interface to the list of cloned interfaces
+                    nodes_config[node.id].append({
+                        'variable': "cloned_interfaces",
+                        'value': f"lagg{self.iface_id}",
+                        'filename': "network",
+                        'operation': "+="
+                    })
+                    # Add vlan interface to the list of cloned interfaces
+                    for address_nic in addresses:
+                        nodes_config[node.id].append({
+                            'variable': f"ifconfig_{address_nic.nic.dev}",
+                            'value': f"up",
+                        })
+                    key = f"ifconfig_lagg{self.iface_id}"
+                    value = f"up laggproto {self.lagg_proto}"
+                    for address in addresses:
+                        value += f" laggport {address.nic.dev}"
+                    if self.ip_cidr:
+                        value += f" {self.ip_cidr}"
+                elif self.type == 'alias':
+                    key = f"ifconfig_{addresses[0].nic.dev}_alias{self.iface_id}"
+                    value = f"{self.family} {self.ip_cidr}"
+                elif self.type == 'system':
+                    key = f"ifconfig_{addresses[0].nic.dev}"
+                    if self.family == 'inet6':
+                        key += "_ipv6"
+                    value = f"{self.family} {self.ip_cidr}"
+
+                if self.is_carp:
+                    value += f" vhid {self.carp_vhid} advskew {addresses[0].carp_priority} pass {addresses[0].carp_passwd}"
+                if self.fib and self.fib !=0:
+                    value += f" fib {str(self.fib)}"
+
+                nodes_config[node.id].append({'variable': key, 'value': value})
+
+        return nodes_config
+
 
     def __str__(self):
         return "'{}' : {}/{}".format(
