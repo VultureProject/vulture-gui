@@ -145,10 +145,9 @@ def access_control_edit(request, object_id=None, api=None):
                 ac.save()
 
                 nodes = set()
-                # TODO: reload workflows
-                # for workflow in Workflow.objects.filter():
-                #     nodes_tmp = workflow.frontend.reload_conf()
-                #     nodes = nodes.union(nodes_tmp)
+                for workflowacl in ac.workflowacl_set.all():
+                    nodes_tmp = workflowacl.workflow.frontend.reload_conf()
+                    nodes = nodes.union(nodes_tmp)
 
                 for node in nodes:
                     api_res = node.api_request("services.haproxy.haproxy.reload_service")
