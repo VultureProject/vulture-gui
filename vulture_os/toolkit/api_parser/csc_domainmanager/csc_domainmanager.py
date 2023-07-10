@@ -98,7 +98,15 @@ class CscDomainManagerParser(ApiParser):
 
             url = "https://apis.cscglobal.com/dbs/api/v2/events"
 
-            r = self.session.get(url, params=params, headers=self.HEADERS, proxies=self.proxies, stream=False, timeout=timeout)
+            r = self.session.get(
+                url,
+                params=params,
+                headers=self.HEADERS,
+                proxies=self.proxies,
+                verify=self.api_parser_verify_ssl,
+                stream=False,
+                timeout=timeout
+            )
 
             if r.status_code != 200:
                 raise CscDomainManagerAPIError(f"Error on URL: {url} Status: {r.status_code} Reason/Content: {r.content}")

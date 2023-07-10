@@ -204,7 +204,7 @@ class FrontendForm(ModelForm):
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'nb_workers','mmdb_cache_size','redis_batch_size',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
-                           'node', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
+                           'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
                            'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
@@ -223,7 +223,7 @@ class FrontendForm(ModelForm):
                            'nozomi_probe_host', 'nozomi_probe_login', 'nozomi_probe_password',
                            'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
                            'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
-                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'sentinel_one_account_type', 'darwin_mode',
+                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'sentinel_one_account_type',
                            'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
                            'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id',
                            'vadesecure_o365_client_secret',
@@ -244,8 +244,8 @@ class FrontendForm(ModelForm):
                            'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                            'trendmicro_visionone_token',
                            'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
+                           'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                            'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
-                           'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey'
                            ]:
             self.fields[field_name].required = False
 
@@ -294,7 +294,7 @@ class FrontendForm(ModelForm):
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                   'nb_workers','mmdb_cache_size','redis_batch_size',
                   'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
-                  'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy',
+                  'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
                   'api_parser_verify_ssl', 'api_parser_custom_certificate',
                   'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
@@ -336,9 +336,9 @@ class FrontendForm(ModelForm):
                   'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
                   'trendmicro_visionone_token',
                   'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
-                  'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
                   'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
-                  'darwin_mode')
+                  'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
+                )
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -499,10 +499,10 @@ class FrontendForm(ModelForm):
             'cisco_duo_host': TextInput(attrs={'class': 'form-control'}),
             'cisco_duo_ikey': Textarea(attrs={'class': 'form-control'}),
             'cisco_duo_skey': Textarea(attrs={'class': 'form-control'}),
+            'sentinel_one_mobile_host': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_mobile_apikey': TextInput(attrs={'type': 'password','class': 'form-control'}),
             'csc_domainmanager_apikey':TextInput(attrs={'class': 'form-control'}),
             'csc_domainmanager_authorization':TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'sentinel_one_mobile_host': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_mobile_apikey': TextInput(attrs={'type': 'password','class': 'form-control'})
         }
 
     def clean_name(self):

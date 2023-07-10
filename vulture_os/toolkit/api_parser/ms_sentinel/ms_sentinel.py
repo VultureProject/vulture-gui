@@ -80,7 +80,7 @@ class MSSentinelParser(ApiParser):
                         'grant_type' : 'client_credentials'
                     },
                     proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                    verify=self.api_parser_verify_ssl
                 ).json()
 
                 assert response.get('access_token') is not None, "Cannot retrieve token from API : {}".format(response)
@@ -126,7 +126,8 @@ class MSSentinelParser(ApiParser):
         response = self.session.post(
             url,
             params=params,
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_verify_ssl
         )
 
         if response.status_code != 200:
@@ -161,7 +162,8 @@ class MSSentinelParser(ApiParser):
         response = self.session.get(
             url,
             params=params,
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:
@@ -195,7 +197,8 @@ class MSSentinelParser(ApiParser):
             url,
             params=params,
             data="toto",
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:
@@ -228,7 +231,8 @@ class MSSentinelParser(ApiParser):
         response = self.session.get(
             url,
             params=params,
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:

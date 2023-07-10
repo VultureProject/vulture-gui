@@ -200,7 +200,6 @@ class Frontend(models.Model):
         help_text=_("Redirect http requests to https, if available"),
         verbose_name=_("Redirect HTTP to HTTPS")
     )
-
     """ *** DARWIN OPTIONS *** """
     """ Darwin policy """
     darwin_policies = models.ArrayReferenceField(
@@ -217,7 +216,6 @@ class Frontend(models.Model):
         choices=DARWIN_MODE_CHOICES,
         help_text=_("Ways to call Darwin: 'enrich' will wait for a score and add it to the data, 'alert' will simply pass the data for Darwin to process and will rely on its configured alerting methods")
     )
-
     """ *** LOGGING OPTIONS *** """
     """ Enable logging to Rsyslog """
     enable_logging = models.BooleanField(
@@ -343,12 +341,10 @@ class Frontend(models.Model):
         default="",
         help_text=_("Filebeat Input configuration. No output allowed here, as it is handled by Vulture")
     )
-
     disable_octet_counting_framing = models.BooleanField(
         default=False,
         help_text=_("Enable option 'SupportOctetCountedFraming' in rsyslog (advanced).")
     )
-
     """ *** HTTP OPTIONS *** """
     """ Log forwarder - File """
     headers = models.ArrayReferenceField(
@@ -483,7 +479,6 @@ class Frontend(models.Model):
         help_text=_("Size of debatch queue for redis pipeline during *POP operations."),
         verbose_name=_("imhiredis debatch queue size")
     )
-
     """ Node is mandatory for KAFKA, FILE and REDIS modes """
     node = models.ForeignKey(
         to=Node,
@@ -492,7 +487,6 @@ class Frontend(models.Model):
         on_delete=models.SET_NULL,
         help_text=_("Vulture node")
     )
-
     """ *** VENDOR API OPTIONS *** """
     # General attributes
     api_parser_type = models.TextField(
@@ -704,17 +698,6 @@ class Frontend(models.Model):
     )
     cisco_meraki_timestamp = models.JSONField(
         default={}
-    )
-    #CSC DomainManager attributes
-    csc_domainmanager_apikey = models.TextField(
-        verbose_name = ("CSC DomainManager API Key"),
-        help_text = ("CSC DomainManager API Key"),
-        default=""
-    )
-    csc_domainmanager_authorization = models.TextField(
-        verbose_name = ("CSC DomainManager Authorization HTTP Header token prefixed by Bearer, ex: Bearer xxxx-xxxx-xxxx-xxxx"),
-        help_text = ("CSC DomainManager Authorization"),
-        default=""
     )
     # Proofpoint TAP attributes
     proofpoint_tap_host = models.TextField(
@@ -1157,6 +1140,17 @@ class Frontend(models.Model):
         help_text=_("Sentinel One Mobile API integration key"),
         default="",
     )
+    #CSC DomainManager attributes
+    csc_domainmanager_apikey = models.TextField(
+        verbose_name = ("CSC DomainManager API Key"),
+        help_text = ("CSC DomainManager API Key"),
+        default=""
+    )
+    csc_domainmanager_authorization = models.TextField(
+        verbose_name = ("CSC DomainManager Authorization HTTP Header token prefixed by Bearer, ex: Bearer xxxx-xxxx-xxxx-xxxx"),
+        help_text = ("CSC DomainManager Authorization"),
+        default=""
+    )
 
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
@@ -1231,6 +1225,7 @@ class Frontend(models.Model):
         if not fields or "logging_geoip_database" in fields:
             if self.enable_logging_geoip:
                 result['logging_geoip_database'] = self.logging_geoip_database.to_template()
+
         if not fields or "log_forwarders_parse_failure" in fields:
             result['log_forwarders_parse_failure'] = [LogOM().select_log_om(log_fwd.id).to_template()
                                                     for log_fwd in self.log_forwarders_parse_failure.all().only('id')]

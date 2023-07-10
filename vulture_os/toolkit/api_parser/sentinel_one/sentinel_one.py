@@ -86,7 +86,8 @@ class SentinelOneParser(ApiParser):
                 response = requests.post(
                     login_url,
                     json=payload,
-                    proxies=self.proxies
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                 ).json()
 
                 assert response.get('data', {}).get('token'), f"Cannot retrieve token from API : {response}"

@@ -13,14 +13,12 @@ if (!String.prototype.endsWith) {
 function get_api_parser_data(type_){
   var data = {
     api_parser_type: $('#id_api_parser_type').val(),
-    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked')
+    api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked'),
+    api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked')
   };
 
-  if (!api_parser_blacklist.includes($('#id_api_parser_type').val())) {
-    data['api_parser_verify_ssl'] = $('#id_api_parser_verify_ssl').is(':checked');
-    if ($('#id_api_parser_verify_ssl').is(':checked')) {
-      data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val();
-    }
+  if ($('#id_api_parser_verify_ssl').is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
+    data['api_parser_custom_certificate'] = $('#id_api_parser_custom_certificate').val();
   }
 
   $("#api_" + type_ + "_row input").each(function(){
@@ -103,6 +101,10 @@ function refresh_api_parser_type(type_){
   $('#test_api_parser').unbind('click');
   $('#test_api_parser').on('click', function(){
     PNotify.removeAll();
+    if($('#id_api_parser_type').val() == "") {
+      notify('error', gettext('Error'), gettext('Select an API Parser Type'))
+      return
+    }
 
     var btn = this;
     var txt = $(btn).html();
@@ -229,7 +231,6 @@ $(function() {
       $('.redis-mode').hide();
       // ALWAYS put show at last
       $('.api-mode').show();
-      $('#id_api_parser_verify_ssl').trigger('change');
     } else if (mode === "log" && listening_mode === "kafka"){
       $('.network-mode').hide();
       $('.file-mode').hide();
@@ -284,7 +285,7 @@ $(function() {
     else {
       $('#ruleset-div').hide();
       $('#id_node').hide();
-      if((mode === "log" && listening_mode === "api") || (mode === "filebeat" && filebeat_listening_mode === "api") ){
+      if((mode === "log" && listening_mode === "api") || (mode === "filebeat" && filebeat_listening_mode === "api") ){
         // Bind API inputs
         $("#tab_api_client input").each(function(){
           $(this).unbind('click');
@@ -305,22 +306,20 @@ $(function() {
     }
   }
 
+  $('#id_api_parser_verify_ssl').on('change', function(e){
+    if ($(this).is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
+      $('#api_parser_custom_certificate').show();
+    } else $('#api_parser_custom_certificate').hide();
+  }).trigger('change');
+
   $('#id_api_parser_type').on('change', function(){
+    if($(this).val() == "") {
+      $('#test_api_parser').prop("disabled", true);
+    } else $('#test_api_parser').prop("disabled", false);
     refresh_api_parser_type($(this).val());
     $('#id_api_parser_verify_ssl').trigger('change');
   }).trigger('change');
 
-  function api_parser_ssl_options(checked) {
-    if (checked && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {
-      $('#api_parser_custom_certificate').show();
-    } else {
-      $('#api_parser_custom_certificate').hide();
-    }
-  }
-
-  $('#id_api_parser_verify_ssl').on('change', function(e){
-    api_parser_ssl_options($(this).is(':checked'));
-  }).trigger('change');
 
   /* Refresh http sub-class attributes show/hide */
   function refresh_http() {

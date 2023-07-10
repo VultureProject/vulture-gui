@@ -83,7 +83,7 @@ class SafenetParser(ApiParser):
             params=query,
             timeout=timeout,
             proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            verify=self.api_parser_verify_ssl
         )
 
         # handler rate limit exceeding

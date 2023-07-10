@@ -120,13 +120,22 @@ class CrowdstrikeParser(ApiParser):
             try:
                 if(method == "GET"):
                     response = self.session.get(
-                        url, params=query, timeout=timeout, proxies=self.proxies,
+                        url,
+                        params=query,
+                        timeout=timeout,
+                        proxies=self.proxies,
                         verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                     )
                 elif(method == "POST"):
                     headers = {'Content-Type': 'application/json'}
-                    response = self.session.post(url, data=json.dumps(
-                        query), headers=headers, timeout=timeout, proxies=self.proxies)
+                    response = self.session.post(
+                        url,
+                        data=json.dumps(query),
+                        headers=headers,
+                        timeout=timeout,
+                        proxies=self.proxies,
+                        verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                    )
             except requests.exceptions.ReadTimeout:
                 time.sleep(timeout)
                 continue

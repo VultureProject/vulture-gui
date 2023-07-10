@@ -86,7 +86,8 @@ class VadesecureO365Parser(ApiParser):
                 'client_secret': self.vadesecure_o365_client_secret
             },
             timeout=timeout,
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
 
         if response.status_code != 200:
