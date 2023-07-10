@@ -28,6 +28,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from gui.decorators.apicall import api_need_key
 from system.netif import views as netif_views
+from django.db.models import Q
 from django.http import JsonResponse
 from django.conf import settings
 from django.views import View
@@ -125,6 +126,11 @@ class NetworkAddressAPIv1(View):
                 query = query & Q(type=request.GET['type'])
             if "ip" in request.GET:
                 query = query & Q(ip=request.GET['ip'])
+            if "nic" in request.GET:
+                nic = request.GET['nic']
+                if not isinstance(nic, list):
+                    nic = [nic]
+                query = query & Q(nic__in=nic)
             fields = request.GET.getlist('fields') or None
             if object_id:
                 obj = NetworkAddress.objects.get(pk=object_id).to_dict(fields=fields)
