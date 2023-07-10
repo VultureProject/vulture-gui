@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] Disk-assisted queues for reliability
 ### Fixed
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
+- [SYSTEM] [CERTIFICATES] Reload HAProxy on certificate change
 
 
 ## [2.8.0] - 2023-06-28

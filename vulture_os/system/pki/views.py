@@ -149,6 +149,14 @@ def pki_edit(request, object_id=None):
         pki.is_external = True
         pki.is_vulture_ca = False
         pki.save()
+
+        """ Reload HAProxy on certificate change """
+        if tls_profiles := pki.certificate_of.all():
+            for profile in tls_profiles:
+                if profile.server_set.exists() or profile.listener.exists():
+                    Cluster.api_request("services.haproxy.haproxy.reload_service")
+                    return HttpResponseRedirect('/system/pki/')
+
         return HttpResponseRedirect('/system/pki/')
 
     return render(request, 'system/pki_edit.html', {
