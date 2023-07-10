@@ -86,9 +86,9 @@ class NetIfForm(ModelForm):
                     self.add_error('nic', "An interface selected is already configured, this is incompatible with LAGG interfaces. Please remove configuration on interface then create LAGG interface or remove this interface.")
                     break
         else:
-            if not cleaned_data['ip']:
+            if "ip" not in cleaned_data:
                 self.add_error('ip', "This field is required")
-            if not cleaned_data['prefix_or_netmask']:
+            if "prefix_or_netmask" not in cleaned_data:
                 self.add_error('prefix_or_netmask', "This field is required")
 
         if cleaned_data['type'] in ['vlan', 'lagg', 'alias'] and cleaned_data['iface_id'] == -1:
