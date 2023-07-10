@@ -70,8 +70,8 @@ LOG_LEVEL_CHOICES = (
 
 # Modes choices of HAProxy HTTP Backend
 HEALTH_CHECK_VERSION_CHOICES = (
-    ('HTTP/1.0\\r\\n', 'HTTP/1.0'),
-    ('HTTP/1.1\\r\\n', 'HTTP/1.1'),
+    ('HTTP/1.0', 'HTTP/1.0'),
+    ('HTTP/1.1', 'HTTP/1.1'),
     ('HTTP/2', 'HTTP/2')
 )
 
