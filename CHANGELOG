@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
 
 
+## [2.8.1] - 2023-07-05
+### Added
+- [NETWORK] Allow possibility to create LAGG interfaces
+- [NET2MONGO] Can now import system configurations for interfaces, aliases, VLANs and LAGG interfaces
+### Changed
+- [NETWORK] [GUI] VLAN configuration rework: ability to create/configure VLAN virtual interfaces directly from GUI
+- [NETWORK] Internal rework of network interfaces parameters
+- [SYSTEM] Improved capabilities to modify system/network configurations
+- [API] [NETWORK] Allow getting a list of NetworkAddress objects filtering by name, ip, type and NICs
+###  Fixed
+- [PF] [CONFIG] Configuration generation could fail with some network interfaces configured
+
+
 ## [2.8.0] - 2023-06-28
 ### Added
 - [API_PARSER] [CYBEREASON] Add support for 'malware' URI
