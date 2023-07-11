@@ -57,6 +57,12 @@ logger = logging.getLogger('gui')
 
 JAILS = ("apache", "mongodb", "redis", "rsyslog", "haproxy")
 
+STATE_CHOICES = (
+    ('UP', 'UP'),
+    ('DOWN', 'DOWN'),
+    ('MAINTENANCE', 'MAINTENANCE')
+)
+
 NET_ADDR_TYPES = (
     ('system', 'System'),
     ('alias', 'Alias'),
@@ -115,6 +121,15 @@ class Node(models.Model):
                                                    blank=False,
                                                    verbose_name=_("Send rsyslog pstats logs to"),
                                                    help_text=_("Log forwarders used to send impstats logs"))
+    _vstate = models.TextField(
+        default=STATE_CHOICES[0][0],
+        choices=STATE_CHOICES,
+        help_text=_("Node state")
+    )
+    heartbeat = models.DateTimeField(
+        default=timezone.now,
+        help_text=_("Last node heartbeat")
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -476,6 +491,20 @@ class Node(models.Model):
 
     def get_certificate(self):
         return X509Certificate.objects.get(name=self.name, status="V", chain=X509Certificate.objects.get(status="V", is_vulture_ca=True, name__startswith="Vulture_PKI").cert)
+
+    def set_state(self, state):
+        if state in [state for state, choice in STATE_CHOICES] and self._vstate != state:
+            logger.warn(f"[NODE SET STATE] State changed to: {state}")
+            self._vstate = state
+            self.save()
+
+    @property
+    def state(self):
+        if timezone.now() - self.heartbeat > timezone.timedelta(seconds=60):
+            self.set_state("DOWN")
+        elif self._vstate == "DOWN":
+            self.set_state("UP")
+        return self._vstate
 
 
 class Cluster (models.Model):

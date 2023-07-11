@@ -68,6 +68,11 @@ def monitor():
     if not node:
         return False
 
+    """ Update Node state and heartbeat """
+    logger.debug(f"Node state: {node.get_state()} {node.heartbeat}")
+    node.heartbeat = timezone.now()
+    node.save()
+
     def get_service_status(service_class):
         """ Get a service_class (eg HaproxyService) 
         :return  a dict {'name':service_name, 'status': status} """
