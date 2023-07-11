@@ -34,13 +34,15 @@ def update_existing_addresses(apps, schema_editor):
 
         if new_net_addr.vlan:
             new_net_addr.type = 'vlan'
+        elif new_net_addr.carp_vhid != 0:
+            new_net_addr.type = 'alias'
         elif saved_net_addr.get('is_system'):
             new_net_addr.type = "system"
         else:
             new_net_addr.type = 'alias'
 
         if not new_net_addr.type == "system":
-            addr_nic = networkAddressNICObjects.get(network_address=new_net_addr.id)
+            addr_nic = networkAddressNICObjects.filter(network_address=new_net_addr.id).first()
             nic = addr_nic.nic
             iface_name_match = re.search(PATTERN_IFACE_NAME, nic.dev)
             if not iface_name_match:
