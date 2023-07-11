@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
 
 
+## [2.8.2] - 2023-07-05
+### Fixed
+- [SYSTEM] [MIGRATIONS] Resolve manual migrtions problems with existing CARP interfaces
+
+
 ## [2.8.1] - 2023-07-05
 ### Added
 - [NETWORK] Allow possibility to create LAGG interfaces
