@@ -50,7 +50,7 @@ logger = logging.getLogger('portal_authentication')
 
 
 # Global variables
-default_timeout = 900
+DEFAULT_TIMEOUT = 900
 
 
 
@@ -141,7 +141,7 @@ class REDISAppSession(REDISSession):
         """ Get the application's hash in REDIS """
         app_cookie = kwargs.get('cookie', None)
 
-        self.default_timeout = default_timeout
+        self.default_timeout = DEFAULT_TIMEOUT
         super(REDISAppSession, self).__init__(redis_handler, app_cookie)
 
         if app_cookie is None:
