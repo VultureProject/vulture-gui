@@ -907,7 +907,6 @@ def log_in(request, workflow_id=None):
     :returns: Home page if user auth succeed. Logon page if auth failed
     """
     """ First, try to retrieve concerned objects """
-    if request.GET.get('redirect_url') == "/favicon.ico": return HttpResponseNotFound() # fast fix à l'arrache bien sale
     try:
         scheme = request.META["HTTP_X_FORWARDED_PROTO"]
         host = request.META["HTTP_HOST"]
