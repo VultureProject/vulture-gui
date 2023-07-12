@@ -8,7 +8,7 @@ import djongo.models.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('authentication', '0019_auto_20230602_1515.py'),
+        ('authentication', '0019_auto_20230602_1515'),
     ]
 
     operations = [
