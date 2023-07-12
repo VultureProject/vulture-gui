@@ -591,7 +591,7 @@ class REDISOauth2Session(REDISSession):
             logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")
             raise REDISWriteError("REDISOauth2Session::register_authentication: Unable to write Oauth2 infos in REDIS")
 
-        logger.info(f"REDISOauth2Session::register_authentication: self.keys {self.keys}") # delete me
+        logger.debug(f"REDISOauth2Session::register_authentication: self.keys {self.keys}")
         return self.key
 
 
@@ -683,7 +683,7 @@ class REDISRefreshSession(REDISSession): # ça c'est la classe pour stocker le r
             logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")
             raise REDISWriteError("REDISRefreshSession::register_authentication: Unable to write Oauth2 infos in REDIS")
 
-        logger.info(f"REDISRefreshSession::register_authentication: self.keys {self.keys}") # delete me
+        logger.debug(f"REDISRefreshSession::register_authentication: self.keys {self.keys}")
         return self.key
 
 
@@ -694,7 +694,7 @@ class RedisOpenIDSession(REDISSession):
     def register(self, oauth2_token, **kwargs):
         self.keys = kwargs
         self.keys['access_token'] = oauth2_token
-        logger.info(f"RedisOpenIDSession::register: {oauth2_token}") # delete me
+        logger.debug(f"RedisOpenIDSession::register: oauth2_token {oauth2_token}")
 
         # This is a temporary token, used for redirection and access_token retrieve
         if not self.write_in_redis(30):
@@ -714,8 +714,7 @@ class RedisOpenIDSessionRefresh(REDISSession): # ça c'est la classe pour stocke
         self.keys = kwargs
         self.keys['access_token'] = oauth2_token
         self.keys['refresh_token'] = refresh_token
-        logger.info(f"RedisOpenIDSessionRefresh::register: oauth2_token, refresh_token {oauth2_token, refresh_token}") # delete me
-        logger.info(f"RedisOpenIDSessionRefresh::register: self.keys {self.keys}") # delete me
+        logger.debug(f"RedisOpenIDSessionRefresh::register: oauth2_token, refresh_token {oauth2_token, refresh_token}")
 
         # This is a temporary token, used for redirection and access_token retrieve
         if not self.write_in_redis(30):

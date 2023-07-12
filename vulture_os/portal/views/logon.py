@@ -185,7 +185,6 @@ def openid_callback(request, workflow_id, repo_id):
         code = request.GET['code']
         state = request.GET['state']
         # Cookie can be empty, it will be created in Authentication class
-        logger.info(f"PORTAL::openid_callback: {request.COOKIES.get(portal_cookie_name)}") # delete me
         portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
 
         # Use POSTAuthentication to print errors with html templates
@@ -401,8 +400,6 @@ def openid_token(request, portal_id):
             client_id = request.POST.get('client_id')
             client_secret = request.POST.get('client_secret')
 
-        logger.info(f"PORTAL::openid_token: client_match {client_id == portal.oauth_client_id, client_secret == portal.oauth_client_secret}") # delete me
-
         if request.POST.get('grant_type') == "authorization_code":
             assert client_id == portal.oauth_client_id
             if portal.enable_refresh:
@@ -410,7 +407,6 @@ def openid_token(request, portal_id):
             else:
                 session_token = RedisOpenIDSession(REDISBase(), f"token_{request.POST.get('code')}")
             session = REDISOauth2Session(REDISBase(), f"oauth2_{session_token['access_token']}")
-            logger.info(f"PORTAL::openid_token: session_token {session_token['access_token'], session_token['refresh_token']}") # delete me
 
             assert session.exists(), f"Could not find token '{request.POST.get('code')}' in redis."
 
@@ -446,32 +442,29 @@ def openid_token(request, portal_id):
         elif request.POST.get('grant_type') == "refresh_token":
             assert client_id, "Missing client_id in request."
             # assert client_secret, "Missing client_secret in request." # not requiered
-            # assert client_secret == portal.oauth_client_secret
+            if client_secret =! None:
+                assert client_secret == portal.oauth_client_secret
 
             refresh_token_POST = request.POST.get('refresh_token')
             session = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token_POST}")
-            logger.info(f"PORTAL::openid_token: session_refresh {refresh_token_POST}") # delete me
-            logger.info(f"PORTAL::openid_token: session {session.keys}") # delete me
 
             assert session.exists(), f"Could not find refresh_token '{refresh_token_POST}' in redis."
             assert session['repo'] == client_id, "Invalid client_id."
             try:
-                logger.info(f"PORTAL::openid_token: overridden by {session['overridden_by'], session['overridden_by'] == None}") # delete me
                 assert session['overridden_by'] == None, "The refresh token provided has been expired."
             except AssertionError as e:
                 logger.exception(e)
                 refresh_token = refresh_token_POST
 
                 # delete this token pair
-                logger.info(f"PORTAL::openid_token: disabling tokens {refresh_token, session['access_token']}") # delete me
                 REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete()
                 session.delete()
 
-                while session['overridden_by'] != None: # delete every token pair in the chain
+                # delete every token pair in the chain
+                while session['overridden_by'] != None:
                     refresh_token = session['overridden_by']
                     session = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
 
-                    logger.info(f"PORTAL::openid_token: disabling tokens {refresh_token, session['access_token']}") # delete me
                     REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete()
                     session.delete()
 
@@ -480,13 +473,12 @@ def openid_token(request, portal_id):
 
             # This is where we reissue an access_token by providing a correct refresh_token
             assert session['redirect_uri'] == request.POST.get('redirect_uri'), "Invalid redirect_uri."
-            logger.info(f"PORTAL::openid_token: Refreshing the session") # delete me
+            logger.debug(f"PORTAL::openid_token: Refreshing the session")
         
             # Delete current access_token and reissue one
             REDISOauth2Session(REDISBase(), f"oauth2_{session['access_token']}").delete() # or invalidate
 
             scope = session["scope"]
-            logger.info(f"PORTAL::openid_token: redis refresh session scopes are {scope}") # change me
 
             oauth2_token = str(uuid4())
             oauth2_session = REDISOauth2Session(REDISBase(), "oauth2_" + oauth2_token)
@@ -496,18 +488,12 @@ def openid_token(request, portal_id):
                 scope,
                 portal.oauth_timeout,
             )
- 
-            logger.info(f"PORTAL::openid_token: access token successfuly created : {oauth2_token}") # change me
-            logger.info(f"PORTAL::openid_token: redis oauth2 session scopes are {oauth2_session['scope']}")
 
             if portal.enable_rotation:
                 refresh_token_POST = str(uuid4())
                 session['overridden_by'] = refresh_token_POST
                 session.write_in_redis(int(session['token_ttl']))
-                logger.info(f"PORTAL::openid_token: new refresh token created : {refresh_token_POST}") # change me
                 session.disable_token()
-                logger.info(f"PORTAL::openid_token: old token deactivated : {session.keys}") # change me
-
 
                 # Grab the new refresh token
                 session = REDISRefreshSession(REDISBase(), "refresh_" + refresh_token_POST)
@@ -550,7 +536,6 @@ def openid_token(request, portal_id):
 
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
-    logger.info(f"PORTAL::openid_userinfo: request.headers {request.headers}") # delete me
     try:
         scheme = request.META['HTTP_X_FORWARDED_PROTO']
     except KeyError:
@@ -558,7 +543,6 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         return HttpResponseServerError()
 
     try:
-        logger.info(f"PORTAL::openid_userinfo: request.headers {request.headers}") # delete me
         if portal_id:
             assert UserAuthentication.objects.filter(pk=portal_id).exists()
         elif workflow_id:
@@ -573,12 +557,10 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         return HttpResponseServerError()
 
     try:
-        logger.info(f"PORTAL::openid_userinfo: request.headers {request.headers}") # delete me
         assert request.headers.get('Authorization'), "No Bearer token provided."
         assert request.headers.get('Authorization').startswith("Bearer "), "No Bearer token provided."
 
         oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
-        logger.info(f"PORTAL::openid_userinfo: oauth2_token {oauth2_token}") # delete me
         session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
         assert session, "Session not found."
         assert session['scope'], "Session does not contain any scope."
@@ -650,8 +632,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
                     # Authenticate user with retrieved credentials
                     authentication_results = authentication.authenticate(request)
-                    logger.info("PORTAL::log_in: Authentication succeed on backend {}, "
-                                 "user infos : {}".format(authentication.backend_id, authentication_results)) # change me
+                    logger.debug(f"PORTAL::log_in: Authentication succeed on backend {authentication.backend_id}, user infos : {authentication_results}")
 
                     # Create user scope depending on GUI configuration attributes
                     # raises an AssertionError if scope is not validated for filtering
@@ -660,12 +641,10 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     # Register authentication results in Redis
 
                     if workflow.authentication.enable_refresh:
-                        logger.info(f"PORTAL::log_in: redirect_uri {request.GET['redirect_uri'], authentication.get_redirect_uri(backend_id)}") # delete me
                         authentication.set_redirect_uri(backend_id, request.GET['redirect_uri'])
-                        logger.info(f"PORTAL::log_in: redirect_uri_after_update {request.GET['redirect_uri'], authentication.get_redirect_uri(backend_id)}") # delete me
 
                     portal_cookie, oauth2_token, refresh_token = authentication.register_user(authentication_results, user_scope)
-                    logger.info("PORTAL::log_in: User {} successfully registered in Redis".format(authentication.credentials[0])) # change me
+                    logger.debug(f"PORTAL::log_in: User {authentication.credentials[0]} successfully registered in Redis")
 
                     if authentication_results.get('password_expired', None):
                         logger.info("PORTAL::log_in: User '{}' must change its password, redirect to self-service portal"
@@ -682,7 +661,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     if portal.enable_sso_forward:
                         portal_cookie, oauth2_token, refresh_token = authentication.register_sso(backend_id)
                         if oauth2_token:
-                            logger.info(f"OAuth2 session = {oauth2_token, refresh_token}") # change me
+                            logger.debug(f"OAuth2 session = {oauth2_token, refresh_token}")
                     logger.info(f"PORTAL::log_in: User {authentication.credentials[0]} successfully SSO-powered !")
 
             except AssertionError as e:
@@ -950,7 +929,7 @@ def log_in(request, workflow_id=None):
         redis_portal_session = REDISPortalSession(REDISBase(), portal_cookie)
         if redirect_url:
             redirect_url = scheme + "://" + host + redirect_url
-            logger.info(f"PORTAL::log_in: redirect_url is {redirect_url}") # change me
+            logger.debug(f"PORTAL::log_in: redirect_url is {redirect_url}")
             redis_portal_session.set_redirect_url(workflow.id, redirect_url)
             # force write in redis to set expiration on session key
             if not redis_portal_session.exists() or workflow.authentication.enable_timeout_restart:
