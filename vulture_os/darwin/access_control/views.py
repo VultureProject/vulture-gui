@@ -34,6 +34,9 @@ from django.conf import settings
 from darwin.access_control.form import AccessControlForm, AccessControlRuleForm
 from darwin.access_control.models import AccessControl
 from services.exceptions import ServiceTestConfigError
+from applications.backend.models import Backend
+from services.frontend.models import Frontend
+from system.cluster.models import Cluster
 from workflow.models import Workflow
 from bson import ObjectId
 import logging
@@ -145,15 +148,33 @@ def access_control_edit(request, object_id=None, api=None):
                 ac.save()
 
                 nodes = set()
-                for workflowacl in ac.workflowacl_set.all():
-                    nodes_tmp = workflowacl.workflow.frontend.reload_conf()
-                    nodes = nodes.union(nodes_tmp)
+                reload_all = False
+                for frontend in Frontend.objects.filter(
+                    workflow__workflowacl__access_control=ac,
+                    # This is still necessary, because Workflow ACLs can still be assigned to backends, but only via API...
+                    workflow__workflowacl__before_policy=True).distinct():
+                    nodes.update(frontend.reload_conf())
 
-                for node in nodes:
-                    api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                for backend in Backend.objects.filter(
+                    workflow__workflowacl__access_control=ac,
+                    # This is still necessary, because Workflow ACLs can still be assigned to backends, but only via API...
+                    workflow__workflowacl__before_policy=False).distinct():
+                    backend.configuration = backend.generate_conf()
+                    backend.save_conf()
+                    # In case some backends own ACLs, every haproxy will have to be reloaded
+                    reload_all = True
+
+                if reload_all:
+                    api_res = Cluster.api_request("services.haproxy.haproxy.reload_service")
                     if not api_res.get('status'):
                         logger.error("Access_Control::edit: API error while trying to "
-                                     "restart HAProxy service : {}".format(api_res.get('message')))
+                                "restart HAProxy service : {}".format(api_res.get('message')))
+                else:
+                    for node in nodes:
+                        api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                        if not api_res.get('status'):
+                            logger.error("Access_Control::edit: API error while trying to "
+                                        "restart HAProxy service : {}".format(api_res.get('message')))
 
                 return JsonResponse({
                     'status': True,
