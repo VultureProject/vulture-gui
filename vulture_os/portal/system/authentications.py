@@ -31,7 +31,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 # Django project imports
 # FIXME from gui.models.repository_settings  import KerberosRepository, LDAPRepository
 from portal.system.redis_sessions import (REDISBase, REDISAppSession, REDISPortalSession, REDISOauth2Session,
-                                          REDISRefreshSession, RedisOpenIDSession, RedisOpenIDSessionRefresh)
+                                          REDISRefreshSession, RedisOpenIDSession)
 from portal.views.responses import (split_domain, basic_authentication_response, kerberos_authentication_response,
                                     post_authentication_response, otp_authentication_response,
                                     learning_authentication_response, error_response)
@@ -177,7 +177,6 @@ class Authentication(object):
 
         self.redis_refresh_session = REDISRefreshSession(self.redis_base, "refresh_" + self.refresh_token)
         timeout = self.workflow.authentication.oauth_timeout * (self.workflow.authentication.max_nb_refresh + 1) + 60
-
         # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
         self.redis_refresh_session.register_authentication(
             str(self.workflow.authentication.oauth_client_id),
@@ -203,6 +202,7 @@ class Authentication(object):
                 if not self.redirect_uri:
                     self.get_redirect_uri(self.backend_id) # Actually set self.redirect_uri
 
+                logger.info(f"AUTH::register_user: Refresh tokens enabled for {self.workflow.authentication.name}, creating refresh token") # delete me
                 self.write_refresh_session(oauth2_scope)
 
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
@@ -262,26 +262,20 @@ class Authentication(object):
         self.credentials = [username, password]
         return portal_cookie, self.oauth2_token, self.refresh_token
 
-    def register_openid(self, openid_token, **kwargs):
+    def register_openid(self, openid_token, enable_refresh, **kwargs):
         # Generate a new OAuth2 token
         if not self.oauth2_token:
             self.oauth2_token = str(uuid4())
         # Register it into session
         self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
+        if enable_refresh:
+            # Generate a new Refresh token
+            if not self.refresh_token:
+                self.refresh_token = str(uuid4())
+            self.redis_portal_session.set_refresh_token(self.backend_id, self.refresh_token)
         # Create a new temporary token containing oauth2_token + kwargs
-        RedisOpenIDSession(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, **kwargs)
-
-    def register_openid_refresh(self, openid_token, **kwargs):
-        # Generate a new OAuth2 token
-        if not self.oauth2_token:
-            self.oauth2_token = str(uuid4())
-        if not self.refresh_token:
-            self.refresh_token = str(uuid4())
-        # Register it into session
-        self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
-        self.redis_portal_session.set_refresh_token(self.backend_id, self.refresh_token)
-        # Create a new temporary token containing oauth2_token + refresh_token + kwargs
-        RedisOpenIDSessionRefresh(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, self.refresh_token, **kwargs)
+        RedisOpenIDSession(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, self.refresh_token, **kwargs)
+        logger.debug(f"AUTH::register_openid: openid_token, self.oauth2_token {openid_token, self.oauth2_token, self.refresh_token}")
 
     def get_redirect_uri(self, backend_id):
         # Grab callback uri used to issue the access_token
@@ -380,7 +374,7 @@ class POSTAuthentication(Authentication):
                                                 captcha=captcha,
                                                 error=kwargs.get('error', ""))
 
-        portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
+        portal_cookie_name = kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
             response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
                                 domain=self.get_redirect_url_domain(), httponly=True,
@@ -402,7 +396,7 @@ class BASICAuthentication(Authentication):
     def ask_credentials_response(self, **kwargs):
         response = basic_authentication_response(self.workflow.name)
 
-        portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
+        portal_cookie_name = kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
             response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
                                 domain=self.get_redirect_url_domain(), httponly=True,
@@ -461,7 +455,7 @@ class KERBEROSAuthentication(Authentication):
     def ask_credentials_response(self, **kwargs):
         response = kerberos_authentication_response()
 
-        portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
+        portal_cookie_name = kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
             response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
                                 domain=self.get_redirect_url_domain(), httponly=True,
