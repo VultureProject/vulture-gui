@@ -89,6 +89,17 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.es8_compatibility.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.es8_compatibility}}
+                      {{form.es8_compatibility.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
                     <label class="col-sm-4 control-label">{% trans "Index Pattern" %}</label>
                     <div class="col-sm-5">
                       {{form.index_pattern}}

@@ -310,15 +310,16 @@ class LogOMElasticSearchForm(ModelForm):
 
     class Meta:
         model = LogOMElasticSearch
-        fields = ('name', 'enabled', 'index_pattern', 'servers', 'uid', 'pwd', 'x509_certificate', 'queue_size',
-                  'dequeue_size', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
+        fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'index_pattern', 'uid', 'pwd', 'x509_certificate',
+                  'queue_size', 'dequeue_size', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
                   'max_file_size', 'max_disk_space')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
             'name': TextInput(attrs={'class': 'form-control'}),
-            'index_pattern': TextInput(attrs={'class': 'form-control'}),
             'servers': TextInput(attrs={'class': 'form-control'}),
+            'es8_compatibility': CheckboxInput(attrs={"class": " js-switch"}),
+            'index_pattern': TextInput(attrs={'class': 'form-control'}),
             'uid': TextInput(attrs={'class': 'form-control'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
             'x509_certificate': Select(attrs={'class': 'form-control'}),
@@ -343,6 +344,11 @@ class LogOMElasticSearchForm(ModelForm):
         if not field:
             raise ValidationError("This field is required.")
         return field.replace(' ', '_')
+
+    def clean_index_pattern(self):
+        field = self.cleaned_data.get('index_pattern')
+        if field:
+            return field.lower()
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
