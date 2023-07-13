@@ -2,7 +2,7 @@
     action(type="omelasticsearch"
             name="{{output_name}}"
             server={{ servers }}
-            {% if es8_compatibility %}esVersion.major="8"{%- endif %}
+            {%- if es8_compatibility %}esVersion.major="8"{%- endif %}
             searchIndex="{{ template_id }}"
             template="{{ out_template }}_elastic"
             dynSearchIndex="on"
