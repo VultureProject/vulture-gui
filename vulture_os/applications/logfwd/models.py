@@ -516,7 +516,7 @@ class LogOMElasticSearch(LogOM):
         help_text=_("Enable Elasticsearch/OpenSearch 8 compatibility"),
         verbose_name=_("Elasticsearch/OpenSearch 8 compatibility")
     )
-    index_pattern = models.TextField(unique=True, null=False, default='mylog-default')
+    index_pattern = models.TextField(unique=True, null=False, default='mylog-%$!timestamp:1:10%')
     uid = models.TextField(null=True, blank=True, default=None)
     pwd = models.TextField(null=True, blank=True, default=None)
     x509_certificate = models.ForeignKey(

@@ -345,6 +345,11 @@ class LogOMElasticSearchForm(ModelForm):
             raise ValidationError("This field is required.")
         return field.replace(' ', '_')
 
+    def clean_index_pattern(self):
+        field = self.cleaned_data.get('index_pattern')
+        if field:
+            return field.lower()
+
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()

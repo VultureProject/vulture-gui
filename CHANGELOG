@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
 - [LOGFORWARDER] [ELASTICSEARCH] Enable ELS>=8 compatibility
+- [LOGFORWARDER] [ELASTICSEARCH] Ensure index patterns are kept to lowercase
 
 
 ## [2.8.0] - 2023-06-28
