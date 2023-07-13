@@ -262,13 +262,13 @@ class Authentication(object):
         self.credentials = [username, password]
         return portal_cookie, self.oauth2_token, self.refresh_token
 
-    def register_openid(self, openid_token, enable_refresh, **kwargs):
+    def register_openid(self, openid_token, **kwargs):
         # Generate a new OAuth2 token
         if not self.oauth2_token:
             self.oauth2_token = str(uuid4())
         # Register it into session
         self.redis_portal_session.set_oauth2_token(self.backend_id, self.oauth2_token)
-        if enable_refresh:
+        if self.workflow.authentication.enable_refresh:
             # Generate a new Refresh token
             if not self.refresh_token:
                 self.refresh_token = str(uuid4())

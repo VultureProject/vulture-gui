@@ -862,14 +862,12 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
     # If we arrive here, the user is authenticated
     if openid:
         token = random_sha256()
-        portal = workflow.authentication # Not sure if that's whorth to create a specific function
         authentication.register_openid(token,
                                     scope=request.GET['scope'],
                                     client_id=request.GET['client_id'],
                                     redirect_uri=request.GET['redirect_uri'],
                                     code_challenge=request.GET.get("code_challenge"),
-                                    code_challenge_method=request.GET.get("code_challenge_method"),
-                                    enable_refresh=portal.enable_refresh)
+                                    code_challenge_method=request.GET.get("code_challenge_method"))
 
         return HttpResponseRedirect(build_url_params(request.GET['redirect_uri'],
                                                      state=request.GET.get('state', ""),
