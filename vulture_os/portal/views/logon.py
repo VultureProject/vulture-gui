@@ -438,7 +438,6 @@ def openid_token(request, portal_id):
             refresh = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
 
             assert refresh.exists(), f"Could not find refresh_token '{refresh_token}' in redis."
-            assert refresh['repo'] == client_id, "Invalid client_id."
 
             if refresh['overridden_by'] != None:
                 logger.error("The refresh token provided has been expired.")
@@ -468,14 +467,12 @@ def openid_token(request, portal_id):
             # Delete current access_token and reissue one
             REDISOauth2Session(REDISBase(), f"oauth2_{refresh['access_token']}").delete() # or invalidate
 
-            scope = refresh["scope"]
-
             oauth2_token = str(uuid4())
             oauth2_session = REDISOauth2Session(REDISBase(), "oauth2_" + oauth2_token)
             # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
             oauth2_session.register_authentication(
                 str(portal.oauth_client_id),
-                scope,
+                refresh['scope'],
                 portal.oauth_timeout,
             )
 
@@ -490,13 +487,10 @@ def openid_token(request, portal_id):
                 timeout = portal.oauth_timeout * (portal.max_nb_refresh + 1) + 60
 
                 # Write the new tokens in redis
-                # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
-                refresh.register_authentication(
-                    str(portal.oauth_client_id),
-                    scope,
+                refresh.store_refresh_token(
+                    oauth2_session['scope'],
                     timeout,
                     oauth2_token,
-                    request.POST.get('redirect_uri'),
                 )
             else:
                 refresh['access_token'] = oauth2_token
@@ -504,12 +498,12 @@ def openid_token(request, portal_id):
 
             return JsonResponse({
                 'access_token': refresh['access_token'],
-                'refresh_token': refresh_token,
                 'token_type': "Bearer",
                 'scope': ["openid"],
                 'iat': oauth2_session['iat'],
                 'exp': oauth2_session['exp'],
                 'expire_in': oauth2_session['token_ttl'],
+                'refresh_token': refresh_token,
             })
         else:
             return JsonResponse({"error": "invalid_request", "error_description": "Unknown grant type"}, status=400)
@@ -630,10 +624,6 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     user_scope = workflow.get_and_validate_scope({}, authentication_results)
 
                     # Register authentication results in Redis
-
-                    if workflow.authentication.enable_refresh:
-                        authentication.set_redirect_uri(backend_id, request.GET['redirect_uri'])
-
                     portal_cookie, oauth2_token, refresh_token = authentication.register_user(authentication_results, user_scope)
                     logger.debug(f"PORTAL::log_in: User {authentication.credentials[0]} successfully registered in Redis")
 

@@ -68,7 +68,6 @@ class Authentication(object):
         self.proto = proto
         self.oauth2_token = None
         self.refresh_token = None
-        self.redirect_uri = None
 
         self.backend_id = self.authenticated_on_backend()
 
@@ -84,7 +83,6 @@ class Authentication(object):
             self.credentials[0] = self.redis_portal_session.get_login(str(self.backend_id))
             self.oauth2_token = self.redis_portal_session.get_oauth2_token(self.backend_id)
             self.refresh_token = self.redis_portal_session.get_refresh_token(self.backend_id)
-            self.redirect_uri = self.redis_portal_session.get_redirect_uri(self.backend_id)
             return True
         return False
 
@@ -168,7 +166,7 @@ class Authentication(object):
             scopes,
             self.workflow.authentication.oauth_timeout)
 
-        logger.debug(f"AUTH::register_user: access token successfuly created : {self.oauth2_token}")
+        logger.debug(f"AUTH::write_oauth2_session: access token successfuly created : {self.oauth2_token}")
 
     def write_refresh_session(self, scopes):
         logger.debug(f"AUTH::write_refresh_session: Redis oauth2 session scopes are {scopes}")
@@ -178,14 +176,12 @@ class Authentication(object):
         self.redis_refresh_session = REDISRefreshSession(self.redis_base, "refresh_" + self.refresh_token)
         timeout = self.workflow.authentication.oauth_timeout * (self.workflow.authentication.max_nb_refresh + 1) + 60
         # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
-        self.redis_refresh_session.register_authentication(
-            str(self.workflow.authentication.oauth_client_id),
+        self.redis_refresh_session.store_refresh_token(
             scopes,
             timeout,
-            self.oauth2_token,
-            self.redirect_uri)
+            self.oauth2_token)
 
-        logger.debug(f"AUTH::register_user: refresh token successfuly created : {self.refresh_token}")
+        logger.debug(f"AUTH::write_refresh_session: refresh token successfuly created : {self.refresh_token}")
 
     def register_user(self, authentication_results, oauth2_scope):
         if self.workflow.authentication.enable_oauth:
@@ -199,10 +195,6 @@ class Authentication(object):
             logger.info(f"AUTH::register_user: Oauth enabled for {self.workflow.authentication.name}, creating oauth2 token")
             self.write_oauth2_session(oauth2_scope)
             if self.workflow.authentication.enable_refresh:
-                if not self.redirect_uri:
-                    self.get_redirect_uri(self.backend_id) # Actually set self.redirect_uri
-
-                logger.info(f"AUTH::register_user: Refresh tokens enabled for {self.workflow.authentication.name}, creating refresh token") # delete me
                 self.write_refresh_session(oauth2_scope)
 
         portal_cookie = self.redis_portal_session.register_authentication(str(self.workflow.id),
@@ -212,7 +204,6 @@ class Authentication(object):
                                                                           self.credentials[0], self.credentials[1],
                                                                           self.oauth2_token,
                                                                           self.refresh_token,
-                                                                          self.redirect_uri,
                                                                           authentication_results,
                                                                           self.workflow.authentication.auth_timeout)
 
@@ -275,18 +266,7 @@ class Authentication(object):
             self.redis_portal_session.set_refresh_token(self.backend_id, self.refresh_token)
         # Create a new temporary token containing oauth2_token + kwargs
         RedisOpenIDSession(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, self.refresh_token, **kwargs)
-        logger.debug(f"AUTH::register_openid: openid_token, self.oauth2_token {openid_token, self.oauth2_token, self.refresh_token}")
-
-    def get_redirect_uri(self, backend_id):
-        # Grab callback uri used to issue the access_token
-        if not self.redirect_uri:
-            self.redirect_uri = self.redis_portal_session.get_redirect_uri(self.backend_id)
-        return self.redirect_uri
-
-    def set_redirect_uri(self, backend_id, refresh_uri):
-        if not self.redirect_uri:
-            self.redirect_uri = refresh_uri
-        self.redis_portal_session.set_redirect_uri(self.backend_id, self.redirect_uri)
+        logger.debug(f"AUTH::register_openid: openid_token, self.oauth2_token, self.refresh_token {openid_token, self.oauth2_token, self.refresh_token}")
 
     def del_redirect_uri(self):
         self.redis_portal_session.del_redirect_uri(self.workflow.id)

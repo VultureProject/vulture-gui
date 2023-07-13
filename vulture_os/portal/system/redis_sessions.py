@@ -297,13 +297,6 @@ class REDISPortalSession(REDISSession):
         self.keys[f'refresh_{backend_id}'] = refresh_token
         return self.handler.hset(self.key, f'refresh_{backend_id}', refresh_token)
 
-    def get_redirect_uri(self, backend_id):
-        return self.handler.hget(self.key, f'refresh_uri{backend_id}')
-
-    def set_redirect_uri(self, backend_id, refresh_uri):
-        self.keys[f'refresh_uri{backend_id}'] = refresh_uri
-        return self.handler.hset(self.key, f'refresh_uri{backend_id}', refresh_uri)
-
     def get_redirect_url(self, workflow_id):
         return self.handler.hget(self.key, f'url_{workflow_id}')
 
@@ -402,7 +395,7 @@ class REDISPortalSession(REDISSession):
         self.write_in_redis(timeout)
 
     def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
-                                oauth2_token, refresh_token, refresh_uri, authentication_datas, timeout):
+                                oauth2_token, refresh_token, authentication_datas, timeout):
         if dbauthentication_required:
             self.keys[str(app_id)] = 0
         else:
@@ -416,8 +409,6 @@ class REDISPortalSession(REDISSession):
             self.keys[f"oauth2_{backend_id}"] = str(oauth2_token)
         if refresh_token:
             self.keys[f"refresh_{backend_id}"] = str(refresh_token)
-        if refresh_uri:
-            self.keys[f"refresh_uri_{backend_id}"] = str(refresh_uri)
         self.keys[f"app_id_{backend_id}"] = str(app_id)
 
         # WARNING : THE KEYS ARE NOT INITIALIZED ANYMORE !
@@ -613,22 +604,10 @@ class REDISRefreshSession(REDISSession):
     def delete(self):
         self.delete_in_redis(self.key)
 
-    def register_authentication(self, repo_id, oauth2_data, timeout, oauth2_token, redirect_uri, overridden_by=None):
-        iat = int(time.time())
-        if isinstance(timeout, datetime):
-            exp = int(timeout.timestamp())
-        elif isinstance(timeout, timedelta):
-            exp = int(time.time()) + timeout.seconds
-        else:
-            exp = int(time.time()) + timeout
+    def store_refresh_token(self, oauth2_data, timeout, oauth2_token, overridden_by=None):
         data = {
-            'token_ttl': exp - iat,
-            'iat': iat,
-            'exp': exp,
             'scope': oauth2_data,
-            'repo': str(repo_id),
             'access_token': oauth2_token,
-            'redirect_uri': redirect_uri,
             'overridden_by': overridden_by,
         }
         if not self.keys:
@@ -636,23 +615,16 @@ class REDISRefreshSession(REDISSession):
         else:
             if not self.keys.get('scope'):
                 self.keys['scope'] = {}
-            if not self.keys.get('repo'):
-                self.keys['repo'] = repo_id
-
-            self.keys['token_ttl'] = exp - iat
-            self.keys['iat'] = iat
-            self.keys['exp'] = exp
             self.keys['access_token'] = oauth2_token
-            self.keys['redirect_uri'] = redirect_uri
             self.keys['overridden_by'] = overridden_by
 
             for key,item in oauth2_data.items():
                 self.keys['scope'][key] = item
         if not self.write_in_redis(timeout):
-            logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")
-            raise REDISWriteError("REDISRefreshSession::register_authentication: Unable to write Oauth2 infos in REDIS")
+            logger.error("REDIS::store_refresh_token: Error while writing portal_session in Redis")
+            raise REDISWriteError("REDISRefreshSession::store_refresh_token: Unable to write Oauth2 infos in REDIS")
 
-        logger.debug(f"REDISRefreshSession::register_authentication: self.keys {self.keys}")
+        logger.debug(f"REDISRefreshSession::store_refresh_token: self.keys {self.keys}")
         return self.key
 
 
