@@ -642,12 +642,10 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 # If the user is already authenticated (retrieved with RedisPortalSession ) => SSO
                 else:
                     logger.info(f"Applying SSO with connected user on backend {backend_id}")
-                    portal = workflow.authentication
-                    if portal.enable_sso_forward:
-                        portal_cookie, oauth2_token, refresh_token = authentication.register_sso(backend_id)
-                        if oauth2_token:
-                            logger.debug(f"OAuth2 session = {oauth2_token, refresh_token}")
+                    portal_cookie, oauth2_token, refresh_token = authentication.register_sso(backend_id)
                     logger.info(f"PORTAL::log_in: User {authentication.credentials[0]} successfully SSO-powered !")
+                    if oauth2_token:
+                        logger.debug(f"OAuth2 session = {oauth2_token}")
 
             except AssertionError as e:
                 logger.exception("PORTAL::log_in: Bad captcha input for username '{}' : {}"
