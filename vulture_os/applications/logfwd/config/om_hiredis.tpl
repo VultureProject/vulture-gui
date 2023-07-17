@@ -10,7 +10,7 @@
             key="{{key}}"
         {%- endif %}
             ServerPassword="{{pwd}}"
-            Template="{{ out_template }}_redis"
+            Template="{{ out_template }}_json"
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
             queue.dequeuebatchsize="{{dequeue_size}}"
