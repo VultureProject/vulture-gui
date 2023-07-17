@@ -1,4 +1,4 @@
-#!venv/bin/python
+#!/home/vlt-os/env/bin/python
 """This file is part of Vulture OS.
 
 Vulture OS is free software: you can redistribute it and/or modify
