@@ -230,8 +230,6 @@ class Authentication(object):
     def register_sso(self, backend_id):
         username = self.redis_portal_session.keys['login_' + backend_id]
         self.oauth2_token = self.redis_portal_session.keys.get('oauth2_' + backend_id)
-        if self.workflow.authentication.enable_refresh:
-            self.refresh_token = self.redis_portal_session.keys.get('refresh_' + backend_id)
         # Get current user_infos for this backend
         oauth2_scope = self.redis_portal_session.get_user_infos(backend_id)
 
@@ -239,6 +237,8 @@ class Authentication(object):
             logger.info(f"AUTH::register_sso: Oauth enabled for {self.workflow.authentication.name}, creating oauth2 token")
             self.write_oauth2_session(oauth2_scope)
             if self.workflow.authentication.enable_refresh:
+                # Might not exist, but will be created by write_refresh_session() if that's the case
+                self.refresh_token = self.redis_portal_session.keys.get('refresh_' + backend_id)
                 logger.info(f"AUTH::register_user: Refresh tokens enabled for {self.workflow.authentication.name}, creating refresh token")
                 self.write_refresh_session(oauth2_scope)
 
@@ -279,7 +279,6 @@ class Authentication(object):
 
     def set_redirect_url(self, redirect_url):
         self.redis_portal_session.set_redirect_url(self.workflow.id, redirect_url)
-        # self.redis_portal_session['url_{}'.format(self.workflow.id)] = redirect_url
 
     def del_redirect_url(self):
         self.redis_portal_session.del_redirect_url(self.workflow.id)

@@ -31,12 +31,12 @@ path.append("/home/vlt-os/vulture_os/portal")
 # Django system imports
 from django.conf                     import settings
 from django.http                     import (HttpResponseRedirect, HttpResponseServerError, HttpResponseForbidden,
-                                             HttpResponseNotFound, JsonResponse, HttpResponse)
+                                             JsonResponse, HttpResponse)
 from django.utils import timezone
 
 # Django project imports
 from system.cluster.models           import Cluster
-from portal.views.responses          import (response_redirect_with_portal_cookie, set_portal_cookie, split_domain)
+from portal.views.responses          import (set_portal_cookie, split_domain)
 from portal.system.authentications   import (Authentication, POSTAuthentication, BASICAuthentication,
                                              KERBEROSAuthentication, DOUBLEAuthentication)
 from portal.system.sso_forwards      import SSOForwardPOST, SSOForwardBASIC, SSOForwardKERBEROS
@@ -64,7 +64,6 @@ from toolkit.http.utils import build_url_params
 from oauthlib.oauth2 import OAuth2Error
 
 # Extern modules imports
-from requests_oauthlib import OAuth2Session
 from base64 import b64decode
 from uuid import uuid4
 
