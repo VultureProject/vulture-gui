@@ -273,9 +273,6 @@ class Authentication(object):
         RedisOpenIDSession(self.redis_base, f"token_{openid_token}").register(self.oauth2_token, self.refresh_token, **kwargs)
         logger.debug(f"AUTH::register_openid: openid_token, self.oauth2_token, self.refresh_token {openid_token, self.oauth2_token, self.refresh_token}")
 
-    def del_redirect_uri(self):
-        self.redis_portal_session.del_redirect_uri(self.workflow.id)
-
     def get_redirect_url(self):
         # Get custom redirect_url if present, or default workflow redirect url
         return self.redis_portal_session.get_redirect_url(self.workflow.id) or self.workflow.get_redirect_uri()
@@ -359,7 +356,7 @@ class POSTAuthentication(Authentication):
                                                 captcha=captcha,
                                                 error=kwargs.get('error', ""))
 
-        portal_cookie_name = kwargs.get('portal_cookie_name', None)
+        portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
             response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
                                 domain=self.get_redirect_url_domain(), httponly=True,
@@ -381,7 +378,7 @@ class BASICAuthentication(Authentication):
     def ask_credentials_response(self, **kwargs):
         response = basic_authentication_response(self.workflow.name)
 
-        portal_cookie_name = kwargs.get('portal_cookie_name', None)
+        portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
             response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
                                 domain=self.get_redirect_url_domain(), httponly=True,
@@ -440,7 +437,7 @@ class KERBEROSAuthentication(Authentication):
     def ask_credentials_response(self, **kwargs):
         response = kerberos_authentication_response()
 
-        portal_cookie_name = kwargs.get('portal_cookie_name', None)
+        portal_cookie_name = self.workflow.authentication.auth_cookie_name or kwargs.get('portal_cookie_name', None)
         if portal_cookie_name:
             response.set_cookie(portal_cookie_name, self.redis_portal_session.key,
                                 domain=self.get_redirect_url_domain(), httponly=True,
