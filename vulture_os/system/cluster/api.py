@@ -184,7 +184,8 @@ def cluster_add(request):
         new_node.api_request("services.darwin.darwin.reload_all")
 
         """ The method configure restart rsyslog if needed """
-        logger.debug("API call to configure rsyslog")
+        logger.debug("API calls to configure rsyslog")
+        new_node.api_request("services.rsyslogd.rsyslog.build_conf")
         # API call to whole Cluster - to refresh mongodb uri in pf logs
         Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
 
