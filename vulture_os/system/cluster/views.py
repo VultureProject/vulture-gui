@@ -112,7 +112,7 @@ def cluster_join(request, object_id, api=False):
 
 def cluster_edit(request, object_id, api=False, update=False):
     """ View used to edit a node """
-    # Node MUST exists - It should be created by an API Call from a slave node
+    # Node MUST exists - It should be created by an API Call from a replica
     # Unlike vulture3 we cannot add a new node from the GUI
     # But we can add an existing node from the GUI, if it has previously been removed from replicaset
 
@@ -174,10 +174,26 @@ def cluster_edit(request, object_id, api=False, update=False):
         if ip_changed:
             Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (node.name, node.management_ip))
             RC_FILENAME = "network"
-            node.api_request('toolkit.system.rc.call_set_rc_config', (RC_FILENAME, "management_ip", node.management_ip))
-            node.api_request('toolkit.system.rc.call_set_rc_config', (RC_FILENAME, "internet_ip", node.internet_ip))
-            node.api_request('toolkit.system.rc.call_set_rc_config', (RC_FILENAME, "backends_outgoing_ip", node.backends_outgoing_ip))
-            node.api_request('toolkit.system.rc.call_set_rc_config', (RC_FILENAME, "logom_outgoing_ip", node.logom_outgoing_ip))
+            node.api_request('toolkit.system.rc.call_set_rc_config', {
+                "variable": "management_ip",
+                "value": node.management_ip,
+                "filename": RC_FILENAME,
+                })
+            node.api_request('toolkit.system.rc.call_set_rc_config', {
+                "variable": "internet_ip",
+                "value": node.internet_ip,
+                "filename": RC_FILENAME,
+                })
+            node.api_request('toolkit.system.rc.call_set_rc_config', {
+                "variable": "backends_outgoing_ip",
+                "value": node.backends_outgoing_ip,
+                "filename": RC_FILENAME,
+                })
+            node.api_request('toolkit.system.rc.call_set_rc_config', {
+                "variable": "logom_outgoing_ip",
+                "value": node.logom_outgoing_ip,
+                "filename": RC_FILENAME,
+                })
 
         if pstats_forwarders_changed:
             node.api_request("services.rsyslogd.rsyslog.configure_pstats")

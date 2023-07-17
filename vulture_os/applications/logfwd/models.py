@@ -82,6 +82,56 @@ class LogOM (models.Model):
     name = models.TextField(unique=True, blank=False, null=False,
                             default="Log Output Module", help_text=_("Name of the Log Output Module"))
     internal = models.BooleanField(default=False, help_text=_("Is this LogForwarder internal"))
+    queue_size = models.PositiveIntegerField(
+        default=10000,
+        help_text=_("Size of the queue in nb of message"),
+        verbose_name=_("Size of the queue in nb of message"),
+        validators=[MinValueValidator(100)]
+    )
+    dequeue_size = models.PositiveIntegerField(
+        default=300,
+        help_text=_("Size of the batch to dequeue"),
+        verbose_name=_("Size of the batch to dequeue"),
+        validators=[MinValueValidator(1)]
+    )
+    enable_retry = models.BooleanField(
+        default=False,
+        help_text=_("Enable retry when failure occurs"),
+        verbose_name=_("Enable retry on failure")
+    )
+    enable_disk_assist = models.BooleanField(
+        default=False,
+        help_text=_("Enable disk-assisted queue on failure"),
+        verbose_name=_("Enable disk queue on failure")
+    )
+    high_watermark = models.PositiveIntegerField(
+        default=8000,
+        null=True,
+        help_text=_("Target of the high watermark"),
+        verbose_name=_("High watermark target"),
+        validators=[MinValueValidator(100)]
+    )
+    low_watermark = models.PositiveIntegerField(
+        default=6000,
+        null=True,
+        help_text=_("Set the value of the low watermark"),
+        verbose_name=_("Low watermark target"),
+        validators=[MinValueValidator(100)]
+        )
+    max_file_size = models.IntegerField(
+        default=256,
+        null=True,
+        help_text=_("Set the value of the queue in MB"),
+        verbose_name=_("Max file size of the queue in MB"),
+        validators=[MinValueValidator(1)]
+    )
+    max_disk_space = models.IntegerField(
+        default=1024,
+        null=True,
+        help_text=_("Limit the maximum disk space used by the queue in MB"),
+        verbose_name=_("Max disk space used by the queue in MB"),
+        validators=[MinValueValidator(1)]
+    )
 
     def __unicode__(self):
         return "{} ({})".format(self.name, self.__class__.__name__)
@@ -212,7 +262,15 @@ class LogOMFile(LogOM):
             'template_id': self.template_id(kwargs.get('ruleset', "")),
             'type': 'File',
             'output': self.file,
-            'stock_as_raw': self.stock_as_raw
+            'stock_as_raw': self.stock_as_raw,
+            'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
+            'enable_retry': self.enable_retry,
+            'enable_disk_assist': self.enable_disk_assist,
+            'high_watermark': self.high_watermark,
+            'low_watermark': self.low_watermark,
+            'max_file_size': self.max_file_size,
+            'max_disk_space': self.max_disk_space
         }
 
     def get_used_parsers(self):
@@ -303,6 +361,14 @@ class LogOMRELP(LogOM):
             'port': self.port,
             'type': 'RELP',
             'tls': self.tls_enabled,
+            'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
+            'enable_retry': self.enable_retry,
+            'enable_disk_assist': self.enable_disk_assist,
+            'high_watermark': self.high_watermark,
+            'low_watermark': self.low_watermark,
+            'max_file_size': self.max_file_size,
+            'max_disk_space': self.max_disk_space,
             'output': self.target + ':' + str(self.port)
         }
         if self.tls_enabled and self.x509_certificate:
@@ -357,6 +423,14 @@ class LogOMHIREDIS(LogOM):
             'key': key,
             'pwd': self.pwd,
             'type': 'Redis',
+            'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
+            'enable_retry': self.enable_retry,
+            'enable_disk_assist': self.enable_disk_assist,
+            'high_watermark': self.high_watermark,
+            'low_watermark': self.low_watermark,
+            'max_file_size': self.max_file_size,
+            'max_disk_space': self.max_disk_space,
             'output': self.target + ':' + str(self.port) + ' (key = {})'.format(self.key),
             'mode': "queue"
         }
@@ -417,6 +491,14 @@ class LogOMFWD(LogOM):
             'type': 'Syslog',
             'zip_level': self.zip_level,
             'send_as_raw': self.send_as_raw,
+            'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
+            'enable_retry': self.enable_retry,
+            'enable_disk_assist': self.enable_disk_assist,
+            'high_watermark': self.high_watermark,
+            'low_watermark': self.low_watermark,
+            'max_file_size': self.max_file_size,
+            'max_disk_space': self.max_disk_space,
             'ratelimit_interval': self.ratelimit_interval,
             'ratelimit_burst': self.ratelimit_burst,
             'output': self.target + ':' + str(self.port) + ' ({})'.format(self.protocol)
@@ -427,11 +509,16 @@ class LogOMFWD(LogOM):
 
 
 class LogOMElasticSearch(LogOM):
-    index_pattern = models.TextField(unique=True, null=False, default='MyLog-%$!timestamp:1:10%')
+    enabled = models.BooleanField(default=True)
     servers = models.TextField(null=False, default='["https://els-1:9200", "https://els-2:9200"]')
+    es8_compatibility = models.BooleanField(
+        default=False,
+        help_text=_("Enable Elasticsearch/OpenSearch 8 compatibility"),
+        verbose_name=_("Elasticsearch/OpenSearch 8 compatibility")
+    )
+    index_pattern = models.TextField(unique=True, null=False, default='mylog-%$!timestamp:1:10%')
     uid = models.TextField(null=True, blank=True, default=None)
     pwd = models.TextField(null=True, blank=True, default=None)
-    enabled = models.BooleanField(default=True)
     x509_certificate = models.ForeignKey(
         X509Certificate,
         on_delete=models.CASCADE,
@@ -439,9 +526,6 @@ class LogOMElasticSearch(LogOM):
         default=None,
         null=True
     )
-
-    ratelimit_interval = models.PositiveIntegerField(null=True, blank=True)
-    ratelimit_burst = models.PositiveIntegerField(null=True, blank=True)
 
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)
@@ -473,15 +557,22 @@ class LogOMElasticSearch(LogOM):
             'id': str(self.id),
             'name': self.name,
             'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
-            'index_pattern': self.index_pattern,
             'servers': self.servers,
+            'es8_compatibility': self.es8_compatibility,
+            'index_pattern': self.index_pattern,
             'uid': self.uid,
             'pwd': self.pwd,
             'template_id': self.template_id(),
             'mapping_id': self.mapping_id,
             'type': 'Elasticsearch',
-            'ratelimit_interval': self.ratelimit_interval,
-            'ratelimit_burst': self.ratelimit_burst,
+            'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
+            'enable_retry': self.enable_retry,
+            'enable_disk_assist': self.enable_disk_assist,
+            'high_watermark': self.high_watermark,
+            'low_watermark': self.low_watermark,
+            'max_file_size': self.max_file_size,
+            'max_disk_space': self.max_disk_space,
             'output': self.servers + ' (index = {})'.format(self.index_pattern)
         }
         if self.x509_certificate:
@@ -547,6 +638,14 @@ class LogOMMongoDB(LogOM):
             'mapping': self.mapping,
             'internal': self.internal,
             'type': 'MongoDB',
+            'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
+            'enable_retry': self.enable_retry,
+            'enable_disk_assist': self.enable_disk_assist,
+            'high_watermark': self.high_watermark,
+            'low_watermark': self.low_watermark,
+            'max_file_size': self.max_file_size,
+            'max_disk_space': self.max_disk_space,
             'output': self.uristr + ' (db = {}, col = {})'.format(self.db, self.collection)
         }
         if self.x509_certificate:

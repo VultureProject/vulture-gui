@@ -25,6 +25,7 @@ __doc__ = 'LDAP Repository model'
 # Django system imports
 from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
@@ -40,7 +41,7 @@ from authentication.openid.models import OpenIDRepository
 from authentication.radius.models import RadiusRepository
 from authentication.user_scope.models import UserScope
 from services.frontend.models import Frontend
-from toolkit.http.utils import build_url
+from toolkit.http.utils import build_url, build_url_params
 from toolkit.system.hashes import random_sha256
 from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
 from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
@@ -87,6 +88,10 @@ SSO_CONTENT_TYPE_CHOICES = (
     ('multipart', 'multipart/form-data'),
     ('json', 'application/json')
 )
+
+
+def get_random_cookie_name():
+    return get_random_string(8, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
 
 
 #    enable_oauth2 = models.BooleanField(
@@ -364,6 +369,12 @@ class UserAuthentication(models.Model):
         verbose_name=_("User's scope"),
         help_text=_("Scope of user to construct")
     )
+    auth_cookie_name = models.TextField(
+        blank=True,
+        null=False,
+        verbose_name=_("Session cookie name"),
+        help_text=_("Name of the cookie used to keep the portal session, overrides the Cluster's portal_cookie_name value"),
+    )
     auth_timeout = models.PositiveIntegerField(
         default=900,
         verbose_name=_("Disconnection timeout"),
@@ -450,6 +461,21 @@ class UserAuthentication(models.Model):
         default=600,
         verbose_name=_("OAuth2 tokens timeout"),
         help_text=_("Time in seconds after which oauth2 tokens will expire")
+    )
+    enable_refresh = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable OAuth2 refresh token"),
+        help_text=_("Enable refresh token provider")
+    )
+    enable_rotation = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable refresh token rotation"),
+        help_text=_("Rotate refresh token at every successful request")
+    )
+    max_nb_refresh = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("History of expired tokens"),
+        help_text=_("Number of old refresh token kept in memory")
     )
     enable_sso_forward = models.BooleanField(
         default=False,
@@ -557,6 +583,13 @@ class UserAuthentication(models.Model):
     def __str__(self):
         return "{} ({})".format(self.name, [str(r) for r in self.repositories.all()])
 
+    def save(self, *args, **kwargs):
+        if self.enable_external and not self.auth_cookie_name:
+            self.auth_cookie_name = get_random_cookie_name()
+        if not self.enable_external:
+            self.auth_cookie_name = ""
+        super(UserAuthentication, self).save(*args, **kwargs)
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
@@ -622,6 +655,22 @@ class UserAuthentication(models.Model):
             base_url = req_scheme + "://" + workflow_host + workflow_path
         base_url += '/' if base_url[-1] != '/' else ''
         return base_url+"oauth2/callback/{}".format(repo_id)
+
+    def get_openid_start_url(self, req_scheme, workflow_host, workflow_path, repo_id):
+        if self.enable_external:
+            base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
+        else:
+            base_url = req_scheme + "://" + workflow_host + workflow_path
+        base_url += '/' if base_url[-1] != '/' else ''
+        return build_url_params(base_url + "oauth2/start/", repo=repo_id)
+
+    def get_openid_authorize_url(self, **kwargs):
+        if self.enable_external:
+            base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
+            full_url = build_url_params(base_url + "oauth2/authorize/", kwargs)
+            return full_url
+        else:
+            return ""
 
     def write_login_template(self):
         """ Write templates as static, to serve them without rendering """
@@ -689,7 +738,7 @@ class UserAuthentication(models.Model):
         return "Workflow configuration written."
 
     def generate_openid_config(self, issuer):
-        return {
+        config = {
             "issuer": issuer,
             "authorization_endpoint": f"{issuer}/oauth2/authorize",
             "token_endpoint": f"{issuer}/oauth2/token",
@@ -708,3 +757,6 @@ class UserAuthentication(models.Model):
                 "authorization_code"
             ]
         }
+        if self.enable_refresh:
+            config['grant_types_supported'].append('refresh_token')
+        return config

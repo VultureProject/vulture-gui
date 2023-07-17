@@ -36,7 +36,7 @@ from django.core.exceptions import ValidationError
 
 # Django project imports
 from portal.system.self_actions import SELFService, SELFServiceChange, SELFServiceLogout, SELFServiceLost
-from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, UserNotFound
+from toolkit.auth.exceptions import AuthenticationError, AuthenticationFailed, ChangePasswordError, UserNotFound
 from workflow.models import Workflow
 from system.cluster.models import Cluster
 from authentication.user_portal.models import UserAuthentication
@@ -45,7 +45,7 @@ from authentication.user_portal.models import UserAuthentication
 from django.utils.datastructures     import MultiValueDictKeyError
 from django.core.exceptions          import ObjectDoesNotExist
 from ldap                            import LDAPError
-from portal.system.exceptions        import PasswordEmptyError, PasswordMatchError, RedirectionNeededError
+from portal.system.exceptions        import PasswordEmptyError, PasswordMatchError, RedirectionNeededError, TokenNotFoundError
 from portal.views.responses          import error_response
 from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError
@@ -82,8 +82,11 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         elif portal_id:
             portal = UserAuthentication.objects.get(pk=portal_id)
             # Prefix ID to prevent conflicts between portal.id and workflow.id
-            workflow = Workflow(authentication=portal, fqdn=portal.external_fqdn, id=f"portal_{portal.id}",
-                                name=portal.name)
+            workflow = Workflow(authentication=portal,
+                                fqdn=portal.external_fqdn,
+                                id=f"portal_{portal.id}",
+                                name=portal.name,
+                                frontend=portal.external_listener)
 
         scheme = request.META['HTTP_X_FORWARDED_PROTO']
         fqdn = request.META['HTTP_HOST']
@@ -148,7 +151,13 @@ def self(request, workflow_id=None, portal_id=None, action=None):
         return Action.message_response(request, Action.action_ok_message())
 
     except (ChangePasswordError, PasswordMatchError, PasswordEmptyError, AuthenticationError) as e:
-        logger.error("SELF::self: Error while trying to update password : '{}'".format(e))
+        logger.error("SELF::Authentication error : '{}'".format(e))
+        return Action.ask_credentials_response(request, action, e)
+
+    except (TokenNotFoundError, AuthenticationFailed) as e:
+        # This is not an error: it will happen when a user connects to self-service with no session or a partial one
+        # they then need to authenticate
+        logger.info(f"SELF::self: {e}")
         return Action.ask_credentials_response(request, action, e)
 
     except MultiValueDictKeyError as e:

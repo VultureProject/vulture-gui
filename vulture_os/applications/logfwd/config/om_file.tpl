@@ -1,11 +1,27 @@
-
     # Output to asked file
     action(type="omfile"
-           name="{{output_name}}"
-           DynaFile="{{template_id}}"
-           flushInterval="{{flush_interval}}"
-           asyncWriting="{{async_writing}}"
-           Template="{% if stock_as_raw %}raw_to_json{% else %}{{ out_template }}{% endif %}"
-           CreateDirs="on"
-           dirCreateMode="0700"
-           FileCreateMode="0644")
+            name="{{output_name}}"
+            DynaFile="{{template_id}}"
+            flushInterval="{{flush_interval}}"
+            asyncWriting="{{async_writing}}"
+            Template="{% if stock_as_raw %}raw_to_json{% else %}{{ out_template }}{% endif %}"
+            CreateDirs="on"
+            dirCreateMode="0700"
+            FileCreateMode="0644"
+            queue.type="LinkedList"
+            queue.size="{{queue_size}}"
+            queue.dequeuebatchsize="{{dequeue_size}}"
+            {%- if enable_retry %}
+            action.ResumeRetryCount = "-1"
+            {%- if enable_disk_assist %}
+            queue.highWatermark="{{high_watermark}}"
+            queue.lowWatermark="{{low_watermark}}"
+            ueue.spoolDirectory="/var/tmp"
+            queue.filename="{{output_name}}_disk-queue"
+            queue.maxFileSize="{{max_file_size}}m"
+            queue.maxDiskSpace="{{max_disk_space}}m"
+            queue.checkpointInterval="128"
+            queue.saveOnShutdown="on"
+            {%- endif -%} {# if enable_disk_assist #}
+            {%- endif -%} {# if enable_retry #}
+            )

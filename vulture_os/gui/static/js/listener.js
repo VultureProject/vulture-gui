@@ -128,15 +128,6 @@ function refresh_api_parser_type(type_){
       $(btn).html(txt);
     })
   })
-
-  if (type_ === "elasticsearch"){
-    $('#id_elasticsearch_auth').on('change', function(){
-      if ($(this).is(':checked'))
-        $('.elasticsearch_auth').show();
-      else
-        $('.elasticsearch_auth').hide();
-    }).trigger('change')
-  }
 }
 
 
@@ -270,7 +261,7 @@ $(function() {
   /* Show fields, or hide them, depending on chosen listening mode */
   function show_listening_mode(mode, listening_mode, filebeat_listening_mode) {
     /* If listening mode is TCP, show according options */
-    if (mode === "log" && listening_mode === "tcp") {
+    if (mode === "log" && (listening_mode === "tcp" || listening_mode === "tcp,udp" || listening_mode === "relp")) {
       $('.listening-tcp').show();
     } else {
       $('.listening-tcp').hide();
@@ -385,6 +376,16 @@ $(function() {
     old_mode = mode;
   }).trigger('change');
 
+  $('#id_redis_mode').on('change', function(event) {
+    var redis_mode = $(this).val();
+
+    if (redis_mode === "queue") {
+      $('.redis-queue-mode').show();
+    }
+    else {
+      $('.redis-queue-mode').hide();
+    }
+  }).trigger('change');
 
   /* Show logging options if logging enabled */
   $('#id_enable_logging').on("change", function(e) {

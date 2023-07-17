@@ -202,11 +202,10 @@ class FrontendForm(ModelForm):
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
+                           'nb_workers','mmdb_cache_size','redis_batch_size',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'api_parser_type', 'api_parser_use_proxy',
-                           'elasticsearch_host', 'elasticsearch_auth', 'elasticsearch_verify_ssl',
-                           'elasticsearch_username', 'elasticsearch_password', 'elasticsearch_index', 'forcepoint_host',
-                           'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
+                           'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
                            'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
@@ -246,6 +245,7 @@ class FrontendForm(ModelForm):
                            'trendmicro_visionone_token',
                            'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
                            'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
+                           'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey'
                            ]:
             self.fields[field_name].required = False
 
@@ -292,10 +292,10 @@ class FrontendForm(ModelForm):
                   'timeout_keep_alive', 'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'ratelimit_interval', 'ratelimit_burst', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
+                  'nb_workers','mmdb_cache_size','redis_batch_size',
                   'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
-                  'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 'elasticsearch_host',
-                  'elasticsearch_verify_ssl', 'elasticsearch_auth', 'elasticsearch_username', 'elasticsearch_password',
-                  'elasticsearch_index', 'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
+                  'node', 'darwin_policies', 'api_parser_type', 'api_parser_use_proxy', 
+                  'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
                   "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
                   "akamai_client_token", 'akamai_config_id', 'office365_tenant_id', 'office365_client_id',
@@ -336,6 +336,7 @@ class FrontendForm(ModelForm):
                   'trendmicro_visionone_token',
                   'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
                   'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
+                  'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                   'darwin_mode')
 
         widgets = {
@@ -382,16 +383,10 @@ class FrontendForm(ModelForm):
             'redis_port': TextInput(attrs={'class': 'form-control'}),
             'redis_key': TextInput(attrs={'class': 'form-control'}),
             'redis_password': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'nb_workers': NumberInput(attrs={'class': 'form-control'}),
+            'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
+            'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
-            'elasticsearch_host': TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': "http://192.168.1.1:9200,http://192.168.1.2:9200"
-            }),
-            'elasticsearch_verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
-            'elasticsearch_auth': CheckboxInput(attrs={'class': 'js-switch'}),
-            'elasticsearch_username': TextInput(attrs={'class': 'form-control'}),
-            'elasticsearch_password': PasswordInput(attrs={'class': 'form-control'}),
-            'elasticsearch_index': TextInput(attrs={'class': 'form-control'}),
             'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
             'forcepoint_password': TextInput(attrs={'class': 'form-control'}),
             'symantec_username': TextInput(attrs={'class': 'form-control'}),
@@ -502,6 +497,8 @@ class FrontendForm(ModelForm):
             'cisco_duo_skey': Textarea(attrs={'class': 'form-control'}),
             'csc_domainmanager_apikey':TextInput(attrs={'class': 'form-control'}),
             'csc_domainmanager_authorization':TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'sentinel_one_mobile_host': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_mobile_apikey': TextInput(attrs={'type': 'password','class': 'form-control'})
         }
 
     def clean_name(self):
@@ -605,6 +602,24 @@ class FrontendForm(ModelForm):
         if "[" in data and "]" in data:
             return ast.literal_eval(data)
         return data.split(',')
+
+    def clean_nb_workers(self):
+        data = self.cleaned_data.get('nb_workers')
+        if data == 0:
+            self.add_error('nb_workers', "Number of workers should be strictly positive")
+        return data
+
+    def clean_mmdb_cache_size(self):
+        data = self.cleaned_data.get('mmdb_cache_size')
+        if data and data !=0 and data % 2 != 0:
+            self.add_error('mmdb_cache_size', "MMDB Cache size needs to be zero or a multiple of 2 (recommended value is 10000)")
+        return data
+
+    def clean_redis_batch_size(self):
+        data = self.cleaned_data.get('redis_batch_size')
+        if data and data < 10:
+            self.add_error('redis_batch_size', "Redis dequeue size should be greater than 10")
+        return data
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """

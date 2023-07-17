@@ -860,7 +860,7 @@ var workflow_vue = new Vue({
                                     var mode = f.mode;
                                     if (mode === "http"){
                                         if (listener.is_tls)
-                                            mode = "https://"
+                                            mode = "https"
                                     }
 
                                     label.push(mode + "://" + listener.addr_port)
@@ -962,13 +962,20 @@ var workflow_vue = new Vue({
                             if (b.id === step.data.object_id){
                                 var label = ["\n"];
                                 for (var j in b.servers){
+                                    var server = b.servers[j];
+
                                     if (j > 1){
                                         label.push("...");
                                         break;
                                     }
 
-                                    var server = b.servers[j];
-                                    label.push(b.mode + "://" + server.target + ":" + server.port);
+                                    var mode = b.mode;
+                                    if (mode === "http"){
+                                        if (server.tls_profile)
+                                            mode = "https"
+                                    }
+
+                                    label.push(mode + "://" + server.target + ":" + server.port);
                                 }
 
                                 tmp.label = label.join('\n');

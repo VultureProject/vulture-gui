@@ -33,6 +33,14 @@
                           {{form.name.errors}}
                         </div>
                       </div>
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.type.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.type}}
+                          {{form.type.errors}}
+                        </div>
+                      </div>
+                      {{form.iface_id.as_hidden}}
                       <div class="form-group" id="device_selector">
                         <label class="col-sm-4 control-label">{% trans "Network Interface Card(s)" %}</label>
                         <div class="col-sm-5">
@@ -40,7 +48,6 @@
                           {{form.nic.errors}}
                         </div>
                       </div>
-                      {% if not is_system %}
                       <div class="form-group" id="carp_info">
                         <label class="col-sm-4 control-label">{% trans "CARP vhid" %}</label>
                         <div class="col-sm-5">
@@ -49,7 +56,6 @@
                         </div>
                         <div class="form-group" id="container_carp"></div>
                       </div>
-                      {% endif %}
 
                       <div class="form-group">
                         <label class="col-sm-4 control-label">{% trans "IP Address" %}</label>
@@ -72,18 +78,22 @@
                           {{form.fib.errors}}
                         </div>
                       </div>
-                      <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "Vlan ID" %}</label>
-                        <div class="col-sm-5">
-                          {{form.vlan}}
-                          {{form.vlan.errors}}
+                      <div class="form-group vlan_parameters">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "Vlan ID" %}</label>
+                          <div class="col-sm-5">
+                            {{form.vlan}}
+                            {{form.vlan.errors}}
+                          </div>
                         </div>
                       </div>
-                      <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "Vlan parent device" %}</label>
-                        <div class="col-sm-5">
-                          {{form.vlandev}}
-                          {{form.vlandev.errors}}
+                      <div class="form-group lagg_parameters">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% trans "LAGG protocol" %}</label>
+                          <div class="col-sm-5">
+                            {{form.lagg_proto}}
+                            {{form.lagg_proto.errors}}
+                          </div>
                         </div>
                       </div>
                   </div>
@@ -125,6 +135,7 @@
       if_carp = false;
       $('#carp_info').hide();
       var val = $(this).val();
+      var current_type = $('#id_type').val();
 
       $('#id_nic option').each(function(){
         $(this).prop('disabled', false);
@@ -135,34 +146,61 @@
         return;
       }
 
-      if (val.length > 1){
+      if (val.length > 1 && current_type === "alias"){
         $('#carp_info').show();
         is_carp = true;
       }
 
       var ids = [];
       var node_names = [];
+      var interface_names = [];
       $("#id_nic option:selected").each(function(){
         $(this).prop('disabled', false);
       
         ids.push($(this).val());
         node_names.push($(this).text().split(' - ')[1]);
+        interface_names.push($(this).text().split(' - ')[0]);
       })
 
       $('#id_nic option').each(function(){
         if ($.inArray($(this).val(), ids) === -1){
           $(this).prop('disabled', false);
-          for (var i in node_names){
-            if ($(this).text().endsWith(node_names[i])){
-              $(this).prop('disabled', true);
+
+          // Disable interfaces on the same node for alias/vlan interfaces (CARP only allowed)
+          if (["alias", "vlan"].includes(current_type)) {
+            for (var i in node_names){
+              if ($(this).text().endsWith(node_names[i])){
+                $(this).prop('disabled', true);
+              }
             }
+          } else if (current_type === "lagg") {
+            for (var i in node_names){
+              if (!$(this).text().endsWith(node_names[i])){
+                $(this).prop('disabled', true);
+              }
+            }
+          } else {
+            $(this).prop('disabled', true);
           }
         }
       })
 
       $('.select2').select2();
-    })
-    $('#id_nic').trigger('change');
+    }).trigger('change')
+
+    $('#id_type').on('change', function(e){
+      var current_type = $('#id_type').val();
+      $('.vlan_parameters').hide();
+      $('.lagg_parameters').hide();
+      
+      if(current_type === "vlan") {
+        $('.vlan_parameters').show();
+      }
+      if(current_type === "lagg") {
+        $('.lagg_parameters').show();
+      }
+
+    }).trigger('change')
 
     $('#netif_edit_form').on('submit', function(e){
       PNotify().removeAll()

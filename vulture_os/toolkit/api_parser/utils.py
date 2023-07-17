@@ -63,7 +63,7 @@ from toolkit.api_parser.waf_cloud_protector.waf_cloud_protector import WAFCloudP
 from toolkit.api_parser.trendmicro_visionone.trendmicro_visionone import TrendmicroVisiononeParser
 from toolkit.api_parser.cisco_duo.cisco_duo import CiscoDuoParser
 from toolkit.api_parser.csc_domainmanager.csc_domainmanager import CscDomainManagerParser
-
+from toolkit.api_parser.sentinel_one_mobile.sentinel_one_mobile import SentinelOneMobileParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -107,6 +107,7 @@ PARSER_LIST = {
     "trendmicro_visionone": TrendmicroVisiononeParser,
     "cisco_duo": CiscoDuoParser,
     "csc_domainmanager": CscDomainManagerParser,
+    "sentinel_one_mobile": SentinelOneMobileParser,
 }
 
 class ParserDoesNotExist(Exception):

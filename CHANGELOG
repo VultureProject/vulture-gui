@@ -4,6 +4,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Removed
+- [LOG_FORWARDER] [ELASTICSEARCH] RateLimit settings
+### Added
+- [LOG_FORWARDER] Disk-assisted queues for reliability
+- [PORTAL] [IDP] Refresh token support through OAuth2 flow
+### Changed
+- [VOCABULARY] Replace 'slave' word uses with 'replica'
+### Fixed
+- [PORTAL] [OPENID] Improve error returns and code quality
+- [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
+- [ACLS] Rebuild HAProxy conf on ACL change
+- [LOGFORWARDER] [ELASTICSEARCH] Enable ELS>=8 compatibility
+- [LOGFORWARDER] [ELASTICSEARCH] Ensure index patterns are kept to lowercase
+- [LOGFORWARDER] [ELASTICSEARCH] Avoid newline problems in generated configurations
+- [CLUSTER_JOIN] New node couldn't resolve all other nodes' name and IP
+- [CLUSTER_JOIN] New node missed an initial Rsyslog configuration file
+- [NODE] [CONFIGURATION] Correctly update rc.conf when editing a Node on GUI/API
+
+
+## [2.8.2] - 2023-07-05
+### Fixed
+- [SYSTEM] [MIGRATIONS] Resolve manual migrtions problems with existing CARP interfaces
+
+
+## [2.8.1] - 2023-07-05
+### Added
+- [NETWORK] Allow possibility to create LAGG interfaces
+- [NET2MONGO] Can now import system configurations for interfaces, aliases, VLANs and LAGG interfaces
+### Changed
+- [NETWORK] [GUI] VLAN configuration rework: ability to create/configure VLAN virtual interfaces directly from GUI
+- [NETWORK] Internal rework of network interfaces parameters
+- [SYSTEM] Improved capabilities to modify system/network configurations
+- [API] [NETWORK] Allow getting a list of NetworkAddress objects filtering by name, ip, type and NICs
+###  Fixed
+- [PF] [CONFIG] Configuration generation could fail with some network interfaces configured
+
+
+## [2.8.0] - 2023-06-28
+### Added
+- [API_PARSER] [CYBEREASON] Add support for 'malware' URI
+- [FRONTEND] [GUI] Allow to configure the maximum number of workers for LOG Listeners
+- [FRONTEND] [GUI] Allow to configure/activate new mmdblookup cache size parameter for LOG Listeners
+- [FRONTEND] [GUI] Allow to configure redis LOG input dequeue batch size
+### Removed
+- [API_PARSER] [ELASTICSEARCH] Last code traces related to the parser
+### Changed
+- [PORTAL] [IDP] Define a new custom cookie name for IDP portal sessions
+- [SETTINGS] [LOGGING] Add correct logging for some code shared between GUI and Portal
+- [GUI] [HAPROXY_TEST_CONF] Remove nbproc (deprecation) and use nbthread instead
+- [FRONTEND] [GUI] Put most of advanced LOG parameters in the 'Advanced' drop-down
+###  Fixed
+- [PORTAL] [VIEWS] Correctly print error messages on self-service page
+- [PORTAL] [SELF_SERVICE] Repair and improve self-service page
+- [PORTAL] [AUTH_FILTERS] Authentication filters could not check conditions properly
+- [AUTH] [LDAP] Encode binary fields in hexadecimal before handling them as claims
+- [PORTAL] [HAPROXY_CONF] Correctly check CORS condition for IDPs
+- [NET2MONGO] Fix vlan interfaces detection
+- [HAPROXY] [CONF] IDPs wouldn't work on Frontends without any Workflow assigned
+- [API_PARSER] [SENTINELONE] Avoid query date stagnation
+- [NETWORK] [GUI] Don't change network interface type when saving it
+- [LOGFORWARDER] [ELASTICSEARCH] remove deprecated option for ELS>=7 compatibility
+
+
 ## [2.7.1] - 2023-06-07
 ###  Fixed
 - [FRONTEND] resolve a bug that prevented users to modify a Listener existing before 2.7.0

@@ -128,6 +128,98 @@
                   </div>
                 </div>
               </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.queue_size.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.queue_size}}
+                      {{form.queue_size.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.dequeue_size.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.dequeue_size}}
+                      {{form.dequeue_size.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.enable_retry.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.enable_retry}}
+                      {{form.enable_retry.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="tab-queue">
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.enable_disk_assist.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.enable_disk_assist}}
+                        {{form.enable_disk_assist.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="tab-disk">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.high_watermark.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.high_watermark}}
+                          {{form.high_watermark.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.low_watermark.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.low_watermark}}
+                          {{form.low_watermark.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.max_file_size.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.max_file_size}}
+                          {{form.max_file_size.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.max_disk_space.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.max_disk_space}}
+                          {{form.max_disk_space.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div> <!-- /.tab-disk -->
+              </div> <!-- /.tab-queue -->
             </div>
             <div class="panel-footer">
               <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
@@ -178,6 +270,22 @@
     $("#id_fqdns").tagEditor({
       delimiter: ' '
     });
+
+    $('#id_enable_retry').on('change', function(e){
+      if ($(this).is(':checked')) {
+        $('#tab-queue').show();
+      } else {
+        $('#tab-queue').hide();
+      }
+    }).trigger('change');
+
+    $('#id_enable_disk_assist').on('change', function(e){
+      if ($(this).is(':checked')) {
+        $('#tab-disk').show();
+      } else {
+        $('#tab-disk').hide();
+      }
+    }).trigger('change');
 
   }); // end of function()
 

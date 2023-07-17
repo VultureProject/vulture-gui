@@ -37,15 +37,19 @@ from django.core.validators import validate_email
 from system.cluster.models import Cluster
 from system.users.models import User
 from portal.system.redis_sessions import REDISBase, REDISAppSession, REDISPortalSession
-from portal.views.responses import self_message_response, self_ask_passwords, self_message_main
+from portal.views.logon import authenticate, validate_portal_cookie
+from portal.views.responses import self_message_response, self_ask_passwords, self_message_main, set_portal_cookie
 from authentication.base_repository import BaseRepository
 from toolkit.portal.registration import perform_email_registration, perform_email_reset
+from toolkit.system.hashes import random_sha256
 from authentication.portal_template.models import (RESET_PASSWORD_NAME, INPUT_PASSWORD_OLD, INPUT_PASSWORD_1,
                                                INPUT_PASSWORD_2, INPUT_EMAIL)
+from workflow.models import Workflow
+from authentication.openid.models import OpenIDRepository
 
 # Required exceptions imports
-from portal.system.exceptions import RedirectionNeededError, PasswordMatchError, PasswordEmptyError
-from toolkit.auth.exceptions import AuthenticationError, UserNotFound
+from portal.system.exceptions import RedirectionNeededError, PasswordMatchError, PasswordEmptyError, TokenNotFoundError
+from toolkit.auth.exceptions import AuthenticationError, AuthenticationFailed, UserNotFound
 
 # Extern modules imports
 from ast import literal_eval
@@ -167,59 +171,46 @@ class SELFService(object):
 
     def retrieve_credentials(self, request):
         """ Get portal_cookie name and application_cookie name from cluster """
-        portal_cookie_name = self.config.portal_cookie_name
+        portal_cookie_name = self.workflow.authentication.auth_cookie_name or self.config.portal_cookie_name
         """ Get portal cookie value (if exists) """
         portal_cookie = request.COOKIES.get(portal_cookie_name, None)
-        assert portal_cookie, "SELF:: Portal cookie not found"
+        if portal_cookie == None:
+            raise TokenNotFoundError("User has no session")
 
         self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie)
-        assert self.redis_portal_session.exists(), "SELF:: Invalid portal session"
+        if self.redis_portal_session == None:
+            raise TokenNotFoundError("Invalid portal session")
+
+        if not self.redis_portal_session.authenticated_app(self.workflow.id):
+            raise AuthenticationFailed("User Authentication is not complete yet")
 
         # And get username from redis_portal_session
         self.backend_id = self.redis_portal_session.get_auth_backend(self.workflow.id)
         self.username = self.redis_portal_session.get_login(str(self.backend_id))
 
         assert self.username, "Unable to find username in portal session !"
+        return self.username
 
     def perform_action(self):
-        # Retrieve all the hkeys in redis matching "backend_(app_id) = (backend_id)"
-        # with portal_cookie
-        backends_apps = self.redis_portal_session.get_auth_backends()
-
-        backends = list()
-        apps = list()
-        for key, item in backends_apps.items():
-            # Extract the id of the application in "backend_(id)"
-            app = key[8:]
-            if app not in apps:
-                apps.append(app)
-            # The item is the backend
-            if item not in backends:
-                backends.append(item)
-
-        logger.debug("User successfully authenticated on following apps : '{}'".format(apps))
-        logger.debug("User successfully authenticated on following backends : '{}'".format(backends))
-
-        # Retrieve all the apps which need auth AND which the backend or backend_fallback is in common with the backend the user is logged on
-        # And retrieve all the apps that does not need authentication
-		# FIXME
-        # Query = (Q(need_auth=True) & (Q(auth_backend__in=backends) | Q(auth_backend_fallbacks__in=backends))) | Q(need_auth=False)
-        Query = None
-        auth_apps = Application.objects(Query).only('name', 'public_name', 'public_dir', 'id', 'type', 'listeners',
-                                                    'need_auth')
+        openid_connector = OpenIDRepository.objects.get(client_id=self.workflow.authentication.oauth_client_id)
+        workflows = Workflow.objects.filter(authentication__repositories_id__exact=openid_connector.id)
 
         final_apps = list()
-        for app in auth_apps:
+        for w in workflows:
             final_apps.append({
-                'name': app.name,
-                'url': str(app.get_redirect_uri()),
-                'status': app.need_auth and str(app.id) in apps
+                "name": w.name,
+                "url": w.authentication.get_openid_start_url(
+                    req_scheme="https" if w.frontend.listener_set.filter(tls_profiles__gt=0).exists() else "http",
+                    workflow_host=w.fqdn,
+                    workflow_path=w.public_dir,
+                    repo_id=openid_connector.id
+                )
             })
 
         return final_apps
 
     def main_response(self, request, app_list, error=None):
-        return self_message_main(request, self.application, self.token_name, app_list, self.username, error)
+        return self_message_main(request, self.workflow.authentication, f"https://{self.workflow.fqdn}/", self.token_name, app_list, self.username, error)
 
     def message_response(self, request, message):
         # If IDP => user can come from /authorize, so get redirect_url
@@ -231,12 +222,18 @@ class SELFService(object):
                                      redirect_url)
 
     def ask_credentials_response(self, request, action, error_msg, **kwargs):
-        return self_ask_passwords(request,
-                                  self.workflow.authentication,
-                                  action,
-                                  request.GET.get(RESET_PASSWORD_NAME) or request.POST.get(RESET_PASSWORD_NAME),
-                                  error_msg,
-                                  **kwargs)
+        portal_cookie_name = self.workflow.authentication.auth_cookie_name or self.config.portal_cookie_name
+        portal_cookie = validate_portal_cookie(request.COOKIES.get(portal_cookie_name)) or random_sha256()
+
+        response = authenticate(request, self.workflow, portal_cookie, self.token_name, sso_forward=False, openid=False)
+        self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie)
+        if self.redis_portal_session:
+            return_url = f"https://{self.workflow.fqdn}/{self.token_name}/self"
+            if action:
+                return_url += f"/{action}"
+            self.redis_portal_session.set_redirect_url(self.workflow.id, return_url)
+
+        return set_portal_cookie(response, portal_cookie_name, portal_cookie, f"https://{self.workflow.fqdn}")
 
 
 class SELFServiceChange(SELFService):
@@ -383,6 +380,7 @@ class SELFServiceChange(SELFService):
                 username = self.username if self.username else ""
             except Exception as e:
                 logger.warning(f"SELFServiceChange::ask_credentials_response: could not retrieve credentials from session : {e}")
+                return super().ask_credentials_response(request, action, error_msg)
         else:
             # Check rdm key format
             if re_match("^[0-9a-f-]+$", rdm):
@@ -391,7 +389,12 @@ class SELFServiceChange(SELFService):
                 username = result if result else ""
 
         kwargs.update({"username": username})
-        return super().ask_credentials_response(request, action, error_msg, **kwargs)
+        return self_ask_passwords(request,
+                            self.workflow.authentication,
+                            action,
+                            request.GET.get(RESET_PASSWORD_NAME) or request.POST.get(RESET_PASSWORD_NAME),
+                            error_msg,
+                            **kwargs)
 
 
 class SELFServiceLost(SELFService):
@@ -415,6 +418,16 @@ class SELFServiceLost(SELFService):
         return email
 
 
+    def ask_credentials_response(self, request, action, error_msg, **kwargs):
+
+        return self_ask_passwords(request,
+                                  self.workflow.authentication,
+                                  action,
+                                  request.GET.get(RESET_PASSWORD_NAME) or request.POST.get(RESET_PASSWORD_NAME),
+                                  error_msg,
+                                  **kwargs)
+
+
     def action_ok_message(self):
         return ("<b>Mail successfully sent</b>"
         "<br>If your email address is valid, you should receive a message shortly with information on how to reset your password")
@@ -431,26 +444,12 @@ class SELFServiceLost(SELFService):
 
 
 class SELFServiceLogout(SELFService):
-    def __init__(workflow, token_name, global_config, main_url):
+    def __init__(self, workflow, token_name, global_config, main_url):
         super().__init__(workflow, token_name, global_config, main_url)
 
-    def retrieve_credentials(self, request):
-        super().retrieve_credentials(request)
+    def perform_action(self, _, username):
 
-        return literal_eval(self.redis_portal_session.keys['app_list'])
-
-    def perform_action(self, request, app_cookie_list):
-        if not app_cookie_list:
-            logger.error("SELF::Logout: Application cookie list is empty")
-        else:
-            for app_cookie in app_cookie_list:
-                try:
-                    app_session = REDISAppSession(self.redis_base, cookie=app_cookie)
-                    app_session.destroy()
-                except Exception as e:
-                    logger.error("SELF::Logout: Failed to destroy app cookie(s) : ")
-                    logger.exception(e)
-
+        logger.info(f"User {username} disconnecting from {self.workflow.authentication.name}")
         self.redis_portal_session.destroy()
 
         return "{} successfully disconnected".format(self.username)

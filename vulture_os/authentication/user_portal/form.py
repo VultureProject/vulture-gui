@@ -91,13 +91,13 @@ class UserAuthenticationForm(ModelForm):
     class Meta:
         model = UserAuthentication
         fields = ('name', 'enable_tracking', 'auth_type', 'portal_template', 'repositories', 'not_openid_repositories',
-                  'lookup_ldap_repo', 'lookup_ldap_attr', 'lookup_claim_attr', 'user_scope',
+                  'lookup_ldap_repo', 'lookup_ldap_attr', 'lookup_claim_attr', 'user_scope', 'auth_cookie_name',
                   'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'otp_repository', 'otp_max_retry',
                   'disconnect_url', 'enable_disconnect_message', 'enable_disconnect_portal', 'enable_registration',
                   'group_registration', 'update_group_registration', 'enable_external', 'external_fqdn',
-                  'external_listener', 'enable_oauth', 'oauth_client_id', 'oauth_client_secret',
-                  'oauth_redirect_uris', 'oauth_timeout',
-                  'enable_sso_forward','sso_forward_type','sso_forward_timeout','sso_forward_direct_post','sso_forward_get_method',
+                  'external_listener', 'enable_oauth', 'oauth_client_id', 'oauth_client_secret', 'oauth_redirect_uris',
+                  'oauth_timeout', 'enable_refresh', 'enable_rotation', 'max_nb_refresh', 'enable_sso_forward',
+                  'sso_forward_type','sso_forward_timeout','sso_forward_direct_post','sso_forward_get_method',
                   'sso_forward_follow_redirect_before','sso_forward_follow_redirect','sso_forward_return_post',
                   'sso_forward_content_type','sso_forward_url','sso_forward_user_agent','sso_forward_content',
                   'sso_forward_enable_capture','sso_forward_capture_content','sso_forward_enable_replace',
@@ -115,6 +115,7 @@ class UserAuthenticationForm(ModelForm):
             'lookup_claim_attr': TextInput(attrs={'class': 'form-control'}),
             'portal_template': Select(choices=PortalTemplate.objects.all().only(*PortalTemplate.str_attrs()),
                                       attrs={'class': 'form-control select2'}),
+            'auth_cookie_name': TextInput(attrs={'class': 'form-control'}),
             'auth_timeout': NumberInput(attrs={'class': 'form-control'}),
             'enable_timeout_restart': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'enable_captcha': CheckboxInput(attrs={'class': 'form-control js-switch'}),
@@ -132,6 +133,9 @@ class UserAuthenticationForm(ModelForm):
             'oauth_client_secret': TextInput(attrs={'readonly': ''}),
             'oauth_redirect_uris': Textarea(attrs={'class': 'form-control'}),
             'oauth_timeout': NumberInput(attrs={'class': 'form-control'}),
+            'enable_refresh': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'enable_rotation': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'max_nb_refresh': NumberInput(attrs={'class': 'form-control'}),
             'enable_sso_forward': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'sso_forward_direct_post': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'sso_forward_get_method': CheckboxInput(attrs={'class': "form-control js-switch"}),
@@ -165,8 +169,8 @@ class UserAuthenticationForm(ModelForm):
         self.fields['user_scope'].queryset = UserScope.objects.all()
         self.fields['otp_repository'].empty_label = "No double authentication"
         # Set fields as non required in POST data
-        for field in ['portal_template', 'otp_repository', 'otp_max_retry', 'group_registration', "user_scope",
-                      'update_group_registration', "sso_forward_direct_post", "sso_forward_get_method",
+        for field in ["portal_template", "otp_repository", "otp_max_retry", "group_registration", "user_scope",
+                      "update_group_registration", "max_nb_refresh", "sso_forward_direct_post", "sso_forward_get_method",
                       "sso_forward_follow_redirect_before", "sso_forward_follow_redirect", "sso_forward_return_post",
                       "sso_forward_enable_capture", "sso_forward_enable_replace", "sso_forward_enable_additionnal",
                       "sso_forward_type", "sso_forward_timeout", "sso_forward_content_type", "sso_forward_tls_proto", "sso_forward_url",

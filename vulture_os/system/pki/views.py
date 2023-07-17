@@ -193,12 +193,19 @@ def pki_delete(request, object_id, api=False):
     if api:
         return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
 
+    if tls_profiles := cert.certificate_of.all():
+        for profile in tls_profiles:
+            used_by = set(listener.frontend for listener in profile.listener_set.all()).union(set(server.backend for server in profile.server_set.all()))
+    else:
+        used_by = []
+
     # If GET request or POST request and API/Delete failure
     return render(request, 'generic_delete.html', {
         'menu_name': _("System -> X509 Certificate -> Delete"),
         'redirect_url': reverse("system.pki.list"),
         'delete_url': reverse("system.pki.delete", kwargs={'object_id': cert.id}),
         'obj_inst': "certificate '{}'".format(str(cert)),
+        'used_by': used_by,
         'error': error
     })
 
