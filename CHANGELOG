@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] [ELASTICSEARCH] RateLimit settings
 ### Added
 - [LOG_FORWARDER] Disk-assisted queues for reliability
+- [PORTAL] [IDP] Refresh token support through OAuth2 flow
 ### Changed
 - [VOCABULARY] Replace 'slave' word uses with 'replica'
 ### Fixed
+- [PORTAL] [OPENID] Improve error returns and code quality
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
 - [ACLS] Rebuild HAProxy conf on ACL change
 - [LOGFORWARDER] [ELASTICSEARCH] Enable ELS>=8 compatibility

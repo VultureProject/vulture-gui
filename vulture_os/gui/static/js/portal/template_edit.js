@@ -270,7 +270,7 @@ let template_edit_vue = new Vue({
                         $('#save_form_btn').prop('disabled', '')
                     })
             } else {
-                axios.put(portal_template_api_uri + object_id, form)
+                axios.put(portal_template_api_uri + object_id + "/", form)
                     .then((response) => {
                         notify('success', gettext('Success'), response.data.message)
                         setTimeout(() => {

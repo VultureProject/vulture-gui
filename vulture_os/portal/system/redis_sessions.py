@@ -50,7 +50,7 @@ logger = logging.getLogger('portal_authentication')
 
 
 # Global variables
-default_timeout = 900
+DEFAULT_TIMEOUT = 900
 
 
 
@@ -141,7 +141,7 @@ class REDISAppSession(REDISSession):
         """ Get the application's hash in REDIS """
         app_cookie = kwargs.get('cookie', None)
 
-        self.default_timeout = default_timeout
+        self.default_timeout = DEFAULT_TIMEOUT
         super(REDISAppSession, self).__init__(redis_handler, app_cookie)
 
         if app_cookie is None:
@@ -231,7 +231,6 @@ class REDISAppSession(REDISSession):
         self.handler.delete(self.key)
 
 
-
 class REDISPortalSession(REDISSession):
     """  Here we manage a  "Portal session" stored in Redis under the "portal_cookie" key
                 [ portal_cookie | url_app_x | backend_app_x | login_backend_x | password_backend_x | backend_x ]
@@ -290,6 +289,13 @@ class REDISPortalSession(REDISSession):
     def set_oauth2_token(self, backend_id, oauth2_token):
         self.keys[f'oauth2_{backend_id}'] = oauth2_token
         return self.handler.hset(self.key, f'oauth2_{backend_id}', oauth2_token)
+
+    def get_refresh_token(self, backend_id):
+        return self.handler.hget(self.key, f'refresh_{backend_id}')
+
+    def set_refresh_token(self, backend_id, refresh_token):
+        self.keys[f'refresh_{backend_id}'] = refresh_token
+        return self.handler.hset(self.key, f'refresh_{backend_id}', refresh_token)
 
     def get_redirect_url(self, workflow_id):
         return self.handler.hget(self.key, f'url_{workflow_id}')
@@ -367,6 +373,7 @@ class REDISPortalSession(REDISSession):
         self.keys.pop(f'backend_{workflow_id}', None)
         self.keys.pop(f'login_{backend_id}', None)
         self.keys.pop(f'oauth2_{backend_id}', None)
+        self.keys.pop(f'refresh_{backend_id}', None)
         self.keys.pop(f'app_id_{backend_id}', None)
 
         # Remove
@@ -388,7 +395,7 @@ class REDISPortalSession(REDISSession):
         self.write_in_redis(timeout)
 
     def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
-                                oauth2_token, authentication_datas, timeout):
+                                oauth2_token, refresh_token, authentication_datas, timeout):
         if dbauthentication_required:
             self.keys[str(app_id)] = 0
         else:
@@ -400,6 +407,8 @@ class REDISPortalSession(REDISSession):
         self.keys[f"login_{backend_id}"] = username
         if oauth2_token:
             self.keys[f"oauth2_{backend_id}"] = str(oauth2_token)
+        if refresh_token:
+            self.keys[f"refresh_{backend_id}"] = str(refresh_token)
         self.keys[f"app_id_{backend_id}"] = str(app_id)
 
         # WARNING : THE KEYS ARE NOT INITIALIZED ANYMORE !
@@ -441,7 +450,7 @@ class REDISPortalSession(REDISSession):
         self.keys[f"doubleauthenticated_{otp_backend_id}"] = "1"
         self.handler.hset(self.key, f"doubleauthenticated_{otp_backend_id}", "1")
 
-    def register_sso(self, timeout, backend_id, app_id, otp_repo_id, username, oauth2_token):
+    def register_sso(self, timeout, backend_id, app_id, otp_repo_id, username, oauth2_token, refresh_token=None):
         if not otp_repo_id or (otp_repo_id and self.is_double_authenticated(otp_repo_id)):
             self.keys[str(app_id)] = 1
 
@@ -450,6 +459,8 @@ class REDISPortalSession(REDISSession):
         self.keys[f"login_{backend_id}"] = username
         if oauth2_token:
             self.keys[f"oauth2_{backend_id}"] = oauth2_token
+        if refresh_token:
+            self.keys[f"refresh_{backend_id}"] = refresh_token
 
         # Save additional related key for Darwin Session quick verification
 
@@ -484,7 +495,6 @@ class REDISPortalSession(REDISSession):
 class REDISOauth2Session(REDISSession):
     def __init__(self, redis_handler, oauth2_token):
         super().__init__(redis_handler, oauth2_token)
-        # Interpret
         if "scope" in self.keys:
             self.keys['scope'] = json.loads(self.keys['scope'])
         else:
@@ -567,6 +577,54 @@ class REDISOauth2Session(REDISSession):
         if not self.write_in_redis(timeout):
             logger.error("REDIS::register_authentication: Error while writing portal_session in Redis")
             raise REDISWriteError("REDISOauth2Session::register_authentication: Unable to write Oauth2 infos in REDIS")
+
+        logger.debug(f"REDISOauth2Session::register_authentication: self.keys {self.keys}")
+        return self.key
+
+
+class REDISRefreshSession(REDISSession):
+    def __init__(self, redis_handler, refresh_token):
+        super().__init__(redis_handler, refresh_token)
+        if "scope" in self.keys:
+            self.keys['scope'] = json.loads(self.keys['scope'])
+        else:
+            self.keys['scope'] = {}
+
+    def write_in_redis(self, timeout=None):
+        backup_scope = deepcopy(self.keys['scope'])
+        # Do not insert json into Redis
+        self.keys['scope'] = json.dumps(self.keys['scope'])
+        ret = super().write_in_redis(timeout)
+
+        # Restore dict in case of re-use
+        self.keys['scope'] = backup_scope
+
+        return ret
+
+    def delete(self):
+        self.delete_in_redis(self.key)
+
+    def store_refresh_token(self, oauth2_data, timeout, oauth2_token, overridden_by=None):
+        data = {
+            'scope': oauth2_data,
+            'access_token': oauth2_token,
+            'overridden_by': overridden_by,
+        }
+        if not self.keys:
+            self.keys = data
+        else:
+            if not self.keys.get('scope'):
+                self.keys['scope'] = {}
+            self.keys['access_token'] = oauth2_token
+            self.keys['overridden_by'] = overridden_by
+
+            for key,item in oauth2_data.items():
+                self.keys['scope'][key] = item
+        if not self.write_in_redis(timeout):
+            logger.error("REDIS::store_refresh_token: Error while writing portal_session in Redis")
+            raise REDISWriteError("REDISRefreshSession::store_refresh_token: Unable to write Oauth2 infos in REDIS")
+
+        logger.debug(f"REDISRefreshSession::store_refresh_token: self.keys {self.keys}")
         return self.key
 
 
@@ -574,9 +632,12 @@ class RedisOpenIDSession(REDISSession):
     def __init__(self, redis_handler, openid_token):
         super().__init__(redis_handler, openid_token)
 
-    def register(self, oauth2_token, **kwargs):
+    def register(self, oauth2_token, refresh_token=None, **kwargs):
         self.keys = kwargs
         self.keys['access_token'] = oauth2_token
+        if refresh_token:
+            self.keys['refresh_token'] = refresh_token
+        logger.debug(f"RedisOpenIDSession::register: oauth2_token, refresh_token {oauth2_token, refresh_token}")
 
         # This is a temporary token, used for redirection and access_token retrieve
         if not self.write_in_redis(30):
