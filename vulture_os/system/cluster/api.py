@@ -151,6 +151,8 @@ def cluster_add(request):
         Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
         Cluster.api_request ("services.pf.pf.gen_config")
         new_node.api_request('toolkit.network.network.refresh_nic')
+        for other_node in Node.objects.exclude(id=new_node.id):
+            new_node.api_request("toolkit.network.network.make_hostname_resolvable", (other_node.name, other_node.management_ip))
 
         """ Update uri of internal Log Forwarder """
         logfwd = LogOMMongoDB.objects.get()

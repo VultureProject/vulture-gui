@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGFORWARDER] [ELASTICSEARCH] Enable ELS>=8 compatibility
 - [LOGFORWARDER] [ELASTICSEARCH] Ensure index patterns are kept to lowercase
 - [LOGFORWARDER] [ELASTICSEARCH] Avoid newline problems in generated configurations
+- [CLUSTER_JOIN] New node couldn't resolve all other nodes' name and IP
 
 
 ## [2.8.2] - 2023-07-05
