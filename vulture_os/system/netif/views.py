@@ -24,8 +24,8 @@ __doc__ = 'Network View'
 
 
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
-from system.cluster.models import NetworkAddress, NetworkAddressNIC, Cluster
-from system.netif.form import NetIfForm, NetIfSystemForm
+from system.cluster.models import NetworkAddress, NetworkAddressNIC, NetworkInterfaceCard, Cluster
+from system.netif.form import NetIfForm
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.crypto import get_random_string
@@ -62,21 +62,10 @@ def netif_edit(request, object_id=None, api=False):
                 return JsonResponse({'error': _("Object does not exist.")}, status=404)
             return HttpResponseForbidden("Injection detected")
 
-    # Netif already exists and is a system interface
-    if netif_model and netif_model.is_system is True:
-        if hasattr(request, 'JSON') and api:
-            form = NetIfSystemForm(request.JSON or None, instance=netif_model)
-        else:
-            form = NetIfSystemForm(request.POST or None, instance=netif_model)
-    # Netif doesn't exist or is not a system interface
+    if hasattr(request, 'JSON') and api:
+        form = NetIfForm(request.JSON or None, instance=netif_model)
     else:
-        if hasattr(request, 'JSON') and api:
-            if request.JSON.get('is_system') is True:
-                form = NetIfSystemForm(request.JSON or None, instance=netif_model)
-            else:
-                form = NetIfForm(request.JSON or None, instance=netif_model)
-        else:
-            form = NetIfForm(request.POST or None, instance=netif_model)
+        form = NetIfForm(request.POST or None, instance=netif_model)
 
     if request.method in ("POST", "PUT") and form.is_valid():
         netif = form.save(commit=False)
@@ -85,6 +74,9 @@ def netif_edit(request, object_id=None, api=False):
         """ CARP settings are defined by default, even if they are not used """
         priority = 50
         pwd = get_random_string(20)
+        # Get Node concerned by NetAddr, will be used in case of 'vlan' or 'lagg' virtual interface
+        # to create its virtual interface in DB
+        node = None
 
         """ This is a new network address """
         if not object_id:
@@ -93,12 +85,14 @@ def netif_edit(request, object_id=None, api=False):
             else:
                 nics = request.POST.getlist("nic")
             for nic in nics:
-                NetworkAddressNIC.objects.create(
+                addr_nic = NetworkAddressNIC.objects.create(
                     nic_id=nic,
                     network_address=netif,
                     carp_passwd=pwd,
                     carp_priority=priority
                 )
+
+                node = addr_nic.nic.node
 
                 priority = priority + 50
         else:
@@ -111,9 +105,9 @@ def netif_edit(request, object_id=None, api=False):
 
             for nic in nic_list:
                 try:
-                    NetworkAddressNIC.objects.get(network_address=netif, nic_id=nic)
+                    addr_nic = NetworkAddressNIC.objects.get(network_address=netif, nic_id=nic)
                 except NetworkAddressNIC.DoesNotExist:
-                    NetworkAddressNIC.objects.create(
+                    addr_nic = NetworkAddressNIC.objects.create(
                         nic_id=nic,
                         network_address=netif,
                         carp_passwd=pwd,
@@ -122,6 +116,7 @@ def netif_edit(request, object_id=None, api=False):
 
                     priority = priority + 50
 
+                node = addr_nic.nic.node
             """ Delete old NIC, if any """
             for current_networkadress_nic in NetworkAddressNIC.objects.filter(network_address=netif):
 
@@ -131,14 +126,27 @@ def netif_edit(request, object_id=None, api=False):
                     current_networkadress_nic.delete()
 
 
-        """ Call ifconfig to setup network IP address right now """
-        Cluster.api_request('toolkit.network.network.ifconfig_call', netif.id)
-
         """ Write permanent network configuration on disk """
         Cluster.api_request('toolkit.network.network.write_network_config')
 
-        """ Garbage collector to delete obsolete running ifconfig and configuration """
-        Cluster.api_request('toolkit.network.network.address_cleanup')
+        if netif.type in ['vlan', 'lagg']:
+            iface_name = netif.type + str(netif.iface_id)
+            Cluster.api_request('toolkit.network.network.destroy_virtual_interface', iface_name)
+            Cluster.api_request('toolkit.network.network.create_virtual_interface', iface_name)
+            # Be sure that NIC are assigned to correct nodes, by removing and recreating virtual ones
+            if node:
+                NIC, created = NetworkInterfaceCard.objects.update_or_create(
+                    dev=iface_name,
+                    defaults={
+                        'node': node
+                    }
+                )
+            logger.info("{} NetworkInterfaceCard {}".format("Created" if created else "Updated", NIC))
+        else:
+            """ Call ifconfig to setup network IP address right now """
+            Cluster.api_request('toolkit.network.network.ifconfig_call', netif.id)
+            """ Garbage collector to delete obsolete running ifconfig and configuration """
+            Cluster.api_request('toolkit.network.network.address_cleanup')
 
         """ Update PF configurations """
         Cluster.api_request ("services.pf.pf.gen_config")
@@ -156,12 +164,10 @@ def netif_edit(request, object_id=None, api=False):
     if netif_model:
         return render(request, 'system/netif_edit.html', {
             'form': form,
-            'is_system': netif_model.is_system
         })
     else:
         return render(request, 'system/netif_edit.html', {
             'form': form,
-            'is_system': False
         })
 
 
@@ -180,13 +186,25 @@ def netif_delete(request, object_id, api=False):
 
         try:
             logger.debug("Trying to delete NetworkAddress {} ({})".format(netif_model, netif_model.id))
-            message = "NetworkAddress {} ({}) deleted".format(netif_model, netif_model.id)
+
+            rc_confs = netif_model.rc_config()
+
+            # A virtual interface was created for those types of addresses, need to remove it separately
+            if netif_model.type in ['vlan', 'lagg']:
+                iface_name = netif_model.type + str(netif_model.iface_id)
+                logger.debug(f"Destroying virtual interface {iface_name}")
+                Cluster.api_request('toolkit.network.network.destroy_virtual_interface', iface_name)
+                # Also remove the NIC associated with the virtual interface
+                NetworkInterfaceCard.objects.filter(
+                    dev=iface_name,
+                ).delete()
+                logger.info(f"Deleted Virtual Interface {iface_name}")
+            # Remove any rc parameters set by the address
+            Cluster.api_request('toolkit.network.network.remove_netif_configs', rc_confs)
 
             # Delete asked object
             netif_model.delete()
-
-            """ Write permanent network configuration on disk """
-            Cluster.api_request('toolkit.network.network.write_network_config')
+            logger.info("NetworkAddress {} ({}) deleted".format(netif_model, netif_model.id))
 
             """ Garbage collector to delete obsolete running ifconfig and configuration """
             Cluster.api_request('toolkit.network.network.address_cleanup')

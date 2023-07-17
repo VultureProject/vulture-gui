@@ -196,60 +196,22 @@ def ifconfig_call(logger, netif_id):
             dev = address_nic.nic.dev
             netif = address_nic.network_address
             try:
-                if not netif.is_carp:
-                    logger.info("Node::ifconfig_call() Creating / Updating network interface: {}:{}".format(
-                        dev,
-                        netif.ip_cidr
-                    ))
+                command = ['/usr/local/bin/sudo', '/sbin/ifconfig', dev, netif.family, netif.ip_cidr]
+                if netif.is_carp:
+                    command.extend([
+                        'vhid', str(netif.carp_vhid),
+                        'advskew', str(address_nic.carp_priority),
+                        'pass', str(address_nic.carp_passwd)
+                    ])
 
-                    if netif.is_system:
-                        logger.debug(
-                            'Node::ifconfig_call() /usr/local/bin/sudo /sbin/ifconfig {} {} {}'.format(
-                                dev,
-                                netif.family,
-                                netif.ip_cidr
-                            ))
+                if netif.type == "alias":
+                    command.append("alias")
 
-                        proc = subprocess.Popen(['/usr/local/bin/sudo', '/sbin/ifconfig',
-                                                 dev, netif.family, netif.ip_cidr],
-                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    else:
-                        logger.debug(
-                            'Node::ifconfig_call() /usr/local/bin/sudo /sbin/ifconfig {} {} {} alias'.format(
-                                dev,
-                                netif.family,
-                                netif.ip_cidr
-                            ))
-                        proc = subprocess.Popen(['/usr/local/bin/sudo', '/sbin/ifconfig',
-                                                 dev, netif.family, netif.ip_cidr, 'alias'],
-                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                else:
-                    logger.info(
-                        "Node::ifconfig_call() Creating / Updating CARP network interface: {}:{}".format(
-                            dev,
-                            netif.ip_cidr
-                        ))
+                logger.debug(f"ifconfig_call:: running {command}")
+                proc = subprocess.Popen(command,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-                    logger.debug(
-                        'Node::ifconfig_call() /usr/local/bin/sudo /sbin/ifconfig {} {} {} vhid {} advskew {} pass {} {}'.format(
-                            dev,
-                            netif.family,
-                            netif.ip_cidr,
-                            str(netif.carp_vhid),
-                            str(address_nic.carp_priority),
-                            str(address_nic.carp_passwd),
-                            'alias')
-                    )
-
-                    proc = subprocess.Popen([
-                        '/usr/local/bin/sudo', '/sbin/ifconfig',
-                        dev, netif.family, netif.ip_cidr, 'vhid',
-                        str(netif.carp_vhid), 'advskew',
-                        str(address_nic.carp_priority), 'pass',
-                        str(address_nic.carp_passwd), 'alias'],
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-                success, error = proc.communicate()
+                _, error = proc.communicate()
                 if error:
                     logger.error("Node::ifconfig_call() Error on '{}' with IP '{}': {}".format(
                         dev, netif.ip_cidr, str(error)))
@@ -340,37 +302,80 @@ def address_cleanup(logger):
     return ret
 
 
-def write_network_config(logger):
-    """ Synchronize network configuration on disk
+def destroy_virtual_interface(logger, iface_name):
+    """ Destroy an interface
 
     :param logger: A logger handler
-    :param netif_id: The _id of the related Network Address we are working on
+    :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-
-    from system.cluster.models import (Cluster, NetworkInterfaceCard,
-                                       NetworkAddressNIC)
+    from system.cluster.models import Cluster, NetworkAddress
     node = Cluster.get_current_node()
 
     ret = True
 
-    for nic in NetworkInterfaceCard.objects.filter(node=node):
-        # Remove all past aliases for interface before setting new ones in system confs
-        status, removed = remove_rc_config(f"ifconfig_{nic.dev}_alias")
-        logger.info(f"Node::write_network_config(): removed old aliases {removed} for interface {nic.dev}")
-        alias_num = 0
-        for address_nic in NetworkAddressNIC.objects.filter(nic=nic):
-            address = address_nic.network_address
+    logger.info(f"Node::destroy_virtual_interface: destroying interface {iface_name}")
+    _, error = subprocess.Popen(['/usr/local/bin/sudo', '/sbin/ifconfig', iface_name, 'destroy']).communicate()
+    if error:
+        logger.error(f"Node::destroy_virtual_interface: Could not destroy interface -> {str(error)}")
+        ret = False
 
-            # Aliases address
-            if address.is_system is False:
-                key, value = address.rc_config(nic.dev)
-                key = key + str(alias_num) # Append an index, as key defines an alias that must be numbered (ifconfig_<if>_alias<number>)
+    return ret
+
+
+def create_virtual_interface(logger, iface_name):
+    """ create an interface
+
+    :param logger: A logger handler
+    :param interface: a string representing the exact name of the interface (as seen by the system)
+    :return: True / False
+    """
+    from system.cluster.models import Cluster, NetworkAddress
+    node = Cluster.get_current_node()
+
+    ret = True
+
+    logger.info(f"Node::create_virtual_interface: creating interface {iface_name}")
+    _, error = subprocess.Popen(['/usr/local/bin/sudo', '/sbin/ifconfig', iface_name, 'create']).communicate()
+    if error:
+        logger.error(f"Node::create_virtual_interface: Could not create interface -> {str(error)}")
+        ret = False
+
+    return ret
+
+
+def write_network_config(logger):
+    """ Synchronize network configuration on disk
+
+    :param logger: A logger handler
+    :return: True / False
+    """
+
+    from system.cluster.models import (Cluster, NetworkAddressNIC)
+    node = Cluster.get_current_node()
+
+    ret = True
+
+    for address_nic in NetworkAddressNIC.objects.filter(nic__node=node):
+        address = address_nic.network_address
+        nic = address_nic.nic
+
+        if address.type in ['vlan', 'lagg']:
+            main_iface = address.main_iface
+            status, error = set_rc_config(variable="cloned_interfaces",
+                                          value=main_iface,
+                                          filename="network",
+                                          operation="+=")
+            if not status:
+                logger.error(f"Node::write_network_config: Could not add {main_iface}"
+                             f" to the list of cloned interfaces: {error}")
             else:
-                # System address
-                key, value = address.rc_config(nic.dev, True)
-            
-            status, error = set_rc_config(variable=key, value=value)
+                logger.info(f"Node::write_network_config: Added {main_iface} to the list of cloned interfaces")
+
+        nodes_configurations = address.rc_config(node_id=node.pk)
+        for configuration in nodes_configurations[node.pk]:
+            logger.debug(configuration)
+            status, error = set_rc_config(**configuration)
             if not status:
                 logger.error(
                     "Node::write_network_config() {}:{}: {}".format(
@@ -379,7 +384,6 @@ def write_network_config(logger):
                 ret = False
                 continue
             else:
-                alias_num += 1
                 logger.info(
                     "Node::write_network_config() {}:{}: Ok".format(
                         nic.dev, address.ip_cidr)
@@ -425,6 +429,34 @@ def write_network_config(logger):
             continue
 
     return ret
+
+
+def remove_netif_configs(logger, rc_confs):
+    if isinstance(rc_confs, str):
+        rc_confs = literal_eval(rc_confs)
+    
+    from system.cluster.models import Cluster
+    node = Cluster.get_current_node()
+
+    message = ""
+
+    node_rc_confs = rc_confs.get(node.id)
+    if node_rc_confs:
+        for rc_conf in node_rc_confs:
+            if rc_conf.get('operation') == "+=":
+                rc_conf['operation'] = "-="
+                status, tmp = set_rc_config(variable=rc_conf['variable'], value=rc_conf['value'], operation="-=", filename=rc_conf.get('filename', None))
+            else:
+                status, tmp = remove_rc_config(variable_regexp=rc_conf['variable'], filename=rc_conf.get('filename', None))
+
+            message += str(tmp) + "\n"
+
+            if not status:
+                logger.error(f"Node::remove_netif_configs: a problem occurred while trying to remove configuration {rc_conf}")
+            else:
+                logger.info(f"Node::remove_netif_configs: successfuly removed configuration {rc_conf}")
+
+    return message
 
 
 def restart_routing(logger):

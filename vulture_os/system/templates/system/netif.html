@@ -59,17 +59,9 @@
     },
     {
       sTitle: '{% trans "Type" %}',
-      name: "is_system", aTargets: [2],
+      name: "type", aTargets: [2],
       defaultContent: "",
-      mData: "is_system",
-      mRender: function(data, type, row) {
-        if (data == true) {
-            return "system";
-        }
-        else {
-            return "alias";
-        }
-      }
+      mData: "type"
     },
     {
       sTitle: '{% trans "NIC" %}',
@@ -124,7 +116,7 @@
       aTargets: [8],
       defaultContent: "",
       mRender: function(data, type, row) {
-        if (row.is_system) {
+        if (row.type === "system") {
             return '';
         }
         else {
