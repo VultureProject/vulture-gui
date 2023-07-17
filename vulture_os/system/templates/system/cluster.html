@@ -120,7 +120,7 @@
             buffer = buffer + '<label class="label label-success">MASTER</label>';
         }
         else if (row.is_master_redis === false) {
-            buffer = buffer + '<label class="label label-warning">SLAVE</label>';
+            buffer = buffer + '<label class="label label-warning">REPLICA</label>';
         }
         else if (row.addresses) {
             buffer = buffer + '<label class="label label-danger">UNKNOWN</label>';

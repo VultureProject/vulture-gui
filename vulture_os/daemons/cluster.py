@@ -66,7 +66,7 @@ if __name__ == '__main__':
     """ Continue as a daemon """
     while True:
         try:
-            """ May be False for pending slave nodes """
+            """ May be False for pending new nodes """
             if this_node:
 
                 # Process messages FIRST

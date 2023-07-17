@@ -59,20 +59,21 @@ logger = logging.getLogger('system')
 @require_http_methods(["POST"])
 def cluster_add(request):
 
-    slave_ip = request.POST.get('slave_ip')
-    slave_name = request.POST.get('slave_name')
+    # TODO Legacy 'slave_ip' and 'slave_name' will need to be removed soon
+    new_node_ip = request.POST.get('ip') or request.POST.get('slave_ip')
+    new_node_name = request.POST.get('name') or request.POST.get('slave_name')
 
     current_node = Cluster.get_current_node()
 
     # FIXME: improve security check (valid IPv4 / IPv6 and valid name)
-    if not slave_name or not slave_ip:
+    if not new_node_name or not new_node_ip:
         return JsonResponse({
             'status': False,
             'message': 'Invalid call'
         })
 
-    """ Make the slave_name resolvable on all Cluster nodes """
-    new_node_is_resolvable = current_node.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
+    """ Make the new_node_name resolvable on all Cluster nodes """
+    new_node_is_resolvable = current_node.api_request("toolkit.network.network.make_hostname_resolvable", (new_node_name, new_node_ip))
     if not new_node_is_resolvable.get('status', False) or 'instance' not in new_node_is_resolvable:
         logger.error(f"Error while creating new 'network.make_hostname_resolvable' task: {new_node_is_resolvable.get('message')}")
         return JsonResponse({
@@ -81,13 +82,13 @@ def cluster_add(request):
         })
     new_node_is_resolvable = new_node_is_resolvable.get('instance', None)
 
-    """ Now the slave should be in the cluster: Add it's management IP """
+    """ Now the new node should be in the cluster: Add it's management IP """
     new_node = Node()
-    new_node.name = slave_name
-    new_node.management_ip = slave_ip
-    new_node.internet_ip = slave_ip
-    new_node.backends_outgoing_ip = slave_ip
-    new_node.logom_outgoing_ip = slave_ip
+    new_node.name = new_node_name
+    new_node.management_ip = new_node_ip
+    new_node.internet_ip = new_node_ip
+    new_node.backends_outgoing_ip = new_node_ip
+    new_node.logom_outgoing_ip = new_node_ip
     new_node.save()
 
     """ Ask cluster to reload PF Conf and wait for it """
@@ -131,25 +132,25 @@ def cluster_add(request):
         cpt = 0
         while not response:
             try:
-                logger.debug("Adding {} to replicaset".format(slave_name))
-                response = mongo.repl_add(slave_name + ':9091')
+                logger.debug("Adding {} to replicaset".format(new_node_name))
+                response = mongo.repl_add(new_node_name + ':9091')
             except Exception as e:
-                logger.error("Cannot connect to slave for the moment : {}".format(e))
+                logger.error("Cannot connect to replica for the moment : {}".format(e))
                 cpt += 1
                 if cpt > 10:
-                    logger.error("Failed to connect to the slave 10 times, aborting.")
+                    logger.error("Failed to connect to the replica 10 times, aborting.")
                     return JsonResponse({
                         'status': False,
                         'message': 'Error during repl_add. Check logs'
                     })
-            logger.info("Waiting for next connection to slave ...")
+            logger.info("Waiting for next connection to replica...")
             time.sleep(1)
     else:
         logger.error("Could not connect to the MongoDB replicaset")
 
     if response:
-        Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (slave_name, slave_ip))
-        Cluster.api_request ("services.pf.pf.gen_config")
+        Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (new_node_name, new_node_ip))
+        Cluster.api_request("services.pf.pf.gen_config")
         new_node.api_request('toolkit.network.network.refresh_nic')
         for other_node in Node.objects.exclude(id=new_node.id):
             new_node.api_request("toolkit.network.network.make_hostname_resolvable", (other_node.name, other_node.management_ip))

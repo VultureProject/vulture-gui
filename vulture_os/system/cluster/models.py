@@ -498,7 +498,7 @@ class Cluster (models.Model):
             hostname = get_hostname()
             return Node.objects.get(name=hostname)
         except Node.DoesNotExist:
-            logger.error("Cluster:get_current_node: Current node not found. Are we a pending slave ?")
+            logger.error("Cluster:get_current_node: Current node not found. Are we a pending replica ?")
             return False
 
     @staticmethod

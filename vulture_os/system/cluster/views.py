@@ -112,7 +112,7 @@ def cluster_join(request, object_id, api=False):
 
 def cluster_edit(request, object_id, api=False, update=False):
     """ View used to edit a node """
-    # Node MUST exists - It should be created by an API Call from a slave node
+    # Node MUST exists - It should be created by an API Call from a replica
     # Unlike vulture3 we cannot add a new node from the GUI
     # But we can add an existing node from the GUI, if it has previously been removed from replicaset
 
