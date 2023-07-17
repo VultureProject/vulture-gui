@@ -134,7 +134,7 @@ class DeleteNode(DeleteView):
 
             """ Before Deleting the node we need to remove it from Redis """
             c = RedisBase(obj_inst.management_ip)
-            c.slave_of('NO', 'ONE')
+            c.replica_of('NO', 'ONE')
 
             # Fixme: Cleanup Sentinel ?
 

@@ -509,11 +509,16 @@ class LogOMFWD(LogOM):
 
 
 class LogOMElasticSearch(LogOM):
-    index_pattern = models.TextField(unique=True, null=False, default='MyLog-%$!timestamp:1:10%')
+    enabled = models.BooleanField(default=True)
     servers = models.TextField(null=False, default='["https://els-1:9200", "https://els-2:9200"]')
+    es8_compatibility = models.BooleanField(
+        default=False,
+        help_text=_("Enable Elasticsearch/OpenSearch 8 compatibility"),
+        verbose_name=_("Elasticsearch/OpenSearch 8 compatibility")
+    )
+    index_pattern = models.TextField(unique=True, null=False, default='mylog-%$!timestamp:1:10%')
     uid = models.TextField(null=True, blank=True, default=None)
     pwd = models.TextField(null=True, blank=True, default=None)
-    enabled = models.BooleanField(default=True)
     x509_certificate = models.ForeignKey(
         X509Certificate,
         on_delete=models.CASCADE,
@@ -552,8 +557,9 @@ class LogOMElasticSearch(LogOM):
             'id': str(self.id),
             'name': self.name,
             'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
-            'index_pattern': self.index_pattern,
             'servers': self.servers,
+            'es8_compatibility': self.es8_compatibility,
+            'index_pattern': self.index_pattern,
             'uid': self.uid,
             'pwd': self.pwd,
             'template_id': self.template_id(),
