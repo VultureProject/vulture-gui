@@ -174,6 +174,11 @@ class Authentication(object):
             self.refresh_token = str(uuid4())
 
         self.redis_refresh_session = REDISRefreshSession(self.redis_base, "refresh_" + self.refresh_token)
+        # Time-To-Live is calculated to be equivalent to the time of the corresponding oauth token + 1 minute
+        # Refresh historisation requires that refresh tokens are then available for max_nb_refresh 
+        #   times the duration of an oauth token
+        # (meaning if 3 refresh tokens are required for history, expiration of one refresh token
+        #   will be 3 times the expiration of the oauth token + 1 minute)
         timeout = self.workflow.authentication.oauth_timeout * (self.workflow.authentication.max_nb_refresh + 1) + 60
         # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
         self.redis_refresh_session.store_refresh_token(

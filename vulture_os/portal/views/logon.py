@@ -382,7 +382,7 @@ def openid_token(request, portal_id):
         return JsonResponse({'error':"invalid_request", "error_description": str(e)},
                             status=400)
 
-    # Check mandatory URI parameters and conditionss
+    # Check mandatory URI parameters and conditions
     try:
         if not request.POST.get('client_id'):
             assert request.headers.get("Authorization"), "Credentials required parameter."
@@ -437,13 +437,13 @@ def openid_token(request, portal_id):
             refresh_token = request.POST.get('refresh_token')
             refresh = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
 
-            assert refresh.exists(), f"Could not find refresh_token '{refresh_token}' in redis."
+            assert refresh.exists(), f"Unknown refresh token."
 
             if refresh['overridden_by'] != None:
-                logger.error("The refresh token provided has been expired.")
+                logger.error("PORTAL::openid_token: The refresh token provided has been expired.")
 
                 # Delete this invalid refresh token
-                logger.warn(f"PORTAL::openid_token: deleting refresh_token {refresh_token}")
+                logger.warn(f"PORTAL::openid_token: deleting overridden refresh_token {refresh_token}")
                 refresh.delete()
 
                 # Delete every token pair in the chain
@@ -453,57 +453,61 @@ def openid_token(request, portal_id):
 
                     if refresh['overridden_by'] == None:
                         # Delete current active access token
-                        logger.warn(f"PORTAL::openid_token: deleting access_token {refresh['access_token']}")
+                        logger.warn(f"PORTAL::openid_token: invalidating access_token {refresh['access_token']}")
                         REDISOauth2Session(REDISBase(), f"oauth2_{refresh['access_token']}").delete()
                     logger.warn(f"PORTAL::openid_token: deleting refresh_token {refresh_token}")
                     refresh.delete()
 
-                return JsonResponse({'error':"invalid_request", "error_description": f"Could not find refresh_token '{request.POST.get('refresh_token')}' in redis."},
+                return JsonResponse({'error':"invalid_request", "error_description": f"Unknown refresh token."},
                                     status=400)
 
             # This is where we reissue an access_token by providing a correct refresh_token
             logger.debug(f"PORTAL::openid_token: Refreshing the session with refresh token: {refresh_token}")
 
-            # Delete current access_token and reissue one
-            REDISOauth2Session(REDISBase(), f"oauth2_{refresh['access_token']}").delete() # or invalidate
+            # Get current access_token
+            current_oauth2_session = REDISOauth2Session(REDISBase(), f"oauth2_{refresh['access_token']}")
+            assert current_oauth2_session.exists(), "Invalid Refresh token."
 
-            oauth2_token = str(uuid4())
-            oauth2_session = REDISOauth2Session(REDISBase(), "oauth2_" + oauth2_token)
+            new_oauth2_token = str(uuid4())
+            new_oauth2_session = REDISOauth2Session(REDISBase(), "oauth2_" + new_oauth2_token)
             # Use client_id as repo_id to allow linking token to both it's IDP and connector in Vulture
-            oauth2_session.register_authentication(
+            new_oauth2_session.register_authentication(
                 str(portal.oauth_client_id),
                 refresh['scope'],
                 portal.oauth_timeout,
             )
 
             if portal.enable_rotation:
-                refresh_token = str(uuid4())
-                refresh['overridden_by'] = refresh_token
+                new_refresh_token = str(uuid4())
+                refresh['overridden_by'] = new_refresh_token
                 refresh.write_in_redis()
 
                 # Grab the new refresh token
-                refresh = REDISRefreshSession(REDISBase(), "refresh_" + refresh_token)
+                refresh = REDISRefreshSession(REDISBase(), "refresh_" + new_refresh_token)
 
                 timeout = portal.oauth_timeout * (portal.max_nb_refresh + 1) + 60
 
-                # Write the new tokens in redis
+                # Write the new token in redis
                 refresh.store_refresh_token(
-                    oauth2_session['scope'],
+                    new_oauth2_session['scope'],
                     timeout,
-                    oauth2_token,
+                    new_oauth2_token,
                 )
             else:
-                refresh['access_token'] = oauth2_token
+                refresh['access_token'] = new_oauth2_token
                 refresh.write_in_redis()
 
+            # Invalidate previous token
+            current_oauth2_session.delete()
+
             return JsonResponse({
-                'access_token': refresh['access_token'],
+                'access_token': new_oauth2_token,
                 'token_type': "Bearer",
                 'scope': ["openid"],
-                'iat': oauth2_session['iat'],
-                'exp': oauth2_session['exp'],
-                'expire_in': oauth2_session['token_ttl'],
-                'refresh_token': refresh_token,
+                'iat': new_oauth2_session['iat'],
+                'exp': new_oauth2_session['exp'],
+                'expire_in': new_oauth2_session['token_ttl'],
+                'refresh_token': new_refresh_token,
             })
         else:
             return JsonResponse({"error": "invalid_request", "error_description": "Unknown grant type"}, status=400)
