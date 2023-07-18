@@ -426,7 +426,7 @@ class FrontendForm(ModelForm):
             'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
             'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_account_type': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_account_type': Select(attrs={'class': 'form-control select2'}),
             'netskope_host': TextInput(attrs={'class': 'form-control'}),
             'netskope_apikey': TextInput(attrs={'class': 'form-control'}),
             'carbon_black_host': TextInput(attrs={'class': 'form-control'}),

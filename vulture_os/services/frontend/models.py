@@ -746,8 +746,12 @@ class Frontend(models.Model):
     )
     sentinel_one_account_type = models.TextField(
         verbose_name = _("Sentinel One Account type"),
-        help_text = _("Type of account : console or user service"),
-        default = "console",
+        choices=[
+            ("collecte", "collecte"),
+            ("user service", "user service")
+        ],
+        help_text = _("Type of account : collecte or user service"),
+        default = "collecte",
     )
     # CarbonBlack attributes
     carbon_black_host = models.TextField(
