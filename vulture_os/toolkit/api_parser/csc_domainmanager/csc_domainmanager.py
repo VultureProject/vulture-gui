@@ -24,10 +24,7 @@ __doc__ = 'CSC DOMAINMANAGER API'
 __parser__ = 'CSC DOMAINMANAGER'
 
 from datetime import datetime, timedelta
-from dateutil.parser import parse as date_parse
 
-from os import path, remove
-from sys import path as sys_path
 import logging
 
 from requests import Session
@@ -62,9 +59,6 @@ class CscDomainManagerParser(ApiParser):
 
         self.last_log_time = 0
 
-        if self.last_api_call and isinstance(self.last_api_call, str):
-            self.last_api_call = date_parse(self.last_api_call)
-
         if self.csc_domainmanager_authorization and not self.csc_domainmanager_authorization.startswith("Bearer "):
             self.csc_domainmanager_authorization = f"Bearer {self.csc_domainmanager_authorization}"
 
@@ -88,7 +82,7 @@ class CscDomainManagerParser(ApiParser):
             logger.error(f"[{__parser__}]:connect: Exception while creating session -- {e}", extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
 
-    def get_logs(self, since, page=1, timeout=10) -> list:
+    def get_logs(self, since, to, page=1, timeout=10) -> list:
         """
         Send a query to csc domainmanager api to get logs
         """
@@ -98,7 +92,7 @@ class CscDomainManagerParser(ApiParser):
             params = {
                 "size": 1000,
                 "page": page,
-                "filter": f"eventDate=gt={since.isoformat().replace(' ','T')}",
+                "filter": f"eventDate=gt={since.isoformat().replace(' ','T')};eventDate=lt={to.isoformat().replace(' ','T')}",
                 "sort": "eventDate,asc"
             }
 
@@ -139,7 +133,11 @@ class CscDomainManagerParser(ApiParser):
 
     def test(self):
         try:
-            logs = self.get_logs(since=(timezone.now() - timedelta(hours=12)))
+            page = 1
+            since = timezone.now() - timedelta(hours=24)
+            to = min(timezone.now(), since + timedelta(hours=24))
+
+            logs = self.get_logs(page=page, since=since, to=to)
 
             return {
                 "status": True,
@@ -158,38 +156,32 @@ class CscDomainManagerParser(ApiParser):
         """
         try:
             page = 1
-            logs = self.get_logs(page=page, since=self.last_api_call or timezone.now() - timedelta(hours=1))
+            since = self.last_api_call or timezone.now() - timedelta(hours=24)
+            to = min(timezone.now(), since + timedelta(hours=24))
+
+            logs = self.get_logs(page=page, since=since, to=to)
             self.update_lock()
 
-            if not logs['links'].get('next') and logs['events']:
+            if logs['events']:
                 self.write_to_file([self._format_log(event) for event in logs['events']])
                 self.update_lock()
                 if self.last_log_time != 0:
                     self.last_api_call = datetime.fromtimestamp(self.last_log_time)
                     self.frontend.last_api_call = self.last_api_call
 
-            elif logs['links'].get('next') and logs['events']:
-                self.write_to_file([self._format_log(event) for event in logs['events']])
-                self.update_lock()
+            while logs['events'] and logs['links'].get('next') and not self.evt_stop.is_set():
                 page = page + 1
                 self.session = None
-                lock = True
-                while lock:
-                    logs = self.get_logs(page=page, since=self.last_api_call or timezone.now() - timedelta(hours=1))
-                    self.update_lock()
-                    self.write_to_file([self._format_log(event) for event in logs['events']])
-                    self.update_lock()
-                    page = page + 1
-                    self.session = None
-
-                    if logs['events'] and not logs['links'].get('next'):
-                        lock = False
+                logs = self.get_logs(page=page, since=since, to=to)
+                self.update_lock()
+                self.write_to_file([self._format_log(event) for event in logs['events']])
+                self.update_lock()
 
                 if self.last_log_time != 0:
                     self.last_api_call = datetime.fromtimestamp(self.last_log_time)
                     self.frontend.last_api_call = self.last_api_call
 
-            if self.last_api_call.timestamp() < (timezone.now() - timedelta(hours=24)).timestamp():
+            if self.last_api_call < timezone.now() - timedelta(hours=24):
                 self.last_api_call += timedelta(hours=1)
 
             self.session = None
