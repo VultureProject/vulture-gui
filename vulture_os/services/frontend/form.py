@@ -37,7 +37,7 @@ from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (COMPRESSION_ALGO_CHOICES, Frontend, FrontendReputationContext, Listener,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES,
-                                      DARWIN_MODE_CHOICES, REDIS_MODE_CHOICES, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST)
+                                      DARWIN_MODE_CHOICES, REDIS_MODE_CHOICES, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
 
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
@@ -426,7 +426,7 @@ class FrontendForm(ModelForm):
             'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
             'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_account_type': Select(attrs={'class': 'form-control select2'}),
+            'sentinel_one_account_type': Select(choices=SENTINEL_ONE_ACCOUNT_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
             'netskope_host': TextInput(attrs={'class': 'form-control'}),
             'netskope_apikey': TextInput(attrs={'class': 'form-control'}),
             'carbon_black_host': TextInput(attrs={'class': 'form-control'}),
