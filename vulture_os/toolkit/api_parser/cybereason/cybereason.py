@@ -414,6 +414,8 @@ class CybereasonParser(ApiParser):
             log['flattened_ip'] = flattened_ip
             log['flattened_hostname'] = flattened_hostname
             log['flattened_domain'] = flattened_domain
+        elif kind == "malwares":
+            log['original_timestamp'] = log.pop("timestamp")
 
         return json.dumps(log)
 
