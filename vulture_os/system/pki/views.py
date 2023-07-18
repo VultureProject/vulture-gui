@@ -151,11 +151,9 @@ def pki_edit(request, object_id=None):
         pki.save()
 
         """ Reload HAProxy on certificate change """
-        if tls_profiles := pki.certificate_of.all():
-            for profile in tls_profiles:
-                if (profile.server_set.exists() or profile.listener_set.exists()) and (node := Cluster.get_current_node()):
-                    node.api_request("services.haproxy.haproxy.reload_service")
-                    return HttpResponseRedirect('/system/pki/')
+        if X509Certificate.objects.filter(certificate_of__listener__isnull=False, id=pki.id).exists() or X509Certificate.objects.filter(certificate_of__server__isnull=False, id=pki.id).exists():
+            Cluster.api_request("services.haproxy.haproxy.reload_service")
+            return HttpResponseRedirect('/system/pki/')
 
         return HttpResponseRedirect('/system/pki/')
 
