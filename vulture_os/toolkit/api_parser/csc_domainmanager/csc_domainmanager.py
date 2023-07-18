@@ -82,7 +82,7 @@ class CscDomainManagerParser(ApiParser):
             logger.error(f"[{__parser__}]:connect: Exception while creating session -- {e}", extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
 
-    def get_logs(self, since, to, page=1, timeout=10) -> list:
+    def get_logs(self, since, to, page, timeout=10) -> list:
         """
         Send a query to csc domainmanager api to get logs
         """
@@ -92,7 +92,7 @@ class CscDomainManagerParser(ApiParser):
             params = {
                 "size": 1000,
                 "page": page,
-                "filter": f"eventDate=gt={since.isoformat().replace(' ','T')};eventDate=lt={to.isoformat().replace(' ','T')}",
+                "filter": f"eventDate=gt={since.isoformat().replace(' ','T')};eventDate=le={to.isoformat().replace(' ','T')}",
                 "sort": "eventDate,asc"
             }
 
@@ -166,8 +166,7 @@ class CscDomainManagerParser(ApiParser):
                 self.write_to_file([self._format_log(event) for event in logs['events']])
                 self.update_lock()
                 if self.last_log_time != 0:
-                    self.last_api_call = datetime.fromtimestamp(self.last_log_time)
-                    self.frontend.last_api_call = self.last_api_call
+                    self.frontend.last_api_call = datetime.fromtimestamp(self.last_log_time, tz=timezone.utc)
 
             while logs['events'] and logs['links'].get('next') and not self.evt_stop.is_set():
                 page = page + 1
@@ -178,8 +177,7 @@ class CscDomainManagerParser(ApiParser):
                 self.update_lock()
 
                 if self.last_log_time != 0:
-                    self.last_api_call = datetime.fromtimestamp(self.last_log_time)
-                    self.frontend.last_api_call = self.last_api_call
+                    self.frontend.last_api_call = datetime.fromtimestamp(self.last_log_time, tz=timezone.utc)
 
             if self.last_api_call < timezone.now() - timedelta(hours=24):
                 self.last_api_call += timedelta(hours=1)
