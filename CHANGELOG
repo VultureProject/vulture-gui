@@ -163,6 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [UPGRADE] [PKG] Better filtering of update scripts' folders during upgrades
 - [UPGRADE] [SCRIPTS] Only launch some post-upgrade scripts when node was bootstrapped and is able to receive them
 - [PORTAL] Return a 401 instead of a 403 when refusing a header-authenticated request
+- [NETIF] [API] Await cluster results when refreshing interfaces list before returning from the API call
 
 
 ## [2.4.0] - 2023-02-16

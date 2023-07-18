@@ -514,6 +514,52 @@ class Cluster (models.Model):
 
         return global_config
 
+
+    def await_api_request(action, config=None, node=None, internal=False, interval=2, tries=10):
+        """
+        Call the usual api_request(), but wait for some time for a result before returning
+
+        :param action:      The requested action function
+        :param config:      The configuration to pass to the function
+        :param node:        The node on which to run the action
+        :param internal:    Does the action need to be shown on the GUI?
+        :param interval:    The interval in seconds between 2 checks on the action status
+        :param tries:       The number of checks to do before returning
+        :return:
+                A tuple representing
+                    The status of the request (True for status done, False on error or job failure)
+                    the result string of the message (in case of failure, the error details)
+            """
+
+        action_cmd = Cluster.api_request(action, config, node, internal)
+        if node:
+            logger.info(f"Cluster::await_api_request:: waiting for result of {action} on node {node}")
+            instance = action_cmd.get('instance')
+            try:
+                return instance.await_result(interval, tries)
+            except APISyncResultTimeOutException:
+                logger.error(f"Cluster::await_api_request:: Action didn't return in {interval*tries}s, returning")
+                return False, ""
+        else:
+            results = list()
+            status = True
+            logger.info(f"Cluster::await_api_request:: waiting for result of {action} on all nodes")
+            instances = action_cmd.get('instances')
+            for instance in instances:
+                try:
+                    status, result = instance.await_result(interval, tries)
+                except APISyncResultTimeOutException:
+                    status = False
+                    logger.error(f"Cluster::await_api_request:: Action didn't return in {interval*tries}s, returning")
+                    result = ""
+                results.append({
+                    "status": status,
+                    "result": result
+                })
+
+            return status, results
+
+
     @staticmethod
     def api_request(action, config=None, node=None, internal=False):
         """
@@ -532,6 +578,7 @@ class Cluster (models.Model):
         """
 
         if not node:
+            instances = list()
             # Ignore pending nodes
             for node in Node.objects.exclude(management_ip__exact=''):
                 m, created = MessageQueue.objects.get_or_create(
@@ -546,10 +593,11 @@ class Cluster (models.Model):
                     logger.debug("Cluster::api_request: Calling \"{}\" on node \"{}\". Config is: \"{}\"".format(
                         action, node.name, config))
                     m.save()
+                    instances.append(m)
                 except Exception as e:
                     logger.error("Cluster::api_request: {}".format(str(e)))
                     return {'status': False, 'message': str(e)}
-            return {'status': True, 'message': ''}
+            return {'status': True, 'message': '', 'instances': instances}
         else:
             m, created = MessageQueue.objects.get_or_create(
                 node=node,

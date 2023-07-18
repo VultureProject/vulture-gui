@@ -101,7 +101,18 @@ def netif_refresh(request):
         }, status=400)
 
     try:
-        Cluster.api_request('toolkit.network.network.refresh_nic')
+        status, results = Cluster.await_api_request('toolkit.network.network.refresh_nic')
+        if status:
+            return JsonResponse({
+                'status': status,
+                'data': results
+            })
+        else:
+            return JsonResponse({
+                'status': status,
+                'error': results
+            }, status=500)
+
     except Exception as e:
         return JsonResponse({
             'status': False,
