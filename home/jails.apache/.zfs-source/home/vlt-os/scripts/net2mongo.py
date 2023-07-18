@@ -130,6 +130,7 @@ def parse_ifconfig_values(line, config):
     if line.upper() in ['DHCP', 'SYNCDHCP']:
         logger.debug("Node::parse_ifconfig_values: interface is configured for DHCP")
         config['dhcp'] = True
+        config['type'] = "system"
         return True
 
     if config.get('ipv6'):
@@ -240,7 +241,7 @@ if __name__ == "__main__":
                         proc = subprocess.Popen([
                             '/usr/local/bin/sudo',
                             '/home/vlt-os/scripts/get_dhcp_address.sh',
-                            config['nic']],
+                            config['nic'][0]],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                         success, error = proc.communicate()
                         if error:
