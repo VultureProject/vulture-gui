@@ -192,19 +192,29 @@ class SELFService(object):
         return self.username
 
     def perform_action(self):
-        openid_connector = OpenIDRepository.objects.get(client_id=self.workflow.authentication.oauth_client_id)
-        workflows = Workflow.objects.filter(authentication__repositories_id__exact=openid_connector.id)
-
         final_apps = list()
-        for w in workflows:
+
+        repo_id = self.backend_id
+        backend_subtype = BaseRepository.objects.get(id=self.backend_id).subtype
+
+        # User is accessing an IDP, accessible applications are listed through its connector
+        if self.workflow.authentication.enable_external:
+            repo_id = OpenIDRepository.objects.get(client_id=self.workflow.authentication.oauth_client_id).id
+
+        for workflow in Workflow.objects.filter(authentication__repositories_id__exact=repo_id):
+            # Workflow links needs to go through OpenID redirection if that was the repo used to authenticate
+            if self.workflow.authentication.enable_external or backend_subtype == "openid":
+                url = workflow.authentication.get_openid_start_url(
+                    req_scheme="https" if workflow.frontend.listener_set.filter(tls_profiles__gt=0).exists() else "http",
+                    workflow_host=workflow.fqdn,
+                    workflow_path=workflow.public_dir,
+                    repo_id=repo_id)
+            else:
+                url = workflow.get_redirect_uri()
+
             final_apps.append({
-                "name": w.name,
-                "url": w.authentication.get_openid_start_url(
-                    req_scheme="https" if w.frontend.listener_set.filter(tls_profiles__gt=0).exists() else "http",
-                    workflow_host=w.fqdn,
-                    workflow_path=w.public_dir,
-                    repo_id=openid_connector.id
-                )
+                "name": workflow.name,
+                "url": url
             })
 
         return final_apps
