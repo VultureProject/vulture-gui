@@ -73,8 +73,6 @@ def execute_parser(frontend):
 
 def api_clients_parser():
     current_node = Cluster.get_current_node()
-    if not current_node.is_master_mongo:
-        return
 
     api_clients_parser = Frontend.objects.filter(
         mode="log",
@@ -84,9 +82,14 @@ def api_clients_parser():
 
     processes = []
     for frontend in api_clients_parser:
-        p = Process(target=execute_parser, name=frontend.name, args=(frontend.to_dict(),))
-        p.start()
-        processes.append(p)
+        if frontend.node == current_node
+        or (not frontend.node and current_node.is_master_mongo)
+        or ((frontend.node.state == "DOWN" or frontend.node.state == "MAINTENANCE") and current_node.is_master_mongo):
+            p = Process(target=execute_parser, name=frontend.name, args=(frontend.to_dict(),))
+            p.start()
+            processes.append(p)
+        else:
+            api_clients_parser.frontend.status[Cluster.get_current_node().name] = "STOP"
 
     some_alive = True
     while some_alive:

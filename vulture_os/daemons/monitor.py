@@ -69,7 +69,7 @@ def monitor():
         return False
 
     """ Update Node state and heartbeat """
-    logger.debug(f"Node state: {node.get_state()} {node.heartbeat}")
+    logger.debug(f"Node state: {node.state} {node.heartbeat}")
     node.heartbeat = timezone.now()
     node.save()
 
