@@ -105,7 +105,10 @@ DARWIN_MODE_CHOICES = (
     ('darwin', "generate alerts"),
     ('both', "enrich logs and generate alerts")
 )
-
+SENTINEL_ONE_ACCOUNT_TYPE_CHOICES = (
+    ('console', 'console'),
+    ('user service', 'user service')
+)
 
 # Filebeat module list
 FILEBEAT_MODULE_PATH = "/usr/local/etc/filebeat/modules.d"
@@ -754,6 +757,12 @@ class Frontend(models.Model):
         verbose_name = _("Sentinel One API key"),
         help_text = _("API key used to retrieve logs - as configured in SentinelOne settings"),
         default = "",
+    )
+    sentinel_one_account_type = models.TextField(
+        verbose_name = _("Sentinel One Account type"),
+        choices=SENTINEL_ONE_ACCOUNT_TYPE_CHOICES,
+        help_text = _("Type of account : console or user service"),
+        default = SENTINEL_ONE_ACCOUNT_TYPE_CHOICES[0][0],
     )
     # CarbonBlack attributes
     carbon_black_host = models.TextField(

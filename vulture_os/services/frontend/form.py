@@ -37,7 +37,7 @@ from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (COMPRESSION_ALGO_CHOICES, Frontend, FrontendReputationContext, Listener,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES,
-                                      DARWIN_MODE_CHOICES, REDIS_MODE_CHOICES, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST)
+                                      DARWIN_MODE_CHOICES, REDIS_MODE_CHOICES, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
 
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
@@ -223,7 +223,7 @@ class FrontendForm(ModelForm):
                            'nozomi_probe_host', 'nozomi_probe_login', 'nozomi_probe_password',
                            'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
                            'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
-                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'darwin_mode',
+                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'sentinel_one_account_type', 'darwin_mode',
                            'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
                            'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id',
                            'vadesecure_o365_client_secret',
@@ -308,7 +308,7 @@ class FrontendForm(ModelForm):
                   "cybereason_host", "cybereason_username", "cybereason_password",
                   "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
                   "proofpoint_tap_secret",
-                  "sentinel_one_host", "sentinel_one_apikey",
+                  "sentinel_one_host", "sentinel_one_apikey", "sentinel_one_account_type",
                   "netskope_host", "netskope_apikey",
                   'rapid7_idr_host', 'rapid7_idr_apikey',
                   'harfanglab_host', 'harfanglab_apikey',
@@ -428,6 +428,7 @@ class FrontendForm(ModelForm):
             'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
             'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_account_type': Select(choices=SENTINEL_ONE_ACCOUNT_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
             'netskope_host': TextInput(attrs={'class': 'form-control'}),
             'netskope_apikey': TextInput(attrs={'class': 'form-control'}),
             'carbon_black_host': TextInput(attrs={'class': 'form-control'}),

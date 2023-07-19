@@ -31,6 +31,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
+from services.frontend.models import SENTINEL_ONE_ACCOUNT_TYPE_CHOICES
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -64,6 +65,7 @@ class SentinelOneParser(ApiParser):
             self.sentinel_one_host = f"https://{self.sentinel_one_host}"
 
         self.sentinel_one_apikey = data["sentinel_one_apikey"]
+        self.sentinel_one_account_type = data["sentinel_one_account_type"]
 
         self.session = None
 
@@ -88,7 +90,10 @@ class SentinelOneParser(ApiParser):
                 ).json()
 
                 assert response.get('data', {}).get('token'), f"Cannot retrieve token from API : {response}"
-                self.session.headers.update({'Authorization': f"Token {response['data']['token']}"})
+                if self.sentinel_one_account_type == SENTINEL_ONE_ACCOUNT_TYPE_CHOICES[1][0]:
+                    self.session.headers.update({'Authorization': f"ApiToken {response['data']['token']}"})
+                else:
+                    self.session.headers.update({'Authorization': f"Token {response['data']['token']}"})
                 logger.info(f"[{__parser__}]:_connect: access token successfully retrieved, ready to query",
                             extra={'frontend': str(self.frontend)})
 
