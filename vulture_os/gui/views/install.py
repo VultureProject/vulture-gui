@@ -340,6 +340,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         infos = requests.post(
             "https://{}:8000/api/system/cluster/add/".format(master_ip),
             headers={'Cluster-api-key': secret_key},
+            # TODO will need to replace 'slave_ip' and 'slave_name' by 'ip' and 'name' resp.
             data={'slave_ip': get_management_ip(), 'slave_name': get_hostname()},
             verify=False
         )
@@ -369,7 +370,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
                 time.sleep(5)
 
         logger.info(f"Current Redis master is {redis_master_node}, linking local redis to it")
-        c.slave_of(redis_master_node, 6379)
+        c.replica_of(redis_master_node, 6379)
 
         """ Tell local sentinel to monitor local redis server """
         c = RedisBase(get_management_ip(), 26379)

@@ -48,7 +48,7 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            for workflow in Workflow.objects.filter(authentication__isnull=False):
+            for workflow in Workflow.objects.all():
                 node.api_request("workflow.workflow.build_conf", workflow.pk)
                 print("Workflow {} conf reload asked".format(workflow))
             for idp_portal in UserAuthentication.objects.filter(enable_external=True):

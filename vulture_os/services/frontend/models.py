@@ -704,6 +704,17 @@ class Frontend(models.Model):
     cisco_meraki_timestamp = models.JSONField(
         default={}
     )
+    #CSC DomainManager attributes
+    csc_domainmanager_apikey = models.TextField(
+        verbose_name = ("CSC DomainManager API Key"),
+        help_text = ("CSC DomainManager API Key"),
+        default=""
+    )
+    csc_domainmanager_authorization = models.TextField(
+        verbose_name = ("CSC DomainManager Authorization HTTP Header token prefixed by Bearer, ex: Bearer xxxx-xxxx-xxxx-xxxx"),
+        help_text = ("CSC DomainManager Authorization"),
+        default=""
+    )
     # Proofpoint TAP attributes
     proofpoint_tap_host = models.TextField(
         help_text=_("ProofPoint TAP host"),

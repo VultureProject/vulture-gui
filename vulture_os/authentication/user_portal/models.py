@@ -462,6 +462,21 @@ class UserAuthentication(models.Model):
         verbose_name=_("OAuth2 tokens timeout"),
         help_text=_("Time in seconds after which oauth2 tokens will expire")
     )
+    enable_refresh = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable OAuth2 refresh token"),
+        help_text=_("Enable refresh token provider")
+    )
+    enable_rotation = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable refresh token rotation"),
+        help_text=_("Rotate refresh token at every successful request")
+    )
+    max_nb_refresh = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("History of expired tokens"),
+        help_text=_("Number of old refresh token kept in memory")
+    )
     enable_sso_forward = models.BooleanField(
         default=False,
         help_text=_('Forward credentials to backend')
@@ -723,7 +738,7 @@ class UserAuthentication(models.Model):
         return "Workflow configuration written."
 
     def generate_openid_config(self, issuer):
-        return {
+        config = {
             "issuer": issuer,
             "authorization_endpoint": f"{issuer}/oauth2/authorize",
             "token_endpoint": f"{issuer}/oauth2/token",
@@ -742,3 +757,6 @@ class UserAuthentication(models.Model):
                 "authorization_code"
             ]
         }
+        if self.enable_refresh:
+            config['grant_types_supported'].append('refresh_token')
+        return config

@@ -71,7 +71,7 @@ def get_rc_config(variable=None, filename=None, flags=[]):
         return False, str(e)
 
 
-def set_rc_config(variable, value, filename=None):
+def set_rc_config(variable, value, filename=None, operation="="):
     """Set or update value of a variable in rc configuration. If no file
     is specified, it is put in /etc/rc.conf. If the file specified does not
     exist, it is created by sysrc.
@@ -80,20 +80,25 @@ def set_rc_config(variable, value, filename=None):
             value:          The value to give to the variable
             filename:       The file to use with sysrc in the /etc/rc.conf.d/ directory (don't specify path)
                             by default, sysrc writes in /etc/rc.conf
+            operation:      Defines the operation to use
+                            Can be either "=" (default), "+=" (add words) or "-=" (remove words)
+
 
     :return: a tuple with
                 - True for success and False on failure
                 - an empty string on success, the error string on failure
     """
 
+    if operation not in ['=', '+=', '-=']:
+        return False, "operation can only be one of '=', '+=' or '-='!"
 
 
     try:
         command = ['/usr/local/bin/sudo', '/usr/sbin/sysrc']
         if filename:
-          file_path = os.path.join(RC_PATH, filename)
-          command.extend(['-f', file_path])
-        command.extend(['{}={}'.format(variable, value)])
+            file_path = os.path.join(RC_PATH, filename)
+            command.extend(['-f', file_path])
+        command.extend(['{}{}{}'.format(variable, operation, value)])
         proc = subprocess.Popen(command,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         res, errors = proc.communicate()
         if not errors:
@@ -153,17 +158,38 @@ def call_set_rc_config(logger, rc_args):
         Will call set_rc_config
 
     :param logger:      API logger
+    :param rc_args:     A dictionary containing set_rc_config() parameters
+    :return: True for success and False for a fail
+    """
+    if isinstance(rc_args, str):
+        rc_args = literal_eval(rc_args)
+
+    logger.debug(f"call_set_rc_config: calling with parameters {rc_args}")
+
+    status, result = set_rc_config(**rc_args)
+    if status:
+        return True
+    else:
+        logger.error(f"call_set_rc_config: Failed to call script: {result}")
+        return False
+
+
+def call_remove_rc_config(logger, rc_args):
+    """Made to be called by a Cluster/Node api_request()
+        Will call remove_rc_config
+
+    :param logger:      API logger
     :param rc_args:     A tuple containing file name, variable and value
     :return: True for success and False for a fail
     """
     if isinstance(rc_args, str):
-        filename, variable, value = literal_eval(rc_args)
-    else:
-        filename, variable, value = rc_args
+        rc_args = literal_eval(rc_args)
 
-    status, result = set_rc_config(variable=variable, value=value, filename=filename)
+    logger.debug(f"call_remove_rc_config: calling with parameters {rc_args}")
+
+    status, result = remove_rc_config(**rc_args)
     if status:
         return True
     else:
-        logger.error(f"set_rc_config: Failed to call script: {result}")
+        logger.error(f"call_remove_rc_config: Failed to call script: {result}")
         return False

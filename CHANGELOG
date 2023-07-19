@@ -9,9 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] [ELASTICSEARCH] RateLimit settings
 ### Added
 - [LOG_FORWARDER] Disk-assisted queues for reliability
+- [PORTAL] [IDP] Refresh token support through OAuth2 flow
+### Changed
+- [VOCABULARY] Replace 'slave' word uses with 'replica'
 ### Fixed
+- [PORTAL] [OPENID] Improve error returns and code quality
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
 - [SYSTEM] [CERTIFICATES] Reload HAProxy on certificate change
+- [ACLS] Rebuild HAProxy conf on ACL change
+- [LOGFORWARDER] [ELASTICSEARCH] Enable ELS>=8 compatibility
+- [LOGFORWARDER] [ELASTICSEARCH] Ensure index patterns are kept to lowercase
+- [LOGFORWARDER] [ELASTICSEARCH] Avoid newline problems in generated configurations
+- [CLUSTER_JOIN] New node couldn't resolve all other nodes' name and IP
+- [CLUSTER_JOIN] New node missed an initial Rsyslog configuration file
+- [NODE] [CONFIGURATION] Correctly update rc.conf when editing a Node on GUI/API
+
+
+## [2.8.2] - 2023-07-05
+### Fixed
+- [SYSTEM] [MIGRATIONS] Resolve manual migrtions problems with existing CARP interfaces
+
+
+## [2.8.1] - 2023-07-05
+### Added
+- [NETWORK] Allow possibility to create LAGG interfaces
+- [NET2MONGO] Can now import system configurations for interfaces, aliases, VLANs and LAGG interfaces
+### Changed
+- [NETWORK] [GUI] VLAN configuration rework: ability to create/configure VLAN virtual interfaces directly from GUI
+- [NETWORK] Internal rework of network interfaces parameters
+- [SYSTEM] Improved capabilities to modify system/network configurations
+- [API] [NETWORK] Allow getting a list of NetworkAddress objects filtering by name, ip, type and NICs
+###  Fixed
+- [PF] [CONFIG] Configuration generation could fail with some network interfaces configured
 
 
 ## [2.8.0] - 2023-06-28
@@ -130,11 +159,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI/API] [NETWORK] Small corrections to internal functions and data types
 - [CONFIG] [FILEBEAT] Correctly remove filebeat configuration files when removing a filebeat Frontend
 - [RSYSLOG] Only restart service once after modifying configuration files
+- [REFRESH_NIC] Correctly get DHCP-enabled interfaces' IP
 ### Changed
 - [LOGGING] [PF] Don't send PF logs to mongodb anymore, log to /var/log/pf/parsed.log instead
 - [UPGRADE] [PKG] Better filtering of update scripts' folders during upgrades
 - [UPGRADE] [SCRIPTS] Only launch some post-upgrade scripts when node was bootstrapped and is able to receive them
 - [PORTAL] Return a 401 instead of a 403 when refusing a header-authenticated request
+- [NETIF] [API] Await cluster results when refreshing interfaces list before returning from the API call
 
 
 ## [2.4.0] - 2023-02-16

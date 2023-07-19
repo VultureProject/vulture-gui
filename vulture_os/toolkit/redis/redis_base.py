@@ -68,9 +68,9 @@ class RedisBase:
 
         return False
 
-    def slave_of(self, node, port):
+    def replica_of(self, node, port):
         """
-        Make the current redis node a slave of the specified one
+        Make the current redis node a replica of the specified one
         :param node: IP address of an existing master node
         :param port: TCP port of the master node
         :return:
