@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [PORTAL] [OPENID] Improve error returns and code quality
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
+- [SYSTEM] [CERTIFICATES] Reload HAProxy on certificate change
 - [ACLS] Rebuild HAProxy conf on ACL change
 - [LOGFORWARDER] [ELASTICSEARCH] Enable ELS>=8 compatibility
 - [LOGFORWARDER] [ELASTICSEARCH] Ensure index patterns are kept to lowercase
