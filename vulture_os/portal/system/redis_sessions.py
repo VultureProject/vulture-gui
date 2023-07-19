@@ -338,7 +338,7 @@ class REDISPortalSession(REDISSession):
     def getAutologonPassword(self, app_id, backend_id, username):
         """ Retrieve encrypted password in REDIS, decrypt it and return it plain text """
         # Get the encrypted password's value for the current backend
-        p = self.handler.hget(self.key, 'password_'+backend_id)
+        p = self.handler.hget(self.key, f"password_{app_id}_{backend_id}")
         if not p:
             return None
 
@@ -353,7 +353,7 @@ class REDISPortalSession(REDISSession):
         pwd = LearningProfile()
         p = pwd.set_data(app_id, app_name, backend_id, BaseRepository.objects.get(pk=backend_id).name, username,
                          'vlt_autologon_password', password)
-        self.keys[f'password_{backend_id}'] = p
+        self.keys[f'password_{app_id}_{backend_id}'] = p
 
     def getData(self):
         """ Return portal_session or None if portal session does not exist """
