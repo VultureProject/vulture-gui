@@ -90,7 +90,7 @@ class SentinelOneParser(ApiParser):
                 ).json()
 
                 assert response.get('data', {}).get('token'), f"Cannot retrieve token from API : {response}"
-                if self.sentinel_one_account_type == SENTINEL_ONE_ACCOUNT_TYPE_CHOICES[1][1]:
+                if self.sentinel_one_account_type == SENTINEL_ONE_ACCOUNT_TYPE_CHOICES[1][0]:
                     self.session.headers.update({'Authorization': f"ApiToken {response['data']['token']}"})
                 else:
                     self.session.headers.update({'Authorization': f"Token {response['data']['token']}"})
