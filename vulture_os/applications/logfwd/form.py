@@ -44,7 +44,7 @@ class LogOMFileForm(ModelForm):
 
     class Meta:
         model = LogOMFile
-        fields = ('name', 'enabled', 'file', 'flush_interval', 'async_writing', 'stock_as_raw', 'retention_time',
+        fields = ('name', 'enabled', 'file', 'flush_interval', 'async_writing', 'send_as_raw', 'retention_time',
                   'rotation_period', 'queue_size', 'dequeue_size', 'enable_retry', 'enable_disk_assist',
                   'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
 
@@ -54,7 +54,7 @@ class LogOMFileForm(ModelForm):
             'file': TextInput(attrs={'class': 'form-control'}),
             'flush_interval': NumberInput(attrs={'class': 'form-control'}),
             'async_writing': CheckboxInput(attrs={"class": " js-switch"}),
-            'stock_as_raw': CheckboxInput(attrs={"class": " js-switch"}),
+            'send_as_raw': CheckboxInput(attrs={"class": " js-switch"}),
             'retention_time': NumberInput(attrs={"class": "form-control"}),
             'rotation_period': Select(attrs={"class": "select2"}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
@@ -116,7 +116,7 @@ class LogOMRELPForm(ModelForm):
 
     class Meta:
         model = LogOMRELP
-        fields = ('name', 'enabled', 'target', 'port', 'tls_enabled', 'x509_certificate', 'queue_size', 'dequeue_size', 'enable_retry',
+        fields = ('name', 'enabled', 'target', 'port', 'tls_enabled', 'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'enable_retry',
                   'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
 
         widgets = {
@@ -126,6 +126,7 @@ class LogOMRELPForm(ModelForm):
             'port': NumberInput(attrs={'class': 'form-control'}),
             'tls_enabled': CheckboxInput(attrs={"class": " js-switch"}),
             'x509_certificate': Select(attrs={'class': 'form-control select2'}),
+            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
@@ -179,9 +180,9 @@ class LogOMHIREDISForm(ModelForm):
 
     class Meta:
         model = LogOMHIREDIS
-        fields = ('name', 'enabled', 'target', 'port', 'key', 'dynamic_key', 'pwd', 'queue_size', 'dequeue_size',
-                  'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
-                  'max_disk_space')
+        fields = ('name', 'enabled', 'target', 'port', 'key', 'dynamic_key', 'pwd', 'send_as_raw',
+                  'queue_size', 'dequeue_size', 'enable_retry', 'enable_disk_assist',
+                  'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -191,6 +192,7 @@ class LogOMHIREDISForm(ModelForm):
             'key': TextInput(attrs={'class': 'form-control'}),
             'dynamic_key': CheckboxInput(attrs={'class': ' js-switch'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
+            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
@@ -323,7 +325,7 @@ class LogOMElasticSearchForm(ModelForm):
     class Meta:
         model = LogOMElasticSearch
         fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'index_pattern', 'uid', 'pwd', 'x509_certificate',
-                  'queue_size', 'dequeue_size', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
+                  'send_as_raw', 'queue_size', 'dequeue_size', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
                   'max_file_size', 'max_disk_space')
 
         widgets = {
@@ -335,6 +337,7 @@ class LogOMElasticSearchForm(ModelForm):
             'uid': TextInput(attrs={'class': 'form-control'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
             'x509_certificate': Select(attrs={'class': 'form-control'}),
+            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
@@ -398,7 +401,7 @@ class LogOMMongoDBForm(ModelForm):
 
     class Meta:
         model = LogOMMongoDB
-        fields = ('name', 'enabled', 'db', 'collection', 'uristr', 'x509_certificate', 'queue_size', 'dequeue_size', 'enable_retry',
+        fields = ('name', 'enabled', 'db', 'collection', 'uristr', 'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'enable_retry',
                   'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
 
         widgets = {
@@ -407,6 +410,7 @@ class LogOMMongoDBForm(ModelForm):
             'db': TextInput(attrs={'class': 'form-control'}),
             'collection': TextInput(attrs={'class': 'form-control'}),
             'uristr': TextInput(attrs={'class': 'form-control'}),
+            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),

@@ -6,7 +6,7 @@
             esVersion.major="8"
         {%- endif %}
             searchIndex="{{ template_id }}"
-            template="{{ out_template }}_elastic"
+            template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}_elastic{% endif %}"
             dynSearchIndex="on"
         {%- if uid and pwd %}
             uid="{{ uid }}"
