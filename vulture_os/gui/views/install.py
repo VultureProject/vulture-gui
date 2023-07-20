@@ -75,16 +75,19 @@ def cluster_create(admin_user=None, admin_password=None):
     if new_node:
         logger.info("Registering new node '{}'".format(node.name))
         success, internet_ip = get_rc_config(filename=RC_NETWORK_CONF, variable="internet_ip")
-        node.internet_ip = internet_ip if success else node.management_ip
+        node.internet_ip = internet_ip if success and internet_ip else node.management_ip
         success, backends_outgoing_ip = get_rc_config(filename=RC_NETWORK_CONF, variable="backends_outgoing_ip")
-        node.backends_outgoing_ip = backends_outgoing_ip if success else node.management_ip
+        node.backends_outgoing_ip = backends_outgoing_ip if success and backends_outgoing_ip else node.management_ip
         success, logom_outgoing_ip = get_rc_config(filename=RC_NETWORK_CONF, variable="logom_outgoing_ip")
-        node.logom_outgoing_ip = logom_outgoing_ip if success else node.management_ip
+        node.logom_outgoing_ip = logom_outgoing_ip if success and logom_outgoing_ip else node.management_ip
         node.save()
 
     """ Read network config and store it into mongo """
     """ No rights to do that in jail - API request """
     node.api_request('toolkit.network.network.refresh_nic')
+
+    """ save Node IPs on disk """
+    node.api_request('toolkit.network.network.write_management_ips')
 
     """ Obtain Certificates and store it into mongoDB """
     with open("/var/db/pki/ca.pem") as f:

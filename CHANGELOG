@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [NODE] [CONFIGURATION] Correctly update rc.conf when editing a Node on GUI/API
 - [PORTAL] [SELF_SERVICE] Correctly list available applications for users connected through local repositories
 - [PORTAL] [SSO] Avoid SSO errors when using local repositories
+- [CLUSTER_CREATE] Some Node IPs were missing from Node's DB and on-disk configurations after cluster creation
 
 ## [2.8.2] - 2023-07-05
 ### Fixed
