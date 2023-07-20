@@ -49,7 +49,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 
-PF_PATH = "/usr/local/etc/"
+PF_PATH = "/usr/local/etc"
 PF_PERMS = "640"
 PF_OWNERS = "root:vlt-os"
 
@@ -79,7 +79,7 @@ class PFService(Service):
 
     def reload(self):
         """ Apply PF configuration """
-        command = ['/usr/local/bin/sudo', '/sbin/pfctl', '-f', PF_PATH + "pf.conf"]
+        command = ['/usr/local/bin/sudo', '/sbin/pfctl', '-f', PF_PATH + "/pf.conf"]
         proc = Popen(command, stdout=PIPE, stderr=PIPE)
         success, error = proc.communicate()
         stdout, stderr, code = success.decode('utf8'), error.decode('utf8'), proc.returncode
@@ -181,7 +181,7 @@ class PFService(Service):
         }
 
         for filename, liste in wl_bl.items():
-            file_path = '{}{}'.format(PF_PATH, filename)
+            file_path = '{}/{}'.format(PF_PATH, filename)
             config = "\n".join(liste.split(','))
             md5_config = md5(config.encode('utf-8')).hexdigest().strip()
             md5sum = ""
