@@ -4,15 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.9.0] - 2023-07-20
 ### Removed
 - [LOG_FORWARDER] [ELASTICSEARCH] RateLimit settings
 ### Added
+- [API_PARSER] New collector **SentinelOne Mobile**
+- [API_PARSER] NEW collector **CSC_DOMAINMANAGER**
 - [LOG_FORWARDER] Disk-assisted queues for reliability
 - [PORTAL] [IDP] Refresh token support through OAuth2 flow
 ### Changed
 - [VOCABULARY] Replace 'slave' word uses with 'replica'
 - [NETWORK] Improve the way Node IPs are updated on disk
+- [NETIF] [API] Only return from API call when refresh has been finished
+- [DEPENDENCIES] Python dependencies upgrade
+    - django 3.2.19 -> 3.2.20
+    - cryptography 41.0.1 -> 41.0.2
 ### Fixed
 - [PORTAL] [OPENID] Improve error returns and code quality
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted
@@ -24,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLUSTER_JOIN] New node couldn't resolve all other nodes' name and IP
 - [CLUSTER_JOIN] New node missed an initial Rsyslog configuration file
 - [NODE] [CONFIGURATION] Correctly update rc.conf when editing a Node on GUI/API
+- [REFRESH_NIC] Correctly get DHCP-enabled interfaces' IP
+- [API_PARSER] [SENTINEL_ONE] Fix authorization token type for service user accounts
+- [API_PARSER] [CYBEREASON] FIx timestamp for `malware` logs
+- [API_PARSER] [IMPERVA] Fix duplicates files downloading
+- [API_PARSER] [IMPERVA] Fix crash if file does not exist
+- [API_PARSER] [SAFENET] Increment last_api_call if no logs
+- [API_PARSER] [CISCO_DUO] Fix update last_api_call if next_offset key doesn't exist
 - [PORTAL] [SELF_SERVICE] Correctly list available applications for users connected through local repositories
 - [PORTAL] [SSO] Avoid SSO errors when using local repositories
 - [CLUSTER_CREATE] Some Node IPs were missing from Node's DB and on-disk configurations after cluster creation
@@ -162,7 +175,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI/API] [NETWORK] Small corrections to internal functions and data types
 - [CONFIG] [FILEBEAT] Correctly remove filebeat configuration files when removing a filebeat Frontend
 - [RSYSLOG] Only restart service once after modifying configuration files
-- [REFRESH_NIC] Correctly get DHCP-enabled interfaces' IP
 ### Changed
 - [LOGGING] [PF] Don't send PF logs to mongodb anymore, log to /var/log/pf/parsed.log instead
 - [UPGRADE] [PKG] Better filtering of update scripts' folders during upgrades
