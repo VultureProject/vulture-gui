@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PORTAL] [IDP] Refresh token support through OAuth2 flow
 ### Changed
 - [VOCABULARY] Replace 'slave' word uses with 'replica'
+- [NETWORK] Improve the way Node IPs are updated on disk
 ### Fixed
 - [PORTAL] [OPENID] Improve error returns and code quality
 - [SYSTEM] [CERTIFICATES] Protect used certificates when attempted to be deleted

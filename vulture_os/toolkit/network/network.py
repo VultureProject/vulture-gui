@@ -344,6 +344,25 @@ def create_virtual_interface(logger, iface_name):
     return ret
 
 
+def write_management_ips(logger):
+    """ Synchronize /etc/rc.conf.d/network file with node IPs
+    :param logger: A logger handler
+    :return: True or False
+    """
+
+    from system.cluster.models import Cluster
+    node = Cluster.get_current_node()
+
+    for attr in ['management_ip', 'internet_ip', 'logom_outgoing_ip', 'backends_outgoing_ip']:
+        status, error = set_rc_config(
+            variable=attr,
+            value=getattr(node, attr),
+            filename='network')
+        if not status:
+            logger.error(
+                f"Node::write_management_ips: Could not update value of {attr} -> {error}")
+
+
 def write_network_config(logger):
     """ Synchronize network configuration on disk
 
