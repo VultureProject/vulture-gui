@@ -37,7 +37,6 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 
-
 class TrendmicroVisionOneAPIError(Exception):
     pass
 
@@ -57,77 +56,81 @@ class TrendmicroVisiononeParser(ApiParser):
         self.trendmicro_visionone_audit_timestamp = data.get("trendmicro_visionone_audit_timestamp")
         self.trendmicro_visionone_oat_timestamp = data.get("trendmicro_visionone_oat_timestamp")
 
+    def __execute_query(self, url_path, query, timeout=10):
+        items = []
 
-    def _get_alerts(self, since=None, to=None, timeout=10):
-
-        url_path = '/v3.0/workbench/alerts'
-
-        query_params = {'startDateTime': since,
-                        'endDateTime': to,
-                        'dateTimeTarget': 'createdDateTime',
-                        'orderBy': 'createdDateTime desc'}
         headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token, 'TMV1-Filter': ""}
 
-        result = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers,
-            proxies=self.proxies, timeout=timeout)
-        if result.status_code != 200:
-            raise TrendmicroVisionOneAPIError(
-                f"Error on URL: {self.URL_BASE + url_path} Status: {result.status_code} Reason/Content: {result.content}")
+        link = self.URL_BASE + url_path
+        try:
+            while True:
+                r = requests.get(link, params=query, headers=headers,
+                                 proxies=self.proxies, timeout=timeout)
+                if r.status_code != 200:
+                    raise TrendmicroVisionOneAPIError(
+                        f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
 
-        return result.json()['items']
+                items.extend(r.json()['items'])
 
-    def _get_auditlogs(self, since=None, to=None, timeout=10):
+                if link := r.json().get('nextLink'):
+                    query = None
+                    continue
+                else:
+                    break
+        except Exception as e:
+            logger.error(f"[{__parser__}]:__execute_query: Error '' : {e}", extra={'frontend': str(self.frontend)})
+        return items
+
+    def _get_alerts(self, since=None, to=None):
+        url_path = '/v3.0/workbench/alerts'
+
+        query = {'detectedStartDateTime': since,
+                    'detectedEndDateTime': to,
+                    'dateTimeTarget': 'createdDateTime',
+                    'orderBy': 'createdDateTime desc'
+                 }
+
+        alerts = self.__execute_query(url_path, query)
+
+        return alerts
+
+    def _get_auditlogs(self, since=None, to=None):
         url_path = '/v3.0/audit/logs'
 
-        query_params = {'startDateTime': since,
-                        'endDateTime': to,
-                        'orderBy': 'createdDateTime desc',
-                        'labels': 'all'}
-        headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token,
-                   'Accept': 'application/json',
-                   'TMV1-Filter': ''}
+        query = {'startDateTime': since,
+                    'endDateTime': to,
+                    'orderBy': 'createdDateTime desc',
+                    'labels': 'all'
+                 }
 
-        r = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers,
-            proxies=self.proxies, timeout=timeout)
+        auditlogs = self.__execute_query(url_path, query)
 
-        if r.status_code != 200:
-            raise TrendmicroVisionOneAPIError(
-                f"Error on URL: {self.URL_BASE + url_path} Status: {r.status_code} Reason/Content: {r.content}")
+        return auditlogs
 
-        return r.json()['items']
+    def _get_OAT(self, since=None, to=None):
+        url_path = '/v3.0/oat/detections'
 
-    def _get_OAT(self, since=None, to=None, timeout=10):
+        query = {'detectedStartDateTime': since,
+                    'detectedEndDateTime': to,
+                }
 
-        url_path = '/v3.0/audit/logs'
+        oat = self.__execute_query(url_path, query, timeout=30)
 
-        query_params = {'detectedStartDateTime': since,
-                        'detectedEndDateTime': to
-                        }
-        headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token,
-                   'Accept': 'application/json',
-                   'TMV1-Filter': ''}
-
-        r = requests.get(self.URL_BASE + url_path, params=query_params, headers=headers,
-            proxies=self.proxies, timeout=timeout)
-
-        if r.status_code != 200:
-            raise TrendmicroVisionOneAPIError(
-                f"Error on URL: {self.URL_BASE + url_path} Status: {r.status_code} Reason/Content: {r.content}")
-
-        return r.json()['items']
+        return oat
     
-    def _format_alert(self, log):
+    @staticmethod
+    def _format_alert(log):
         return json.dumps(log)
     
-    def _format_auditlog(self, log):
+    @staticmethod
+    def _format_auditlog(log):
         return json.dumps(log)
 
-    def _format_OAT_log(self, log):
-        return json.dumps(log["details"])
-
+    @staticmethod
+    def _format_OAT_log(log):
+        return json.dumps(log)
 
     def execute(self):
-
         for kind in ["alerts", "oat", "audit"]:
 
             try:
@@ -157,17 +160,11 @@ class TrendmicroVisiononeParser(ApiParser):
                 logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                 logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
-            
-            
-
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
-
     def test(self):
-
         since = timezone.now() - timedelta(hours=24)
         to = timezone.now()
-        logs = {}
         start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
 
