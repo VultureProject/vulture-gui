@@ -492,7 +492,7 @@
                             </div>
                           </div>
                         </div> <!-- /.row -->
-                        <div class="row sso_forward">
+                        <div class="row sso_forward sso_forward_content">
                           <div class="col-md-12">
                             <div class="form-group">
                               <label class="col-sm-4 control-label">{% trans "SSO forward status" %}</label>
@@ -503,6 +503,11 @@
                                 <span id="sso_forward_status" style="color:green">{% trans "Configured"%}</span>
                                 {% endif %}
                               </div>
+                            </div>
+                          </div>
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label"></label>
                               <div id="sso_forward_content_div" class="col-sm-5" hidden>
                                 {{form.sso_forward_content}}
                                 {{form.sso_forward_content.errors|safe}}
@@ -1110,11 +1115,11 @@
 
 
   /* Show sso_forward_content if mouse is over sso_forward_status */
-  $('#sso_forward_status,#sso_forward_content_div').on('mouseover', function(e) {
+  $('.sso_forward_content').on('mouseover', function(e) {
     console.log("mouse over")
     $('#sso_forward_content_div').show();
   });
-  $('#sso_forward_status,#sso_forward_content_div').on('mouseout', function(e) {
+  $('.sso_forward_content').on('mouseout', function(e) {
     console.log("mouse out")
     $('#sso_forward_content_div').hide();
   });
