@@ -33,6 +33,7 @@ from authentication.ldap.models import (LDAPRepository, LDAP_ENC_SCHEMES_CHOICES
 
 # Extern modules imports
 from re import match as re_match
+from json import loads as json_loads
 
 # Required exceptions imports
 from django.forms import ValidationError
@@ -48,9 +49,9 @@ class LDAPRepositoryForm(ModelForm):
     class Meta:
         model = LDAPRepository
         fields = ('name', 'host', 'port', 'protocol', 'encryption_scheme', 'connection_dn', 'dn_password', 'base_dn',
-                  'user_scope', 'user_dn', 'user_attr', 'user_filter', 'user_account_locked_attr',
+                  'user_scope', 'user_dn', 'user_attr', 'user_objectclasses', 'user_filter', 'user_account_locked_attr',
                   'user_change_password_attr', 'user_groups_attr', 'user_mobile_attr', 'user_email_attr',
-                  'group_scope', 'group_dn', 'group_attr', 'group_filter', 'group_member_attr')
+                  'group_scope', 'group_dn', 'group_attr', 'group_objectclasses', 'group_filter', 'group_member_attr')
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'host': TextInput(attrs={'class': 'form-control'}),
@@ -63,6 +64,7 @@ class LDAPRepositoryForm(ModelForm):
             'user_scope': Select(choices=LDAP_SCOPES_CHOICES, attrs={'class': 'form-control select2'}),
             'user_dn': TextInput(attrs={'class': 'form-control'}),
             'user_attr': TextInput(attrs={'class': 'form-control'}),
+            'user_objectclasses': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'user_filter': TextInput(attrs={'class': 'form-control'}),
             'user_account_locked_attr': TextInput(attrs={'class': 'form-control'}),
             'user_change_password_attr': TextInput(attrs={'class': 'form-control'}),
@@ -72,6 +74,7 @@ class LDAPRepositoryForm(ModelForm):
             'group_scope': Select(choices=LDAP_SCOPES_CHOICES, attrs={'class': 'form-control select2'}),
             'group_dn': TextInput(attrs={'class': 'form-control'}),
             'group_attr': TextInput(attrs={'class': 'form-control'}),
+            'group_objectclasses': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'group_filter': TextInput(attrs={'class': 'form-control'}),
             'group_member_attr': TextInput(attrs={'class': 'form-control'}),
         }
@@ -86,6 +89,12 @@ class LDAPRepositoryForm(ModelForm):
             self.fields[field].required = False
         if not self.initial.get('name'):
             self.fields['name'].initial = "LDAP Repository"
+        self.initial['user_objectclasses'] = ','.join(
+            self.initial.get('user_objectclasses', [])
+            or self.fields['user_objectclasses'].initial)
+        self.initial['group_objectclasses'] = ','.join(
+            self.initial.get('group_objectclasses', [])
+            or self.fields['group_objectclasses'].initial)
 
     def connection_is_valid(self):
         """ Method used to verify connection test needed fields only """
@@ -155,6 +164,43 @@ class LDAPRepositoryForm(ModelForm):
 
     def clean_user_filter(self):
         return self.clean_ldap_filter('user_filter')
+
+    def clean_user_objectclasses(self):
+        user_objectclasses = self.cleaned_data.get('user_objectclasses')
+        if user_objectclasses:
+            try:
+                user_objectclasses = set(json_loads(user_objectclasses.replace("'", '"')))
+            except:
+                logger.debug(f"LDAPRepositoryForm::clean_user_objectclasses: '{user_objectclasses}' "
+                             "doesn't look like a valid json, spliting values instead")
+                user_objectclasses = set([i.strip() for i in user_objectclasses.split(',')])
+            validator = RegexValidator('^[A-Za-z-]*$', message="values can only be lower/uppercase letters and hyphens")
+            for objectclass in user_objectclasses:
+                validator(objectclass)
+        else:
+            user_objectclasses = set()
+        # Ensure 'top' is always part of the object classes
+        user_objectclasses.add("top")
+        return list(user_objectclasses)
+
+    def clean_group_objectclasses(self):
+        group_objectclasses = self.cleaned_data.get('group_objectclasses')
+        if group_objectclasses:
+            try:
+                group_objectclasses = set(json_loads(group_objectclasses.replace("'", '"')))
+            except:
+                logger.debug(f"LDAPRepositoryForm::clean_group_objectclasses: '{group_objectclasses}' "
+                             "doesn't look like a valid json, spliting values instead")
+                group_objectclasses = set([i.strip() for i in group_objectclasses.split(',')])
+            validator = RegexValidator('^[A-Za-z-]*$', message="values can only be lower/uppercase letters and hyphens")
+            for objectclass in group_objectclasses:
+                validator(objectclass)
+        else:
+            group_objectclasses = set()
+        # Ensure 'top' is always part of the object classes
+        group_objectclasses.add("top")
+        return list(group_objectclasses)
+
 
     def clean_user_account_locked_attr(self):
         return self.clean_ldap_filter('user_account_locked_attr')

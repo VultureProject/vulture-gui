@@ -205,13 +205,14 @@
                         <div class="row">
                           <div class="col-md-12">
                             <div class="form-group">
-                              <label class="col-sm-4 control-label">{% trans "Object Class" %}</label>
-                                <div class="col-sm-5">
-                                  <input type="text" class="form-control" disabled value="InetOrgPerson"/>
-                                </div>
+                            <label class="col-sm-4 control-label">{{ form.user_objectclasses.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.user_objectclasses}}
+                                {{form.user_objectclasses.errors|safe}}
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </div> <!-- /.row -->
                         <div class="row">
                           <div class="col-md-12">
                             <div class="form-group">
@@ -324,10 +325,11 @@
                         <div class="row">
                           <div class="col-md-12">
                             <div class="form-group">
-                              <label class="col-sm-4 control-label">{% trans "Object Class" %}</label>
-                                <div class="col-sm-5">
-                                  <input type="text" class="form-control" disabled value="groupOfNames"/>
-                                </div>
+                            <label class="col-sm-4 control-label">{{ form.group_objectclasses.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.group_objectclasses}}
+                                {{form.group_objectclasses.errors|safe}}
+                              </div>
                             </div>
                           </div>
                         </div> <!-- /.row -->
