@@ -137,14 +137,14 @@ class LDAPRepository(BaseRepository):
         verbose_name=_("User search scope"),
         default=LDAP_SCOPES_CHOICES[0][0],
         choices=LDAP_SCOPES_CHOICES,
-        help_text=_('Deep of search operation')
+        help_text=_('Depth of the search operation')
     )
     user_dn = models.TextField(
         verbose_name=_("User DN"),
         help_text=_('Location in the directory from which the user LDAP search begins')
     )
     user_attr = models.TextField(
-        verbose_name=_("User attribute"),
+        verbose_name=_("User main attribute"),
         default="uid",
         help_text=_('Attribute which identify user')
     )
@@ -207,7 +207,7 @@ class LDAPRepository(BaseRepository):
     group_member_attr = models.TextField(
         verbose_name=_("Members attribute"),
         default="member",
-        help_text=_("Attribute which contains  list of group members")
+        help_text=_("Attribute which contains list of group members")
     )
 
     @property
