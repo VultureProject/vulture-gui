@@ -475,12 +475,19 @@ def frontend_edit(request, object_id=None, api=False):
         if frontend.id:
             try:
                 changed_data = form.changed_data
+
                 for node in old_nodes:
                     """ If the ruleset has changed, we need to delete the old-named file """
                     if frontend.mode in ["log", "filebeat"] and "ruleset" in changed_data and old_rsyslog_filename:
                         # API request deletion of rsyslog frontend filename
                             node.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
                             logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
+
+                    """ If the type has changed, we need to delete the old-named file """
+                    if "mode" in changed_data and old_rsyslog_filename:
+                        # API request deletion of rsyslog frontend filename
+                        node.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
+                        logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
 
                     """ If it is a Rsyslog only config """
                     if frontend.rsyslog_only_conf:
@@ -511,7 +518,7 @@ def frontend_edit(request, object_id=None, api=False):
                             node.api_request('services.haproxy.haproxy.reload_service')
 
                         """ If it is an HAProxy only conf """
-                    elif frontend.mode not in ("log", "filebeat") and old_rsyslog_filename:
+                    elif frontend.mode not in ("log", "filebeat") and not frontend.enable_logging:
                         """ And it was not """
                         if "mode" in changed_data or "enable_logging" in changed_data:
                             # API request deletion of rsyslog frontend filename
