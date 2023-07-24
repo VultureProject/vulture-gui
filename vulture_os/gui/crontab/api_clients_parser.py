@@ -70,6 +70,22 @@ def execute_parser(frontend):
                     extra={'frontend': str(frontend['name'])})
         parser.finish()
 
+def node_selected(current_node, frontend):
+    """ Small routine that verify if this node has to run the collector """
+    if current_node.state == "UP":
+        # In any case, actual node has to be up
+        if frontend.node == current_node:
+            # Return true if the selected node is the current node
+            return True
+        elif current_node.is_master_mongo:
+            # Mongo master will take the ownership if...
+            if not frontend.node:
+                # ...no specific node selected in the frontend
+                return True
+            elif frontend.node.state != "UP":
+                # ...the selected node is unavailable
+                return True
+    return False
 
 def api_clients_parser():
     current_node = Cluster.get_current_node()
@@ -82,14 +98,10 @@ def api_clients_parser():
 
     processes = []
     for frontend in api_clients_parser:
-        if frontend.node == current_node
-        or (not frontend.node and current_node.is_master_mongo)
-        or ((frontend.node.state == "DOWN" or frontend.node.state == "MAINTENANCE") and current_node.is_master_mongo):
+        if node_selected(current_node, frontend):
             p = Process(target=execute_parser, name=frontend.name, args=(frontend.to_dict(),))
             p.start()
             processes.append(p)
-        else:
-            api_clients_parser.frontend.status[Cluster.get_current_node().name] = "STOP"
 
     some_alive = True
     while some_alive:

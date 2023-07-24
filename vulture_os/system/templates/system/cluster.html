@@ -73,7 +73,25 @@
       sTitle: '{% trans "Name" %}',
       name: "name", aTargets: [1],
       defaultContent: "",
-      mData: "name"
+      mData: "name",
+      mRender: function(data, type, row) {
+        var result = "";
+
+        switch( row.state ) {
+            case "UP":
+              result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+            case "DOWN":
+              result += '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+            case "MAINTENANCE":
+              result += '<img width="16" height="16" src="{% static 'img/status_orange.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+          }
+          result += data+':<font size="-2">'+row.state+'</font>';
+
+          return result;
+      }
     },
     {
       sTitle: '{% trans "Network Interfaces" %}',

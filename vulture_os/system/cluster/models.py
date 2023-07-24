@@ -229,6 +229,7 @@ class Node(models.Model):
         conf = {
             'id': str(self.id),
             'name': self.name,
+            'state': self.state,
             'pf_limit_states': self.pf_limit_states,
             'pf_limit_frags': self.pf_limit_frags,
             'pf_limit_src': self.pf_limit_src,
