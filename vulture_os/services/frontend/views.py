@@ -48,6 +48,7 @@ from services.exceptions import ServiceConfigError, ServiceError, ServiceReloadE
 from system.exceptions import VultureSystemError
 
 # Extern modules imports
+from copy import deepcopy
 from json import loads as json_loads
 from re import findall as re_findall
 from sys import exc_info
@@ -85,6 +86,10 @@ def frontend_clone(request, object_id=None):
     for r_tmp in frontend.frontendreputationcontext_set.all():
         reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
+    filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
+    if frontend.filebeat_module and frontend.filebeat_config:
+        filebeat_configs[frontend.filebeat_module]=frontend.filebeat_config
+
     frontend.pk = None
     frontend.name = 'Copy of ' + str(frontend.name)
 
@@ -96,6 +101,7 @@ def frontend_clone(request, object_id=None):
         'reputation_contexts': reputationctx_form_list,
         'reputationctx_form': FrontendReputationContextForm(),
         'log_om_table': LogOMTableForm(auto_id=False),
+        'filebeat_module_config': filebeat_configs,
         'object_id': ""
     })
 
@@ -254,9 +260,9 @@ def frontend_edit(request, object_id=None, api=False):
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
-
+        filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
         if front and front.filebeat_module and front.filebeat_config:
-            FILEBEAT_MODULE_CONFIG[front.filebeat_module]=front.filebeat_config
+            filebeat_configs[front.filebeat_module]=front.filebeat_config
 
         return render(request, 'services/frontend_edit.html',
                       {'form': form, 'listeners': listener_form_list, 'listener_form': ListenerForm(),
@@ -264,7 +270,7 @@ def frontend_edit(request, object_id=None, api=False):
                        'reputation_contexts': reputationctx_form_list,
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
-                       'filebeat_module_config': FILEBEAT_MODULE_CONFIG,
+                       'filebeat_module_config': filebeat_configs,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 
     if request.method in ("POST", "PUT"):
