@@ -477,8 +477,11 @@ def openid_token(request, portal_id):
 
             if portal.enable_rotation:
                 new_refresh_token = str(uuid4())
-                refresh['overridden_by'] = new_refresh_token
-                refresh.write_in_redis()
+                if portal.max_nb_refresh > 0:
+                    refresh['overridden_by'] = new_refresh_token
+                    refresh.write_in_redis()
+                else:
+                    refresh.delete()
 
                 # Grab the new refresh token
                 refresh = REDISRefreshSession(REDISBase(), "refresh_" + new_refresh_token)
