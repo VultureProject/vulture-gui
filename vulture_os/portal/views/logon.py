@@ -465,7 +465,6 @@ def openid_token(request, portal_id):
 
             # Get current access_token
             current_oauth2_session = REDISOauth2Session(REDISBase(), f"oauth2_{refresh['access_token']}")
-            assert current_oauth2_session.exists(), "Invalid Refresh token."
 
             new_oauth2_token = str(uuid4())
             new_oauth2_session = REDISOauth2Session(REDISBase(), "oauth2_" + new_oauth2_token)
