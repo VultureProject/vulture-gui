@@ -292,6 +292,9 @@ class Frontend(models.Model):
         default="",
         help_text=_("Conditional configuration of log forwarders")
     )
+    keep_source_fields = models.JSONField(
+        default={}
+    )
     """ Generated configuration depending on Node listening on """
     configuration = models.JSONField(
         default={}
@@ -509,6 +512,9 @@ class Frontend(models.Model):
         related_name="certificate_used_by_api_parser",
         verbose_name=_("Custom certificate"),
         help_text=_("Custom certificate to use.")
+    )
+    last_api_call = models.DateTimeField(
+        default=datetime.datetime.utcnow
     )
     # Forcepoint attributes
     forcepoint_host = models.TextField(
@@ -950,12 +956,6 @@ class Frontend(models.Model):
         help_text=_("Authentication token"),
         default="",
     )
-    last_api_call = models.DateTimeField(
-        default=datetime.datetime.utcnow
-    )
-    keep_source_fields = models.JSONField(
-        default={}
-    )
     # Netskope attributes
     netskope_host = models.TextField(
         verbose_name = _("Netskope Host"),
@@ -1150,6 +1150,17 @@ class Frontend(models.Model):
         verbose_name = ("CSC DomainManager Authorization HTTP Header token prefixed by Bearer, ex: Bearer xxxx-xxxx-xxxx-xxxx"),
         help_text = ("CSC DomainManager Authorization"),
         default=""
+    )
+    # Retarus attributes
+    retarus_token = models.TextField(
+        verbose_name=_("Retarus token"),
+        help_text=_("Retarus token"),
+        default = ""
+    )
+    retarus_channel = models.TextField(
+        verbose_name=_("Retarus channel"),
+        help_text=_("Retarus channel"),
+        default="",
     )
 
     def reload_haproxy_conf(self):

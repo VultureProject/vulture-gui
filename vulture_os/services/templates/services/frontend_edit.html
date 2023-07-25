@@ -1766,6 +1766,22 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-12 api_clients_row" id="api_retarus_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.retarus_token.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.retarus_token }}
+                            {{ form.retarus_token.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.retarus_channel.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.retarus_channel }}
+                            {{ form.retarus_channel.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
@@ -1827,6 +1843,9 @@
 
   var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";
   var fetch_frontend_api_parser_data_uri = "{% url 'services.frontend.fetch_apiparser_data' %}";
-  var api_parser_blacklist = ["cisco_meraki", "defender", "defender_atp", "gsuite_alertcenter", "mongodb", "ms_sentinel", "office_365", "proofpoint_pod", "proofpoint_casb", "safenet", "sophos_cloud", "symantec", "trendmicro_visionone", "waf_cloudflare"];
+  var api_parser_blacklist = ["cisco_meraki", "defender", "defender_atp", "gsuite_alertcenter", "mongodb",
+                              "ms_sentinel", "office_365", "proofpoint_pod", "proofpoint_casb", "safenet",
+                              "sophos_cloud", "symantec", "trendmicro_visionone", "waf_cloudflare", "retarus",
+                              ];
 
 {% endblock %}
