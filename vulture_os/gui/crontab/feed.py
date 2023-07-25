@@ -52,9 +52,6 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('crontab')
 
 
-# The slash at the end is mandatory
-IPSET_VULTURE = "https://predator.vultureproject.org/ipsets/"
-
 def security_alert(title, level, content):
     """
     Insert an rss to notify an important event
@@ -127,44 +124,6 @@ def security_update(node_logger=None):
                          "{}".format(str(e)))
     except Exception as e:
         logger.error("Crontab::security_update: Failed to retrieve vulnerabilities : {}".format(e))
-
-    # If it is the master node, update our internal database with predator feed list
-    # Update May 2022: Predator Feeds are public and shared with all tenants
-    if Cluster.get_current_node().is_master_mongo:
-
-        try:
-            logger.info("Crontab::security_update: get Vulture's ipsets...")
-            result = requests.get(IPSET_VULTURE+"index.json",proxies=proxies,timeout=5)
-            result.raise_for_status()
-            infos = result.json()
-        except Exception as e:
-            logger.error("Crontab::security_update: Unable to download Vulture's ipsets: {}".format(e))
-            return False
-
-        for info in infos:
-            label = info['label']
-            description = info['description']
-            entry_type = info['type']
-            url = info.get('url', IPSET_VULTURE+info['filename'])
-            nb_netset = info.get('nb_netset', 0)
-            nb_unique = info.get('nb_unique', 0)
-            filename = info['filename']
-
-            """ Create/update object """
-            ctx, created = ReputationContext.objects.update_or_create(
-                filename = filename,
-                defaults = {
-                    "name": label,
-                    "url": url,
-                    "db_type": entry_type,
-                    "description": description,
-                    "nb_netset": nb_netset,
-                    "nb_unique": nb_unique,
-                    "internal": True,
-                    "custom_headers": {},
-                }
-            )
-            logger.info("Reputation context {} {}.".format(ctx.name, "created" if created else "updated"))
 
     # On ALL nodes, write databases on disk
     # All internal reputation contexts are retrieved and created if needed
