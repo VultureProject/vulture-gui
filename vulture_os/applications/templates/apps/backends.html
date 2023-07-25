@@ -63,10 +63,10 @@
       mRender: function(data, type, row) {
         var cpt = 0;
         var result = "";
-        $.each(data, function(key, value) {
+        $.each(data, function(index, node) {
           if( cpt > 0 )
             result += "</br>";
-          switch( value ) {
+          switch( node.status ) {
             case "UP":
               result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
               break;
@@ -86,7 +86,7 @@
               result += '<i class="icon fa fa-spinner fa-spin"></i>&nbsp;';
               break;
           }
-          result += key+':<font size="-2">'+value+'</font>';
+          result += node.node+':<font size="-2">'+node.status+'</font>';
           cpt++;
         });
         return result;

@@ -410,9 +410,9 @@ def backend_edit(request, object_id=None, api=False):
                 raise ServiceReloadError("on cluster\n API request error.", "haproxy",
                                          traceback=api_res.get('message'))
 
+            backend.status = []
             for node in Node.objects.all():
-                backend.status[node.name] = "WAITING"
-
+                backend.status.append({"node": node.name, "status": "WAITING"})
             backend.save()
 
             Cluster.api_request("services.pf.pf.gen_config")

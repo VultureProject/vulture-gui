@@ -169,10 +169,13 @@ def monitor():
         """ BACKENDS """
         for backend in backends:
             status = "DISABLED" if not backend.enabled else statuses.get("BACKEND", {}).get(backend.name, "ERROR")
-            logger.debug("Status of backend '{}': {}".format(backend.name, status))
-            if backend.status.get(node.name) != status:
-                backend.status[node.name] = status
-                backend.save()
+            logger.debug(f"Status of backend '{backend.name}': {status}")
+            for i, node_dict in enumerate(backend.status):
+                node_name = node_dict.get("node")
+                node_status = node_dict.get("status")
+                if node_status != status.get(node_name):
+                    backend.status[i]["status"] = status[node_name]
+                    backend.save()
 
     """ STRONGSWAN """
     try:
