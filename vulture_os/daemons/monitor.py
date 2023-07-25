@@ -233,12 +233,16 @@ def monitor():
             dfilter.status[node.name] = default
 
             filter_status = filter_statuses.get(dfilter.name, False)
-            if not dfilter.enabled:
-                dfilter.status[node.name] = "DISABLED"
-            elif filter_status is None or not dfilter.filter_type.is_launchable:
-                dfilter.status[node.name] = "DOWN"
-            elif filter_statuses.get(dfilter.name, {}).get('status') is not None:
-                dfilter.status[node.name] = filter_statuses.get(dfilter.name).get('status').upper()
+
+            for i, node_dict in enumerate(dfilter.status):
+                node_name = node_dict.get("node")
+                if node.name == node_name:
+                    if not dfilter.enabled:
+                        dfilter.status[i]["status"] = "DISABLED"
+                    elif filter_status is None or not dfilter.filter_type.is_launchable:
+                        dfilter.status[i]["status"] = "DOWN"
+                    elif filter_statuses.get(dfilter.name, {}).get('status') is not None:
+                        dfilter.status[i]["status"] = filter_statuses.get(dfilter.name).get('status').upper()
             dfilter.save()
 
     """ Update Node state and heartbeat """
