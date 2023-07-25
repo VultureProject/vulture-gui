@@ -153,15 +153,18 @@ def monitor():
                     status[node.name] = statuses.get("FRONTEND", {}).get(frontend.name, "ERROR")
                 logger.debug(f"Status of frontend '{frontend.name}': {status}")
 
-                for node_name in status.keys():
-                    if status[node_name] != frontend.status.get(node_name):
-                        logger.info(f"Status of '{node_name}' changed from {frontend.status[node_name]} to {status[node_name]}")
-                        frontend.status[node_name] = status[node_name]
+                for i, node_dict in enumerate(frontend.status):
+                    node_name = node_dict.get("node")
+                    node_status = node_dict.get("status")
+                    if node_status != status.get(node_name):
+                        frontend.status[i]["status"] = status[node_name]
                         frontend.save()
 
-            elif not (frontend.mode == "log" and frontend.listening_mode == "api") and frontend.status.get(node.name):
-                frontend.status.pop(node.name, None)
-                frontend.save()
+            elif not (frontend.mode == "log" and frontend.listening_mode == "api"):
+                for i, node_dict in enumerate(frontend.status):
+                    if node_dict.get("node") == node.name:
+                        frontend.status.pop(i)
+                        frontend.save()
 
         """ BACKENDS """
         for backend in backends:
