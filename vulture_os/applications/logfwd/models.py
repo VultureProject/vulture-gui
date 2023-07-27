@@ -407,9 +407,7 @@ class LogOMHIREDIS(LogOM):
             'internal': self.internal,
             'name': self.name,
             'type': 'Redis',
-            'output': self.target + ':' + str(self.port) + ' ({}key = {})'.format(
-                'dynamic ' if self.dynamic_key else '',
-                self.key)
+            'output': f"{self.target}:{self.port} ({'dynamic ' if self.dynamic_key else ''}key = {self.key})"
         }
 
     @property
