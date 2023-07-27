@@ -95,7 +95,7 @@ class RetarusParser(ApiParser):
 
         ## WRITE TO FILE ##
 
-        self.write_to_file([self.format_log(message)])
+        self.write_to_file([self.format_log(json.loads(message))])
         self.update_lock()
 
     def on_error(self, error):
