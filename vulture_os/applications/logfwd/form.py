@@ -179,8 +179,9 @@ class LogOMHIREDISForm(ModelForm):
 
     class Meta:
         model = LogOMHIREDIS
-        fields = ('name', 'enabled', 'target', 'port', 'key', 'pwd', 'queue_size', 'dequeue_size', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+        fields = ('name', 'enabled', 'target', 'port', 'key', 'dynamic_key', 'pwd', 'queue_size', 'dequeue_size',
+                  'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
+                  'max_disk_space')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -188,6 +189,7 @@ class LogOMHIREDISForm(ModelForm):
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
             'key': TextInput(attrs={'class': 'form-control'}),
+            'dynamic_key': CheckboxInput(attrs={'class': ' js-switch'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
@@ -209,6 +211,12 @@ class LogOMHIREDISForm(ModelForm):
         if not field:
             raise ValidationError("This field is required.")
         return field.replace(' ', '_')
+    
+    def clean_key(self):
+        key = self.cleaned_data.get('key')
+        if " " in key:
+            raise ValidationError("Cannot contain spaces")
+        return key
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
@@ -233,6 +241,10 @@ class LogOMHIREDISForm(ModelForm):
             else:
                 if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
                     self.add_error("max_file_size", "File size is higher than the disk space")
+        if cleaned_data.get('dynamic_key') == True:
+            key = cleaned_data.get('key')
+            if key.count("%") % 2 != 0:
+                self.add_error("key", "seems like your number of '%' is incorrect, please check your templated key")
         return cleaned_data
 
 

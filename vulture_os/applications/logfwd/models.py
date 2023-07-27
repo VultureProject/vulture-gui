@@ -180,6 +180,9 @@ class LogOM (models.Model):
         conf['out_template'] = rsyslog_template_name
         return template.render(conf)
 
+    def template_id(self):
+        return hashlib.sha256(self.name.encode('utf-8')).hexdigest()
+
     def get_rsyslog_template(self):
         """ Return the rsyslog template used to interpret the filename
              or index name
@@ -382,6 +385,7 @@ class LogOMHIREDIS(LogOM):
     target = models.TextField(null=False, default="1.2.3.4")
     port = models.IntegerField(null=False, default=6379)
     key = models.TextField(null=False, default="MyKey")
+    dynamic_key = models.BooleanField(default=False)
     pwd = models.TextField(blank=True, default=None)
     enabled = models.BooleanField(default=True)
 
@@ -403,7 +407,7 @@ class LogOMHIREDIS(LogOM):
             'internal': self.internal,
             'name': self.name,
             'type': 'Redis',
-            'output': self.target + ':' + str(self.port) + ' (key = {})'.format(self.key)
+            'output': f"{self.target}:{self.port} ({'dynamic ' if self.dynamic_key else ''}key = {self.key})"
         }
 
     @property
@@ -421,6 +425,8 @@ class LogOMHIREDIS(LogOM):
             'target': self.target,
             'port': self.port,
             'key': key,
+            'dynamic_key': self.dynamic_key,
+            'template_id': self.template_id(),
             'pwd': self.pwd,
             'type': 'Redis',
             'queue_size': self.queue_size,
@@ -436,8 +442,10 @@ class LogOMHIREDIS(LogOM):
         }
 
     def get_rsyslog_template(self):
-        return ""
-
+        template = ""
+        if self.dynamic_key:
+            template = "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.key)
+        return template
 
 class LogOMFWD(LogOM):
     target = models.TextField(null=False, default="1.2.3.4")
@@ -585,9 +593,6 @@ class LogOMElasticSearch(LogOM):
     def get_rsyslog_template(self):
         return "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.index_pattern)
 
-    def template_id(self):
-        return hashlib.sha256(self.name.encode('utf-8')).hexdigest()
-
     @property
     def mapping_id(self):
         return 'mapping_'+self.template_id()
@@ -675,9 +680,6 @@ class LogOMMongoDB(LogOM):
             })
 
         return pymongo.MongoClient(**kwargs)
-
-    def template_id(self):
-        return hashlib.sha256(self.name.encode('utf-8')).hexdigest()
 
     @property
     def mapping(self):

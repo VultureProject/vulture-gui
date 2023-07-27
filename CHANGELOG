@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- [LOG_FORWARDER] [HIREDIS] Ability to specify that the destination key is a dynamic template
+### Changed
+- [LOG_FORWARDER] [HIREDIS] Use updated templates <name>_json
 ### Fixed
 - [FRONTEND] [CLONE] Resolve GUI loading problems when cloning an existing Frontend
 - [FRONTEND] [FILEBEAT] Avoid overriding default module config for all Frontends when changed in one
