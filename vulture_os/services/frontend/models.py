@@ -1618,8 +1618,8 @@ class Frontend(models.Model):
             template = jinja2_env.get_template(template_name)
             conf = self.to_template()
             conf['ruleset'] = self.ruleset
-            conf['log_condition'] = self.render_log_condition()
-            conf['log_condition_failure'] = self.render_log_condition_failure()
+            conf['log_condition'] = self.render_log_condition() if self.enable_logging else ""
+            conf['log_condition_failure'] = self.render_log_condition_failure() if self.enable_logging else ""
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
 
             darwin_actions = []

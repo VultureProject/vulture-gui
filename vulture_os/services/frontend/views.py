@@ -70,7 +70,7 @@ def frontend_clone(request, object_id=None):
     :param object_id: MongoDB object_id of a Frontend object
     """
     if not object_id:
-        return HttpResponseRedirect('/services/frontend/')
+        return HttpResponseRedirect(reverse('services.frontend.list'))
 
     """ Retrieve object from id in MongoDB """
     try:
@@ -122,6 +122,9 @@ def frontend_delete(request, object_id, api=False):
     if((request.method == "POST" and request.POST.get('confirm', "").lower() == "yes")
        or (api and request.method == "DELETE" and request.JSON.get('confirm', "").lower() == "yes")):
 
+        # Save frontend nodes before delete-it
+        nodes = frontend.get_nodes()
+
         # Save frontend filename before delete-it
         frontend_filename = frontend.get_base_filename()
 
@@ -141,33 +144,33 @@ def frontend_delete(request, object_id, api=False):
             # If POST request and no error: delete frontend
             frontend.delete()
 
-            # TODO: Verify which node(s) are concerned for API requests ?
             # API request deletion of frontend filename
-            Cluster.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
+            for node in nodes:
+                node.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
 
-            # And reload HAProxy services
-            Cluster.api_request('services.haproxy.haproxy.reload_service')
+                # And reload HAProxy services
+                node.api_request('services.haproxy.haproxy.reload_service')
 
-            # Delete frontend conf
-            if rsyslog_filename:
-                Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', rsyslog_filename)
+                # Delete frontend conf
+                if rsyslog_filename:
+                    node.api_request('services.rsyslogd.rsyslog.delete_conf', rsyslog_filename)
 
-            # Regenerate Rsyslog system conf and restart
-            Cluster.api_request('services.rsyslogd.rsyslog.build_conf')
-            Cluster.api_request('services.rsyslogd.rsyslog.restart_service')
+                # Regenerate Rsyslog system conf and restart
+                node.api_request('services.rsyslogd.rsyslog.build_conf')
+                node.api_request('services.rsyslogd.rsyslog.restart_service')
 
-            # Delete Filebeat conf and restart if concerned
-            if filebeat_filename:
-                Cluster.api_request('services.filebeat.filebeat.delete_conf', filebeat_filename)
-                Cluster.api_request('services.filebeat.filebeat.reload_service')
+                # Delete Filebeat conf and restart if concerned
+                if filebeat_filename:
+                    node.api_request('services.filebeat.filebeat.delete_conf', filebeat_filename)
+                    node.api_request('services.filebeat.filebeat.reload_service')
 
-            # Reload darwin buffering if necessary
-            if was_darwin_buffered:
-                DarwinPolicy.update_buffering()
-                Cluster.api_request("services.darwin.darwin.reload_conf")
+                # Reload darwin buffering if necessary
+                if was_darwin_buffered:
+                    DarwinPolicy.update_buffering()
+                    node.api_request("services.darwin.darwin.reload_conf")
 
-            # Update cluster's PF configuration
-            Cluster.api_request("services.pf.pf.gen_config")
+                # Update node's PF configuration
+                node.api_request("services.pf.pf.gen_config")
 
             if api:
                 return JsonResponse({
@@ -415,6 +418,9 @@ def frontend_edit(request, object_id=None, api=False):
                             node_listeners[nic.node] = list()
                         node_listeners[nic.node].append(listener_obj)
 
+        # Get previous nodes for api_request call
+        old_nodes = frontend.get_nodes()
+
         # Get current Rsyslog configuration filename
         old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.enable_logging else ""
 
@@ -469,54 +475,51 @@ def frontend_edit(request, object_id=None, api=False):
         if frontend.id:
             try:
                 changed_data = form.changed_data
-
-                """ If the ruleset has changed, we need to delete the old-named file """
-                if frontend.mode in ["log", "filebeat"] and "ruleset" in changed_data and old_rsyslog_filename:
-
-                    # API request deletion of rsyslog frontend filename
-                    Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
-                    logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
-
-                """ If it is a Rsyslog only config """
-                if frontend.rsyslog_only_conf:
-
-                    """ And if it was not before saving """
-                    if "mode" in changed_data or "listening_mode" in changed_data or "filebeat_listening_mode" in changed_data:
-                        """ Delete old HAProxy conf """
-                        frontend_filename = frontend.get_base_filename()
-
-                        # API request deletion of frontend filename
-                        Cluster.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
-                        logger.info("HAProxy config '{}' deletion asked.".format(frontend_filename))
-
-                        # And reload of HAProxy service
-                        Cluster.api_request('services.haproxy.haproxy.reload_service')
-
-
-                elif frontend.filebeat_only_conf:
-
-                    """ And if it was not before saving """
-                    if "mode" in changed_data or "listening_mode" in changed_data or "filebeat_listening_mode" in changed_data:
-                        """ Delete old HAProxy conf """
-                        frontend_filename = frontend.get_base_filename()
-
-                        # API request deletion of frontend filename
-                        Cluster.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
-                        logger.info("HAProxy config '{}' deletion asked.".format(frontend_filename))
-
-                        # And reload of HAProxy service
-                        Cluster.api_request('services.haproxy.haproxy.reload_service')
-
-                    """ If it is an HAProxy only conf """
-                elif frontend.mode not in ("log", "filebeat") and not frontend.enable_logging:
-                    """ And it was not """
-                    if "mode" in changed_data or "enable_logging" in changed_data:
+                for node in old_nodes:
+                    """ If the ruleset has changed, we need to delete the old-named file """
+                    if frontend.mode in ["log", "filebeat"] and "ruleset" in changed_data and old_rsyslog_filename:
                         # API request deletion of rsyslog frontend filename
-                        Cluster.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
-                        logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
+                            node.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
+                            logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
 
-                        # And reload of Rsyslog service
-                        Cluster.api_request('services.rsyslogd.rsyslog.restart_service')
+                    """ If it is a Rsyslog only config """
+                    if frontend.rsyslog_only_conf:
+                        """ And if it was not before saving """
+                        if "mode" in changed_data or "listening_mode" in changed_data or "filebeat_listening_mode" in changed_data:
+                            """ Delete old HAProxy conf """
+                            frontend_filename = frontend.get_base_filename()
+
+                            # API request deletion of frontend filename
+                            node.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
+                            logger.info("HAProxy config '{}' deletion asked.".format(frontend_filename))
+
+                            # And reload of HAProxy service
+                            node.api_request('services.haproxy.haproxy.reload_service')
+
+                        """ If it is a Filebeat only config """
+                    elif frontend.filebeat_only_conf:
+                        """ And if it was not before saving """
+                        if "mode" in changed_data or "listening_mode" in changed_data or "filebeat_listening_mode" in changed_data:
+                            """ Delete old HAProxy conf """
+                            frontend_filename = frontend.get_base_filename()
+
+                            # API request deletion of frontend filename
+                            node.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
+                            logger.info("HAProxy config '{}' deletion asked.".format(frontend_filename))
+
+                            # And reload of HAProxy service
+                            node.api_request('services.haproxy.haproxy.reload_service')
+
+                        """ If it is an HAProxy only conf """
+                    elif frontend.mode not in ("log", "filebeat") and old_rsyslog_filename:
+                        """ And it was not """
+                        if "mode" in changed_data or "enable_logging" in changed_data:
+                            # API request deletion of rsyslog frontend filename
+                            node.api_request('services.rsyslogd.rsyslog.delete_conf', old_rsyslog_filename)
+                            logger.info("Rsyslogd config '{}' deletion asked.".format(old_rsyslog_filename))
+
+                            # And reload of Rsyslog service
+                            node.api_request('services.rsyslogd.rsyslog.restart_service')
 
             except Exception as e:
                 logger.exception(e)
@@ -659,7 +662,7 @@ def frontend_edit(request, object_id=None, api=False):
 
         if api:
             return build_response(frontend.id, "services.frontend.api", COMMAND_LIST)
-        return HttpResponseRedirect('/services/frontend')
+        return HttpResponseRedirect(reverse('services.frontend.list'))
 
     return render_form(frontend)
 
