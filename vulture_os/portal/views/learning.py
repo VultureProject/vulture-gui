@@ -105,7 +105,7 @@ def log_in(request):
     backend            = portal_session.keys['backend_'+str(app.id)]
     logged_user        = portal_session.keys['login_'+backend]
     oauth2_token       = portal_session.keys['oauth2_'+backend]
-    autologon_password = portal_session.getAutologonPassword(app.id, backend, logged_user)
+    autologon_password = portal_session.getAutologonPassword(backend, logged_user)
 
     """ Perform SSO Forward if needed
         If learning is enable: It can only be for FORM or BASIC SSO Forward

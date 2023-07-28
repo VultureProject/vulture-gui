@@ -335,25 +335,27 @@ class REDISPortalSession(REDISSession):
         return secret_key
 
 
-    def getAutologonPassword(self, app_id, backend_id, username):
+    def getAutologonPassword(self, backend_id, username):
         """ Retrieve encrypted password in REDIS, decrypt it and return it plain text """
         # Get the encrypted password's value for the current backend
-        p = self.handler.hget(self.key, f"password_{app_id}_{backend_id}")
+        p = self.handler.hget(self.key, f"password_{backend_id}")
         if not p:
             return None
 
-        # And decrypt it with the app_id and username given
+        # And decrypt it with the backend_id and username given
         pwd = LearningProfile()
-        decrypted_pass = pwd.get_data(p, app_id, backend_id, username, 'vlt_autologon_password')
+        # Autologon password doesn't depend on app_id
+        decrypted_pass = pwd.get_data(p, '', backend_id, username, 'vlt_autologon_password')
         return decrypted_pass
 
 
     """ Update encrypted password in REDIS """
-    def setAutologonPassword(self, app_id, app_name, backend_id, username, password):
+    def setAutologonPassword(self, backend_id, username, password):
         pwd = LearningProfile()
-        p = pwd.set_data(app_id, app_name, backend_id, BaseRepository.objects.get(pk=backend_id).name, username,
+        # Autologon password doesn't depend on app_id/app_name
+        p = pwd.set_data('', '', backend_id, BaseRepository.objects.get(pk=backend_id).name, username,
                          'vlt_autologon_password', password)
-        self.keys[f'password_{app_id}_{backend_id}'] = p
+        self.keys[f'password_{backend_id}'] = p
 
     def getData(self):
         """ Return portal_session or None if portal session does not exist """
@@ -424,8 +426,8 @@ class REDISPortalSession(REDISSession):
         self.set_user_infos(backend_id, authentication_datas)
 
         if password:
-            # Encrypt the password with the application id and user login and store it in portal session
-            self.setAutologonPassword(app_id, app_name, backend_id, username, password)
+            # Encrypt the password with the backend id and user login and store it in portal session
+            self.setAutologonPassword(backend_id, username, password)
 
         if not self.write_in_redis(timeout):
             raise REDISWriteError("REDISPortalSession::register_authentication: Unable to write authentication infos "
