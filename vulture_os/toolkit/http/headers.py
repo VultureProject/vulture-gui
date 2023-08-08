@@ -277,12 +277,14 @@ class HttpHealthCheckHeaderForm(Form):
 
     check_header_name = ChoiceField(
         choices=HTTP_HEADER_CHOICES,
+        label = "Header select",
         widget=Select(attrs={
             'class': 'form-control select2'
         })
     )
 
     check_header_value = CharField(
+        label = "Header value",
         widget=TextInput(attrs={
             'class': 'form-control'
         })
@@ -297,8 +299,8 @@ class HttpHealthCheckHeaderForm(Form):
     def as_table_headers(self):
         """ Format field names as table head """
         result = "<tr>"
-        for field in self.labels:
-            result += "<th>{}</th>\n".format(field)
+        for field in self:
+            result += f"<th>{field.label}</th>\n"
         result += "<th>Delete</th></tr>\n"
         return result
 
@@ -306,7 +308,7 @@ class HttpHealthCheckHeaderForm(Form):
         """ Format fields as a table with <td></td> """
         result = "<tr>"
         for field in self:
-            result += "<td>{}</td>\n".format(field)
+            result += f"<td>{field}</td>\n"
         result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
                   "class='fas fa-trash-alt'></i></a></td></tr>\n"
         return result
@@ -315,7 +317,7 @@ class HttpHealthCheckHeaderForm(Form):
         """ Format fields as a table with <td></td> """
         result = "<tr>"
         for field in self.fields:
-            new_field = deepcopy(self.fields[field].widget)
+            new_field = deepcopy(self.labels[field].widget)
             new_field.attrs['readonly'] = True
             result += "<td>{}</td>\n".format(new_field.render(field, self.initial.get(field)))
         result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \

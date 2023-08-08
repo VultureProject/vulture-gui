@@ -70,8 +70,9 @@ LOG_LEVEL_CHOICES = (
 
 # Modes choices of HAProxy HTTP Backend
 HEALTH_CHECK_VERSION_CHOICES = (
-    ('HTTP/1.0\\r\\n', 'HTTP/1.0'),
-    ('HTTP/1.1\\r\\n', 'HTTP/1.1')
+    ('HTTP/1.0', 'HTTP/1.0'),
+    ('HTTP/1.1', 'HTTP/1.1'),
+    ('HTTP/2', 'HTTP/2')
 )
 
 HEALTH_CHECK_METHOD_CHOICES = (
@@ -91,6 +92,18 @@ HEALTH_CHECK_EXPECT_CHOICES = (
     ('! rstatus', 'Status code does not match regex'),
     ('! string', 'Response content does not contain'),
     ('! rstring', 'Response content does not match regex')
+)
+
+HEALTH_CHECK_TCP_EXPECT_CHOICES = (
+    ('', 'None'),
+    ('string', 'Response content contains'),
+    ('rstring', 'Response content match regex'),
+    ('binary', 'Response binary contains'),
+    ('rbinary', 'Response binary match regex'),
+    ('! string', 'Response content does not contain'),
+    ('! rstring', 'Response content does not match regex'),
+    ('! binary', 'Response binary does not contains'),
+    ('! rbinary', 'Response binary does not match regex')
 )
 
 BALANCING_CHOICES = (
@@ -150,7 +163,7 @@ class Backend(models.Model):
     configuration = models.TextField(
         default="{}"
     )
-    """ Status of frontend for each nodes """
+    """ Status of backend for each nodes """
     status = models.JSONField(
         default={}
     )
@@ -166,6 +179,60 @@ class Backend(models.Model):
     custom_haproxy_conf = models.TextField(
         default="",
         help_text=_("Custom HAProxy configuration directives.")
+    )
+
+    """ TCP Options """
+    """ Enable TCP protocol to check on the servers health """
+    enable_tcp_health_check = models.BooleanField(
+        default=False,
+        help_text=_("Enable TCP protocol health checker"),
+        verbose_name=_("TCP health check")
+    )
+    """ Enable TCP linger to close cleanly the connection instead of sending RST """
+    tcp_health_check_linger = models.BooleanField(
+        default=True,
+        help_text=_("Enable linger to close cleanly the TCP tunnel"),
+        verbose_name=_("Close the connection cleanly")
+    )
+    """ Health check message sent after connection established """
+    tcp_health_check_send = models.TextField(
+        default="",
+        null=True,
+        help_text=_("Message sent after connection established"),
+        verbose_name=_("Message to send")
+    )
+    """ Health check expect """
+    tcp_health_check_expect_match = models.TextField(
+        choices=HEALTH_CHECK_TCP_EXPECT_CHOICES,
+        default=HEALTH_CHECK_TCP_EXPECT_CHOICES[0][0],
+        null=True,
+        help_text=_("Type of match to expect"),
+        verbose_name=_("TCP Health Check expected")
+    )
+    tcp_health_check_expect_pattern = models.TextField(
+        default="",
+        help_text=_("Type of pattern to match to expect"),
+        verbose_name=_("TCP Health Check expected pattern")
+    )
+    """ Health check interval """
+    tcp_health_check_interval = models.PositiveIntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(3600)],
+        help_text=_("TCP Health Check interval"),
+        verbose_name=_("TCP Health Check interval")
+    )
+    """ Enable or disable TCP keep-alive from client to server """
+    enable_tcp_keep_alive = models.BooleanField(
+        default=True,
+        help_text=_("Enable TCP keep-alive"),
+        verbose_name=_("TCP Keep alive")
+    )
+    """ Keep-alive Timeout """
+    tcp_keep_alive_timeout = models.PositiveIntegerField(
+        default=60,
+        validators=[MinValueValidator(1), MaxValueValidator(20000)],
+        help_text=_("TCP request Timeout"),
+        verbose_name=_("Timeout")
     )
 
     """ HTTP Options """
@@ -201,6 +268,12 @@ class Backend(models.Model):
         default=False,
         help_text=_("Enable HTTP protocol health checker"),
         verbose_name=_("HTTP health check")
+    )
+    """ Enable HTTP linger to close cleanly the connection instead of sending RST """
+    http_health_check_linger = models.BooleanField(
+        default=True,
+        help_text=_("Enable linger to close cleanly the TCP tunnel"),
+        verbose_name=_("Close the connection cleanly")
     )
     """ The optional HTTP method used with the requests """
     http_health_check_method = models.TextField(
@@ -242,6 +315,13 @@ class Backend(models.Model):
         default="200",
         help_text=_("Type of pattern to match to expect"),
         verbose_name=_("HTTP Health Check expected pattern")
+    )
+    """ Health check interval """
+    http_health_check_interval = models.PositiveIntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(3600)],
+        help_text=_("HTTP Health Check interval"),
+        verbose_name=_("HTTP Health Check interval")
     )
     """ Enable or disable HTTP keep-alive from client to server """
     enable_http_keep_alive = models.BooleanField(
@@ -416,14 +496,24 @@ class Backend(models.Model):
             'unix_socket': self.get_unix_socket(),
             'custom_haproxy_conf': self.custom_haproxy_conf,
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
+            'enable_tcp_health_check': self.enable_tcp_health_check,
+            'tcp_health_check_linger': self.tcp_health_check_linger,
+            'tcp_health_check_send': self.tcp_health_check_send,
+            'tcp_health_check_expect_match': self.tcp_health_check_expect_match,
+            'tcp_health_check_expect_pattern': self.tcp_health_check_expect_pattern,
+            'tcp_health_check_interval': self.tcp_health_check_interval,
+            'enable_tcp_keep_alive': self.enable_tcp_keep_alive,
+            'tcp_keep_alive_timeout': self.tcp_keep_alive_timeout,
             'accept_invalid_http_response': self.accept_invalid_http_response,
             'http_forwardfor_header': self.http_forwardfor_header,
             'http_forwardfor_except': self.http_forwardfor_except,
             'enable_http_health_check': self.enable_http_health_check,
+            'http_health_check_linger': self.http_health_check_linger,
             'http_health_check_method': self.http_health_check_method,
             'http_health_check_uri': self.http_health_check_uri,
             'http_health_check_version': self.http_health_check_version,
             'http_health_check_headers': self.http_health_check_headers,
+            'http_health_check_interval': self.http_health_check_interval,
             'enable_http_keep_alive': self.enable_http_keep_alive,
             'http_keep_alive_timeout': self.http_keep_alive_timeout,
             'access_controls_list': set(access_controls_list),
@@ -442,8 +532,7 @@ class Backend(models.Model):
             # Same for headers
             result['headers'] = header_list or self.headers.all()
             if self.enable_http_health_check and self.http_health_check_expect_match:
-                result['http_health_check_expect'] = "{} {}".format(self.http_health_check_expect_match,
-                                                                    self.http_health_check_expect_pattern)
+                result['http_health_check_expect'] = f"{self.http_health_check_expect_match} {self.http_health_check_expect_pattern}"
         return result
 
     def generate_conf(self, server_list=None, header_list=None):
