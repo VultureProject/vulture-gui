@@ -367,13 +367,11 @@ $(function() {
       $('#id_enable_logging').trigger('click');
       $('#id_enable_logging').prop("disabled", true);
       last_enable_log = log_enabled;
-    } else if ( mode !== "log" && mode !== "filebeat" ) {
-      if( mode === "http" ) {
-        refresh_http();
-        $('#id_enable_logging').prop("disabled", false);
-        if( last_enable_log != log_enabled )
-          $('#id_enable_logging').trigger('click');
-      }
+    } else if ( mode === "http" ) {
+      refresh_http();
+      $('#id_enable_logging').prop("disabled", false);
+      if( last_enable_log != log_enabled )
+        $('#id_enable_logging').trigger('click');
     } else if ( mode === "log") {
       last_enable_log = log_enabled;
       $('#id_enable_logging').prop("disabled", true);
@@ -418,6 +416,7 @@ $(function() {
         $('#id_enable_logging_reputation').trigger("click");
       }
     }
+    redrawSwitch('id_enable_logging');
   }).trigger("change");
 
   $('#id_darwin_policies').on("change", function(e) {
@@ -688,6 +687,14 @@ $(function() {
   $('#id_log_forwarders').on('change', function(e) {
     refresh_log_forwarders($(this).val());
   });
+
+  /* Redraw a switch to take new properties into account */
+  function redrawSwitch(id) {
+    elem = document.getElementById(id);
+    elem.removeAttribute('readonly');
+    while(elem.nextElementSibling) elem.nextElementSibling.remove();
+    Switchery(elem);
+  }
 
   /* Initialize all custom fields */
   refresh_table_events();
