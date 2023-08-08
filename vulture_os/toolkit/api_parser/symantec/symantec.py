@@ -76,6 +76,7 @@ class SymantecParser(ApiParser):
                 url,
                 headers=self.HEADERS,
                 proxies=self.proxies,
+                verify=self.api_parser_verify_ssl,
                 allow_redirects=False,
                 timeout=10,
                 stream=True
@@ -135,6 +136,7 @@ class SymantecParser(ApiParser):
                 url,
                 headers=self.HEADERS,
                 proxies=self.proxies,
+                verify=self.api_parser_verify_ssl,
                 allow_redirects=False,
                 stream=True,
                 timeout=60

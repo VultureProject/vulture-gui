@@ -90,7 +90,8 @@ class VadesecureParser(ApiParser):
                         "login": self.vadesecure_login,
                         "password": self.vadesecure_password
                     },
-                    proxies=self.proxies
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                 )
                 assert response.status_code == 200
 
@@ -119,7 +120,8 @@ class VadesecureParser(ApiParser):
                 json=query,
                 headers=self.HEADERS,
                 timeout=timeout,
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         else:
             raise VadesecureAPIError(f"Error at Vadesecure request, unknown method : {method}")

@@ -100,7 +100,12 @@ class NetskopeParser(ApiParser):
             'limit': self.BULK_SIZE,
             'offset': cursor
         }
-        response = self.session.get(alert_url, params=query, proxies=self.proxies)
+        response = self.session.get(
+            alert_url,
+            params=query,
+            proxies=self.proxies,
+            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+        )
         response.raise_for_status() # raises exception if != 2XX
         if response.status_code == 200:
             result = response.json()

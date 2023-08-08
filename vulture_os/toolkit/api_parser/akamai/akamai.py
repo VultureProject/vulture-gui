@@ -214,7 +214,9 @@ class AkamaiParser(ApiParser):
         self.offset = None
         result = []
 
-        with self.session.get(url, params=params, proxies=self.proxies, stream=True) as r:
+        with self.session.get(url, params=params, proxies=self.proxies,
+            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl, stream=True
+        ) as r:
             r.raise_for_status()
             i = 0
 

@@ -65,7 +65,7 @@ class TrendmicroVisiononeParser(ApiParser):
         try:
             while True:
                 r = requests.get(link, params=query, headers=headers,
-                                 proxies=self.proxies, timeout=timeout)
+                                 proxies=self.proxies, verify=self.api_parser_verify_ssl, timeout=timeout)
                 if r.status_code != 200:
                     raise TrendmicroVisionOneAPIError(
                         f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")

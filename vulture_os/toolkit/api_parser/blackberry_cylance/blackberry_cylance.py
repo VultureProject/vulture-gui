@@ -103,7 +103,8 @@ class BlackberryCylanceParser(ApiParser):
                 auth_url,
                 json=payload,
                 timeout=timeout,
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         except requests.RequestException as e:
             self.session = None
@@ -142,7 +143,8 @@ class BlackberryCylanceParser(ApiParser):
                     url,
                     params=query,
                     timeout=timeout,
-                    proxies=self.proxies
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                 )
 
                 if response.status_code not in [200, 201]:

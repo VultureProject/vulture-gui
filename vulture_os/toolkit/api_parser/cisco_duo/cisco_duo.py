@@ -57,11 +57,11 @@ class CiscoDuoParser(ApiParser):
 
     def __init__(self, data):
         super().__init__(data)
-
+        
         self.cisco_duo_host = data["cisco_duo_host"]
         self.cisco_duo_ikey = data["cisco_duo_ikey"]
         self.cisco_duo_skey = data["cisco_duo_skey"]
-        
+
         self.session = None
 
     def _connect(self):
@@ -93,7 +93,7 @@ class CiscoDuoParser(ApiParser):
             headers=headers,
             timeout=timeout,
             proxies=self.proxies,
-            verify=False
+            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
 
         # Get json response

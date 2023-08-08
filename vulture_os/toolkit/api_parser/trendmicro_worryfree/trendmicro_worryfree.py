@@ -122,7 +122,14 @@ class TrendmicroWorryfreeParser(ApiParser):
             logger.info(f"[{__parser__}]:send_request: Sending request (try {retry_time + 1}/{retry})", extra={'frontend': str(self.frontend)})
             headers = self.__gen_auth_headers(http_method, request_uri, body)
             url = "%s://%s%s" % (self.scheme, self.trendmicro_worryfree_server_name, request_uri)
-            resp = self.session.request(http_method, url, data=body, headers=headers, proxies=self.proxies)
+            resp = self.session.request(
+                http_method,
+                url,
+                data=body,
+                headers=headers,
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            )
             if resp.status_code == 200:
                 break
             else:

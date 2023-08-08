@@ -86,6 +86,7 @@ class SentinelOneMobileParser(ApiParser):
                     params=query,
                     headers=headers,
                     proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl,
                     timeout=timeout
                 )
 

@@ -67,7 +67,8 @@ class DefenderATPParser(ApiParser):
                         'client_secret' : self.app_secret,
                         'grant_type' : 'client_credentials'
                     },
-                    proxies=self.proxies
+                    proxies=self.proxies,
+                    verify=self.api_parser_verify_ssl
                 ).json()
 
                 assert response.get('access_token') is not None, "Cannot retrieve token from API : {}".format(response)
@@ -116,7 +117,8 @@ class DefenderATPParser(ApiParser):
         response = self.session.get(
             url,
             params=params,
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:

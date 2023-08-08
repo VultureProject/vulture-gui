@@ -83,7 +83,8 @@ class Office365Parser(ApiParser):
                 'client_assertion_type': 'urn%3Aietf%3Aparams%3Aoauth',
                 'client_secret': self.office365_client_secret
             },
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_verify_ssl
         )
 
         if response.status_code != 200:
@@ -108,7 +109,8 @@ class Office365Parser(ApiParser):
             headers={
                 "Authorization": f"Bearer {access_token}"
             },
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_verify_ssl
         )
 
         for feed in response.json():
@@ -126,7 +128,8 @@ class Office365Parser(ApiParser):
             headers={
                 'Authorization': f'Bearer {access_token}'
             },
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_verify_ssl
         )
 
         if response.status_code != 200:

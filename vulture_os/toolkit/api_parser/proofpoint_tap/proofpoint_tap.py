@@ -96,7 +96,8 @@ class ProofpointTAPParser(ApiParser):
                 auth=(self.proofpoint_tap_principal, self.proofpoint_tap_secret),
                 allow_redirects=allow_redirects,
                 params=params,
-                proxies=self.proxies
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         except requests.ConnectionError as e:
             logger.error(f"[{__parser__}]:_get_logs: {e}", extra={'frontend': str(self.frontend)})

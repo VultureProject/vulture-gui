@@ -68,7 +68,8 @@ class ReachFiveParser(ApiParser):
                         'client_secret': self.reachfive_client_secret,
                         'scope': "read:user-events"
                     },
-                    proxies=self.proxies
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                 ).json()
 
                 assert response.get('access_token') is not None, "Cannot retrieve token from API : {}".format(response)
@@ -119,7 +120,8 @@ class ReachFiveParser(ApiParser):
         response = self.session.get(
             url,
             params=params,
-            proxies=self.proxies
+            proxies=self.proxies,
+            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:

@@ -87,7 +87,7 @@ class WAFCloudflareParser(ApiParser):
 
         cpt = 0
         bulk = []
-        with self.session.get(url, params=query, proxies=self.proxies, stream=True) as r:
+        with self.session.get(url, params=query, proxies=self.proxies, stream=True, verify=self.api_parser_verify_ssl) as r:
             if r.status_code != 200:
                 logger.error(f"{[__parser__]}:get_logs: Status code = {r.status_code}, Error = {r.text}",
                              extra={'frontend': str(self.frontend)})
