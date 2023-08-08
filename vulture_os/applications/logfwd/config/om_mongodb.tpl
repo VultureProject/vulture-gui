@@ -1,6 +1,6 @@
     action(type="ommongodb"
             name="{{output_name}}"
-            template="{{out_template}}_mongo"
+            template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}_mongo{% endif %}"
             uristr="{{uristr}}"
             {% if ssl_cert %}ssl_cert="{{ssl_cert}}"{% endif %}
             {% if ssl_ca %}ssl_ca="{{ssl_ca}}"{% endif %}

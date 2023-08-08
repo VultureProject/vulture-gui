@@ -2,7 +2,7 @@
             name="{{output_name}}"
             Target="{{target}}"
             Port="{{port}}"
-            Template="{{out_template}}"
+            Template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}{% endif %}"
             TLS="{% if tls %}on{% else %}off{% endif -%}"
             {% if ssl_ca -%}TLS.CaCert="{{ssl_ca}}" {%- endif -%}
             {% if ssl_cert -%}TLS.MyCert="{{ssl_cert}}" {%- endif -%}

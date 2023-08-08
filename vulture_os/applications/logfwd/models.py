@@ -132,6 +132,11 @@ class LogOM (models.Model):
         verbose_name=_("Max disk space used by the queue in MB"),
         validators=[MinValueValidator(1)]
     )
+    send_as_raw = models.BooleanField(
+        default=False,
+        help_text=_("Send logs without any modification"),
+        verbose_name=_("Send as raw")
+    )
 
     def __unicode__(self):
         return "{} ({})".format(self.name, self.__class__.__name__)
@@ -223,7 +228,6 @@ class LogOMFile(LogOM):
     flush_interval = models.IntegerField(default=1, null=False)
     async_writing = models.BooleanField(default=True)
     enabled = models.BooleanField(default=True)
-    stock_as_raw = models.BooleanField(default=True)
     retention_time = models.PositiveIntegerField(default=30, validators=[MinValueValidator(1)])
     rotation_period = models.TextField(default=ROTATION_PERIOD_CHOICES[0][0], choices=ROTATION_PERIOD_CHOICES)
 
@@ -264,8 +268,7 @@ class LogOMFile(LogOM):
             'async_writing': "on" if self.async_writing else "off",
             'template_id': self.template_id(kwargs.get('ruleset', "")),
             'type': 'File',
-            'output': self.file,
-            'stock_as_raw': self.stock_as_raw,
+            'send_as_raw': self.send_as_raw,
             'queue_size': self.queue_size,
             'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
@@ -273,7 +276,8 @@ class LogOMFile(LogOM):
             'high_watermark': self.high_watermark,
             'low_watermark': self.low_watermark,
             'max_file_size': self.max_file_size,
-            'max_disk_space': self.max_disk_space
+            'max_disk_space': self.max_disk_space,
+            'output': self.file
         }
 
     def get_used_parsers(self):
@@ -311,7 +315,7 @@ class LogOMFile(LogOM):
         return res
 
     def __str__(self):
-        return "{} ({})".format(self.name, self.__class__.__name__)
+        return f"{self.name} ({self.__class__.__name__})"
 
 
 class LogOMRELP(LogOM):
@@ -364,6 +368,7 @@ class LogOMRELP(LogOM):
             'port': self.port,
             'type': 'RELP',
             'tls': self.tls_enabled,
+            'send_as_raw': self.send_as_raw,
             'queue_size': self.queue_size,
             'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
@@ -429,6 +434,8 @@ class LogOMHIREDIS(LogOM):
             'template_id': self.template_id(),
             'pwd': self.pwd,
             'type': 'Redis',
+            'mode': "queue",
+            'send_as_raw': self.send_as_raw,
             'queue_size': self.queue_size,
             'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
@@ -437,15 +444,16 @@ class LogOMHIREDIS(LogOM):
             'low_watermark': self.low_watermark,
             'max_file_size': self.max_file_size,
             'max_disk_space': self.max_disk_space,
-            'output': self.target + ':' + str(self.port) + ' (key = {})'.format(self.key),
-            'mode': "queue"
+            'output': f"{self.target}:{self.port} (key = {self.key})"
         }
 
     def get_rsyslog_template(self):
         template = ""
-        if self.dynamic_key:
+        from services.frontend.models import Frontend
+        if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.id).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.id).exists():
             template = "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.key)
         return template
+
 
 class LogOMFWD(LogOM):
     target = models.TextField(null=False, default="1.2.3.4")
@@ -462,7 +470,6 @@ class LogOMFWD(LogOM):
         validators=[MinValueValidator(0), MaxValueValidator(9)],
         help_text=_("Compression level for messages.")
     )
-    send_as_raw = models.BooleanField(default=False)
 
     ratelimit_interval = models.PositiveIntegerField(null=True, blank=True)
     ratelimit_burst = models.PositiveIntegerField(null=True, blank=True)
@@ -573,6 +580,7 @@ class LogOMElasticSearch(LogOM):
             'template_id': self.template_id(),
             'mapping_id': self.mapping_id,
             'type': 'Elasticsearch',
+            'send_as_raw': self.send_as_raw,
             'queue_size': self.queue_size,
             'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
@@ -643,6 +651,7 @@ class LogOMMongoDB(LogOM):
             'mapping': self.mapping,
             'internal': self.internal,
             'type': 'MongoDB',
+            'send_as_raw': self.send_as_raw,
             'queue_size': self.queue_size,
             'dequeue_size': self.dequeue_size,
             'enable_retry': self.enable_retry,
