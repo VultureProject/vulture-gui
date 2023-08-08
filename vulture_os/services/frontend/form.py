@@ -196,8 +196,8 @@ class FrontendForm(ModelForm):
             self.fields[field_name].empty_label = None
         self.fields['error_template'].empty_label = "No template"
         # Set required in POST data to False
-        for field_name in ['log_condition', 'ruleset', 'log_level', 'listening_mode', 'filebeat_listening_mode', 'filebeat_module',
-                           'filebeat_config', 'headers', 'custom_haproxy_conf',
+        for field_name in ['log_condition', 'keep_source_fields', 'ruleset', 'log_level', 'listening_mode',
+                           'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'headers', 'custom_haproxy_conf',
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst',
@@ -209,7 +209,7 @@ class FrontendForm(ModelForm):
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
                            'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
-                           'keep_source_fields', 'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
+                           'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
                            'imperva_private_key', 'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
                            'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
                            "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
@@ -246,6 +246,7 @@ class FrontendForm(ModelForm):
                            'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
                            'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                            'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
+                           'retarus_token', 'retarus_channel',
                            ]:
             self.fields[field_name].required = False
 
@@ -283,7 +284,7 @@ class FrontendForm(ModelForm):
 
     class Meta:
         model = Frontend
-        fields = ('enabled', 'tags', 'name', 'mode', 'enable_logging', 'log_level', 'log_condition', 'ruleset',
+        fields = ('enabled', 'tags', 'name', 'mode', 'enable_logging', 'log_level', 'log_condition', 'keep_source_fields', 'ruleset',
                   'listening_mode', 'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'custom_haproxy_conf',
                   'enable_cache', 'cache_total_max_size', 'cache_max_age',
                   'enable_compression', 'compression_algos', 'compression_mime_types', 'error_template',
@@ -297,10 +298,10 @@ class FrontendForm(ModelForm):
                   'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
                   'api_parser_verify_ssl', 'api_parser_custom_certificate',
                   'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
-                  "symantec_username", "symantec_password", "aws_access_key_id", "aws_secret_access_key",
-                  "aws_bucket_name", "akamai_host", "akamai_client_secret", "akamai_access_token",
-                  "akamai_client_token", 'akamai_config_id', 'office365_tenant_id', 'office365_client_id',
-                  'keep_source_fields', 'office365_client_secret',
+                  "symantec_username", "symantec_password",
+                  "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name",
+                  "akamai_host", "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
+                  'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
                   'imperva_base_url', 'imperva_api_key', 'imperva_api_id', 'imperva_private_key',
                   'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
                   'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
@@ -338,6 +339,7 @@ class FrontendForm(ModelForm):
                   'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
                   'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                   'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
+                  'retarus_token', 'retarus_channel',
                 )
 
         widgets = {
@@ -503,6 +505,8 @@ class FrontendForm(ModelForm):
             'sentinel_one_mobile_apikey': TextInput(attrs={'type': 'password','class': 'form-control'}),
             'csc_domainmanager_apikey':TextInput(attrs={'class': 'form-control'}),
             'csc_domainmanager_authorization':TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'retarus_token': TextInput(attrs={'class': 'form-control'}),
+            'retarus_channel': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):

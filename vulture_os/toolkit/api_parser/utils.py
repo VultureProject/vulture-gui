@@ -64,6 +64,7 @@ from toolkit.api_parser.trendmicro_visionone.trendmicro_visionone import Trendmi
 from toolkit.api_parser.cisco_duo.cisco_duo import CiscoDuoParser
 from toolkit.api_parser.sentinel_one_mobile.sentinel_one_mobile import SentinelOneMobileParser
 from toolkit.api_parser.csc_domainmanager.csc_domainmanager import CscDomainManagerParser
+from toolkit.api_parser.retarus.retarus import RetarusParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -108,6 +109,7 @@ PARSER_LIST = {
     "cisco_duo": CiscoDuoParser,
     "sentinel_one_mobile": SentinelOneMobileParser,
     "csc_domainmanager": CscDomainManagerParser,
+    "retarus": RetarusParser,
 }
 
 class ParserDoesNotExist(Exception):
