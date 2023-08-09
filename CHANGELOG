@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] New collector **Retarus**
 - [BACKEND] [GUI] HTTP/2 Health check
 - [BACKEND] [GUI] TCP Health check
+- [CLUSTER] Node state and heartbeat
+- [GUI] API collector node runner selector
 ### Changed
 - [LOG_FORWARDER] [HIREDIS] Use updated templates <name>_json
 ### Fixed

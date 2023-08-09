@@ -68,6 +68,8 @@ def monitor():
     if not node:
         return False
 
+    logger.debug(f"Node state was: {node.state} {node.heartbeat}")
+
     def get_service_status(service_class):
         """ Get a service_class (eg HaproxyService) 
         :return  a dict {'name':service_name, 'status': status} """
@@ -136,21 +138,28 @@ def monitor():
         """ FRONTENDS """
         for frontend in frontends:
             if node in frontend.get_nodes():
+                status = {}
                 if not frontend.enabled:
-                    status = "DISABLED"
+                    status[node.name] = "DISABLED"
+                elif frontend.mode == "log" and frontend.listening_mode == "api":
+                    for tmp_node in frontend.get_nodes():
+                        # Let Rsyslog take the responsability to set the status to OPEN
+                        status[tmp_node.name] = "STOP" if tmp_node.state != "UP" else {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
                 elif frontend.rsyslog_only_conf:
-                    status = {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
+                    status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
                 elif frontend.filebeat_only_conf:
-                    status = {'UP': "OPEN", 'DOWN': "STOP"}.get(filebeat_status.status, filebeat_status.status)
+                    status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(filebeat_status.status, filebeat_status.status)
                 else:
-                    status = statuses.get("FRONTEND", {}).get(frontend.name, "ERROR")
-                logger.debug("Status of frontend '{}': {}".format(frontend.name, status))
+                    status[node.name] = statuses.get("FRONTEND", {}).get(frontend.name, "ERROR")
+                logger.debug(f"Status of frontend '{frontend.name}': {status}")
 
-                if status != frontend.status.get(node.name):
-                    frontend.status[node.name] = status
-                    frontend.save()
+                for node_name in status.keys():
+                    if status[node_name] != frontend.status.get(node_name):
+                        logger.info(f"Status of '{node_name}' changed from {frontend.status[node_name]} to {status[node_name]}")
+                        frontend.status[node_name] = status[node_name]
+                        frontend.save()
 
-            elif not (frontend.mode=="log" and frontend.listening_mode=="api") and frontend.status.get(node.name):
+            elif not (frontend.mode == "log" and frontend.listening_mode == "api") and frontend.status.get(node.name):
                 frontend.status.pop(node.name, None)
                 frontend.save()
 
@@ -225,6 +234,11 @@ def monitor():
             elif filter_statuses.get(dfilter.name, {}).get('status') is not None:
                 dfilter.status[node.name] = filter_statuses.get(dfilter.name).get('status').upper()
             dfilter.save()
+
+    """ Update Node state and heartbeat """
+    node.heartbeat = timezone.now()
+    node.save()
+    logger.info(f"Node state: {node.state} {node.heartbeat}")
 
     # Delete old monitoring
     last_date = (timezone.now() - timedelta(days=30))
