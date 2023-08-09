@@ -37,7 +37,9 @@ from applications.backend.models import Backend, BACKEND_OWNER, BACKEND_PERMS, S
 from services.darwin.darwin import get_darwin_sockets
 from system.cluster.models import Cluster, Node
 from toolkit.api.responses import build_response
+
 from toolkit.http.headers import HeaderForm, Header, HttpHealthCheckHeaderForm
+from workflow.models import Workflow
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -322,6 +324,17 @@ def backend_edit(request, object_id=None, api=False):
 
             server_obj = server_f.save(commit=False)
             server_objs.append(server_obj)
+
+        try:
+            assert(Workflow.objects.filter(backend=backend).exists() and form.mode != backend.mode)
+            # isinstance(Workflow.backend)
+            # backend.mode == http
+            # frontend.mode == log || filebeat || tcp || http
+        except Exception as e:
+            if api:
+                api_errors.append({"backend_type_check": "You can't modify type of a currently used backend : {e}".format(e)})
+            else:
+                form.add_error('backend_type_check', "You can't modify type of a currently used backend")
 
         # If errors has been added in form
         if not form.is_valid():

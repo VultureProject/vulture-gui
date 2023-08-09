@@ -41,6 +41,7 @@ from system.pki.models import X509Certificate
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
 from toolkit.api_parser.utils import get_api_parser
+from workflow.models import Workflow
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -435,6 +436,17 @@ def frontend_edit(request, object_id=None, api=False):
             # Get current Haproxy configuration filename
             if not frontend.rsyslog_only_conf and not frontend.filebeat_only_conf:
                 old_haproxy_filename = frontend.get_base_filename()
+
+        try:
+            assert(Workflow.objects.filter(backend=backend).exists() and form.mode != backend.mode)
+            # isinstance(Workflow.backend)
+            # backend.mode == http
+            # frontend.mode == log || filebeat || tcp || http
+        except Exception as e:
+            if api:
+                api_errors.append({"backend_type_check": "".format(e)})
+            else:
+                form.add_error('backend_type_check', httpchkform.errors.as_ul())
 
         # If errors has been added in form
         if not form.is_valid():
