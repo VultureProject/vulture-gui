@@ -325,16 +325,12 @@ def backend_edit(request, object_id=None, api=False):
             server_obj = server_f.save(commit=False)
             server_objs.append(server_obj)
 
-        try:
-            assert(Workflow.objects.filter(backend=backend).exists() and form.mode != backend.mode)
-            # isinstance(Workflow.backend)
-            # backend.mode == http
-            # frontend.mode == log || filebeat || tcp || http
-        except Exception as e:
+        # Backend used by workflow type change check
+        if (Workflow.objects.filter(backend=backend).exists() and form.mode != backend.mode):
             if api:
-                api_errors.append({"backend_type_check": "You can't modify type of a currently used backend : {e}".format(e)})
+                api_errors.append({"backend_type_check": "You can't modify type of backend currently used by a worflow : {}".format(str(Workflow.objects.filter(backend=backend).values_list("name", flat=True)))})
             else:
-                form.add_error('backend_type_check', "You can't modify type of a currently used backend")
+                form.add_error('backend_type_check', "You can't modify type of backend currently used by a workflow : {}".format(str(Workflow.objects.filter(backend=backend).values_list("name", flat=True))))
 
         # If errors has been added in form
         if not form.is_valid():
