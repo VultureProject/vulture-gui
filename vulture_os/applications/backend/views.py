@@ -326,11 +326,13 @@ def backend_edit(request, object_id=None, api=False):
             server_objs.append(server_obj)
 
         # Backend used by workflow type change check
-        if Workflow.objects.filter(backend=backend).exists() and backend.mode != form.data.get("mode"):
-            if api:
-                api_errors.append({"backend_workflow_type_change": "You can't modify backend's type currently used by workflow : {}".format(str(Workflow.objects.filter(backend=backend).values_list("name", flat=True)).replace("<QuerySet ","").replace(">",""))})
-            else:
-                form.add_error(None, "You can't modify backend's type currently used by workflow {}".format(str(Workflow.objects.filter(backend=backend).values_list("name", flat=True)).replace("<QuerySet ","").replace(">","")))
+        if backend.mode != form.data.get("mode"):
+            backends = Workflow.objects.filter(backend=backend)
+            if backends.exists():
+                if api:
+                    api_errors.append({"backend_workflow_type_change": "You can't modify backend's type currently used by workflow : {}".format(str(backends.values_list("name", flat=True)).replace("<QuerySet ","").replace(">",""))})
+                else:
+                    form.add_error(None, "You can't modify backend's type currently used by workflow {}".format(str(backends.values_list("name", flat=True)).replace("<QuerySet ","").replace(">","")))
 
         # If errors has been added in form
         if not form.is_valid():
