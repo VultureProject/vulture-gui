@@ -439,12 +439,12 @@ def frontend_edit(request, object_id=None, api=False):
                 old_haproxy_filename = frontend.get_base_filename()
 
         # Frontend used by workflow type change check
-        if (Workflow.objects.filter(frontend=frontend).exists() and "mode" in changed_data):
-            form.add_error('frontend_type_check', "You can't modify type of frontend currently used by a workflow : {}".format(str(Workflow.objects.filter(frontend=frontend).values_list("name", flat=True))))
+        if "mode" in form.changed_data and Workflow.objects.filter(frontend=frontend).exists():
+            form.add_error(None, "You can't modify frontend's type currently used by workflow : {}".format(str(Workflow.objects.filter(frontend=frontend).values_list("name", flat=True)).replace("<QuerySet ","").replace(">","")))
 
-        # When frontend used by idp portal
-        if (UserAuthentication.enable_external and UserAuthentication.external_listener.exists() and frontend.mode == "tcp"):
-            form.add_error('frontend_type_check', "You can't modify type of frontend currently used by a workflow : {}".format(str(Workflow.objects.filter(frontend=frontend).values_list("name", flat=True))))
+        # TODO : Frontend used by idp portal
+        # if "mode" in form.changed_data and UserAuthentication.objects.filter(pk=frontend.id).exists(): #UserAuthentication.enable_external 
+        #     form.add_error('frontend_type_check', "You can't modify frontend's type currently used by workflow : {}".format(str(Workflow.objects.filter(frontend=frontend).values_list("name", flat=True))))
 
         # If errors has been added in form
         if not form.is_valid():
