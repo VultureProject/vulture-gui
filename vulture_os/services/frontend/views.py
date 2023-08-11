@@ -440,13 +440,13 @@ def frontend_edit(request, object_id=None, api=False):
 
         # Frontend used by workflow type change check
         if "mode" in form.changed_data:
-            frontends = Workflow.objects.filter(frontend=frontend)
-            if frontends.exists():
-                form.add_error(None, "You can't modify frontend's type currently used by workflow : {}".format(str(frontends.values_list("name", flat=True)).replace("<QuerySet ","").replace(">","")))
+            workflows = [workflow.name for workflow in Workflow.objects.filter(frontend=frontend) if workflow.enabled]
+            if workflows.__len__() > 0:
+                form.add_error(None, "You can't modify frontend's type currently used by workflow : {}".format(workflows.__str__()))
 
-            idps = UserAuthentication.objects.filter(external_listener=frontend)
-            if idps.exists():
-                form.add_error(None, "You can't modify frontend's type currently used by idp : {}".format(str(idps.values_list("name", flat=True)).replace("<QuerySet ","").replace(">","")))
+            idps = [workflow.name for workflow in UserAuthentication.objects.filter(external_listener=frontend) & UserAuthentication.objects.filter(enable_external=True)]
+            if idps.__len__() > 0:
+                form.add_error(None, "You can't modify frontend's type currently used by idp : {}".format(idps.__str__()))
 
         # If errors has been added in form
         if not form.is_valid():

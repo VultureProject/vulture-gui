@@ -325,14 +325,16 @@ def backend_edit(request, object_id=None, api=False):
             server_obj = server_f.save(commit=False)
             server_objs.append(server_obj)
 
+        first_save = not object_id
+
         # Backend used by workflow type change check
-        if backend.mode != form.data.get("mode"):
-            backends = Workflow.objects.filter(backend=backend)
-            if backends.exists():
+        if not first_save and backend.mode != form.data.get("mode"):
+            workflows = [workflow.name for workflow in Workflow.objects.filter(backend=backend) if workflow.enabled]
+            if workflows.__len__() > 0:
                 if api:
-                    api_errors.append({"backend_workflow_type_change": "You can't modify backend's type currently used by workflow : {}".format(str(backends.values_list("name", flat=True)).replace("<QuerySet ","").replace(">",""))})
+                    api_errors.append({"backend_workflow_type_change": "You can't modify backend's type currently used by workflow : {}".format(workflows.__str__())})
                 else:
-                    form.add_error(None, "You can't modify backend's type currently used by workflow {}".format(str(backends.values_list("name", flat=True)).replace("<QuerySet ","").replace(">","")))
+                    form.add_error(None, "You can't modify backend's type currently used by workflow {}".format(workflows.__str__()))
 
         # If errors has been added in form
         if not form.is_valid():
@@ -367,7 +369,6 @@ def backend_edit(request, object_id=None, api=False):
 
         """ If the conf is OK, save the Backend object """
         # Is that object already in db or not
-        first_save = not backend.id
         try:
             logger.debug("Saving backend")
             backend.save()
