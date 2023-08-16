@@ -468,7 +468,7 @@ class UserAuthentication(models.Model):
         help_text=_("Enable refresh token provider")
     )
     enable_rotation = models.BooleanField(
-        default=False,
+        default=True,
         verbose_name=_("Enable refresh token rotation"),
         help_text=_("Rotate refresh token at every successful request")
     )

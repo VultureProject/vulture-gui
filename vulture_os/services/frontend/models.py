@@ -1507,7 +1507,7 @@ class Frontend(models.Model):
                 infos = post("https://{}:8000/api/services/frontend/test_conf/".format(node_name),
                              headers={'cluster-api-key': cluster_api_key},
                              data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
-                             verify=False, timeout=9).json()
+                             verify=False, timeout=30).json()
             except Exception as e:
                 logger.error(e)
                 raise ServiceTestConfigError("on node '{}'\n Request failure.".format(node_name), "haproxy")

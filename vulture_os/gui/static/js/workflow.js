@@ -112,7 +112,7 @@ var workflow_vue = new Vue({
             }
         } else {
             $.get(
-                workflow_api + workflow_id,
+                workflow_api + workflow_id + '/',
                 $.param({
                     fields: ["workflow_json"]
                 }, true),

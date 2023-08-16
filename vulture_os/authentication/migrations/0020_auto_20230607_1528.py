@@ -25,6 +25,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='userauthentication',
             name='max_nb_refresh',
-            field=models.PositiveIntegerField(default=0, help_text='Number of token allowed to replay of refresh token', verbose_name='Maximum number of token'),
+            field=models.PositiveIntegerField(default=0, help_text='Number of old refresh token kept in memory', verbose_name='History of expired tokens'),
         ),
     ]

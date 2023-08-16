@@ -130,6 +130,13 @@ function refresh_api_parser_type(type_){
   })
 }
 
+/* Redraw a switch to take new properties into account */
+function redrawSwitch(id) {
+  elem = document.getElementById(id);
+  elem.removeAttribute('readonly');
+  while(elem.nextElementSibling) elem.nextElementSibling.remove();
+  Switchery(elem);
+}
 
 $(function() {
 
@@ -349,13 +356,11 @@ $(function() {
       $('#id_enable_logging').trigger('click');
       $('#id_enable_logging').prop("disabled", true);
       last_enable_log = log_enabled;
-    } else if ( mode !== "log" && mode !== "filebeat" ) {
-      if( mode === "http" ) {
-        refresh_http();
-        $('#id_enable_logging').prop("disabled", false);
-        if( last_enable_log != log_enabled )
-          $('#id_enable_logging').trigger('click');
-      }
+    } else if ( mode === "http" || mode === "tcp" ) {
+      refresh_http();
+      $('#id_enable_logging').prop("disabled", false);
+      if( last_enable_log != log_enabled )
+        $('#id_enable_logging').trigger('click');
     } else if ( mode === "log") {
       last_enable_log = log_enabled;
       $('#id_enable_logging').prop("disabled", true);
@@ -681,6 +686,7 @@ $(function(){
     elems.forEach(function(html) {
       var switchery = new Switchery(html);
     });
+    redrawSwitch('id_enable_logging');
     $("#id_kafka_options").tagsinput({
                     freeInput: true,
                     typeaheadjs: {

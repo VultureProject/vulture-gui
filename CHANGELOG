@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.9.1] - 2023-08-16
 ### Fixed
 - [API_PARSER] [SENTINEL_ONE_MOBILE] Fix query params and API uri
+- [FRONTEND] timeouts on save and wrong endpoints
 
 
 ## [2.9.0] - 2023-07-20
