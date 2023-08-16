@@ -27,7 +27,7 @@
             queue.size="{{queue_size}}"
             queue.dequeuebatchsize="{{dequeue_size}}"
     {%- if enable_retry %}
-            action.ResumeRetryCount = "-1"
+            action.resumeRetryCount = "-1"
         {%- if enable_disk_assist %}
             queue.highWatermark="{{high_watermark}}"
             queue.lowWatermark="{{low_watermark}}"
@@ -39,4 +39,11 @@
             queue.saveOnShutdown="on"
         {%- endif -%} {# if enable_disk_assist #}
     {%- endif -%} {# if enable_retry #}
+        {%- if data_stream_mode %}
+            searchType=""
+            bulkid="bulkid-template"
+            dynbulkid="on"
+            writeoperation="create"
+        {%- endif -%} {# if data_stream_mode #}
+            errorFile="/var/log/internal/{{output_name}}_error.log"
             )

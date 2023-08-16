@@ -28,7 +28,7 @@ from django.db.models import Q
 from djongo import models
 
 # Django project imports
-from applications.logfwd.models import LogOMFile
+from applications.logfwd.models import LogOMFile, LogOMElasticSearch
 from system.cluster.models import Cluster
 
 # Required exceptions imports
@@ -50,10 +50,10 @@ class LogRotateSettings(models.Model):
         :return     Dictionnary of configuration parameters
         """
         # Get all files used by enabled frontends in log_forwarders or log_forwarders_parse_failure
-        # FIXME : It seems to have a bug in QuerySet, the merge of 2 querysets does not work
-        # So, waiting for correction, use 2 queries and a list .....
-        log_oms = list(LogOMFile.objects.filter(frontend_set__enabled=True))
-        log_oms = set(log_oms + list(LogOMFile.objects.filter(frontend_failure_set__enabled=True)))
+        log_oms = set(LogOMFile.objects.filter(frontend_set__enabled=True))
+        log_oms = log_oms.union(set(LogOMFile.objects.filter(frontend_failure_set__enabled=True)))
+        log_oms = log_oms.union(set(LogOMElasticSearch.objects.filter(frontend_set__enabled=True)))
+        log_oms = log_oms.union(set(LogOMElasticSearch.objects.filter(frontend_failure_set__enabled=True)))
         """ First, use to_mongo() internal django function """
         return {
             'log_forwarders': log_oms

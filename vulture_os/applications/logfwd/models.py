@@ -531,6 +531,11 @@ class LogOMElasticSearch(LogOM):
         help_text=_("Enable Elasticsearch/OpenSearch 8 compatibility"),
         verbose_name=_("Elasticsearch/OpenSearch 8 compatibility")
     )
+    data_stream_mode = models.BooleanField(
+        default=False,
+        help_text=_("Enable Elasticsearch datastreams support"),
+        verbose_name=_("Enable Elasticsearch datastreams support")
+    )
     index_pattern = models.TextField(unique=True, null=False, default='mylog-%$!timestamp:1:10%')
     uid = models.TextField(null=True, blank=True, default=None)
     pwd = models.TextField(null=True, blank=True, default=None)
@@ -574,6 +579,7 @@ class LogOMElasticSearch(LogOM):
             'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
             'servers': self.servers,
             'es8_compatibility': self.es8_compatibility,
+            'data_stream_mode': self.data_stream_mode,
             'index_pattern': self.index_pattern,
             'uid': self.uid,
             'pwd': self.pwd,
@@ -596,6 +602,14 @@ class LogOMElasticSearch(LogOM):
             if not self.x509_certificate.is_ca_cert():
                 result['ssl_cert'] = self.x509_certificate.get_base_filename() + ".crt"
                 result['ssl_key'] = self.x509_certificate.get_base_filename() + ".key"
+        return result
+
+    def get_rsyslog_filenames(self):
+        """ Render filenames based on filename attribute, depending on frontend used """
+        result = set()
+        from services.frontend.models import Frontend
+        for f in Frontend.objects.filter(log_forwarders=self.id).only('name') | Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.id).only('name'):
+            result.add(f"/var/log/internal/{self.name}_{f.name}_error.log")
         return result
 
     def get_rsyslog_template(self):

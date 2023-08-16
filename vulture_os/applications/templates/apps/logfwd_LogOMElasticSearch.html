@@ -100,6 +100,17 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.data_stream_mode.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.data_stream_mode}}
+                      {{form.data_stream_mode.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
                     <label class="col-sm-4 control-label">{% trans "Index Pattern" %}</label>
                     <div class="col-sm-5">
                       {{form.index_pattern}}
