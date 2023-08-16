@@ -43,7 +43,7 @@ class SentinelOneMobileAPIError(Exception):
     pass
 
 class SentinelOneMobileParser(ApiParser):
-    ALERT_URI = "api/v1/devices/public/device_updates"
+    ALERT_URI = "api/v1/events/public/search"
 
     def __init__(self, data):
         super().__init__(data)
@@ -124,16 +124,19 @@ class SentinelOneMobileParser(ApiParser):
         to = to.isoformat()
         since = since.isoformat()
 
-        query_size = 1000
+        query_size = 100
 
-        query = {"page": 0, "size": query_size, "excludeDeleted": "true"}
+        time_field_name = "persistedTime"
 
-        time_field_name = "updatedAt"
+        query = {"page": 0, "size": query_size, "excludeDeleted": "true", "sort": f"{time_field_name},asc"}
 
+        rsql = []
         if since:
-            query[f"rsql={time_field_name}=gt="] = since
+            rsql += [f"{time_field_name}=gt='{since}'"]
         if to:
-            query[f"rsql={time_field_name}=lte="] = to
+            rsql += [f"{time_field_name}=le='{to}'"]
+        if rsql:
+            query['rsql'] = ';'.join(rsql)
 
         logs = []
         while True:
