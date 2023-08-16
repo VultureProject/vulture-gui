@@ -419,7 +419,7 @@ def frontend_edit(request, object_id=None, api=False):
                         node_listeners[nic.node].append(listener_obj)
 
         # Get previous nodes for api_request call
-        old_nodes = frontend.get_nodes()
+        old_nodes = frontend.get_nodes() if frontend else None
 
         # Get current Rsyslog configuration filename
         old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.enable_logging else ""

@@ -219,7 +219,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     try:
         logger.info("[+] Getting distant cluster information")
         response = requests.get(
-            "https://{}:8000/api/v1/system/cluster/info".format(master_ip),
+            "https://{}:8000/api/v1/system/cluster/info/".format(master_ip),
             headers={'Cluster-api-key': secret_key},
             verify=False
         )
@@ -247,7 +247,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     try:
         logger.info("[+] Getting cluster existing secret key")
         response = requests.get(
-            "https://{}:8000/api/v1/system/cluster/key".format(master_ip),
+            "https://{}:8000/api/v1/system/cluster/key/".format(master_ip),
             headers={'Cluster-api-key': secret_key},
             verify=False
         )
@@ -272,7 +272,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
         try:
             infos = requests.post(
-                "https://{}:8000/api/system/pki/get_ca".format(master_ip),
+                "https://{}:8000/api/system/pki/get_ca/".format(master_ip),
                 headers={'Cluster-api-key': secret_key},
                 verify=False
             ).json()

@@ -139,6 +139,14 @@ function refresh_api_parser_type(type_){
   })
 }
 
+/* Redraw a switch to take new properties into account */
+function redrawSwitch(id) {
+  elem = document.getElementById(id);
+  elem.removeAttribute('readonly');
+  while(elem.nextElementSibling) elem.nextElementSibling.remove();
+  Switchery(elem);
+}
+
 $(function() {
 
   /* All events to refresh (re-apply) after a table is modified */
@@ -367,7 +375,7 @@ $(function() {
       $('#id_enable_logging').trigger('click');
       $('#id_enable_logging').prop("disabled", true);
       last_enable_log = log_enabled;
-    } else if ( mode === "http" ) {
+    } else if ( mode === "http" || mode === "tcp" ) {
       refresh_http();
       $('#id_enable_logging').prop("disabled", false);
       if( last_enable_log != log_enabled )
@@ -688,14 +696,6 @@ $(function() {
     refresh_log_forwarders($(this).val());
   });
 
-  /* Redraw a switch to take new properties into account */
-  function redrawSwitch(id) {
-    elem = document.getElementById(id);
-    elem.removeAttribute('readonly');
-    while(elem.nextElementSibling) elem.nextElementSibling.remove();
-    Switchery(elem);
-  }
-
   /* Initialize all custom fields */
   refresh_table_events();
 
@@ -706,6 +706,7 @@ $(function(){
     elems.forEach(function(html) {
       var switchery = new Switchery(html);
     });
+    redrawSwitch('id_enable_logging');
     $("#id_kafka_options").tagsinput({
                     freeInput: true,
                     typeaheadjs: {

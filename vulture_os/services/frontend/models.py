@@ -1245,8 +1245,9 @@ class Frontend(models.Model):
             result['log_forwarders'] = [LogOM().select_log_om(log_fwd.id).to_template()
                                     for log_fwd in self.log_forwarders.all().only('id')]
 
-        if result['api_parser_custom_certificate'] == None:
-            result['api_parser_custom_certificate'] = {}
+        if not fields or "api_parser_custom_certificate" in fields:
+            if result['api_parser_custom_certificate'] == None:
+                result['api_parser_custom_certificate'] = {}
 
         return result
 
@@ -1494,7 +1495,7 @@ class Frontend(models.Model):
                 infos = post("https://{}:8000/api/services/frontend/test_conf/".format(node_name),
                              headers={'cluster-api-key': cluster_api_key},
                              data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
-                             verify=False, timeout=9).json()
+                             verify=False, timeout=30).json()
             except Exception as e:
                 logger.error(e)
                 raise ServiceTestConfigError("on node '{}'\n Request failure.".format(node_name), "haproxy")
