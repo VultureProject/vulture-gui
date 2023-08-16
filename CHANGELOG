@@ -4,12 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.9.1] - 2023-08-16
+### Fixed
+- [API_PARSER] [SENTINEL_ONE_MOBILE] Fix query params and API uri
+
+
 ## [2.9.0] - 2023-07-20
 ### Removed
 - [LOG_FORWARDER] [ELASTICSEARCH] RateLimit settings
 ### Added
-- [API_PARSER] New collector **SentinelOne Mobile**
-- [API_PARSER] NEW collector **CSC_DOMAINMANAGER**
+- [API_PARSER] New API parser SentinelOne Mobile
+- [API_PARSER] New API parser CSC DomainManager
 - [LOG_FORWARDER] Disk-assisted queues for reliability
 - [PORTAL] [IDP] Refresh token support through OAuth2 flow
 ### Changed
@@ -40,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PORTAL] [SELF_SERVICE] Correctly list available applications for users connected through local repositories
 - [PORTAL] [SSO] Avoid SSO errors when using local repositories
 - [CLUSTER_CREATE] Some Node IPs were missing from Node's DB and on-disk configurations after cluster creation
+
 
 ## [2.8.2] - 2023-07-05
 ### Fixed
