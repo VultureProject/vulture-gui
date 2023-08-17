@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [BACKEND] [GUI] TCP Health check
 - [CLUSTER] Node state and heartbeat
 - [GUI] API collector node runner selector
+- [LDAP] Allow to define custom ObjectClasses for Users and Groups when creating them through Vulture
 ### Changed
 - [LOG_FORWARDER] [HIREDIS] Use updated templates <name>_json
 ### Fixed

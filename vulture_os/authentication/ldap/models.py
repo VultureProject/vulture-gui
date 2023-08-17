@@ -137,16 +137,21 @@ class LDAPRepository(BaseRepository):
         verbose_name=_("User search scope"),
         default=LDAP_SCOPES_CHOICES[0][0],
         choices=LDAP_SCOPES_CHOICES,
-        help_text=_('Deep of search operation')
+        help_text=_('Depth of the search operation')
     )
     user_dn = models.TextField(
         verbose_name=_("User DN"),
         help_text=_('Location in the directory from which the user LDAP search begins')
     )
     user_attr = models.TextField(
-        verbose_name=_("User attribute"),
+        verbose_name=_("User main attribute"),
         default="uid",
         help_text=_('Attribute which identify user')
+    )
+    user_objectclasses = models.JSONField(
+        default=["top", "InetOrgPerson"],
+        verbose_name=_("User Object classes"),
+        help_text=_("List of object classes to use to define new Users"),
     )
     user_filter = models.TextField(
         verbose_name=_("User search filter"),
@@ -189,6 +194,11 @@ class LDAPRepository(BaseRepository):
         verbose_name=_("Group attribute"),
         help_text=_("Attribute which identify group")
     )
+    group_objectclasses = models.JSONField(
+        default=["top", "groupOfNames"],
+        verbose_name=_("Group Object classes"),
+        help_text=_("List of object classes to use to define new Groups"),
+    )
     group_filter = models.TextField(
         verbose_name=_("Group search filter"),
         default="(objectClass=groupOfNames)",
@@ -197,13 +207,8 @@ class LDAPRepository(BaseRepository):
     group_member_attr = models.TextField(
         verbose_name=_("Members attribute"),
         default="member",
-        help_text=_("Attribute which contains  list of group members")
+        help_text=_("Attribute which contains list of group members")
     )
-
-    @property
-    def get_group_objectclass_value(self):
-        regex = r"\(.*=(.*)\)"
-        return re.findall(regex, self.group_filter)[0]
 
     @property
     def get_user_account_locked_attr(self):

@@ -112,7 +112,7 @@ def _create_user(ldap_repository, user_dn, username, userPassword, attrs, group_
         "sn": [username],
         "cn": [username],
         ldap_repository.user_attr: [username],
-        "objectClass": ["inetOrgPerson", "top"],
+        "objectClass": ldap_repository.user_objectclasses,
         "description": ["User created by Vulture"]
     }
 

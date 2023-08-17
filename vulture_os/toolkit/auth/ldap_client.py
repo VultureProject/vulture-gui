@@ -87,6 +87,12 @@ class LDAPClient(BaseAuth):
             self.user_attr = settings.user_attr
         except:
             self.user_attr = ""
+        try:
+            self.user_objectclasses = list()
+            for object_class in settings.user_objectclasses:
+                self.user_objectclasses.append(bytes(object_class, 'utf-8'))
+        except:
+            self.user_objectclasses = [b'top', b'inetOrgPerson']
         self.user_account_locked_attr = settings.user_account_locked_attr
         self.user_change_password_attr = settings.user_change_password_attr
         self.user_mobile_attr = settings.user_mobile_attr
@@ -101,8 +107,12 @@ class LDAPClient(BaseAuth):
         self.group_scope = settings.group_scope
         if not self.group_scope:
             self.group_scope = 2  # Subtree by default
-
-        self.group_objectclass = settings.get_group_objectclass_value
+        try:
+            self.group_objectclasses = list()
+            for object_class in settings.group_objectclasses:
+                self.group_objectclasses.append(bytes(object_class, 'utf-8'))
+        except:
+            self.group_objectclasses = [b'top', b'groupOfNames']
 
         try:
             self.group_filter = settings.group_filter
@@ -801,7 +811,7 @@ class LDAPClient(BaseAuth):
             dn += ","+str(g)
 
         attrs = {
-            'objectClass': [b'inetOrgPerson', b'top'],
+            'objectClass': self.user_objectclasses,
             'sn': [bytes(username, "utf-8")],
             self.user_attr: [bytes(username, "utf-8")],
             'userPassword' : [bytes(password, "utf-8")],
@@ -837,10 +847,14 @@ class LDAPClient(BaseAuth):
         self._bind_connection(self.user, self.password)
 
         for k, v in attrs.items():
+            attrs[k] = list()
             if not isinstance(v, list):
                 v = [v]
-
-            attrs[k] = [bytes(d, 'utf-8') for d in v]
+            for d in v:
+                if not isinstance(d, bytes):
+                    attrs[k].append(bytes(d, 'utf-8'))
+                else:
+                    attrs[k].append(d)
 
         ldif = modlist.addModlist(attrs)
         self._get_connection().add_s(dn, ldif)
@@ -859,7 +873,7 @@ class LDAPClient(BaseAuth):
                 # Group does not exist. Creating it
                 self.add_group(group_dn, {
                     "member": [dn],
-                    "objectClass": [self.group_objectclass]
+                    "objectClass": self.group_objectclasses
                 })
 
         self._bind_connection(self.user, self.password)
