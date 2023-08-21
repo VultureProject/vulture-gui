@@ -27,7 +27,7 @@ from django.conf import settings
 from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, NumberInput, Select
 
 # Django project imports
-from applications.logfwd.models import (LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB,
+from applications.logfwd.models import (LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA,
                                         OMFWD_PROTOCOL)
 from system.pki.models import X509Certificate
 
@@ -213,7 +213,7 @@ class LogOMHIREDISForm(ModelForm):
         if not field:
             raise ValidationError("This field is required.")
         return field.replace(' ', '_')
-    
+
     def clean_key(self):
         key = self.cleaned_data.get('key')
         if " " in key:
@@ -243,7 +243,7 @@ class LogOMHIREDISForm(ModelForm):
             else:
                 if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
                     self.add_error("max_file_size", "File size is higher than the disk space")
-        if cleaned_data.get('dynamic_key') == True:
+        if cleaned_data.get('dynamic_key') == True and cleaned_data.get('key'):
             key = cleaned_data.get('key')
             if key.count("%") % 2 != 0:
                 self.add_error("key", "seems like your number of '%' is incorrect, please check your templated key")
@@ -456,4 +456,94 @@ class LogOMMongoDBForm(ModelForm):
             else:
                 if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
                     self.add_error("max_file_size", "File size is higher than the disk space")
+        return cleaned_data
+
+
+class LogOMKafkaForm(ModelForm):
+
+    class Meta:
+        model = LogOMKAFKA
+        fields = ('name', 'enabled', 'broker', 'topic', 'key', 'dynaKey', 'dynaTopic', 'partitions_useFixed',
+                  'partitions_auto', 'confParam', 'topicConfParam', 'queue_size', 'dequeue_size', 'enable_retry',
+                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+
+        widgets = {
+            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
+            'name': TextInput(attrs={'class': 'form-control'}),
+            'broker': TextInput(attrs={'class': 'form-control'}),
+            'topic': TextInput(attrs={'class': 'form-control'}),
+            'key': TextInput(attrs={'class': 'form-control'}),
+            'dynaKey': CheckboxInput(attrs={"class": " js-switch"}),
+            'dynaTopic': CheckboxInput(attrs={"class": " js-switch"}),
+            'partitions_useFixed': NumberInput(attrs={'class': 'form-control'}),
+            'partitions_auto': CheckboxInput(attrs={"class": " js-switch"}),
+            'confParam': TextInput(attrs={'class': 'form-control'}),
+            'topicConfParam': TextInput(attrs={'class': 'form-control'}),
+            'queue_size': NumberInput(attrs={'class': 'form-control'}),
+            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
+            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
+            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
+            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
+            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
+            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
+            'max_disk_space': NumberInput(attrs={'class': 'form-control'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
+            self.fields[field_name].required = False
+
+    def clean_name(self):
+        field = self.cleaned_data.get('name')
+        if not field:
+            raise ValidationError("This field is required.")
+        return field.replace(' ', '_')
+
+    def clean_key(self):
+        key = self.cleaned_data.get('key')
+        if " " in key:
+            raise ValidationError("Cannot contain spaces")
+        return key
+
+    def clean_topic(self):
+        topic = self.cleaned_data.get('topic')
+        if " " in topic:
+            raise ValidationError("Cannot contain spaces")
+        return topic
+
+    def clean(self):
+        """ Verify needed fields - depending on mode chosen """
+        cleaned_data = super().clean()
+        if cleaned_data.get('enable_disk_assist') == True:
+            try:
+                assert cleaned_data.get('high_watermark'), "high_watermark"
+                assert cleaned_data.get('low_watermark'), "low_watermark"
+            except AssertionError as e:
+                self.add_error(str(e), "This field is required.")
+            else:
+                if cleaned_data.get('queue_size') and (cleaned_data.get('queue_size') < cleaned_data.get('high_watermark') or cleaned_data.get('queue_size') < cleaned_data.get('low_watermark')):
+                    self.add_error("queue_size", "Queue size is lower than a watermark")
+                if cleaned_data.get('high_watermark') < cleaned_data.get('low_watermark'):
+                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
+                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
+            try:
+                assert cleaned_data.get('max_file_size'), "max_file_size"
+                assert cleaned_data.get('max_disk_space'), "max_disk_space"
+            except AssertionError as e:
+                self.add_error(str(e), "This field is required.")
+            else:
+                if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
+                    self.add_error("max_file_size", "File size is higher than the disk space")
+        if cleaned_data.get('dynaKey') == True:
+            if cleaned_data.get('key'):
+                key = cleaned_data.get('key')
+                if key.count("%") % 2 != 0:
+                    self.add_error("key", "seems like your number of '%' is incorrect, please check your templated key")
+            else:
+                self.add_error("key", "This field is required.")
+        if cleaned_data.get('dynaTopic') == True and cleaned_data.get('topic'):
+            topic = cleaned_data.get('topic')
+            if topic.count("%") % 2 != 0:
+                self.add_error("topic", "seems like your number of '%' is incorrect, please check your templated topic")
         return cleaned_data

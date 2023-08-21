@@ -1,4 +1,3 @@
-
     action(type="omelasticsearch"
             name="{{output_name}}"
             server={{ servers }}

@@ -59,6 +59,7 @@ ACTION_TYPE = (
     ('omhiredis', 'Redis'),
     ('ommongodb', 'MongoDB'),
     ('omrelp', 'RELP'),
+    ('omkafka', 'Kafka'),
 )
 
 OMFWD_PROTOCOL = (
@@ -78,7 +79,6 @@ JINJA_PATH = "/home/vlt-os/vulture_os/applications/logfwd/config/"
 
 
 class LogOM (models.Model):
-
     name = models.TextField(unique=True, blank=False, null=False,
                             default="Log Output Module", help_text=_("Name of the Log Output Module"))
     internal = models.BooleanField(default=False, help_text=_("Is this LogForwarder internal"))
@@ -206,6 +206,8 @@ class LogOM (models.Model):
             subclass_obj = self.logommongodb
         elif hasattr(self, 'logomrelp'):
             subclass_obj = self.logomrelp
+        elif hasattr(self, 'logomkafka'):
+            subclass_obj = self.logomkafka
         elif hasattr(self, "logom_ptr") and type(self.logom_ptr) != LogOM:
             subclass_obj = self.logom_ptr
         else:
@@ -223,7 +225,6 @@ class LogOM (models.Model):
 
 
 class LogOMFile(LogOM):
-
     file = models.TextField(null=False)
     flush_interval = models.IntegerField(default=1, null=False)
     async_writing = models.BooleanField(default=True)
@@ -285,10 +286,10 @@ class LogOMFile(LogOM):
         result = set()
         from services.frontend.models import Frontend
         # FIXME : Add .distinct("ruleset") when implemented in djongo
-        for f in Frontend.objects.filter(log_forwarders=self.id).only('ruleset'):
+        for f in Frontend.objects.filter(log_forwarders=self.id, enabled=True).only('ruleset'):
             result.add(f.ruleset)
         # Retrieve log_forwarders_parse_failure for log listeners
-        for f in Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.id).only('ruleset'):
+        for f in Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.id, enabled=True).only('ruleset'):
             result.add(f.ruleset+"_garbage")
         return result
 
@@ -448,11 +449,10 @@ class LogOMHIREDIS(LogOM):
         }
 
     def get_rsyslog_template(self):
-        template = ""
         from services.frontend.models import Frontend
-        if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.id).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.id).exists():
-            template = "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.key)
-        return template
+        if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.id, enabled=True).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.id, enabled=True).exists():
+            return "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.key)
+        return ""
 
 
 class LogOMFWD(LogOM):
@@ -608,12 +608,15 @@ class LogOMElasticSearch(LogOM):
         """ Render filenames based on filename attribute, depending on frontend used """
         result = set()
         from services.frontend.models import Frontend
-        for f in Frontend.objects.filter(log_forwarders=self.id).only('name') | Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.id).only('name'):
+        for f in Frontend.objects.filter(log_forwarders=self.id, enabled=True).only('name') | Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.id, enabled=True).only('name'):
             result.add(f"/var/log/internal/{self.name}_{f.name}_error.log")
         return result
 
     def get_rsyslog_template(self):
-        return "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.index_pattern)
+        from services.frontend.models import Frontend
+        if Frontend.objects.filter(log_forwarders=self.id, enabled=True).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.id, enabled=True).exists():
+            return "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.index_pattern)
+        return ""
 
     @property
     def mapping_id(self):
@@ -708,3 +711,81 @@ class LogOMMongoDB(LogOM):
     def mapping(self):
         # FIXME: Dynamically build mongodb mapping based on Input's Log Format
         return "property(name=\"$!app_name\")"
+
+
+class LogOMKAFKA(LogOM):
+    broker = models.TextField(blank=True, default='["1.2.3.4:9092"]')
+    enabled = models.BooleanField(default=True)
+    topic = models.TextField()
+    key = models.TextField(blank=True)
+    dynaKey = models.BooleanField(default=False)
+    dynaTopic = models.BooleanField(default=False)
+    topicConfParam = models.TextField(blank=True)
+    confParam = models.TextField(blank=True)
+    partitions_useFixed = models.IntegerField(blank=True)
+    partitions_auto = models.BooleanField(default=False)
+
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "type" in fields:
+            result['type'] = 'Kafka'
+
+        return result
+
+    def to_html_template(self):
+        """ Returns only needed attributes for display in GUI """
+        return {
+            'id': str(self.id),
+            'internal': self.internal,
+            'name': self.name,
+            'type': 'Kafka',
+            'output': self.broker + ' (topic = {})'.format(self.topic)
+        }
+
+    @property
+    def template(self):
+        return 'om_kafka.tpl'
+
+    def to_template(self, **kwargs):
+        """  returns the attributes of the class """
+        tpl = Template(self.key)
+        key = tpl.render(Context({'ruleset': kwargs.get('ruleset')}))
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+            'broker': self.broker,
+            'topic': self.topic,
+            'key': self.key,
+            'dynaKey': self.dynaKey,
+            'dynaTopic': self.dynaTopic,
+            'template_id': self.template_id(),
+            'template_topic': self.template_topic(),
+            'partitions_useFixed': self.partitions_useFixed,
+            'partitions_auto': self.partitions_auto,
+            'type': 'Kafka',
+            'mode': "queue",
+            'send_as_raw': self.send_as_raw,
+            'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
+            'enable_retry': self.enable_retry,
+            'enable_disk_assist': self.enable_disk_assist,
+            'high_watermark': self.high_watermark,
+            'low_watermark': self.low_watermark,
+            'max_file_size': self.max_file_size,
+            'max_disk_space': self.max_disk_space,
+            'output': self.broker + ' (topic = {})'.format(self.topic),
+        }
+
+    def template_topic(self):
+        return hashlib.sha256(self.topic.encode('utf-8')).hexdigest()
+
+    def get_rsyslog_template(self):
+        from services.frontend.models import Frontend
+        template = ""
+        if Frontend.objects.filter(log_forwarders=self.id, enabled=True).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.id, enabled=True).exists():
+            if self.dynaKey:
+                template += "template(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_id(), self.key)
+            if self.dynaTopic:
+                template += "\ntemplate(name=\"{}\" type=\"string\" string=\"{}\")".format(self.template_topic(), self.topic)
+        return template

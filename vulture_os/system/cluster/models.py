@@ -359,7 +359,7 @@ class Node(models.Model):
     @property
     def get_forwarders_enabled(self):
         """ Return all tuples (family, proto, ip, port) for each LogForwarders """
-        from applications.logfwd.models import LogOM, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB
+        from applications.logfwd.models import LogOM, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
         # !!! REQUIRED BY listener_set !
         from services.frontend.models import Listener
         result = set()
@@ -374,19 +374,22 @@ class Node(models.Model):
         logfwds = list()
         """ Retrieve LogForwarder used by the frontend using listeners """
         # Log Forwarder RELP
-        logfwds.extend(list(LogOMRELP.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+        logfwds.extend(list(LogOMRELP.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
 
         # Log Forwarder REDIS
-        logfwds.extend(list(LogOMHIREDIS.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+        logfwds.extend(list(LogOMHIREDIS.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
 
         # Log Forwarder Syslog
-        logfwds.extend(list(LogOMFWD.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+        logfwds.extend(list(LogOMFWD.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
 
         # Log Forwarder ElasticSearch
-        logfwds.extend(list(LogOMElasticSearch.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+        logfwds.extend(list(LogOMElasticSearch.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
 
         # Log Forwarder MongoDB
-        logfwds.extend(list(LogOMMongoDB.objects.filter(enabled=True, frontend_set__listener__in=listener_ids).all()))
+        logfwds.extend(list(LogOMMongoDB.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+
+        # Log Forwarder Kafka
+        logfwds.extend(list(LogOMKAFKA.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
 
         """Second, retrieve Log Forwarders directly associated with the node and not a listener eg. KAFKA and REDIS"""
         logfwds.extend([LogOM().select_log_om(log_fwd) for log_fwds in self.frontend_set.values_list('log_forwarders', flat=True) for log_fwd in log_fwds])
@@ -416,6 +419,12 @@ class Node(models.Model):
                 """ For OMMongoDB - parse uristr """
                 for ip, port in parse_uristr(logfwd.uristr):
                     result.add(('tcp', ip, port))
+
+            # Log Forwarder Kafka
+            elif hasattr(logfwd, 'logomkafka'):
+                """ For kafka, we need to parse the brokers """
+                for ip, port in re_findall("([^:\"\']+):(\d+)", logfwd.broker):
+                    result.add(("tcp", ip, port))
 
         return list(result)
 

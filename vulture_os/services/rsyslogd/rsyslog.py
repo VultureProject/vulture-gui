@@ -157,7 +157,7 @@ def build_conf(node_logger, frontend_id=None):
             raise VultureSystemError("Frontend with id {} not found, failed to generate conf.".format(frontend_id),
                                      "build rsyslog conf", traceback=" ")
 
-    """ Generate inputs configutation """
+    """ Generate inputs configuration """
     service = RsyslogService()
     """ If frontend was given we cannot check if its conf has changed to restart service
      and if reload_conf is True, conf has changed so restart service
