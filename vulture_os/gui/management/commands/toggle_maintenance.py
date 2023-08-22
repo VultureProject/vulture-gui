@@ -6,7 +6,8 @@ class Command(BaseCommand):
     help = 'Place a node in maintenance state'
 
     def add_arguments(self, parser):
-        pass
+        parser.add_argument("--on", action="store_true", help="Force a specific state")
+        parser.add_argument("--off", action="store_true", help="Force a specific state")
 
     def handle(self, *args, **options):
         if not Cluster.is_node_bootstrapped():
@@ -14,7 +15,10 @@ class Command(BaseCommand):
 
         if node := Cluster.get_current_node():
             try:
-                if node.state == "MAINTENANCE":
+                if options["on"]:
+                    node.set_state("MAINTENANCE")
+                    self.stdout.write(self.style.SUCCESS(f"The Node is now in MAINTENANCE."))
+                elif options["off"] or node.state == "MAINTENANCE":
                     node.set_state("DOWN")
                     self.stdout.write(self.style.SUCCESS(f"The Node has been put out of MAINTENANCE."))
                 else:

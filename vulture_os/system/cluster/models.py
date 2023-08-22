@@ -503,7 +503,7 @@ class Node(models.Model):
         return X509Certificate.objects.get(name=self.name, status="V", chain=X509Certificate.objects.get(status="V", is_vulture_ca=True, name__startswith="Vulture_PKI").cert)
 
     def set_state(self, state):
-        if state in [state for state, choice in STATE_CHOICES] and self._vstate != state:
+        if state in [state_tmp for state_tmp, choice in STATE_CHOICES] and self._vstate != state:
             logger.warn(f"[NODE SET STATE] State changed to: {state}")
             self._vstate = state
             self.save()
