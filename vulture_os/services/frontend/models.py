@@ -1580,10 +1580,11 @@ class Frontend(models.Model):
             match = re_search("{{([^}]+)}}", line)
             if match:
                 log_om = LogOM().select_log_om_by_name(match.group(1))
-                if log_om.internal and isinstance(log_om, LogOMMongoDB):
-                    log_om.collection = self.ruleset
-                log_oms[match.group(1)] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
-                logger.info("Configuration of Log Forwarder named '{}' generated.".format(log_om.name))
+                if log_om.enabled:
+                    if log_om.internal and isinstance(log_om, LogOMMongoDB):
+                        log_om.collection = self.ruleset
+                    log_oms[match.group(1)] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
+                    logger.info("Configuration of Log Forwarder named '{}' generated.".format(log_om.name))
         internal_ruleset = ""
 
         tpl = JinjaTemplate(self.log_condition)
@@ -1596,9 +1597,9 @@ class Frontend(models.Model):
         """
         result = ""
         for log_forwarder in self.log_forwarders_parse_failure.all().only('id'):
-            result += LogOM.generate_conf(LogOM().select_log_om(log_forwarder.id),
-                                          self.ruleset+"_garbage",
-                                          frontend=self.name+"_garbage") + "\n"
+            log_om = LogOM().select_log_om(log_forwarder.id)
+            if log_om.enabled:
+                result += LogOM.generate_conf(log_om, self.ruleset+"_garbage", frontend=self.name+"_garbage") + "\n"
         return result
 
     @property
@@ -1635,8 +1636,8 @@ class Frontend(models.Model):
             template = jinja2_env.get_template(template_name)
             conf = self.to_template()
             conf['ruleset'] = self.ruleset
-            conf['log_condition'] = self.render_log_condition() if self.enable_logging else ""
-            conf['log_condition_failure'] = self.render_log_condition_failure() if self.enable_logging else ""
+            conf['log_condition'] = self.render_log_condition() if self.enabled and self.enable_logging else ""
+            conf['log_condition_failure'] = self.render_log_condition_failure() if self.enabled and self.enable_logging else ""
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
 
             darwin_actions = []

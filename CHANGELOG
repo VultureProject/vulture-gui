@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] [FILE] Wrong configuration of the spool directory when disk queuing is enabled
 - [BACKEND] Avoid salt errors on 'tcp_health_check_expect_match' field
 - [PORTAL] [IDP] Refresh token validation with multiple IDP
+- [FRONTEND] Disable log condition if log forwarder disabled
 
 
 ## [2.10.2] - 2023-09-25
