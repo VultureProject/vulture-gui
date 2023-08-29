@@ -60,7 +60,7 @@ urlpatterns = [
     path('system/pki/', ListX509Certificate.as_view(), name="system.pki.list"),
     path('api/v1/system/pki/', api.PKIView.as_view(), name="api.system.pki"),
 
-    path('api/system/pki/get_ca', api.pki_get_ca, name="system.pki_get_ca"),
+    path('api/system/pki/get_ca/', api.pki_get_ca, name="system.pki_get_ca"),
 
     path('api/system/pki/get_cert/', api.pki_issue_cert, name="system.pki.pki_issue_cert"),
 

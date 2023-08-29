@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Remove old conf when changing frontend mode to avoid duplicate ruleset
 - [MANAGE] Allow force toggle into maintenance
 - [CLUSTER_JOIN] Correctly reload Haproxy internal configurations on every node
-
+- [SYSTEM] [API] Add missing trailing slash to the /api/system/pki/get_ca/ endpoint
 
 ## [2.9.1] - 2023-08-16
 ### Fixed
