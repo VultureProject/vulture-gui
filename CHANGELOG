@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] [KAFKA] New Kafka log forwarder
 ### Changed
 - [LOG_FORWARDER] [HIREDIS] Use updated templates <name>_json
+- [FILEBEAT] [CONFIGURATION] Use internal Redis proxyfication with Haproxy instead of direct connections
 ### Fixed
 - [FRONTEND] [CLONE] Resolve GUI loading problems when cloning an existing Frontend
 - [FRONTEND] [FILEBEAT] Avoid overriding default module config for all Frontends when changed in one
