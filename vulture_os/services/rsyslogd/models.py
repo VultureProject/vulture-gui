@@ -31,6 +31,7 @@ from django.db.models import Q
 from applications.logfwd.models import LogOM
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from services.frontend.models import Frontend, Listener
+from system.cluster.models import Cluster
 from system.config.models import Config
 
 # Required exceptions imports
@@ -50,8 +51,11 @@ class RsyslogSettings(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ Variables used by template rendering """
+        current_node = Cluster.get_current_node()
+        frontends = [listener.frontend for listener in Listener.objects.filter(network_address__nic__node=current_node).distinct()]
         return {
-            'frontends': Frontend.objects.filter(enabled=True),
+            'frontends': frontends,
+            'node': current_node,
             'max_tcp_listeners': Listener.objects.filter(frontend__listening_mode__icontains="tcp",frontend__enabled=True).count() + Frontend.objects.filter(enabled=True, listening_mode="api").count() + 1,
             'log_forwarders': LogOM.objects.all(),
             'DATABASES_PATH': DATABASES_PATH,
