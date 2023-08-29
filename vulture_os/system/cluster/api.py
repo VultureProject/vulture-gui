@@ -178,8 +178,8 @@ def cluster_add(request):
         for idp in UserAuthentication.objects.filter(enable_external = True):
             new_node.api_request("authentication.user_portal.api.write_templates", idp.id)
             idp.save_conf()
-        # Reload/Build global haproxy configurations and reload service
-        new_node.api_request("services.haproxy.haproxy.configure_node")
+        # Reload/Build global haproxy configurations and reload service for all nodes
+        Cluster.api_request("services.haproxy.haproxy.configure_node")
 
         logger.debug("API call to reload whole darwin configuration")
         new_node.api_request("services.darwin.darwin.reload_all")
