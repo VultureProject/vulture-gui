@@ -1760,12 +1760,19 @@ class Frontend(models.Model):
         """
         :return: Return the node where the frontend has been declared
         """
-        if self.listening_mode in ["file", "kafka", "redis"] or self.filebeat_listening_mode == "file" :
-            return {self.node}
+        result = set()
+        if self.mode == "log" and self.listening_mode in ["file", "kafka", "redis"] \
+        or self.mode == "filebeat" and self.filebeat_listening_mode == "file" :
+            result = {self.node}
         elif self.listening_mode == "api":
-            return set(Node.objects.all())
+            result = set(Node.objects.all())
         else:
-            return set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.id))
+            result = set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.id))
+
+        if None in result:
+            result.remove(None)
+
+        return result
 
 
     def reload_conf(self):

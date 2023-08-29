@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLUSTER_JOIN] Correctly reload Haproxy internal configurations on every node
 - [SYSTEM] [API] Add missing trailing slash to the /api/system/pki/get_ca/ endpoint
 - [RSYSLOG] [CONFIGURATION] Improve inputs' configuration generation on clustered nodes
+- [FRONTEND] [CONFIGURATION] Improve generation/deletion of obsolete configuration files on clustered nodes
 
 ## [2.9.1] - 2023-08-16
 ### Fixed
