@@ -12,6 +12,7 @@ if /usr/local/bin/sudo -u vlt-os /home/vlt-os/env/bin/python /home/vlt-os/vultur
 
 else
     echo "Node not bootstrapped yet."
+    exit 0
 fi
 # Launch upgrade scripts depending on version
 # Get old version
