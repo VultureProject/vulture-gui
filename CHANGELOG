@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [LDAP_REPO] Avoid formatting errors for fields inserted to LDAP when creating/updating users
 - [LDAP_REPO] Correct missing default user/group objectclasses configuration on existing repositories
+- [RSYSLOG] Correct wrong rsyslog input configuration generation
 
 
 ## [2.10.0] - 2023-08-22
