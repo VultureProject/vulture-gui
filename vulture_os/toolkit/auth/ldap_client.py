@@ -882,7 +882,7 @@ class LDAPClient(BaseAuth):
             if not isinstance(v, list):
                 v = [v]
 
-            attributes[k] = [bytes(d, "utf-8") for d in v]
+            attributes[k] = [bytes(str(d), "utf-8") for d in v if d]
 
         ldif = modlist.addModlist(attributes)
         try:
@@ -905,10 +905,10 @@ class LDAPClient(BaseAuth):
 
         # Convert values to bytes
         for k, v in old_attributes.items():
-            old_attributes[k] = [bytes(d, "utf-8") for d in v]
+            old_attributes[k] = [bytes(str(d), "utf-8") for d in v if d]
 
         for k, v in new_attributes.items():
-            new_attributes[k] = [bytes(d, "utf-8") for d in v]
+            new_attributes[k] = [bytes(str(d), "utf-8") for d in v if d]
 
         ldif = modlist.modifyModlist(old_attributes, new_attributes)
         self._get_connection().modify_s(dn, ldif)
