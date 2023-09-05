@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LDAP_REPO] Avoid formatting errors for fields inserted to LDAP when creating/updating users
 - [LDAP_REPO] Correct missing default user/group objectclasses configuration on existing repositories
 - [RSYSLOG] Correct wrong rsyslog input configuration generation
+- [NODE] [STATUS] Don't update Node state when put into MAINTENANCE
 - [API_PARSER] [STATUS] Correctly set and update each node status for API parsers
 
 
