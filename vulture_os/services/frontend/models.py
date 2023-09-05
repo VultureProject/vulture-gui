@@ -1762,9 +1762,9 @@ class Frontend(models.Model):
         """
         result = set()
         if self.mode == "log" and self.listening_mode in ["file", "kafka", "redis"] \
-        or self.mode == "filebeat" and self.filebeat_listening_mode == "file" :
+        or self.mode == "filebeat" and self.filebeat_listening_mode in ["file", "api"] :
             result = {self.node}
-        elif self.listening_mode == "api":
+        elif self.mode == "log" and self.listening_mode == "api":
             result = set(Node.objects.all())
         else:
             result = set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.id))
