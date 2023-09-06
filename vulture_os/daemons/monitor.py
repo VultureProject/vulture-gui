@@ -153,23 +153,29 @@ def monitor():
                     status[node.name] = statuses.get("FRONTEND", {}).get(frontend.name, "ERROR")
                 logger.debug(f"Status of frontend '{frontend.name}': {status}")
 
-                for node_name in status.keys():
-                    if status[node_name] != frontend.status.get(node_name):
-                        logger.info(f"Status of '{node_name}' changed from {frontend.status[node_name]} to {status[node_name]}")
-                        frontend.status[node_name] = status[node_name]
+                for i, node_dict in enumerate(frontend.status):
+                    node_name = node_dict.get("node")
+                    node_status = node_dict.get("status")
+                    if node_status != status.get(node_name):
+                        frontend.status[i]["status"] = status[node_name]
                         frontend.save()
 
-            elif not (frontend.mode == "log" and frontend.listening_mode == "api") and frontend.status.get(node.name):
-                frontend.status.pop(node.name, None)
-                frontend.save()
+            elif not (frontend.mode == "log" and frontend.listening_mode == "api"):
+                for i, node_dict in enumerate(frontend.status):
+                    if node_dict.get("node") == node.name:
+                        frontend.status.pop(i)
+                        frontend.save()
 
         """ BACKENDS """
         for backend in backends:
             status = "DISABLED" if not backend.enabled else statuses.get("BACKEND", {}).get(backend.name, "ERROR")
-            logger.debug("Status of backend '{}': {}".format(backend.name, status))
-            if backend.status.get(node.name) != status:
-                backend.status[node.name] = status
-                backend.save()
+            logger.debug(f"Status of backend '{backend.name}': {status}")
+            for i, node_dict in enumerate(backend.status):
+                node_name = node_dict.get("node")
+                node_status = node_dict.get("status")
+                if node_status != status.get(node_name):
+                    backend.status[i]["status"] = status[node_name]
+                    backend.save()
 
     """ STRONGSWAN """
     try:
@@ -227,12 +233,16 @@ def monitor():
             dfilter.status[node.name] = default
 
             filter_status = filter_statuses.get(dfilter.name, False)
-            if not dfilter.enabled:
-                dfilter.status[node.name] = "DISABLED"
-            elif filter_status is None or not dfilter.filter_type.is_launchable:
-                dfilter.status[node.name] = "DOWN"
-            elif filter_statuses.get(dfilter.name, {}).get('status') is not None:
-                dfilter.status[node.name] = filter_statuses.get(dfilter.name).get('status').upper()
+
+            for i, node_dict in enumerate(dfilter.status):
+                node_name = node_dict.get("node")
+                if node.name == node_name:
+                    if not dfilter.enabled:
+                        dfilter.status[i]["status"] = "DISABLED"
+                    elif filter_status is None or not dfilter.filter_type.is_launchable:
+                        dfilter.status[i]["status"] = "DOWN"
+                    elif filter_statuses.get(dfilter.name, {}).get('status') is not None:
+                        dfilter.status[i]["status"] = filter_statuses.get(dfilter.name).get('status').upper()
             dfilter.save()
 
     """ Update Node state and heartbeat """

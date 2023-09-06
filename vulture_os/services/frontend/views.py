@@ -591,6 +591,7 @@ def frontend_edit(request, object_id=None, api=False):
                                                          arg_field=reputationctx.arg_field,
                                                          dst_field=reputationctx.dst_field)
 
+            frontend.status = []
             for node in node_listeners.keys():
 
                 logger.info("Writing conf of frontend '{}' on node '{}'".format(frontend.name, node.name))
@@ -620,8 +621,8 @@ def frontend_edit(request, object_id=None, api=False):
                     if not api_res.get('status'):
                         raise ServiceReloadError("on node {}: API request error.".format(node.name), "haproxy",
                                                  traceback=api_res.get('message'))
-                    frontend.status[node.name] = "WAITING"
-                    frontend.save()
+                frontend.status.append({"node": node.name, "status": "WAITING"})
+                frontend.save()
 
             # Check if reload logrotate conf if needed
             # meaning if there is a log_forwarder file enabled used by this frontend

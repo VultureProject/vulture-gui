@@ -86,9 +86,9 @@
           $.each(filter, function(fname, statuses) {
             if( !jQuery.isEmptyObject(statuses) ){
               var status_list = "";
-              $.each(statuses, function(node, status) {
+              $.each(statuses, function(index, node) {
                 var status_render = "";
-                switch( status ) {
+                switch( node.status ) {
                   case "RUNNING":
                     status_render = '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
                     break;
@@ -109,7 +109,7 @@
                   if (status_list.length === 0) {
                     status_list += "<li>" + fname + '<ul id="ul_policy">';
                   }
-                  status_list += '<li>' + status_render + node + '</li>';
+                  status_list += '<li>' + status_render + node.node + '</li>';
                 }
               });
               if (status_list.length > 0)

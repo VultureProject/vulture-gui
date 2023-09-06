@@ -483,38 +483,39 @@ class FilterPolicy(models.Model):
     enabled = models.BooleanField(
         default=False,
         help_text=_("Wheter this filter should be started"),
-        )
+    )
 
     """ Number of threads """
     nb_thread = models.PositiveIntegerField(
         default=5,
         help_text=_("The number of concurrent threads to run for this instance (going above 10 is rarely a good idea)"),
-        )
+    )
 
     """ Level of logging (not alerts) """
     log_level = models.TextField(
         default=DARWIN_LOGLEVEL_CHOICES[2][0], choices=DARWIN_LOGLEVEL_CHOICES,
         help_text=_("The logging level for this particular instance (closer to DEBUG means more info, but also more disk space taken and less performances overall)"),
-        )
+    )
 
     """ Alert detection thresold """
     threshold = models.PositiveIntegerField(
         default=80,
         help_text=_("The threshold above which the filter should trigger an alert: filters return a certitude between 0 and 100 (inclusive), this tells the filter to raise an alert if the certitude for the data analysed is above or equal to this threshold"),
-        )
+    )
 
     """ Does the filter has a custom Rsyslog configuration? """
     mmdarwin_enabled = models.BooleanField(
         default=False,
         help_text=_("!!! ADVANCED FEATURE !!! Activates a custom call to Darwin from Rsyslog"),
-        )
+    )
 
     """ The list of custom fields to take from the rsyslog message to send to Darwin """
     mmdarwin_parameters = models.JSONField(
         default=[],
         blank=True,
         help_text=_("!!! ADVANCED FEATURE !!! the list of rsyslog fields to take when executing the custom call to Darwin (syntax is Rsyslog "),
-        validators=[validate_mmdarwin_parameters])
+        validators=[validate_mmdarwin_parameters]
+    )
 
     """ The tag put in rsyslog enrichment field in case of match """
     enrichment_tags = models.JSONField(
@@ -527,13 +528,13 @@ class FilterPolicy(models.Model):
         default=1.0,
         validators=[MinValueValidator(0.0)],
         help_text=_("The weight of this filter when calculating mean certitude during multiple calls to different filters with the same data"),
-        )
+    )
 
     """ Status of filter for each nodes """
     status = models.JSONField(
         default={},
         help_text=_("The statuses of the filter on each cluster's node"),
-        )
+    )
 
     """ The number of cache entries (not memory size) """
     cache_size = models.PositiveIntegerField(

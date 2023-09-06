@@ -98,7 +98,7 @@ function init_vue(){
 
       if (object_id){
         $.get(
-          darwin_policy_api_uri + `/${object_id}`,
+          darwin_policy_api_uri + `${object_id}`,
           null,
 
           function(response) {
@@ -550,7 +550,7 @@ function init_vue(){
           })
         } else {
           $.ajax({
-            url: darwin_policy_api_uri + `/${object_id}`,
+            url: darwin_policy_api_uri + `${object_id}`,
             type: "PUT",
             data: JSON.stringify(data),
             contentType: "application/json",

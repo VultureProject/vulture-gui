@@ -393,7 +393,7 @@ class Backend(models.Model):
                 s = server.to_dict(fields=['id','target','port','mode','weight', 'tls_profile'])
                 result['servers'].append(s)
         if not fields or "status" in fields:
-            result['status'] = dict(self.status)
+            result['status'] = self.status
         if not fields or "headers" in fields:
             """ Other attributes """
             result['headers'] = []
