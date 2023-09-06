@@ -200,8 +200,8 @@ class CiscoDuoParser(ApiParser):
 
                     self.frontend.last_api_call = to
                     self.frontend.save()
-                
-                else: logger.info(f"[{__parser__}]:execute: Collected empty logs, passed", extra={'frontend': str(self.frontend)})
+
+                else: logger.info(f"[{__parser__}]:execute: Empty logs collected & ignored", extra={'frontend': str(self.frontend)})
 
             except Exception as e:
                 msg = f"Failed to endpoint {endpoint}: {e}"
