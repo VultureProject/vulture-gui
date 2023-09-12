@@ -510,10 +510,11 @@ class Node(models.Model):
 
     @property
     def state(self):
-        if timezone.now() - self.heartbeat > timezone.timedelta(seconds=60):
-            self.set_state("DOWN")
-        elif self._vstate == "DOWN":
-            self.set_state("UP")
+        if self._vstate != "MAINTENANCE":
+            if timezone.now() - self.heartbeat > timezone.timedelta(seconds=60):
+                self.set_state("DOWN")
+            elif self._vstate == "DOWN":
+                self.set_state("UP")
         return self._vstate
 
 

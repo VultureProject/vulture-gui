@@ -32,6 +32,7 @@ from django.utils.timezone import make_aware
 from applications.backend.models import Backend
 from darwin.policy.models import FilterPolicy
 from gui.models.monitor import Monitor, ServiceStatus
+from gui.crontab.api_clients_parser import node_selected
 from services.service import Service
 from services.strongswan.strongswan import get_ipsec_tunnels_stats, StrongswanService
 from services.openvpn.openvpn import get_ssl_tunnels_stats, OpenvpnService
@@ -143,8 +144,12 @@ def monitor():
                     status[node.name] = "DISABLED"
                 elif frontend.mode == "log" and frontend.listening_mode == "api":
                     for tmp_node in frontend.get_nodes():
-                        # Let Rsyslog take the responsability to set the status to OPEN
-                        status[tmp_node.name] = "STOP" if tmp_node.state != "UP" else {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
+                        if node_selected(tmp_node, frontend):
+                            if node == tmp_node:
+                                # Let Rsyslog take the responsability to set the status to OPEN
+                                status[tmp_node.name] = {'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status)
+                        else:
+                            status[tmp_node.name] = "STOP"
                 elif frontend.rsyslog_only_conf:
                     status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
                 elif frontend.filebeat_only_conf:
@@ -155,7 +160,7 @@ def monitor():
 
                 for node_name in status.keys():
                     if status[node_name] != frontend.status.get(node_name):
-                        logger.info(f"Status of '{node_name}' changed from {frontend.status[node_name]} to {status[node_name]}")
+                        logger.info(f"Status of '{node_name}' changed from {frontend.status.get(node_name)} to {status[node_name]}")
                         frontend.status[node_name] = status[node_name]
                         frontend.save()
 

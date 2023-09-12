@@ -73,30 +73,32 @@ class SentinelOneParser(ApiParser):
         try:
             if self.session is None:
                 self.session = requests.Session()
-                login_url = f"{self.sentinel_one_host}/{self.LOGIN_URI_TOKEN}"
-                logger.info(f"[{__parser__}]:_connect: connecting with endpoint '{login_url}'...",
-                            extra={'frontend': str(self.frontend)})
 
-                payload = {
-                    "data": {
-                        "apiToken": self.sentinel_one_apikey
+                if self.sentinel_one_account_type == "console":
+                    login_url = f"{self.sentinel_one_host}/{self.LOGIN_URI_TOKEN}"
+                    logger.info(f"[{__parser__}]:_connect: connecting with endpoint '{login_url}'...",
+                                extra={'frontend': str(self.frontend)})
+
+                    payload = {
+                        "data": {
+                            "apiToken": self.sentinel_one_apikey
+                        }
                     }
-                }
-                logger.debug(f"[{__parser__}]:_connect: payload is '{payload}'", extra={'frontend': str(self.frontend)})
-                response = requests.post(
-                    login_url,
-                    json=payload,
-                    proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
-                ).json()
+                    logger.debug(f"[{__parser__}]:_connect: payload is '{payload}'", extra={'frontend': str(self.frontend)})
+                    response = requests.post(
+                        login_url,
+                        json=payload,
+                        proxies=self.proxies,
+                        verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                    ).json()
 
-                assert response.get('data', {}).get('token'), f"Cannot retrieve token from API : {response}"
-                if self.sentinel_one_account_type == SENTINEL_ONE_ACCOUNT_TYPE_CHOICES[1][0]:
-                    self.session.headers.update({'Authorization': f"ApiToken {response['data']['token']}"})
-                else:
+                    assert response.get('data', {}).get('token'), f"Cannot retrieve token from API : {response}"
                     self.session.headers.update({'Authorization': f"Token {response['data']['token']}"})
-                logger.info(f"[{__parser__}]:_connect: access token successfully retrieved, ready to query",
-                            extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}]:_connect: access token successfully retrieved, ready to query",
+                                extra={'frontend': str(self.frontend)})
+
+                else:
+                    self.session.headers.update({'Authorization': f"ApiToken {self.sentinel_one_apikey}"})
 
             return True
 

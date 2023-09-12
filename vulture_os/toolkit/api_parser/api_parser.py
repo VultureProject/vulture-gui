@@ -48,7 +48,7 @@ class ApiParser:
     def __init__(self, data):
         self.data = data
 
-        self.api_parser_verify_ssl = data["api_parser_verify_ssl"]
+        self.api_parser_verify_ssl = data.get("api_parser_verify_ssl", True)
         self.api_parser_custom_certificate = data.get("api_parser_custom_certificate", None)
 
         if current_thread() is main_thread():
@@ -77,7 +77,7 @@ class ApiParser:
         )
 
         self.proxies = None
-        if self.data['api_parser_use_proxy']:
+        if self.data.get('api_parser_use_proxy', False):
             self.proxies = self.get_system_proxy()
 
         self.redis_cli = RedisBase()

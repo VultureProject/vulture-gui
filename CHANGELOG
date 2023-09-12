@@ -43,6 +43,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PKG_UPGRADE] Avoid trying to launch upgrade scripts when node is not bootstrapped
 
 
+## [2.10.1] - 2023-09-12
+### Fixed
+- [LDAP_REPO] Avoid formatting errors for fields inserted to LDAP when creating/updating users
+- [LDAP_REPO] Correct missing default user/group objectclasses configuration on existing repositories
+- [RSYSLOG] Correct wrong rsyslog input configuration generation
+- [NODE] [STATUS] Don't update Node state when put into MAINTENANCE
+- [API_PARSER] Avoid problems while getting parameters by defining custom values
+- [API_PARSER] [STATUS] Correctly set and update each node status for API parsers
+- [API_PARSER] [SENTINEL_ONE] Fix account_type="user service" authentication routine
+
+
 ## [2.10.0] - 2023-08-22
 ### Removed
 - [PREDATOR] Remove predator references
