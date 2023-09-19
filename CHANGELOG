@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+### Fixed
+- [API_PARSER] [CROWDSTRIKE] Delay query time of 2 minutes - to avoid missing events
+
+
 ## [2.10.1] - 2023-09-12
 ### Fixed
 - [LDAP_REPO] Avoid formatting errors for fields inserted to LDAP when creating/updating users

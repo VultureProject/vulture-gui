@@ -261,7 +261,8 @@ class CrowdstrikeParser(ApiParser):
         # Default timestamp is 24 hours ago
         since = self.last_api_call or (timezone.now() - datetime.timedelta(days=7))
         # Get a batch of 24h at most, to avoid running the parser for too long
-        to = min(timezone.now(), since + timedelta(hours=24))
+        # delay the query time of 2 minutes, to avoid missing events
+        to = min(timezone.now()-timedelta(minutes=2), since + timedelta(hours=24))
         to = to.strftime("%Y-%m-%dT%H:%M:%SZ")
         since = since.strftime("%Y-%m-%dT%H:%M:%SZ")
         tmp_logs = self.get_logs(self.kind, since=since, to=to)
@@ -310,3 +311,5 @@ class CrowdstrikeParser(ApiParser):
                 "status": False,
                 "error": str(e)
             }
+
+
