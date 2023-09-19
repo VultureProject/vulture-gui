@@ -137,7 +137,7 @@ class CiscoDuoParser(ApiParser):
 
         current_time = timezone.now()
         try:
-            logs = self.get_logs(since=(current_time - timedelta(hours=24)), to=current_time, endpoint="authentication")
+            logs = self.get_logs(since=(current_time - timedelta(hours=1)), to=current_time, endpoint="authentication")
 
             return {
                 "status": True,
@@ -182,7 +182,7 @@ class CiscoDuoParser(ApiParser):
 
                 logs = self.get_logs(since=since, to=to, endpoint=endpoint)
 
-                if logs:
+                if logs['metadata']:
                     ## UPDATE LAST API CALL IF LOGS ALWAYS PRESENT IN RANGE ##
 
                     if logs['metadata']['total_objects'] >= self.LIMIT and logs['metadata']['next_offset']:
