@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [API_PARSER] [CROWDSTRIKE] Delay query time of 2 minutes - to avoid missing events
+- [FRONTEND] [FILEBEAT] Missing Rsyslog garbage templates in generated configurations
 ### Changed
 - [FRONTEND] Set new default redis server to '127.0.0.5'
 - [FRONTEND] [GUI] Show redis parameters when editing a Filebeat Listener to be able to select a different Redis cache

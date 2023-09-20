@@ -289,7 +289,7 @@ class LogOMFile(LogOM):
         for f in Frontend.objects.filter(log_forwarders=self.id, enabled=True).only('ruleset'):
             result.add(f.ruleset)
         # Retrieve log_forwarders_parse_failure for log listeners
-        for f in Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.id, enabled=True).only('ruleset'):
+        for f in Frontend.objects.filter(mode__in=["log", "filebeat"], log_forwarders_parse_failure=self.id, enabled=True).only('ruleset'):
             result.add(f.ruleset+"_garbage")
         return result
 
