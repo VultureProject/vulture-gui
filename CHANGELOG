@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [FRONTEND] Set new default redis server to '127.0.0.5'
 - [FRONTEND] [GUI] Show redis parameters when editing a Filebeat Listener to be able to select a different Redis cache
+- [FRONTEND] [CONFIGURATION] Allow configured redis_password to be used for Filebeat Listener's cache
 
 
 ## [2.10.1] - 2023-09-12
