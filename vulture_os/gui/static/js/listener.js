@@ -261,6 +261,11 @@ $(function() {
       // ALWAYS put show at last
       $('.network-mode').show();
     }
+
+    // FIXME temporary fix to show redis fields when filebeat mode is activated
+    if (mode === "filebeat") {
+      $('.filebeat-mode.redis-mode').show();
+    }
   }
 
   /* Show rsyslog only fields, or hide them */
