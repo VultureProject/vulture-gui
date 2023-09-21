@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
-__doc__ = "Reload Log and Filebeat Frontend configurations"
+__doc__ = "Reload Log (REDIS) and Filebeat Frontend configurations"
 
 import sys
 import os
@@ -32,6 +32,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
 from django.conf import settings
+from django.db.models import Q
 django.setup()
 
 from system.cluster.models import Cluster
@@ -47,7 +48,8 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            for frontend in Frontend.objects.filter(mode__in=["log", "filebeat"]).only(*Frontend.str_attrs(), 'ruleset'):
+            query = Q(mode="log", listening_mode="redis") | Q(mode="filebeat")
+            for frontend in Frontend.objects.filter(query).only(*Frontend.str_attrs(), 'ruleset'):
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 print("Listener {}({}) Rsyslog configuration reload asked.".format(frontend, frontend.ruleset))
                 if frontend.mode == "filebeat":
