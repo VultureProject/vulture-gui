@@ -147,7 +147,8 @@ class SSOClient(object):
         response.set_cookie(cookie.name,
                             cookie.value,
                             path=path,
-                            httponly=cookie._rest.get('HttpOnly', False),
+                            # NEEDS to check if key is PRESENT: value will be set to None when attribute is set for cookie!
+                            httponly=cookie.has_nonstandard_attr('HttpOnly'),
                             secure=portal_url.startswith('https'),
                             max_age=cookie.expires,
                             samesite=cookie.get_nonstandard_attr('SameSite', 'Lax'))
