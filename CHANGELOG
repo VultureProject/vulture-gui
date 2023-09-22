@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PKG_UPGRADE] Avoid trying to launch upgrade scripts when node is not bootstrapped
 - [GUI] [ACLS] Improve 'Used by' presentation of Wokrflows using ACLs
 - [CODE] [CLEAN] Minor corrections
+- [SSO_CLIENT] [COOKIES] Fix cookies' banning when receiving application's response
 
 
 ## [2.10.2] - 2023-09-25

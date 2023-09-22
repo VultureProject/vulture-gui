@@ -162,7 +162,7 @@ class SSOClient(object):
                 final_response[key] = item
 
         for cookie in self.session.cookies:
-            if key not in self.banned_cookies:
+            if cookie.name not in self.banned_cookies:
                 final_response = self.add_cookie_W_path(final_response, cookie, app_uri)
 
         return final_response
