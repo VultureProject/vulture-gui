@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CODE] [CLEAN] Minor corrections
 - [SSO_CLIENT] [COOKIES] Fix cookies' banning when receiving application's response
 - [SSO_CLIENT] [COOKIES] Correctly check the 'HttpOnly' attribute set from application's response
+- [IDP] [COOKIES] Ensure 'HttpOnly' attribute is always set on IDP session cookies
 
 
 ## [2.10.2] - 2023-09-25
