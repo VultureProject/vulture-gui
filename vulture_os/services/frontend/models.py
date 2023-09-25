@@ -447,8 +447,8 @@ class Frontend(models.Model):
         verbose_name=_("Use LPOP")
     )
     redis_server = models.TextField(
-        default="127.0.0.3",
-        help_text=_("Default Vulture internal server is available on 127.0.0.3"),
+        default="127.0.0.5",
+        help_text=_("Default Vulture internal master server is available on 127.0.0.5"),
         verbose_name=_("Redis server to use")
     )
     redis_port = models.PositiveIntegerField(

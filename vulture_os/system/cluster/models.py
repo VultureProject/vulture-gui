@@ -510,6 +510,9 @@ class Node(models.Model):
 
     @property
     def state(self):
+        if not self.heartbeat:
+            # If initial value isn't set (which COULD happen), set the current value to have a DOWN state
+            self.heartbeat = timezone.now() - timezone.timedelta(seconds=60)
         if self._vstate != "MAINTENANCE":
             if timezone.now() - self.heartbeat > timezone.timedelta(seconds=60):
                 self.set_state("DOWN")
