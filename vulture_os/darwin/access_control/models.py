@@ -146,7 +146,7 @@ class AccessControl(models.Model):
             'id': str(self.pk),
             'name': self.name,
             'acls': self.acls,
-            'used_by': [str(w) for w in self.workflowacl_set.all()],
+            'used_by': [f"Workflow {wacl.workflow.name}" for wacl in self.workflowacl_set.all()],
             'rules': json.dumps(self.rules)
         }
 

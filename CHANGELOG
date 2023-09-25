@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - setuptools 67.8.0 -> removed
 ### Fixed
 - [PKG_UPGRADE] Avoid trying to launch upgrade scripts when node is not bootstrapped
+- [GUI] [ACLS] Improve 'Used by' presentation of Wokrflows using ACLs
 
 
 ## [2.10.2] - 2023-09-25

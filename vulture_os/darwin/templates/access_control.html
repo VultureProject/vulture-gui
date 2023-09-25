@@ -61,7 +61,15 @@
       name: "used_by",
       aTargets: [2],
       defaultContent: "",
-      mData: "used_by"
+      mData: "used_by",
+      mRender: function(data, type, row) {
+        result = "<ul>";
+        data.forEach(function(item) {
+          result += "<li>" + item + "</li>";
+        })
+        result += "</ul>";
+        return result;
+      }
     },
     {
       sTitle: '{% trans "NB Rules" %}',
