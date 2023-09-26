@@ -56,7 +56,7 @@ from pymongo.errors                  import PyMongoError
 from redis                           import ConnectionError as RedisConnectionError, RedisError
 from requests.exceptions             import ConnectionError as RequestsConnectionError
 from portal.system.exceptions        import (TokenNotFoundError, RedirectionNeededError, CredentialsMissingError,
-                                             CredentialsError, REDISWriteError, TwoManyOTPAuthFailure, ACLError)
+                                             CredentialsError, REDISWriteError, TooManyOTPAuthFailure, ACLError)
 from toolkit.auth.exceptions import AuthenticationError, OTPError
 from toolkit.portal.pkce import validate_code_verifier as validate_pkce_code_identifier
 from toolkit.system.hashes import random_sha256, validate_digest
@@ -161,6 +161,10 @@ def openid_callback(request, workflow_id, repo_id):
         repo = OpenIDRepository.objects.get(pk=repo_id)
         workflow = Workflow.objects.get(pk=workflow_id)
         portal = workflow.authentication
+        assert portal
+    except AssertionError:
+        logger.error(f"OpenID_callback:: Workflow '{workflow_id}' doesn't have any authentication")
+        return HttpResponseServerError()
     except Exception as e:
         logger.exception(e)
         return HttpResponseForbidden("Injection detected.")
@@ -170,7 +174,7 @@ def openid_callback(request, workflow_id, repo_id):
     scheme = request.META['HTTP_X_FORWARDED_PROTO']
     fqdn = request.META['HTTP_HOST']
     w_path = workflow.public_dir
-    callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
+    callback_url = portal.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
 
     redirect_url = scheme + "://" + fqdn + w_path
 
@@ -178,7 +182,7 @@ def openid_callback(request, workflow_id, repo_id):
     token_name = global_config.public_token
     """ Retrieve token and cookies to instantiate Redis wrapper objects """
     # Retrieve cookies required for authentication
-    portal_cookie_name = workflow.authentication.auth_cookie_name or global_config.portal_cookie_name
+    portal_cookie_name = portal.auth_cookie_name or global_config.portal_cookie_name
 
     try:
         code = request.GET['code']
@@ -206,17 +210,17 @@ def openid_callback(request, workflow_id, repo_id):
         logger.info(f"OpenID_callback::{portal}: Claims retrieved from {repo.userinfo_endpoint} for token {token} : {claims}")
         repo_attributes = {}
         # Make LDAP Lookup if configured
-        if workflow.authentication.lookup_ldap_repo:
-            ldap_attr = workflow.authentication.lookup_ldap_attr
-            claim = claims.get(workflow.authentication.lookup_claim_attr)
+        if portal.lookup_ldap_repo:
+            ldap_attr = portal.lookup_ldap_attr
+            claim = claims.get(portal.lookup_claim_attr)
             if not claim:
-                logger.error("OpenID_callback: Cannot retrieve user claim '{}' from user claims '{}'".format(workflow.authentication.lookup_claim_attr, claims))
+                logger.error("OpenID_callback: Cannot retrieve user claim '{}' from user claims '{}'".format(portal.lookup_claim_attr, claims))
             else:
-                ldap_connector = workflow.authentication.lookup_ldap_repo.get_client()
+                ldap_connector = portal.lookup_ldap_repo.get_client()
                 # Enrich user claims with LDAP infos - merge dictionnaries
                 repo_attributes = ldap_connector.user_lookup_enrichment(ldap_attr, claim)
                 logger.info(f"OpenID_callback::{portal}: Repo attributes retrieved from "
-                            f"{workflow.authentication.lookup_ldap_repo} for {ldap_attr}={claim} : {repo_attributes}")
+                            f"{portal.lookup_ldap_repo} for {ldap_attr}={claim} : {repo_attributes}")
 
         # Create user scope depending on GUI configuration attributes, raises an AssertionError if scope is not validated for filtering
         user_scope = workflow.get_and_validate_scope(claims, repo_attributes)
@@ -252,7 +256,7 @@ def openid_callback(request, workflow_id, repo_id):
 
     except Exception as e:
         logger.exception(e)
-        return error_response(workflow.authentication, "An error occurred")
+        return error_response(portal, "An error occurred")
 
     if not return_oauth_token:
         response = authenticate(request,
@@ -475,6 +479,7 @@ def openid_token(request, portal_id):
                 portal.oauth_timeout,
             )
 
+            new_refresh_token = refresh_token
             if portal.enable_rotation:
                 new_refresh_token = str(uuid4())
                 if portal.max_nb_refresh > 0:
@@ -752,7 +757,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 return db_authentication.ask_credentials_response(public_token=token_name, request=request,
                                                                   error="<b> Bad OTP key </b>")
 
-            except TwoManyOTPAuthFailure as e:
+            except TooManyOTPAuthFailure as e:
                 logger.error("PORTAL::log_in: Too many OTP authentication failures for username'{}', "
                              "redirecting to portal".format(authentication.credentials[0]))
                 db_authentication.deauthenticate_user()
@@ -772,7 +777,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             return db_authentication.ask_credentials_response(public_token=token_name, request=request,
                                                               error="<b> OTP Error </b> {}".format(str(e)))
 
-        except TwoManyOTPAuthFailure as e:
+        except TooManyOTPAuthFailure as e:
             logger.error("PORTAL::log_in: Too many OTP authentication failures for username'{}', "
                          "redirecting to portal".format(authentication.credentials[0]))
             db_authentication.deauthenticate_user()

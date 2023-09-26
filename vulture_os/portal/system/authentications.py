@@ -41,7 +41,7 @@ from authentication.base_repository import BaseRepository
 from authentication.portal_template.models import INPUT_OTP_KEY, INPUT_OTP_RESEND
 
 # Required exceptions imports
-from portal.system.exceptions import RedirectionNeededError, CredentialsError, ACLError, TwoManyOTPAuthFailure
+from portal.system.exceptions import RedirectionNeededError, CredentialsError, ACLError, TooManyOTPAuthFailure
 from ldap import LDAPError
 from pymongo.errors import PyMongoError
 from toolkit.auth.exceptions import AuthenticationError, RegisterAuthenticationError, OTPError
@@ -553,7 +553,7 @@ class DOUBLEAuthentication(Authentication):
         if otp_retries >= int(self.workflow.authentication.otp_max_retry):
             logger.error("DB-AUTH::authentication_failure: Maximum number of retries reached : '{}'>='{}'"
                          .format(otp_retries, self.workflow.authentication.otp_max_retry))
-            raise TwoManyOTPAuthFailure("Max number of retry reached </br> <b> Please re-authenticate </b>")
+            raise TooManyOTPAuthFailure("Max number of retry reached </br> <b> Please re-authenticate </b>")
 
     def deauthenticate_user(self):
         self.redis_portal_session.deauthenticate(self.workflow.id, self.backend_id,

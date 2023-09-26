@@ -57,9 +57,9 @@ class ACLError(Exception):
         super(ACLError, self).__init__(message)
 
 
-class TwoManyOTPAuthFailure(Exception):
+class TooManyOTPAuthFailure(Exception):
     def __init__(self, message):
-        super(TwoManyOTPAuthFailure, self).__init__(message)
+        super(TooManyOTPAuthFailure, self).__init__(message)
 
 
 class PasswordMatchError(Exception):
