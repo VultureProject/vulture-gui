@@ -93,7 +93,7 @@ class CiscoDuoParser(ApiParser):
             headers=headers,
             timeout=timeout,
             proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            # verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
 
         # Get json response
@@ -137,7 +137,7 @@ class CiscoDuoParser(ApiParser):
 
         current_time = timezone.now()
         try:
-            logs = self.get_logs(since=(current_time - timedelta(hours=1)), to=current_time, endpoint="authentication")
+            logs = self.get_logs(since=(current_time - timedelta(hours=24)), to=current_time, endpoint="authentication")
 
             return {
                 "status": True,
@@ -182,7 +182,7 @@ class CiscoDuoParser(ApiParser):
 
                 logs = self.get_logs(since=since, to=to, endpoint=endpoint)
 
-                if logs['metadata']:
+                if logs and logs['metadata']:
                     ## UPDATE LAST API CALL IF LOGS ALWAYS PRESENT IN RANGE ##
 
                     if logs['metadata']['total_objects'] >= self.LIMIT and logs['metadata']['next_offset']:
@@ -201,7 +201,7 @@ class CiscoDuoParser(ApiParser):
                     self.frontend.last_api_call = to
                     self.frontend.save()
 
-                else: logger.info(f"[{__parser__}]:execute: Empty logs collected & ignored", extra={'frontend': str(self.frontend)})
+                else: logger.info(f"[{__parser__}]:execute: Empty logs collected", extra={'frontend': str(self.frontend)})
 
             except Exception as e:
                 msg = f"Failed to endpoint {endpoint}: {e}"
