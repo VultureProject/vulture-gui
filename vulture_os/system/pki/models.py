@@ -66,7 +66,7 @@ BROWSER_CHOICES = (
 )
 
 PROTOCOLS_HANDLER = {
-    'advanced': 'tlsv13,tlsv12',
+    'advanced': 'tlsv13',
     'broad': 'tlsv13,tlsv12',
     'widest': 'tlsv13,tlsv12,tlsv11,tlsv10',
     'legacy': 'tlsv13,tlsv12,tlsv11,tlsv10'
@@ -548,7 +548,7 @@ class TLSProfile(models.Model):
     """ Allowed listening protocols """
     protocols = models.JSONField(
         models.TextField(choices=PROTOCOL_CHOICES),
-        default=["tlsv12"],
+        default=["tlsv13", "tlsv12"],
         help_text=_("Allowed protocol ciphers.")
     )
     """ List of cipher algorithms (cipher suite) allowed 

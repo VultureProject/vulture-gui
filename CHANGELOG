@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - validators 0.20.0 -> 0.22.0
   - werkzeug 2.3.4 -> 2.3.7
   - setuptools 67.8.0 -> removed
+- [TLS] Update default parameters for accepted TLS versions
 ### Fixed
 - [PKG_UPGRADE] Avoid trying to launch upgrade scripts when node is not bootstrapped
 - [GUI] [ACLS] Improve 'Used by' presentation of Wokrflows using ACLs
