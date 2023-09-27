@@ -335,7 +335,7 @@ class Frontend(models.Model):
         help_text=_("TCP mode = HAProxy, UDP mode = Filebeat")
     )
     filebeat_module= models.TextField(
-        default="tcp",
+        default=FILEBEAT_MODULE_LIST[0][0],
         choices=FILEBEAT_MODULE_LIST,
         help_text=_("Filebeat built-in module")
     )
@@ -493,17 +493,22 @@ class Frontend(models.Model):
     """ *** VENDOR API OPTIONS *** """
     # General attributes
     api_parser_type = models.TextField(
-        help_text=_("API Parser Type"),
-        default=""
+        default="",
+        help_text=_("API Parser Type")
     )
     api_parser_use_proxy = models.BooleanField(
-        help_text=_("Use Proxy"),
-        default=False
+        default=False,
+        help_text=_("Use Proxy")
+    )
+    api_parser_custom_proxy = models.TextField(
+        default="",
+        help_text=_("Custom Proxy to use when requesting logs"),
+        verbose_name=_("Custom Proxy")
     )
     api_parser_verify_ssl = models.BooleanField(
+        default=True,
         help_text=_("Verify SSL"),
-        verbose_name=_("Verify certificate"),
-        default=True
+        verbose_name=_("Verify certificate")
     )
     api_parser_custom_certificate = models.ForeignKey(
         to=X509Certificate,
@@ -1773,7 +1778,6 @@ class Frontend(models.Model):
             result.remove(None)
 
         return result
-
 
     def reload_conf(self):
         """ Generate conf based on MongoDB data and save-it on concerned nodes

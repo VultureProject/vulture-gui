@@ -204,7 +204,8 @@ class FrontendForm(ModelForm):
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'nb_workers','mmdb_cache_size','redis_batch_size',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
-                           'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
+                           'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
+                           'api_parser_verify_ssl', 'api_parser_custom_certificate',
                            'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
@@ -296,7 +297,7 @@ class FrontendForm(ModelForm):
                   'nb_workers','mmdb_cache_size','redis_batch_size',
                   'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                   'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
-                  'api_parser_verify_ssl', 'api_parser_custom_certificate',
+                  'api_parser_custom_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
                   'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password",
                   "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name",
@@ -390,6 +391,7 @@ class FrontendForm(ModelForm):
             'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
             'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
+            'api_parser_custom_proxy': TextInput(attrs={'class': 'form-control'}),
             'api_parser_verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
             'api_parser_custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': "form-control select2"}),
             'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
@@ -682,7 +684,6 @@ class FrontendForm(ModelForm):
                 elif "type:" in cleaned_data.get('filebeat_config'):
                     self.add_error('filebeat_config', "Filebeat config cannot contains 'type', this is managed by Vulture")
 
-
         if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "tcp":
             if not cleaned_data.get('timeout_connect'):
                 self.add_error('timeout_connect', "This field is required.")
@@ -704,6 +705,25 @@ class FrontendForm(ModelForm):
         if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
             if not cleaned_data.get('node'):
                 self.add_error('node', "This field is required.")
+
+        if mode == "log" and cleaned_data.get('listening_mode') == "api" or \
+        mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
+            if cleaned_data.get('api_parser_use_proxy', True) and cleaned_data.get('api_parser_custom_proxy', None):
+                custom_proxy = cleaned_data.get('api_parser_custom_proxy', None)
+                search = re_search("\w+:\/\/", custom_proxy)
+                proxy_scheme = search.group() if search else "http://"
+
+                custom_proxy = custom_proxy.lstrip(proxy_scheme)
+                search = re_search("(\w+\.)*\w+", custom_proxy)
+                proxy_domain = search.group() if search else None
+
+                custom_proxy = custom_proxy.lstrip(proxy_domain)
+                search = re_search("\d{1,5}", custom_proxy)
+                proxy_port = search.group() if search else None
+
+                if not proxy_domain or not proxy_port:
+                    self.add_error('api_parser_custom_proxy', "Wrong proxy format")
+                cleaned_data['api_parser_custom_proxy'] = f"{proxy_scheme}{proxy_domain}:{proxy_port}"
 
         if mode == "log" and cleaned_data.get('listening_mode') == "kafka":
             if not cleaned_data.get('node'):

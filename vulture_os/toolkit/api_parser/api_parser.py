@@ -27,6 +27,8 @@ import logging
 import signal
 import socket
 from threading import Event, current_thread, main_thread
+from os.path import exists as os_exists
+from re import findall as re_findall
 import time
 
 from django.conf import settings
@@ -78,7 +80,19 @@ class ApiParser:
 
         self.proxies = None
         if self.data.get('api_parser_use_proxy', False):
-            self.proxies = self.get_system_proxy()
+            if self.frontend and self.data.get('api_parser_custom_proxy', ""):
+                if self.frontend.listening_mode == "api":
+                    self.proxies = {
+                        "http": self.data.get('api_parser_custom_proxy', ""),
+                        "https": self.data.get('api_parser_custom_proxy', ""),
+                        "ftp": self.data.get('api_parser_custom_proxy', "")
+                    }
+                else:
+                    self.proxies = self.get_custom_proxy()
+            elif self.data.get('proxies', None):
+                self.proxies = self.data.get('proxies', None)
+            else:
+                self.proxies = self.get_system_proxy()
 
         self.redis_cli = RedisBase()
 
@@ -102,6 +116,44 @@ class ApiParser:
             return proxy
 
         return None
+    
+    def get_custom_proxy(self):
+        """
+        return custom proxy settings from /usr/local/etc/filebeat/filebeat_X.yml
+
+        should be stored as :
+            env.http_proxy: "http://10.10.10.10:8080"
+            env.https_proxy: "https://10.10.10.10:8080"
+            env.ftp_proxy: "http://10.10.10.10:8080"
+
+        return: A ready-to-use dict for python request, or
+            None in case of no proxy
+        """
+        proxy = {}
+        if os_exists(self.frontend.get_filebeat_filename()):
+            http_proxy = None
+            https_proxy = None
+            ftp_proxy = None
+            try:
+                with open(self.frontend.get_filebeat_filename()) as tmp:
+                    buf = tmp.read()
+                    proxy = re_findall('env\.http_proxy: "?([^"\n]*)"?', buf)
+                    http_proxy = proxy[0] if proxy else None
+
+                    proxy = re_findall('env\.https_proxy: \"?([^\"\n]*)\"?', buf)
+                    https_proxy = proxy[0] if proxy else http_proxy
+
+                    proxy = re_findall('env\.ftp_proxy: \"?([^\"\n]*)\"?', buf)
+                    ftp_proxy = proxy[0] if proxy else http_proxy
+
+                    proxy = {
+                        "http": http_proxy,
+                        "https": https_proxy,
+                        "ftp": ftp_proxy
+                    }
+            except Exception:
+                pass
+        return proxy
 
     def can_run(self):
         """

@@ -51,7 +51,7 @@ from system.exceptions import VultureSystemError
 # Extern modules imports
 from copy import deepcopy
 from json import loads as json_loads
-from re import findall as re_findall
+from re import findall as re_findall, search as re_search
 from sys import exc_info
 from traceback import format_exception
 
@@ -728,6 +728,32 @@ def frontend_test_apiparser(request):
 
         if data.get('api_parser_verify_ssl', True) and data.get('api_parser_custom_certificate', None):
             data['api_parser_custom_certificate'] = X509Certificate.objects.get(pk=data['api_parser_custom_certificate']).bundle_filename
+
+        if data.get('api_parser_use_proxy', True) and data.get('api_parser_custom_proxy', None):
+            custom_proxy = data.get('api_parser_custom_proxy', None)
+            search = re_search("\w+:\/\/", custom_proxy)
+            scheme = search.group() if search else "http://"
+
+            custom_proxy = custom_proxy.lstrip(scheme)
+            search = re_search("(\w+\.)*\w+", custom_proxy)
+            domain = search.group() if search else None
+
+            custom_proxy = custom_proxy.lstrip(domain)
+            search = re_search("\d{1,5}", custom_proxy)
+            port = search.group() if search else None
+
+            logger.debug(f"[TEST_APIPARSER] {scheme, domain, port}")
+
+            if not domain or not port:
+                return JsonResponse({'status': False, 'error': "Wrong proxy format"})
+
+            proxy = f"{scheme}{domain}{port}"
+            data['proxies'] = {
+                "http": proxy,
+                "https": proxy,
+                "ftp": proxy
+            }
+
         parser = get_api_parser(type_parser)(data)
         return JsonResponse(parser.test())
 

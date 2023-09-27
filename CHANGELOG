@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [GUI] [FRONTEND] New field for custom proxy to use with an api parser
 ### Changed
 - [DEPENDENCIES] Python dependencies upgrade
   - aiohttp 3.8.4 -> 3.8.5
