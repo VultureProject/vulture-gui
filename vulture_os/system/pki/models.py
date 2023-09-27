@@ -228,7 +228,7 @@ class X509Certificate(models.Model):
                 with open("/var/db/acme/.acme.sh/{}/fullchain.cer".format(cn)) as pem_chain:
 
                     try:
-                        x509.load_pem_x509_certificate(pem_cert.encode())
+                        tmp_crt = x509.load_pem_x509_certificate(pem_cert.encode())
                     except Exception as e:
                         logger.error("X509Certificate::gen_letsencrypt(): {}".format(e))
                         return False

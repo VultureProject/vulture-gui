@@ -317,7 +317,7 @@ class HttpHealthCheckHeaderForm(Form):
         """ Format fields as a table with <td></td> """
         result = "<tr>"
         for field in self.fields:
-            new_field = deepcopy(self.labels[field].widget)
+            new_field = deepcopy(self.fields[field].widget)
             new_field.attrs['readonly'] = True
             result += "<td>{}</td>\n".format(new_field.render(field, self.initial.get(field)))
         result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \
