@@ -493,7 +493,8 @@ class UserAuthentication(models.Model):
     )
     sso_forward_tls_proto = models.TextField(
         choices=TLS_PROTOCOL_CHOICES,
-        default=TLS_PROTOCOL_CHOICES[-1],
+        default=TLS_PROTOCOL_CHOICES[1],
+        verbose_name=_("TLS minimal accepted version"),
         help_text=_('Minimal TLS protocol used to connect to SSO url')
     )
     sso_forward_tls_check = models.BooleanField(
