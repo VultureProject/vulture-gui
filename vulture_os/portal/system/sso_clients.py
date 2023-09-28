@@ -147,7 +147,8 @@ class SSOClient(object):
         response.set_cookie(cookie.name,
                             cookie.value,
                             path=path,
-                            httponly=cookie._rest.get('HttpOnly', False),
+                            # NEEDS to check if key is PRESENT: value will be set to None when attribute is set for cookie!
+                            httponly=cookie.has_nonstandard_attr('HttpOnly'),
                             secure=portal_url.startswith('https'),
                             max_age=cookie.expires,
                             samesite=cookie.get_nonstandard_attr('SameSite', 'Lax'))
@@ -162,7 +163,7 @@ class SSOClient(object):
                 final_response[key] = item
 
         for cookie in self.session.cookies:
-            if key not in self.banned_cookies:
+            if cookie.name not in self.banned_cookies:
                 final_response = self.add_cookie_W_path(final_response, cookie, app_uri)
 
         return final_response

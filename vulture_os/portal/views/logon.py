@@ -144,7 +144,7 @@ def openid_start(request, workflow_id, repo_id):
         response = HttpResponseRedirect(authorization_url)
         # Needed for Safari and mobiles support
         response['Content-Length'] = 0
-        response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(fqdn), httponly=False, secure=scheme=="https")
+        response.set_cookie(portal_cookie_name, portal_cookie, domain=split_domain(fqdn), httponly=True, secure=scheme=="https")
 
         return response
 
