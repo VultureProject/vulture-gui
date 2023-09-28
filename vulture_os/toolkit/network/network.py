@@ -143,6 +143,24 @@ def get_proxy(openvpn_format=False):
     return proxy
 
 
+def parse_proxy_url(custom_proxy):
+    search = re.search("\w+:\/\/", custom_proxy)
+    scheme = search.group() if search else "http://"
+
+    custom_proxy = custom_proxy.lstrip(scheme)
+    search = re.search("(\w+\.)*\w+", custom_proxy)
+    domain = search.group() if search else None
+
+    custom_proxy = custom_proxy.lstrip(domain)
+    search = re.search("\d{1,5}", custom_proxy)
+    port = search.group() if search else None
+
+    if not domain or not port:
+        return None
+
+    return f"{scheme}{domain}:{port}"
+
+
 def get_sanitized_proxy():
     """
     Return the proxy settings of /etc/rc.conf.proxy (using get_proxy()) after sanitation

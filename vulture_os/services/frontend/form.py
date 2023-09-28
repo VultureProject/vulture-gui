@@ -43,6 +43,7 @@ from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
 from system.error_templates.models import ErrorTemplate
 from toolkit.api_parser.utils import get_available_api_parser
+from toolkit.network.network import parse_proxy_url
 from system.pki.models import TLSProfile, X509Certificate
 from system.cluster.models import Node
 from system.tenants.models import Tenants
@@ -709,21 +710,11 @@ class FrontendForm(ModelForm):
         if mode == "log" and cleaned_data.get('listening_mode') == "api" or \
         mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
             if cleaned_data.get('api_parser_use_proxy', True) and cleaned_data.get('api_parser_custom_proxy', None):
-                custom_proxy = cleaned_data.get('api_parser_custom_proxy', None)
-                search = re_search("\w+:\/\/", custom_proxy)
-                proxy_scheme = search.group() if search else "http://"
-
-                custom_proxy = custom_proxy.lstrip(proxy_scheme)
-                search = re_search("(\w+\.)*\w+", custom_proxy)
-                proxy_domain = search.group() if search else None
-
-                custom_proxy = custom_proxy.lstrip(proxy_domain)
-                search = re_search("\d{1,5}", custom_proxy)
-                proxy_port = search.group() if search else None
-
-                if not proxy_domain or not proxy_port:
+                # parse_proxy_url will validate and return a correct url
+                custom_proxy = parse_proxy_url(cleaned_data.get('api_parser_custom_proxy', None))
+                if not custom_proxy:
                     self.add_error('api_parser_custom_proxy', "Wrong proxy format")
-                cleaned_data['api_parser_custom_proxy'] = f"{proxy_scheme}{proxy_domain}:{proxy_port}"
+                cleaned_data['api_parser_custom_proxy'] = custom_proxy
 
         if mode == "log" and cleaned_data.get('listening_mode') == "kafka":
             if not cleaned_data.get('node'):

@@ -41,6 +41,7 @@ from system.pki.models import X509Certificate
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
 from toolkit.api_parser.utils import get_api_parser
+from toolkit.network.network import parse_proxy_url
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -730,29 +731,11 @@ def frontend_test_apiparser(request):
             data['api_parser_custom_certificate'] = X509Certificate.objects.get(pk=data['api_parser_custom_certificate']).bundle_filename
 
         if data.get('api_parser_use_proxy', True) and data.get('api_parser_custom_proxy', None):
-            custom_proxy = data.get('api_parser_custom_proxy', None)
-            search = re_search("\w+:\/\/", custom_proxy)
-            scheme = search.group() if search else "http://"
-
-            custom_proxy = custom_proxy.lstrip(scheme)
-            search = re_search("(\w+\.)*\w+", custom_proxy)
-            domain = search.group() if search else None
-
-            custom_proxy = custom_proxy.lstrip(domain)
-            search = re_search("\d{1,5}", custom_proxy)
-            port = search.group() if search else None
-
-            logger.debug(f"[TEST_APIPARSER] {scheme, domain, port}")
-
-            if not domain or not port:
+            # parse_proxy_url will validate and return a correct url
+            proxy = parse_proxy_url(data.get('api_parser_custom_proxy', None))
+            if not proxy:
                 return JsonResponse({'status': False, 'error': "Wrong proxy format"})
-
-            proxy = f"{scheme}{domain}{port}"
-            data['proxies'] = {
-                "http": proxy,
-                "https": proxy,
-                "ftp": proxy
-            }
+            data['api_parser_custom_proxy'] = proxy
 
         parser = get_api_parser(type_parser)(data)
         return JsonResponse(parser.test())
