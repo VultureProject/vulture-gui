@@ -23,14 +23,11 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'CSC DOMAINMANAGER API'
 __parser__ = 'CSC DOMAINMANAGER'
 
-import json
 from datetime import datetime, timedelta
 
 import logging
 
 from requests import Session
-
-from json import dumps
 
 from django.conf import settings
 from django.utils import timezone
@@ -164,6 +161,8 @@ class CscDomainManagerParser(ApiParser):
             page = 1
             since = self.last_api_call or timezone.now() - timedelta(hours=24)
             to = min(timezone.now(), since + timedelta(hours=24))
+
+            logger.info(f"{[__parser__]}:execute: Collect logs since {since} to {to}", extra={'frontend': str(self.frontend)})
 
             while logs := self.get_logs(page=page, since=since, to=to):
                 if self.evt_stop.is_set() or not logs.get('events'):
