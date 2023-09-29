@@ -54,8 +54,6 @@ class CscDomainManagerParser(ApiParser):
         self.csc_domainmanager_apikey = data.get("csc_domainmanager_apikey")
         self.csc_domainmanager_authorization = data.get("csc_domainmanager_authorization")
 
-        self.last_log_time = 0
-
         if self.csc_domainmanager_authorization and not self.csc_domainmanager_authorization.startswith("Bearer "):
             self.csc_domainmanager_authorization = f"Bearer {self.csc_domainmanager_authorization}"
 
@@ -79,7 +77,7 @@ class CscDomainManagerParser(ApiParser):
                          extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
 
-    def get_logs(self, since: datetime, to: datetime, page: int, timeout=10) -> dict:
+    def get_logs(self, since: datetime, to: datetime, page: int, timeout=10) -> (dict, Exception):
         """
         Send a query to csc domainmanager api to get logs
         """
@@ -121,19 +119,6 @@ class CscDomainManagerParser(ApiParser):
                          extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
 
-    def update_last_log_time(self, log: dict) -> (None, Exception):
-        """
-        Update self.last_log_time
-        """
-        try:
-            timestamp = datetime.strptime(log['event'].get('date'), "%Y-%m-%dT%H:%M:%SZ").timestamp()
-            if self.last_log_time < timestamp:
-                self.last_log_time = timestamp
-        except Exception as e:
-            logger.error(f"[{__parser__}]:format_log: Exception while updating last_log_time logs -- {e}",
-                         extra={'frontend': str(self.frontend)})
-            raise CscDomainManagerAPIError(e)
-
     def test(self):
         try:
             page = 1
@@ -162,25 +147,18 @@ class CscDomainManagerParser(ApiParser):
             since = self.last_api_call or timezone.now() - timedelta(hours=24)
             to = min(timezone.now(), since + timedelta(hours=24))
 
-            logger.info(f"{[__parser__]}:execute: Collect logs since {since} to {to}", extra={'frontend': str(self.frontend)})
+            logger.info(f"{[__parser__]}:execute: Collect logs since {since} to {to}",
+                        extra={'frontend': str(self.frontend)})
 
             while logs := self.get_logs(page=page, since=since, to=to):
-                if self.evt_stop.is_set() or not logs.get('events'):
+                if 'events' not in logs:
                     break
 
                 self.update_lock()
 
-                # Update self.last_log_time
-                for log in logs['events']:
-                    self.update_last_log_time(log)
-
                 self.write_to_file(logs['events'])
 
                 self.update_lock()
-
-                if self.last_log_time:
-                    self.frontend.last_api_call = datetime.fromtimestamp(self.last_log_time, tz=timezone.utc)
-                    self.frontend.save()
 
                 if logs['links'].get('next'):
                     page = page + 1
@@ -188,11 +166,8 @@ class CscDomainManagerParser(ApiParser):
                 else:
                     break
 
-            if self.last_api_call < timezone.now() - timedelta(hours=24):
-                # If no logs where retrieved during the last 24hours,
-                # move forward 1h to prevent stagnate ad vitam eternam
-                self.frontend.last_api_call += timedelta(hours=1)
-                self.frontend.save()
+            self.frontend.last_api_call = to
+            self.frontend.save()
 
             self.session = None
 
