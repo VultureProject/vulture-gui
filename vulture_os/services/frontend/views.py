@@ -436,6 +436,13 @@ def frontend_edit(request, object_id=None, api=False):
             if not frontend.rsyslog_only_conf and not frontend.filebeat_only_conf:
                 old_haproxy_filename = frontend.get_base_filename()
 
+        # Frontend used by workflow type change check
+        if object_id and "mode" in form.changed_data:
+            if frontend.workflow_set.exists():
+                form.add_error('mode', "You can't modify frontend's type, currently used by workflow(s) : {}".format(", ".join([w.name for w in frontend.workflow_set.all().only('name')])))
+            if frontend.userauthentication_set.exists():
+                form.add_error('mode', "You can't modify frontend's type, currently used by IDP(s) : {}".format(", ".join([w.name for w in frontend.userauthentication_set.all().only('name')])))
+
         # If errors has been added in form
         if not form.is_valid():
             logger.error("Frontend form errors: {}".format(form.errors.as_json()))
@@ -529,7 +536,6 @@ def frontend_edit(request, object_id=None, api=False):
 
         """ If the conf is OK, save the Frontend object """
         # Is that object already in db or not
-        first_save = not frontend.id
         try:
             if frontend.mode == "http":
                 frontend.ruleset = "haproxy"

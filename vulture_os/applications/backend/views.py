@@ -323,6 +323,16 @@ def backend_edit(request, object_id=None, api=False):
             server_obj = server_f.save(commit=False)
             server_objs.append(server_obj)
 
+        first_save = not object_id
+
+        # Backend used by workflow type change check
+        if not first_save and "mode" in form.changed_data:
+            if backend.workflow_set.exists():
+                if api:
+                    api_errors.append({'mode': "You can't modify backend's mode, currently used by workflow(s) : {}".format([w.name for w in backend.workflow_set.all().only('name')])})
+                else:
+                    form.add_error('mode', "You can't modify backend's type, currently used by workflow(s) : {}".format(", ".join([w.name for w in backend.workflow_set.all().only('name')])))
+
         # If errors has been added in form
         if not form.is_valid():
             logger.error("Form errors: {}".format(form.errors.as_json()))
@@ -356,7 +366,6 @@ def backend_edit(request, object_id=None, api=False):
 
         """ If the conf is OK, save the Backend object """
         # Is that object already in db or not
-        first_save = not backend.id
         try:
             logger.debug("Saving backend")
             backend.save()
