@@ -59,7 +59,7 @@ class VadesecureParser(ApiParser):
             vadesecure_host
             vadesecure_login
             vadesecure_password
-            vadesecure_global_adm_id
+            vadesecure_global_adm_id (optional)
         """
         super().__init__(data)
 
@@ -70,7 +70,7 @@ class VadesecureParser(ApiParser):
         self.vadesecure_login = data["vadesecure_login"]
         self.vadesecure_password = data["vadesecure_password"]
 
-        self.vadesecure_global_adm_id = data["vadesecure_global_adm_id"] or ""
+        self.vadesecure_global_adm_id = data["vadesecure_global_adm_id"] or None
 
         self.session = None
         self.accountID = None
@@ -261,11 +261,16 @@ class VadesecureParser(ApiParser):
 
             # Init the payload
             payload = {
-                'accountId': self.vadesecure_global_adm_id,
                 'pageSize': 100, # Mandatory
                 'startDate': since,
                 'endDate': to
             }
+
+            # with given test accounts, it's seems that every user heritate userId from parent (in our cases -> global administrator id)
+            # thus self.accountID is always filled with the right value for accountId
+            # so we let the parameter to permit call, if user not heritated from global administrator
+            if endpoint == self.EVENTLOG and self.vadesecure_global_adm_id:
+                payload.update({'accountId': int(self.vadesecure_global_adm_id) or self.accountID})
 
             # We need to wait 5min between each call of GETREPORT
             if endpoint == self.GETREPORT:
