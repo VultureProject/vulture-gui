@@ -198,11 +198,9 @@ class CiscoDuoParser(ApiParser):
                     self.write_to_file([self.format_log(log) for log in logs['authlogs']])
                     self.update_lock()
 
-                    self.frontend.last_api_call = to
-                    self.frontend.save()
-
-                else: logger.info(f"[{__parser__}]:execute: Empty logs collected", extra={'frontend': str(self.frontend)})
-
+                self.frontend.last_api_call = to
+                self.frontend.save()
+                
             except Exception as e:
                 msg = f"Failed to endpoint {endpoint}: {e}"
                 logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
