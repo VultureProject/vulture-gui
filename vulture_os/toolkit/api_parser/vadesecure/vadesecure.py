@@ -59,6 +59,7 @@ class VadesecureParser(ApiParser):
             vadesecure_host
             vadesecure_login
             vadesecure_password
+            vadesecure_global_adm_id
         """
         super().__init__(data)
 
@@ -68,6 +69,8 @@ class VadesecureParser(ApiParser):
 
         self.vadesecure_login = data["vadesecure_login"]
         self.vadesecure_password = data["vadesecure_password"]
+
+        self.vadesecure_global_adm_id = data["vadesecure_global_adm_id"] or ""
 
         self.session = None
         self.accountID = None
@@ -258,6 +261,7 @@ class VadesecureParser(ApiParser):
 
             # Init the payload
             payload = {
+                'accountId': self.vadesecure_global_adm_id,
                 'pageSize': 100, # Mandatory
                 'startDate': since,
                 'endDate': to
