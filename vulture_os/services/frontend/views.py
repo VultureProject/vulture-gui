@@ -41,8 +41,6 @@ from system.pki.models import X509Certificate
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
 from toolkit.api_parser.utils import get_api_parser
-from workflow.models import Workflow
-from authentication.user_portal.models import UserAuthentication
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -439,14 +437,11 @@ def frontend_edit(request, object_id=None, api=False):
                 old_haproxy_filename = frontend.get_base_filename()
 
         # Frontend used by workflow type change check
-        if "mode" in form.changed_data:
-            workflows = [workflow.name for workflow in Workflow.objects.filter(frontend=frontend) if workflow.enabled]
-            if workflows.__len__() > 0:
-                form.add_error(None, "You can't modify frontend's type currently used by workflow : {}".format(workflows.__str__()))
-
-            idps = [workflow.name for workflow in UserAuthentication.objects.filter(external_listener=frontend) & UserAuthentication.objects.filter(enable_external=True)]
-            if idps.__len__() > 0:
-                form.add_error(None, "You can't modify frontend's type currently used by idp : {}".format(idps.__str__()))
+        if object_id and "mode" in form.changed_data:
+            if frontend.workflow_set.exists():
+                form.add_error('mode', "You can't modify frontend's type, currently used by workflow(s) : {}".format(", ".join([w.name for w in frontend.workflow_set.all().only('name')])))
+            if frontend.userauthentication_set.exists():
+                form.add_error('mode', "You can't modify frontend's type, currently used by IDP(s) : {}".format(", ".join([w.name for w in frontend.userauthentication_set.all().only('name')])))
 
         # If errors has been added in form
         if not form.is_valid():
@@ -541,7 +536,6 @@ def frontend_edit(request, object_id=None, api=False):
 
         """ If the conf is OK, save the Frontend object """
         # Is that object already in db or not
-        first_save = not frontend.id
         try:
             if frontend.mode == "http":
                 frontend.ruleset = "haproxy"

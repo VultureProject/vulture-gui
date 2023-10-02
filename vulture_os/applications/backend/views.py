@@ -37,9 +37,7 @@ from applications.backend.models import Backend, BACKEND_OWNER, BACKEND_PERMS, S
 from services.darwin.darwin import get_darwin_sockets
 from system.cluster.models import Cluster, Node
 from toolkit.api.responses import build_response
-
 from toolkit.http.headers import HeaderForm, Header, HttpHealthCheckHeaderForm
-from workflow.models import Workflow
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -328,13 +326,12 @@ def backend_edit(request, object_id=None, api=False):
         first_save = not object_id
 
         # Backend used by workflow type change check
-        if not first_save and backend.mode != form.data.get("mode"):
-            workflows = [workflow.name for workflow in Workflow.objects.filter(backend=backend) if workflow.enabled]
-            if workflows.__len__() > 0:
+        if not first_save and "mode" in form.changed_data:
+            if backend.workflow_set.exists():
                 if api:
-                    api_errors.append({"backend_workflow_type_change": "You can't modify backend's type currently used by workflow : {}".format(workflows.__str__())})
+                    api_errors.append({'mode': "You can't modify backend's mode, currently used by workflow(s) : {}".format([w.name for w in backend.workflow_set.all().only('name')])})
                 else:
-                    form.add_error(None, "You can't modify backend's type currently used by workflow {}".format(workflows.__str__()))
+                    form.add_error('mode', "You can't modify backend's type, currently used by workflow(s) : {}".format(", ".join([w.name for w in backend.workflow_set.all().only('name')])))
 
         # If errors has been added in form
         if not form.is_valid():
