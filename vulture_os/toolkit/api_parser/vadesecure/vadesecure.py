@@ -73,7 +73,6 @@ class VadesecureParser(ApiParser):
         self.vadesecure_global_adm_id = data["vadesecure_global_adm_id"] or None
 
         self.session = None
-        self.accountID = None
 
         self.isTest = False
 
@@ -270,7 +269,7 @@ class VadesecureParser(ApiParser):
             # thus self.accountID is always filled with the right value for accountId
             # so we let the parameter to permit call, if user not heritated from global administrator
             if endpoint == self.EVENTLOG and self.vadesecure_global_adm_id:
-                payload.update({'accountId': int(self.vadesecure_global_adm_id) or self.accountID})
+                payload.update({'accountId': int(self.vadesecure_global_adm_id) or self.userId})
 
             # We need to wait 5min between each call of GETREPORT
             if endpoint == self.GETREPORT:
