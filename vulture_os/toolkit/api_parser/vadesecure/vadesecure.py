@@ -189,7 +189,7 @@ class VadesecureParser(ApiParser):
                 'userId': self.accountID
             })
 
-            if self.EVENTLOG: # using admin userId to fetch eventlogs
+            if endpoint == self.EVENTLOG: # using admin userId to fetch eventlogs
                 if self.userID:
                     payload.update({
                         'userId': self.userID,
