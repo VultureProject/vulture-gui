@@ -27,8 +27,6 @@ import logging
 import signal
 import socket
 from threading import Event, current_thread, main_thread
-from os.path import exists as os_exists
-from re import findall as re_findall
 import time
 
 from django.conf import settings

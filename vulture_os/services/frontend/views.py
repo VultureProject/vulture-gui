@@ -52,7 +52,7 @@ from system.exceptions import VultureSystemError
 # Extern modules imports
 from copy import deepcopy
 from json import loads as json_loads
-from re import findall as re_findall, search as re_search
+from re import findall as re_findall
 from sys import exc_info
 from traceback import format_exception
 
