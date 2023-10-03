@@ -805,11 +805,6 @@ class Frontend(models.Model):
         help_text = _("Password used to fetch the token for the Vadesecure API"),
         default = "",
     )
-    vadesecure_global_adm_id = models.TextField(
-        verbose_name = _("Vadesecure Global Admin Id"),
-        help_text = _("Used to call API when user is not global administrator (userId: integer)"),
-        default = "",
-    )
     # Defender attributes
     defender_token_endpoint = models.TextField(
         verbose_name = _("Defender token endpoint"),

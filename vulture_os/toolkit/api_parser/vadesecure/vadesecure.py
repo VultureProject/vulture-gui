@@ -59,7 +59,6 @@ class VadesecureParser(ApiParser):
             vadesecure_host
             vadesecure_login
             vadesecure_password
-            vadesecure_global_adm_id (optional)
         """
         super().__init__(data)
 
@@ -70,9 +69,10 @@ class VadesecureParser(ApiParser):
         self.vadesecure_login = data["vadesecure_login"]
         self.vadesecure_password = data["vadesecure_password"]
 
-        self.vadesecure_global_adm_id = data["vadesecure_global_adm_id"] or None
-
         self.session = None
+
+        self.userID = None
+        self.accountID = None
 
         self.isTest = False
 
@@ -103,7 +103,8 @@ class VadesecureParser(ApiParser):
 
                 try:
                     response = response.json()
-                    self.userId = int(response["accounts"][0]["accountId"])
+                    self.accountID = int(response["accounts"][0]["accountId"])
+                    self.userID = int(response["accounts"][0].get("userId"))
                 except:
                     return False
             return True
@@ -144,19 +145,16 @@ class VadesecureParser(ApiParser):
 
     def fetch_details(self, payload, logs):
         url = f"{self.vadesecure_host}/{self.VERSION}/{self.GETDETAIL}"
-        payload = {
-            "userId": self.userId,
-        }
         for log in logs:
             msgId = log["messageId"]
             msg = f"Fetching details of log with messageId: {msgId}"
             logger.debug(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
             try:
-                payload.update({
+                payload = {
                     "date": log["date"],
                     "messageId": log["messageId"],
                     "hostname": log["hostname"]
-                })
+                }
                 response = self.__execute_query("POST", url, payload)
 
                 try:
@@ -188,8 +186,21 @@ class VadesecureParser(ApiParser):
 
             payload.update({
                 'pageToGet': index,
-                'userId': self.userId
+                'userId': self.accountID
             })
+
+            if self.EVENTLOG: # using admin userId to fetch eventlogs
+                if self.userID:
+                    payload.update({
+                        'userId': self.userID,
+                        'accountId': self.userID
+                    })
+                else:
+                    payload.update({
+                        'accountId': self.accountID,
+                        'userId': self.accountID
+                    })
+
             response = self.__execute_query("POST", alert_url, payload)
 
             # Downloading may take a while, so refresh token in Redis
@@ -264,12 +275,6 @@ class VadesecureParser(ApiParser):
                 'startDate': since,
                 'endDate': to
             }
-
-            # with given test accounts, it's seems that every user heritate userId from parent (in our cases -> global administrator id)
-            # thus self.accountID is always filled with the right value for accountId
-            # so we let the parameter to permit call, if user not heritated from global administrator
-            if endpoint == self.EVENTLOG and self.vadesecure_global_adm_id:
-                payload.update({'accountId': int(self.vadesecure_global_adm_id) or self.userId})
 
             # We need to wait 5min between each call of GETREPORT
             if endpoint == self.GETREPORT:
