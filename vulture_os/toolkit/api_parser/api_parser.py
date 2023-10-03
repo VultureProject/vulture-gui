@@ -107,7 +107,7 @@ class ApiParser:
             return proxy
 
         return None
-    
+
     def get_custom_proxy(self):
         """
         return custom proxy settings from frontend settings
