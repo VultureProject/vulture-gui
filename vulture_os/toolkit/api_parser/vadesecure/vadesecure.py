@@ -186,20 +186,14 @@ class VadesecureParser(ApiParser):
 
             payload.update({
                 'pageToGet': index,
-                'userId': self.accountID
+                'userId': self.userID or self.accountID
             })
 
             if endpoint == self.EVENTLOG: # using admin userId to fetch eventlogs
-                if self.userID:
-                    payload.update({
-                        'userId': self.userID,
-                        'accountId': self.userID
-                    })
-                else:
-                    payload.update({
-                        'accountId': self.accountID,
-                        'userId': self.accountID
-                    })
+                payload.update({
+                    'userId': self.accountID,
+                    'accountId': self.userID
+                })
 
             response = self.__execute_query("POST", alert_url, payload)
 
