@@ -29,13 +29,10 @@ import logging
 
 from requests import Session
 
-from json import dumps
-
 from django.conf import settings
 from django.utils import timezone
 
 from toolkit.api_parser.api_parser import ApiParser
-
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -44,33 +41,30 @@ logger = logging.getLogger('api_parser')
 class CscDomainManagerAPIError(Exception):
     pass
 
-class CscDomainManagerParser(ApiParser):
 
+class CscDomainManagerParser(ApiParser):
     HEADERS = {
-            "Content-Type": "application/json",
-            'Accept': 'application/json'
+        "Content-Type": "application/json",
+        'Accept': 'application/json'
     }
 
     def __init__(self, data):
         super().__init__(data)
-        
+
         self.csc_domainmanager_apikey = data.get("csc_domainmanager_apikey")
         self.csc_domainmanager_authorization = data.get("csc_domainmanager_authorization")
-
-        self.last_log_time = 0
 
         if self.csc_domainmanager_authorization and not self.csc_domainmanager_authorization.startswith("Bearer "):
             self.csc_domainmanager_authorization = f"Bearer {self.csc_domainmanager_authorization}"
 
         self.session = None
 
-
-    def _connect(self):
+    def _connect(self) -> (bool, Exception):
         """
         Create session & prepare headers
         """
         try:
-            if (self.session is None):
+            if self.session is None:
                 self.session = Session()
 
                 self.session.headers['apikey'] = self.csc_domainmanager_apikey
@@ -79,10 +73,11 @@ class CscDomainManagerParser(ApiParser):
                 return True
 
         except Exception as e:
-            logger.error(f"[{__parser__}]:connect: Exception while creating session -- {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:connect: Exception while creating session -- {e}",
+                         extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
 
-    def get_logs(self, since, to, page, timeout=10) -> list:
+    def get_logs(self, since: datetime, to: datetime, page: int, timeout=10) -> (dict, Exception):
         """
         Send a query to csc domainmanager api to get logs
         """
@@ -92,7 +87,7 @@ class CscDomainManagerParser(ApiParser):
             params = {
                 "size": 1000,
                 "page": page,
-                "filter": f"eventDate=gt={since.isoformat().replace(' ','T')};eventDate=le={to.isoformat().replace(' ','T')}",
+                "filter": f"eventDate=gt={since.isoformat().replace(' ', 'T')};eventDate=le={to.isoformat().replace(' ', 'T')}",
                 "sort": "eventDate,asc"
             }
 
@@ -109,34 +104,19 @@ class CscDomainManagerParser(ApiParser):
             )
 
             if r.status_code != 200:
-                raise CscDomainManagerAPIError(f"Error on URL: {url} Status: {r.status_code} Reason/Content: {r.content}")
+                raise CscDomainManagerAPIError(
+                    f"Error on URL: {url} Status: {r.status_code} Reason/Content: {r.content}")
 
             try:
                 return r.json()
             except Exception as e:
-                logger.error(f"[{__parser__}]:get_logs: Bad json formatting -- {e}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:get_logs: Bad json formatting -- {e}",
+                             extra={'frontend': str(self.frontend)})
                 raise CscDomainManagerAPIError(f"Error while formatting json -- {e}")
 
         except Exception as e:
-            logger.error(f"[{__parser__}]:get_logs: Exception while getting logs -- {e}", extra={'frontend': str(self.frontend)})
-            raise CscDomainManagerAPIError(e)
-
-
-    def _format_log(self, log:dict) -> dict:
-        """
-        Format input log
-        """
-        try:
-            timestamp = datetime.strptime(log['event'].get('date'),"%Y-%m-%dT%H:%M:%SZ").timestamp()
-            if self.last_log_time < timestamp:
-                self.last_log_time = timestamp
-        except Exception as e:
-            logger.error(f"[{__parser__}]:format_log: Exception while updating last_log_time logs -- {e}", extra={'frontend': str(self.frontend)})
-            raise CscDomainManagerAPIError(e)
-        try:
-            return dumps(log)
-        except Exception as e:
-            logger.error(f"[{__parser__}]:format_log: Bad json formatting -- {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: Exception while getting logs -- {e}",
+                         extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
 
     def test(self):
@@ -167,33 +147,33 @@ class CscDomainManagerParser(ApiParser):
             since = self.last_api_call or timezone.now() - timedelta(hours=24)
             to = min(timezone.now(), since + timedelta(hours=24))
 
-            logs = self.get_logs(page=page, since=since, to=to)
-            self.update_lock()
+            logger.info(f"{[__parser__]}:execute: Collect logs since {since} to {to}",
+                        extra={'frontend': str(self.frontend)})
 
-            if logs['events']:
-                self.write_to_file([self._format_log(event) for event in logs['events']])
-                self.update_lock()
-                if self.last_log_time != 0:
-                    self.frontend.last_api_call = datetime.fromtimestamp(self.last_log_time, tz=timezone.utc)
+            while logs := self.get_logs(page=page, since=since, to=to):
+                if 'events' not in logs:
+                    break
 
-            while logs['events'] and logs['links'].get('next') and not self.evt_stop.is_set():
-                page = page + 1
-                self.session = None
-                logs = self.get_logs(page=page, since=since, to=to)
-                self.update_lock()
-                self.write_to_file([self._format_log(event) for event in logs['events']])
                 self.update_lock()
 
-                if self.last_log_time != 0:
-                    self.frontend.last_api_call = datetime.fromtimestamp(self.last_log_time, tz=timezone.utc)
+                self.write_to_file(logs['events'])
 
-            if self.last_api_call < timezone.now() - timedelta(hours=24):
-                self.last_api_call += timedelta(hours=1)
+                self.update_lock()
+
+                if logs['links'].get('next'):
+                    page = page + 1
+                    self.session = None
+                else:
+                    break
+
+            self.frontend.last_api_call = to
+            self.frontend.save()
 
             self.session = None
 
             logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
-            logger.error(f"[{__parser__}]:execute: Could not get results from logs -- {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:execute: Could not get results from logs -- {e}",
+                         extra={'frontend': str(self.frontend)})
             raise CscDomainManagerAPIError(e)
