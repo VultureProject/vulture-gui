@@ -181,21 +181,22 @@ class CiscoDuoParser(ApiParser):
                 to = min(timezone.now(), since + timedelta(hours=24))
 
                 logs = self.get_logs(since=since, to=to, endpoint=endpoint)
-                
-                ## UPDATE LAST API CALL IF LOGS ALWAYS PRESENT IN RANGE ##
 
-                if logs['metadata']['total_objects'] >= self.LIMIT and logs['metadata']['next_offset']:
-                    offset = int(logs['metadata']['next_offset'][0]) + 1
-                    new_to = datetime.fromtimestamp(offset/1000, tz=timezone.now().astimezone().tzinfo)
-                    logger.info(f"[{__parser__}]:Logs always present in range since: {since} to : {to}, update last_api_call in {new_to}", extra={'frontend': str(self.frontend)})
-                    to = new_to
+                if logs and logs['metadata']:
+                    ## UPDATE LAST API CALL IF LOGS ALWAYS PRESENT IN RANGE ##
 
-                self.update_lock()
+                    if logs['metadata']['total_objects'] >= self.LIMIT and logs['metadata']['next_offset']:
+                        offset = int(logs['metadata']['next_offset'][0]) + 1
+                        new_to = datetime.fromtimestamp(offset/1000, tz=timezone.now().astimezone().tzinfo)
+                        logger.info(f"[{__parser__}]:Logs always present in range since: {since} to : {to}, update last_api_call in {new_to}", extra={'frontend': str(self.frontend)})
+                        to = new_to
 
-                ## WRITE TO FILE ##
+                    self.update_lock()
 
-                self.write_to_file([self.format_log(log) for log in logs['authlogs']])
-                self.update_lock()
+                    ## WRITE TO FILE ##
+
+                    self.write_to_file([self.format_log(log) for log in logs['authlogs']])
+                    self.update_lock()
 
                 self.frontend.last_api_call = to
                 self.frontend.save()
