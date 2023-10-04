@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [IDP] [COOKIES] Ensure 'HttpOnly' attribute is always set on IDP session cookies
 - [UPGRADE] [SCRIPTS] Avoid updating Frontend's Redis internal IP when a custom port is used
 - [CSS] Incorrect color conditions for custom form errors
+- [API_PARSER] [CISCO_DUO] Unwanted error log on empty response
 
 
 ## [2.10.2] - 2023-09-25
