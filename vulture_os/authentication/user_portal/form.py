@@ -36,7 +36,7 @@ from authentication.ldap.models import LDAPRepository
 from authentication.otp.models import OTPRepository
 from authentication.openid.models import OpenIDRepository
 from authentication.user_portal.models import (AUTH_TYPE_CHOICES, SSO_TYPE_CHOICES, SSO_BASIC_MODE_CHOICES,
-                                               SSO_CONTENT_TYPE_CHOICES, UserAuthentication)
+                                               JWT_SIG_TYPE_CHOICES, SSO_CONTENT_TYPE_CHOICES, UserAuthentication)
 from authentication.user_scope.models import UserScope
 from gui.forms.form_utils import NoValidationField
 from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
@@ -92,7 +92,8 @@ class UserAuthenticationForm(ModelForm):
         model = UserAuthentication
         fields = ('name', 'enable_tracking', 'auth_type', 'portal_template', 'repositories', 'not_openid_repositories',
                   'lookup_ldap_repo', 'lookup_ldap_attr', 'lookup_claim_attr', 'user_scope', 'auth_cookie_name',
-                  'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'otp_repository', 'otp_max_retry',
+                  'auth_timeout', 'enable_timeout_restart', 'enable_captcha', 'enable_jwt',
+                  'jwt_signature_type', 'jwt_key', 'jwt_validate_audience', 'otp_repository', 'otp_max_retry',
                   'disconnect_url', 'enable_disconnect_message', 'enable_disconnect_portal', 'enable_registration',
                   'group_registration', 'update_group_registration', 'enable_external', 'external_fqdn',
                   'external_listener', 'enable_oauth', 'oauth_client_id', 'oauth_client_secret', 'oauth_redirect_uris',
@@ -119,6 +120,10 @@ class UserAuthenticationForm(ModelForm):
             'auth_timeout': NumberInput(attrs={'class': 'form-control'}),
             'enable_timeout_restart': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'enable_captcha': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'enable_jwt': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'jwt_signature_type': Select(choices=JWT_SIG_TYPE_CHOICES, attrs={'class': "form-control select2"}),
+            'jwt_key': Textarea(attrs={'class': 'form-control'}),
+            'jwt_validate_audience': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'otp_repository': Select(choices=OTPRepository.objects.all().only(*OTPRepository.str_attrs()),
                                      attrs={'class': 'form-control select2'}),
             'otp_max_retry': NumberInput(attrs={'class': 'form-control'}),
@@ -176,7 +181,7 @@ class UserAuthenticationForm(ModelForm):
                       "sso_forward_type", "sso_forward_timeout", "sso_forward_content_type", "sso_forward_tls_proto", "sso_forward_url",
                       "sso_forward_user_agent", "sso_forward_content", "sso_forward_capture_content",
                       "sso_forward_replace_pattern", "sso_forward_replace_content", "sso_forward_additional_url",
-                      "sso_keep_client_cookies"]:
+                      "sso_keep_client_cookies", "enable_jwt", "jwt_signature_type", 'jwt_key', 'jwt_validate_audience']:
             self.fields[field].required = False
         # Format oauth_redirect_uris
         self.initial['oauth_redirect_uris'] = '\n'.join(self.initial.get('oauth_redirect_uris', []) or self.fields['oauth_redirect_uris'].initial)
@@ -237,5 +242,14 @@ class UserAuthenticationForm(ModelForm):
                 self.add_error('lookup_ldap_attr', "This field is required with 'LDAP Lookup repository'")
             if not cleaned_data.get('lookup_claim_attr'):
                 self.add_error('lookup_claim_attr', "This field is required with 'LDAP Lookup repository'")
+
+        """ If jwt enabled, options required """
+        if cleaned_data.get('enable_jwt'):
+            if not cleaned_data.get('jwt_signature_type'):
+                self.add_error('jwt_signature_type', "This field required if jwt enabled.")
+            if not cleaned_data.get('jwt_key'):
+                self.add_error('jwt_key', "This field required if jwt enabled.")
+            if not cleaned_data.get('jwt_validate_audience'):
+                self.add_error('jwt_validate_audience', "This field required if jwt enabled.")
 
         return cleaned_data

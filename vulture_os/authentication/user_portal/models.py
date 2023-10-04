@@ -74,6 +74,23 @@ AUTH_TYPE_CHOICES = (
     ('kerberos', 'Kerberos Authentication')
 )
 
+#TODO:Removes comments
+JWT_SIG_TYPE_CHOICES = (
+    ('hmac_sha256', 'HS256'), #required
+    ('hmac_sha384', 'HS384'), #optionnal
+    ('hmac_sha512', 'HS512'), #optionnal
+    ('rsa_pkcs1_sha256', 'RS256'), #recommended
+    ('rsa_pkcs1_sha384', 'RS384'), #optional
+    ('rsa_pkcs1_sha512', 'RS512'), #optional
+    ('ecdsa_p256_sha256', 'ES256'), #recommended+
+    ('ecdsa_p384_sha384', 'ES384'), #optional
+    ('ecdsa_p512_sha512', 'ES512'), #optional
+    ('rsassa_pss_mgf1_sha256', 'PS256'), #optional
+    ('rsassa_pss_mgf1_sha384', 'PS384'), #optional
+    ('rsassa_pss_mgf1_sha512', 'PS512'), #optional
+    ('none', 'none') #optional
+)
+
 SSO_TYPE_CHOICES = (
     ('form', 'HTML Form'),
     ('basic', 'Basic Authentication'),
@@ -390,6 +407,28 @@ class UserAuthentication(models.Model):
         verbose_name=_("Enable captcha"),
         help_text=_("Ask a captcha validation")
     )
+    enable_jwt = models.BooleanField(
+        default=False,
+        # validators=[],
+        verbose_name=_("Authorize JWT"),
+        help_text=_("JWT used to authenticate/authorize user")
+    )
+    jwt_signature_type = models.TextField(
+        default=JWT_SIG_TYPE_CHOICES[0][0],
+        choices=JWT_SIG_TYPE_CHOICES,
+        verbose_name=_("Signature type"),
+        help_text=_("Signature type as given in RFC7518")
+    )
+    jwt_key = models.TextField(
+        default="",
+        verbose_name=_("Key"),
+        help_text=_("Secret/pubkey used to validate jwt's signature")
+    )
+    jwt_validate_audience = models.BooleanField(
+        default=True,
+        verbose_name=_("Validate audience"),
+        help_text=_("Be more flexible without verifying who's the token for, used when multiple fqdn need to be reached (default=on)")
+    )
     otp_repository = models.ForeignKey(
         to=OTPRepository,
         null=True,
@@ -643,6 +682,7 @@ class UserAuthentication(models.Model):
             'enable_external': self.enable_external,
             'repositories': [str(repo) for repo in self.repositories.all()],
             'enable_captcha': self.enable_captcha,
+            'enable_jwt': self.enable_jwt,
             'otp_repository': str(self.otp_repository) if self.otp_repository else "",
             'enable_registration': self.enable_registration,
             'auth_type': self.str_auth_type()

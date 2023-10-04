@@ -104,9 +104,22 @@
       }
     },
     {
+      sTitle: '{% translate "JWT" %}',
+      name: "enable_jwt",
+      aTargets: [6],
+      defaultContent: "",
+      mData: "enable_jwt",
+      mRender: function(data, type, row) {
+        if (row.enable_jwt) <!-- data -->
+          return "<label class='label label-success'><i class='fas fa-check-circle'></i></label>";
+        else
+          return "<label class='label label-default'><i class='fas fa-times-circle'></i></label>";
+      }
+    },
+    {
       sTitle: '{% translate "OTP repository" %}',
       name:"otp_repository",
-      aTargets: [6],
+      aTargets: [7],
       defaultContent: "",
       mData:"otp_repository",
       mRender: function(data, type, row) {
@@ -119,7 +132,7 @@
     {
       sTitle: '{% translate "Registration" %}',
       name: "enable_registration",
-      aTargets: [7],
+      aTargets: [8],
       defaultContent: "",
       mData: "enable_registration",
       mRender: function(data, type, row) {
@@ -132,7 +145,7 @@
     {
       sTitle: '{% translate "Action" %}',
       mData:"id",
-      aTargets: [8],
+      aTargets: [9],
       defaultContent: "",
       mRender: function(data, type, row) {
         let btns = []
