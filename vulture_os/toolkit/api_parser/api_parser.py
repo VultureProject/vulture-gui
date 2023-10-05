@@ -78,7 +78,10 @@ class ApiParser:
 
         self.proxies = None
         if self.data.get('api_parser_use_proxy', False):
-            self.proxies = self.get_system_proxy()
+            if self.data.get('api_parser_custom_proxy', None):
+                self.proxies = self.get_custom_proxy()
+            else:
+                self.proxies = self.get_system_proxy()
 
         self.redis_cli = RedisBase()
 
@@ -102,6 +105,22 @@ class ApiParser:
             return proxy
 
         return None
+
+    def get_custom_proxy(self):
+        """
+        return custom proxy settings from frontend settings
+
+        return: A ready-to-use dict for python request, or
+            None in case of no proxy
+        """
+        proxy = {}
+        if self.data.get('api_parser_custom_proxy', ""):
+            proxy = {
+                "http": self.data.get('api_parser_custom_proxy', ""),
+                "https": self.data.get('api_parser_custom_proxy', ""),
+                "ftp": self.data.get('api_parser_custom_proxy', "")
+            }
+        return proxy
 
     def can_run(self):
         """

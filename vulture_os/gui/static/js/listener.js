@@ -14,6 +14,7 @@ function get_api_parser_data(type_){
   var data = {
     api_parser_type: $('#id_api_parser_type').val(),
     api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked'),
+    api_parser_custom_proxy: $('#id_api_parser_custom_proxy').val(),
     api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked')
   };
 
@@ -318,6 +319,12 @@ $(function() {
       $('.darwin-mode').hide();
     }
   }
+
+  $('#id_api_parser_use_proxy').on('change', function(e){
+    if ($(this).is(':checked')) {
+      $('#api_parser_custom_proxy').show();
+    } else $('#api_parser_custom_proxy').hide();
+  }).trigger('change');
 
   $('#id_api_parser_verify_ssl').on('change', function(e){
     if ($(this).is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {

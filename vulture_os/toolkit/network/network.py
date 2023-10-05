@@ -33,6 +33,8 @@ import glob
 import os
 import re
 
+from django.core.validators import URLValidator
+
 logger = logging.getLogger('system')
 
 
@@ -141,6 +143,20 @@ def get_proxy(openvpn_format=False):
                 return None
 
     return proxy
+
+
+def parse_proxy_url(custom_proxy):
+    search = re.search("\w+:\/\/", custom_proxy)
+    if not search:
+        custom_proxy = f"http://{custom_proxy}"
+
+    validate = URLValidator()
+    try:
+        validate(custom_proxy)
+    except:
+        return None
+
+    return custom_proxy
 
 
 def get_sanitized_proxy():
