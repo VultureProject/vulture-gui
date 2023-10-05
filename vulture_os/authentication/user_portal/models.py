@@ -74,21 +74,20 @@ AUTH_TYPE_CHOICES = (
     ('kerberos', 'Kerberos Authentication')
 )
 
-#TODO:Removes comments
-JWT_SIG_TYPE_CHOICES = (
-    ('hmac_sha256', 'HS256'), #required
-    ('hmac_sha384', 'HS384'), #optionnal
-    ('hmac_sha512', 'HS512'), #optionnal
-    ('rsa_pkcs1_sha256', 'RS256'), #recommended
-    ('rsa_pkcs1_sha384', 'RS384'), #optional
-    ('rsa_pkcs1_sha512', 'RS512'), #optional
-    ('ecdsa_p256_sha256', 'ES256'), #recommended+
-    ('ecdsa_p384_sha384', 'ES384'), #optional
-    ('ecdsa_p512_sha512', 'ES512'), #optional
-    ('rsassa_pss_mgf1_sha256', 'PS256'), #optional
-    ('rsassa_pss_mgf1_sha384', 'PS384'), #optional
-    ('rsassa_pss_mgf1_sha512', 'PS512'), #optional
-    ('none', 'none') #optional
+JWT_SIG_ALG_CHOICES = (
+    ('HS256', 'hmac using sha265'),
+    ('HS384', 'hmac using sha384'),
+    ('HS512', 'hmac using sha512'),
+    ('RS256', 'rsa_pkcs1 using sha256'),
+    ('RS384', 'rsa_pkcs1 using sha384'),
+    ('RS512', 'rsa_pkcs1 using sha512'),
+    ('ES256', 'ecdsa using p256 & sha256'),
+    ('ES384', 'ecdsa using p384 & sha384'),
+    ('ES512', 'ecdsa using p512 & sha512'),
+    ('PS256', 'rsa_pss using mgf1 & sha256'),
+    ('PS384', 'rsa_pss using mgf1 & sha384'),
+    ('PS512', 'rsa_pss using mgf1 & sha512'),
+    ('none', 'no digital signature')
 )
 
 SSO_TYPE_CHOICES = (
@@ -409,13 +408,12 @@ class UserAuthentication(models.Model):
     )
     enable_jwt = models.BooleanField(
         default=False,
-        # validators=[],
         verbose_name=_("Authorize JWT"),
         help_text=_("JWT used to authenticate/authorize user")
     )
     jwt_signature_type = models.TextField(
-        default=JWT_SIG_TYPE_CHOICES[0][0],
-        choices=JWT_SIG_TYPE_CHOICES,
+        default=JWT_SIG_ALG_CHOICES[0][0],
+        choices=JWT_SIG_ALG_CHOICES,
         verbose_name=_("Signature type"),
         help_text=_("Signature type as given in RFC7518")
     )
