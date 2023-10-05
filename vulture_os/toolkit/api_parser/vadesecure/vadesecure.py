@@ -70,6 +70,8 @@ class VadesecureParser(ApiParser):
         self.vadesecure_password = data["vadesecure_password"]
 
         self.session = None
+
+        self.userID = None
         self.accountID = None
 
         self.isTest = False
@@ -101,7 +103,8 @@ class VadesecureParser(ApiParser):
 
                 try:
                     response = response.json()
-                    self.userId = int(response["accounts"][0]["accountId"])
+                    self.accountID = int(response["accounts"][0]["accountId"])
+                    self.userID = int(response["accounts"][0].get("userId", 0))
                 except:
                     return False
             return True
@@ -142,19 +145,16 @@ class VadesecureParser(ApiParser):
 
     def fetch_details(self, payload, logs):
         url = f"{self.vadesecure_host}/{self.VERSION}/{self.GETDETAIL}"
-        payload = {
-            "userId": self.userId,
-        }
         for log in logs:
             msgId = log["messageId"]
             msg = f"Fetching details of log with messageId: {msgId}"
             logger.debug(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
             try:
-                payload.update({
+                payload = {
                     "date": log["date"],
                     "messageId": log["messageId"],
                     "hostname": log["hostname"]
-                })
+                }
                 response = self.__execute_query("POST", url, payload)
 
                 try:
@@ -186,8 +186,12 @@ class VadesecureParser(ApiParser):
 
             payload.update({
                 'pageToGet': index,
-                'userId': self.userId
+                'userId': self.userID or self.accountID
             })
+
+            if endpoint == self.EVENTLOG: # using admin userId to fetch eventlogs
+                payload.update({'accountId': self.userID})
+
             response = self.__execute_query("POST", alert_url, payload)
 
             # Downloading may take a while, so refresh token in Redis

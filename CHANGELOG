@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TLS] Update default parameters for accepted TLS versions
 ### Fixed
 - [API_PARSER] [CSC_DOMAINMANAGER] Correctly handle log stagnation and query interval
+- [API_PARSER] [VADESECURE] Ensure correct user ID is used depending on API
 - [PKG_UPGRADE] Avoid trying to launch upgrade scripts when node is not bootstrapped
 - [GUI] [ACLS] Improve 'Used by' presentation of Wokrflows using ACLs
 - [GUI] [FRONTEND] Prevent mode modification if Frontend is linked to a Workflow/IDP
