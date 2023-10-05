@@ -65,6 +65,8 @@ from toolkit.api_parser.cisco_duo.cisco_duo import CiscoDuoParser
 from toolkit.api_parser.sentinel_one_mobile.sentinel_one_mobile import SentinelOneMobileParser
 from toolkit.api_parser.csc_domainmanager.csc_domainmanager import CscDomainManagerParser
 from toolkit.api_parser.retarus.retarus import RetarusParser
+from toolkit.api_parser.vectra.vectra import VectraParser
+
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -110,6 +112,7 @@ PARSER_LIST = {
     "sentinel_one_mobile": SentinelOneMobileParser,
     "csc_domainmanager": CscDomainManagerParser,
     "retarus": RetarusParser,
+    "vectra": VectraParser,
 }
 
 class ParserDoesNotExist(Exception):
