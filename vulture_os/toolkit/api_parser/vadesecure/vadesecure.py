@@ -104,7 +104,7 @@ class VadesecureParser(ApiParser):
                 try:
                     response = response.json()
                     self.accountID = int(response["accounts"][0]["accountId"])
-                    self.userID = int(response["accounts"][0].get("userId"))
+                    self.userID = int(response["accounts"][0].get("userId", 0))
                 except:
                     return False
             return True
