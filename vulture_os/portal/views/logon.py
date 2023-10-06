@@ -545,7 +545,7 @@ def jwt_validate_token(
     try:
         return jwt.decode(jwt=token, algorithms=[alg], key=key, issuer=issuer, audience=audience)
     except Exception as e:
-        logger.info("JWT::openid_userinfo: jwt validation failed: {}".format(e))
+        logger.info(f"JWT::openid_userinfo: jwt validation failed: {e}")
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
     try:
@@ -574,22 +574,20 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
         token = request.headers.get('Authorization').replace("Bearer ", "")
 
-        # if alg in ["HS256", "HS384", "HS512"]: # simple secret verif
-        # else: # signature verif
-
         ## JWT ##
         try:
-            alg = jwt.get_unverified_header(token).get("alg", "HS256")
-            jwt_unverified = jwt.decode(jwt=token, algorithms=[alg], options={"verify_signature":False,"verify_exp":True})
-            
+            jwt_alg = UserAuthentication.objects.filter(pk=portal_id).first().jwt_signature_type
+            jwt_unverified = jwt.decode(jwt=token, algorithms=[jwt_alg], options={"verify_signature": False, "verify_exp": True})
+
             issuer = jwt_unverified.get("iss", None)
             audience = jwt_unverified.get("aud", None)
 
-            # get keys/signatures from idp information or applicative portal infos
-            # session = REDISOauth2Session(REDISBase(), f"oauth2_{token}") replica ?
+            jwt_key = UserAuthentication.objects.filter(pk=portal_id).first().jwt_key
 
-            jwt_verified = jwt_validate_token(token=token,key="your-256-bit-secret",alg=alg,issuer=issuer,audience=audience)
-            if jwt_verified: return JsonResponse(jwt_verified)
+            # get issuer/signature when we are on IDP mode
+            if jwt_key:
+                jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=issuer, audience=audience)
+                if jwt_verified: return JsonResponse(jwt_verified)
 
         except Exception as e:
             print(f"JWT::openid_userinfo: Bad token: {e}")
