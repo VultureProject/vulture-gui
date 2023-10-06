@@ -66,6 +66,7 @@ from oauthlib.oauth2 import OAuth2Error
 # Extern modules imports
 from base64 import b64decode
 from uuid import uuid4
+import jwt
 
 # Logger configuration imports
 import logging
@@ -529,6 +530,17 @@ def openid_token(request, portal_id):
         logger.exception(e)
         return JsonResponse({"error": "internal_error", "error_description": "An unknown error occurred"}, status=500)
 
+def jwt_validate_token(
+        token: str,
+        key: str | bytes,
+        alg: str,
+        issuer = None, # could be null ?
+        audience = None # could be null ?
+    ) -> dict | None:
+    try:
+        return jwt.decode(jwt=token, algorithms=[alg], key=key, issuer=issuer, audience=audience)
+    except Exception as e:
+        logger.info("JWT::openid_userinfo: jwt validation failed: {}".format(e))
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
     try:
@@ -555,8 +567,31 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         assert request.headers.get('Authorization'), "No Bearer token provided."
         assert request.headers.get('Authorization').startswith("Bearer "), "No Bearer token provided."
 
-        oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
-        session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
+        token = request.headers.get('Authorization').replace("Bearer ", "")
+
+        # if alg in ["HS256", "HS384", "HS512"]: # simple secret verif
+        # else: # signature verif
+
+        ## JWT ##
+        try:
+            alg = jwt.get_unverified_header(token).get("alg", "HS256")
+            jwt_unverified = jwt.decode(jwt=token, algorithms=[alg], options={"verify_signature":False,"verify_exp":True})
+            
+            issuer = jwt_unverified.get("iss", None)
+            audience = jwt_unverified.get("aud", None)
+
+            # get keys/signatures from idp information or applicative portal infos
+            # session = REDISOauth2Session(REDISBase(), f"oauth2_{token}") replica ?
+
+            jwt_verified = jwt_validate_token(token=token,key="your-256-bit-secret",alg=alg,issuer=issuer,audience=audience)
+            if jwt_verified: return JsonResponse(jwt_verified)
+
+        except Exception as e:
+            print(f"JWT::openid_userinfo: Bad token: {e}")
+            # return JsonResponse({"error": "invalid_request", "error_description": "Malformed jwt token"}, status=400)
+
+        ## OAUTH2 ##
+        session = REDISOauth2Session(REDISBase(), f"oauth2_{token}")
         assert session.exists(), "Session not found."
         assert session['scope'], "Session does not contain any scope."
         # Add internal Oauth2 attributes
