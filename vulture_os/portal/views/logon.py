@@ -33,6 +33,7 @@ from django.conf                     import settings
 from django.http                     import (HttpResponseRedirect, HttpResponseServerError, HttpResponseForbidden,
                                              JsonResponse, HttpResponse)
 from django.utils import timezone
+from django.db.models import Q
 
 # Django project imports
 from system.cluster.models           import Cluster
@@ -535,12 +536,6 @@ def openid_token(request, portal_id):
         logger.exception(e)
         return JsonResponse({"error": "internal_error", "error_description": "An unknown error occurred"}, status=500)
 
-def jwt_validate_token(token, key, alg, issuer = None, audience = None):
-    try:
-        return jwt.decode(jwt=token, algorithms=[alg], key=key, issuer=issuer, audience=audience)
-    except Exception as e:
-        logger.error(f"JWT::openid_userinfo: JWT validation failed (maybe issuer/audience invalid): {e}")
-
 def openid_userinfo(request, portal_id=None, workflow_id=None):
     try:
         scheme = request.headers['x-forwarded-proto']
@@ -567,38 +562,41 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         assert request.headers.get('Authorization').startswith("Bearer "), "No Bearer token provided."
 
         token = request.headers.get('Authorization').replace("Bearer ", "")
+        ret = {}
 
         ## JWT ##
-        jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True})
+        jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
         if jwt_unverified:
-            for portal in UserAuthentication.objects.filter(enable_jwt=True):
-                # if portal.enable_external: uses aggregated idp infos
-                try:
-                    jwt_alg = portal.jwt_signature_type
-                    jwt_key = portal.jwt_key
-                    iss = jwt_unverified.get("iss", None)
-
-                    if portal.jwt_validate_audience:
-                        aud = jwt_unverified.get("aud", None)
-                        jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=iss, audience=aud)
-                    else:
-                        jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=iss)
-
-                    if jwt_verified: return JsonResponse(jwt_verified)
-
-                except Exception as e:
-                    logger.error(f"JWT::openid_userinfo: Invalid token: {e}")
+            jwt_iss = jwt_unverified["iss"]
+            jwt_fqdn = jwt_iss.split(":")[-1].split("/")[0]
+            portals = UserAuthentication.objects.filter(
+                Q(enable_external=True, enable_jwt=True, external_fqdn=jwt_fqdn) | Q(workflow__fqdn=jwt_fqdn))
+            assert portals, "No portal assigned to issuer : %s"%(jwt_iss)
+            for portal in portals:
+                jwt_verified = jwt.decode(jwt=token, algorithms=[portal.jwt_signature_type], key=portal.jwt_key, issuer=jwt_iss)
+                if jwt_verified:
+                    ret = jwt_verified
+                    break
 
         ## OAUTH2 ##
-        session = REDISOauth2Session(REDISBase(), f"oauth2_{token}")
-        assert session.exists(), "Session not found."
-        assert session['scope'], "Session does not contain any scope."
-        # Add internal Oauth2 attributes
-        session['scope'].update({'exp': session['exp']})
-        session['scope'].update({'iat': session['iat']})
-        return JsonResponse(session['scope'])
+        else:
+            session = REDISOauth2Session(REDISBase(), f"oauth2_{token}")
+            assert session.exists(), "Session not found."
+            assert session['scope'], "Session does not contain any scope."
+            # Add internal Oauth2 attributes
+            session['scope'].update({'exp': session['exp']})
+            session['scope'].update({'iat': session['iat']})
+            ret = session["scope"]
+
+        return JsonResponse(ret)
+
+    except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
+        logger.debug(f"PORTAL::openid_userinfo: Invalid jwt structure")
     except AssertionError as e:
         logger.info(f"PORTAL::openid_userinfo: {e}")
+        return HttpResponse(status=401)
+    except jwt.PyJWTError as e:
+        logger.error(f"PORTAL::openid_userinfo: Failed to authenticate JWT with given informations: {e}")
         return HttpResponse(status=401)
     except Exception as e:
         logger.exception(f"PORTAL::openid_userinfo: {e}")
