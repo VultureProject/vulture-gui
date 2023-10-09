@@ -535,13 +535,7 @@ def openid_token(request, portal_id):
         logger.exception(e)
         return JsonResponse({"error": "internal_error", "error_description": "An unknown error occurred"}, status=500)
 
-def jwt_validate_token(
-        token: str,
-        key: str | bytes,
-        alg: str,
-        issuer = None, # could be null ?
-        audience = None # could be null ?
-    ) -> dict | None:
+def jwt_validate_token(token: str, key: str | bytes, alg: str, issuer = None, audience = None) -> dict | None:
     try:
         return jwt.decode(jwt=token, algorithms=[alg], key=key, issuer=issuer, audience=audience)
     except Exception as e:
@@ -576,16 +570,26 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
         ## JWT ##
         try:
-            jwt_alg = UserAuthentication.objects.filter(pk=portal_id).first().jwt_signature_type
-            jwt_unverified = jwt.decode(jwt=token, algorithms=[jwt_alg], options={"verify_signature": False, "verify_exp": True})
+            if portal_id and UserAuthentication.objets.get(pk=portal_id).enable_jwt:
+                jwt_alg = UserAuthentication.objects.get(pk=portal_id).jwt_signature_type
+                jwt_unverified = jwt.decode(jwt=token, algorithms=[jwt_alg], options={"verify_signature": False, "verify_exp": True})
+                issuer = jwt_unverified.get("iss", None)
+                audience = jwt_unverified.get("aud", None)
+                jwt_key = UserAuthentication.objects.get(pk=portal_id).jwt_key
 
-            issuer = jwt_unverified.get("iss", None)
-            audience = jwt_unverified.get("aud", None)
+            elif workflow_id and Workflow.objets.get(pk=workflow_id).enable_jwt:
+                jwt_alg = Workflow.objects.get(pk=workflow_id).jwt_signature_type
+                jwt_unverified = jwt.decode(jwt=token, algorithms=[jwt_alg], options={"verify_signature": False, "verify_exp": True})
+                issuer = jwt_unverified.get("iss", None)
+                audience = jwt_unverified.get("aud", None)
+                jwt_key = Workflow.objets.get(pk=workflow_id).jwt_key
 
-            jwt_key = UserAuthentication.objects.filter(pk=portal_id).first().jwt_key
+            if jwt_key and type(issuer) == list:
+                for iss in issuer:
+                    jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=iss, audience=audience)
+                    if jwt_verified: return JsonResponse(jwt_verified)
 
-            # get issuer/signature when we are on IDP mode
-            if jwt_key:
+            elif jwt_key and type(issuer) == str:
                 jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=issuer, audience=audience)
                 if jwt_verified: return JsonResponse(jwt_verified)
 
