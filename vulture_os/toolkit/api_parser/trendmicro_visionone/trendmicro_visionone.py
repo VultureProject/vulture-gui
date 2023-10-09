@@ -78,17 +78,18 @@ class TrendmicroVisiononeParser(ApiParser):
                 else:
                     break
         except Exception as e:
-            logger.error(f"[{__parser__}]:__execute_query: Error '' : {e}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:__execute_query: Error on link '{link}' : {e}", extra={'frontend': str(self.frontend)})
         return items
 
     def _get_alerts(self, since=None, to=None):
         url_path = '/v3.0/workbench/alerts'
 
-        query = {'detectedStartDateTime': since,
-                    'detectedEndDateTime': to,
-                    'dateTimeTarget': 'createdDateTime',
-                    'orderBy': 'createdDateTime desc'
-                 }
+        query = {
+            'startDateTime': since,
+            'endDateTime': to,
+            'dateTimeTarget': 'createdDateTime',
+            'orderBy': 'createdDateTime desc'
+        }
 
         alerts = self.__execute_query(url_path, query)
 
@@ -97,11 +98,12 @@ class TrendmicroVisiononeParser(ApiParser):
     def _get_auditlogs(self, since=None, to=None):
         url_path = '/v3.0/audit/logs'
 
-        query = {'startDateTime': since,
-                    'endDateTime': to,
-                    'orderBy': 'createdDateTime desc',
-                    'labels': 'all'
-                 }
+        query = {
+            'startDateTime': since,
+            'endDateTime': to,
+            'orderBy': 'createdDateTime desc',
+            'labels': 'all'
+        }
 
         auditlogs = self.__execute_query(url_path, query)
 
@@ -110,9 +112,10 @@ class TrendmicroVisiononeParser(ApiParser):
     def _get_OAT(self, since=None, to=None):
         url_path = '/v3.0/oat/detections'
 
-        query = {'detectedStartDateTime': since,
-                    'detectedEndDateTime': to,
-                }
+        query = {
+            'detectedStartDateTime': since,
+            'detectedEndDateTime': to,
+        }
 
         oat = self.__execute_query(url_path, query, timeout=30)
 
