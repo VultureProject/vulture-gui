@@ -535,11 +535,11 @@ def openid_token(request, portal_id):
         logger.exception(e)
         return JsonResponse({"error": "internal_error", "error_description": "An unknown error occurred"}, status=500)
 
-def jwt_validate_token(token: str, key: str | bytes, alg: str, issuer = None, audience = None) -> dict | None:
+def jwt_validate_token(token, key, alg, issuer = None, audience = None):
     try:
         return jwt.decode(jwt=token, algorithms=[alg], key=key, issuer=issuer, audience=audience)
     except Exception as e:
-        logger.info(f"JWT::openid_userinfo: jwt validation failed: {e}")
+        logger.error(f"JWT::openid_userinfo: JWT validation failed (maybe issuer/audience invalid): {e}")
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
     try:
@@ -569,33 +569,25 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         token = request.headers.get('Authorization').replace("Bearer ", "")
 
         ## JWT ##
-        try:
-            if portal_id and UserAuthentication.objets.get(pk=portal_id).enable_jwt:
-                jwt_alg = UserAuthentication.objects.get(pk=portal_id).jwt_signature_type
-                jwt_unverified = jwt.decode(jwt=token, algorithms=[jwt_alg], options={"verify_signature": False, "verify_exp": True})
-                issuer = jwt_unverified.get("iss", None)
-                audience = jwt_unverified.get("aud", None)
-                jwt_key = UserAuthentication.objects.get(pk=portal_id).jwt_key
+        jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True})
+        if jwt_unverified:
+            for portal in UserAuthentication.objects.filter(enable_jwt=True):
+                # if portal.enable_external: uses aggregated idp infos
+                try:
+                    jwt_alg = portal.jwt_signature_type
+                    jwt_key = portal.jwt_key
+                    iss = jwt_unverified.get("iss", None)
 
-            elif workflow_id and Workflow.objets.get(pk=workflow_id).enable_jwt:
-                jwt_alg = Workflow.objects.get(pk=workflow_id).jwt_signature_type
-                jwt_unverified = jwt.decode(jwt=token, algorithms=[jwt_alg], options={"verify_signature": False, "verify_exp": True})
-                issuer = jwt_unverified.get("iss", None)
-                audience = jwt_unverified.get("aud", None)
-                jwt_key = Workflow.objets.get(pk=workflow_id).jwt_key
+                    if portal.jwt_validate_audience:
+                        aud = jwt_unverified.get("aud", None)
+                        jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=iss, audience=aud)
+                    else:
+                        jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=iss)
 
-            if jwt_key and type(issuer) == list:
-                for iss in issuer:
-                    jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=iss, audience=audience)
                     if jwt_verified: return JsonResponse(jwt_verified)
 
-            elif jwt_key and type(issuer) == str:
-                jwt_verified = jwt_validate_token(token=token, key=jwt_key, alg=jwt_alg, issuer=issuer, audience=audience)
-                if jwt_verified: return JsonResponse(jwt_verified)
-
-        except Exception as e:
-            print(f"JWT::openid_userinfo: Bad token: {e}")
-            # return JsonResponse({"error": "invalid_request", "error_description": "Malformed jwt token"}, status=400)
+                except Exception as e:
+                    logger.error(f"JWT::openid_userinfo: Invalid token: {e}")
 
         ## OAUTH2 ##
         session = REDISOauth2Session(REDISBase(), f"oauth2_{token}")
