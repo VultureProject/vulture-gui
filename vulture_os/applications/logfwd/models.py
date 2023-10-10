@@ -720,8 +720,12 @@ class LogOMKAFKA(LogOM):
     key = models.TextField(blank=True)
     dynaKey = models.BooleanField(default=False)
     dynaTopic = models.BooleanField(default=False)
-    topicConfParam = models.TextField(blank=True)
-    confParam = models.TextField(blank=True)
+    topicConfParam = models.JSONField(
+        default=list(),
+        blank=True)
+    confParam = models.JSONField(
+        default=list(),
+        blank=True)
     partitions_useFixed = models.IntegerField(blank=True)
     partitions_auto = models.BooleanField(default=False)
 
@@ -763,6 +767,8 @@ class LogOMKAFKA(LogOM):
             'template_topic': self.template_topic(),
             'partitions_useFixed': self.partitions_useFixed,
             'partitions_auto': self.partitions_auto,
+            'confParam': self.confParam,
+            'topicConfParam': self.topicConfParam,
             'type': 'Kafka',
             'mode': "queue",
             'send_as_raw': self.send_as_raw,

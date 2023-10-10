@@ -304,6 +304,9 @@
       });
     });
 
+    $("#id_confParam").tagsinput();
+    $("#id_topicConfParam").tagsinput();
+
     $('#id_enable_retry').on('change', function(e){
       if ($(this).is(':checked')) {
         $('#tab-queue').show();

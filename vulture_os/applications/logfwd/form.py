@@ -24,6 +24,7 @@ __doc__ = 'rsyslog dedicated form classes'
 
 # Django system imports
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, NumberInput, Select
 
 # Django project imports
@@ -33,6 +34,9 @@ from system.pki.models import X509Certificate
 
 # Required exceptions imports
 from django.forms import ValidationError
+
+# Additional module imports
+from ast import literal_eval as ast_literal_eval
 
 # Logger configuration imports
 import logging
@@ -477,8 +481,8 @@ class LogOMKafkaForm(ModelForm):
             'dynaTopic': CheckboxInput(attrs={"class": " js-switch"}),
             'partitions_useFixed': NumberInput(attrs={'class': 'form-control'}),
             'partitions_auto': CheckboxInput(attrs={"class": " js-switch"}),
-            'confParam': TextInput(attrs={'class': 'form-control'}),
-            'topicConfParam': TextInput(attrs={'class': 'form-control'}),
+            'confParam': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+            'topicConfParam': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
@@ -493,6 +497,9 @@ class LogOMKafkaForm(ModelForm):
         super().__init__(*args, **kwargs)
         for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
             self.fields[field_name].required = False
+
+        self.initial['confParam'] = ','.join(self.initial.get('confParam', []) or self.fields['confParam'].initial)
+        self.initial['topicConfParam'] = ','.join(self.initial.get('topicConfParam', []) or self.fields['topicConfParam'].initial)
 
     def clean_name(self):
         field = self.cleaned_data.get('name')
@@ -511,6 +518,50 @@ class LogOMKafkaForm(ModelForm):
         if " " in topic:
             raise ValidationError("Cannot contain spaces")
         return topic
+
+    def clean_confParam(self):
+        data = self.cleaned_data.get('confParam')
+        cleaned = []
+        if not data:
+            return cleaned
+        try:
+            data = ast_literal_eval(data)
+        except Exception:
+            data = [entry.strip() for entry in data.split(',')]
+        for entry in data:
+            kv = entry.split('=', 1)
+            if len(kv) < 2:
+                raise ValidationError("Every option should be a key/value separated by a '='")
+            kv[0] = kv[0].strip()
+            kv[1] = kv[1].strip().replace("'", '"')
+            try:
+                RegexValidator('^[A-Za-z0-9-._]+$')(kv[0])
+            except Exception:
+                raise ValidationError("Only letters, digits, '-' (dash), '_' (underscore) and '.' (dot) are allowed in the keys.")
+            cleaned.append(kv[0] + "=" + kv[1])
+        return cleaned
+
+    def clean_topicConfParam(self):
+        data = self.cleaned_data.get('topicConfParam')
+        cleaned = []
+        if not data:
+            return cleaned
+        try:
+            data = ast_literal_eval(data)
+        except Exception:
+            data = [entry.strip() for entry in data.split(',')]
+        for entry in data:
+            kv = entry.split('=', 1)
+            if len(kv) < 2:
+                raise ValidationError("Every option should be a key/value separated by a '='")
+            kv[0] = kv[0].strip()
+            kv[1] = kv[1].strip().replace("'", '"')
+            try:
+                RegexValidator('^[A-Za-z0-9-._]+$')(kv[0])
+            except Exception:
+                raise ValidationError("Only letters, digits, '-' (dash), '_' (underscore) and '.' (dot) are allowed in the keys.")
+            cleaned.append(kv[0] + "=" + kv[1])
+        return cleaned
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
