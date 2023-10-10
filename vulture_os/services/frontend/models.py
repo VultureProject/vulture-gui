@@ -1204,9 +1204,9 @@ class Frontend(models.Model):
               it will be handled by the view
         """
         if not exclude:
-            exclude = ['log_forwarders']
+            exclude = set('log_forwarders')
         else:
-            exclude.append('log_forwarders')
+            exclude.add('log_forwarders')
         return super().clean_fields(exclude=exclude)
 
     def to_dict(self, fields=None):

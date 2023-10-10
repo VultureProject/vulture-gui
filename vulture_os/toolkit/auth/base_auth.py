@@ -86,7 +86,7 @@ class BaseAuth(object):
                 if str(hash) in alg:
                     algo=getattr(hashlib, 'sha'+str(hash))
                     if not fixed_salt:
-                        rdm_str=get_random_string()
+                        rdm_str=get_random_string(length=12)
                     else:
                         rdm_str=fixed_salt
                     pwd=base64.b64encode (pbkdf2(password, rdm_str, int(iter), digest=algo))

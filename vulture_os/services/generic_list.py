@@ -57,7 +57,7 @@ class ListView(View):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, **kwargs):
-        if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+        if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return render(request, self.template_name)
         return HttpResponseBadRequest()
 
@@ -65,7 +65,7 @@ class ListView(View):
         search_tags = kwargs.get("tags")
         html_template = kwargs.get("to_html_template")
 
-        if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+        if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return HttpResponseBadRequest()
 
         order = {

@@ -714,7 +714,7 @@ class Server(models.Model):
         """ Generate Listener HAProxy configuration
         :return     A string - Bind directive
         """
-        result = "server srv{} {}{} weight {}".format(self.id or get_random_string(),
+        result = "server srv{} {}{} weight {}".format(self.id or get_random_string(length=12),
                                                        self.target,
                                                        ":" + str(self.port) if self.mode == "net" else "",
                                                        self.weight)

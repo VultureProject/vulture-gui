@@ -206,7 +206,7 @@ def self_ask_passwords(request, portal, action, rdm=None, error="", **kwargs):
 
 	reset_password_key = rdm
 
-	redirect_url = request.GET.get('redirect_url') or request.META.get('HTTP_REFERER')
+	redirect_url = request.GET.get('redirect_url') or request.headers.get('referer')
 	if redirect_url:
 		kwargs['form_action'] = f"?redirect_url={quote_plus(redirect_url)}"
 

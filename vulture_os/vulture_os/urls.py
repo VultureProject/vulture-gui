@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.urls import path, re_path, include
+from django.urls import path, include
 from django.conf.urls.i18n import i18n_patterns
 from django.views.defaults import bad_request as default_bad_request
 from django.views.defaults import permission_denied as default_permission_denied
@@ -96,7 +96,7 @@ for app in settings.AVAILABLE_APPS:
 for app, urls in urls_files.items():
     for url in urls:
         url = url.replace(settings.BASE_DIR + "/", '').replace('/', '.').replace('.py', '')
-        urlpatterns.append(re_path(r"^", include(url)))
+        urlpatterns.append(path("", include(url)))
 
 
 urlpatterns += i18n_patterns(

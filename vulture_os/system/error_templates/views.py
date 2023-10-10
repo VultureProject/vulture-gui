@@ -59,12 +59,12 @@ class ListErrorTemplate(View):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, **kwargs):
-        if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+        if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return render(request, self.template_name)
         return HttpResponseBadRequest()
 
     def post(self, request, **kwargs):
-        if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+        if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return HttpResponseBadRequest()
 
         search = request.POST['sSearch']

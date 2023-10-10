@@ -82,10 +82,10 @@ class SSOForward(object):
             logger.debug("SSOForward:__init__: keeping client's cookies while making requests")
             cookies = request.COOKIES
 
-        self.sso_client   = SSOClient(application.authentication.sso_forward_user_agent or request.META.get('HTTP_USER_AGENT',None),
+        self.sso_client   = SSOClient(application.authentication.sso_forward_user_agent or request.headers.get('user-agent',None),
                                       application.backend.headers.filter(enabled=True, type="request",
                                                        action__in=['add-header', 'set-header']),
-                                    request.META.get('HTTP_REFERER', None),
+                                    request.headers.get('referer', None),
                                     ssl_client_certificate,
                                     self.ssl_context,
                                     verify_certificate=application.authentication.sso_forward_tls_check,

@@ -258,7 +258,7 @@ def strongswan_edit(request, object_id=None, api=False, update=False):
 
 
 def strongswan_start(request, object_id, api=False):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -294,7 +294,7 @@ def strongswan_start(request, object_id, api=False):
 
 
 def strongswan_restart(request, object_id, api=False):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -330,7 +330,7 @@ def strongswan_restart(request, object_id, api=False):
 
 
 def strongswan_stop(request, object_id, api=False):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -366,7 +366,7 @@ def strongswan_stop(request, object_id, api=False):
 
 
 def strongswan_reload(request, object_id, api=False):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -402,7 +402,7 @@ def strongswan_reload(request, object_id, api=False):
 
 
 def strongswan_status(request, object_id, api=False):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
