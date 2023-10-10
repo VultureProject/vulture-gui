@@ -62,26 +62,9 @@ class ConfigAPIv1(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def post(self, request, list_type=None):
+    def put(self, request, object_id):
         try:
-            return pf_whitelist_blacklist(request, list_type)
-
-        except Exception as e:
-            logger.critical(e, exc_info=1)
-            error = _("An error has occurred")
-
-            if settings.DEV_MODE:
-                error = str(e)
-
-            return JsonResponse({
-                'status': False,
-                'error': error
-            }, status=500)
-
-    @api_need_key('cluster_api_key')
-    def put(self, request):
-        try:
-            return config_edit(request, api=True)
+            return config_edit(request, object_id, api=True)
         except Exception as e:
             logger.critical(e, exc_info=1)
             if settings.DEV_MODE:
@@ -117,3 +100,22 @@ class ConfigAPIv1(View):
             'status': False,
             'error': error
         }, status=500)
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PfAPIv1(View):
+    @api_need_key('cluster_api_key')
+    def post(self, request, list_type=None):
+        try:
+            return pf_whitelist_blacklist(request, list_type)
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+            return JsonResponse({
+                'status': False,
+                'error': error
+            }, status=500)

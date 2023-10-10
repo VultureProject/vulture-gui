@@ -67,7 +67,7 @@ def build_response_config(module_url, command_list):
     return JsonResponse(result, status=201)
 
 
-def config_edit(request, api=False, update=False):
+def config_edit(request, object_id=None, api=False, update=False):
     config_model = Cluster.get_global_config()
 
     if hasattr(request, "JSON") and api:
