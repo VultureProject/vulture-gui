@@ -19,7 +19,7 @@
         {# Print form errors correctly #}
         {% if form.non_field_errors %}
           <div class="alert alert-danger alert-dismissible">
-            <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+            <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
             <div class="tab-content no-padding">
               {{ form.non_field_errors|safe }}
             </div>
@@ -29,9 +29,9 @@
         {% if save_error %}
           <div class="alert alert-danger alert-dismissible nav-tabs-custom">
             <ul class="nav nav-tabs pull-right ui-sortable-handle">
-              <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
-              <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-              <li class="pull-left header"><i class="fa fa-inbox"></i>{% trans "Configuration error" %}</li>
+              <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
+              <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+              <li class="pull-left header"><i class="fa fa-inbox"></i>{% translate "Configuration error" %}</li>
             </ul>
             <div class="tab-content no-padding">
               <div class="tab-pane active" id="tab_1">
@@ -49,7 +49,7 @@
             <div class="panel-body">
               <div class="nav-tabs-custom">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <div class="tab-pane active" id="tab_general">
@@ -57,14 +57,14 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Enable VPNSSL" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Enable VPNSSL" %}</label>
                           <div class="col-sm-5">
                             {{form.enabled}}
                             {{form.enabled.errors|safe}}
                           </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label"> {% trans "Apply settings to node" %}</label>
+                            <label class="col-sm-4 control-label"> {% translate "Apply settings to node" %}</label>
                             <div class="col-sm-5">
                             <label>
                                 {{form.node}}
@@ -73,28 +73,28 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Protocol" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Protocol" %}</label>
                             <div class="col-sm-5">
                                 {{form.proto}}
                                 {{form.proto.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Remote server" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Remote server" %}</label>
                             <div class="col-sm-5">
                                 {{form.remote_server}}
                                 {{form.remote_server.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group hideikelifetime">
-                                <label class="col-sm-4 control-label">{% trans "Remote port" %}</label>
+                                <label class="col-sm-4 control-label">{% translate "Remote port" %}</label>
                                 <div class="col-sm-5">
                                     {{form.remote_port}}
                                     {{form.remote_port.errors|safe}}
                                 </div>
                         </div>
                         <div class="form-group hideikelifetime">
-                          <label class="col-sm-4 control-label">{% trans "TLS Profile for authentication" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "TLS Profile for authentication" %}</label>
                           <div class="col-sm-5">
                               {{form.tls_profile}}
                               {{form.tls_profile.errors|safe}}
@@ -107,8 +107,8 @@
               </div> <!-- /.nav-tabs-custom -->
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'services.openvpn.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'services.openvpn.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </form>

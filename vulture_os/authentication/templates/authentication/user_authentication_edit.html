@@ -56,17 +56,17 @@
               {% endif %}
               <div class="panel">
                 <div class="panel-header with-border">
-                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "User Authentication edition" %}</h1>
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "User Authentication edition" %}</h1>
                 </div>
                 <div class="panel-body">
                   <div class="nav-tabs-custom nav-tabs-no-margin">
                     <ul class="nav nav-tabs">
-                      <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Main settings" %}</a></li>
-                      <li><a href="#tab_otp" data-toggle="tab">{% trans "OTP" %}</a></li>
-                      <li><a href="#tab_disconnect" data-toggle="tab">{% trans "Disconnect" %}</a></li>
-                      <li><a href="#tab_idp" data-toggle="tab" id="idp-tab">{% trans "Identity Provider" %}</a></li>
-                      <li><a href="#tab_oauth" data-toggle="tab">{% trans "OAuth2" %}</a></li>
-                      <li><a href="#tab_sso_forward" data-toggle="tab">{% trans "SSO Forward" %}</a></li>
+                      <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "Main settings" %}</a></li>
+                      <li><a href="#tab_otp" data-toggle="tab">{% translate "OTP" %}</a></li>
+                      <li><a href="#tab_disconnect" data-toggle="tab">{% translate "Disconnect" %}</a></li>
+                      <li><a href="#tab_idp" data-toggle="tab" id="idp-tab">{% translate "Identity Provider" %}</a></li>
+                      <li><a href="#tab_oauth" data-toggle="tab">{% translate "OAuth2" %}</a></li>
+                      <li><a href="#tab_sso_forward" data-toggle="tab">{% translate "SSO Forward" %}</a></li>
                     </ul>
                     <div class="tab-content">
                       </br>
@@ -259,7 +259,7 @@
                                 {{form.otp_repository.errors|safe}}
                               </div>
                               <div class="col-sm-3">
-                                <a class="btn btn-flat btn-primary" href="{% url 'authentication.otp.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                                <a class="btn btn-flat btn-primary" href="{% url 'authentication.otp.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                               </div>
                             </div>
                           </div>
@@ -495,12 +495,12 @@
                         <div class="row sso_forward sso_forward_content">
                           <div class="col-md-12">
                             <div class="form-group">
-                              <label class="col-sm-4 control-label">{% trans "SSO forward status" %}</label>
+                              <label class="col-sm-4 control-label">{% translate "SSO forward status" %}</label>
                               <div class="col-sm-1">
                                 {% if form.sso_forward_content.value == "" %}
-                                <span id="sso_forward_status" style="color:red">{% trans "Not configured"%}</span>
+                                <span id="sso_forward_status" style="color:red">{% translate "Not configured"%}</span>
                                 {% else %}
-                                <span id="sso_forward_status" style="color:green">{% trans "Configured"%}</span>
+                                <span id="sso_forward_status" style="color:green">{% translate "Configured"%}</span>
                                 {% endif %}
                               </div>
                             </div>
@@ -516,7 +516,7 @@
                           </div>
                         </div> <!-- /.row -->
                         <fieldset class="col-lg-12 sol-sm-12 sso_forward_tls">
-                          <legend>{% trans "TLS options" %}</legend>
+                          <legend>{% translate "TLS options" %}</legend>
                           <div class="row sso_forward sso_forward_tls">
                             <div class="col-md-12">
                               <div class="form-group">
@@ -552,7 +552,7 @@
                           </div> <!-- /.row -->
                         </fieldset>
                         <fieldset class="col-lg-12 sol-sm-12">
-                          <legend>{% trans "Behavior Options" %}</legend>
+                          <legend>{% translate "Behavior Options" %}</legend>
                           <div class="row sso_forward">
                             <div class="col-md-12">
                               <div class="form-group">
@@ -713,8 +713,8 @@
                   </div> <!-- /.nav-tabs-custom -->
                 </div> <!-- /.box-body -->
                 <div class="panel-footer">
-                  <a type="button" href="{% url 'portal.user_authentication.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                  <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Save" %}</button>
+                  <a type="button" href="{% url 'portal.user_authentication.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+                  <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Save" %}</button>
                 </div> <!-- /.box-footer -->
               </div> <!-- /.box -->
             </div>
@@ -729,13 +729,13 @@
       <div class="modal-content">
         <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h4 class="modal-title">{% trans "SSO Forward configuration" %}</h4>
+            <h4 class="modal-title">{% translate "SSO Forward configuration" %}</h4>
         </div>
         <div class="modal-body" id="sso_modal">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
-          <button type="button" id="btn_sso_wizard" class="btn btn-success btn-flat">{% trans "Save" %}</button>
+          <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% translate "Cancel" %}</button>
+          <button type="button" id="btn_sso_wizard" class="btn btn-success btn-flat">{% translate "Save" %}</button>
         </div>
       </div>
     </div>
@@ -1106,7 +1106,7 @@
       }
       else{
         reason = data['reason'];
-        result += "<b style='color:red;'>{% trans 'Unable to retrieve form, reason: '%}" + reason + "</b>";
+        result += "<b style='color:red;'>{% translate 'Unable to retrieve form, reason: '%}" + reason + "</b>";
       }
       $('#sso_modal').html(result);
       $("#modal_sso_wizard").modal('show');

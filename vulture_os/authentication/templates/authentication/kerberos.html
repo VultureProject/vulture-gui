@@ -17,9 +17,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                      <a class="btn btn-flat btn-primary" href="{% url 'authentication.kerberos.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                      <a class="btn btn-flat btn-primary" href="{% url 'authentication.kerberos.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Kerberos Repository" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Kerberos Repository" %}</h1>
                 </div>
                 <div class="panel-body">
                   <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="kerberos_list">
@@ -50,42 +50,42 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name",
       aTargets: [1],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "Realm" %}',
+      sTitle: '{% translate "Realm" %}',
       name: "realm",
       aTargets: [2],
       defaultContent: "",
       mData: "realm"
     },
     {
-      sTitle: '{% trans "Domain Realm" %}',
+      sTitle: '{% translate "Domain Realm" %}',
       name: "domain_realm",
       aTargets: [3],
       defaultContent: "",
       mData: "domain_realm"
     },
     {
-      sTitle: '{% trans "KDC(s)" %}',
+      sTitle: '{% translate "KDC(s)" %}',
       name: "kdc",
       aTargets: [4],
       defaultContent: "",
       mData: "kdc"
     },
     {
-      sTitle: '{% trans "Service name" %}',
+      sTitle: '{% translate "Service name" %}',
       name: "krb5_service",
       aTargets: [5],
       defaultContent: "",
       mData: "krb5_service"
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [6],
       defaultContent: "",
@@ -125,18 +125,18 @@
         data   : aoData,
         success: function(data, callback){
           if (!data.status){
-            notify('error', "{% trans 'Error' %}", data.error);
+            notify('error', "{% translate 'Error' %}", data.error);
           } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+        notify('error', "{% translate 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          notify('error', "{% trans 'Error' %}", data.error);
+          notify('error', "{% translate 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }

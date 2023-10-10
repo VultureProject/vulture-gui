@@ -3,7 +3,7 @@
 <div class="row">
     <div class="col-md-12">
         <div class="template_helper">
-            <p>{% trans "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
+            <p>{% translate "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
         </div>
     </div>
 
@@ -11,23 +11,23 @@
         <div class="template_helper col-md-3">
             <div class="panel  panel-bordered panel-dark">
                 <div class="panel-heading">
-                    <h3 class="panel-title">{% trans "The following tags are available: "%}</h3>
+                    <h3 class="panel-title">{% translate "The following tags are available: "%}</h3>
                 </div>
                 <div class="panel-body">
                     <ul>
-                        <li><b style="color:#39454C;">&#123;&#123;application_list&#125;&#125;</color></b>: {% trans "A list of applications the user has access to. Applications have the following attributes"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;application_list&#125;&#125;</color></b>: {% translate "A list of applications the user has access to. Applications have the following attributes"%}</li>
                     </ul>
                     <ul>
-                        <li><b style="color:#39454C;">&#123;&#123;name&#125;&#125;</color></b>: {% trans "The friendly name of the application"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;uri&#125;&#125;</color></b>: {% trans "The public URI of the application"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;status&#125;&#125;</color></b>: {% trans "Indicates if the user is logged on it"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;name&#125;&#125;</color></b>: {% translate "The friendly name of the application"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;uri&#125;&#125;</color></b>: {% translate "The public URI of the application"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;status&#125;&#125;</color></b>: {% translate "Indicates if the user is logged on it"%}</li>
                     </ul>
                     <ul>
-                        <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;changePassword&#125;&#125;</color></b>: {% trans "The URI to change password"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;logout&#125;&#125;</color></b>: {% trans "The URI to disconnect from all applications"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;username&#125;&#125;</color></b>: {% trans "The name of the current user"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The message telling what happens"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% translate "The Cascading Style sheet section"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;changePassword&#125;&#125;</color></b>: {% translate "The URI to change password"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;logout&#125;&#125;</color></b>: {% translate "The URI to disconnect from all applications"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;username&#125;&#125;</color></b>: {% translate "The name of the current user"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% translate "The message telling what happens"%}</li>
                     </ul>
                 </div>
             </div>
@@ -39,7 +39,7 @@
             {{form.html_self}}
             {{form.html_self.errors}}
             <p class="text-center">
-                <button type="button" @click="preview('html_self')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                <button type="button" @click="preview('html_self')" class="btn btn-primary">{% translate "PREVIEW" %}</button>
             </p>
         </div>
     </div>

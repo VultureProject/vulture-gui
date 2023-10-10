@@ -16,7 +16,7 @@
         <div class="col-md-12">
             <div class="panel">
                 <div class="panel-heading">
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "TOTP Profiles" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "TOTP Profiles" %}</h1>
                 </div>
                 <div class="panel-body">
                   <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="totp_profiles_list">
@@ -47,28 +47,28 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Repository" %}',
+      sTitle: '{% translate "Repository" %}',
       name: "auth_repository",
       aTargets: [1],
       defaultContent: "",
       mData: "auth_repository"
     },
     {
-      sTitle: '{% trans "TOTP repository" %}',
+      sTitle: '{% translate "TOTP repository" %}',
       name: "totp_repository",
       aTargets: [2],
       defaultContent: "",
       mData: "totp_repository"
     },
     {
-      sTitle: '{% trans "User" %}',
+      sTitle: '{% translate "User" %}',
       name: "login",
       aTargets: [3],
       defaultContent: "",
       mData: "login"
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       name: "action",
       mData:"id",
       aTargets: [4],
@@ -108,18 +108,18 @@
         data   : aoData,
         success: function(data, callback){
           if (!data.status){
-            notify('error', "{% trans 'Error' %}", data.error);
+            notify('error', "{% translate 'Error' %}", data.error);
           } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+        notify('error', "{% translate 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          notify('error', "{% trans 'Error' %}", data.error);
+          notify('error', "{% translate 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }

@@ -56,12 +56,12 @@
               {% endif %}
               <div class="panel">
                 <div class="panel-header with-border">
-                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "User's Scope edition" %}</h1>
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "User's Scope edition" %}</h1>
                 </div>
                 <div class="panel-body">
                   <div class="nav-tabs-custom nav-tabs-no-margin">
                     <ul class="nav nav-tabs">
-                      <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Main settings" %}</a></li>
+                      <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "Main settings" %}</a></li>
                     </ul>
                     <div class="tab-content">
                       </br>
@@ -106,7 +106,7 @@
                                     {% endfor %}
                                   </tbody>
                                 </table>
-                                <button class="addlink addplus" id="add_repo_attribute" type="button">{% trans "Add an Entry" %}</button>
+                                <button class="addlink addplus" id="add_repo_attribute" type="button">{% translate "Add an Entry" %}</button>
                                 {{ form.repo_attributes.errors|safe }}
                                 <input id="repo_attributes" name="repo_attributes" value="" type="hidden">
                               </div>
@@ -118,8 +118,8 @@
                   </div> <!-- /.nav-tabs-custom -->
                 </div> <!-- /.box-body -->
                 <div class="panel-footer">
-                  <a type="button" href="{% url 'authentication.user_scope.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                  <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Save" %}</button>
+                  <a type="button" href="{% url 'authentication.user_scope.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+                  <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Save" %}</button>
                 </div> <!-- /.box-footer -->
               </div> <!-- /.box -->
             </div>

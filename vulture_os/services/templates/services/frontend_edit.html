@@ -24,13 +24,13 @@
               {# If there is save/configuration errors #}
               {% if save_error %}
                 <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
                 </ul>
-                <h4 class="panel-title">{% trans "Configuration error" %}</h4>
+                <h4 class="panel-title">{% translate "Configuration error" %}</h4>
               {% endif %}
               {% if form.non_field_errors %}
-                <h4 class="panel-title"><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                <h4 class="panel-title"><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
               {% endif %}
             </div>
             <div class="panel-body">
@@ -60,14 +60,14 @@
             <div class="panel-body">
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
-                  <li><a href="#tab_network" data-toggle="tab" class="network-mode">{% trans "Listeners" %}</a></li>
-                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode filebeat-api-mode">{% trans "Vendor API" %}</a></li>
-                  <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% trans "HTTP Options" %}</a></li>
-                  <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% trans "HTTP Headers" %}</a></li>
-                  <li><a href="#tab_enrichment" data-toggle="tab" class="logging">{% trans "Logs Enrichment" %}</a></li>
-                  <li><a href="#tab_logging" data-toggle="tab" class="logging">{% trans "Logs Forwarder" %}</a></li>
-                  <li><a href="#tab_custom" data-toggle="tab" class="haproxy-conf">{% trans "Custom conf" %}</a></li>
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+                  <li><a href="#tab_network" data-toggle="tab" class="network-mode">{% translate "Listeners" %}</a></li>
+                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode filebeat-api-mode">{% translate "Vendor API" %}</a></li>
+                  <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% translate "HTTP Options" %}</a></li>
+                  <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% translate "HTTP Headers" %}</a></li>
+                  <li><a href="#tab_enrichment" data-toggle="tab" class="logging">{% translate "Logs Enrichment" %}</a></li>
+                  <li><a href="#tab_logging" data-toggle="tab" class="logging">{% translate "Logs Forwarder" %}</a></li>
+                  <li><a href="#tab_custom" data-toggle="tab" class="haproxy-conf">{% translate "Custom conf" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <br/>
@@ -75,7 +75,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Enable listener" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Enable listener" %}</label>
                           <div class="col-sm-5">
                             {{form.enabled}}
                             {{form.enabled.errors|safe}}
@@ -86,7 +86,7 @@
                     <div class="row">
                       <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                             <div class="col-sm-5">
                               {{form.name}}
                               {{form.name.errors|safe}}
@@ -97,7 +97,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Mode" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Mode" %}</label>
                           <div class="col-sm-5">
                             {{form.mode}}
                             {{form.mode.errors|safe}}
@@ -108,7 +108,7 @@
                     <div class="row tcp-mode log-mode http-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Enable logging" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Enable logging" %}</label>
                           <div class="col-sm-5">
                           {{form.enable_logging}}
                           {{form.enable_logging.errors|safe}}
@@ -119,7 +119,7 @@
                     <div class="row http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Log level" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Log level" %}</label>
                           <div class="col-sm-5">
                             {{form.log_level}}
                             {{form.log_level.errors|safe}}
@@ -130,7 +130,7 @@
                     <div class="row http-mode-logging tcp-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Store logs into cluster database" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Store logs into cluster database" %}</label>
                           <div class="col-sm-5">
                             <input type="checkbox" class="js-switch" id="stock_logs_locally"/>
                           </div>
@@ -140,7 +140,7 @@
                     <div class="row logging">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Archive logs on system" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Archive logs on system" %}</label>
                           <div class="col-sm-5">
                             <input type="checkbox" class="js-switch" id="archive_logs"/>
                           </div>
@@ -150,7 +150,7 @@
                     <div class="row log-mode no-filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Rsyslog Listening mode" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Rsyslog Listening mode" %}</label>
                           <div class="col-sm-5">
                             {{form.listening_mode}}
                             {{form.listening_mode.errors|safe}}
@@ -161,7 +161,7 @@
                     <div class="row log-mode filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Filebeat Listening mode" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Filebeat Listening mode" %}</label>
                           <div class="col-sm-5">
                             {{form.filebeat_listening_mode}}
                             {{form.filebeat_listening_mode.errors|safe}}
@@ -172,7 +172,7 @@
                     <div class="row log-mode filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Filebeat Module" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Filebeat Module" %}</label>
                           <div class="col-sm-5">
                             {{form.filebeat_module}}
                             {{form.filebeat_module.errors|safe}}
@@ -183,7 +183,7 @@
                     <div class="row log-mode filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Filebeat Configuration" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Filebeat Configuration" %}</label>
                           <div class="col-sm-5">
                             {{form.filebeat_config}}
                             {{form.filebeat_config.errors|safe}}
@@ -194,7 +194,7 @@
                     <div class="row log-mode" id="ruleset-div">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Input logs type" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Input logs type" %}</label>
                           <div class="col-sm-5">
                             {{form.ruleset}}
                             {{form.ruleset.errors|safe}}
@@ -326,7 +326,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Tags" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Tags" %}</label>
                           <div class="col-sm-5">
                             {{form.tags}}
                             {{form.tags.errors|safe}}
@@ -337,7 +337,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Darwin policies" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Darwin policies" %}</label>
                           <div class="col-sm-5">
                             {{form.darwin_policies}}
                             {{form.darwin_policies.errors|safe}}
@@ -347,7 +347,7 @@
                       <div class="darwin-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Darwin mode" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Darwin mode" %}</label>
                             <div class="col-sm-5">
                               {{form.darwin_mode}}
                               {{form.darwin_mode.errors|safe}}
@@ -360,7 +360,7 @@
                       <div class="col-sm-4 pull-right">
                         <div class="form-group">
                           <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
-                            <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                            <i class="fa fa-plus"></i> {% translate "Advanced" %}
                           </button>
                         </div>
                       </div>
@@ -402,7 +402,7 @@
                       <div class="row log-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Max. number of rsyslog workers" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Max. number of rsyslog workers" %}</label>
                             <div class="col-sm-5">
                               {{form.nb_workers}}
                               {{form.nb_workers.errors|safe}}
@@ -413,7 +413,7 @@
                       <div class="row log-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Size of mmdblookup cache" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Size of mmdblookup cache" %}</label>
                             <div class="col-sm-5">
                               {{form.mmdb_cache_size}}
                               {{form.mmdb_cache_size.errors|safe}}
@@ -424,7 +424,7 @@
                       <div class="row log-mode listening-tcp no-filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Disable 'Octet-counted framing'" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Disable 'Octet-counted framing'" %}</label>
                             <div class="col-sm-5">
                               {{form.disable_octet_counting_framing}}
                               {{form.disable_octet_counting_framing.errors|safe}}
@@ -435,13 +435,13 @@
                       <div class="row log-mode listening-tcp no-filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "rate-limiting interval" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "rate-limiting interval" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_interval}}
                               {{form.ratelimit_interval.errors|safe}}
                             </div>
                             <div class="col-sm-2">
-                              {% trans " s" %}
+                              {% translate " s" %}
                             </div>
                           </div>
                         </div>
@@ -449,7 +449,7 @@
                       <div class="row log-mode listening-tcp no-filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "rate-limiting burst" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "rate-limiting burst" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_burst}}
                               {{form.ratelimit_burst.errors|safe}}
@@ -474,13 +474,13 @@
                           <thead>
                             <tr>
                               <th style="visibility:hidden;">Id</th>
-                              <th>{% trans "Listen Address(es)" %}</th>
-                              <th>{% trans "Port" %}</th>
-                              <th>{% trans "TLS Profile" %}</th>
-                              <th>{% trans "Allow from" %}</th>
-                              <th>{% trans "Max src" %}</th>
-                              <th>{% trans "Max rate" %}</th>
-                              <th>{% trans "Delete" %}</th>
+                              <th>{% translate "Listen Address(es)" %}</th>
+                              <th>{% translate "Port" %}</th>
+                              <th>{% translate "TLS Profile" %}</th>
+                              <th>{% translate "Allow from" %}</th>
+                              <th>{% translate "Max src" %}</th>
+                              <th>{% translate "Max rate" %}</th>
+                              <th>{% translate "Delete" %}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -495,17 +495,17 @@
                     </div>
 
                     <fieldset class="col-lg-12 sol-sm-12 haproxy-conf">
-                      <legend>{% trans "Timeout options" %}</legend>
+                      <legend>{% translate "Timeout options" %}</legend>
                       <div class="row haproxy-conf">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Timeout connect" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Timeout connect" %}</label>
                             <div class="col-sm-5">
                               {{form.timeout_connect}}
                               {{form.timeout_connect.errors|safe}}
                             </div>
                             <div class="col-sm-2">
-                              {% trans " ms" %}
+                              {% translate " ms" %}
                             </div>
                           </div>
                         </div>
@@ -513,13 +513,13 @@
                       <div class="row tcp-mode haproxy-conf">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Timeout client" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Timeout client" %}</label>
                             <div class="col-sm-5">
                               {{form.timeout_client}}
                               {{form.timeout_client.errors|safe}}
                             </div>
                             <div class="col-sm-2">
-                              {% trans " s" %}
+                              {% translate " s" %}
                             </div>
                           </div>
                         </div>
@@ -533,7 +533,7 @@
                               {{form.timeout_keep_alive.errors|safe}}
                             </div>
                             <div class="col-sm-2">
-                              {% trans " ms" %}
+                              {% translate " ms" %}
                             </div>
                           </div>
                         </div>
@@ -555,7 +555,7 @@
                     <div class="row http-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Enable cache" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Enable cache" %}</label>
                           <div class="col-sm-5">
                             {{form.enable_cache}}
                             {{form.enable_cache.errors|safe}}
@@ -566,7 +566,7 @@
                     <div class="row http-mode cache">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Cache total max size (Mb)" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Cache total max size (Mb)" %}</label>
                           <div class="col-sm-5">
                             {{form.cache_total_max_size}}
                             {{form.cache_total_max_size.errors|safe}}
@@ -577,7 +577,7 @@
                     <div class="row http-mode cache">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Cache max age (seconds)" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Cache max age (seconds)" %}</label>
                           <div class="col-sm-5">
                             {{form.cache_max_age}}
                             {{form.cache_max_age.errors|safe}}
@@ -588,7 +588,7 @@
                     <div class="row http-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Enable compression" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Enable compression" %}</label>
                           <div class="col-sm-5">
                             {{form.enable_compression}}
                             {{form.enable_compression.errors|safe}}
@@ -599,7 +599,7 @@
                     <div class="row http-mode compression">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Supported compression algorithms" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Supported compression algorithms" %}</label>
                           <div class="col-sm-5">
                             {{form.compression_algos}}
                             {{form.compression_algos.errors|safe}}
@@ -610,7 +610,7 @@
                     <div class="row http-mode compression">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "MIME types compressed" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "MIME types compressed" %}</label>
                           <div class="col-sm-5">
                             {{form.compression_mime_types}}
                             {{form.compression_mime_types.errors|safe}}
@@ -621,7 +621,7 @@
                     <div class="row http-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Error template" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Error template" %}</label>
                           <div class="col-sm-5">
                             {{form.error_template}}
                             {{form.error_template.errors|safe}}
@@ -634,7 +634,7 @@
                     <div class="row http-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Headers" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Headers" %}</label>
                         </div>
                         <table id="header_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
                           <thead>
@@ -648,7 +648,7 @@
                         </table>
                         <div style="text-align:right;margin-top:10px;">
                           <div class="add-group">
-                            <button class="addplus addlink" id="add_header" type="button">{% trans "Add an Entry" %}</button>
+                            <button class="addplus addlink" id="add_header" type="button">{% translate "Add an Entry" %}</button>
                           </div>
                         </div>
                         {{ form.headers.errors|safe }}
@@ -679,7 +679,7 @@
                       <div class="col-sm-4 pull-right">
                         <div class="form-group">
                           <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".browsers-compat">
-                            <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                            <i class="fa fa-plus"></i> {% translate "Advanced" %}
                           </button>
                         </div>
                       </div>
@@ -687,15 +687,15 @@
                     <div class="row logging">
                       <div class="col-md-12 log-parser-json">
                         <div class="form-group collapse browsers-compat">
-                          <legend>{% trans "Rename fields (only on json source)" %}</legend>
+                          <legend>{% translate "Rename fields (only on json source)" %}</legend>
                           <table id="keep_source_fields_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
                             <!-- Here are the attributes of Listener class -->
                             <thead>
                               <tr>
-                                <th>{% trans "Origin field" %}</th>
-                                <th>{% trans "New field" %}</th>
-                                <th>{% trans "Keep source" %}</th>
-                                <th>{% trans "Delete" %}</th>
+                                <th>{% translate "Origin field" %}</th>
+                                <th>{% translate "New field" %}</th>
+                                <th>{% translate "Keep source" %}</th>
+                                <th>{% translate "Delete" %}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -728,7 +728,7 @@
                           </table>
                           <div style="text-align:right;margin-top:10px;">
                             <div class="add-group">
-                              <button class="addplus addlink" id="add_log_fwd_entry" data-id="request_data_get" type="button">{% trans "Add an Entry" %}</button>
+                              <button class="addplus addlink" id="add_log_fwd_entry" data-id="request_data_get" type="button">{% translate "Add an Entry" %}</button>
                             </div>
                           </div>
                         </div>
@@ -737,7 +737,7 @@
                     <div class="row logging">
                       <div class="col-md-12">
                         <div class="form-group collapse browsers-compat">
-                          <label class="col-sm-4 control-label">{% trans "Logging conditions" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Logging conditions" %}</label>
                           <div class="col-sm-5">
                             {{form.log_condition}}
                             {{form.log_condition.errors|safe}}
@@ -750,7 +750,7 @@
                     <div class="row logging http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Tenants config" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Tenants config" %}</label>
                           <div class="col-sm-5">
                             {{form.tenants_config}}
                             {{form.tenants_config.errors|safe}}
@@ -761,7 +761,7 @@
                     <div class="row logging http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Enable reputation logging" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Enable reputation logging" %}</label>
                           <div class="col-sm-5">
                             {{form.enable_logging_reputation}}
                             {{form.enable_logging_reputation.errors|safe}}
@@ -772,7 +772,7 @@
                     <div class="row reputation-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Reputation database IPv4" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Reputation database IPv4" %}</label>
                           <div class="col-sm-5">
                             {{form.logging_reputation_database_v4}}
                             {{form.logging_reputation_database_v4.errors|safe}}
@@ -783,7 +783,7 @@
                     <div class="row reputation-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Reputation database IPv6" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Reputation database IPv6" %}</label>
                           <div class="col-sm-5">
                             {{form.logging_reputation_database_v6}}
                             {{form.logging_reputation_database_v6.errors|safe}}
@@ -794,7 +794,7 @@
                     <div class="row logging http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Geoip database (v4 & v6)" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Geoip database (v4 & v6)" %}</label>
                           <div class="col-sm-5">
                             {{form.logging_geoip_database}}
                             {{form.logging_geoip_database.errors|safe}}
@@ -807,7 +807,7 @@
                         <a class="btn btn-flat btn-primary" href="{% url 'applications.reputation_ctx.edit' %}">
                           <i class="fa fa-plus-circle">&nbsp;
                           </i>
-                          {% trans "No custom tags for now, create a new <b>Custom tags</b> object." %}
+                          {% translate "No custom tags for now, create a new <b>Custom tags</b> object." %}
                         </a>
                       {% else %}
                         <div class="col-md-12">
@@ -824,7 +824,7 @@
                             </table>
                             <div style="text-align:right;margin-top:10px;">
                               <div class="add-group">
-                                <button class="addplus addlink" id="add_reputationctx_entry" data-id="request_data_get" type="button">{% trans "Add an Entry" %}</button>
+                                <button class="addplus addlink" id="add_reputationctx_entry" data-id="request_data_get" type="button">{% translate "Add an Entry" %}</button>
                               </div>
                             </div>
                             {{ form.reputation_ctx.errors|safe }}
@@ -838,7 +838,7 @@
                     <div class="row haproxy-conf">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{% trans "HAProxy Frontend Config" %}</label>
+                          <label class="col-sm-3 control-label">{% translate "HAProxy Frontend Config" %}</label>
                           <div class="col-sm-8">
                             {{form.custom_haproxy_conf}}
                             {{form.custom_haproxy_conf.errors|safe}}
@@ -851,7 +851,7 @@
                     <div class="row">
                       <div class="col-md-12 api-mode">
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{% trans "API Parser Type" %}</label>
+                          <label class="col-sm-3 control-label">{% translate "API Parser Type" %}</label>
                           <div class="col-sm-5">
                             {{ form.api_parser_type }}
                             {{ form.api_parser_type.errors|safe }}
@@ -860,7 +860,7 @@
                       </div>
                       <div class="col-md-12 api-mode filebeat-api-mode">
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{% trans "Use proxy" %}</label>
+                          <label class="col-sm-3 control-label">{% translate "Use proxy" %}</label>
                           <div class="col-sm-5">
                             {{ form.api_parser_use_proxy }}
                             {{ form.api_parser_use_proxy.errors|safe }}
@@ -1165,7 +1165,7 @@
 
                         <div class="text-center mar-btm">
                           <button class="btn btn-primary fetch_data_api_parser" data-target="id_aws_bucket_name" data-type="select" type="button">
-                            {% trans "Fetch buckets name" %}
+                            {% translate "Fetch buckets name" %}
                           </button>
                         </div>
 
@@ -1817,7 +1817,7 @@
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
-                            {% trans "Test Configuration" %}
+                            {% translate "Test Configuration" %}
                           </button>
                           <input type="hidden" name="api_parser_has_been_tested" id="id_api_parser_has_been_tested" value="{% if object_id %}1{% else %}0{% endif %}"/>
                         </div>
@@ -1828,8 +1828,8 @@
               </div>
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'services.frontend.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'services.frontend.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </div>
@@ -1842,7 +1842,7 @@
           <div class="modal-content">
               <div class="modal-header">
                   <button type="button" class="close" data-dismiss="modal"><i class="pci-cross pci-circle"></i></button>
-                  <h4 class="modal-title">{% trans "API Parser results" %}</h4>
+                  <h4 class="modal-title">{% translate "API Parser results" %}</h4>
               </div>
 
               <div class="modal-body" id="modal-test-apiparser-body">
@@ -1850,7 +1850,7 @@
               </div>
 
               <div class="modal-footer">
-                  <button class="btn btn-primary" data-dismiss="modal" type="button">{% trans "Continue" %}</button>
+                  <button class="btn btn-primary" data-dismiss="modal" type="button">{% translate "Continue" %}</button>
               </div>
           </div>
       </div>
@@ -1860,11 +1860,11 @@
 
 {% block jquery_code %}
   {% if save_error %}
-    notify('error', '{% trans "Error" %}', '{{ save_error.0 }}');
+    notify('error', '{% translate "Error" %}', '{{ save_error.0 }}');
   {% endif %}
 
   {% if errors %}
-    notify('error', '{% trans "Error" %}', '{{ errors }}');
+    notify('error', '{% translate "Error" %}', '{{ errors }}');
   {% endif %}
 
   var header_form_td = `{{header_form.as_table_td|safe}}`

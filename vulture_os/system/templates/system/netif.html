@@ -20,10 +20,10 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                        <a class="btn btn-flat btn-primary" href="{% url 'system.netif.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
-                        <a class="btn btn-flat btn-secondary" href="{% url 'system.netif.refresh' %}"><i class="fas fa-sync-alt">&nbsp;</i>{% trans "Refresh NIC" %}</a>
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.netif.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
+                        <a class="btn btn-flat btn-secondary" href="{% url 'system.netif.refresh' %}"><i class="fas fa-sync-alt">&nbsp;</i>{% translate "Refresh NIC" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "Network" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% translate "Network" %}</h1>
                 </div>
                 <div class="panel-body">
                     <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="interface_list">
@@ -52,38 +52,38 @@
       bVisible: false
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name", aTargets: [1],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "Type" %}',
+      sTitle: '{% translate "Type" %}',
       name: "type", aTargets: [2],
       defaultContent: "",
       mData: "type"
     },
     {
-      sTitle: '{% trans "NIC" %}',
+      sTitle: '{% translate "NIC" %}',
       name: "nic", aTargets: [3],
       defaultContent: "",
       sWidth: "20%",
       mData: "nic"
     },
     {
-      sTitle: '{% trans "IP Address" %}',
+      sTitle: '{% translate "IP Address" %}',
       name: "ip", aTargets: [4],
       defaultContent: "",
       mData: "ip"
     },
     {
-      sTitle: '{% trans "Netmask or prefix" %}',
+      sTitle: '{% translate "Netmask or prefix" %}',
       name: "prefix_or_netmask", aTargets: [5],
       defaultContent: "",
       mData: "prefix_or_netmask"
     },
     {
-      sTitle: '{% trans "CARP vhid" %}',
+      sTitle: '{% translate "CARP vhid" %}',
       name: "carp_vhid", aTargets: [6],
       defaultContent: "",
       mData: "carp_vhid",
@@ -97,7 +97,7 @@
       }
     },
     {
-      sTitle: '{% trans "VLAN" %}',
+      sTitle: '{% translate "VLAN" %}',
       name: "vlan", aTargets: [7],
       defaultContent: "",
       mData: "vlan",
@@ -111,7 +111,7 @@
       }
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [8],
       defaultContent: "",

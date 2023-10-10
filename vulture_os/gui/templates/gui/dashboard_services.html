@@ -18,7 +18,7 @@
           <div class="panel-heading">
               <h1 class="panel-title">
                 <a target="_blank" >{{ node.name|upper }}</a>
-                <small>({% trans "Last check: " %} ${ monitor_date('{{ node.name }}')} )</small>
+                <small>({% translate "Last check: " %} ${ monitor_date('{{ node.name }}')} )</small>
               </h1>
             </div>
             <div class="panel-body col-md-12">
@@ -27,8 +27,8 @@
                   <table class="table table-condensed table-monitoring">
                     <thead>
                       <tr>
-                        <th>{% trans "Service" %}</th>
-                        <th>{% trans "State" %}</th>
+                        <th>{% translate "Service" %}</th>
+                        <th>{% translate "State" %}</th>
                       </tr>
                     </thead>
                     <tbody v-html="services('{{ node.name }}')"></tbody>

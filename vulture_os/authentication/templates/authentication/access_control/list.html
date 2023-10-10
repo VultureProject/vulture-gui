@@ -18,9 +18,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                        <a class="btn btn-flat btn-primary" href="{% url 'portal.authentication_access_control.edit' %}"><i class="fas fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                        <a class="btn btn-flat btn-primary" href="{% url 'portal.authentication_access_control.edit' %}"><i class="fas fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                       </div>
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Access Control" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Access Control" %}</h1>
                 </div>
                 <div class="panel-body">
                   <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="authentication_access_control_list">
@@ -52,7 +52,7 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Enabled" %}',
+      sTitle: '{% translate "Enabled" %}',
       name: "enabled",
       aTargets: [1],
       defaultContent: "",
@@ -64,14 +64,14 @@
       }
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name",
       aTargets: [2],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "NB Rules" %}',
+      sTitle: '{% translate "NB Rules" %}',
       name: "rules",
       aTargets: [3],
       defaultContent: "",
@@ -83,13 +83,13 @@
       }
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [4],
       defaultContent: "",
       mRender: function(data, type, row) {
-        return '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% trans 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>' +
-        '&nbsp;<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/portal/authentication/acl/delete/' + data + '"" title="{% trans 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+        return '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% translate 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>' +
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/portal/authentication/acl/delete/' + data + '"" title="{% translate 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
       }
     }
   ];
@@ -122,18 +122,18 @@
         data   : aoData,
         success: function(data, callback){
           if (!data.status){
-            notify('error', "{% trans 'Error' %}", data.error);
+            notify('error', "{% translate 'Error' %}", data.error);
           } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+        notify('error', "{% translate 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          notify('error', "{% trans 'Error' %}", data.error);
+          notify('error', "{% translate 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }

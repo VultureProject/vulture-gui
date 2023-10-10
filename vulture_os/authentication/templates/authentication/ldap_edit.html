@@ -27,7 +27,7 @@
                   {# Print form errors correctly #}
                   {% if form.non_field_errors %}
                     <div class="alert alert-danger alert-dismissible">
-                      <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %}</h4>
+                      <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %}</h4>
                       <div class="tab-content no-padding">
                         {{ form.non_field_errors|safe }}
                       </div>
@@ -37,9 +37,9 @@
                   {% if save_error %}
                     <div class="alert alert-danger alert-dismissible nav-tabs-custom">
                       <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                        <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
-                        <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-                        <li class="pull-left header"><i class="fa fa-inbox"></i>{% trans "Configuration error" %}</li>
+                        <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
+                        <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                        <li class="pull-left header"><i class="fa fa-inbox"></i>{% translate "Configuration error" %}</li>
                       </ul>
                       <div class="tab-content no-padding">
                         <div class="tab-pane active" id="tab_1">
@@ -70,14 +70,14 @@
               {% endif %}
               <div class="panel">
                 <div class="panel-header with-border">
-                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "LDAP Repository edition" %}</h1>
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "LDAP Repository edition" %}</h1>
                 </div>
                 <div class="panel-body">
                   <div class="nav-tabs-custom nav-tabs-no-margin">
                     <ul class="nav nav-tabs">
-                      <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Connection settings" %}</a></li>
-                      <li><a href="#tab_user" data-toggle="tab">{% trans "User settings" %}</a></li>
-                      <li><a href="#tab_group" data-toggle="tab">{% trans "Group settings" %}</a></li>
+                      <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "Connection settings" %}</a></li>
+                      <li><a href="#tab_user" data-toggle="tab">{% translate "User settings" %}</a></li>
+                      <li><a href="#tab_group" data-toggle="tab">{% translate "Group settings" %}</a></li>
                     </ul>
                     <div class="tab-content">
                       <br/>
@@ -172,7 +172,7 @@
                         </div> <!-- /.row -->
                         <div class="row">
                           <div class="col-sm-12" style="text-align:center;">
-                            <button name="connection_test" id="connection_test" class="btn btn-success btn-flat" value="test"><span>{% trans "Test LDAP connection" %}</span></button>
+                            <button name="connection_test" id="connection_test" class="btn btn-success btn-flat" value="test"><span>{% translate "Test LDAP connection" %}</span></button>
                           </div>
                         </div> <!-- /.row -->
                       </div> <!-- /.tab-pane -->
@@ -292,7 +292,7 @@
                         </div> <!-- /.row -->
                         <div class="row">
                           <div class="col-sm-12" style="text-align:center;">
-                            <button name="user_search_test" id="user_search_test" class="btn btn-success btn-flat"><span>{% trans "Test User authentication settings" %}</span></button>
+                            <button name="user_search_test" id="user_search_test" class="btn btn-success btn-flat"><span>{% translate "Test User authentication settings" %}</span></button>
                           </div>
                         </div> <!-- /.row -->
                       </div> <!-- /.tab-pane -->
@@ -368,7 +368,7 @@
                         </div> <!-- /.row -->
                         <div class="row">
                           <div class="col-sm-12" style="text-align:center;">
-                            <button id="group_search_test" class="btn btn-success btn-flat"><span>{% trans "Test group settings" %}</span></button>
+                            <button id="group_search_test" class="btn btn-success btn-flat"><span>{% translate "Test group settings" %}</span></button>
                           </div>
                         </div> <!-- /.row -->
                       </div> <!-- /.tab-pane -->
@@ -376,8 +376,8 @@
                   </div> <!-- /.nav-tabs-custom -->
                 </div> <!-- /.box-body -->
                 <div class="panel-footer">
-                  <a type="button" href="{% url 'authentication.ldap.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                  <button type="submit" class="btn btn-info btn-flat pull-right" {% if not object_id and not success %}disabled style="display:none;"{% endif %}>{% trans "Save" %}</button>
+                  <a type="button" href="{% url 'authentication.ldap.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+                  <button type="submit" class="btn btn-info btn-flat pull-right" {% if not object_id and not success %}disabled style="display:none;"{% endif %}>{% translate "Save" %}</button>
                 </div> <!-- /.box-footer -->
               </div> <!-- /.box -->
             </div>
@@ -392,17 +392,17 @@
         <div class="modal-content">
           <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-              <h4 class="modal-title">{% trans "User authentication test" %}</h4>
+              <h4 class="modal-title">{% translate "User authentication test" %}</h4>
           </div>
           <div class="modal-body">
             <div class="row">
-              <label class="col-sm-6 control-label">{% trans "Username" %}</label>
+              <label class="col-sm-6 control-label">{% translate "Username" %}</label>
                 <div class="col-sm-6 form-group">
                   <input type="text" name="test_username" id="test_username" data-placement="right" container="body" class="form-control has-popover" data-original-title="" title="">
                 </div>
             </div>
             <div class="row">
-              <label class="col-sm-6 control-label">{% trans "Password" %}</label>
+              <label class="col-sm-6 control-label">{% translate "Password" %}</label>
               <div class="col-sm-6 form-group">
                 <input type="password" name="test_password" id="test_password" data-placement="right" container="body" class="form-control has-popover" data-original-title="" title="">
               </div>
@@ -420,8 +420,8 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
-            <button type="button" id="btn_send_user_search" class="btn btn-success btn-flat">{% trans "Test credentials" %}</button>
+            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% translate "Cancel" %}</button>
+            <button type="button" id="btn_send_user_search" class="btn btn-success btn-flat">{% translate "Test credentials" %}</button>
           </div>
         </div>
       </div>
@@ -432,11 +432,11 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h4 class="modal-title">{% trans "Group list test" %}</h4>
+            <h4 class="modal-title">{% translate "Group list test" %}</h4>
           </div>
           <div class="modal-body">
             <div class="row">
-              <label class="col-sm-6 control-label">{% trans "Group name" %}</label>
+              <label class="col-sm-6 control-label">{% translate "Group name" %}</label>
               <div class="col-sm-6 form-group">
                 <input type="text" name="test_group" id="test_group" data-placement="right" container="body" class="form-control has-popover" data-original-title="" title="">
               </div>
@@ -449,8 +449,8 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
-            <button type="button" id="btn_send_group_search" class="btn btn-success btn-flat">{% trans "Search" %}</button>
+            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% translate "Cancel" %}</button>
+            <button type="button" id="btn_send_group_search" class="btn btn-success btn-flat">{% translate "Search" %}</button>
           </div>
         </div>
     </div>
@@ -558,17 +558,17 @@
       status = data['status'];
       handle_form_errors(data);
       if(status == 'true'){
-        $('#user_search_test_msg').html('<b style="color:green;">{% trans "Successful connection" %}</b>');
+        $('#user_search_test_msg').html('<b style="color:green;">{% translate "Successful connection" %}</b>');
       }
       else{
         reason = data['reason'];
-        $('#user_search_test_msg').html("<b style='color:red;'>{% trans 'Unable to authenticate user, reason: '%}" + reason + "</b>");
+        $('#user_search_test_msg').html("<b style='color:red;'>{% translate 'Unable to authenticate user, reason: '%}" + reason + "</b>");
       }
-      $('#user_phone').html('{% trans "Phone number" %}: '+ data['user_phone']);
-      $('#user_email').html('{% trans "Email address" %}: '+ data['user_email']);
-      $('#account_locked').html('{% trans "Account locked" %}: '+ data['account_locked']);
-      $('#password_expired').html('{% trans "Need change pass" %}: '+ data['password_expired']);
-      $('#user_groups').html('{% trans "User groups" %}:');
+      $('#user_phone').html('{% translate "Phone number" %}: '+ data['user_phone']);
+      $('#user_email').html('{% translate "Email address" %}: '+ data['user_email']);
+      $('#account_locked').html('{% translate "Account locked" %}: '+ data['account_locked']);
+      $('#password_expired').html('{% translate "Need change pass" %}: '+ data['password_expired']);
+      $('#user_groups').html('{% translate "User groups" %}:');
       group_list = $('#user_groups');
       var ul = $('<ul/>').appendTo(group_list);
       $.each(data['user_groups'], function(i)
@@ -603,17 +603,17 @@
           status = data['status'];
           // handle_form_errors(data);
           if(status == 'true'){
-              $('#group_search_test_msg').html('<b style="color:green;">{% trans "Successful query" %}</b>');
+              $('#group_search_test_msg').html('<b style="color:green;">{% translate "Successful query" %}</b>');
           }
           else{
               reason = data['reason'];
-              $('#group_search_test_msg').html("<b style='color:red;'>{% trans 'Unable to execute query, reason: '%}" + reason + "</b><br>" +
+              $('#group_search_test_msg').html("<b style='color:red;'>{% translate 'Unable to execute query, reason: '%}" + reason + "</b><br>" +
                                                "Form errors : "+ data['form_errors']);
           }
           var groups = [];
           if( data['groups'].length == 0 ) {
               var dn_div = $('<div class="test_group">');
-              dn_div.html('{% trans "No result found, please make sure that your query is correct" %}');
+              dn_div.html('{% translate "No result found, please make sure that your query is correct" %}');
               $('#group_results').append(dn_div);
           }
           else {
@@ -624,11 +624,11 @@
                   var members = group['group_members'];
 
                   var dn_div = $('<div class="test_group">');
-                  dn_div.html('{% trans "Group DN" %}: ' + dn);
+                  dn_div.html('{% translate "Group DN" %}: ' + dn);
                   $('#group_results').append(dn_div);
 
                   var members_div = $('<div class="test_group">');
-                  members_div.html('{% trans "Group members" %}: ');
+                  members_div.html('{% translate "Group members" %}: ');
                   var ul = $('<ul/>').appendTo(members_div);
                   $.each(members, function(i)
                   {

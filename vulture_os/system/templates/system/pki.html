@@ -20,9 +20,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                        <a class="btn btn-flat btn-primary" href="{% url 'system.pki.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.pki.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "X509 Certificates" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% translate "X509 Certificates" %}</h1>
                 </div>
                 <div class="panel-body">
                     <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="pki_list">
@@ -51,7 +51,7 @@
       bVisible: false
     },
     {
-      sTitle: '{% trans "Type" %}',
+      sTitle: '{% translate "Type" %}',
       name: "name", aTargets: [1],
       defaultContent: "",
       mData: "name",
@@ -71,7 +71,7 @@
       }
     },
     {
-      sTitle: '{% trans "Status" %}',
+      sTitle: '{% translate "Status" %}',
       name: "status", aTargets: [2],
       defaultContent: "",
       mData: "status",
@@ -85,7 +85,7 @@
       }
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name", aTargets: [3],
       defaultContent: "",
       mData: "name",
@@ -94,7 +94,7 @@
       }
     },
     {
-      sTitle: '{% trans "Subject" %}',
+      sTitle: '{% translate "Subject" %}',
       name: "subject", aTargets: [4],
       defaultContent: "",
       mData: "subject",
@@ -103,7 +103,7 @@
       }
     },
     {
-      sTitle: '{% trans "Issuer" %}',
+      sTitle: '{% translate "Issuer" %}',
       name: "issuer", aTargets: [5],
       defaultContent: "",
       mData: "issuer",
@@ -112,51 +112,51 @@
       }
     },
     {
-      sTitle: '{% trans "Valid from" %}',
+      sTitle: '{% translate "Valid from" %}',
       name: "validfrom", aTargets: [6],
       defaultContent: "",
       mData: "validfrom",
     },
     {
-      sTitle: '{% trans "Valid until" %}',
+      sTitle: '{% translate "Valid until" %}',
       name: "validuntil", aTargets: [7],
       defaultContent: "",
       mData: "validuntil",
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [8],
       defaultContent: "",
       mRender: function(data, type, row) {
         if (row.is_vulture_ca) {
-            return '<a class="btn btn-flat btn-xs btn-primary" title="{% trans "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
-                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>\
-                <a class="btn btn-flat btn-xs btn-warning" title="{% trans "Download CRL" %}" href="/system/pki/getcrl/' + data + '"><span><i class="fa fa-list"></i></span></a>\
-                <a class="btn btn-flat btn-xs btn-success" title="{% trans "Generate CRL" %}" href="/system/pki/gencrl/' + data + '"><span><i class="fa fa-history"></i></span></a>';
+            return '<a class="btn btn-flat btn-xs btn-primary" title="{% translate "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% translate "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-warning" title="{% translate "Download CRL" %}" href="/system/pki/getcrl/' + data + '"><span><i class="fa fa-list"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-success" title="{% translate "Generate CRL" %}" href="/system/pki/gencrl/' + data + '"><span><i class="fa fa-history"></i></span></a>';
         }
         else if (row.is_external) {
-            buffer = '<a class="btn btn-flat btn-xs btn-primary" title="{% trans "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
-                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>&nbsp';
+            buffer = '<a class="btn btn-flat btn-xs btn-primary" title="{% translate "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% translate "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>&nbsp';
             if (row.crl) {
-                buffer = buffer + '<a class="btn btn-flat btn-xs btn-warning" title="{% trans "Download CRL" %}" href="/system/pki/getcrl/' + data + '"><span><i class="fa fa-list"></i></span></a>';
+                buffer = buffer + '<a class="btn btn-flat btn-xs btn-warning" title="{% translate "Download CRL" %}" href="/system/pki/getcrl/' + data + '"><span><i class="fa fa-list"></i></span></a>';
             }
             if (row.crl_uri) {
-                buffer = buffer + '<a class="btn btn-flat btn-xs btn-success" title="{% trans "Update CRL" %}" href="/system/pki/gencrl/' + data + '"><span><i class="fa fa-history"></i></span></a>';
+                buffer = buffer + '<a class="btn btn-flat btn-xs btn-success" title="{% translate "Update CRL" %}" href="/system/pki/gencrl/' + data + '"><span><i class="fa fa-history"></i></span></a>';
             }
-            buffer = buffer + '<a class="btn btn-flat btn-xs btn-danger" title="{% trans "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+            buffer = buffer + '<a class="btn btn-flat btn-xs btn-danger" title="{% translate "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
             return buffer;
         }
         //Vulture internal valid certificates
         else if (row.status=='V') {
-            return '<a class="btn btn-flat btn-xs btn-primary" title="{% trans "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
-                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>\
-                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Revoke" %}" href="/system/pki/revoke/' + data + '"><span><i class="fa fa-unlink"></i></span></a>\
-                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+            return '<a class="btn btn-flat btn-xs btn-primary" title="{% translate "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% translate "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% translate "Revoke" %}" href="/system/pki/revoke/' + data + '"><span><i class="fa fa-unlink"></i></span></a>\
+                <a class="btn btn-flat btn-xs btn-danger" title="{% translate "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
         }
         //Vulture's internal revoked certificate
         else {
-            return '<a class="btn btn-flat btn-xs btn-danger" title="{% trans "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
+            return '<a class="btn btn-flat btn-xs btn-danger" title="{% translate "Remove from database" %}" href="/system/pki/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
         }
       }
     }

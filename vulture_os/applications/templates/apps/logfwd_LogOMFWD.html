@@ -21,7 +21,7 @@
           {% csrf_token %}
           <div class="panel">
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Syslog log forwarder" %}</h1>
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Syslog log forwarder" %}</h1>
             </div>
             <div class="panel-body">
               {# Print form errors correctly #}
@@ -56,7 +56,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Enable forwarder" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Enable forwarder" %}</label>
                     <div class="col-sm-5">
                       {{form.enabled}}
                       {{form.enabled.errors|safe}}
@@ -67,7 +67,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                     <div class="col-sm-5">
                       {{form.name}}
                       {{form.name.errors|safe}}
@@ -78,7 +78,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Remote IP" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Remote IP" %}</label>
                     <div class="col-sm-5">
                       {{form.target}}
                       {{form.target.errors|safe}}
@@ -89,7 +89,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Remote port" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Remote port" %}</label>
                     <div class="col-sm-5">
                       {{form.port}}
                       {{form.port.errors|safe}}
@@ -100,7 +100,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Protocol" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Protocol" %}</label>
                     <div class="col-sm-5">
                       {{form.protocol}}
                       {{form.protocol.errors|safe}}
@@ -111,7 +111,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "ZIP level" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "ZIP level" %}</label>
                     <div class="col-sm-5">
                       {{form.zip_level}}
                       {{form.zip_level.errors|safe}}
@@ -122,7 +122,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Send as raw" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Send as raw" %}</label>
                     <div class="col-sm-5">
                       {{form.send_as_raw}}
                       {{form.send_as_raw.errors|safe}}
@@ -134,7 +134,7 @@
                 <div class="col-sm-4 pull-right">
                   <div class="form-group">
                     <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
-                      <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                      <i class="fa fa-plus"></i> {% translate "Advanced" %}
                     </button>
                   </div>
                 </div>
@@ -143,7 +143,7 @@
                 <div class="row">
                   <div class="col-md-12">
                     <div class="form-group">
-                      <label class="col-sm-4 control-label">{% trans "Rate-limiting interval" %}</label>
+                      <label class="col-sm-4 control-label">{% translate "Rate-limiting interval" %}</label>
                       <div class="col-sm-5">
                         {{form.ratelimit_interval}}
                         {{form.ratelimit_interval.errors|safe}}
@@ -154,7 +154,7 @@
                 <div class="row">
                   <div class="col-md-12">
                     <div class="form-group">
-                      <label class="col-sm-4 control-label">{% trans "Rate-limiting burst" %}</label>
+                      <label class="col-sm-4 control-label">{% translate "Rate-limiting burst" %}</label>
                       <div class="col-sm-5">
                         {{form.ratelimit_burst}}
                         {{form.ratelimit_burst.errors|safe}}
@@ -301,8 +301,8 @@
               </div> <!-- Advanced tab -->
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </form>

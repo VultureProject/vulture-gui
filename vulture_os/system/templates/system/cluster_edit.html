@@ -20,7 +20,7 @@
           {% csrf_token %}
           <div class="panel">
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Node settings" %}</h1>
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Node settings" %}</h1>
             </div>
             <div class="panel-body">
               {# If there is save/configuration errors #}
@@ -38,16 +38,16 @@
               {{ form.errors|safe }}
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "Main settings" %}</a></li>
-                  <li><a href="#tab_network" data-toggle="tab">{% trans "Network" %}</a></li>
-                  <li><a href="#tab_firewall" data-toggle="tab">{% trans "Firewall" %}</a></li>
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "Main settings" %}</a></li>
+                  <li><a href="#tab_network" data-toggle="tab">{% translate "Network" %}</a></li>
+                  <li><a href="#tab_firewall" data-toggle="tab">{% translate "Firewall" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <div class="tab-pane active" id="tab_general">
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Hostname" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Hostname" %}</label>
                           <div class="col-sm-5">
                           {{form.name}}
                           {{form.name.errors}}
@@ -71,7 +71,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Internet IP Address" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Internet IP Address" %}</label>
                           <div class="col-sm-5">
                           {{form.internet_ip}}
                           {{form.internet_ip.errors}}
@@ -82,7 +82,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "InterCluster IP Address" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "InterCluster IP Address" %}</label>
                           <div class="col-sm-5">
                           {{form.management_ip}}
                           {{form.management_ip.errors}}
@@ -93,7 +93,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Backends outgoing IP Address masquerading" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Backends outgoing IP Address masquerading" %}</label>
                           <div class="col-sm-5">
                           {{form.backends_outgoing_ip}}
                           {{form.backends_outgoing_ip.errors}}
@@ -104,7 +104,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Log forwarders IP Address masquerading" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Log forwarders IP Address masquerading" %}</label>
                           <div class="col-sm-5">
                           {{form.logom_outgoing_ip}}
                           {{form.logom_outgoing_ip.errors}}
@@ -115,7 +115,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Default router" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Default router" %}</label>
                           <div class="col-sm-5">
                           {{form.gateway}}
                           {{form.gateway.errors}}
@@ -126,7 +126,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Default IPV6 router" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Default IPV6 router" %}</label>
                           <div class="col-sm-5">
                           {{form.gateway_ipv6}}
                           {{form.gateway_ipv6.errors}}
@@ -137,7 +137,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Static network routes" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Static network routes" %}</label>
                           <div class="col-sm-5">
                           {{form.static_routes}}
                           {{form.static_routes.errors}}
@@ -148,7 +148,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Scanner IP Address" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Scanner IP Address" %}</label>
                           <div class="col-sm-5">
                           {{form.scanner_ip}}
                           {{form.scanner_ip.errors|safe}}
@@ -161,7 +161,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Max. entries for PF state table" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Max. entries for PF state table" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_limit_states}}
                           {{form.pf_limit_states.errors}}
@@ -172,7 +172,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Max. entries for PF packet reassembly" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Max. entries for PF packet reassembly" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_limit_frags}}
                           {{form.pf_limit_frags.errors}}
@@ -183,7 +183,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Max. entries for PF source tracking" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Max. entries for PF source tracking" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_limit_src}}
                           {{form.pf_limit_src.errors}}
@@ -194,14 +194,14 @@
                     <div class="col-sm-4 pull-right">
                       <div class="form-group">
                         <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".browsers-compat">
-                          <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                          <i class="fa fa-plus"></i> {% translate "Advanced" %}
                         </button>
                       </div>
                     </div>
                     <div class="row collapse browsers-compat">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Custom PF initial parameters configuration" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Custom PF initial parameters configuration" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_custom_param_config}}
                           {{form.pf_custom_param_config.errors}}
@@ -212,7 +212,7 @@
                     <div class="row collapse browsers-compat">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Custom PF NAT Configuration" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Custom PF NAT Configuration" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_custom_nat_config}}
                           {{form.pf_custom_nat_config.errors}}
@@ -223,7 +223,7 @@
                     <div class="row collapse browsers-compat">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Custom PF RDR Configuration" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Custom PF RDR Configuration" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_custom_rdr_config}}
                           {{form.pf_custom_rdr_config.errors}}
@@ -234,7 +234,7 @@
                     <div class="row collapse browsers-compat">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Custom PF Configuration" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Custom PF Configuration" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_custom_config}}
                           {{form.pf_custom_config.errors}}
@@ -247,8 +247,8 @@
               </div> <!-- /.nav-tabs-custom -->
             </div> <!-- /.box-body -->
             <div class="panel-footer">
-            <a href="{% url 'system.cluster.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-            <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+            <a href="{% url 'system.cluster.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+            <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
           </div> <!-- /.box-footer -->
           </div> <!-- /.box -->
         </form>

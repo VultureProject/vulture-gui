@@ -19,7 +19,7 @@
         <div class="col-md-12">
             <div class="panel">
                 <div class="panel-heading">
-                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "Nodes" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% translate "Nodes" %}</h1>
                 </div>
                 <div class="panel-body">
                     <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="node_list">
@@ -38,7 +38,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><i class="pci-cross pci-circle"></i></button>
-            <h4 class="modal-title">{% trans "Cluster configuration" %}</h4>
+            <h4 class="modal-title">{% translate "Cluster configuration" %}</h4>
           </div>
           <div class="modal-body" style="text-align: center">
             <div class="row">
@@ -48,7 +48,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% translate "Cancel" %}</button>
           </div>
         </div>
       </div>
@@ -70,7 +70,7 @@
       bVisible: false
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name", aTargets: [1],
       defaultContent: "",
       mData: "name",
@@ -94,7 +94,7 @@
       }
     },
     {
-      sTitle: '{% trans "Network Interfaces" %}',
+      sTitle: '{% translate "Network Interfaces" %}',
       name: "addresses", aTargets: [2],
       defaultContent: "",
       mData: "addresses",
@@ -103,14 +103,14 @@
       }
     },
      {
-      sTitle: '{% trans "MongoDB" %}',
+      sTitle: '{% translate "MongoDB" %}',
       name: "name", aTargets: [3],
       defaultContent: "",
       mData: "name",
       mRender: function(data, type, row) {
         buffer =  '';
         if (row.is_master_mongo) {
-            buffer = buffer + '<label class="label label-success">PRIMARY</label>&nbsp;&nbsp;<button class="btn btn-flat btn-xs btn-danger" id="stepdown" title="{% trans "Step Down" %}"><span><i class="fa fa-chevron-down"></i></span></button>';
+            buffer = buffer + '<label class="label label-success">PRIMARY</label>&nbsp;&nbsp;<button class="btn btn-flat btn-xs btn-danger" id="stepdown" title="{% translate "Step Down" %}"><span><i class="fa fa-chevron-down"></i></span></button>';
         }
         else if (row.addresses) {
             buffer = buffer + '<label class="label label-warning">SECONDARY</label>';
@@ -119,16 +119,16 @@
             buffer = 'Not configured';
         }
         if (!row.is_master_mongo && !row.is_standalone) {
-            buffer = buffer + '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" id="remove" title="{% trans "Remove from replicaset" %}"><i class="fa fa-unlink"></i></a>';
+            buffer = buffer + '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" id="remove" title="{% translate "Remove from replicaset" %}"><i class="fa fa-unlink"></i></a>';
         }
         else if (!row.is_master_mongo && row.is_standalone && row.addresses) {
-            buffer = buffer + '<a class="btn btn-flat btn-xs btn-danger" id="join" title="{% trans "Add to replicaset" %}"><i class="fa fa-link"></i></a>';
+            buffer = buffer + '<a class="btn btn-flat btn-xs btn-danger" id="join" title="{% translate "Add to replicaset" %}"><i class="fa fa-link"></i></a>';
         }
         return buffer;
       }
     },
      {
-      sTitle: '{% trans "Redis" %}',
+      sTitle: '{% translate "Redis" %}',
       name: "name", aTargets: [4],
       defaultContent: "",
       mData: "name",
@@ -150,14 +150,14 @@
       }
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [5],
       defaultContent: "",
       mRender: function(data, type, row) {
         result = '';
         if ( !row.is_master_redis && !row.is_master_mongo) {
-            result += '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" href="/system/cluster/delete/' + row.id + '" title="{% trans "delete" %}"><i class="fas fa-trash-alt"></i></a>';
+            result += '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" href="/system/cluster/delete/' + row.id + '" title="{% translate "delete" %}"><i class="fas fa-trash-alt"></i></a>';
         }
         return result;
       }
@@ -206,7 +206,7 @@
         $(nRow).find("#stepdown").on("click", function(e) {
           e.stopPropagation();
 
-          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Please wait ..." %}');
+          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% translate "Please wait ..." %}');
           $("#modal_node").modal('show');
 
           var id = aData['id'];
@@ -219,7 +219,7 @@
                   fnCallback(data);
             }
           }).fail( function( jqXHR, textStatus ) {
-            $('#node_msg').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+            $('#node_msg').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
                                      "Status code : " + jqXHR.status + "</br>" +
                                      "Message : " + jqXHR.statusText);
           }).done( function( msg ) {
@@ -231,7 +231,7 @@
         $(nRow).find("#remove").on("click", function(e) {
           e.stopPropagation();
 
-          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Please wait ..." %}');
+          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% translate "Please wait ..." %}');
           $("#modal_node").modal('show');
 
           var id = aData['id'];
@@ -244,7 +244,7 @@
                   fnCallback(data);
             }
           }).fail( function( jqXHR, textStatus ) {
-            $('#node_msg').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+            $('#node_msg').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
                                      "Status code : " + jqXHR.status + "</br>" +
                                      "Message : " + jqXHR.statusText);
           }).done( function( msg ) {
@@ -256,7 +256,7 @@
         $(nRow).find("#join").on("click", function(e) {
           e.stopPropagation();
 
-          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Please wait ..." %}');
+          $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% translate "Please wait ..." %}');
           $("#modal_node").modal('show');
 
           var id = aData['id'];
@@ -269,7 +269,7 @@
                   fnCallback(data);
             }
           }).fail( function( jqXHR, textStatus ) {
-            $('#node_msg').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+            $('#node_msg').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
                                      "Status code : " + jqXHR.status + "</br>" +
                                      "Message : " + jqXHR.statusText);
           }).done( function( msg ) {

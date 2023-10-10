@@ -21,13 +21,13 @@
           {% csrf_token %}
           <div class="panel">
               <div class="panel-heading">
-                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Network" %}</h1>
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Network" %}</h1>
               </div>
               <div class="panel-body">
                 <div class="row">
                   <div class="col-md-12">
                       <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                         <div class="col-sm-5">
                           {{form.name}}
                           {{form.name.errors}}
@@ -42,14 +42,14 @@
                       </div>
                       {{form.iface_id.as_hidden}}
                       <div class="form-group" id="device_selector">
-                        <label class="col-sm-4 control-label">{% trans "Network Interface Card(s)" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "Network Interface Card(s)" %}</label>
                         <div class="col-sm-5">
                           {{form.nic}}
                           {{form.nic.errors}}
                         </div>
                       </div>
                       <div class="form-group" id="carp_info">
-                        <label class="col-sm-4 control-label">{% trans "CARP vhid" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "CARP vhid" %}</label>
                         <div class="col-sm-5">
                           {{form.carp_vhid}}
                           {{form.carp_vhid.errors}}
@@ -58,21 +58,21 @@
                       </div>
 
                       <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "IP Address" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "IP Address" %}</label>
                         <div class="col-sm-5">
                           {{form.ip}}
                           {{form.ip.errors}}
                         </div>
                       </div>
                       <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "Netmask / Prefix" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "Netmask / Prefix" %}</label>
                         <div class="col-sm-5">
                           {{form.prefix_or_netmask}}
                           {{form.prefix_or_netmask.errors}}
                         </div>
                       </div>
                       <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "Network fib" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "Network fib" %}</label>
                         <div class="col-sm-5">
                           {{form.fib}}
                           {{form.fib.errors}}
@@ -80,7 +80,7 @@
                       </div>
                       <div class="form-group vlan_parameters">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Vlan ID" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Vlan ID" %}</label>
                           <div class="col-sm-5">
                             {{form.vlan}}
                             {{form.vlan.errors}}
@@ -89,7 +89,7 @@
                       </div>
                       <div class="form-group lagg_parameters">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "LAGG protocol" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "LAGG protocol" %}</label>
                           <div class="col-sm-5">
                             {{form.lagg_proto}}
                             {{form.lagg_proto.errors}}
@@ -100,8 +100,8 @@
                 </div>
               </div>
               <div class="panel-footer">
-                <a type="button" href="{% url 'system.netif.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+                <a type="button" href="{% url 'system.netif.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+                <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
               </div>
             </div>
         </form>

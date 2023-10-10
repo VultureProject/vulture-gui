@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [URLS] Simplification of different paths
 - [DEPRECATION] Change request.META to request.headers
 - [DEPRECATION] get_random_string now requires length argument
+- [DEPRECATION] Keyword "trans" replaced by "translate" in templates
 
 
 ## [2.11.1] - 2023-10-13

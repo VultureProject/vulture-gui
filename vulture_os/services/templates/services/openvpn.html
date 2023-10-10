@@ -17,7 +17,7 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                      <a class="btn btn-flat btn-primary" href="{% url 'services.openvpn.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                      <a class="btn btn-flat btn-primary" href="{% url 'services.openvpn.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
                     <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>VPN SSL Configuration</h1>
                 </div>
@@ -47,7 +47,7 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Status" %}',
+      sTitle: '{% translate "Status" %}',
       defaultContent: "",
       name: "status",
       mData: "status",
@@ -76,7 +76,7 @@
       }
     },
     {
-      sTitle: '{% trans "Tunnels status" %}',
+      sTitle: '{% translate "Tunnels status" %}',
       defaultContent: "",
       name: "tunnels_status",
       mData: "tunnels_status",
@@ -97,7 +97,7 @@
       }
     },
     {
-      sTitle: '{% trans "Node" %}',
+      sTitle: '{% translate "Node" %}',
       name: "node", aTargets: [3],
       defaultContent: "",
       mData: "node",
@@ -106,7 +106,7 @@
       }
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [4],
       defaultContent: "",
@@ -157,18 +157,18 @@
         data   : aoData,
         success: function(data, callback){
           if (!data.status){
-            notify('error', "{% trans 'Error' %}", data.error);
+            notify('error', "{% translate 'Error' %}", data.error);
           } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+        notify('error', "{% translate 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          notify('error', "{% trans 'Error' %}", data.error);
+          notify('error', "{% translate 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }

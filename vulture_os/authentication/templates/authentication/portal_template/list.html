@@ -19,20 +19,20 @@
         <div class="col-md-12">
           <div class="panel">
             <div class="panel-heading">
-              <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Portal Templates" %}</h1>
+              <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Portal Templates" %}</h1>
             </div>
             <div class="panel-body">
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_template" data-toggle="tab">{% trans "Templates" %}</a></li>
-                  <li><a href="#tab_image" data-toggle="tab">{% trans "Images" %}</a></li>
+                  <li class="active"><a href="#tab_template" data-toggle="tab">{% translate "Templates" %}</a></li>
+                  <li><a href="#tab_image" data-toggle="tab">{% translate "Images" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <div class="tab-pane active" id="tab_template">
                     <div class="panel">
                         <div class="panel-heading">
                             <div class="panel-control">
-                              <a class="btn btn-flat btn-primary" href="{% url 'portal.template.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                              <a class="btn btn-flat btn-primary" href="{% url 'portal.template.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                             </div>
                         </div>
                         <div class="panel-body">
@@ -49,16 +49,16 @@
                     <div class="panel">
                         <div class="panel-heading">
                             <div class="panel-control">
-                              <a class="btn btn-flat btn-primary" href="{% url 'portal.image.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                              <a class="btn btn-flat btn-primary" href="{% url 'portal.image.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                             </div>
                         </div>
                         <div class="panel-body">
                           <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="image_list">
                             <thead>
                               <tr>
-                                <th>{% trans "Preview" %}</th>
-                                <th>{% trans "Name" %}</th>
-                                <th>{% trans "Action" %}</th>
+                                <th>{% translate "Preview" %}</th>
+                                <th>{% translate "Name" %}</th>
+                                <th>{% translate "Action" %}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -97,7 +97,7 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name",
       aTargets: [1],
       defaultContent: "",
@@ -105,13 +105,13 @@
       sWidth: "90%",
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [2],
       defaultContent: "",
       sWidth: "10%",
       mRender: function(data, type, row) {
-        result = '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% trans 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>&nbsp;';
+        result = '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% translate 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>&nbsp;';
         if( !row.internal ) {
           result += '<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/portal/template/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
         }
@@ -149,18 +149,18 @@
         data   : aoData,
         success: function(data, callback){
           if (!data.status){
-            notify('error', "{% trans 'Error' %}", data.error);
+            notify('error', "{% translate 'Error' %}", data.error);
           } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+        notify('error', "{% translate 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          notify('error', "{% trans 'Error' %}", data.error);
+          notify('error', "{% translate 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }

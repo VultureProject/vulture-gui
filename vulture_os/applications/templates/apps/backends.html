@@ -20,10 +20,10 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                      <a id="reload_all" class="btn btn-flat btn-primary"><i class="fa fa-sync">&nbsp;</i>{% trans "Reload all" %}</a>
-                      <a class="btn btn-flat btn-primary" href="{% url 'applications.backend.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                      <a id="reload_all" class="btn btn-flat btn-primary"><i class="fa fa-sync">&nbsp;</i>{% translate "Reload all" %}</a>
+                      <a class="btn btn-flat btn-primary" href="{% url 'applications.backend.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Backends" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Backends" %}</h1>
                 </div>
                 <div class="panel-body">
                   <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="backend_list">
@@ -54,7 +54,7 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Status" %}',
+      sTitle: '{% translate "Status" %}',
       defaultContent: "",
       name: "status",
       mData: "status",
@@ -93,21 +93,21 @@
       }
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name",
       aTargets: [2],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "Tags" %}',
+      sTitle: '{% translate "Tags" %}',
       name: "tags",
       aTargets: [3],
       defaultContent: "",
       mData: "tags"
     },
     {
-      sTitle: '{% trans "Servers" %}',
+      sTitle: '{% translate "Servers" %}',
       name: "servers",
       aTargets: [4],
       defaultContent: "",
@@ -121,21 +121,21 @@
       }
     },
     {
-      sTitle: '{% trans "Mode" %}',
+      sTitle: '{% translate "Mode" %}',
       name: "mode",
       aTargets: [5],
       defaultContent: "",
       mData: "mode"
     },
     {
-      sTitle: '{% trans "Additional infos" %}',
+      sTitle: '{% translate "Additional infos" %}',
       name: "additional_infos",
       aTargets: [6],
       defaultContent: "",
       mData: "additional_infos"
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [7],
       defaultContent: "",
@@ -181,18 +181,18 @@
         data   : aoData,
         success: function(data, callback){
           if (!data.status){
-            notify('error', "{% trans 'Error' %}", data.error);
+            notify('error', "{% translate 'Error' %}", data.error);
           } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+        notify('error', "{% translate 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          notify('error', "{% trans 'Error' %}", data.error);
+          notify('error', "{% translate 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }

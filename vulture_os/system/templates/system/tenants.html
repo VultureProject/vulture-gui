@@ -20,9 +20,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                        <a class="btn btn-flat btn-primary" href="{% url 'system.tenants.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.tenants.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "Multi-Tenants" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% translate "Multi-Tenants" %}</h1>
                 </div>
                 <div class="panel-body">
                     <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="tenant_list">
@@ -51,7 +51,7 @@
       bVisible: false
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name",
       aTargets: [1],
       defaultContent: "",
@@ -63,14 +63,14 @@
       }
     },
     {
-      sTitle: '{% trans "Associated CTI feeds" %}',
+      sTitle: '{% translate "Associated CTI feeds" %}',
       name: "reputation_contexts",
       aTargets: [2],
       defaultContent: "",
       mData: "reputation_contexts"
     },
     {
-      sTitle: '{% trans "Associated listeners" %}',
+      sTitle: '{% translate "Associated listeners" %}',
       name: "frontends",
       aTargets: [3],
       defaultContent: "",
@@ -84,14 +84,14 @@
       }
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [4],
       defaultContent: "",
       mRender: function(data, type, row) {
         var res = '<a class="btn btn-flat btn-xs btn-primary" data-toggle="tooltip" data-placement="top" title="Copy" href="/system/tenants/clone/' + data + '"><span><i class="fa fa-copy"></i></span></a>';
         if( row.frontends.length == 0 && !row.internal ) {
-          res += ' ' + '<a class="btn btn-flat btn-xs btn-danger" href="/system/tenants/delete/' + data + '" title="{% trans "Delete" %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+          res += ' ' + '<a class="btn btn-flat btn-xs btn-danger" href="/system/tenants/delete/' + data + '" title="{% translate "Delete" %}"><span><i class="fas fa-trash-alt"></i></span></a>';
         }
         return res;
       }
