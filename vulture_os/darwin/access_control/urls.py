@@ -34,13 +34,12 @@ urlpatterns = [
     path('darwin/acl/', ListAccessControl.as_view(), name="darwin.access_control.list"),
     re_path('^darwin/acl/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
             views.access_control_edit, name="darwin.access_control.edit"),
-    re_path('^darwin/acl/delete/(?P<object_id>[A-Fa-f0-9]+)$',
+    path('darwin/acl/delete/<int:object_id>',
             DeleteAccessControl.as_view(), name="darwin.access_control.delete"),
 
     path('api/v1/darwin/acl/', api.ACLAPIv1.as_view(), name="api.darwin.access_control.get"),
-    re_path('^api/v1/darwin/acl/(?P<object_id>[A-Fa-f0-9]+)/$',
+    path('^api/v1/darwin/acl/<int:object_id>/',
             api.ACLAPIv1.as_view(), name="api.darwin.access_control.get"),
-    re_path('^api/v1/darwin/acl/edit/(?P<object_id>[A-Fa-f0-9]+)/$',
+    re_path('^api/v1/darwin/acl/edit/(?P<object_id>[A-Fa-f0-9]+)?/?$',
             api.ACLAPIv1.as_view(), name="api.darwin.access_control.edit"),
-    re_path('^api/v1/darwin/acl/edit/$', api.ACLAPIv1.as_view(), name="api.darwin.access_control.edit"),
 ]

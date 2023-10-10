@@ -63,9 +63,7 @@ urlpatterns = [
 
     path('api/services/frontend/test_conf/', api.frontend_test_conf, name="services.frontend.test_conf"),
 
-    path('api/v1/services/frontend/', api.FrontendAPIv1.as_view(), name="services.frontend.api"),
-
-    path('api/v1/services/frontend/<int:object_id>/', api.FrontendAPIv1.as_view(), name="services.frontend.api"),
+    re_path('^api/v1/services/frontend/(?P<object_id>[0-9]+)?/?$', api.FrontendAPIv1.as_view(), name="services.frontend.api"),
 
     path('api/v1/services/frontend/<int:object_id>/<str:action>/',
          api.FrontendAPIv1.as_view(),
