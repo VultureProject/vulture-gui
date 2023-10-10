@@ -23,10 +23,10 @@
             partitions.Auto="on"
         {%- endif %}
         {%- if confParam %}
-            confParam="{{confParam}}"
+            confParam={{confParam | tojson}}
         {%- endif %}
         {%- if topicConfParam %}
-            topicConfParam="{{topicConfParam}}"
+            topicConfParam={{topicConfParam | tojson}}
         {%- endif %}
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
