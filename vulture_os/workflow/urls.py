@@ -31,23 +31,17 @@ from workflow import views, api
 
 
 urlpatterns = [
-    re_path('^workflow/delete/(?P<object_id>[A-Fa-f0-9]+)$',
+    path('workflow/delete/<int:object_id>',
             views.workflow_delete,
             name="workflow.delete"),
 
-    re_path('^workflow/edit/$',
+    re_path('^workflow/edit/(?P<object_id>[0-9]+)?$',
             views.workflow_edit,
             name="workflow.edit"),
 
-    re_path('^workflow/edit/(?P<object_id>[A-Fa-f0-9]+)$',
-            views.workflow_edit,
-            name="workflow.edit"),
-
-    re_path('^workflow/$',
+    path('workflow/',
             ListWorkflow.as_view(),
             name="workflow.list"),
 
-    path('api/v1/workflow/', api.WorkflowAPIv1.as_view(), name='workflow.api'),
-    path('api/v1/workflow/<int:object_id>/', api.WorkflowAPIv1.as_view(), name='workflow.api')
-
+    re_path('^api/v1/workflow/(?P<object_id>[0-9]+)?/?$', api.WorkflowAPIv1.as_view(), name='workflow.api'),
 ]

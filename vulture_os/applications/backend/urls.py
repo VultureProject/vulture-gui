@@ -33,23 +33,23 @@ from applications.generic_list import ListBackend
 urlpatterns = [
     path('apps/backend/', ListBackend.as_view(), name="applications.backend.list"),
 
-    re_path('^apps/backend/delete/(?P<object_id>[A-Fa-f0-9]+)$',
+    path('apps/backend/delete/<int:object_id>',
             views.backend_delete,
             name="applications.backend.delete"),
 
-    re_path('^apps/backend/edit/(?P<object_id>[A-Fa-f0-9]+)?$',
+    re_path('^apps/backend/edit/(?P<object_id>[0-9]+)?$',
             views.backend_edit,
             name="applications.backend.edit"),
 
-    re_path('^apps/backend/clone/(?P<object_id>[A-Fa-f0-9]+)$',
+    path('apps/backend/clone/<int:object_id>',
             views.backend_clone,
             name="applications.backend.clone"),
 
-    re_path('^apps/backend/start/(?P<object_id>[A-Fa-f0-9]+)$',
+    path('apps/backend/start/<int:object_id>',
             views.backend_start,
             name="applications.backend.start"),
 
-    re_path('^apps/backend/pause/(?P<object_id>[A-Fa-f0-9]+)$',
+    path('apps/backend/pause/<int:object_id>',
             views.backend_pause,
             name="applications.backend.pause"),
 
@@ -57,9 +57,7 @@ urlpatterns = [
 
     path('api/apps/backend/test/', api.test, name="applications.backend.test"),
 
-    path('api/v1/apps/backend/', api.BackendAPIv1.as_view(), name="applications.backend.api"),
-
-    path('api/v1/apps/backend/<int:object_id>/', api.BackendAPIv1.as_view(), name="applications.backend.api"),
+    re_path('^api/v1/apps/backend/(?P<object_id>[0-9]+)?/$', api.BackendAPIv1.as_view(), name="applications.backend.api"),
 
     path('api/v1/apps/backend/<int:object_id>/<str:action>/',
          api.BackendAPIv1.as_view(),
