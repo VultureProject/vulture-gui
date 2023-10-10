@@ -3,7 +3,7 @@
 <div class="row">
     <div class="col-md-12">
         <div class="template_helper">
-            <p>{% trans "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
+            <p>{% translate "Note on Template: You can use <b style='color:#39454C;'>Jinja2 Template syntax</b>" %} (<a href="http://jinja.pocoo.org/docs/dev/" target="_blank">http://jinja.pocoo.org/docs/dev/</a>)</p>
         </div>
     </div>
 
@@ -11,18 +11,18 @@
         <div class="template_helper col-md-3">
             <div class="panel  panel-bordered panel-dark">
                 <div class="panel-heading">
-                    <h3 class="panel-title">{% trans "The following tags are available: "%}</h3>
+                    <h3 class="panel-title">{% translate "The following tags are available: "%}</h3>
                 </div>
                 <div class="panel-body">
                     <ul>
-                        <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% trans "The Cascading Style sheet section"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% trans "The error message when OTP code verification goes wrong"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% trans "The beginning &lt;form action='...'&gt;"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% trans "The end &lt;/form&gt;"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;input_key&#125;&#125;</color></b>: {% trans "The key input"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% trans "The 'login' button"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;resend_button&#125;&#125;</color></b>: {% trans "The 'resend mail/sms' button"%}</li>
-                        <li><b style="color:#39454C;">&#123;&#123;qrcode&#125;&#125;</color></b>: {% trans "The 'src' html tag of the TOTP QRcode"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;style&#125;&#125;</color></b>: {% translate "The Cascading Style sheet section"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;error_message&#125;&#125;</color></b>: {% translate "The error message when OTP code verification goes wrong"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;form_begin&#125;&#125;</color></b>: {% translate "The beginning &lt;form action='...'&gt;"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;form_end&#125;&#125;</color></b>: {% translate "The end &lt;/form&gt;"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_key&#125;&#125;</color></b>: {% translate "The key input"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;input_submit&#125;&#125;</color></b>: {% translate "The 'login' button"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;resend_button&#125;&#125;</color></b>: {% translate "The 'resend mail/sms' button"%}</li>
+                        <li><b style="color:#39454C;">&#123;&#123;qrcode&#125;&#125;</color></b>: {% translate "The 'src' html tag of the TOTP QRcode"%}</li>
                     </ul>
                 </div>
             </div>
@@ -34,7 +34,7 @@
             {{form.html_otp}}
             {{form.html_otp.errors}}
             <p class="text-center">
-                <button type="button" @click="preview('html_otp')" class="btn btn-primary">{% trans "PREVIEW" %}</button>
+                <button type="button" @click="preview('html_otp')" class="btn btn-primary">{% translate "PREVIEW" %}</button>
             </p>
         </div>
 
@@ -42,22 +42,22 @@
             <div class="panel  panel-colorful panel-dark">
                 <div class="panel-body">
                     <div class="form-group">
-                        <label class="control-label">{%  trans "OTP key field name" %}</label>
+                        <label class="control-label">{% translate"OTP key field name" %}</label>
                         {{ form.otp_key_field }}
                         {{ form.otp_key_field.errors }}
                     </div>
                     <div class="form-group">
-                        <label class="control-label">{%  trans "OTP submit field name" %}</label>
+                        <label class="control-label">{% translate"OTP submit field name" %}</label>
                         {{ form.otp_submit_field }}
                         {{ form.otp_submit_field.errors }}
                     </div>
                     <div class="form-group">
-                        <label class="control-label">{%  trans "OTP resend field name" %}</label>
+                        <label class="control-label">{% translate"OTP resend field name" %}</label>
                         {{ form.otp_resend_field }}
                         {{ form.otp_resend_field.errors }}
                     </div>
                     <div class="form-group">
-                        <label class="control-label">{%  trans "Onetouch answer message" %}</label>
+                        <label class="control-label">{% translate"Onetouch answer message" %}</label>
                         {{ form.otp_onetouch_field }}
                         {{ form.otp_onetouch_field.errors }}
                     </div>

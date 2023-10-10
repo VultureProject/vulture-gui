@@ -21,9 +21,9 @@
         <div class="panel">
           <div class="panel-heading">
               <div class="panel-control">
-                <a class="btn btn-flat btn-primary" href="{% url 'workflow.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                <a class="btn btn-flat btn-primary" href="{% url 'workflow.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
               </div>
-              <h1 class="panel-title"><i class="fab fa-hubspot">&nbsp;</i>{% trans "Workflow" %}</h1>
+              <h1 class="panel-title"><i class="fab fa-hubspot">&nbsp;</i>{% translate "Workflow" %}</h1>
           </div>
           <div class="panel-body">
             <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="workflow_table">
@@ -42,7 +42,7 @@
     $('[data-toggle="tooltip"]').tooltip();
     var aoColumns = [
       {
-        sTitle: '{% trans "Enabled" %}',
+        sTitle: '{% translate "Enabled" %}',
         name: "enabeld",
         aTargets: [0],
         defaultContent: "",
@@ -55,14 +55,14 @@
         }
       },
       {
-        sTitle: '{% trans "Name" %}',
+        sTitle: '{% translate "Name" %}',
         name: "name",
         aTargets: [1],
         defaultContent: "",
         mData: "name"
       },
       {
-        sTitle: '{% trans "Frontend" %}',
+        sTitle: '{% translate "Frontend" %}',
         name: "frontend",
         aTargets: [2],
         defaultContent: "",
@@ -101,7 +101,7 @@
         }
       },
       {
-        sTitle: '{% trans "Backend" %}',
+        sTitle: '{% translate "Backend" %}',
         name: "backend",
         aTargets: [3],
         defaultContent: "",
@@ -140,20 +140,20 @@
         }
       },
       {
-        sTitle: '{% trans "FQDN" %}',
+        sTitle: '{% translate "FQDN" %}',
         name: "fqdn",
         aTargets: [4],
         defaultContent: "",
         mData: "fqdn"
       },
       {
-        sTitle: '{% trans "Public Directory" %}',
+        sTitle: '{% translate "Public Directory" %}',
         name: "public_dir",
         aTargets: [5],
         defaultContent: "",
         mData: "public_dir"
       },{
-        sTitle: '{% trans "Authentication" %}',
+        sTitle: '{% translate "Authentication" %}',
         name: "authentication",
         aTargets: [6],
         defaultContent: "",
@@ -165,20 +165,20 @@
         }
       },
       {
-        sTitle: '{% trans "ACLs" %}',
+        sTitle: '{% translate "ACLs" %}',
         name: "acls",
         aTargets: [7],
         defaultContent: "",
         mData: "acls"
       },
       {
-        sTitle: '{% trans "Action" %}',
+        sTitle: '{% translate "Action" %}',
         mData:"id",
         aTargets: [8],
         sWidth: "5%",
         defaultContent: "",
         mRender: function(data, type, row) {
-          return '<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/workflow/delete/' + data + '"" title="{% trans 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+          return '<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/workflow/delete/' + data + '"" title="{% translate 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
         }
       }
     ];

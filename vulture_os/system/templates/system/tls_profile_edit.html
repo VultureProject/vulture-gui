@@ -21,13 +21,13 @@
           {% csrf_token %}
           <div class="panel">
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "TLS Profile" %}</h1>
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "TLS Profile" %}</h1>
             </div>
             <div class="panel-body">
               {# Print form errors correctly #}
               {% if form.non_field_errors %}
                 <div class="alert alert-danger alert-dismissible">
-                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
                   <div class="tab-content no-padding">
                     {{ form.non_field_errors|safe }}
                   </div>
@@ -37,9 +37,9 @@
               {% if save_error %}
                 <div class="alert alert-danger alert-dismissible nav-tabs-custom">
                   <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                    <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
-                    <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-                    <li class="pull-left header"><i class="fa fa-inbox"></i>{% trans "Configuration error" %}</li>
+                    <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
+                    <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                    <li class="pull-left header"><i class="fa fa-inbox"></i>{% translate "Configuration error" %}</li>
                   </ul>
                   <div class="tab-content no-padding">
                     <div class="tab-pane active" id="tab_1">
@@ -56,7 +56,7 @@
               <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                      <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                      <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                       <div class="col-sm-5">
                         {{form.name}}
                         {{form.name.errors|safe}}
@@ -67,7 +67,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Certificate" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Certificate" %}</label>
                     <div class="col-sm-5">
                         {{form.x509_certificate}}
                         {{form.x509_certificate.errors|safe}}
@@ -78,7 +78,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Browsers compatibility" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Browsers compatibility" %}</label>
                     <div class="col-sm-5">
                       {{form.compatibility}}
                       {{form.compatibility.errors|safe}}
@@ -92,7 +92,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group browsers-compat collapse">
-                    <label class="col-sm-4 control-label">{% trans "Allowed cipher protocols" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Allowed cipher protocols" %}</label>
                     <div class="col-sm-5">
                       {{form.protocols}}
                       {{form.protocols.errors|safe}}
@@ -103,7 +103,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group browsers-compat collapse">
-                    <label class="col-sm-4 control-label">{% trans "Allowed ciphers" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Allowed ciphers" %}</label>
                     <div class="col-sm-5">
                       {{form.cipher_suite}}
                       {{form.cipher_suite.errors|safe}}
@@ -114,7 +114,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Advertise protocol list" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Advertise protocol list" %}</label>
                     <div class="col-sm-5">
                       {{form.alpn}}
                       {{form.alpn.errors|safe}}
@@ -125,7 +125,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Verify client certificate" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Verify client certificate" %}</label>
                     <div class="col-sm-5">
                       {{form.verify_client}}
                       {{form.verify_client.errors|safe}}
@@ -136,7 +136,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group require-cert">
-                    <label class="col-sm-4 control-label">{% trans "Client's CA certificate" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Client's CA certificate" %}</label>
                     <div class="col-sm-5">
                       {{form.ca_cert}}
                       {{form.ca_cert.errors|safe}}
@@ -146,8 +146,8 @@
               </div>
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'system.tls_profile.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'system.tls_profile.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </form>

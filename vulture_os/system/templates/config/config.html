@@ -21,7 +21,7 @@
           {% csrf_token %}
           <div class="panel">
               <div class="panel-heading">
-                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Cluster Configuration" %}</h1>
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Cluster Configuration" %}</h1>
               </div>
               <div class="panel-body">
                 <div class="row">
@@ -32,33 +32,33 @@
                     {{api_error}}
                   <div class="col-md-12 nav-tabs-custom">
                       <ul class="nav nav-tabs">
-                        <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
-                        <li><a href="#tab_network" data-toggle="tab">{% trans "Network" %}</a></li>
-                        <li><a href="#tab_api" data-toggle="tab">{% trans "REST Api" %}</a></li>
-                        <li><a href="#tab_auth" data-toggle="tab">{% trans "Authentication" %}</a></li>
-                        <li><a href="#tab_sso" data-toggle="tab">{% trans "SSO" %}</a></li>
-                        <li><a href="#tab_logs" data-toggle="tab">{% trans "Logs settings" %}</a></li>
+                        <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+                        <li><a href="#tab_network" data-toggle="tab">{% translate "Network" %}</a></li>
+                        <li><a href="#tab_api" data-toggle="tab">{% translate "REST Api" %}</a></li>
+                        <li><a href="#tab_auth" data-toggle="tab">{% translate "Authentication" %}</a></li>
+                        <li><a href="#tab_sso" data-toggle="tab">{% translate "SSO" %}</a></li>
+                        <li><a href="#tab_logs" data-toggle="tab">{% translate "Logs settings" %}</a></li>
                       </ul>
                       <div class="tab-content">
                         <br/>
                         <div class="tab-pane active" id="tab_general">
                           <div class="row">
                             <div class="form-group col-md-12">
-                              <label class="col-sm-4 control-label">{% trans "Internal tenants config" %}</label>
+                              <label class="col-sm-4 control-label">{% translate "Internal tenants config" %}</label>
                               <div class="col-sm-5">
                                 {{form.internal_tenants}}
                                 {{form.internal_tenants.errors|safe}}
                               </div>
                             </div>
                             <div class="form-group col-md-12">
-                              <label class="col-sm-4 control-label">{% trans "Release branch" %}</label>
+                              <label class="col-sm-4 control-label">{% translate "Release branch" %}</label>
                               <div class="col-sm-5">
                                 {{form.branch}}
                                 {{form.branch.errors|safe}}
                               </div>
                             </div>
                             <div class="form-group col-md-12">
-                              <label class="col-sm-4 control-label">{% trans "vlt-adm SSH authorized_keys" %}</label>
+                              <label class="col-sm-4 control-label">{% translate "vlt-adm SSH authorized_keys" %}</label>
                               <div class="col-sm-5">
                                 {{form.ssh_authorized_key}}
                                 {{form.ssh_authorized_key.errors|safe}}
@@ -70,21 +70,21 @@
                               <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "SMTP server" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "SMTP server" %}</label>
                                       <div class="col-sm-5">
                                         {{form.smtp_server}}
                                         {{form.smtp_server.errors|safe}}
                                       </div>
                                     </div>
                                     <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "Allowed sources for SSH connexion" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "Allowed sources for SSH connexion" %}</label>
                                       <div class="col-sm-5">
                                         {{form.pf_ssh_restrict}}
                                         {{form.pf_ssh_restrict.errors|safe}}
                                       </div>
                                     </div>
                                     <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "Allowed sources for GUI connexion" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "Allowed sources for GUI connexion" %}</label>
                                       <div class="col-sm-5">
                                         {{form.pf_admin_restrict}}
                                         {{form.pf_admin_restrict.errors|safe}}
@@ -92,7 +92,7 @@
                                     </div>
 
                                     <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "Packet Filter Whitelist" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "Packet Filter Whitelist" %}</label>
                                       <div class="col-sm-5">
                                         {{form.pf_whitelist}}
                                         {{form.pf_whitelist.errors|safe}}
@@ -100,7 +100,7 @@
                                     </div>
 
                                     <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "Packet Filter Blacklist" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "Packet Filter Blacklist" %}</label>
                                       <div class="col-sm-5">
                                         {{form.pf_blacklist}}
                                         {{form.pf_blacklist.errors|safe}}
@@ -113,7 +113,7 @@
                               <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "API Key for Cluster Management" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "API Key for Cluster Management" %}</label>
                                       <div class="col-sm-5">
                                         {{form.cluster_api_key}}
                                         {{form.cluster_api_key.errors|safe}}
@@ -126,7 +126,7 @@
                               <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "LDAP repository for GUI authentication" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "LDAP repository for GUI authentication" %}</label>
                                       <div class="col-sm-5">
                                         {{form.ldap_repository}}
                                         {{form.ldap_repository.errors|safe}}
@@ -139,21 +139,21 @@
                               <div class="row">
                                 <div class="col-md-12">
                                      <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "Header name for OAuth2 authentication" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "Header name for OAuth2 authentication" %}</label>
                                       <div class="col-sm-5">
                                         {{form.oauth2_header_name}}
                                         {{form.oauth2_header_name.errors|safe}}
                                       </div>
                                     </div>
                                      <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "Portal cookie name" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "Portal cookie name" %}</label>
                                       <div class="col-sm-5">
                                         {{form.portal_cookie_name}}
                                         {{form.portal_cookie_name.errors|safe}}
                                       </div>
                                     </div>
                                      <div class="form-group">
-                                      <label class="col-sm-4 control-label">{% trans "Public token" %}</label>
+                                      <label class="col-sm-4 control-label">{% translate "Public token" %}</label>
                                       <div class="col-sm-5">
                                         {{form.public_token}}
                                         {{form.public_token.errors|safe}}
@@ -173,7 +173,7 @@
                               </div>
                             </div>
                             <div class="form-group col-md-12">
-                              <label class="col-sm-4 control-label">{% trans "Logs encryption PEM certificate" %}</label>
+                              <label class="col-sm-4 control-label">{% translate "Logs encryption PEM certificate" %}</label>
                               <div class="col-sm-5">
                                 {{form.rsa_encryption_key}}
                                 {{form.rsa_encryption_key.errors|safe}}
@@ -187,8 +187,8 @@
 
               </div>
               <div class="panel-footer">
-                <a type="button" href="{% url 'system.netif.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+                <a type="button" href="{% url 'system.netif.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+                <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
               </div>
           </div>
         </form>

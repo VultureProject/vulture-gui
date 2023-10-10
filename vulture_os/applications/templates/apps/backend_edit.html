@@ -26,7 +26,7 @@
               {# Print form errors correctly #}
               {% if form.non_field_errors %}
                 <div class="alert alert-danger alert-dismissible">
-                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
                   <div class="tab-content no-padding">
                     {{ form.non_field_errors|safe }}
                   </div>
@@ -36,9 +36,9 @@
               {% if save_error %}
                 <div class="alert alert-danger alert-dismissible nav-tabs-custom">
                   <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                    <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
-                    <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-                    <li class="pull-left header"><i class="fa fa-inbox"></i>{% trans "Configuration error" %}</li>
+                    <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
+                    <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                    <li class="pull-left header"><i class="fa fa-inbox"></i>{% translate "Configuration error" %}</li>
                   </ul>
                   <div class="tab-content no-padding">
                     <div class="tab-pane active" id="tab_1">
@@ -57,19 +57,19 @@
             <div class="panel-body">
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
-                  <li><a href="#tab_servers" data-toggle="tab">{% trans "Servers" %}</a></li>
-                  <li><a href="#tab_tcp" data-toggle="tab" class="tcp-mode">{% trans "TCP Options" %}</a></li>
-                  <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% trans "HTTP Options" %}</a></li>
-                  <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% trans "HTTP Headers" %}</a></li>
-                  <li><a href="#tab_custom" data-toggle="tab">{% trans "Custom conf" %}</a></li>
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+                  <li><a href="#tab_servers" data-toggle="tab">{% translate "Servers" %}</a></li>
+                  <li><a href="#tab_tcp" data-toggle="tab" class="tcp-mode">{% translate "TCP Options" %}</a></li>
+                  <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% translate "HTTP Options" %}</a></li>
+                  <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% translate "HTTP Headers" %}</a></li>
+                  <li><a href="#tab_custom" data-toggle="tab">{% translate "Custom conf" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <div class="tab-pane active" id="tab_general"><br/>
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Enable backend" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Enable backend" %}</label>
                           <div class="col-sm-5">
                             {{form.enabled}}
                             {{form.enabled.errors|safe}}
@@ -80,7 +80,7 @@
                     <div class="row">
                       <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                             <div class="col-sm-5">
                               {{form.name}}
                               {{form.name.errors|safe}}
@@ -91,7 +91,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Mode" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Mode" %}</label>
                           <div class="col-sm-5">
                             {{form.mode}}
                             {{form.mode.errors|safe}}
@@ -102,13 +102,13 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Timeout connect" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Timeout connect" %}</label>
                           <div class="col-sm-5">
                             {{form.timeout_connect}}
                             {{form.timeout_connect.errors|safe}}
                           </div>
                           <div class="col-sm-2">
-                            {% trans " ms" %}
+                            {% translate " ms" %}
                           </div>
                         </div>
                       </div>
@@ -116,13 +116,13 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Timeout server" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Timeout server" %}</label>
                           <div class="col-sm-5">
                             {{form.timeout_server}}
                             {{form.timeout_server.errors|safe}}
                           </div>
                           <div class="col-sm-2">
-                            {% trans " s" %}
+                            {% translate " s" %}
                           </div>
                         </div>
                       </div>
@@ -130,7 +130,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Tags" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Tags" %}</label>
                           <div class="col-sm-5">
                             {{form.tags}}
                             {{form.tags.errors|safe}}
@@ -166,7 +166,7 @@
                       </div>
                     </div> <!-- /.row  -->
                     <fieldset class="col-lg-12 sol-sm-12">
-                      <legend>{% trans "Backend Net servers" %}</legend>
+                      <legend>{% translate "Backend Net servers" %}</legend>
                       <div class="row">
                         <div class="col-md-12">
                           <table id="net_server_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
@@ -182,11 +182,11 @@
                               {% endfor %}
                             </tbody>
                           </table>
-                          <button class="addlink addplus" id="add_net_server" type="button">{% trans "Add an Entry" %}</button>
+                          <button class="addlink addplus" id="add_net_server" type="button">{% translate "Add an Entry" %}</button>
                           {{ form.servers.errors|safe }}
                         </div>
                       </div>
-                      <legend>{% trans "Backend Unix servers" %}</legend>
+                      <legend>{% translate "Backend Unix servers" %}</legend>
                       <div class="row">
                         <div class="col-md-12">
                           <table id="unix_server_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
@@ -202,7 +202,7 @@
                               {% endfor %}
                             </tbody>
                           </table>
-                          <button class="addlink addplus" id="add_unix_server" type="button">{% trans "Add an Entry" %}</button>
+                          <button class="addlink addplus" id="add_unix_server" type="button">{% translate "Add an Entry" %}</button>
                           {{ form.servers.errors|safe }}
                           <input id="servers" name="servers" value="" type="hidden">
                         </div>
@@ -368,7 +368,7 @@
                                 </tbody>
                               </table>
                             </div>
-                            <button class="addlink addplus" id="add_http_health_check_header" type="button">{% trans "Add an Entry" %}</button>
+                            <button class="addlink addplus" id="add_http_health_check_header" type="button">{% translate "Add an Entry" %}</button>
                             <input id="http_health_check_headers" name="http_health_check_headers" value="" type="hidden">
                             {{ http_health_check_headers.errors|safe }}
                             {{form.enable_http_health_check.errors|safe}}
@@ -427,7 +427,7 @@
                               {% endfor %}
                             </tbody>
                           </table>
-                          <button class="btn btn-flat btn-primary addplus" id="add_header" type="button">{% trans "Add an Entry" %}</button>
+                          <button class="btn btn-flat btn-primary addplus" id="add_header" type="button">{% translate "Add an Entry" %}</button>
                           {{ form.headers.errors|safe }}
                           <input id="headers" name="headers" value="" type="hidden">
                         </div>
@@ -438,7 +438,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-3 control-label">{% trans "HAProxy Backend Config" %}</label>
+                          <label class="col-sm-3 control-label">{% translate "HAProxy Backend Config" %}</label>
                           <div class="col-sm-8">
                             {{form.custom_haproxy_conf}}
                             {{form.custom_haproxy_conf.errors|safe}}
@@ -452,8 +452,8 @@
             </div>
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'applications.backend.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'applications.backend.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </div>

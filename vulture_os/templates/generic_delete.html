@@ -17,7 +17,7 @@
             <div class="panel panel-colorful panel-danger">
               <div class="panel-heading">
                 <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
                 </ul>
                 <h4 class="panel-title">Deletion error</h4>
               </div>
@@ -43,16 +43,16 @@
                   <div class="form-group">
                     <label class="col-sm-12 text-center">
                       {% if not used_by %}
-                      {% trans "Are you sure you want to delete " %}<strong>{{ obj_inst }}</strong> ? <br />
+                      {% translate "Are you sure you want to delete " %}<strong>{{ obj_inst }}</strong> ? <br />
                       {% if related_objs %}
-                            {% trans "All related objects will be destroyed : " %}
+                            {% translate "All related objects will be destroyed : " %}
                             <ul>{% for related in related_objs %}
                                 <li>{{ related }}</li>
                                 {% endfor %}</ul>
                             {% endif %}
                       {% else %}
-                      {% trans "Cannot delete " %}{{ obj_inst }} <br/>
-                      {% trans "This object is currently used by " %}
+                      {% translate "Cannot delete " %}{{ obj_inst }} <br/>
+                      {% translate "This object is currently used by " %}
                         <ul>
                           {% for used in used_by %}
                             <li><b>{{used}}<b></li>
@@ -66,10 +66,10 @@
             </div> <!-- /.tab-pane tab_custom -->
             <div class="panel-footer">
               <a href="{{ redirect_url }}"><button class="btn btn-warning btn-cancel" type="button">
-                <i class="fas fa-times">&nbsp;&nbsp;</i>{% trans "CANCEL"  %}</button></a>
+                <i class="fas fa-times">&nbsp;&nbsp;</i>{% translate "CANCEL"  %}</button></a>
                 {% if not used_by %}
                 <button id="submit" class="btn btn-danger pull-right btn-save" type="submit">
-                    <i class="fas fa-check">&nbsp;&nbsp;</i>{% trans "Yes" %}
+                    <i class="fas fa-check">&nbsp;&nbsp;</i>{% translate "Yes" %}
                 </button>
                 {% endif %}
             </div>

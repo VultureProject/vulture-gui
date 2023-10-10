@@ -20,9 +20,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                        <a class="btn btn-flat btn-primary" href="{% url 'system.tls_profile.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.tls_profile.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% trans "TLS Profile" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-at">&nbsp;</i>{% translate "TLS Profile" %}</h1>
                 </div>
                 <div class="panel-body">
                     <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="tls_list">
@@ -51,13 +51,13 @@
       bVisible: false
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name", aTargets: [1],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "Certificate" %}',
+      sTitle: '{% translate "Certificate" %}',
       name: "subject", aTargets: [2],
       defaultContent: "",
       mData: "x509_certificate",
@@ -66,25 +66,25 @@
       }
     },
     {
-      sTitle: '{% trans "Protocols" %}',
+      sTitle: '{% translate "Protocols" %}',
       name: "issuer", aTargets: [3],
       defaultContent: "",
       mData: "protocols",
     },
     {
-      sTitle: '{% trans "Verify client" %}',
+      sTitle: '{% translate "Verify client" %}',
       name: "verify_client", aTargets: [4],
       defaultContent: "",
       mData: "verify_client",
     },
     {
-      sTitle: '{% trans "Client CA" %}',
+      sTitle: '{% translate "Client CA" %}',
       name: "ca_cert", aTargets: [5],
       defaultContent: "",
       mData: "ca_cert",
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [6],
       defaultContent: "",

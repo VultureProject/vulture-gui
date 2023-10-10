@@ -20,9 +20,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                        <a class="btn btn-flat btn-primary" href="{% url 'system.users.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                        <a class="btn btn-flat btn-primary" href="{% url 'system.users.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-users">&nbsp;</i>{% trans "Users" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-users">&nbsp;</i>{% translate "Users" %}</h1>
                 </div>
                 <div class="panel-body">
                     <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="users_list">
@@ -51,19 +51,19 @@
       bVisible: false
     },
     {
-      sTitle: '{% trans "Username" %}',
+      sTitle: '{% translate "Username" %}',
       name: "username", aTargets: [1],
       defaultContent: "",
       mData: "username"
     },
     {
-      sTitle: '{% trans "Groups" %}',
+      sTitle: '{% translate "Groups" %}',
       name: "groups", aTargets: [2],
       defaultContent: "",
       mData: "groups"
     },
     {
-      sTitle: '{% trans "Super user" %}',
+      sTitle: '{% translate "Super user" %}',
       name: "groups", aTargets: [3],
       defaultContent: "is_superuser",
       mData: "is_superuser",
@@ -75,12 +75,12 @@
       }
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [4],
       defaultContent: "",
       mRender: function(data, type, row) {
-        return  '<a class="btn btn-flat btn-xs btn-danger" href="/system/users/delete/' + data + '" title="{% trans "delete" %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+        return  '<a class="btn btn-flat btn-xs btn-danger" href="/system/users/delete/' + data + '" title="{% translate "delete" %}"><span><i class="fas fa-trash-alt"></i></span></a>';
       }
     }
   ];

@@ -44,7 +44,7 @@
                         <li class="link_gui link_dashboard_services">
                             <a href="{% url 'gui.dashboard.services' %}">
                                 <i class="fas fa-tachometer-alt"></i>
-                                <span class="menu-title">{% trans "Home" %}</span>
+                                <span class="menu-title">{% translate "Home" %}</span>
                             </a>
                         </li>
 
@@ -54,7 +54,7 @@
                                 <i class="{{ menu.icon }}"></i>
                                 <span class="menu-title">{{ menu.text }}
                                     {% if menu.coming_soon %}
-                                    <br/><label class="label label-warning label-sm pull-right">{% trans "Coming Soon" %}</label>
+                                    <br/><label class="label label-warning label-sm pull-right">{% translate "Coming Soon" %}</label>
                                     {% endif %}
                                 </span>
                                 {% if menu.submenu %}

@@ -28,19 +28,19 @@
             {% csrf_token %}
                 <input type="hidden" name="confirm" value="yes" />
                 <fieldset class="col-sm-12">
-                    <legend>{% trans "Confirm delete" %}</legend>
+                    <legend>{% translate "Confirm delete" %}</legend>
                     <div class="form-group">
                         <label class="col-sm-12 text-center">
-                            {% trans "Are you sure you want to delete Template named " %}{{ template.name }} ? <br/>
+                            {% translate "Are you sure you want to delete Template named " %}{{ template.name }} ? <br/>
                         </label>
                     </div>
                 </fieldset>
                 <div class="form-group">
                     <div class="col-sm-12 text-center">
-                        <a href="{% url 'system.error_templates.list' %}"><button class="btn-cancel" type="button">{% trans "CANCEL"  %}</button></a>
+                        <a href="{% url 'system.error_templates.list' %}"><button class="btn-cancel" type="button">{% translate "CANCEL"  %}</button></a>
                         <button id="submit" class="btn-save" type="submit">
                         <span><i class="fa fa-check"></i></span>
-                        {% trans "YES" %}
+                        {% translate "YES" %}
                         </button>
                     </div>
                 </div>

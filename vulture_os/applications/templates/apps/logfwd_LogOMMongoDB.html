@@ -25,13 +25,13 @@
               {# If there is save/configuration errors #}
               {% if save_error %}
                 <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
                 </ul>
-                <h4 class="panel-title">{% trans "Configuration error" %}</h4>
+                <h4 class="panel-title">{% translate "Configuration error" %}</h4>
               {% endif %}
               {% if form.non_field_errors %}
-                <h4 class="panel-title"><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                <h4 class="panel-title"><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
               {% endif %}
             </div>
             <div class="panel-body">
@@ -59,13 +59,13 @@
           {% endif %}
           <div class="panel">
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "MongoDB Log forwarder" %}</h1>
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "MongoDB Log forwarder" %}</h1>
             </div>
             <div class="panel-body">
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Enable forwarder" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Enable forwarder" %}</label>
                     <div class="col-sm-5">
                       {{form.enabled}}
                       {{form.enabled.errors|safe}}
@@ -76,7 +76,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                     <div class="col-sm-5">
                       {{form.name}}
                       {{form.name.errors|safe}}
@@ -87,7 +87,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "MongoDB URI" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "MongoDB URI" %}</label>
                     <div class="col-sm-5">
                       {{form.uristr}}
                       {{form.uristr.errors|safe}}
@@ -98,7 +98,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Database" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Database" %}</label>
                     <div class="col-sm-5">
                       {{form.db}}
                       {{form.db.errors|safe}}
@@ -109,7 +109,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Collection" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Collection" %}</label>
                     <div class="col-sm-5">
                       {{form.collection}}
                       {{form.collection.errors|safe}}
@@ -120,7 +120,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Use TLS Certificate or CA" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Use TLS Certificate or CA" %}</label>
                     <div class="col-sm-5">
                       {{form.x509_certificate}}
                       {{form.x509_certificate.errors|safe}}
@@ -289,8 +289,8 @@
               </div> <!-- /.advanced_options -->
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </form>

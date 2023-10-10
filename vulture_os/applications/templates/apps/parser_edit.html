@@ -25,8 +25,8 @@
               {# If there is save/configuration errors #}
               {% if save_error %}
                 <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
                 </ul>
                 <h4 class="panel-title">Configuration error</h4>
               {% endif %}
@@ -35,7 +35,7 @@
               {# Print form errors correctly #}
               {% if form.non_field_errors %}
                 <div>
-                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
                   <div class="tab-content no-padding">
                     {{ form.non_field_errors|safe }}
                   </div>
@@ -61,7 +61,7 @@
             <div class="panel-body">
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <br/>
@@ -69,7 +69,7 @@
                     <div class="row">
                       <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                             <div class="col-sm-5">
                               {{form.name}}
                               {{form.name.errors|safe}}
@@ -101,13 +101,13 @@
                     </div> <!-- /.row  -->
                     <div class="row">
                       <div class="col-sm-12" style="text-align:center;">
-                        <button name="parser_test" id="parser_test" class="btn btn-success btn-flat"><span>{% trans "Test rules" %}</span></button>
+                        <button name="parser_test" id="parser_test" class="btn btn-success btn-flat"><span>{% translate "Test rules" %}</span></button>
                       </div>
                     </div> <!-- /.row -->
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-12 control-label">{% trans "Result"  %}</label>
+                          <label class="col-sm-12 control-label">{% translate "Result"  %}</label>
                           <div class="col-sm-12">
                              <div id="parser_status">
                              </div>
@@ -122,8 +122,8 @@
               </div>
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'applications.parser.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'applications.parser.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </div>
@@ -201,7 +201,7 @@
 
     /* Parser test */
     $('#parser_test').on("click", function(e) {
-      $('#parser_status').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Testing ..." %}');
+      $('#parser_status').html('<i class="fas fa-spinner fa-spin"></i>{% translate "Testing ..." %}');
       $('#result').val('');
 
       url = "/apps/parser/test/";
@@ -212,14 +212,14 @@
         data: form_data
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        $('#parser_status').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+        $('#parser_status').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
                                      "Status code : " + jqXHR.status + "</br>" +
                                      "Message : " + jqXHR.statusText);
       }) // /$.fail
       .done( function( msg ) {
         handle_form_errors(msg);
         if( msg['status'] ) {
-          $('#parser_status').html('<b style="color:green;">{% trans "Parsing successful" %}</b>');
+          $('#parser_status').html('<b style="color:green;">{% translate "Parsing successful" %}</b>');
           const message_type = $.type(msg['message']);
           if( message_type === "object" || message_type === "array" ) {
             $('#result').html(JSON.stringify(msg['message'], undefined, 4));
@@ -228,7 +228,7 @@
           }
         } else {
           reason = msg['error'];
-          $('#parser_status').html("<b style='color:red;'>{% trans 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
+          $('#parser_status').html("<b style='color:red;'>{% translate 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
         }
       }); // /$.done
       e.preventDefault();

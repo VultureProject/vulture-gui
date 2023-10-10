@@ -25,8 +25,8 @@
               {# If there is save/configuration errors #}
               {% if save_error %}
                 <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
                 </ul>
                 <h4 class="panel-title">Configuration error</h4>
               {% endif %}
@@ -35,7 +35,7 @@
               {# Print form errors correctly #}
               {% if form.non_field_errors %}
                 <div>
-                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
                   <div class="tab-content no-padding">
                     {{ form.non_field_errors|safe }}
                   </div>
@@ -61,8 +61,8 @@
             <div class="panel-body">
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
-                  <li><a href="#tab_http" data-toggle="tab">{% trans "HTTP Options" %}</a></li>
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+                  <li><a href="#tab_http" data-toggle="tab">{% translate "HTTP Options" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <br/>
@@ -70,7 +70,7 @@
                     <div class="row">
                       <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                             <div class="col-sm-5">
                               {{form.name}}
                               {{form.name.errors|safe}}
@@ -81,7 +81,7 @@
                     <div class="row">
                       <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Description" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Description" %}</label>
                             <div class="col-sm-5">
                               {{form.description}}
                               {{form.description.errors|safe}}
@@ -136,7 +136,7 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Tags" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Tags" %}</label>
                           <div class="col-sm-5">
                             {{form.tags}}
                             {{form.tags.errors|safe}}
@@ -192,7 +192,7 @@
                     </div> <!-- /.row  -->
                     <div class="row">
                       <div class="col-md-12">
-                        <label class="col-sm-4 control-label">{% trans "HTTP Headers" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "HTTP Headers" %}</label>
                         <div class="col-sm-5">
                           <table id="headers_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
                             <thead>
@@ -204,7 +204,7 @@
                               {% endfor %}
                             </tbody>
                           </table>
-                          <button class="addlink addplus" id="add_header" type="button">{% trans "Add an Entry" %}</button>
+                          <button class="addlink addplus" id="add_header" type="button">{% translate "Add an Entry" %}</button>
                           {{ form.custom_headers.errors|safe }}
                           <input id="custom_headers" name="custom_headers" value="" type="hidden">
                         </div>
@@ -217,11 +217,11 @@
             <div class="panel-footer">
               <div class="row">
                 <div class="col-sm-12" style="text-align:center;">
-                  <button name="download_test" id="download_test" class="btn btn-success btn-flat mmdb"><span>{% trans "Get MMDB info" %}</span></button>
+                  <button name="download_test" id="download_test" class="btn btn-success btn-flat mmdb"><span>{% translate "Get MMDB info" %}</span></button>
                 </div>
               </div> <!-- /.row -->
-              <a type="button" href="{% url 'applications.reputation_ctx.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'applications.reputation_ctx.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </div>
@@ -233,7 +233,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><i class="pci-cross pci-circle"></i></button>
-            <h4 class="modal-title">{% trans "Download result" %}</h4>
+            <h4 class="modal-title">{% translate "Download result" %}</h4>
           </div>
           <div class="modal-body" style="text-align: center">
             <div class="row">
@@ -245,7 +245,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <button type="button" class="btn btn-default btn-flat" data-dismiss="modal">{% translate "Cancel" %}</button>
           </div>
         </div>
       </div>
@@ -384,7 +384,7 @@
 
     /* Download test */
     $('#download_test').on("click", function(e) {
-      $('#download_test_msg').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Downloading ..." %}');
+      $('#download_test_msg').html('<i class="fas fa-spinner fa-spin"></i>{% translate "Downloading ..." %}');
       $('#downloaded_content').html('');
       $("#modal_test_download").modal('show');
 
@@ -401,14 +401,14 @@
         data: indexed_data
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        $('#download_test_msg').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+        $('#download_test_msg').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
                                      "Status code : " + jqXHR.status + "</br>" +
                                      "Message : " + jqXHR.statusText);
       }) // /$.fail
       .done( function( msg ) {
         handle_form_errors(msg);
         if( msg['status'] ) {
-          $('#download_test_msg').html('<b style="color:green;">{% trans "Successful connection" %}</b>');
+          $('#download_test_msg').html('<b style="color:green;">{% translate "Successful connection" %}</b>');
           var result = "";
           if( $.type(msg['message']) == "object" ) {
             result += '<table style="margin: 0 auto">';
@@ -425,7 +425,7 @@
           $('#downloaded_content').html('<p>' + result + '</p>');
         } else {
           reason = msg['error'];
-          $('#download_test_msg').html("<b style='color:red;'>{% trans 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
+          $('#download_test_msg').html("<b style='color:red;'>{% translate 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
         }
       }); // /$.done
       e.preventDefault();

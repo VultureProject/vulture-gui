@@ -17,9 +17,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                      <a class="btn btn-flat btn-primary" href="{% url 'authentication.radius.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                      <a class="btn btn-flat btn-primary" href="{% url 'authentication.radius.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Radius Repository" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Radius Repository" %}</h1>
                 </div>
                 <div class="panel-body">
                   <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="radius_list">
@@ -50,42 +50,42 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name",
       aTargets: [1],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "Server : Port" %}',
+      sTitle: '{% translate "Server : Port" %}',
       name: "uri",
       aTargets: [2],
       defaultContent: "",
       mData: "uri"
     },
     {
-      sTitle: '{% trans "Nas ID" %}',
+      sTitle: '{% translate "Nas ID" %}',
       name: "nas_id",
       aTargets: [3],
       defaultContent: "",
       mData: "nas_id"
     },
     {
-      sTitle: '{% trans "Retries number" %}',
+      sTitle: '{% translate "Retries number" %}',
       name: "retry",
       aTargets: [4],
       defaultContent: "",
       mData: "retry"
     },
     {
-      sTitle: '{% trans "Connection timeout" %}',
+      sTitle: '{% translate "Connection timeout" %}',
       name: "timeout",
       aTargets: [5],
       defaultContent: "",
       mData: "timeout"
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [6],
       defaultContent: "",
@@ -125,18 +125,18 @@
         data   : aoData,
         success: function(data, callback){
           if (!data.status){
-            notify('error', "{% trans 'Error' %}", data.error);
+            notify('error', "{% translate 'Error' %}", data.error);
           } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+        notify('error', "{% translate 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          notify('error', "{% trans 'Error' %}", data.error);
+          notify('error', "{% translate 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }

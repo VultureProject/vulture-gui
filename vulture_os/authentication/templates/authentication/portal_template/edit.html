@@ -26,8 +26,8 @@
               {# If there is save/configuration errors #}
               {% if save_error %}
                 <ul class="nav nav-tabs pull-right ui-sortable-handle">
-                  <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-                  <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
+                  <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+                  <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
                 </ul>
                 <h4 class="panel-title">Configuration error</h4>
               {% endif %}
@@ -36,7 +36,7 @@
               {# Print form errors correctly #}
               {% if form.non_field_errors %}
                 <div>
-                  <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+                  <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
                   <div class="tab-content no-padding">
                     {{ form.non_field_errors|safe }}
                   </div>
@@ -65,27 +65,27 @@
         <div class="panel-heading">
           <div class="panel-control">
             <div class="btn-group btn-flat">
-              <a type="button" href="{% url 'portal.template.list' %}" class="btn btn-flat btn-warning">{% trans "Cancel" %}</a>&nbsp;&nbsp;
-              <button type="submit" id="save_form_btn" class="btn btn-primary btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'portal.template.list' %}" class="btn btn-flat btn-warning">{% translate "Cancel" %}</a>&nbsp;&nbsp;
+              <button type="submit" id="save_form_btn" class="btn btn-primary btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
-          <h3 class="panel-title">{% trans "Portal templates" %}</h3>
+          <h3 class="panel-title">{% translate "Portal templates" %}</h3>
         </div>
         <div class="panel-body">
           <div class="nav-tabs-custom nav-tabs-no-margin">
             <ul class="nav nav-tabs">
-              <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
-              <li class=""><a href="#tab_style" data-toggle="tab">{% trans "Style" %}</a></li>
-              <li class=""><a href="#tab_login" data-toggle="tab">{% trans "Login" %}</a></li>
-              <li class=""><a href="#tab_logout" data-toggle="tab">{% trans "Logout" %}</a></li>
-              <li class=""><a href="#tab_learning" data-toggle="tab">{% trans "Learning" %}</a></li>
-              <li class=""><a href="#tab_self" data-toggle="tab">{% trans "Self-Service" %}</a></li>
-              <li class=""><a href="#tab_password" data-toggle="tab">{% trans "Password" %}</a></li>
-              <li class=""><a href="#tab_dialogs" data-toggle="tab">{% trans "Email & Dialogs" %}</a></li>
-              <li class=""><a href="#tab_otp" data-toggle="tab">{% trans "OTP" %}</a></li>
-              <li class=""><a href="#tab_message" data-toggle="tab">{% trans "Message" %}</a></li>
-              <li class=""><a href="#tab_errors" data-toggle="tab">{% trans "HTML Errors" %}</a></li>
-              <li class=""><a href="#tab_registration" data-toggle="tab">{% trans "User Registration" %}</a></li>
+              <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+              <li class=""><a href="#tab_style" data-toggle="tab">{% translate "Style" %}</a></li>
+              <li class=""><a href="#tab_login" data-toggle="tab">{% translate "Login" %}</a></li>
+              <li class=""><a href="#tab_logout" data-toggle="tab">{% translate "Logout" %}</a></li>
+              <li class=""><a href="#tab_learning" data-toggle="tab">{% translate "Learning" %}</a></li>
+              <li class=""><a href="#tab_self" data-toggle="tab">{% translate "Self-Service" %}</a></li>
+              <li class=""><a href="#tab_password" data-toggle="tab">{% translate "Password" %}</a></li>
+              <li class=""><a href="#tab_dialogs" data-toggle="tab">{% translate "Email & Dialogs" %}</a></li>
+              <li class=""><a href="#tab_otp" data-toggle="tab">{% translate "OTP" %}</a></li>
+              <li class=""><a href="#tab_message" data-toggle="tab">{% translate "Message" %}</a></li>
+              <li class=""><a href="#tab_errors" data-toggle="tab">{% translate "HTML Errors" %}</a></li>
+              <li class=""><a href="#tab_registration" data-toggle="tab">{% translate "User Registration" %}</a></li>
             </ul>
 
             <div class="tab-content">
@@ -95,7 +95,7 @@
                 <div class="row">
                   <div class="col-md-12">
                     <div class="form-group">
-                      <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                      <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                       <div class="col-sm-5">
                         {{form.name}}
                         {{form.name.errors|safe}}
@@ -243,7 +243,7 @@
 
     /* Parser test */
     $('#parser_test').on("click", function(e) {
-      $('#parser_status').html('<i class="fas fa-spinner fa-spin"></i>{% trans "Testing ..." %}');
+      $('#parser_status').html('<i class="fas fa-spinner fa-spin"></i>{% translate "Testing ..." %}');
       $('#result').val('');
 
       url = "/apps/parser/test/";
@@ -254,14 +254,14 @@
         data: form_data
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        $('#parser_status').html("<b style='color:red;'>{% trans 'API request failure: '%}" + textStatus + "</b></br>" +
+        $('#parser_status').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
                                      "Status code : " + jqXHR.status + "</br>" +
                                      "Message : " + jqXHR.statusText);
       }) // /$.fail
       .done( function( msg ) {
         handle_form_errors(msg);
         if( msg['status'] ) {
-          $('#parser_status').html('<b style="color:green;">{% trans "Successful connection" %}</b>');
+          $('#parser_status').html('<b style="color:green;">{% translate "Successful connection" %}</b>');
           const message_type = $.type(msg['message']);
           if( message_type === "object" || message_type === "array" ) {
             $('#result').html(JSON.stringify(msg['message'], undefined, 4));
@@ -270,7 +270,7 @@
           }
         } else {
           reason = msg['error'];
-          $('#parser_status').html("<b style='color:red;'>{% trans 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
+          $('#parser_status').html("<b style='color:red;'>{% translate 'Cannot retrieve asked url, reason: '%}" + reason + "</b>");
         }
       }); // /$.done
       e.preventDefault();

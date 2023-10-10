@@ -17,9 +17,9 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                      <a class="btn btn-flat btn-primary" href="{% url 'darwin.access_control.edit' %}"><i class="fas fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                      <a class="btn btn-flat btn-primary" href="{% url 'darwin.access_control.edit' %}"><i class="fas fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Access control" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Access control" %}</h1>
                 </div>
                 <div class="panel-body">
                   <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="access_control_table">
@@ -50,14 +50,14 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name",
       aTargets: [1],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "Used by" %}',
+      sTitle: '{% translate "Used by" %}',
       name: "used_by",
       aTargets: [2],
       defaultContent: "",
@@ -72,7 +72,7 @@
       }
     },
     {
-      sTitle: '{% trans "NB Rules" %}',
+      sTitle: '{% translate "NB Rules" %}',
       name: "rules",
       aTargets: [3],
       defaultContent: "",
@@ -82,14 +82,14 @@
       }
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [4],
       sWidth: "5%",
       defaultContent: "",
       mRender: function(data, type, row) {
-        return '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% trans 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>' +
-        '&nbsp;<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/darwin/acl/delete/' + data + '"" title="{% trans 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+        return '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% translate 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>' +
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/darwin/acl/delete/' + data + '"" title="{% translate 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
       }
     }
   ];
@@ -156,7 +156,7 @@
 
           function(response){
             if (check_json_error(response)){
-              notify('success', '{% trans "Success" %}', '{% trans "ACL cloned" %}');
+              notify('success', '{% translate "Success" %}', '{% translate "ACL cloned" %}');
               access_control_table.DataTable().fnDraw(false);
             }
           }

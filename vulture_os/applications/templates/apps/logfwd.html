@@ -17,15 +17,15 @@
             <div class="panel">
                 <div class="panel-heading">
                     <div class="panel-control">
-                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/File/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "File" %}</a>
-                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/RELP/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "RELP" %}</a>
-                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Redis/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Redis" %}</a>
-                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Syslog/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Syslog" %}</a>
-                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Elasticsearch/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Elasticsearch" %}</a>
-                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/MongoDB/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "MongoDB" %}</a>
-                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Kafka/"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Kafka" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/File/"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "File" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/RELP/"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "RELP" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Redis/"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Redis" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Syslog/"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Syslog" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Elasticsearch/"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Elasticsearch" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/MongoDB/"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "MongoDB" %}</a>
+                        <a class="btn btn-flat btn-primary" href="/apps/logfwd/edit/Kafka/"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Kafka" %}</a>
                     </div>
-                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Logs Forwarders" %}</h1>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Logs Forwarders" %}</h1>
                 </div>
 
                 <div class="panel-body">
@@ -52,32 +52,32 @@
       bVisible: false
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name", aTargets: [1],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "Internal" %}',
+      sTitle: '{% translate "Internal" %}',
       name: "internal",
       aTargets: [2],
       defaultContent: "",
       mData: "internal"
     },
     {
-      sTitle: '{% trans "Type" %}',
+      sTitle: '{% translate "Type" %}',
       name: "type", aTargets: [3],
       defaultContent: "",
       mData: "type",
     },
     {
-      sTitle: '{% trans "Output" %}',
+      sTitle: '{% translate "Output" %}',
       name: "output", aTargets: [4],
       defaultContent: "",
       mData: "output"
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [5],
       defaultContent: "",

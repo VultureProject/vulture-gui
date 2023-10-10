@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block navleft %}
-    <li><h3><i class="fa fa-tasks"></i>&nbsp;{% trans "Image -> Edit" %}</h3></li>
+    <li><h3><i class="fa fa-tasks"></i>&nbsp;{% translate "Image -> Edit" %}</h3></li>
 {% endblock %}
 
 {% block content %}
@@ -15,13 +15,13 @@
 			{% csrf_token %}
             <div class="panel">
               <div class="panel-heading">
-                <h2 class="panel-title"><i class="fa fa-folder-open"></i>&nbsp;{% trans "Import Image" %}</h2>
+                <h2 class="panel-title"><i class="fa fa-folder-open"></i>&nbsp;{% translate "Import Image" %}</h2>
               </div>
               <div class="panel-body">
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Name" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Name" %}</label>
                             <div class="col-sm-5">
                                 {{ form.name }}
                                 {{ form.name.errors }}
@@ -29,7 +29,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "Image" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "Image" %}</label>
                         <div class="col-sm-5">
                             {{ form.content }}
                             {{ form.content.errors }}
@@ -38,8 +38,8 @@
                 </div>
               </div>
               <div class="panel-footer">
-                <a type="button" href="{% url 'portal.template.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+                <a type="button" href="{% url 'portal.template.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+                <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
               </div>
             </div>
         </form>

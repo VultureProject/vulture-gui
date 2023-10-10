@@ -21,7 +21,7 @@
           {% csrf_token %}
           <div class="panel">
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "RELP log forwarder" %}</h1>
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "RELP log forwarder" %}</h1>
             </div>
             <div class="panel-body">
               {# Print form errors correctly #}
@@ -56,7 +56,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Enable forwarder" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Enable forwarder" %}</label>
                     <div class="col-sm-5">
                       {{form.enabled}}
                       {{form.enabled.errors|safe}}
@@ -67,7 +67,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                     <div class="col-sm-5">
                       {{form.name}}
                       {{form.name.errors|safe}}
@@ -78,7 +78,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Remote IP" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Remote IP" %}</label>
                     <div class="col-sm-5">
                       {{form.target}}
                       {{form.target.errors|safe}}
@@ -89,7 +89,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Remote TCP port" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Remote TCP port" %}</label>
                     <div class="col-sm-5">
                       {{form.port}}
                       {{form.port.errors|safe}}
@@ -100,7 +100,7 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Enable TLS encryption" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Enable TLS encryption" %}</label>
                     <div class="col-sm-5">
                       {{form.tls_enabled}}
                       {{form.tls_enabled.errors|safe}}
@@ -111,7 +111,7 @@
               <div class="row tls">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% trans "Use TLS Certificate or CA" %}</label>
+                    <label class="col-sm-4 control-label">{% translate "Use TLS Certificate or CA" %}</label>
                     <div class="col-sm-5">
                       {{form.x509_certificate}}
                       {{form.x509_certificate.errors|safe}}
@@ -280,8 +280,8 @@
               </div> <!-- /.advanced_options -->
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </form>

@@ -27,7 +27,7 @@
             <div class="col-md-12">
                 <div class="panel">
                     <div class="panel-heading">
-                        <h3 class="panel-title"><i class="fab fa-hubspot">&nbsp;</i>{% trans "Workflow" %}</h3>
+                        <h3 class="panel-title"><i class="fab fa-hubspot">&nbsp;</i>{% translate "Workflow" %}</h3>
                     </div>
                     <div class="panel-body">
                         <div class="row">
@@ -35,15 +35,15 @@
                                 <div class="panel panel-colorful panel-dark" id="block-tree">
                                     <div class="panel-body" id="toolbox">
                                         <div class="form-group">
-                                            <label>{% trans "Enabled" %}:</label>
+                                            <label>{% translate "Enabled" %}:</label>
                                             <input type="checkbox" class="js-switch" id="id_enabled" name="enabled" {% if workflow.enabled %} checked="checked" {% endif %}/>
                                         </div>
                                         <div class="form-group">
-                                            <label>{% trans "Workflow name" %}:</label>
+                                            <label>{% translate "Workflow name" %}:</label>
                                             <input type="text" class="form-control" id="id_name" name="name" value="{{ workflow.name }}"/>
                                         </div>
                                         <div class="input-group" id="toolbox-workflow">
-                                            <input type="text" id="search-toolbox" placeholder="{% trans 'Search' %}" class="form-control input-sm"/>
+                                            <input type="text" id="search-toolbox" placeholder="{% translate 'Search' %}" class="form-control input-sm"/>
                                             <span class="input-group-btn">
                                                 <button class="btn btn-success btn-sm" id="search-toolbox-btn" type="button"><i class="fa fa-search"></i>&nbsp;Search</button>
                                                 <button class="btn btn-purple btn-sm" v-on:click="get_dependencies()" type="button"><i class="fas fa-sync"></i></button>
@@ -70,20 +70,20 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="pull-right">
-                                    <label><i class="fa fa-cloud fa-2x"></i>&nbsp;&nbsp;{% trans "Internet" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <label><i class="fa fa-sitemap fa-2x"></i>&nbsp;&nbsp;{% trans "Frontend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <label><i class="fa fa-lock fa-2x"></i>&nbsp;&nbsp;{% trans "ACL" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <label><i class="fa fa-server fa-2x"></i>&nbsp;&nbsp;{% trans "Backend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <label><i class="fa fa-user fa-2x"></i>&nbsp;&nbsp;{% trans "Authentication" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <label><i class="fa fa-shield fa-2x"></i>&nbsp;&nbsp;{% trans "Authentication Filter" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <label><i class="fa fa-database fa-2x"></i>&nbsp;&nbsp;{% trans "Database" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-cloud fa-2x"></i>&nbsp;&nbsp;{% translate "Internet" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-sitemap fa-2x"></i>&nbsp;&nbsp;{% translate "Frontend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-lock fa-2x"></i>&nbsp;&nbsp;{% translate "ACL" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-server fa-2x"></i>&nbsp;&nbsp;{% translate "Backend" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-user fa-2x"></i>&nbsp;&nbsp;{% translate "Authentication" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-shield fa-2x"></i>&nbsp;&nbsp;{% translate "Authentication Filter" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <label><i class="fa fa-database fa-2x"></i>&nbsp;&nbsp;{% translate "Database" %}</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="panel-footer">
-                        <a href="{% url 'workflow.list' %}" class="btn btn-flat btn-default"><i class="fa fa-times">&nbsp;&nbsp;</i>{% trans "Cancel" %}</a>
-                        <button type="submit" id="btn-save-workflow" class="btn btn-flat btn-success pull-right"><i class="fa fa-check">&nbsp;&nbsp;</i>{% trans "Save" %}</button>
+                        <a href="{% url 'workflow.list' %}" class="btn btn-flat btn-default"><i class="fa fa-times">&nbsp;&nbsp;</i>{% translate "Cancel" %}</a>
+                        <button type="submit" id="btn-save-workflow" class="btn btn-flat btn-success pull-right"><i class="fa fa-check">&nbsp;&nbsp;</i>{% translate "Save" %}</button>
                     </div>
                 </div>
             </div>

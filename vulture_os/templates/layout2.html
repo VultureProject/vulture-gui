@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>Vulture Project | {% trans "Control Panel" %}</title>
+    <title>Vulture Project | {% translate "Control Panel" %}</title>
     <link rel='shortcut icon' href="{% static 'img/favicon.ico' %}" type='image/png'/>
     <link rel='stylesheet' href="{% static 'css/open_sans.css' %}" type='text/css'/>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" type='text/css'/>
@@ -147,7 +147,7 @@
         if (response.error === "need_login"){
           window.location.href = window.location.href;
         } else {
-          notify('error', '{% trans "Error" %}', response.error);
+          notify('error', '{% translate "Error" %}', response.error);
         }
         return false;
       }

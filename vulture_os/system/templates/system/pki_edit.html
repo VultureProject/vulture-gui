@@ -21,13 +21,13 @@
           {% csrf_token %}
           <div class="panel">
               <div class="panel-heading">
-                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "X509 Certificate" %}</h1>
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "X509 Certificate" %}</h1>
               </div>
               <div class="panel-body">
                 <div class="row">
                   <div class="col-md-12">
                       <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "Certificate type" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "Certificate type" %}</label>
                         <div class="col-sm-5">
                          <div class="col-sm-5">
                           {{form.type}}
@@ -36,49 +36,49 @@
                         </div>
                       </div>
                       <div class="form-group">
-                        <label class="col-sm-4 control-label">{% trans "Friendly name" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                         <div class="col-sm-5">
                           {{form.name}}
                           {{form.name.errors|safe}}
                         </div>
                       </div>
                       <div class="form-group internal">
-                        <label class="col-sm-4 control-label">{% trans "Common name" %}</label>
+                        <label class="col-sm-4 control-label">{% translate "Common name" %}</label>
                         <div class="col-sm-5">
                           {{form.cn}}
                           {{form.cn.errors|safe}}
                         </div>
                       </div>
                           <div class="form-group external">
-                            <label class="col-sm-4 control-label">{% trans "PEM Certificate" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "PEM Certificate" %}</label>
                             <div class="col-sm-5">
                               {{form.cert}}
                               {{form.cert.errors|safe}}
                             </div>
                           </div>
                           <div class="form-group external">
-                            <label class="col-sm-4 control-label">{% trans "PEM Private Key" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "PEM Private Key" %}</label>
                             <div class="col-sm-5">
                               {{form.key}}
                               {{form.key.errors|safe}}
                             </div>
                           </div>
                           <div class="form-group external">
-                            <label class="col-sm-4 control-label">{% trans "PEM Certificate Chain" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "PEM Certificate Chain" %}</label>
                             <div class="col-sm-5">
                               {{form.chain}}
                               {{form.chain.errors|safe}}
                             </div>
                           </div>
                           <div class="form-group external">
-                            <label class="col-sm-4 control-label">{% trans "PEM CRL (optional)" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "PEM CRL (optional)" %}</label>
                             <div class="col-sm-5">
                               {{form.crl}}
                               {{form.crl.errors|safe}}
                             </div>
                           </div>
                           <div class="form-group external">
-                            <label class="col-sm-4 control-label">{% trans "URI to fetch CRL (optional)" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "URI to fetch CRL (optional)" %}</label>
                             <div class="col-sm-5">
                               {{form.crl_uri}}
                               {{form.crl_uri.errors|safe}}
@@ -89,8 +89,8 @@
                 </div>
               </div>
               <div class="panel-footer">
-                <a type="button" href="{% url 'system.pki.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-                <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+                <a type="button" href="{% url 'system.pki.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+                <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
               </div>
             </div>
         </form>

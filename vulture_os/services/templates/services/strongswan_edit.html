@@ -19,7 +19,7 @@
         {# Print form errors correctly #}
         {% if form.non_field_errors %}
           <div class="alert alert-danger alert-dismissible">
-            <h4><i class="icon fa fa-ban"></i> {% trans "Form errors" %} </h4>
+            <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
             <div class="tab-content no-padding">
               {{ form.non_field_errors|safe }}
             </div>
@@ -29,9 +29,9 @@
         {% if save_error %}
           <div class="alert alert-danger alert-dismissible nav-tabs-custom">
             <ul class="nav nav-tabs pull-right ui-sortable-handle">
-              <li><a href="#tab_2" data-toggle="tab">{% trans "Advanced informations" %}</a></li>
-              <li class="active"><a href="#tab_1" data-toggle="tab">{% trans "Message" %}</a></li>
-              <li class="pull-left header"><i class="fa fa-inbox"></i>{% trans "Configuration error" %}</li>
+              <li><a href="#tab_2" data-toggle="tab">{% translate "Advanced informations" %}</a></li>
+              <li class="active"><a href="#tab_1" data-toggle="tab">{% translate "Message" %}</a></li>
+              <li class="pull-left header"><i class="fa fa-inbox"></i>{% translate "Configuration error" %}</li>
             </ul>
             <div class="tab-content no-padding">
               <div class="tab-pane active" id="tab_1">
@@ -46,15 +46,15 @@
         <form id="strongswan_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
           <div class="panel">
             <div class="panel-heading">
-              <div class="panel-title">{% trans "IPSEC" %}</div>
+              <div class="panel-title">{% translate "IPSEC" %}</div>
             </div>
             <div class="panel-body">
                 {% csrf_token %}
               <div class="nav-tabs-custom">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
-                  <li><a href="#tab_authentication" data-toggle="tab">{% trans "Authentication" %}</a></li>
-                  <li><a href="#tab_advanced" data-toggle="tab" class="http-mode">{% trans "Advanced Settings" %}</a></li>
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+                  <li><a href="#tab_authentication" data-toggle="tab">{% translate "Authentication" %}</a></li>
+                  <li><a href="#tab_advanced" data-toggle="tab" class="http-mode">{% translate "Advanced Settings" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <div class="tab-pane active" id="tab_general">
@@ -62,14 +62,14 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% trans "Enable IPSEC" %}</label>
+                          <label class="col-sm-4 control-label">{% translate "Enable IPSEC" %}</label>
                           <div class="col-sm-5">
                             {{form.enabled}}
                             {{form.enabled.errors|safe}}
                           </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label"> {% trans "Apply settings to node" %}</label>
+                            <label class="col-sm-4 control-label"> {% translate "Apply settings to node" %}</label>
                             <div class="col-sm-5">
                             <label>
                                 {{form.node}}
@@ -78,70 +78,70 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "IPSEC type" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "IPSEC type" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_type}}
                                 {{form.ipsec_type.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Key Exchange" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Key Exchange" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_keyexchange}}
                                 {{form.ipsec_keyexchange.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group hideikelifetime">
-                                <label class="col-sm-4 control-label">{% trans "Allow IKE fragmentation" %}</label>
+                                <label class="col-sm-4 control-label">{% translate "Allow IKE fragmentation" %}</label>
                                 <div class="col-sm-5">
                                     {{form.ipsec_fragmentation}}
                                     {{form.ipsec_fragmentation.errors|safe}}
                                 </div>
                         </div>
                         <div class="form-group hideikelifetime">
-                                <label class="col-sm-4 control-label">{% trans "Force UDP encapsulation for ESP packets even if no NAT situation is detected" %}</label>
+                                <label class="col-sm-4 control-label">{% translate "Force UDP encapsulation for ESP packets even if no NAT situation is detected" %}</label>
                                 <div class="col-sm-5">
                                     {{form.ipsec_forceencaps}}
                                     {{form.ipsec_forceencaps.errors|safe}}
                                 </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "IKE Algorithm" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "IKE Algorithm" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_ike}}
                                 {{form.ipsec_ike.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "ESP Algorithms" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "ESP Algorithms" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_esp}}
                                 {{form.ipsec_esp.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "IP address of the remote IPSEC Gateway (right)" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "IP address of the remote IPSEC Gateway (right)" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_right}}
                                 {{form.ipsec_right.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "IP address of the vulture Endpoint (leftsubnet)" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "IP address of the vulture Endpoint (leftsubnet)" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_leftsubnet}}
                                 {{form.ipsec_leftsubnet.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "ID of the vulture Endpoint (leftid)" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "ID of the vulture Endpoint (leftid)" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_leftid}}
                                 {{form.ipsec_leftid.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "List of comma-separated subnets behind the remote gateway" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "List of comma-separated subnets behind the remote gateway" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_rightsubnet}}
                                 {{form.ipsec_rightsubnet.errors|safe}}
@@ -155,14 +155,14 @@
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Authentication mode" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Authentication mode" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_authby}}
                                 {{form.ipsec_authby.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group hidesecret">
-                            <label class="col-sm-4 control-label">{% trans "Private Secret Key (PSK)" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Private Secret Key (PSK)" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_psk}}
                                 {{form.ipsec_psk.errors|safe}}
@@ -176,35 +176,35 @@
                     <div class="row http-mode">
                       <div class="col-md-12">
                         <div class="form-group hideikelifetime">
-                            <label class="col-sm-4 control-label">{% trans "How long the keying channel of a connection (ISAKMP or IKE SA) should last before being renegotiated." %}</label>
+                            <label class="col-sm-4 control-label">{% translate "How long the keying channel of a connection (ISAKMP or IKE SA) should last before being renegotiated." %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_ikelifetime}}
                                 {{form.ipsec_ikelifetime.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group hideikelifetime">
-                            <label class="col-sm-4 control-label">{% trans "Lifetime of a connection from successful negotiation to expiry" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Lifetime of a connection from successful negotiation to expiry" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_keylife}}
                                 {{form.ipsec_keylife.errors|safe}}
                             </div>
                         </div>
                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Renegotiate connection when it is about to expire" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Renegotiate connection when it is about to expire" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_rekey}}
                                 {{form.ipsec_rekey.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-4 control-label">{% trans "Dead Peer Detection Action" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Dead Peer Detection Action" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_dpdaction}}
                                 {{form.ipsec_dpdaction.errors|safe}}
                             </div>
                         </div>
                         <div class="form-group hidedpd">
-                            <label class="col-sm-4 control-label">{% trans "Dead Peer Detection Delay" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Dead Peer Detection Delay" %}</label>
                             <div class="col-sm-5">
                                 {{form.ipsec_dpddelay}}
                                 {{form.ipsec_dpddelay.errors|safe}}
@@ -217,8 +217,8 @@
               </div>
             </div>
             <div class="panel-footer">
-              <a type="button" href="{% url 'services.strongswan.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
-              <button type="submit" class="btn btn-info btn-flat pull-right">{% trans "Submit" %}</button>
+              <a type="button" href="{% url 'services.strongswan.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
         </form>

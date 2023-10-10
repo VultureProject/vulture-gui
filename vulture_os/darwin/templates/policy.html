@@ -16,9 +16,9 @@
           <div class="panel">
               <div class="panel-heading">
                   <div class="panel-control">
-                    <a class="btn btn-flat btn-primary" href="{% url 'darwin.policy.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% trans "Add an entry" %}</a>
+                    <a class="btn btn-flat btn-primary" href="{% url 'darwin.policy.edit' %}"><i class="fa fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
                   </div>
-                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% trans "Darwin Security Policies" %}</h1>
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Darwin Security Policies" %}</h1>
               </div>
               <div class="panel-body">
                 <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="policy_list">
@@ -46,21 +46,21 @@
       bVisible: false,
     },
     {
-      sTitle: '{% trans "Name" %}',
+      sTitle: '{% translate "Name" %}',
       name: "name",
       aTargets: [1],
       defaultContent: "",
       mData: "name"
     },
     {
-      sTitle: '{% trans "Description" %}',
+      sTitle: '{% translate "Description" %}',
       name: "description",
       aTargets: [2],
       defaultContent: "",
       mData: "description"
     },
     {
-      sTitle: '{% trans "Inputs" %}',
+      sTitle: '{% translate "Inputs" %}',
       name: "inputs",
       aTargets: [3],
       defaultContent: "",
@@ -73,7 +73,7 @@
       }
     },
     {
-      sTitle: '{% trans "Status" %}',
+      sTitle: '{% translate "Status" %}',
       defaultContent: "",
       name: "status",
       mData: "status",
@@ -124,7 +124,7 @@
       }
     },
     {
-      sTitle: '{% trans "Action" %}',
+      sTitle: '{% translate "Action" %}',
       mData:"id",
       aTargets: [5],
       defaultContent: "",
@@ -165,18 +165,18 @@
         data   : aoData,
         success: function(data, callback){
           if (!data.status){
-            notify('error', "{% trans 'Error' %}", data.error);
+            notify('error', "{% translate 'Error' %}", data.error);
           } else {
             fnCallback(data);
           }
         }
       }) // /$.ajax
       .fail( function( jqXHR, textStatus ) {
-        notify('error', "{% trans 'Error' %}", jqXHR.responseText);
+        notify('error', "{% translate 'Error' %}", jqXHR.responseText);
       }) // /$.fail
       .done( function( data ) {
         if (!data.status){
-          notify('error', "{% trans 'Error' %}", data.error);
+          notify('error', "{% translate 'Error' %}", data.error);
         } else {
           fnCallback(data);
         }

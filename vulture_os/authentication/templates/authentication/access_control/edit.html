@@ -18,13 +18,13 @@
   		<div class="col-md-12">
   			<div class="panel">
   				<div class="panel-header with-border">
-  					<h3 class="panel-title">{% trans "Authentication Access control" %}</h3>
+  					<h3 class="panel-title">{% translate "Authentication Access control" %}</h3>
   				</div>
   				<div class="panel-body" id="ac-body">
 					<div class="nav-tabs-custom nav-tabs-no-margin">
 					    <ul class="nav nav-tabs">
-						    <li class="active"><a href="#tab_general" data-toggle="tab">{% trans "General" %}</a></li>
-						    <li><a href="#tab_conditions" data-toggle="tab">{% trans "Conditions" %}</a></li>
+						    <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+						    <li><a href="#tab_conditions" data-toggle="tab">{% translate "Conditions" %}</a></li>
 						</ul>
 						<div class="tab-content">
 							<div class="tab-pane active" id="tab_general">
@@ -60,10 +60,10 @@
 													<thead>
 														<tr>
 															<th></th>
-															<th>{% trans "Variable" %}</th>
-															<th>{% trans "Operator" %}</th>
-															<th>{% trans "Value" %}</th>
-															<th>{% trans "Action" %}</th>
+															<th>{% translate "Variable" %}</th>
+															<th>{% translate "Operator" %}</th>
+															<th>{% translate "Value" %}</th>
+															<th>{% translate "Action" %}</th>
 														</tr>
 													</thead>
 													<tbody class="body_lines">
@@ -93,14 +93,14 @@
 															<td></td>
 															<td></td>
 															<td>
-																<button type="button" v-on:click="add_and(or_line.pk, or_index)" class="btn btn-success btn-flat"><i class="fa fa-plus">&nbsp;&nbsp;</i>{% trans "Add Rule" %}</button>
+																<button type="button" v-on:click="add_and(or_line.pk, or_index)" class="btn btn-success btn-flat"><i class="fa fa-plus">&nbsp;&nbsp;</i>{% translate "Add Rule" %}</button>
 															</td>
 														</tr>
 													</tfoot>
 												</table>
 											</div>
 										</div>
-										<button type="button" class="btn btn-warning btn-flat pull-right" v-on:click="add_or"><i class="fas fa-plus">&nbsp;&nbsp;</i>{% trans "OR" %}</button>
+										<button type="button" class="btn btn-warning btn-flat pull-right" v-on:click="add_or"><i class="fas fa-plus">&nbsp;&nbsp;</i>{% translate "OR" %}</button>
 									</div>
 								</div>
 							</div>
@@ -108,8 +108,8 @@
 					</div>
 				</div>
   				<div class="panel-footer">
-  					<a href="{% url 'portal.authentication_access_control' %}" class="btn btn-flat btn-default"><i class="fa fa-times">&nbsp;&nbsp;</i>{% trans "Cancel" %}</a>
-        			<button type="button" v-on:click="save_form" id="save_form_btn" class="btn btn-flat btn-success pull-right"><i class="fa fa-check">&nbsp;&nbsp;</i>{% trans "Save" %}</button>
+  					<a href="{% url 'portal.authentication_access_control' %}" class="btn btn-flat btn-default"><i class="fa fa-times">&nbsp;&nbsp;</i>{% translate "Cancel" %}</a>
+        			<button type="button" v-on:click="save_form" id="save_form_btn" class="btn btn-flat btn-success pull-right"><i class="fa fa-check">&nbsp;&nbsp;</i>{% translate "Save" %}</button>
   				</div>
   			</div>
   		</div>
