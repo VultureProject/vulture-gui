@@ -369,7 +369,7 @@ class BASICAuthentication(Authentication):
         super().__init__(portal_cookie, workflow, proto, redirect_url=redirect_url)
 
     def retrieve_credentials(self, request):
-        authorization_header = request.META.get("HTTP_AUTHORIZATION").replace("Basic ", "")
+        authorization_header = request.headers.get("authorization").replace("Basic ", "")
         authorization_header += '=' * (4 - len(authorization_header) % 4)
         username, password = urlsafe_b64decode(authorization_header).decode('utf-8').split(':')
         self.credentials = [username, password]
@@ -391,7 +391,7 @@ class KERBEROSAuthentication(Authentication):
         super().__init__(portal_cookie, workflow, proto, redirect_url=redirect_url)
 
     def retrieve_credentials(self, request):
-        self.credentials = request.META["HTTP_AUTHORIZATION"].replace("Negotiate ", "")
+        self.credentials = request.headers["authorization"].replace("Negotiate ", "")
 
     def authenticate(self, request):
         e = None

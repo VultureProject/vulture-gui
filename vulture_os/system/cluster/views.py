@@ -46,7 +46,7 @@ def cluster_stepdown(request, object_id, api=False):
     :param api:
     :return:
     """
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -72,7 +72,7 @@ def cluster_remove(request, object_id, api=False):
     """ Remove a node from the MongoDB replicaset
     This is an API request
     """
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -93,7 +93,7 @@ def cluster_join(request, object_id, api=False):
     """ Join a node into the MongoDB replicaset
     This is an API request
     """
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:

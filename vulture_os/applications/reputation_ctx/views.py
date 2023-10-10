@@ -281,7 +281,7 @@ def reputation_ctx_edit(request, object_id=None, api=False, update=False):
 
 
 def reputation_ctx_download(request, object_id, api=False):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:

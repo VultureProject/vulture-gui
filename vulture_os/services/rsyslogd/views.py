@@ -94,7 +94,7 @@ def haproxy_clone(request, object_id):
 
 
 def reload(request):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     # TODO : Security AJAX API verification

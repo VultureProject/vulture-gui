@@ -453,7 +453,7 @@ def backend_edit(request, object_id=None, api=False):
 
 
 def backend_start(request, object_id, api=False):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:
@@ -474,7 +474,7 @@ def backend_start(request, object_id, api=False):
 
 
 def backend_pause(request, object_id, api=False):
-    if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return HttpResponseBadRequest()
 
     try:

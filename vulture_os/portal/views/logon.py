@@ -99,9 +99,9 @@ def openid_configuration(request, portal_id):
 
     # Build the callback url
     # Get scheme
-    scheme = request.META['HTTP_X_FORWARDED_PROTO']
+    scheme = request.headers['x-forwarded-proto']
     # Asked FQDN (with or without port)
-    fqdn = request.META['HTTP_HOST']
+    fqdn = request.headers['host']
 
     issuer = "{}://{}".format(scheme, fqdn)
 
@@ -120,9 +120,9 @@ def openid_start(request, workflow_id, repo_id):
     try:
         # Build the callback url
         # Get scheme
-        scheme = request.META['HTTP_X_FORWARDED_PROTO']
+        scheme = request.headers['x-forwarded-proto']
         # Asked FQDN (with or without port if needed)
-        fqdn = request.META['HTTP_HOST']
+        fqdn = request.headers['host']
         w_path = workflow.public_dir
         callback_url = workflow.authentication.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
 
@@ -171,8 +171,8 @@ def openid_callback(request, workflow_id, repo_id):
 
     # Build the callback url
     # Get scheme
-    scheme = request.META['HTTP_X_FORWARDED_PROTO']
-    fqdn = request.META['HTTP_HOST']
+    scheme = request.headers['x-forwarded-proto']
+    fqdn = request.headers['host']
     w_path = workflow.public_dir
     callback_url = portal.get_openid_callback_url(scheme, fqdn, w_path, repo.id_alea)
 
@@ -285,7 +285,7 @@ def openid_callback(request, workflow_id, repo_id):
 
 def openid_authorize(request, portal_id):
     try:
-        scheme = request.META['HTTP_X_FORWARDED_PROTO']
+        scheme = request.headers['x-forwarded-proto']
     except KeyError:
         logger.error("PORTAL::openid_authorize: could not get scheme from request")
         return HttpResponseServerError()
@@ -356,8 +356,8 @@ def openid_authorize(request, portal_id):
 
 def openid_token(request, portal_id):
     try:
-        scheme = request.META['HTTP_X_FORWARDED_PROTO']
-        fqdn = request.META['HTTP_HOST']
+        scheme = request.headers['x-forwarded-proto']
+        fqdn = request.headers['host']
     except KeyError:
         logger.error("PORTAL::openid_token: could not get scheme and/or fqdn from request")
         return HttpResponseServerError()
@@ -537,7 +537,7 @@ def openid_token(request, portal_id):
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
     try:
-        scheme = request.META['HTTP_X_FORWARDED_PROTO']
+        scheme = request.headers['x-forwarded-proto']
     except KeyError:
         logger.error("PORTAL::openid_userinfo: could not get scheme from request")
         return HttpResponseServerError()
@@ -578,7 +578,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
 def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=False, sso_forward=True, openid=False, keep_method=False):
 
-    scheme = request.META['HTTP_X_FORWARDED_PROTO']
+    scheme = request.headers['x-forwarded-proto']
 
     if not double_auth_only:
         authentication_classes = {'form':POSTAuthentication, 'basic':BASICAuthentication, 'kerberos':KERBEROSAuthentication}
@@ -893,8 +893,8 @@ def log_in(request, workflow_id=None):
     """
     """ First, try to retrieve concerned objects """
     try:
-        scheme = request.META["HTTP_X_FORWARDED_PROTO"]
-        host = request.META["HTTP_HOST"]
+        scheme = request.headers["x-forwarded-proto"]
+        host = request.headers["host"]
         connection_url = scheme + "://" + host
         workflow = Workflow.objects.get(pk=workflow_id)
     except Exception as e:

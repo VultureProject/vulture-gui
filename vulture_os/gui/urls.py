@@ -37,7 +37,7 @@ urlpatterns = [
 
     path('collapse', collapse, name="gui.collapse_menu"),
 
-    re_path(r'^$', dashboard.dashboard_services, name="gui.dashboard.services"),
+    path('', dashboard.dashboard_services, name="gui.dashboard.services"),
 
     path('rss/', rss, name='gui.rss'),
     path('process_queue/', process_queue_state, name='gui.process_queue'),
@@ -49,6 +49,6 @@ urlpatterns = [
     re_path('^api/ci/get/(?P<objclass>[A-Za-z0-9\._]+)/(?P<object_id>[A-Fa-f0-9]+)?$',
             ApiWrapperGet.as_view(), name='gui.views.api_wrapper_get'),
 
-    re_path('^api/v1/services/monitor/$', api_view.services_monitor, name="api.services_monitor"),
+    path('api/v1/services/monitor/', api_view.services_monitor, name="api.services_monitor"),
 
 ]

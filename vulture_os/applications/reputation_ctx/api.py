@@ -65,7 +65,7 @@ def reputation_ctx_download_test(request):
     :return:
     """
     post_body = request.POST.copy()
-    post_body['name'] = get_random_string()  # Set random name to prevent duplicate name error in form
+    post_body['name'] = get_random_string(length=12)  # Set random name to prevent duplicate name error in form
     form = ReputationContextForm(post_body, error_class=DivErrorList)
     if not form.is_valid():
         return JsonResponse({'status': False, 'error': "Some fields are not valid.",

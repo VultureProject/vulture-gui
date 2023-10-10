@@ -88,8 +88,8 @@ def self(request, workflow_id=None, portal_id=None, action=None):
                                 name=portal.name,
                                 frontend=portal.external_listener)
 
-        scheme = request.META['HTTP_X_FORWARDED_PROTO']
-        fqdn = request.META['HTTP_HOST']
+        scheme = request.headers['x-forwarded-proto']
+        fqdn = request.headers['host']
         w_path = workflow.public_dir
         redirect_url = scheme + "://" + fqdn + w_path
 

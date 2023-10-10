@@ -70,6 +70,6 @@ class WorkflowForm(Form):
                 if not validators.domain(cleaned_data.get('fqdn')):
                     self.add_error("fqdn", _("This FQDN is invalid"))
             else:
-                cleaned_data['fqdn'] = get_random_string()
+                cleaned_data['fqdn'] = get_random_string(length=12)
 
         return cleaned_data

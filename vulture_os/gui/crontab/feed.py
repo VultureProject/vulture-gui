@@ -36,7 +36,7 @@ from django.utils.crypto import get_random_string
 
 from system.cluster.models import Cluster
 from django.conf import settings
-from django.utils.timezone import make_aware, now as timezone_now
+from django.utils.timezone import now as timezone_now
 from gui.models.rss import RSS
 from toolkit.network.network import get_hostname, get_proxy
 from applications.reputation_ctx.models import ReputationContext
@@ -146,7 +146,7 @@ def security_update(node_logger=None):
                          .format(reputation_ctx.name, e))
             continue
         try:
-            tmp_filename = "{}{}".format("/tmp/", get_random_string())
+            tmp_filename = "{}{}".format("/tmp/", get_random_string(length=12))
             with open(tmp_filename, "wb") as f:
                 f.write(content)
             """ Immediatly reload the rsyslog service to prevent crash on MMDB access """
