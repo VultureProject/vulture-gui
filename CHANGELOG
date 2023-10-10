@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - botocore 1.31.52 -> 1.31.68
   - cffi 1.15.1 -> 1.16.0
   - charset-normalizer 3.2.0 -> 3.3.1
+  - django 3.2.22 -> 4.2.6
+  - djongo pypi -> VultureProject
   - google-api-core 2.11.1 -> 2.12.0
   - google-api-python-client 2.100.0 -> 2.104.0
   - google-auth 2.23.0 -> 2.23.3
@@ -25,7 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - packaging 23.1 -> 23.2
   - pillow 10.0.1 -> 10.1.0
   - protobuf 4.24.3 -> 4.24.4
+  - pytz deleted
   - s3transfer 0.6.2 -> 0.7.0
+  - sqlparse 0.2.4 -> 0.4.4
   - urllib3 1.26.17 -> 1.26.18
   - werkzeug 2.3.7 -> 3.0.0
 - [API] [PF] Changed old PF whitelist/blacklist from config to new API entrypoint 'api/v1/system/pf/'
