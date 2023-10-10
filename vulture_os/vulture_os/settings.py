@@ -47,8 +47,7 @@ TEMPLATE_DEBUG = DEBUG
 ALLOWED_HOSTS = ["*"]
 
 CSRF_COOKIE_SECURE = True
-#CSRF_TRUSTED_ORIGINS = ["https://localhost:8000"] #Django 4
-CSRF_TRUSTED_ORIGINS = ["vulture-nginx:8000"] #Django 3.2
+CSRF_TRUSTED_ORIGINS = ["https://vulture-nginx:8000"]
 
 # Application definition
 INSTALLED_APPS = [

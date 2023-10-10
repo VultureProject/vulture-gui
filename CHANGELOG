@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PORTAL] [SSO] Avoid autologon password retrieval failures
 - [API_PARSER] [TRENDMICRO_VISIONONE] Fix Alerts endpoint params
 - [API] [CLUSTER_CONFIG] Add missing allowed fields for API PATCHing
+- [SETTINGS] Update CSRF_TRUSTED_ORIGINS format for Django 4
 
 
 ## [2.11.1] - 2023-10-13
