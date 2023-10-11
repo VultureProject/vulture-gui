@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSS] Incorrect color conditions for custom form errors
 - [API_PARSER] [CISCO_DUO] Unwanted error log on empty response
 - [LOG_FORWARDER] [KAFKA] Ensure kafka custom configurations are correctly handled and validated
+- [LOG_FORWARDER] [REDIS] Non-working LogForwarder when no password was set
 
 
 ## [2.10.2] - 2023-09-25

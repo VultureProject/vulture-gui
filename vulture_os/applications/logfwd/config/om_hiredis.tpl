@@ -9,7 +9,9 @@
         {%- else %}
             key="{{key}}"
         {%- endif %}
+        {%- if pwd %}
             ServerPassword="{{pwd}}"
+        {%- endif %}
             Template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}_json{% endif %}"
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
