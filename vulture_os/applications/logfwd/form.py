@@ -49,7 +49,8 @@ class LogOMFileForm(ModelForm):
     class Meta:
         model = LogOMFile
         fields = ('name', 'enabled', 'file', 'flush_interval', 'async_writing', 'send_as_raw', 'retention_time',
-                  'rotation_period', 'queue_size', 'dequeue_size', 'enable_retry', 'enable_disk_assist',
+                  'rotation_period', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers',
+                  'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist',
                   'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
 
         widgets = {
@@ -63,6 +64,10 @@ class LogOMFileForm(ModelForm):
             'rotation_period': Select(attrs={"class": "select2"}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
+            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
+            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
+            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
+            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
             'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
@@ -113,6 +118,9 @@ class LogOMFileForm(ModelForm):
             else:
                 if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
                     self.add_error("max_file_size", "File size is higher than the disk space")
+        if cleaned_data.get('new_worker_minimum_messages'):
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
@@ -120,8 +128,10 @@ class LogOMRELPForm(ModelForm):
 
     class Meta:
         model = LogOMRELP
-        fields = ('name', 'enabled', 'target', 'port', 'tls_enabled', 'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+        fields = ('name', 'enabled', 'target', 'port', 'tls_enabled', 'x509_certificate', 'send_as_raw', 'queue_size',
+                  'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
+                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
+                  'max_file_size', 'max_disk_space')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -133,6 +143,10 @@ class LogOMRELPForm(ModelForm):
             'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
+            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
+            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
+            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
+            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
             'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
@@ -177,6 +191,9 @@ class LogOMRELPForm(ModelForm):
             else:
                 if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
                     self.add_error("max_file_size", "File size is higher than the disk space")
+        if cleaned_data.get('new_worker_minimum_messages'):
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
@@ -185,8 +202,9 @@ class LogOMHIREDISForm(ModelForm):
     class Meta:
         model = LogOMHIREDIS
         fields = ('name', 'enabled', 'target', 'port', 'key', 'dynamic_key', 'pwd', 'send_as_raw',
-                  'queue_size', 'dequeue_size', 'enable_retry', 'enable_disk_assist',
-                  'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+                  'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
+                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
+                  'max_file_size', 'max_disk_space')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -199,6 +217,10 @@ class LogOMHIREDISForm(ModelForm):
             'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
+            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
+            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
+            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
+            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
             'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
@@ -251,6 +273,9 @@ class LogOMHIREDISForm(ModelForm):
             key = cleaned_data.get('key')
             if key.count("%") % 2 != 0:
                 self.add_error("key", "seems like your number of '%' is incorrect, please check your templated key")
+        if cleaned_data.get('new_worker_minimum_messages'):
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
@@ -258,9 +283,10 @@ class LogOMFWDForm(ModelForm):
 
     class Meta:
         model = LogOMFWD
-        fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level', 'queue_size', 'dequeue_size', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space',
-                  'ratelimit_interval', 'ratelimit_burst', 'send_as_raw')
+        fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level', 'queue_size', 'dequeue_size',
+                  'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown',
+                  'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
+                  'max_disk_space', 'ratelimit_interval', 'ratelimit_burst', 'send_as_raw')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -271,6 +297,10 @@ class LogOMFWDForm(ModelForm):
             'zip_level': NumberInput(attrs={'class': 'form-control'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
+            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
+            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
+            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
+            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
             'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
@@ -321,6 +351,9 @@ class LogOMFWDForm(ModelForm):
             self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
         if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):
             self.add_error("ratelimit_interval", "This field cannot be left blank if rate-limiting burst is set")
+        if cleaned_data.get('new_worker_minimum_messages'):
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
@@ -328,9 +361,10 @@ class LogOMElasticSearchForm(ModelForm):
 
     class Meta:
         model = LogOMElasticSearch
-        fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'data_stream_mode', 'index_pattern', 'uid', 'pwd', 'x509_certificate',
-                  'send_as_raw', 'queue_size', 'dequeue_size', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space')
+        fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'data_stream_mode', 'index_pattern', 'uid', 'pwd',
+                  'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown',
+                  'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry',
+                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -345,6 +379,10 @@ class LogOMElasticSearchForm(ModelForm):
             'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
+            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
+            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
+            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
+            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
             'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
@@ -393,6 +431,9 @@ class LogOMElasticSearchForm(ModelForm):
             else:
                 if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
                     self.add_error("max_file_size", "File size is higher than the disk space")
+        if cleaned_data.get('new_worker_minimum_messages'):
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
@@ -406,8 +447,10 @@ class LogOMMongoDBForm(ModelForm):
 
     class Meta:
         model = LogOMMongoDB
-        fields = ('name', 'enabled', 'db', 'collection', 'uristr', 'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+        fields = ('name', 'enabled', 'db', 'collection', 'uristr', 'x509_certificate', 'send_as_raw', 'queue_size',
+                  'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
+                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
+                  'max_file_size', 'max_disk_space')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -418,6 +461,10 @@ class LogOMMongoDBForm(ModelForm):
             'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
+            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
+            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
+            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
+            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
             'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
@@ -460,6 +507,9 @@ class LogOMMongoDBForm(ModelForm):
             else:
                 if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
                     self.add_error("max_file_size", "File size is higher than the disk space")
+        if cleaned_data.get('new_worker_minimum_messages'):
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
@@ -468,8 +518,10 @@ class LogOMKafkaForm(ModelForm):
     class Meta:
         model = LogOMKAFKA
         fields = ('name', 'enabled', 'broker', 'topic', 'key', 'dynaKey', 'dynaTopic', 'partitions_useFixed',
-                  'partitions_auto', 'confParam', 'topicConfParam', 'queue_size', 'dequeue_size', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+                  'partitions_auto', 'confParam', 'topicConfParam', 'queue_size', 'dequeue_size',
+                  'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown',
+                  'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
+                  'max_disk_space')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -485,6 +537,10 @@ class LogOMKafkaForm(ModelForm):
             'topicConfParam': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
+            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
+            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
+            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
+            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
             'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
             'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
@@ -597,4 +653,7 @@ class LogOMKafkaForm(ModelForm):
             topic = cleaned_data.get('topic')
             if topic.count("%") % 2 != 0:
                 self.add_error("topic", "seems like your number of '%' is incorrect, please check your templated topic")
+        if cleaned_data.get('new_worker_minimum_messages'):
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data

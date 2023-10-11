@@ -139,98 +139,154 @@
                   </div>
                 </div>
               </div>
-              <div class="row">
-                <div class="col-md-12">
+              <!-- Advanced tab -->
+              <div class="row log-mode">
+                <div class="col-sm-4 pull-right">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{{form.queue_size.label}}</label>
-                    <div class="col-sm-5">
-                      {{form.queue_size}}
-                      {{form.queue_size.errors|safe}}
-                    </div>
+                    <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
+                      <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                    </button>
                   </div>
                 </div>
               </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{{form.dequeue_size.label}}</label>
-                    <div class="col-sm-5">
-                      {{form.dequeue_size}}
-                      {{form.dequeue_size.errors|safe}}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{{form.enable_retry.label}}</label>
-                    <div class="col-sm-5">
-                      {{form.enable_retry}}
-                      {{form.enable_retry.errors|safe}}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div id="tab-queue">
+              <div class="form-group collapse advanced_options">
                 <div class="row">
                   <div class="col-md-12">
                     <div class="form-group">
-                      <label class="col-sm-4 control-label">{{form.enable_disk_assist.label}}</label>
+                      <label class="col-sm-4 control-label">{{form.queue_size.label}}</label>
                       <div class="col-sm-5">
-                        {{form.enable_disk_assist}}
-                        {{form.enable_disk_assist.errors|safe}}
+                        {{form.queue_size}}
+                        {{form.queue_size.errors|safe}}
                       </div>
                     </div>
                   </div>
                 </div>
-                <div id="tab-disk">
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.dequeue_size.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.dequeue_size}}
+                        {{form.dequeue_size.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.max_workers.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.max_workers}}
+                        {{form.max_workers.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.queue_timeout_shutdown.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.queue_timeout_shutdown}}
+                        {{form.queue_timeout_shutdown.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.new_worker_minimum_messages.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.new_worker_minimum_messages}}
+                        {{form.new_worker_minimum_messages.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.worker_timeout_shutdown.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.worker_timeout_shutdown}}
+                        {{form.worker_timeout_shutdown.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.enable_retry.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.enable_retry}}
+                        {{form.enable_retry.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="tab-queue">
                   <div class="row">
                     <div class="col-md-12">
                       <div class="form-group">
-                        <label class="col-sm-4 control-label">{{form.high_watermark.label}}</label>
+                        <label class="col-sm-4 control-label">{{form.enable_disk_assist.label}}</label>
                         <div class="col-sm-5">
-                          {{form.high_watermark}}
-                          {{form.high_watermark.errors|safe}}
+                          {{form.enable_disk_assist}}
+                          {{form.enable_disk_assist.errors|safe}}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label class="col-sm-4 control-label">{{form.low_watermark.label}}</label>
-                        <div class="col-sm-5">
-                          {{form.low_watermark}}
-                          {{form.low_watermark.errors|safe}}
+                  <div id="tab-disk">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.high_watermark.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.high_watermark}}
+                            {{form.high_watermark.errors|safe}}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label class="col-sm-4 control-label">{{form.max_file_size.label}}</label>
-                        <div class="col-sm-5">
-                          {{form.max_file_size}}
-                          {{form.max_file_size.errors|safe}}
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.low_watermark.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.low_watermark}}
+                            {{form.low_watermark.errors|safe}}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label class="col-sm-4 control-label">{{form.max_disk_space.label}}</label>
-                        <div class="col-sm-5">
-                          {{form.max_disk_space}}
-                          {{form.max_disk_space.errors|safe}}
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.max_file_size.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.max_file_size}}
+                            {{form.max_file_size.errors|safe}}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div> <!-- /.tab-disk -->
-              </div> <!-- /.tab-queue -->
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.max_disk_space.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.max_disk_space}}
+                            {{form.max_disk_space.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-disk -->
+                </div> <!-- /.tab-queue -->
+              </div> <!-- /.advanced_options -->
             </div>
             <div class="panel-footer">
               <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% trans "Cancel" %}</a>
