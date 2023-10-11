@@ -94,6 +94,34 @@ class LogOM (models.Model):
         verbose_name=_("Size of the batch to dequeue"),
         validators=[MinValueValidator(1)]
     )
+    queue_timeout_shutdown = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Time to wait for the queue to finish processing entries (in ms)"),
+        verbose_name=_("Queue timeout shutdown (ms)"),
+        validators=[MinValueValidator(1)]
+    )
+    max_workers = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Maximum workers created for the output"),
+        verbose_name=_("Queue max workers"),
+        validators=[MinValueValidator(1)]
+    )
+    new_worker_minimum_messages = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Number of messages in queue to start a new worker thread"),
+        verbose_name=_("Minimum messages to start a new worker"),
+        validators=[MinValueValidator(1)]
+    )
+    worker_timeout_shutdown = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Inactivity delay after which to stop a worker (in ms)"),
+        verbose_name=_("Worker inactivity shutdown delay (ms)"),
+        validators=[MinValueValidator(1)]
+    )
     enable_retry = models.BooleanField(
         default=False,
         help_text=_("Enable retry when failure occurs"),
@@ -223,6 +251,28 @@ class LogOM (models.Model):
     def to_dict(self, fields=None):
         return model_to_dict(self, fields=fields)
 
+    def to_template(self, **kwargs):
+        """  returns the attributes of the class """
+        return {
+            'id': str(self.id),
+            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+            'name': self.name,
+            'template_id': self.template_id(),
+            'send_as_raw': self.send_as_raw,
+            'queue_size': self.queue_size,
+            'dequeue_size': self.dequeue_size,
+            'queue_timeout_shutdown': self.queue_timeout_shutdown,
+            'max_workers': self.max_workers,
+            'new_worker_minimum_messages': self.new_worker_minimum_messages,
+            'worker_timeout_shutdown': self.worker_timeout_shutdown,
+            'enable_retry': self.enable_retry,
+            'enable_disk_assist': self.enable_disk_assist,
+            'high_watermark': self.high_watermark,
+            'low_watermark': self.low_watermark,
+            'max_file_size': self.max_file_size,
+            'max_disk_space': self.max_disk_space,
+        }
+
 
 class LogOMFile(LogOM):
     file = models.TextField(null=False)
@@ -260,26 +310,16 @@ class LogOMFile(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
-        return {
-            'id': str(self.id),
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
-            'name': self.name,
+        template = super().to_template(**kwargs)
+        template.update({
             'file': self.file,
             'flush_interval': self.flush_interval,
             'async_writing': "on" if self.async_writing else "off",
             'template_id': self.template_id(kwargs.get('ruleset', "")),
             'type': 'File',
-            'send_as_raw': self.send_as_raw,
-            'queue_size': self.queue_size,
-            'dequeue_size': self.dequeue_size,
-            'enable_retry': self.enable_retry,
-            'enable_disk_assist': self.enable_disk_assist,
-            'high_watermark': self.high_watermark,
-            'low_watermark': self.low_watermark,
-            'max_file_size': self.max_file_size,
-            'max_disk_space': self.max_disk_space,
             'output': self.file
-        }
+        })
+        return template
 
     def get_used_parsers(self):
         """ Return parsers of frontends which uses this log_forwarder """
@@ -361,30 +401,19 @@ class LogOMRELP(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
-        result = {
-            'id': str(self.id),
-            'name': self.name,
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+        template = super().to_template(**kwargs)
+        template.update({
             'target': self.target,
             'port': self.port,
             'type': 'RELP',
             'tls': self.tls_enabled,
-            'send_as_raw': self.send_as_raw,
-            'queue_size': self.queue_size,
-            'dequeue_size': self.dequeue_size,
-            'enable_retry': self.enable_retry,
-            'enable_disk_assist': self.enable_disk_assist,
-            'high_watermark': self.high_watermark,
-            'low_watermark': self.low_watermark,
-            'max_file_size': self.max_file_size,
-            'max_disk_space': self.max_disk_space,
             'output': self.target + ':' + str(self.port)
-        }
+        })
         if self.tls_enabled and self.x509_certificate:
-            result['ssl_ca'] = self.x509_certificate.get_base_filename() + ".chain"
-            result['ssl_cert'] = self.x509_certificate.get_base_filename() + ".crt"
-            result['ssl_key'] = self.x509_certificate.get_base_filename() + ".key"
-        return result
+            template['ssl_ca'] = self.x509_certificate.get_base_filename() + ".chain"
+            template['ssl_cert'] = self.x509_certificate.get_base_filename() + ".crt"
+            template['ssl_key'] = self.x509_certificate.get_base_filename() + ".key"
+        return template
 
 
 class LogOMHIREDIS(LogOM):
@@ -422,31 +451,20 @@ class LogOMHIREDIS(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
+        template = super().to_template(**kwargs)
         tpl = Template(self.key)
         key = tpl.render(Context({'ruleset': kwargs.get('ruleset')}))
-        return {
-            'id': str(self.id),
-            'name': self.name,
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+        template.update({
             'target': self.target,
             'port': self.port,
             'key': key,
             'dynamic_key': self.dynamic_key,
-            'template_id': self.template_id(),
             'pwd': self.pwd,
             'type': 'Redis',
             'mode': "queue",
-            'send_as_raw': self.send_as_raw,
-            'queue_size': self.queue_size,
-            'dequeue_size': self.dequeue_size,
-            'enable_retry': self.enable_retry,
-            'enable_disk_assist': self.enable_disk_assist,
-            'high_watermark': self.high_watermark,
-            'low_watermark': self.low_watermark,
-            'max_file_size': self.max_file_size,
-            'max_disk_space': self.max_disk_space,
             'output': f"{self.target}:{self.port} (key = {self.key})"
-        }
+        })
+        return template
 
     def get_rsyslog_template(self):
         from services.frontend.models import Frontend
@@ -496,28 +514,18 @@ class LogOMFWD(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
-        return {
-            'id': str(self.id),
-            'name': self.name,
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+        template = super().to_template(**kwargs)
+        template.update({
             'target': self.target,
             'port': self.port,
             'protocol': self.protocol,
             'type': 'Syslog',
             'zip_level': self.zip_level,
-            'send_as_raw': self.send_as_raw,
-            'queue_size': self.queue_size,
-            'dequeue_size': self.dequeue_size,
-            'enable_retry': self.enable_retry,
-            'enable_disk_assist': self.enable_disk_assist,
-            'high_watermark': self.high_watermark,
-            'low_watermark': self.low_watermark,
-            'max_file_size': self.max_file_size,
-            'max_disk_space': self.max_disk_space,
             'ratelimit_interval': self.ratelimit_interval,
             'ratelimit_burst': self.ratelimit_burst,
             'output': self.target + ':' + str(self.port) + ' ({})'.format(self.protocol)
-        }
+        })
+        return template
 
     def get_rsyslog_template(self):
         return ""
@@ -573,10 +581,8 @@ class LogOMElasticSearch(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
-        result = {
-            'id': str(self.id),
-            'name': self.name,
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+        template = super().to_template(**kwargs)
+        template.update({
             'servers': self.servers,
             'es8_compatibility': self.es8_compatibility,
             'data_stream_mode': self.data_stream_mode,
@@ -586,23 +592,14 @@ class LogOMElasticSearch(LogOM):
             'template_id': self.template_id(),
             'mapping_id': self.mapping_id,
             'type': 'Elasticsearch',
-            'send_as_raw': self.send_as_raw,
-            'queue_size': self.queue_size,
-            'dequeue_size': self.dequeue_size,
-            'enable_retry': self.enable_retry,
-            'enable_disk_assist': self.enable_disk_assist,
-            'high_watermark': self.high_watermark,
-            'low_watermark': self.low_watermark,
-            'max_file_size': self.max_file_size,
-            'max_disk_space': self.max_disk_space,
             'output': self.servers + ' (index = {})'.format(self.index_pattern)
-        }
+        })
         if self.x509_certificate:
-            result['ssl_ca'] = self.x509_certificate.ca_filename()
+            template['ssl_ca'] = self.x509_certificate.ca_filename()
             if not self.x509_certificate.is_ca_cert():
-                result['ssl_cert'] = self.x509_certificate.get_base_filename() + ".crt"
-                result['ssl_key'] = self.x509_certificate.get_base_filename() + ".key"
-        return result
+                template['ssl_cert'] = self.x509_certificate.get_base_filename() + ".crt"
+                template['ssl_key'] = self.x509_certificate.get_base_filename() + ".key"
+        return template
 
     def get_rsyslog_filenames(self):
         """ Render filenames based on filename attribute, depending on frontend used """
@@ -658,31 +655,19 @@ class LogOMMongoDB(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
-        result = {
-            'id': str(self.id),
-            'name': self.name,
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+        template = super().to_template(**kwargs)
+        template.update({
             'uristr': self.uristr,
             'db': self.db,
             'collection': self.collection,
             'mapping': self.mapping,
-            'internal': self.internal,
             'type': 'MongoDB',
-            'send_as_raw': self.send_as_raw,
-            'queue_size': self.queue_size,
-            'dequeue_size': self.dequeue_size,
-            'enable_retry': self.enable_retry,
-            'enable_disk_assist': self.enable_disk_assist,
-            'high_watermark': self.high_watermark,
-            'low_watermark': self.low_watermark,
-            'max_file_size': self.max_file_size,
-            'max_disk_space': self.max_disk_space,
             'output': self.uristr + ' (db = {}, col = {})'.format(self.db, self.collection)
-        }
+        })
         if self.x509_certificate:
-            result['ssl_ca'] = self.x509_certificate.get_base_filename() + ".chain"
-            result['ssl_cert'] = self.x509_certificate.get_base_filename() + ".pem"
-        return result
+            template['ssl_ca'] = self.x509_certificate.get_base_filename() + ".chain"
+            template['ssl_cert'] = self.x509_certificate.get_base_filename() + ".pem"
+        return template
 
     def get_connection(self):
         host_configuration = pymongo.uri_parser.parse_uri(self.uristr)
@@ -752,12 +737,10 @@ class LogOMKAFKA(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
+        template = super().to_template(**kwargs)
         tpl = Template(self.key)
         key = tpl.render(Context({'ruleset': kwargs.get('ruleset')}))
-        return {
-            'id': str(self.id),
-            'name': self.name,
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+        template.update({
             'broker': self.broker,
             'topic': self.topic,
             'key': self.key,
@@ -771,17 +754,9 @@ class LogOMKAFKA(LogOM):
             'topicConfParam': self.topicConfParam,
             'type': 'Kafka',
             'mode': "queue",
-            'send_as_raw': self.send_as_raw,
-            'queue_size': self.queue_size,
-            'dequeue_size': self.dequeue_size,
-            'enable_retry': self.enable_retry,
-            'enable_disk_assist': self.enable_disk_assist,
-            'high_watermark': self.high_watermark,
-            'low_watermark': self.low_watermark,
-            'max_file_size': self.max_file_size,
-            'max_disk_space': self.max_disk_space,
             'output': self.broker + ' (topic = {})'.format(self.topic),
-        }
+        })
+        return template
 
     def template_topic(self):
         return hashlib.sha256(self.topic.encode('utf-8')).hexdigest()
