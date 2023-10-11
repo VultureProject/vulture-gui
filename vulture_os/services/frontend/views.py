@@ -34,7 +34,7 @@ from django.utils.translation import gettext_lazy as _
 from applications.logfwd.models import LogOM
 from darwin.policy.models import DarwinBuffering, DarwinPolicy
 from gui.forms.form_utils import DivErrorList
-from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
+from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm, FrontendTestApiParserForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, FILEBEAT_MODULE_CONFIG
 from system.cluster.models import Cluster, Node
 from system.pki.models import X509Certificate
@@ -654,7 +654,7 @@ def frontend_edit(request, object_id=None, api=False):
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """
             """ The object has been saved, delete-it if needed """
-            if first_save:
+            if not object_id: # HOT FIXED, first_save doesn't exists anymore
                 for listener in frontend.listener_set.all():
                     listener.delete()
 
@@ -674,7 +674,6 @@ def frontend_edit(request, object_id=None, api=False):
         return HttpResponseRedirect(reverse('services.frontend.list'))
 
     return render_form(frontend)
-
 
 def frontend_start(request, object_id, api=False):
     if not request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
@@ -726,9 +725,14 @@ def frontend_test_apiparser(request):
 
             data[k] = v
 
-        if data.get('api_parser_verify_ssl', True) and data.get('api_parser_custom_certificate', None):
-            data['api_parser_custom_certificate'] = X509Certificate.objects.get(pk=data['api_parser_custom_certificate']).bundle_filename
-        parser = get_api_parser(type_parser)(data)
+        test_api_parser_form = FrontendApiParserTestForm(data)
+        if not test_api_parser_form.is_valid():
+            return JsonResponse({"status":False, "error":test_api_parser_form.errors.as_json()})
+
+        if test_api_parser_form.data.get('api_parser_verify_ssl', True) and test_api_parser_form.data.get('api_parser_custom_certificate', None):
+            test_api_parser_form.data['api_parser_custom_certificate'] = X509Certificate.objects.get(pk=data['api_parser_custom_certificate']).bundle_filename
+        parser = get_api_parser(type_parser)(test_api_parser_form.data)
+
         return JsonResponse(parser.test())
 
     except Exception as e:

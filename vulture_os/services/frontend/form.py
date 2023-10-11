@@ -26,9 +26,10 @@ __doc__ = 'Frontends & Listeners dedicated form classes'
 import ast
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
+from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, BooleanField, Form,
                           ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
 from django.utils.translation import gettext_lazy as _
+from djongo import models
 
 # Django project imports
 from applications.logfwd.models import LogOM
@@ -833,6 +834,268 @@ class ListenerForm(ModelForm):
                   "class='fas fa-trash-alt'></i></a></td></tr>\n"
         return result
 
+class FrontendTestApiParserForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        AVAILABLE_API_PARSER = [("", "--------")]
+        AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
+                                     for parser in get_available_api_parser()])
+        
+        self.fields['api_parser_type'] = ChoiceField(
+            required=True,
+            label=_('API Parser'),
+            choices=AVAILABLE_API_PARSER,
+            widget=Select(attrs={'class': 'form-control select2'})
+        )
+
+        self.fields['api_parser_use_proxy'] = BooleanField(
+            required=False,
+            initial=False,
+            label=_('API use proxy option'),
+            widget=Select(attrs={'class': 'form-control select2'})
+        )
+
+        self.fields['api_parser_verify_ssl'] = BooleanField(
+            required=False,
+            initial=False,
+            label=_('API verify ssl option'),
+            widget=Select(attrs={'class': 'form-control select2'})
+        )
+
+        self.fields['api_custom_certificate'] = ChoiceField(
+            required=False,
+            choices=X509Certificate.objects.all(),
+            label=_('API custom certificate to use on ssl mode'),
+            widget=Select(attrs={'class': 'form-control select2'})
+        )
+
+        for field_name in ['api_parser_use_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
+                           'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
+                           "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
+                           "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
+                           'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
+                           'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
+                           'imperva_private_key', 'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
+                           'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
+                           "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
+                           "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
+                           "cybereason_host", "cybereason_username", "cybereason_password",
+                           "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
+                           "carbon_black_host", 'carbon_black_orgkey', 'carbon_black_apikey',
+                           "netskope_host", 'netskope_apikey',
+                           'rapid7_idr_host', 'rapid7_idr_apikey',
+                           'harfanglab_host', 'harfanglab_apikey',
+                           'nozomi_probe_host', 'nozomi_probe_login', 'nozomi_probe_password',
+                           'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
+                           'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
+                           'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'sentinel_one_account_type',
+                           'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
+                           'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id',
+                           'vadesecure_o365_client_secret',
+                           'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id',
+                           'blackberry_cylance_app_secret',
+                           'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
+                           'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
+                           'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
+                           'waf_cloudflare_apikey','waf_cloudflare_zoneid',
+                           'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail',
+                           'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id',
+                           'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
+                           'trendmicro_worryfree_server_port',
+                           'safenet_tenant_code', 'safenet_apikey',
+                           'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
+                           'proofpoint_trap_host', 'proofpoint_trap_apikey',
+                           'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv',
+                           'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
+                           'trendmicro_visionone_token',
+                           'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
+                           'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
+                           'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
+                           'retarus_token', 'retarus_channel',
+                           ]:
+            self.fields[field_name].required = False
+
+    class Meta:
+        model = Frontend
+        fields = ('api_parser_use_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
+                  'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
+                  "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
+                  "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
+                  'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
+                  'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
+                  'imperva_private_key', 'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
+                  'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
+                  "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
+                  "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
+                  "cybereason_host", "cybereason_username", "cybereason_password",
+                  "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
+                  "carbon_black_host", 'carbon_black_orgkey', 'carbon_black_apikey',
+                  "netskope_host", 'netskope_apikey',
+                  'rapid7_idr_host', 'rapid7_idr_apikey',
+                  'harfanglab_host', 'harfanglab_apikey',
+                  'nozomi_probe_host', 'nozomi_probe_login', 'nozomi_probe_password',
+                  'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
+                  'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
+                  'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'sentinel_one_account_type',
+                  'crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
+                  'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id',
+                  'vadesecure_o365_client_secret',
+                  'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id',
+                  'blackberry_cylance_app_secret',
+                  'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
+                  'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
+                  'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
+                  'waf_cloudflare_apikey','waf_cloudflare_zoneid',
+                  'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail',
+                  'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id',
+                  'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
+                  'trendmicro_worryfree_server_port',
+                  'safenet_tenant_code', 'safenet_apikey',
+                  'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
+                  'proofpoint_trap_host', 'proofpoint_trap_apikey',
+                  'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv',
+                  'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
+                  'trendmicro_visionone_token',
+                  'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
+                  'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
+                  'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
+                  'retarus_token', 'retarus_channel')
+
+        widgets = {
+            'api_parser_type': Select(attrs={'class': 'form-control select2'}),
+            'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
+            'api_parser_verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
+            'api_parser_custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': "form-control select2"}),
+            'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
+            'forcepoint_password': TextInput(attrs={'class': 'form-control'}),
+            'symantec_username': TextInput(attrs={'class': 'form-control'}),
+            'symantec_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'aws_access_key_id': TextInput(attrs={'class': 'form-control'}),
+            'aws_secret_access_key': TextInput(attrs={'class': 'form-control'}),
+            'aws_bucket_name': Select(attrs={'class': 'form-control select2'}),
+            'akamai_host': TextInput(attrs={'class': 'form-control'}),
+            'akamai_client_secret': TextInput(attrs={'class': 'form-control'}),
+            'akamai_access_token': TextInput(attrs={'class': 'form-control'}),
+            'akamai_client_token': TextInput(attrs={'class': 'form-control'}),
+            'akamai_config_id': TextInput(attrs={'class': 'form-control'}),
+            'office365_tenant_id': TextInput(attrs={'class': 'form-control'}),
+            'office365_client_id': TextInput(attrs={'class': 'form-control'}),
+            'office365_client_secret': TextInput(attrs={'class': 'form-control'}),
+            'imperva_base_url': TextInput(attrs={'class': 'form-control'}),
+            'imperva_api_key': TextInput(attrs={'class': 'form-control'}),
+            'imperva_api_id': TextInput(attrs={'class': 'form-control'}),
+            'imperva_private_key': Textarea(attrs={'class': 'form-control'}),
+            'reachfive_host': TextInput(attrs={'class': 'form-control'}),
+            'reachfive_client_id': TextInput(attrs={'class': 'form-control'}),
+            'reachfive_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'mongodb_api_user': TextInput(attrs={'class': 'form-control'}),
+            'mongodb_api_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'mongodb_api_group_id': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_tenant': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_appid': TextInput(attrs={'class': 'form-control'}),
+            'mdatp_api_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'cortex_xdr_host': TextInput(attrs={'class': 'form-control'}),
+            'cortex_xdr_apikey_id': TextInput(attrs={'class': 'form-control'}),
+            'cortex_xdr_apikey': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_host': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_username': TextInput(attrs={'class': 'form-control'}),
+            'cybereason_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'cisco_meraki_apikey': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_tap_host': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_tap_endpoint': Select(attrs={'class': 'form-control select2'}),
+            'proofpoint_tap_principal': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_tap_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'sentinel_one_host': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_apikey': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_account_type': Select(choices=SENTINEL_ONE_ACCOUNT_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
+            'netskope_host': TextInput(attrs={'class': 'form-control'}),
+            'netskope_apikey': TextInput(attrs={'class': 'form-control'}),
+            'carbon_black_host': TextInput(attrs={'class': 'form-control'}),
+            'carbon_black_orgkey': TextInput(attrs={'class': 'form-control'}),
+            'carbon_black_apikey': TextInput(attrs={'class': 'form-control'}),
+            'rapid7_idr_host': TextInput(attrs={'class': 'form-control'}),
+            'rapid7_idr_apikey': TextInput(attrs={'class': 'form-control'}),
+            'harfanglab_host': TextInput(attrs={'class': 'form-control'}),
+            'harfanglab_apikey': TextInput(attrs={'class': 'form-control'}),
+            'nozomi_probe_host': TextInput(attrs={'class': 'form-control'}),
+            'nozomi_probe_login': TextInput(attrs={'class': 'form-control'}),
+            'nozomi_probe_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'vadesecure_host': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_login': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'defender_token_endpoint': TextInput(attrs={'class': 'form-control'}),
+            'defender_client_id': TextInput(attrs={'class': 'form-control'}),
+            'defender_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'crowdstrike_host': TextInput(attrs={'class': 'form-control'}),
+            'crowdstrike_client_id': TextInput(attrs={'class': 'form-control'}),
+            'crowdstrike_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'crowdstrike_client': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_o365_host': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_o365_tenant': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_o365_client_id': TextInput(attrs={'class': 'form-control'}),
+            'vadesecure_o365_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'blackberry_cylance_host': TextInput(attrs={'class': 'form-control'}),
+            'blackberry_cylance_tenant': TextInput(attrs={'class': 'form-control'}),
+            'blackberry_cylance_app_id': TextInput(attrs={'class': 'form-control'}),
+            'blackberry_cylance_app_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'ms_sentinel_tenant_id': TextInput(attrs={'class': 'form-control'}),
+            'ms_sentinel_appid': TextInput(attrs={'class': 'form-control'}),
+            'ms_sentinel_appsecret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'ms_sentinel_subscription_id': TextInput(attrs={'class': 'form-control'}),
+            'ms_sentinel_resource_group': TextInput(attrs={'class': 'form-control'}),
+            'ms_sentinel_workspace': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_pod_uri': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_pod_cluster_id': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_pod_token': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'waf_cloudflare_apikey': TextInput(attrs={'class': 'form-control'}),
+            'waf_cloudflare_zoneid': TextInput(attrs={'class': 'form-control'}),
+            'gsuite_alertcenter_json_conf': Textarea(attrs={'class': 'form-control'}),
+            'gsuite_alertcenter_admin_mail': TextInput(attrs={'class': 'form-control'}),
+            'sophos_cloud_client_id': TextInput(attrs={'class': 'form-control'}),
+            'sophos_cloud_client_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'sophos_cloud_tenant_id': TextInput(attrs={'class': 'form-control'}),
+            'trendmicro_worryfree_access_token': TextInput(attrs={'class': 'form-control'}),
+            'trendmicro_worryfree_secret_key': TextInput(attrs={'type': "password", 'class': 'form-control'}),
+            'trendmicro_worryfree_server_name': TextInput(attrs={'class': 'form-control'}),
+            'trendmicro_worryfree_server_port': TextInput(attrs={'class': 'form-control'}),
+            'safenet_tenant_code': TextInput(attrs={'class': 'form-control'}),
+            'safenet_apikey': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_casb_api_key': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_casb_client_id': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_casb_client_secret': TextInput(attrs={'type': 'password','class': 'form-control'}),
+            'proofpoint_trap_host': TextInput(attrs={'class': 'form-control'}),
+            'proofpoint_trap_apikey': TextInput(attrs={'class': 'form-control'}),
+            'waf_cloud_protector_host': TextInput(attrs={'class': 'form-control'}),
+            'waf_cloud_protector_api_key_pub': Textarea(attrs={'class': 'form-control'}),
+            'waf_cloud_protector_api_key_priv': Textarea(attrs={'class': 'form-control'}),
+            'waf_cloud_protector_provider': TextInput(attrs={'class': 'form-control'}),
+            'waf_cloud_protector_tenant': TextInput(attrs={'class': 'form-control'}),
+            'waf_cloud_protector_servers': TextInput(attrs={'class': 'form-control'}),
+            'trendmicro_visionone_token': TextInput(attrs={'class': 'form-control'}),
+            'cisco_duo_host': TextInput(attrs={'class': 'form-control'}),
+            'cisco_duo_ikey': Textarea(attrs={'class': 'form-control'}),
+            'cisco_duo_skey': Textarea(attrs={'class': 'form-control'}),
+            'sentinel_one_mobile_host': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_mobile_apikey': TextInput(attrs={'type': 'password','class': 'form-control'}),
+            'csc_domainmanager_apikey':TextInput(attrs={'class': 'form-control'}),
+            'csc_domainmanager_authorization':TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'retarus_token': TextInput(attrs={'class': 'form-control'}),
+            'retarus_channel': TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def clean(self):
+        """ Verify needed fields - depending on mode chosen """
+        cleaned_data = super().clean()
+
+        if cleaned_data['api_parser_verify_ssl']:
+            raise ValidationError(f"toto => {cleaned_data['api_parser_verify_ssl']}")
+        
+        if cleaned_data['api_parser_verify_ssl'] and not cleaned_data['api_parser_custom_certificate']:
+            raise ValidationError("Logging is enabled. Please check \"Archive logs on system\" or configure a log forwarder.")
+
+        return cleaned_data
 
 CONDITION_CHOICES = (
     ('if', 'If'),
