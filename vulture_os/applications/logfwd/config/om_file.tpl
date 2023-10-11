@@ -28,7 +28,7 @@
             {%- if enable_disk_assist %}
             queue.highWatermark="{{high_watermark}}"
             queue.lowWatermark="{{low_watermark}}"
-            ueue.spoolDirectory="/var/tmp"
+            queue.spoolDirectory="/var/tmp"
             queue.filename="{{output_name}}_disk-queue"
             queue.maxFileSize="{{max_file_size}}m"
             queue.maxDiskSpace="{{max_disk_space}}m"
