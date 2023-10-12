@@ -881,7 +881,7 @@ class FrontendTestApiParserForm(ModelForm):
             widget=Select(attrs={'class': 'form-control select2'})
         )
 
-        for field_name in ['api_parser_use_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
+        for field_name in ['api_parser_use_proxy', 'api_parser_custom_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
                            'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                            "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
@@ -929,7 +929,7 @@ class FrontendTestApiParserForm(ModelForm):
 
     class Meta:
         model = Frontend
-        fields = ('api_parser_use_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
+        fields = ('api_parser_use_proxy', 'api_parser_custom_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
                   'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                   "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
                   "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
@@ -976,6 +976,7 @@ class FrontendTestApiParserForm(ModelForm):
         widgets = {
             'api_parser_type': Select(attrs={'class': 'form-control select2'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
+            'api_parser_custom_proxy': TextInput(attrs={'class': 'form-control'}),
             'api_parser_verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
             'api_parser_custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': "form-control select2"}),
             'forcepoint_username': TextInput(attrs={'class': 'form-control'}),
@@ -1096,16 +1097,7 @@ class FrontendTestApiParserForm(ModelForm):
         }
     
     def clean(self):
-        """ Verify needed fields - depending on mode chosen """
-        cleaned_data = super().clean()
-
-        if cleaned_data['api_parser_verify_ssl']:
-            raise ValidationError(f"toto => {cleaned_data['api_parser_verify_ssl']}")
-        
-        if cleaned_data['api_parser_verify_ssl'] and not cleaned_data['api_parser_custom_certificate']:
-            raise ValidationError("Logging is enabled. Please check \"Archive logs on system\" or configure a log forwarder.")
-
-        return cleaned_data
+        return super().clean()
 
 
 CONDITION_CHOICES = (

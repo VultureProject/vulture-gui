@@ -737,11 +737,11 @@ def frontend_test_apiparser(request):
                 return JsonResponse({'status': False, 'error': "Wrong proxy format"})
             data['api_parser_custom_proxy'] = proxy
 
-        test_api_parser_form = FrontendTestApiParserForm(data)
-        if not test_api_parser_form.is_valid():
-            return JsonResponse({"status": False, "error": test_api_parser_form.errors.as_json()})
+        test_api_parser = FrontendTestApiParserForm(data)
+        if not test_api_parser.is_valid():
+            return JsonResponse({"status": False, "error": test_api_parser.errors.as_json()})
 
-        parser = get_api_parser(type_parser)(test_api_parser_form.data)
+        parser = get_api_parser(type_parser)(test_api_parser.data)
         return JsonResponse(parser.test())
 
     except Exception as e:
