@@ -53,6 +53,26 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='logom',
+            name='max_workers',
+            field=models.PositiveIntegerField(blank=True, help_text='Maximum workers created for the output', null=True, validators=[django.core.validators.MinValueValidator(1)], verbose_name='Queue max workers'),
+        ),
+        migrations.AddField(
+            model_name='logom',
+            name='new_worker_minimum_messages',
+            field=models.PositiveIntegerField(blank=True, help_text='Number of messages in queue to start a new worker thread', null=True, validators=[django.core.validators.MinValueValidator(1)], verbose_name='Minimum messages to start a new worker'),
+        ),
+        migrations.AddField(
+            model_name='logom',
+            name='queue_timeout_shutdown',
+            field=models.PositiveIntegerField(blank=True, help_text='Time to wait for the queue to finish processing entries (in ms)', null=True, validators=[django.core.validators.MinValueValidator(1)], verbose_name='Queue timeout shutdown (ms)'),
+        ),
+        migrations.AddField(
+            model_name='logom',
+            name='worker_timeout_shutdown',
+            field=models.PositiveIntegerField(blank=True, help_text='Inactivity delay after which to stop a worker (in ms)', null=True, validators=[django.core.validators.MinValueValidator(1)], verbose_name='Worker inactivity shutdown delay (ms)'),
+        ),
         migrations.AlterField(
             model_name='backend',
             name='tcp_health_check_expect_match',
