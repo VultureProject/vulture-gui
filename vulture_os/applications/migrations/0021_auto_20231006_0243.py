@@ -53,6 +53,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterField(
+            model_name='backend',
+            name='tcp_health_check_expect_match',
+            field=models.TextField(choices=[('', 'None'), ('string', 'Response content contains'), ('rstring', 'Response content match regex'), ('binary', 'Response binary contains'), ('rbinary', 'Response binary match regex'), ('! string', 'Response content does not contain'), ('! rstring', 'Response content does not match regex'), ('! binary', 'Response binary does not contains'), ('! rbinary', 'Response binary does not match regex')], default='', help_text='Type of match to expect', verbose_name='TCP Health Check expected'),
+        ),
         migrations.RunPython(save_kafka_params, restore_kafka_params),
         migrations.RemoveField(
             model_name="logomkafka",

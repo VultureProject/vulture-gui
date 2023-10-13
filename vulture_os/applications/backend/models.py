@@ -205,7 +205,7 @@ class Backend(models.Model):
     tcp_health_check_expect_match = models.TextField(
         choices=HEALTH_CHECK_TCP_EXPECT_CHOICES,
         default=HEALTH_CHECK_TCP_EXPECT_CHOICES[0][0],
-        null=True,
+        null=False,
         help_text=_("Type of match to expect"),
         verbose_name=_("TCP Health Check expected")
     )
