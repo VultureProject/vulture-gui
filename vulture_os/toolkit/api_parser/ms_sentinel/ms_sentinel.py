@@ -85,7 +85,7 @@ class MSSentinelParser(ApiParser):
 
                 assert response.get('access_token') is not None, "Cannot retrieve token from API : {}".format(response)
 
-                logger.info(f"[{__parser__}]:_connect: Authentication succeed - access token retrieved", extra={'frontend': str(self.frontend)})
+                logger.debug(f"[{__parser__}]:_connect: Authentication succeed - access token retrieved", extra={'frontend': str(self.frontend)})
 
                 self.session.headers.update({'Authorization': "Bearer {}".format(response.get('access_token'))})
 
@@ -120,8 +120,8 @@ class MSSentinelParser(ApiParser):
             'api-version': self.API_VERSION
         }
 
-        msg = f"Get entities request params: {params}"
-        logger.debug(f"[{__parser__}]:get_incident_entities: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_incident_entities: Get entities request params: {params}",
+                     extra={'frontend': str(self.frontend)})
 
         response = self.session.post(
             url,
@@ -131,17 +131,13 @@ class MSSentinelParser(ApiParser):
         )
 
         if response.status_code != 200:
-            msg = f"Error at API Call: {response.content}"
-            logger.error(f"[{__parser__}]:get_incidents: {msg}", extra={'frontend': str(self.frontend)})
-            return False, {}
+            logger.error(f"[{__parser__}]:get_incidents: Error at API Call: {response.content}",
+                         extra={'frontend': str(self.frontend)})
+            return {}
 
-        content = response.json()
+        logger.debug(f"[{__parser__}]:get_incidents: Content retrieved", extra={'frontend': str(self.frontend)})
 
-        msg = f"Content retrieved"
-        logger.debug(f"[{__parser__}]:get_incidents: {msg}", extra={'frontend': str(self.frontend)})
-
-        return True, content
-
+        return response.json()
 
     def get_incidents(self, test=False):
         self._connect()
@@ -156,8 +152,8 @@ class MSSentinelParser(ApiParser):
         if test:
             params['top'] = 10
 
-        msg = f"Get incidents request params: {params}"
-        logger.debug(f"[{__parser__}]:get_incidents: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_incidents: Get incidents request params: {params}",
+                     extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -174,12 +170,9 @@ class MSSentinelParser(ApiParser):
             logger.error(f"[{__parser__}]:get_incidents: {msg}", extra={'frontend': str(self.frontend)})
             raise MSSentinelAPIError(msg)
 
-        content = response.json()
+        logger.debug(f"[{__parser__}]:get_incidents: Content retrieved", extra={'frontend': str(self.frontend)})
 
-        msg = f"Content retrieved"
-        logger.debug(f"[{__parser__}]:get_incidents: {msg}", extra={'frontend': str(self.frontend)})
-
-        return True, content
+        return True, response.json()
 
     def get_incident_alerts(self, incident_url):
         self._connect()
@@ -190,8 +183,8 @@ class MSSentinelParser(ApiParser):
             'api-version': self.API_VERSION
         }
 
-        msg = f"Get incident's alerts request params: {params}"
-        logger.debug(f"[{__parser__}]:get_incident_alerts: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_incident_alerts: Get incident's alerts request params: {params}",
+                     extra={'frontend': str(self.frontend)})
 
         response = self.session.post(
             url,
@@ -211,8 +204,8 @@ class MSSentinelParser(ApiParser):
 
         content = response.json()
 
-        msg = f"Content retrieved : {content}"
-        logger.debug(f"[{__parser__}]:get_incident_alerts: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_incident_alerts: Content retrieved : {content}",
+                     extra={'frontend': str(self.frontend)})
 
         return True, content
 
@@ -225,8 +218,8 @@ class MSSentinelParser(ApiParser):
             'api-version': self.API_VERSION
         }
 
-        msg = f"Get incident's comments request params: {params}"
-        logger.debug(f"[{__parser__}]:get_incident_comments: {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_incident_comments: Get incident's comments request params: {params}",
+                     extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -244,8 +237,9 @@ class MSSentinelParser(ApiParser):
             raise MSSentinelAPIError(msg)
 
         content = response.json()
-        msg = f"Content retrieved : {content}"
-        logger.debug(f"[{__parser__}]:get_incident_comments: {msg}", extra={'frontend': str(self.frontend)})
+
+        logger.debug(f"[{__parser__}]:get_incident_comments: Content retrieved : {content}",
+                     extra={'frontend': str(self.frontend)})
         return True, content
 
     def parse_alert_time(self, time_str):
@@ -296,19 +290,21 @@ class MSSentinelParser(ApiParser):
 
                 logs = []
 
-                # Get incidents' entities
-                status, result = self.get_incident_entities(incident['id'])
-                if status:
-                    entities = result['value']
+                # Entities
+                entities = self.get_incident_entities(incident['name']).get('entities', None)
+                if entities:
                     incident['entities'] = entities
+                    logger.info(f"[{__parser__}]:execute: {len(entities)} entities founds for incident {incident['name']}",
+                                extra={'frontend': str(self.frontend)})
                 else:
                     logger.warning(f"[{__parser__}]:execute: Fail to retrieve entities for incident {incident['name']}",
                                 extra={'frontend': str(self.frontend)})
 
-                logger.info(f"[{__parser__}]:execute: {incident['properties']['additionalData']['commentsCount']} "
+                # Comments
+                logger.debug(f"[{__parser__}]:execute: {incident['properties']['additionalData']['commentsCount']} "
                              f"comments found for incident {incident['name']}",
                              extra={'frontend': str(self.frontend)})
-                # Get incidents' comment
+
                 if incident['properties']['additionalData']['commentsCount'] > 0:
                     status, result = self.get_incident_comments(incident['id'])
                     if status:
@@ -318,8 +314,8 @@ class MSSentinelParser(ApiParser):
                         logger.error(f"[{__parser__}]:execute: Fail to retrieve comments for incident {incident['name']}",
                                     extra={'frontend': str(self.frontend)})
 
-                # Get alerts
-                logger.info(f"[{__parser__}]:execute: {incident['properties']['additionalData']['alertsCount']} "
+                # Alerts
+                logger.debug(f"[{__parser__}]:execute: {incident['properties']['additionalData']['alertsCount']} "
                              f"alerts found for incident {incident['name']}",
                              extra={'frontend': str(self.frontend)})
 
@@ -329,7 +325,7 @@ class MSSentinelParser(ApiParser):
                         alerts = result['value']
 
                         for alert in alerts:
-                            alert_time = self.parse_alert_time(alert['properties']['timeGenerated'])
+                            alert_time = self.parse_alert_time(alert['properties']['processingEndTime'])
                             if not self.outdated_alert(alert_time):
                                 alert['incident'] = incident
                                 logs.append(alert)
