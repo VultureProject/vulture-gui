@@ -604,11 +604,12 @@ class REDISRefreshSession(REDISSession):
     def delete(self):
         self.delete_in_redis(self.key)
 
-    def store_refresh_token(self, oauth2_data, timeout, oauth2_token, overridden_by=None):
+    def store_refresh_token(self, oauth2_data, timeout, oauth2_token, portal_id, overridden_by=None):
         data = {
             'scope': oauth2_data,
             'access_token': oauth2_token,
             'overridden_by': overridden_by,
+            'portal_id': portal_id,
         }
         if not self.keys:
             self.keys = data
@@ -617,6 +618,7 @@ class REDISRefreshSession(REDISSession):
                 self.keys['scope'] = {}
             self.keys['access_token'] = oauth2_token
             self.keys['overridden_by'] = overridden_by
+            self.keys['portal_id'] = portal_id
 
             for key,item in oauth2_data.items():
                 self.keys['scope'][key] = item

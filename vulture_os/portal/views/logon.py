@@ -435,12 +435,16 @@ def openid_token(request, portal_id):
         elif request.POST.get('grant_type') == "refresh_token":
             # TODO This assumes all applications are considered public, as no client_secret is enforced
             if client_secret != None:
-                assert client_secret == portal.oauth_client_secret, "Client secret is invalid."
+                assert client_secret == portal.oauth_client_secret, "Invalid client_secret."
 
             refresh_token = request.POST.get('refresh_token')
             refresh = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
 
             assert refresh.exists(), f"Unknown refresh token."
+
+            logger.debug(f"Expected idp: {refresh['portal_id']} Actual idp: portal_{portal_id}")
+            assert (refresh['portal_id'] == f"portal_{portal_id}"), f"Invalid IDP."
+
 
             if refresh['overridden_by'] != None:
                 logger.error("PORTAL::openid_token: The refresh token provided has been expired.")
@@ -498,6 +502,7 @@ def openid_token(request, portal_id):
                     new_oauth2_session['scope'],
                     timeout,
                     new_oauth2_token,
+                    f"portal_{portal_id}"
                 )
             else:
                 refresh['access_token'] = new_oauth2_token

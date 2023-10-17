@@ -175,7 +175,7 @@ class Authentication(object):
 
         self.redis_refresh_session = REDISRefreshSession(self.redis_base, "refresh_" + self.refresh_token)
         # Time-To-Live is calculated to be equivalent to the time of the corresponding oauth token + 1 minute
-        # Refresh historisation requires that refresh tokens are then available for max_nb_refresh 
+        # Refresh historisation requires that refresh tokens are then available for max_nb_refresh
         #   times the duration of an oauth token
         # (meaning if 3 refresh tokens are required for history, expiration of one refresh token
         #   will be 3 times the expiration of the oauth token + 1 minute)
@@ -184,7 +184,8 @@ class Authentication(object):
         self.redis_refresh_session.store_refresh_token(
             scopes,
             timeout,
-            self.oauth2_token)
+            self.oauth2_token,
+            self.workflow.id)
 
         logger.debug(f"AUTH::write_refresh_session: refresh token successfuly created : {self.refresh_token}")
 
