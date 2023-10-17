@@ -28,6 +28,7 @@ from django.conf import settings
 from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect)
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # Django project imports
@@ -529,6 +530,7 @@ def frontend_edit(request, object_id=None, api=False):
                 frontend.log_forwarders_id = log_forwarders
 
             logger.debug("Saving frontend")
+            frontend.last_update_time = timezone.now()
             frontend.save()
             logger.debug("Frontend '{}' (id={}) saved in MongoDB.".format(frontend.name, frontend.id))
 
@@ -625,7 +627,7 @@ def frontend_edit(request, object_id=None, api=False):
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """
             """ The object has been saved, delete-it if needed """
-            if first_save:
+            if not frontend.id:
                 for listener in frontend.listener_set.all():
                     listener.delete()
 

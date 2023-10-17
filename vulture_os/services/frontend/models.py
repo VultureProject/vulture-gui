@@ -29,6 +29,7 @@ import datetime
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.template import Context, Template as JinjaTemplate
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
@@ -165,6 +166,10 @@ class Frontend(models.Model):
         unique=True,
         default="Listener",
         help_text=_("Name of HAProxy frontend"),
+    )
+    last_update_time = models.DateTimeField(
+        default=timezone.now,
+        help_text=_("Datetime of the last frontend's update"),
     )
     """ Tags """
     tags = models.JSONField(
