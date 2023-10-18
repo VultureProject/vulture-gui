@@ -169,6 +169,7 @@ class Frontend(models.Model):
     )
     last_update_time = models.DateTimeField(
         default=timezone.now,
+        editable=False,
         help_text=_("Datetime of the last frontend's update"),
     )
     """ Tags """
