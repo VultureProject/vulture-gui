@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [API_PARSER] [MS_SENTINEL] timeGenerated -> processingEndTime and incident.id -> incident.name
 ### Fixed
 - [PORTAL] [IDP] Refresh token validation with multiple IDP
 - [FRONTEND] Disable log condition if log forwarder disabled
