@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Disable log condition if log forwarder disabled
 - [REPUTATION_CTX] Invalid headers templating
 - [PORTAL] [SSO] Avoid autologon password retrieval failures
+- [API_PARSER] [TRENDMICRO_VISIONONE] Fix Alerts endpoint params
 
 
 ## [2.11.1] - 2023-10-13
