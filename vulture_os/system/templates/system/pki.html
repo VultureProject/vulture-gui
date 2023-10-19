@@ -137,7 +137,7 @@
         }
         else if (row.is_external) {
             buffer = '<a class="btn btn-flat btn-xs btn-primary" title="{% trans "Download Cert" %}" href="/system/pki/getcert/' + data + '"><span><i class="fa fa-download"></i></span></a>\
-                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>';
+                <a class="btn btn-flat btn-xs btn-danger" title="{% trans "Download Bundle" %}" href="/system/pki/getbundle/' + data + '"><span><i class="fa fa-lock"></i></span></a>&nbsp';
             if (row.crl) {
                 buffer = buffer + '<a class="btn btn-flat btn-xs btn-warning" title="{% trans "Download CRL" %}" href="/system/pki/getcrl/' + data + '"><span><i class="fa fa-list"></i></span></a>';
             }
