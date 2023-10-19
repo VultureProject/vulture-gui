@@ -370,8 +370,7 @@ class SELFServiceChange(SELFService):
 
         # If not rdm : set new password in Redis portal session
         if not rdm:
-            self.redis_portal_session.setAutologonPassword(self.workflow.id, self.workflow.name,
-                                                           self.backend_id, self.username, new_passwd)
+            self.redis_portal_session.setAutologonPassword(self.backend_id, self.username, new_passwd)
         else:
             # Delete key in Redis
             self.redis_base.delete('password_reset_' + rdm)

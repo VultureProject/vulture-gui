@@ -243,7 +243,7 @@ class Authentication(object):
                 logger.info(f"AUTH::register_user: Refresh tokens enabled for {self.workflow.authentication.name}, creating refresh token")
                 self.write_refresh_session(oauth2_scope)
 
-        password = self.redis_portal_session.getAutologonPassword(self.workflow.id, backend_id, username)
+        password = self.redis_portal_session.getAutologonPassword(backend_id, username)
         logger.debug("AUTH::register_sso: Password successfully retrieved from Redis portal session")
 
         timeout = self.workflow.authentication.auth_timeout if self.workflow.authentication.enable_timeout_restart else None
@@ -308,8 +308,7 @@ class Authentication(object):
             except:
                 if not self.backend_id:
                     self.backend_id = self.authenticated_on_backend()
-                self.credentials[1] = self.redis_portal_session.getAutologonPassword(str(self.workflow.id),
-                                                                                     self.backend_id,
+                self.credentials[1] = self.redis_portal_session.getAutologonPassword(self.backend_id,
                                                                                      self.credentials[0])
         logger.debug("AUTH::get_credentials: User's password successfully retrieved/decrypted from Redis session")
 
