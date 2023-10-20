@@ -86,8 +86,7 @@ JWT_SIG_ALG_CHOICES = (
     ('ES512', 'ecdsa using p512 & sha512'),
     ('PS256', 'rsa_pss using mgf1 & sha256'),
     ('PS384', 'rsa_pss using mgf1 & sha384'),
-    ('PS512', 'rsa_pss using mgf1 & sha512'),
-    ('none', 'no digital signature')
+    ('PS512', 'rsa_pss using mgf1 & sha512')
 )
 
 SSO_TYPE_CHOICES = (

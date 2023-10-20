@@ -12,15 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='repoattributes',
-            name='id',
-        ),
-        migrations.AddField(
-            model_name='repoattributes',
-            name='_id',
-            field=djongo.models.fields.ObjectIdField(auto_created=True, default=bson.objectid.ObjectId, primary_key=True, serialize=False),
-        ),
         migrations.AddField(
             model_name='userauthentication',
             name='enable_jwt',
@@ -40,45 +31,5 @@ class Migration(migrations.Migration):
             model_name='userauthentication',
             name='jwt_validate_audience',
             field=models.BooleanField(default=True, help_text="Be more flexible without verifying who's the token for, used when multiple fqdn need to be reached (default=on)", verbose_name='Validate audience'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='authorization_endpoint',
-            field=models.TextField(default='', help_text='', verbose_name='Authorization url'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='end_session_endpoint',
-            field=models.TextField(default='', help_text='', verbose_name='Disconnect url'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='issuer',
-            field=models.TextField(default='', help_text='', verbose_name='Issuer to use'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='token_endpoint',
-            field=models.TextField(default='', help_text='', verbose_name='Get token url'),
-        ),
-        migrations.AlterField(
-            model_name='openidrepository',
-            name='userinfo_endpoint',
-            field=models.TextField(default='', help_text='', verbose_name='Get user infos url'),
-        ),
-        migrations.AlterField(
-            model_name='userauthentication',
-            name='sso_forward_capture_content',
-            field=models.TextField(default='^REGEX to capture (content.*) in SSO Forward Response$', help_text=''),
-        ),
-        migrations.AlterField(
-            model_name='userauthentication',
-            name='sso_forward_content',
-            field=models.TextField(default='', help_text=''),
-        ),
-        migrations.AlterField(
-            model_name='userauthentication',
-            name='sso_forward_tls_proto',
-            field=models.TextField(choices=[('tlsv13', 'TLSv1.3'), ('tlsv12', 'TLSv1.2'), ('tlsv11', 'TLSv1.1'), ('tlsv10', 'TLSv1.0')], default=('tlsv12', 'TLSv1.2'), help_text='Minimal TLS protocol used to connect to SSO url', verbose_name='TLS minimal accepted version'),
         ),
     ]

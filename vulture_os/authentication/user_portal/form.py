@@ -180,7 +180,7 @@ class UserAuthenticationForm(ModelForm):
                       "sso_forward_type", "sso_forward_timeout", "sso_forward_content_type", "sso_forward_tls_proto", "sso_forward_url",
                       "sso_forward_user_agent", "sso_forward_content", "sso_forward_capture_content",
                       "sso_forward_replace_pattern", "sso_forward_replace_content", "sso_forward_additional_url",
-                      "sso_keep_client_cookies", "enable_jwt", "jwt_signature_type", 'jwt_key', 'jwt_validate_audience']:
+                      "sso_keep_client_cookies", "enable_jwt", "jwt_signature_type", "jwt_key", "jwt_validate_audience"]:
             self.fields[field].required = False
         # Format oauth_redirect_uris
         self.initial['oauth_redirect_uris'] = '\n'.join(self.initial.get('oauth_redirect_uris', []) or self.fields['oauth_redirect_uris'].initial)
@@ -245,6 +245,6 @@ class UserAuthenticationForm(ModelForm):
         """ If jwt enabled, options required """
         if cleaned_data.get('enable_jwt'):
             if not cleaned_data.get('jwt_key'):
-                self.add_error('jwt_key', "This field required if jwt enabled.")
+                self.add_error('jwt_key', "This field is required when jwt is enabled.")
 
         return cleaned_data
