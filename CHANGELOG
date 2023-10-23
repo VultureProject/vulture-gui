@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [API_PARSER] [VECTRA] New parser Vectra
 - [MANAGE] [COMMANDS] New command get_api_key
+- [OPENID] [CONNECTOR] New JWT validation parameters
 ### Changed
 - [API_PARSER] [MS_SENTINEL] timeGenerated -> processingEndTime and incident.id -> incident.name
 - [DEPENDENCIES] Python dependencies upgrade
