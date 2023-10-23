@@ -1167,6 +1167,22 @@ class Frontend(models.Model):
         help_text=_("Retarus channel"),
         default="",
     )
+    # Vectra attributes
+    vectra_host = models.TextField(
+        verbose_name=_("Vectra url"),
+        help_text=_("Vectra url"),
+        default = ""
+    )
+    vectra_secret_key = models.TextField(
+        verbose_name=_("Vectra secret key"),
+        help_text=_("Vectra secret key"),
+        default="",
+    )
+    vectra_client_id = models.TextField(
+        verbose_name=_("Vectra client id"),
+        help_text=_("Vectra client id"),
+        default="",
+    )
 
     def reload_haproxy_conf(self):
         for node in self.get_nodes():

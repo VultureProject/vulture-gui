@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [VECTRA] New parser Vectra
 ### Changed
 - [API_PARSER] [MS_SENTINEL] timeGenerated -> processingEndTime and incident.id -> incident.name
 ### Fixed

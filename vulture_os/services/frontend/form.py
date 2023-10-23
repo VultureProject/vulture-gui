@@ -248,7 +248,7 @@ class FrontendForm(ModelForm):
                            'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
                            'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                            'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
-                           'retarus_token', 'retarus_channel',
+                           'retarus_token', 'retarus_channel', 'vectra_host', 'vectra_client_id', 'vectra_secret_key',
                            ]:
             self.fields[field_name].required = False
 
@@ -341,7 +341,7 @@ class FrontendForm(ModelForm):
                   'cisco_duo_host', 'cisco_duo_ikey', 'cisco_duo_skey',
                   'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                   'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
-                  'retarus_token', 'retarus_channel',
+                  'retarus_token', 'retarus_channel', 'vectra_host', 'vectra_secret_key', 'vectra_client_id',
                 )
 
         widgets = {
@@ -510,6 +510,9 @@ class FrontendForm(ModelForm):
             'csc_domainmanager_authorization':TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'retarus_token': TextInput(attrs={'class': 'form-control'}),
             'retarus_channel': TextInput(attrs={'class': 'form-control'}),
+            'vectra_host': TextInput(attrs={'class': 'form-control'}),
+            'vectra_secret_key': TextInput(attrs={'class': 'form-control'}),
+            'vectra_client_id': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
