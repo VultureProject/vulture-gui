@@ -69,6 +69,7 @@ class VectraParser(ApiParser):
                 data={"grant_type": "client_credentials"},
                 timeout=30,
                 headers = {"Content-Type": "application/x-www-form-urlencoded"},
+                proxies=self.proxies,
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
             if res.status_code == 401:
