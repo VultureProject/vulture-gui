@@ -248,50 +248,6 @@
                             </div>
                           </div>
                         </div> <!-- /.row -->
-                        <div class="row">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.enable_jwt.label}}</label>
-                                <div class="col-sm-5">
-                                  {{form.enable_jwt}}
-                                  {{form.enable_jwt.errors|safe}}
-                                </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row jwt -->
-                        <div class="row jwt">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.jwt_signature_type.label}}</label>
-                              <div class="col-sm-5">
-                                {{form.jwt_signature_type}}
-                                {{form.jwt_signature_type.errors|safe}}
-                              </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row jwt -->
-                        <div class="row jwt">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.jwt_key.label}}</label>
-                              <div class="col-sm-5">
-                                {{form.jwt_key}}
-                                {{form.jwt_key.errors|safe}}
-                              </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row jwt -->
-                        <div class="row jwt">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{% translate form.jwt_validate_audience.label %}</label>
-                              <div class="col-sm-5">
-                                {{form.jwt_validate_audience}}
-                                {{form.jwt_validate_audience.errors|safe}}
-                              </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row jwt -->
                       </div> <!-- /.tab-pane -->
                       <div class="tab-pane" id="tab_otp">
                         <div class="row">
@@ -821,13 +777,6 @@
 
   let enable_oauth_switch = new Switchery(document.querySelector("#id_enable_oauth"));
 
-  /* Show jwt class if enable_jwt is True */
-  function toggle_jwt(){
-    if( document.querySelector('#id_enable_jwt').checked )
-      $('.jwt').show();
-    else
-      $('.jwt').hide();
-  }
 
   /* Show openid class if openid repo is chosen */
   function toggle_repos() {
@@ -1018,8 +967,6 @@
   }
 
   /* Show attributes depending on chosen options */
-  $('#id_enable_jwt').on("change", function(e){ toggle_class("jwt", e); });
-  toggle_class("jwt");
   $('#id_enable_oauth').on("change", function(e){ toggle_class("oauth", e); });
   toggle_class("oauth");
   $('#id_enable_external').on("change", function(e){ toggle_class("external", e); });

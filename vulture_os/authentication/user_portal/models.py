@@ -74,21 +74,6 @@ AUTH_TYPE_CHOICES = (
     ('kerberos', 'Kerberos Authentication')
 )
 
-JWT_SIG_ALG_CHOICES = (
-    ('HS256', 'hmac using sha265'),
-    ('HS384', 'hmac using sha384'),
-    ('HS512', 'hmac using sha512'),
-    ('RS256', 'rsa_pkcs1 using sha256'),
-    ('RS384', 'rsa_pkcs1 using sha384'),
-    ('RS512', 'rsa_pkcs1 using sha512'),
-    ('ES256', 'ecdsa using p256 & sha256'),
-    ('ES384', 'ecdsa using p384 & sha384'),
-    ('ES512', 'ecdsa using p512 & sha512'),
-    ('PS256', 'rsa_pss using mgf1 & sha256'),
-    ('PS384', 'rsa_pss using mgf1 & sha384'),
-    ('PS512', 'rsa_pss using mgf1 & sha512')
-)
-
 SSO_TYPE_CHOICES = (
     ('form', 'HTML Form'),
     ('basic', 'Basic Authentication'),
@@ -405,27 +390,6 @@ class UserAuthentication(models.Model):
         verbose_name=_("Enable captcha"),
         help_text=_("Ask a captcha validation")
     )
-    enable_jwt = models.BooleanField(
-        default=False,
-        verbose_name=_("Authorize JWT"),
-        help_text=_("JWT used to authenticate/authorize user")
-    )
-    jwt_signature_type = models.TextField(
-        default=JWT_SIG_ALG_CHOICES[0][0],
-        choices=JWT_SIG_ALG_CHOICES,
-        verbose_name=_("Signature type"),
-        help_text=_("Signature type as given in RFC7518")
-    )
-    jwt_key = models.TextField(
-        default="",
-        verbose_name=_("Key"),
-        help_text=_("Secret/pubkey used to validate jwt's signature")
-    )
-    jwt_validate_audience = models.BooleanField(
-        default=True,
-        verbose_name=_("Validate audience"),
-        help_text=_("Be more flexible without verifying who's the token for, used when multiple fqdn need to be reached (default=on)")
-    )
     otp_repository = models.ForeignKey(
         to=OTPRepository,
         null=True,
@@ -679,7 +643,6 @@ class UserAuthentication(models.Model):
             'enable_external': self.enable_external,
             'repositories': [str(repo) for repo in self.repositories.all()],
             'enable_captcha': self.enable_captcha,
-            'enable_jwt': self.enable_jwt,
             'otp_repository': str(self.otp_repository) if self.otp_repository else "",
             'enable_registration': self.enable_registration,
             'auth_type': self.str_auth_type()

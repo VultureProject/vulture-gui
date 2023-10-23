@@ -119,6 +119,50 @@
                   <div class="row">
                     <div class="col-md-12">
                       <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.enable_jwt.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.enable_jwt}}
+                            {{form.enable_jwt.errors|safe}}
+                          </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row jwt -->
+                  <div class="row jwt">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.jwt_signature_type.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.jwt_signature_type}}
+                          {{form.jwt_signature_type.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row jwt -->
+                  <div class="row jwt">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.jwt_key.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.jwt_key}}
+                          {{form.jwt_key.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row jwt -->
+                  <div class="row jwt">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{% translate form.jwt_validate_audience.label %}</label>
+                        <div class="col-sm-5">
+                          {{form.jwt_validate_audience}}
+                          {{form.jwt_validate_audience.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.row jwt -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
                         <label class="col-sm-4 control-label">{{form.use_proxy.label}}</label>
                         <div class="col-sm-5">
                           {{form.use_proxy}}
@@ -260,6 +304,15 @@
     return data;
   }
 
+  /* Show jwt class if enable_jwt is True */
+  function toggle_jwt(){
+    if( document.querySelector('#id_enable_jwt').checked ) {
+      $('.jwt').show();
+    }
+    else {
+      $('.jwt').hide();
+    }
+  }
 
   $('#test_provider').unbind('click');
   $('#test_provider').on('click', function(){
@@ -297,6 +350,11 @@
       $(btn).html(txt);
     })
   })
+
+  $('#id_enable_jwt').on("change", function(e){
+    toggle_jwt();
+  })
+  toggle_jwt();
 
   function handle_form_errors(data){
     if (typeof(data['form_errors']) !== 'undefined'){
