@@ -537,6 +537,7 @@ def openid_token(request, portal_id):
         return JsonResponse({"error": "internal_error", "error_description": "An unknown error occurred"}, status=500)
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
+    token = None
     try:
         scheme = request.headers['x-forwarded-proto']
     except KeyError:
@@ -565,21 +566,23 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         ret = {}
 
         ## JWT ##
-        jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
-        if jwt_unverified:
-            jwt_iss = jwt_unverified["iss"]
-            jwt_fqdn = jwt_iss.split(":")[-1].split("/")[0]
-            portals = UserAuthentication.objects.filter(
-                Q(enable_external=True, enable_jwt=True, external_fqdn=jwt_fqdn) | Q(workflow__fqdn=jwt_fqdn))
-            assert portals, "No portal assigned to issuer : %s"%(jwt_iss)
-            for portal in portals:
-                jwt_verified = jwt.decode(jwt=token, algorithms=[portal.jwt_signature_type], key=portal.jwt_key, issuer=jwt_iss)
-                if jwt_verified:
-                    ret = jwt_verified
-                    break
+        try:
+            jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
+        except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
+            logger.debug(f"PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
+        else:
+            if jwt_unverified:
+                logger.debug("PORTAL::openid_userinfo: Token is a valid JWT")
+                jwt_iss = jwt_unverified["iss"]
+                for connector in OpenIDRepository.objects.filter(enable_jwt=True, provider_url=jwt_iss):
+                    jwt_verified = jwt.decode(jwt=token, algorithms=[connector.jwt_signature_type], key=connector.jwt_key, issuer=connector.provider_url)
+                    if jwt_verified:
+                        logger.debug(f"PORTAL::openid_userinfo: JWT verified")
+                        ret = jwt_verified
+                        break
 
         ## OAUTH2 ##
-        else:
+        if not ret:
             session = REDISOauth2Session(REDISBase(), f"oauth2_{token}")
             assert session.exists(), "Session not found."
             assert session['scope'], "Session does not contain any scope."
@@ -590,17 +593,15 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
 
         return JsonResponse(ret)
 
-    except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
-        logger.debug(f"PORTAL::openid_userinfo: Invalid jwt structure")
     except AssertionError as e:
         logger.info(f"PORTAL::openid_userinfo: {e}")
-        return HttpResponse(status=401)
     except jwt.PyJWTError as e:
-        logger.error(f"PORTAL::openid_userinfo: Failed to authenticate JWT with given informations: {e}")
-        return HttpResponse(status=401)
+        logger.error(f"PORTAL::openid_userinfo: Failed to authenticate JWT with given information: {e}")
+        logger.debug(f"PORTAL::openid_userinfo: full JWT value is {token}")
     except Exception as e:
         logger.exception(f"PORTAL::openid_userinfo: {e}")
-        return HttpResponse(status=401)
+
+    return HttpResponse(status=401)
 
 
 def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=False, sso_forward=True, openid=False, keep_method=False):
