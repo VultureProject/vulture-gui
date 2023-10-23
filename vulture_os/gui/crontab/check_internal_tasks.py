@@ -24,7 +24,7 @@ __doc__ = 'Job for documentation update'
 
 from system.cluster.models import MessageQueue, Cluster
 from toolkit.mongodb.mongo_base import MongoBase
-from django.utils.timezone import make_aware
+from django.utils import timezone
 from django.conf import settings
 import datetime
 import logging
@@ -41,7 +41,7 @@ def check_internal_tasks():
             return
 
         # Deleting done internal tasks older than a month
-        last_month_date = make_aware(datetime.datetime.now() - datetime.timedelta(days=30))
+        last_month_date = timezone.now() - datetime.timedelta(days=30)
         MessageQueue.objects.filter(status="done", date_add__lte=last_month_date).delete()
 
         # Checking if a node has not executing his duty since a while.

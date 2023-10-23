@@ -26,7 +26,6 @@ __doc__ = 'Job for OS Monitoring'
 # Django system imports
 from django.conf import settings
 from django.utils import timezone
-from django.utils.timezone import make_aware
 
 # Django project imports
 from applications.backend.models import Backend
@@ -83,10 +82,8 @@ def monitor():
         return service_status
 
     """ Initialize date and Monitor object """
-    date = datetime.now().strftime('%Y-%m-%d %H:%M:00')
-    date = datetime.strptime(date, '%Y-%m-%d %H:%M:00')
     mon = Monitor(
-        date=make_aware(date),
+        date=timezone.now().replace(second=0, microsecond=0),
         node=node
     )
     mon.services_id = set()

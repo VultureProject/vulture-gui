@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DEPRECATION] Change request.META to request.headers
 - [DEPRECATION] get_random_string now requires length argument
 - [DEPRECATION] Keyword "trans" replaced by "translate" in templates
+- [DEPRECATION] make_aware function changed to django aware datetime
 
 
 ## [2.11.1] - 2023-10-13
