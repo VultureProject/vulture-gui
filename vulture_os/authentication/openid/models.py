@@ -73,6 +73,20 @@ PROVIDERS_TYPE = (
     ('digital_pass', 'Digital Pass'),
 )
 
+JWT_SIG_ALG_CHOICES = (
+    ('HS256', 'hmac using sha265'),
+    ('HS384', 'hmac using sha384'),
+    ('HS512', 'hmac using sha512'),
+    ('RS256', 'rsa_pkcs1 using sha256'),
+    ('RS384', 'rsa_pkcs1 using sha384'),
+    ('RS512', 'rsa_pkcs1 using sha512'),
+    ('ES256', 'ecdsa using p256 & sha256'),
+    ('ES384', 'ecdsa using p384 & sha384'),
+    ('ES512', 'ecdsa using p512 & sha512'),
+    ('PS256', 'rsa_pss using mgf1 & sha256'),
+    ('PS384', 'rsa_pss using mgf1 & sha384'),
+    ('PS512', 'rsa_pss using mgf1 & sha512')
+)
 
 class OpenIDRepository(BaseRepository):
     """ Class used to represent an OTP repository object
@@ -161,6 +175,31 @@ class OpenIDRepository(BaseRepository):
         verbose_name=_("User's scope"),
         help_text=_("Scope of user to construct")
     )
+    enable_jwt = models.BooleanField(
+        default=False,
+        blank=True,
+        verbose_name=_("Validate JWT"),
+        help_text=_("JWT used to authenticate/authorize user")
+    )
+    jwt_signature_type = models.TextField(
+        default=JWT_SIG_ALG_CHOICES[0][0],
+        choices=JWT_SIG_ALG_CHOICES,
+        blank=True,
+        verbose_name=_("Signature type"),
+        help_text=_("Signature type as given in RFC7518")
+    )
+    jwt_key = models.TextField(
+        default="",
+        blank=True,
+        verbose_name=_("Key"),
+        help_text=_("Secret/pubkey used to validate jwt's signature")
+    )
+    jwt_validate_audience = models.BooleanField(
+        default=True,
+        blank=True,
+        verbose_name=_("Validate JWT audience"),
+        help_text=_("Be more flexible without verifying who's the token for, used when multiple fqdn need to be reached (default=on)")
+    )
 
     class Meta:
         constraints = [
@@ -206,7 +245,7 @@ class OpenIDRepository(BaseRepository):
             'id': str(self.id),
             'name': self.name,
             'provider': self.str_provider(),
-            'additional_infos': "URL : {} </br> Callback URL : /oauth2/callback/{}".format(self.provider_url, self.id_alea),
+            'additional_infos': "URL : {} <br> JWT validation {} </br> Callback URL : /oauth2/callback/{}".format(self.provider_url, "enabled" if self.enable_jwt else "disabled", self.id_alea),
             'callback_url': f"/oauth2/callback/{self.id_alea}"
         }
 
