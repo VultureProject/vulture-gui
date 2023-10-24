@@ -40,7 +40,7 @@ from authentication.openid.models import OpenIDRepository
 # Logger configuration imports
 import logging
 
-from toolkit.api.responses import build_response
+from toolkit.api.responses import build_response, build_form_errors
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -98,7 +98,10 @@ def edit(request, object_id=None, api=False):
 
         return HttpResponseRedirect('/authentication/openid/')
 
-    return render(request, 'authentication/openid_edit.html', {'form': form})
+    if api:
+        return JsonResponse({"errors": build_form_errors(form.errors)}, status=400)
+    else:
+        return render(request, 'authentication/openid_edit.html', {'form': form})
 
 
 def test_provider(request):
