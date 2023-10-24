@@ -185,7 +185,7 @@ def find_user_email(ldap_repository, username):
     # No need to construct the scope, search_user does-it automatically...
     user = ldap_repository.get_client().search_user(username, attr_list=[ldap_repository.user_email_attr])
     if not user:
-        raise UserDoesntExistError(dn=dn)
+        raise UserDoesntExistError(dn=username)
     dn = user[0][0]
     mail = user[0][1][ldap_repository.user_email_attr]
     return dn, mail[0] if isinstance(mail, list) else mail
