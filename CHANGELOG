@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [VECTRA] New parser Vectra
+- [MANAGE] [COMMANDS] New command get_api_key
 ### Changed
 - [API_PARSER] [MS_SENTINEL] timeGenerated -> processingEndTime and incident.id -> incident.name
 - [DEPENDENCIES] Python dependencies upgrade
@@ -27,12 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - s3transfer 0.6.2 -> 0.7.0
   - urllib3 1.26.17 -> 1.26.18
   - werkzeug 2.3.7 -> 3.0.0
+- [API] [PF] Changed old PF whitelist/blacklist from config to new API entrypoint 'api/v1/system/pf/'
 ### Fixed
 - [PORTAL] [IDP] Refresh token validation with multiple IDP
 - [FRONTEND] Disable log condition if log forwarder disabled
 - [REPUTATION_CTX] Invalid headers templating
 - [PORTAL] [SSO] Avoid autologon password retrieval failures
 - [API_PARSER] [TRENDMICRO_VISIONONE] Fix Alerts endpoint params
+- [API] [CLUSTER_CONFIG] Add missing allowed fields for API PATCHing
 
 
 ## [2.11.1] - 2023-10-13
