@@ -33,6 +33,7 @@ from django.conf                     import settings
 from django.http                     import (HttpResponseRedirect, HttpResponseServerError, HttpResponseForbidden,
                                              JsonResponse, HttpResponse)
 from django.utils import timezone
+from django.db.models import Q
 
 # Django project imports
 from system.cluster.models           import Cluster
@@ -66,6 +67,7 @@ from oauthlib.oauth2 import OAuth2Error
 # Extern modules imports
 from base64 import b64decode
 from uuid import uuid4
+import jwt
 
 # Logger configuration imports
 import logging
@@ -534,8 +536,8 @@ def openid_token(request, portal_id):
         logger.exception(e)
         return JsonResponse({"error": "internal_error", "error_description": "An unknown error occurred"}, status=500)
 
-
 def openid_userinfo(request, portal_id=None, workflow_id=None):
+    token = None
     try:
         scheme = request.headers['x-forwarded-proto']
     except KeyError:
@@ -560,20 +562,46 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         assert request.headers.get('Authorization'), "No Bearer token provided."
         assert request.headers.get('Authorization').startswith("Bearer "), "No Bearer token provided."
 
-        oauth2_token = request.headers.get('Authorization').replace("Bearer ", "")
-        session = REDISOauth2Session(REDISBase(), f"oauth2_{oauth2_token}")
-        assert session.exists(), "Session not found."
-        assert session['scope'], "Session does not contain any scope."
-        # Add internal Oauth2 attributes
-        session['scope'].update({'exp': session['exp']})
-        session['scope'].update({'iat': session['iat']})
-        return JsonResponse(session['scope'])
+        token = request.headers.get('Authorization').replace("Bearer ", "")
+        ret = {}
+
+        ## JWT ##
+        try:
+            jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
+        except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
+            logger.debug(f"PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
+        else:
+            if jwt_unverified:
+                logger.debug("PORTAL::openid_userinfo: Token is a valid JWT")
+                jwt_iss = jwt_unverified["iss"]
+                for connector in OpenIDRepository.objects.filter(enable_jwt=True, provider_url=jwt_iss):
+                    jwt_verified = jwt.decode(jwt=token, algorithms=[connector.jwt_signature_type], key=connector.jwt_key, issuer=connector.provider_url)
+                    if jwt_verified:
+                        logger.debug(f"PORTAL::openid_userinfo: JWT verified")
+                        ret = jwt_verified
+                        break
+
+        ## OAUTH2 ##
+        if not ret:
+            session = REDISOauth2Session(REDISBase(), f"oauth2_{token}")
+            assert session.exists(), "Session not found."
+            assert session['scope'], "Session does not contain any scope."
+            # Add internal Oauth2 attributes
+            session['scope'].update({'exp': session['exp']})
+            session['scope'].update({'iat': session['iat']})
+            ret = session["scope"]
+
+        return JsonResponse(ret)
+
     except AssertionError as e:
         logger.info(f"PORTAL::openid_userinfo: {e}")
-        return HttpResponse(status=401)
+    except jwt.PyJWTError as e:
+        logger.error(f"PORTAL::openid_userinfo: Failed to authenticate JWT with given information: {e}")
+        logger.debug(f"PORTAL::openid_userinfo: full JWT value is {token}")
     except Exception as e:
         logger.exception(f"PORTAL::openid_userinfo: {e}")
-        return HttpResponse(status=401)
+
+    return HttpResponse(status=401)
 
 
 def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=False, sso_forward=True, openid=False, keep_method=False):

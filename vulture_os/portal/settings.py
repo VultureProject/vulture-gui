@@ -17,6 +17,11 @@ except ImportError:
     # Generate a key in the settings' folder
     SECRET_KEY = set_key(SETTINGS_DIR)
 
+# Applying custom patches to code
+try:
+    from toolkit.patches import *
+except ImportError:
+    pass
 
 LOG_LEVEL = 'INFO'
 
