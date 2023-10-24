@@ -62,6 +62,50 @@ class ConfigAPIv1(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
+    def put(self, request, object_id):
+        try:
+            return config_edit(request, object_id, api=True)
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            if settings.DEV_MODE:
+                error = str(e)
+            else:
+                error = _("An error has occurred")
+
+        return JsonResponse({
+            'status': False,
+            'error': error
+        }, status=500)
+
+    @api_need_key('cluster_api_key')
+    def patch(self, request, object_id):
+        allowed_fields = ('pf_ssh_restrict', 'pf_admin_restrict', 'pf_whitelist', 'pf_blacklist',
+                          'cluster_api_key', 'ldap_repository', 'oauth2_header_name', 'portal_cookie_name',
+                          'public_token', 'branch', 'smtp_server', 'ssh_authorized_key', 'rsa_encryption_key',
+                          'logs_ttl', 'internal_tenants')
+        try:
+            for key in request.JSON.keys():
+                if key not in allowed_fields:
+                    return JsonResponse({'error': _("Attribute not allowed : '{}'."
+                                                    "Allowed attributes are {}".format(key, allowed_fields))},
+                                                    status=400)
+            return config_edit(request, object_id, api=True, update=True)
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            if settings.DEV_MODE:
+                error = str(e)
+            else:
+                error = _("An error has occurred")
+
+        return JsonResponse({
+            'status': False,
+            'error': error
+        }, status=500)
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PfAPIv1(View):
+    @api_need_key('cluster_api_key')
     def post(self, request, list_type=None):
         try:
             return pf_whitelist_blacklist(request, list_type)
@@ -77,43 +121,3 @@ class ConfigAPIv1(View):
                 'status': False,
                 'error': error
             }, status=500)
-
-    @api_need_key('cluster_api_key')
-    def put(self, request):
-        try:
-            return config_edit(request, api=True)
-        except Exception as e:
-            logger.critical(e, exc_info=1)
-            if settings.DEV_MODE:
-                error = str(e)
-            else:
-                error = _("An error has occurred")
-
-        return JsonResponse({
-            'status': False,
-            'error': error
-        }, status=500)
-
-    @api_need_key('cluster_api_key')
-    def patch(self, request):
-        allowed_fields = ('pf_ssh_restrict', 'pf_admin_restrict', 'pf_whitelist', 'pf_blacklist',
-                          'cluster_api_key', 'ldap_repository', 'oauth2_header_name', 'portal_cookie_name',
-                          'public_token', 'branch', 'smtp_server', 'ssh_authorized_key', 'rsa_encryption_key')
-        try:
-            for key in request.JSON.keys():
-                if key not in allowed_fields:
-                    return JsonResponse({'error': _("Attribute not allowed : '{}'."
-                                                    "Allowed attributes are {}".format(key, allowed_fields))})
-            return config_edit(request, api=True, update=True)
-
-        except Exception as e:
-            logger.critical(e, exc_info=1)
-            if settings.DEV_MODE:
-                error = str(e)
-            else:
-                error = _("An error has occurred")
-
-        return JsonResponse({
-            'status': False,
-            'error': error
-        }, status=500)
