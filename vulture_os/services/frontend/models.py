@@ -1523,6 +1523,8 @@ class Frontend(models.Model):
                         .replace("listen {}".format(self.name),
                                  "listen test_{}".format(self.id or "test")) \
                         .replace('filter spoe engine', '#filter spoe engine') # don't test spoe files, they won't be up-to-date
+        for workflow in self.workflow_set.all():
+            test_conf = test_conf.replace(f"backend {'_'.join(workflow.name.split())}", f"backend test_{'_'.join(workflow.name.split())}")
         if node_name != Cluster.get_current_node().name:
             try:
                 global_config = Cluster().get_global_config()
