@@ -104,19 +104,6 @@
       }
     },
     {
-      sTitle: '{% translate "JWT" %}',
-      name: "enable_jwt",
-      aTargets: [6],
-      defaultContent: "",
-      mData: "enable_jwt",
-      mRender: function(data, type, row) {
-        if (row.enable_jwt) <!-- data -->
-          return "<label class='label label-success'><i class='fas fa-check-circle'></i></label>";
-        else
-          return "<label class='label label-default'><i class='fas fa-times-circle'></i></label>";
-      }
-    },
-    {
       sTitle: '{% translate "OTP repository" %}',
       name:"otp_repository",
       aTargets: [6],
