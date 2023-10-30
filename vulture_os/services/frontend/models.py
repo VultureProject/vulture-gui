@@ -24,7 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
-import uuid
+from uuid import uuid4
 import datetime
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -1518,13 +1518,11 @@ class Frontend(models.Model):
         conf = self.configuration.get(node_name)
         if not conf:
             return
-        test_conf = conf.replace("frontend {}".format(self.name),
-                                 "frontend test_{}".format(self.id or "test")) \
-                        .replace("listen {}".format(self.name),
-                                 "listen test_{}".format(self.id or "test")) \
+        test_conf = conf.replace(f"frontend {self.name}", f"frontend {uuid4()}") \
+                        .replace(f"listen {self.name}", f"listen test_{uuid4()}") \
                         .replace('filter spoe engine', '#filter spoe engine') # don't test spoe files, they won't be up-to-date
         for workflow in self.workflow_set.all():
-            test_conf = test_conf.replace(f"backend {'_'.join(workflow.name.split())}", f"backend test_{'_'.join(workflow.name.split())}")
+            test_conf = test_conf.replace(f"backend {workflow.name.replace(' ', '_')}", f"backend {uuid4()}")
         if node_name != Cluster.get_current_node().name:
             try:
                 global_config = Cluster().get_global_config()
@@ -2277,7 +2275,7 @@ class BlacklistWhitelist(models.Model):
 
         acl_name = "acl_"
         acl_name_list = []
-        current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+        current_acl_name = "{}{}".format(acl_name, str(uuid4()))
         acl_name_list.append(current_acl_name)
         acl_str = ""
         spaces = "    "
@@ -2285,7 +2283,7 @@ class BlacklistWhitelist(models.Model):
         if mode == "$or":
             for condition_tuple in condition_list:
                 acl_str += "acl {} {}\n{}".format(current_acl_name, condition_tuple[0], spaces)
-                current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+                current_acl_name = "{}{}".format(acl_name, str(uuid4()))
                 acl_name_list.append(current_acl_name)
 
             acl_str += "http-request deny if"
@@ -2305,7 +2303,7 @@ class BlacklistWhitelist(models.Model):
         else:
             for condition_tuple in condition_list:
                 acl_str += "acl {} {}\n{}".format(current_acl_name, condition_tuple[0], spaces)
-                current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+                current_acl_name = "{}{}".format(acl_name, str(uuid4()))
                 acl_name_list.append(current_acl_name)
 
             acl_str += "http-request deny if"

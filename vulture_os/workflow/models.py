@@ -224,7 +224,8 @@ class Workflow(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
             return template.render({'conf': self.to_template(),
-                                    'nodes': Node.objects.exclude(name=get_hostname())})
+                                    'nodes': Node.objects.exclude(name=get_hostname()),
+                                    'global_config': Cluster.get_global_config().to_dict(fields=['public_token', 'portal_cookie_name'])})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound:

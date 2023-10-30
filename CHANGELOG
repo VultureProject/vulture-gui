@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] New last_update_time field
 ### Changed
 - [HAPROXY] [CONF] Split Frontend and Workflow config to improve performance
+- [HAPROXY] [CONF] Change test config names by uuids
 ### Fixed
 - [GUI] [FRONTEND] Bug allowing the creation of an http or tcp frontend without a listener
 - [LOG_FORWARDER] Rsyslog config generation error when '-' found in LOGOM name
