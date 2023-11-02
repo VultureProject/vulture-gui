@@ -27,15 +27,38 @@ __doc__ = 'Backends & Servers dedicated form classes'
 from django.utils.translation import gettext_lazy as _
 from django.utils.crypto import get_random_string
 from django.conf import settings
-from django.forms import Form
+from django.forms import (ModelForm, CheckboxInput, NumberInput, SelectMultiple, TextInput)
 import validators
 import logging
+
+# Django project imports
+from workflow.models import Workflow, CORS_METHODS
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 
-class WorkflowForm(Form):
+class WorkflowForm(ModelForm):
+
+    class Meta:
+        model = Workflow
+        fields = ('enabled', 'name', 'enable_cors_policy', 'allowed_methods',
+                  'allowed_origins', 'allowed_headers', 'max_age')
+        widgets = {
+            'enabled': CheckboxInput(attrs={'class': 'js-switch'}),
+            'name': TextInput(attrs={'class': 'form-control'}),
+            'enable_cors_policy': CheckboxInput(attrs={'class': 'js-switch'}),
+            'allowed_methods': SelectMultiple(choices=CORS_METHODS, attrs={'class': 'form-control select2'}),
+            'allowed_origins': TextInput(attrs={'class': 'form-control'}),
+            'allowed_headers': TextInput(attrs={'class': 'form-control'}),
+            'max_age': NumberInput(attrs={'class': 'form-control'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        """ Initialize form and special attributes """
+        super().__init__(*args, **kwargs)
+        self.fields['allowed_methods'].empty_label = "Don't select me" # I tried None but doesn't work
+
     # Exclude LOG Frontends
     def clean_public_dir(self):
         """ """

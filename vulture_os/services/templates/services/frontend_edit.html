@@ -355,109 +355,111 @@
                           </div>
                         </div>
                       </div> <!-- /.row darwin-mode -->
+                    </div> <!-- /.row -->
                     <!-- Advanced tab -->
-                    <div class="row log-mode">
-                      <div class="col-sm-4 pull-right">
-                        <div class="form-group">
-                          <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
-                            <i class="fa fa-plus"></i> {% translate "Advanced" %}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="form-group collapse advanced_options">
-                      <div class="row log-mode filebeat-mode redis-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_password.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_password}}
-                              {{form.redis_password.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row log-mode redis-mode redis-queue-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_use_lpop.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_use_lpop}}
-                              {{form.redis_use_lpop.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row log-mode redis-mode redis-queue-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_batch_size.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_batch_size}}
-                              {{form.redis_batch_size.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                    <div class="row">
                       <div class="row log-mode">
-                        <div class="col-md-12">
+                        <div class="col-sm-4 pull-right">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "Max. number of rsyslog workers" %}</label>
-                            <div class="col-sm-5">
-                              {{form.nb_workers}}
-                              {{form.nb_workers.errors|safe}}
-                            </div>
+                            <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
+                              <i class="fa fa-plus"></i> {% translate "Advanced" %}
+                            </button>
                           </div>
                         </div>
                       </div>
-                      <div class="row log-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "Size of mmdblookup cache" %}</label>
-                            <div class="col-sm-5">
-                              {{form.mmdb_cache_size}}
-                              {{form.mmdb_cache_size.errors|safe}}
+                      <div class="form-group collapse advanced_options">
+                        <div class="row log-mode filebeat-mode redis-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_password.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_password}}
+                                {{form.redis_password.errors|safe}}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="row log-mode listening-tcp no-filebeat-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "Disable 'Octet-counted framing'" %}</label>
-                            <div class="col-sm-5">
-                              {{form.disable_octet_counting_framing}}
-                              {{form.disable_octet_counting_framing.errors|safe}}
+                        <div class="row log-mode redis-mode redis-queue-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_use_lpop.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_use_lpop}}
+                                {{form.redis_use_lpop.errors|safe}}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
-                      <div class="row log-mode listening-tcp no-filebeat-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "rate-limiting interval" %}</label>
-                            <div class="col-sm-5">
-                              {{form.ratelimit_interval}}
-                              {{form.ratelimit_interval.errors|safe}}
-                            </div>
-                            <div class="col-sm-2">
-                              {% translate " s" %}
+                        <div class="row log-mode redis-mode redis-queue-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_batch_size.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_batch_size}}
+                                {{form.redis_batch_size.errors|safe}}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
-                      <div class="row log-mode listening-tcp no-filebeat-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "rate-limiting burst" %}</label>
-                            <div class="col-sm-5">
-                              {{form.ratelimit_burst}}
-                              {{form.ratelimit_burst.errors|safe}}
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{% translate "Max. number of rsyslog workers" %}</label>
+                              <div class="col-sm-5">
+                                {{form.nb_workers}}
+                                {{form.nb_workers.errors|safe}}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
-                    </div> <!-- /advanced_options -->
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{% translate "Size of mmdblookup cache" %}</label>
+                              <div class="col-sm-5">
+                                {{form.mmdb_cache_size}}
+                                {{form.mmdb_cache_size.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode listening-tcp no-filebeat-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{% translate "Disable 'Octet-counted framing'" %}</label>
+                              <div class="col-sm-5">
+                                {{form.disable_octet_counting_framing}}
+                                {{form.disable_octet_counting_framing.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row log-mode -->
+                        <div class="row log-mode listening-tcp no-filebeat-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{% translate "rate-limiting interval" %}</label>
+                              <div class="col-sm-5">
+                                {{form.ratelimit_interval}}
+                                {{form.ratelimit_interval.errors|safe}}
+                              </div>
+                              <div class="col-sm-2">
+                                {% translate " s" %}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row log-mode -->
+                        <div class="row log-mode listening-tcp no-filebeat-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{% translate "rate-limiting burst" %}</label>
+                              <div class="col-sm-5">
+                                {{form.ratelimit_burst}}
+                                {{form.ratelimit_burst.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.row log-mode -->
+                      </div> <!-- /advanced_options -->
                     </div> <!-- /.row -->
                   </div> <!-- /.tab-pane tab_general -->
                   <div class="tab-pane" id="tab_network">

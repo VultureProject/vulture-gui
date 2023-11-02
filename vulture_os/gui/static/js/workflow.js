@@ -267,10 +267,14 @@ var workflow_vue = new Vue({
                 '',
                 {
                     workflow_enabled: $('#id_enabled').is(':checked'),
-                    workflow_name: $('#id_name').val(),
+                    name: $('#id_name').val(),
+                    enable_cors_policy: $('#id_enable_cors_policy').is(':checked'),
+                    allowed_methods: $('#id_allowed_methods').val(),
+                    allowed_origins: $('#id_allowed_origins').val(),
+                    allowed_headers: $('#id_allowed_headers').val(),
+                    max_age: $('#id_max_age').val(),
                     workflow: JSON.stringify(self.workflow)
                 },
-
                 function(response){
                     $('#btn-save-workflow').html(txt)
                     $('#btn-save-workflow').prop('disabled', "");
@@ -282,7 +286,13 @@ var workflow_vue = new Vue({
                         }, 300);
                     }
                 }
-            )
+            ).fail(function(response) {
+                $('#btn-save-workflow').html(txt)
+                $('#btn-save-workflow').prop('disabled', "");
+                let errors = response.responseJSON.errors
+                console.log(errors)
+                error(errors.next())
+            })
         },
 
         generate_id: function(){
@@ -1351,6 +1361,13 @@ $(function(){
         target: $('#block-visualisation')
     });
 
-    var elem = document.querySelector('.js-switch');
-    var init = new Switchery(elem);
+    $("#btn-modal-cors").on('click', function(){
+        $('.select2').select2();
+        $("#modalCORS").modal('show')
+    })
+
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(elem) {
+      var init = new Switchery(elem);
+    });
 })
