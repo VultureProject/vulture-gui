@@ -1607,11 +1607,11 @@ class Frontend(models.Model):
                 if log_om.enabled:
                     if log_om.internal and isinstance(log_om, LogOMMongoDB):
                         log_om.collection = self.ruleset
-                    log_oms[match.group(1)] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
+                    log_oms[match.group(1).replace('-','_')] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
                     logger.info("Configuration of Log Forwarder named '{}' generated.".format(log_om.name))
         internal_ruleset = ""
 
-        tpl = JinjaTemplate(self.log_condition)
+        tpl = JinjaTemplate(self.log_condition.replace('-','_'))
         return internal_ruleset + "\n\n" + tpl.render(Context(log_oms, autoescape=False)) + "\n"
 
     def render_log_condition_failure(self):
