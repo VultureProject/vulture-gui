@@ -157,7 +157,9 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                 frontends.update([listener.frontend for listener in Listener.objects.filter(Q(frontend__log_forwarders=log_om.id) |
                                                         Q(frontend__log_forwarders_parse_failure=log_om.id),
                                                         network_address__nic__node=node.id).distinct()])
-                frontends.update(Frontend.objects.filter(node=node.id, log_forwarders= log_om.id))
+                frontends.update(Frontend.objects.filter(Q(log_forwarders=log_om.id) |
+                                                        Q(log_forwarders_parse_failure=log_om.id),
+                                                        Q(listening_mode="api") | Q(node=node.id)))
                 for frontend  in frontends:
                     # If the name of the log forwarder is changed, update it in the log_condition of the frontend
                     if log_om_old_name:
