@@ -58,21 +58,24 @@ class Tenants(models.Model):
         # Build CTI feed list associated to this tenant
         frontend_list = list()
         feed_list = set()
-        for f in self.frontend_set.all().only("name"):
-            frontend_list.append(f.name)
-            for ctx in f.frontendreputationcontext_set.all().only("reputation_ctx"):
-                try:
-                    feed = ReputationContext.objects.get(id=ctx.reputation_ctx.id)
-                    feed_list.add(feed.name)
-                except Exception as e:
-                    logger.error("Error when getting reputation context for tenant {}: {}".format(f.name, str(e)))
-                    pass
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            for f in self.frontend_set.all().only("name"):
+                frontend_list.append(f.name)
+                for ctx in f.frontendreputationcontext_set.all().only("reputation_ctx"):
+                    try:
+                        feed = ReputationContext.objects.get(id=ctx.reputation_ctx.id)
+                        feed_list.add(feed.name)
+                    except Exception as e:
+                        logger.error("Error when getting reputation context for tenant {}: {}".format(f.name, str(e)))
+                        pass
         return {
             "id": str(self.id),
             "name": self.name,
             "frontends": frontend_list,
             "reputation_contexts": list(feed_list),
-            "internal": self.config_set.all().count() > 0
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            "internal": self.config_set.all().count() > 0 if self.pk else False
         }
 
     class Meta:
@@ -80,10 +83,12 @@ class Tenants(models.Model):
 
     def reload_frontends_conf(self):
         updated_nodes = set()
-        for frontend in self.frontend_set.filter(enabled=True, enable_logging=True):
-            for node in frontend.get_nodes():
-                updated_nodes.add(node)
-                node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            for frontend in self.frontend_set.filter(enabled=True, enable_logging=True):
+                for node in frontend.get_nodes():
+                    updated_nodes.add(node)
+                    node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
 
         for node in updated_nodes:
             node.api_request("services.rsyslogd.rsyslog.restart_service")

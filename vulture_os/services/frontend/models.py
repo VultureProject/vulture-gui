@@ -1222,13 +1222,15 @@ class Frontend(models.Model):
         if not fields or "listeners" in fields:
             result['listeners'] = []
             """ Add listeners, except if listening_mode is file """
-            for listener in self.listener_set.all():
-                l = listener.to_template()
-                # Remove frontend to prevent infinite loop
-                del l['frontend']
-                result['listeners'].append(l)
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            if self.pk:
+                for listener in self.listener_set.all():
+                    l = listener.to_template()
+                    # Remove frontend to prevent infinite loop
+                    del l['frontend']
+                    result['listeners'].append(l)
         if not fields or "backend" in fields:
-            result['backend'] = [b.to_dict() for b in self.backend.all()]
+            result['backend'] = [b.to_dict() for b in self.backend.all()] if self.pk else []
         if not fields or "darwin_policies" in fields:
             result['darwin_policies'] = list(self.darwin_policies.all())
         if not fields or "darwin_policies" in fields:
@@ -1245,7 +1247,8 @@ class Frontend(models.Model):
 
         if self.enable_logging_reputation:
             if not fields or "reputation_contexts" in fields:
-                result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
+                # Test self.pk to prevent M2M errors when object isn't saved in DB
+                result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()] if self.pk else []
             if not fields or "logging_reputation_database_v4" in fields:
                 if self.logging_reputation_database_v4:
                     result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
@@ -1282,7 +1285,8 @@ class Frontend(models.Model):
         elif self.listening_mode == "api":
             listeners_list = [self.api_parser_type]
         else:
-            listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())]
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())] if self.pk else []
 
         log_forwarders = [str(l) for l in self.log_forwarders.all()]
 
@@ -1321,14 +1325,15 @@ class Frontend(models.Model):
             'additional_infos': additional_infos
         }
 
-    def to_template(self, listener_list=None, header_list=None, node=None):
+    def to_template(self, listener_list=[], header_list=None, node=None):
         """ Dictionary used to create configuration file
 
         :return     Dictionnary of configuration parameters
         """
         """ Retrieve list/custom objects """
         # If facultative arg listener_list is not given
-        if not listener_list:
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if not listener_list and self.pk:
             # Retrieve listeners into database
             # No .only ! Used to generated conf, neither str, we need the whole object
             if node:
@@ -1356,13 +1361,15 @@ class Frontend(models.Model):
             geoip_database = DATABASES_PATH + '/' + self.logging_geoip_database.filename
 
         reputation_ctxs = []
-        if self.enable_logging:
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.enable_logging and self.pk:
             for reputation_ctx in self.frontendreputationcontext_set.filter(enabled=True):
                 reputation_ctxs.append(reputation_ctx)
 
         workflow_list = []
         access_controls_list = []
-        if self.id:
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.pk:
             for workflow in self.workflow_set.filter(enabled=True):
                 tmp = workflow.to_template()
 
@@ -1455,8 +1462,9 @@ class Frontend(models.Model):
             'filebeat_module': self.filebeat_module,
             'filebeat_config': self.filebeat_config,
             'filebeat_listening_mode': self.filebeat_listening_mode,
-            'external_idps': self.userauthentication_set.filter(enable_external=True),
-            'session_enabled': self.workflow_set.filter(authentication__isnull=False).count() > 0
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            'external_idps': self.userauthentication_set.filter(enable_external=True) if self.pk else [],
+            'session_enabled': self.workflow_set.filter(authentication__isnull=False).count() > 0 if self.pk else []
 
         }
 
@@ -1882,9 +1890,11 @@ class Frontend(models.Model):
         return self.mode == "filebeat" and self.filebeat_listening_mode in ("udp", "file", "api")
 
     def has_tls(self):
-        for listener in self.listener_set.all():
-            if listener.is_tls:
-                return True
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            for listener in self.listener_set.all():
+                if listener.is_tls:
+                    return True
         return False
 
 

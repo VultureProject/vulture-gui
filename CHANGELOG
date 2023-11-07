@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [GUI] [FRONTEND] Bug allowing the creation of an http or tcp frontend without a listener
-- [TEMPLATE] Missing space after "translate" block tag
 
 
 ## [2.12.0]
@@ -41,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - urllib3 1.26.17 -> 1.26.18
   - werkzeug 2.3.7 -> 3.0.0
 - [API] [PF] Changed old PF whitelist/blacklist from config to new API entrypoint 'api/v1/system/pf/'
+- [INTERNAL] Adapt model relationships to Django 4.2
 ### Fixed
 - [PORTAL] [IDP] Refresh token validation with multiple IDP
 - [FRONTEND] Disable log condition if log forwarder disabled
