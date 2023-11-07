@@ -159,7 +159,8 @@ class Workflow(models.Model):
             'backend': str(self.backend),
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
-            'acls': self.workflowacl_set.count(),
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            'acls': self.workflowacl_set.count() if self.pk else 0,
             'authentication': str(self.authentication)
         }
         return tmp
@@ -179,7 +180,8 @@ class Workflow(models.Model):
         if not fields or "authentication" in fields:
             result['authentication'] = self.authentication.to_dict() if self.authentication else None
         if not fields or "acls" in fields:
-            result['acls'] = [acl.to_dict() for acl in self.workflowacl_set.all()]
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            result['acls'] = [acl.to_dict() for acl in self.workflowacl_set.all()] if self.pk else []
         return result
 
     def to_template(self):

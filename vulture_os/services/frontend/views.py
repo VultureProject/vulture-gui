@@ -261,7 +261,7 @@ def frontend_edit(request, object_id=None, api=False):
             for header in DEFAULT_FRONTEND_HEADERS:
                 header_form_list.append(HeaderForm(header))
 
-        if not reputationctx_form_list and front:
+        if not reputationctx_form_list and front and front.pk:
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
