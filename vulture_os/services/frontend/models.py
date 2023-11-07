@@ -1183,7 +1183,26 @@ class Frontend(models.Model):
         help_text=_("Vectra client id"),
         default="",
     )
-
+    # Apex attributes
+    apex_server_host = models.TextField(
+        verbose_name=_("Apex server host"),
+        help_text=_("Apex server host"),
+        default = ""
+    )
+    apex_api_key = models.TextField(
+        verbose_name=_("Apex api key"),
+        help_text=_("Apex api key"),
+        default="",
+    )
+    apex_application_id = models.TextField(
+        verbose_name=_("Apex application id"),
+        help_text=_("Apex application id"),
+        default="",
+    )
+    apex_timestamp = models.JSONField(
+        default={}
+    )
+    
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)

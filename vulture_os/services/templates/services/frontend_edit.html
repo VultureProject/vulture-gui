@@ -1800,6 +1800,29 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-12 api_clients_row" id="api_apex_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.apex_server_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.apex_server_host }}
+                            {{ form.apex_server_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.apex_api_key.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.apex_api_key }}
+                            {{ form.apex_api_key.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.apex_application_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.apex_application_id }}
+                            {{ form.apex_application_id.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
