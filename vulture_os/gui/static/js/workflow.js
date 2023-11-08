@@ -78,6 +78,7 @@ var workflow_vue = new Vue({
         access_control_choices: [],
         authentication_choices: [],
         authentication_filter_choices: [],
+        cors_policy: {},
 
         workflow: [],
 
@@ -114,11 +115,18 @@ var workflow_vue = new Vue({
             $.get(
                 workflow_api + workflow_id + '/',
                 $.param({
-                    fields: ["workflow_json"]
+                    fields: ["workflow_json", "enable_cors_policy", "allowed_methods", "allowed_origins", "allowed_headers", "max_age"]
                 }, true),
 
                 function(response){
                     self.workflow = response.data.workflow_json;
+                    self.cors_policy = {
+                        "enable_cors_policy": response.data.enable_cors_policy,
+                        "allowed_methods": response.data.allowed_methods,
+                        "allowed_origins": response.data.allowed_origins,
+                        "allowed_headers": response.data.allowed_headers,
+                        "max_age": response.data.max_age
+                    }
                     for(node of self.workflow) {
                         switch(node.data.type) {
                             case "authentication":
@@ -268,11 +276,11 @@ var workflow_vue = new Vue({
                 {
                     workflow_enabled: $('#id_enabled').is(':checked'),
                     name: $('#id_name').val(),
-                    enable_cors_policy: $('#id_enable_cors_policy').is(':checked'),
-                    allowed_methods: $('#id_allowed_methods').val(),
-                    allowed_origins: $('#id_allowed_origins').val(),
-                    allowed_headers: $('#id_allowed_headers').val(),
-                    max_age: $('#id_max_age').val(),
+                    enable_cors_policy: self.cors_policy.enable_cors_policy,
+                    allowed_methods: self.cors_policy.allowed_methods,
+                    allowed_origins: self.cors_policy.allowed_origins,
+                    allowed_headers: self.cors_policy.allowed_headers,
+                    max_age: self.cors_policy.max_age,
                     workflow: JSON.stringify(self.workflow)
                 },
                 function(response){
@@ -290,7 +298,7 @@ var workflow_vue = new Vue({
                 $('#btn-save-workflow').html(txt)
                 $('#btn-save-workflow').prop('disabled', "");
                 let errors = response.responseJSON.errors
-                console.log(errors)
+                console.error(errors)
                 error(errors.next())
             })
         },
@@ -508,23 +516,23 @@ var workflow_vue = new Vue({
             var tree_data = [];
 
             if (!self.frontend_set){
-                
+
                 tree_data.push(this.generate_frontend_tree());
-            
+
             } else if (!self.backend_set){
 
                 tree_data.push(this.generate_acl_tree());
 
 
                 if (!self.authentication_set){
-                    
+
                     tree_data.push(this.generate_authentication_tree());
 
                 } else {
                     if(!self.authentication_filter_set) {
-                        
+
                         tree_data.push(this.generate_authentication_filter_tree());
-                    
+
                     }
                 }
 
@@ -651,14 +659,14 @@ var workflow_vue = new Vue({
                 $.confirm({
                     title: gettext('Define FQDN & Public Directory'),
                     columnClass: 'medium',
-                    content: form_frontend(false),
+                    content: form_frontend(false), //function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflow_mode, fqdn, public_dir){
                     buttons: {
                         formSubmit: {
                             text: gettext('Save'),
                             btnClass: 'btn-blue',
                             action: function () {
-                                var fqdn = this.$content.find('.fqdn').val();
-                                var public_dir = this.$content.find('.public_dir').val();
+                                let fqdn = this.$content.find('.fqdn').val();
+                                let public_dir = this.$content.find('.public_dir').val();
 
                                 if (!fqdn){
                                     this.error(gettext("Please provide FQDN to reach your application"))
@@ -667,6 +675,12 @@ var workflow_vue = new Vue({
 
                                 frontend_node.data.fqdn = fqdn;
                                 frontend_node.data.public_dir = public_dir;
+                                self.cors_policy.enable_cors_policy = this.$content.find('#id_enable_cors_policy').is(':checked');
+                                self.cors_policy.allowed_methods = this.$content.find('#id_allowed_methods').val();
+                                self.cors_policy.allowed_origins = this.$content.find('#id_allowed_origins').val();
+                                self.cors_policy.allowed_headers = this.$content.find('#id_allowed_headers').val();
+                                self.cors_policy.max_age = this.$content.find('#id_max_age').val();
+
                                 self.workflow[0].label = fqdn + public_dir;
                                 append_frontend_to_workflow(frontend_node)
                                 return;
@@ -677,7 +691,10 @@ var workflow_vue = new Vue({
                             return true;
                         }
                     },
-                    onContentReady: onContentReady
+                    onContentReady: function () {
+                        this.$content.find('.select2').select2({dropdownParent: $(".jconfirm")});
+                        new Switchery(this.$content.find('.js-switch')[0]);
+                    }
                 })
             } else {
                 // Define what to do with other type of frontends
@@ -1081,7 +1098,8 @@ var workflow_vue = new Vue({
                                 $.confirm({
                                     title: gettext('Listener'),
                                     columnClass: 'medium',
-                                    content: form_frontend(true, self.frontend_choices, node.data.object_id, self.workflow_mode, node.data.fqdn, node.data.public_dir),
+                                    content: form_frontend(true, self.cors_policy, self.frontend_choices, node.data.object_id, self.workflow_mode, node.data.fqdn, node.data.public_dir),
+                                    //function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflow_mode, fqdn, public_dir){
                                     buttons: {
                                         formSubmit: {
                                             text: gettext('Save'),
@@ -1090,11 +1108,21 @@ var workflow_vue = new Vue({
                                                 var frontend_id = this.$content.find('.frontend').val();
                                                 var fqdn = this.$content.find('.fqdn').val();
                                                 var public_dir = this.$content.find('.public_dir').val();
+                                                if (!fqdn){
+                                                    this.error(gettext("Please provide FQDN to reach your application"))
+                                                    return false;
+                                                }
 
                                                 node.data.fqdn = fqdn;
                                                 node.data.public_dir = public_dir;
                                                 node.data.object_id = frontend_id
                                                 self.workflow[0].label = fqdn + public_dir;
+
+                                                self.cors_policy.enable_cors_policy = this.$content.find('#id_enable_cors_policy').is(':checked');
+                                                self.cors_policy.allowed_methods = this.$content.find('#id_allowed_methods').val();
+                                                self.cors_policy.allowed_origins = this.$content.find('#id_allowed_origins').val();
+                                                self.cors_policy.allowed_headers = this.$content.find('#id_allowed_headers').val();
+                                                self.cors_policy.max_age = this.$content.find('#id_max_age').val();
 
                                                 var index_frontend = self.get_node(node.id, true);
                                                 self.workflow[index_frontend] = node;
@@ -1106,7 +1134,10 @@ var workflow_vue = new Vue({
                                             return true;
                                         }
                                     },
-                                    onContentReady: onContentReady
+                                    onContentReady: function () {
+                                        this.$content.find('.select2').select2({dropdownParent: $(".jconfirm")});
+                                        new Switchery(this.$content.find('.js-switch')[0]);
+                                    }
                                 })
                                 break;
                             case "acl":
@@ -1368,6 +1399,6 @@ $(function(){
 
     var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
       elems.forEach(function(elem) {
-      var init = new Switchery(elem);
+      new Switchery(elem);
     });
 })

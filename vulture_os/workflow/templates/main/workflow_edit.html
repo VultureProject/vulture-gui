@@ -94,59 +94,6 @@
     </div>
   </section>
 
-    <div class="modal" id="modalCORS">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal"><i class="pci-cross pci-circle"></i></button>
-                    <h4 class="modal-title">{% translate "Workflow CORS policy" %}</h4>
-                </div>
-
-                <div class="modal-body" id="modalCORSContent">
-                    <div class="row">
-                        <label class="col-sm-4 control-label">{{ form.enable_cors_policy.label }}</label>
-                        <div class="col-sm-7 form-group">
-                            {{form.enable_cors_policy}}
-                            {{form.enable_cors_policy.errors|safe}}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <label class="col-sm-4 control-label">{{ form.allowed_methods.label }}</label>
-                        <div class="col-sm-7 form-group">
-                            {{form.allowed_methods}}
-                            {{form.allowed_methods.errors|safe}}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <label class="col-sm-4 control-label">{{ form.allowed_origins.label }}</label>
-                        <div class="col-sm-7 form-group">
-                            {{form.allowed_origins}}
-                            {{form.allowed_origins.errors|safe}}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <label class="col-sm-4 control-label">{{ form.allowed_headers.label }}</label>
-                        <div class="col-sm-7 form-group">
-                            {{form.allowed_headers}}
-                            {{form.allowed_headers.errors|safe}}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <label class="col-sm-4 control-label">{{ form.max_age.label }}</label>
-                        <div class="col-sm-7 form-group">
-                            {{form.max_age}}
-                            {{form.max_age.errors|safe}}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn-success btn-flat" data-dismiss="modal" type="button">{% translate "Continue" %}</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 {% endblock %}
 
 

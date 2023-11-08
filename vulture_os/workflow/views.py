@@ -139,8 +139,6 @@ def save_workflow(request, workflow_obj, object_id=None):
         workflow_obj.name = request.POST['name']
         workflow_obj.enabled = request.POST['workflow_enabled'] == "true"
         if request.POST.get('enable_cors_policy'):
-            logger.info(f"[SAVE WORKFLOW] {request.POST.getlist('allowed_methods[]')}")
-            logger.info(f"[SAVE WORKFLOW] {','.join(request.POST.getlist('allowed_methods[]'))}")
             workflow_obj.enable_cors_policy = request.POST['enable_cors_policy'] == "true"
             workflow_obj.allowed_methods = request.POST.getlist('allowed_methods[]')
             workflow_obj.allowed_origins = request.POST['allowed_origins']
