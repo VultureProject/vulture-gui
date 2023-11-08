@@ -1604,6 +1604,7 @@ class Frontend(models.Model):
 
     def render_log_condition(self):
         log_oms = {}
+        clean_log_condition = self.log_condition
         for line in self.log_condition.split('\n'):
             if line.count('{') < 2:
                 continue
@@ -1613,11 +1614,13 @@ class Frontend(models.Model):
                 if log_om.enabled:
                     if log_om.internal and isinstance(log_om, LogOMMongoDB):
                         log_om.collection = self.ruleset
-                    log_oms[match.group(1)] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
+                    # Ensure variable names don't have a '-' character (and only those variables)
+                    clean_log_condition = self.log_condition.replace(match.group(1), match.group(1).replace('-','_'))
+                    log_oms[match.group(1).replace('-','_')] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
                     logger.info("Configuration of Log Forwarder named '{}' generated.".format(log_om.name))
         internal_ruleset = ""
 
-        tpl = JinjaTemplate(self.log_condition)
+        tpl = JinjaTemplate(clean_log_condition)
         return internal_ruleset + "\n\n" + tpl.render(Context(log_oms, autoescape=False)) + "\n"
 
     def render_log_condition_failure(self):
