@@ -184,12 +184,6 @@ class Frontend(models.Model):
         choices=MODE_CHOICES,
         help_text=_("Listening mode"),
     )
-    timeout_connect = models.PositiveIntegerField(
-        default=5000,
-        validators=[MaxValueValidator(20000)],
-        help_text=_("HTTP request Timeout"),
-        verbose_name=_("Timeout")
-    )
     timeout_client = models.PositiveIntegerField(
         default=60,
         validators=[MaxValueValidator(3600)],
@@ -1428,7 +1422,6 @@ class Frontend(models.Model):
             'listeners': listener_list,
             'https_redirect': self.https_redirect,
             'mode': self.mode,
-            'timeout_connect': self.timeout_connect,
             'timeout_client': self.timeout_client,
             'timeout_keep_alive': self.timeout_keep_alive,
             'enable_logging': self.enable_logging,

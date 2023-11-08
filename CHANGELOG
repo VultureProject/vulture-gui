@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [FRONTEND] New last_update_time field
+### Removed
+- [FRONTEND] [TIMEOUTS] Incoherent "timeout connect" in Frontend attributes
 ### Changed
 - [HAPROXY] [CONF] Split Frontend and Workflow config to improve performance
 - [HAPROXY] [CONF] Change test config names by uuids
