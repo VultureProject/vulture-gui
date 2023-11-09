@@ -512,34 +512,21 @@ var workflow_vue = new Vue({
 
         init_toolbox_tree(){
             var self = this;
-
             var tree_data = [];
 
             if (!self.frontend_set){
-
                 tree_data.push(this.generate_frontend_tree());
-
             } else if (!self.backend_set){
-
                 tree_data.push(this.generate_acl_tree());
-
-
                 if (!self.authentication_set){
-
                     tree_data.push(this.generate_authentication_tree());
-
                 } else {
                     if(!self.authentication_filter_set) {
-
                         tree_data.push(this.generate_authentication_filter_tree());
-
                     }
                 }
-
                 tree_data.push(this.generate_backend_tree());
-
             }
-
             this.refresh_jstree(tree_data);
         },
 
@@ -659,7 +646,7 @@ var workflow_vue = new Vue({
                 $.confirm({
                     title: gettext('Define FQDN & Public Directory'),
                     columnClass: 'medium',
-                    content: form_frontend(false), //function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflow_mode, fqdn, public_dir){
+                    content: form_frontend(false),
                     buttons: {
                         formSubmit: {
                             text: gettext('Save'),
@@ -667,21 +654,20 @@ var workflow_vue = new Vue({
                             action: function () {
                                 let fqdn = this.$content.find('.fqdn').val();
                                 let public_dir = this.$content.find('.public_dir').val();
-
                                 if (!fqdn){
-                                    this.error(gettext("Please provide FQDN to reach your application"))
+                                    $.alert(gettext("Please provide FQDN to reach your application"))
                                     return false;
                                 }
 
                                 frontend_node.data.fqdn = fqdn;
                                 frontend_node.data.public_dir = public_dir;
+                                self.workflow[0].label = fqdn + public_dir;
                                 self.cors_policy.enable_cors_policy = this.$content.find('#id_enable_cors_policy').is(':checked');
                                 self.cors_policy.allowed_methods = this.$content.find('#id_allowed_methods').val();
                                 self.cors_policy.allowed_origins = this.$content.find('#id_allowed_origins').val();
                                 self.cors_policy.allowed_headers = this.$content.find('#id_allowed_headers').val();
                                 self.cors_policy.max_age = this.$content.find('#id_max_age').val();
 
-                                self.workflow[0].label = fqdn + public_dir;
                                 append_frontend_to_workflow(frontend_node)
                                 return;
                             }
@@ -1099,7 +1085,6 @@ var workflow_vue = new Vue({
                                     title: gettext('Listener'),
                                     columnClass: 'medium',
                                     content: form_frontend(true, self.cors_policy, self.frontend_choices, node.data.object_id, self.workflow_mode, node.data.fqdn, node.data.public_dir),
-                                    //function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflow_mode, fqdn, public_dir){
                                     buttons: {
                                         formSubmit: {
                                             text: gettext('Save'),
@@ -1109,7 +1094,7 @@ var workflow_vue = new Vue({
                                                 var fqdn = this.$content.find('.fqdn').val();
                                                 var public_dir = this.$content.find('.public_dir').val();
                                                 if (!fqdn){
-                                                    this.error(gettext("Please provide FQDN to reach your application"))
+                                                    $.alert(gettext("Please provide FQDN to reach your application"))
                                                     return false;
                                                 }
 
@@ -1117,7 +1102,6 @@ var workflow_vue = new Vue({
                                                 node.data.public_dir = public_dir;
                                                 node.data.object_id = frontend_id
                                                 self.workflow[0].label = fqdn + public_dir;
-
                                                 self.cors_policy.enable_cors_policy = this.$content.find('#id_enable_cors_policy').is(':checked');
                                                 self.cors_policy.allowed_methods = this.$content.find('#id_allowed_methods').val();
                                                 self.cors_policy.allowed_origins = this.$content.find('#id_allowed_origins').val();
@@ -1392,13 +1376,5 @@ $(function(){
         target: $('#block-visualisation')
     });
 
-    $("#btn-modal-cors").on('click', function(){
-        $('.select2').select2();
-        $("#modalCORS").modal('show')
-    })
-
-    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
-      elems.forEach(function(elem) {
-      new Switchery(elem);
-    });
+    new Switchery(document.querySelector('.js-switch'));
 })
