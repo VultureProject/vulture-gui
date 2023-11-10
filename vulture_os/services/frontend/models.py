@@ -1446,7 +1446,7 @@ class Frontend(models.Model):
             'reputation_database_v6': reputation_database_v6,
             'geoip_database': geoip_database,
             'reputation_ctxs': reputation_ctxs,
-            'workflows': workflow_list,
+            'workflows': sorted(workflow_list, reverse=True, key=lambda x: len(x['public_dir'].split('/'))),
             'access_controls_list': set(access_controls_list),
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
             'CONF_PATH': HAPROXY_PATH,
