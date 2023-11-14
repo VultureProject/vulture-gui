@@ -24,7 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
-import uuid
+from uuid import uuid4
 import datetime
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -183,12 +183,6 @@ class Frontend(models.Model):
         default="tcp",
         choices=MODE_CHOICES,
         help_text=_("Listening mode"),
-    )
-    timeout_connect = models.PositiveIntegerField(
-        default=5000,
-        validators=[MaxValueValidator(20000)],
-        help_text=_("HTTP request Timeout"),
-        verbose_name=_("Timeout")
     )
     timeout_client = models.PositiveIntegerField(
         default=60,
@@ -1373,62 +1367,23 @@ class Frontend(models.Model):
                 reputation_ctxs.append(reputation_ctx)
 
         workflow_list = []
-        access_controls_list = []
-        # Test self.pk to prevent M2M errors when object isn't saved in DB
-        if self.pk:
-            for workflow in self.workflow_set.filter(enabled=True):
-                tmp = workflow.to_template()
-
-                access_controls_deny = []
-                access_controls_301 = []
-                access_controls_302 = []
-                for acl in workflow.workflowacl_set.filter(before_policy=True):
-                    rules, acls_name = acl.access_control.generate_rules()
-                    access_controls_list.append(rules)
-
-                    conditions = acl.generate_condition(acls_name)
-
-                    redirect_url = None
-                    deny = acl.action_satisfy == "403"
-                    redirect = acl.action_satisfy in ("301", "302")
-                    for type_acl in ('action_satisfy', 'action_not_satisfy'):
-                        action = getattr(acl, type_acl)
-                        if action != "200":
-                            if action in ("301", "302"):
-                                redirect_url = getattr(acl, type_acl.replace('action', 'redirect_url'))
-
-                            break
-
-                    tmp_acl = {
-                        'before_policy': acl.before_policy,
-                        'redirect_url': redirect_url,
-                        'conditions': conditions,
-                        'action': action,
-                        'deny': deny,
-                        "redirect": redirect,
-                    }
-
-                    if action == "403":
-                        access_controls_deny.append(tmp_acl)
-                    elif action == "301":
-                        access_controls_301.append(tmp_acl)
-                    elif action == "302":
-                        access_controls_302.append(tmp_acl)
-
-                tmp['access_controls_deny'] = access_controls_deny
-                tmp['access_controls_302'] = access_controls_302
-                tmp['access_controls_301'] = access_controls_301
-
-                workflow_list.append(tmp)
+        for w in self.workflow_set.filter(enabled=True):
+            workflow_list.append({
+                'id': w.pk,
+                'name': w.name,
+                'backend_name': w.backend.name,
+                'mode': w.mode,
+                'fqdn': w.fqdn,
+                'public_dir': w.public_dir
+            })
 
         result = {
-            'id': str(self.id),
+            'id': str(self.pk),
             'enabled': self.enabled,
             'name': self.name,
             'listeners': listener_list,
             'https_redirect': self.https_redirect,
             'mode': self.mode,
-            'timeout_connect': self.timeout_connect,
             'timeout_client': self.timeout_client,
             'timeout_keep_alive': self.timeout_keep_alive,
             'enable_logging': self.enable_logging,
@@ -1453,8 +1408,7 @@ class Frontend(models.Model):
             'reputation_database_v6': reputation_database_v6,
             'geoip_database': geoip_database,
             'reputation_ctxs': reputation_ctxs,
-            'workflows': workflow_list,
-            'access_controls_list': set(access_controls_list),
+            'workflows': sorted(workflow_list, reverse=True, key=lambda x: len(x['public_dir'].split('/'))),
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
@@ -1470,8 +1424,6 @@ class Frontend(models.Model):
             'filebeat_listening_mode': self.filebeat_listening_mode,
             # Test self.pk to prevent M2M errors when object isn't saved in DB
             'external_idps': self.userauthentication_set.filter(enable_external=True) if self.pk else [],
-            'session_enabled': self.workflow_set.filter(authentication__isnull=False).count() > 0 if self.pk else []
-
         }
 
         """ And returns the attributes of the class """
@@ -1518,11 +1470,10 @@ class Frontend(models.Model):
         conf = self.configuration.get(node_name)
         if not conf:
             return
-        test_conf = conf.replace("frontend {}".format(self.name),
-                                 "frontend test_{}".format(self.id or "test")) \
-                        .replace("listen {}".format(self.name),
-                                 "listen test_{}".format(self.id or "test")) \
-                        .replace('filter spoe engine', '#filter spoe engine') # don't test spoe files, they won't be up-to-date
+        test_conf = conf.replace(f"frontend {self.name}", f"frontend {uuid4()}") \
+                        .replace(f"listen {self.name}", f"listen test_{uuid4()}")
+        for workflow in self.workflow_set.all():
+            test_conf = test_conf.replace(f"backend Workflow_{workflow.pk}", f"backend {uuid4()}")
         if node_name != Cluster.get_current_node().name:
             try:
                 global_config = Cluster().get_global_config()
@@ -2275,7 +2226,7 @@ class BlacklistWhitelist(models.Model):
 
         acl_name = "acl_"
         acl_name_list = []
-        current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+        current_acl_name = "{}{}".format(acl_name, str(uuid4()))
         acl_name_list.append(current_acl_name)
         acl_str = ""
         spaces = "    "
@@ -2283,7 +2234,7 @@ class BlacklistWhitelist(models.Model):
         if mode == "$or":
             for condition_tuple in condition_list:
                 acl_str += "acl {} {}\n{}".format(current_acl_name, condition_tuple[0], spaces)
-                current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+                current_acl_name = "{}{}".format(acl_name, str(uuid4()))
                 acl_name_list.append(current_acl_name)
 
             acl_str += "http-request deny if"
@@ -2303,7 +2254,7 @@ class BlacklistWhitelist(models.Model):
         else:
             for condition_tuple in condition_list:
                 acl_str += "acl {} {}\n{}".format(current_acl_name, condition_tuple[0], spaces)
-                current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+                current_acl_name = "{}{}".format(acl_name, str(uuid4()))
                 acl_name_list.append(current_acl_name)
 
             acl_str += "http-request deny if"

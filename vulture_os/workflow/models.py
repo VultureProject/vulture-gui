@@ -142,6 +142,10 @@ class Workflow(models.Model):
     def __str__(self):
         return "{}: '{}' ==> '{}'".format(self.name, str(self.frontend), str(self.backend))
 
+    @property
+    def mode(self):
+        return "http" if self.frontend.mode == "http" else "tcp"
+
     def to_html_template(self):
         """ Dictionary used to render object as html
         :return     Dictionnary of configuration parameters
@@ -191,19 +195,62 @@ class Workflow(models.Model):
         """
         """ Retrieve list/custom objects """
         """ And returns the attributes of the class """
+
+        access_controls_list = list()
+        access_controls_deny = []
+        access_controls_301 = []
+        access_controls_302 = []
+        for acl in self.workflowacl_set.filter(before_policy=True):
+            rules, acls_name = acl.access_control.generate_rules()
+            access_controls_list.append(rules)
+
+            conditions = acl.generate_condition(acls_name)
+
+            redirect_url = None
+            deny = acl.action_satisfy == "403"
+            redirect = acl.action_satisfy in ("301", "302")
+            action = "200"
+            for type_acl in ('action_satisfy', 'action_not_satisfy'):
+                action = getattr(acl, type_acl)
+                if action != "200":
+                    if action in ("301", "302"):
+                        redirect_url = getattr(acl, type_acl.replace('action', 'redirect_url'))
+
+                    break
+
+            tmp_acl = {
+                'redirect_url': redirect_url,
+                'conditions': conditions,
+                'deny': deny,
+                "redirect": redirect,
+            }
+
+            if action == "403":
+                access_controls_deny.append(tmp_acl)
+            elif action == "301":
+                access_controls_301.append(tmp_acl)
+            elif action == "302":
+                access_controls_302.append(tmp_acl)
+
         client_ids = []
         if self.authentication:
             client_ids = [repo.get_daughter().client_id for repo in self.authentication.repositories.filter(subtype="openid")]
             client_ids.append(self.authentication.oauth_client_id)
+
         return {
-            'id': str(self.id),
+            'id': str(self.pk),
             'name': self.name,
             'enabled': self.enabled,
             'fqdn': self.fqdn,
             'public_dir': self.public_dir,
+            'mode': self.mode,
             'frontend': self.frontend,
             'backend': self.backend,
             'authentication': self.authentication.to_template() if self.authentication else None,
+            'access_controls_list': set(access_controls_list),
+            'access_controls_deny': access_controls_deny,
+            'access_controls_302': access_controls_302,
+            'access_controls_301': access_controls_301,
             'openid_client_ids': client_ids,
             'disconnect_url': self.get_disconnect_url()
         }
@@ -224,7 +271,8 @@ class Workflow(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
             return template.render({'conf': self.to_template(),
-                                    'nodes': Node.objects.exclude(name=get_hostname())})
+                                    'nodes': Node.objects.exclude(name=get_hostname()),
+                                    'global_config': Cluster.get_global_config().to_dict(fields=['public_token', 'portal_cookie_name'])})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound:

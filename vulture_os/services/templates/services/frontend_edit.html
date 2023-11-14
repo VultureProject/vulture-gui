@@ -496,20 +496,6 @@
 
                     <fieldset class="col-lg-12 sol-sm-12 haproxy-conf">
                       <legend>{% translate "Timeout options" %}</legend>
-                      <div class="row haproxy-conf">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "Timeout connect" %}</label>
-                            <div class="col-sm-5">
-                              {{form.timeout_connect}}
-                              {{form.timeout_connect.errors|safe}}
-                            </div>
-                            <div class="col-sm-2">
-                              {% translate " ms" %}
-                            </div>
-                          </div>
-                        </div>
-                      </div> <!-- /.row -->
                       <div class="row tcp-mode haproxy-conf">
                         <div class="col-md-12">
                           <div class="form-group">
