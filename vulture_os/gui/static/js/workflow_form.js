@@ -84,6 +84,7 @@ function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflo
                 <div class="col-sm-7 form-group">
                     <input type="checkbox" class="form-control js-switch" ${cors_policy.enable_cors_policy ? "checked" : ""} id="id_enable_cors_policy">
                 </div>
+                <div class="cors_options">
                 <label class="col-sm-4">${gettext('Allowed methods')}</label>
                 <div class="col-sm-7 form-group">
                     <select class="form-control select2" id="id_allowed_methods" multiple>`
@@ -105,7 +106,18 @@ function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflo
                     <label class="col-sm-4">${gettext('Max age')}</label>
                     <div class="col-sm-7 form-group">
                         <input type="number" value="${cors_policy.max_age}" class="form-control" min="0" id="id_max_age">
-                    </div>`
+                    </div>
+                    </div>
+                    <script>
+                    $('#id_enable_cors_policy').on('change', function(event) {
+                        if ($(this).is(':checked')) {
+                            $('.cors_options').show();
+                          } else {
+                            $('.cors_options').hide();
+                          }
+                    });
+                    $('#id_enable_cors_policy').trigger('change');
+                    </script>`
     }
 
     form += "</form>";

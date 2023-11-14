@@ -148,7 +148,7 @@ class Workflow(models.Model):
         help_text=_("Switch to enable specified CORS policy")
     )
     allowed_methods = models.JSONField(
-        default=CORS_METHODS[0][0],
+        default=[CORS_METHODS[0][0]],
         choices=CORS_METHODS,
         blank=True,
         verbose_name=_("Allowed methods"),
