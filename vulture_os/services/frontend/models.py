@@ -1367,15 +1367,16 @@ class Frontend(models.Model):
                 reputation_ctxs.append(reputation_ctx)
 
         workflow_list = []
-        for w in self.workflow_set.filter(enabled=True):
-            workflow_list.append({
-                'id': w.pk,
-                'name': w.name,
-                'backend_name': w.backend.name,
-                'mode': w.mode,
-                'fqdn': w.fqdn,
-                'public_dir': w.public_dir
-            })
+        if self.pk:
+            for w in self.workflow_set.filter(enabled=True):
+                workflow_list.append({
+                    'id': w.pk,
+                    'name': w.name,
+                    'backend_name': w.backend.name,
+                    'mode': w.mode,
+                    'fqdn': w.fqdn,
+                    'public_dir': w.public_dir
+                })
 
         result = {
             'id': str(self.pk),
@@ -1472,8 +1473,9 @@ class Frontend(models.Model):
             return
         test_conf = conf.replace(f"frontend {self.name}", f"frontend {uuid4()}") \
                         .replace(f"listen {self.name}", f"listen test_{uuid4()}")
-        for workflow in self.workflow_set.all():
-            test_conf = test_conf.replace(f"backend Workflow_{workflow.pk}", f"backend {uuid4()}")
+        if self.pk:
+            for workflow in self.workflow_set.all():
+                test_conf = test_conf.replace(f"backend Workflow_{workflow.pk}", f"backend {uuid4()}")
         if node_name != Cluster.get_current_node().name:
             try:
                 global_config = Cluster().get_global_config()
