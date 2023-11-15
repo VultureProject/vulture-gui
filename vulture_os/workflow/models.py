@@ -181,10 +181,10 @@ class Workflow(models.Model):
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
-        return ['name', 'frontend', 'backend']
+        return ['name']
 
     def __str__(self):
-        return "{}: '{}' ==> '{}'".format(self.name, str(self.frontend), str(self.backend))
+        return f"Workflow {self.name}"
 
     @property
     def mode(self):
