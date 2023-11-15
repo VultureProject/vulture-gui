@@ -135,15 +135,18 @@ def save_workflow(request, workflow_obj, object_id=None):
     had_authentication = workflow_obj.authentication is not None
 
     try:
+        # TODO replace by proper form validation and saving!
         workflow_obj.workflow_json = json.loads(request.POST['workflow'])
         workflow_obj.name = request.POST['name']
         workflow_obj.enabled = request.POST['workflow_enabled'] == "true"
-        if request.POST.get('enable_cors_policy'):
-            workflow_obj.enable_cors_policy = request.POST['enable_cors_policy'] == "true"
-            workflow_obj.cors_allowed_methods = request.POST.getlist('cors_allowed_methods[]')
-            workflow_obj.cors_allowed_origins = request.POST['cors_allowed_origins']
-            workflow_obj.cors_allowed_headers = request.POST['cors_allowed_headers']
-            workflow_obj.cors_max_age = request.POST['cors_max_age']
+        workflow_obj.enable_cors_policy = request.POST.get('enable_cors_policy') == "true"
+        workflow_obj.cors_allowed_methods = request.POST.getlist('cors_allowed_methods[]', ['*'])
+        workflow_obj.cors_allowed_origins = request.POST.get('cors_allowed_origins', '*')
+        workflow_obj.cors_allowed_headers = request.POST.get('cors_allowed_headers', '*')
+        workflow_obj.cors_max_age = request.POST.get('cors_max_age', 600)
+
+        if len(workflow_obj.cors_allowed_methods) > 1 and "*" in workflow_obj.cors_allowed_methods:
+            workflow_obj.cors_allowed_methods.remove('*')
 
         # Get all current ACLs assigned to this Workflow (in_bulk allows to execute the queryset)
         old_workflow_acls = WorkflowACL.objects.filter(workflow=workflow_obj).in_bulk()
