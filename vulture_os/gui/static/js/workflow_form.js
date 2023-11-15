@@ -49,10 +49,10 @@ function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflo
     if (!cors_policy){
         cors_policy = {
             "enable_cors_policy": false,
-            "allowed_methods": "*",
-            "allowed_origins": "*",
-            "allowed_headers": "*",
-            "max_age": 600
+            "cors_allowed_methods": "*",
+            "cors_allowed_origins": "*",
+            "cors_allowed_headers": "*",
+            "cors_max_age": 600
         }
     }
 
@@ -87,25 +87,25 @@ function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflo
                 <div class="cors_options">
                 <label class="col-sm-4">${gettext('Allowed methods')}</label>
                 <div class="col-sm-7 form-group">
-                    <select class="form-control select2" id="id_allowed_methods" multiple>`
+                    <select class="form-control select2" id="id_cors_allowed_methods" multiple>`
 
         for (let key in cors_methods){
-            form += `<option value='${key}' ${cors_policy.allowed_methods.includes(key) ? "selected=''" : ""}>${cors_methods[key]}</option>`
+            form += `<option value='${key}' ${cors_policy.cors_allowed_methods.includes(key) ? "selected=''" : ""}>${cors_methods[key]}</option>`
         }
 
         form += `</select>
                     </div>
                     <label class="col-sm-4">${gettext('Allowed origins')}</label>
                     <div class="col-sm-7 form-group">
-                        <input type="text" value="${cors_policy.allowed_origins}" class="form-control" id="id_allowed_origins">
+                        <input type="text" value="${cors_policy.cors_allowed_origins}" class="form-control" id="id_cors_allowed_origins">
                     </div>
                     <label class="col-sm-4">${gettext('Allowed headers')}</label>
                     <div class="col-sm-7 form-group">
-                        <input type="text" value="${cors_policy.allowed_headers}" class="form-control" id="id_allowed_headers">
+                        <input type="text" value="${cors_policy.cors_allowed_headers}" class="form-control" id="id_cors_allowed_headers">
                     </div>
                     <label class="col-sm-4">${gettext('Max age')}</label>
                     <div class="col-sm-7 form-group">
-                        <input type="number" value="${cors_policy.max_age}" class="form-control" min="0" id="id_max_age">
+                        <input type="number" value="${cors_policy.cors_max_age}" class="form-control" min="0" id="id_cors_max_age">
                     </div>
                     </div>
                     <script>

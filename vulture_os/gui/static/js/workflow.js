@@ -115,17 +115,17 @@ var workflow_vue = new Vue({
             $.get(
                 workflow_api + workflow_id + '/',
                 $.param({
-                    fields: ["workflow_json", "enable_cors_policy", "allowed_methods", "allowed_origins", "allowed_headers", "max_age"]
+                    fields: ["workflow_json", "enable_cors_policy", "cors_allowed_methods", "cors_allowed_origins", "cors_allowed_headers", "cors_cors_max_age"]
                 }, true),
 
                 function(response){
                     self.workflow = response.data.workflow_json;
                     self.cors_policy = {
                         "enable_cors_policy": response.data.enable_cors_policy,
-                        "allowed_methods": response.data.allowed_methods,
-                        "allowed_origins": response.data.allowed_origins,
-                        "allowed_headers": response.data.allowed_headers,
-                        "max_age": response.data.max_age
+                        "cors_allowed_methods": response.data.cors_allowed_methods,
+                        "cors_allowed_origins": response.data.cors_allowed_origins,
+                        "cors_allowed_headers": response.data.cors_allowed_headers,
+                        "cors_max_age": response.data.cors_max_age
                     }
                     for(node of self.workflow) {
                         switch(node.data.type) {
@@ -277,10 +277,10 @@ var workflow_vue = new Vue({
                     workflow_enabled: $('#id_enabled').is(':checked'),
                     name: $('#id_name').val(),
                     enable_cors_policy: self.cors_policy.enable_cors_policy,
-                    allowed_methods: self.cors_policy.allowed_methods,
-                    allowed_origins: self.cors_policy.allowed_origins,
-                    allowed_headers: self.cors_policy.allowed_headers,
-                    max_age: self.cors_policy.max_age,
+                    cors_allowed_methods: self.cors_policy.cors_allowed_methods,
+                    cors_allowed_origins: self.cors_policy.cors_allowed_origins,
+                    cors_allowed_headers: self.cors_policy.cors_allowed_headers,
+                    cors_max_age: self.cors_policy.cors_max_age,
                     workflow: JSON.stringify(self.workflow)
                 },
                 function(response){
@@ -663,10 +663,10 @@ var workflow_vue = new Vue({
                                 frontend_node.data.public_dir = public_dir;
                                 self.workflow[0].label = fqdn + public_dir;
                                 self.cors_policy.enable_cors_policy = this.$content.find('#id_enable_cors_policy').is(':checked');
-                                self.cors_policy.allowed_methods = this.$content.find('#id_allowed_methods').val();
-                                self.cors_policy.allowed_origins = this.$content.find('#id_allowed_origins').val();
-                                self.cors_policy.allowed_headers = this.$content.find('#id_allowed_headers').val();
-                                self.cors_policy.max_age = this.$content.find('#id_max_age').val();
+                                self.cors_policy.cors_allowed_methods = this.$content.find('#id_cors_allowed_methods').val();
+                                self.cors_policy.cors_allowed_origins = this.$content.find('#id_cors_allowed_origins').val();
+                                self.cors_policy.cors_allowed_headers = this.$content.find('#id_cors_allowed_headers').val();
+                                self.cors_policy.cors_max_age = this.$content.find('#id_cors_max_age').val();
 
                                 append_frontend_to_workflow(frontend_node)
                                 return;
@@ -1103,10 +1103,10 @@ var workflow_vue = new Vue({
                                                 node.data.object_id = frontend_id
                                                 self.workflow[0].label = fqdn + public_dir;
                                                 self.cors_policy.enable_cors_policy = this.$content.find('#id_enable_cors_policy').is(':checked');
-                                                self.cors_policy.allowed_methods = this.$content.find('#id_allowed_methods').val();
-                                                self.cors_policy.allowed_origins = this.$content.find('#id_allowed_origins').val();
-                                                self.cors_policy.allowed_headers = this.$content.find('#id_allowed_headers').val();
-                                                self.cors_policy.max_age = this.$content.find('#id_max_age').val();
+                                                self.cors_policy.cors_allowed_methods = this.$content.find('#id_cors_allowed_methods').val();
+                                                self.cors_policy.cors_allowed_origins = this.$content.find('#id_cors_allowed_origins').val();
+                                                self.cors_policy.cors_allowed_headers = this.$content.find('#id_cors_allowed_headers').val();
+                                                self.cors_policy.cors_max_age = this.$content.find('#id_cors_max_age').val();
 
                                                 var index_frontend = self.get_node(node.id, true);
                                                 self.workflow[index_frontend] = node;

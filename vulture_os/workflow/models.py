@@ -147,26 +147,26 @@ class Workflow(models.Model):
         verbose_name=_("Enable CORS policy"),
         help_text=_("Switch to enable specified CORS policy")
     )
-    allowed_methods = models.JSONField(
+    cors_allowed_methods = models.JSONField(
         default=[CORS_METHODS[0][0]],
         choices=CORS_METHODS,
         blank=True,
         verbose_name=_("Allowed methods"),
         help_text=_("Restrict requests to provided methods")
     )
-    allowed_origins = models.TextField(
+    cors_allowed_origins = models.TextField(
         default="*",
         blank=True,
         verbose_name=_("Allowed origins"),
         help_text=_("Origins allowed to handle the response")
     )
-    allowed_headers = models.TextField(
+    cors_allowed_headers = models.TextField(
         default="*",
         blank=True,
         verbose_name=_("Allowed headers"),
         help_text=_("Headers field allowed in the request")
     )
-    max_age = models.PositiveIntegerField(
+    cors_max_age = models.PositiveIntegerField(
         default=600,
         blank=True,
         verbose_name=_("Max age"),
@@ -206,10 +206,10 @@ class Workflow(models.Model):
             'public_dir': self.public_dir,
             'backend': str(self.backend),
             'enable_cors_policy': self.enable_cors_policy,
-            'allowed_methods': self.allowed_methods,
-            'allowed_origins': self.allowed_origins,
-            'allowed_headers': self.allowed_headers,
-            'max_age': self.max_age,
+            'cors_allowed_methods': self.cors_allowed_methods,
+            'cors_allowed_origins': self.cors_allowed_origins,
+            'cors_allowed_headers': self.cors_allowed_headers,
+            'cors_max_age': self.cors_max_age,
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             # Test self.pk to prevent M2M errors when object isn't saved in DB
@@ -296,10 +296,10 @@ class Workflow(models.Model):
             'frontend': self.frontend,
             'backend': self.backend,
             'enable_cors_policy': self.enable_cors_policy,
-            'allowed_methods': self.allowed_methods,
-            'allowed_origins': self.allowed_origins,
-            'allowed_headers': self.allowed_headers,
-            'max_age': self.max_age,
+            'cors_allowed_methods': self.cors_allowed_methods,
+            'cors_allowed_origins': self.cors_allowed_origins,
+            'cors_allowed_headers': self.cors_allowed_headers,
+            'cors_max_age': self.cors_max_age,
             'authentication': self.authentication.to_template() if self.authentication else None,
             'access_controls_list': set(access_controls_list),
             'access_controls_deny': access_controls_deny,
