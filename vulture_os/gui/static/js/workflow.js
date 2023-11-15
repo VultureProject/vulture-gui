@@ -115,7 +115,7 @@ var workflow_vue = new Vue({
             $.get(
                 workflow_api + workflow_id + '/',
                 $.param({
-                    fields: ["workflow_json", "enable_cors_policy", "cors_allowed_methods", "cors_allowed_origins", "cors_allowed_headers", "cors_cors_max_age"]
+                    fields: ["workflow_json", "enable_cors_policy", "cors_allowed_methods", "cors_allowed_origins", "cors_allowed_headers", "cors_max_age"]
                 }, true),
 
                 function(response){
