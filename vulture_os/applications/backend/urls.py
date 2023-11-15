@@ -57,7 +57,7 @@ urlpatterns = [
 
     path('api/apps/backend/test/', api.test, name="applications.backend.test"),
 
-    re_path('^api/v1/apps/backend/(?P<object_id>[0-9]+)?/$', api.BackendAPIv1.as_view(), name="applications.backend.api"),
+    re_path('^api/v1/apps/backend/(?P<object_id>[0-9]+)?/?$', api.BackendAPIv1.as_view(), name="applications.backend.api"),
 
     path('api/v1/apps/backend/<int:object_id>/<str:action>/',
          api.BackendAPIv1.as_view(),
