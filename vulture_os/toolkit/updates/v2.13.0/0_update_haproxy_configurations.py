@@ -34,9 +34,10 @@ import django
 from django.conf import settings
 django.setup()
 
+from authentication.user_portal.models import UserAuthentication
+from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 from workflow.models import Workflow
-from services.frontend.models import Frontend
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
@@ -49,12 +50,16 @@ if __name__ == "__main__":
     else:
         try:
             for workflow in Workflow.objects.all():
-                print(f"Rebuilding configuration for Workflow '{workflow.name}'")
+                print(f"Triggering configuration rebuild for Workflow '{workflow.name}'")
                 node.api_request("workflow.workflow.build_conf", workflow.pk)
 
             for frontend in Frontend.objects.filter(mode__in=['tcp', 'http'], workflow__isnull=False).distinct():
-                print(f"Rebuilding configuration for Frontend '{frontend.name}'")
+                print(f"Triggering configuration rebuild for Frontend '{frontend.name}'")
                 node.api_request("services.haproxy.haproxy.build_conf", frontend.pk)
+
+            for idp_portal in UserAuthentication.objects.filter(enable_external=True):
+                idp_portal.save_conf()
+                print(f"Triggering configuration rebuild for IDP '{idp_portal.name}'")
 
             api_res = node.api_request("services.haproxy.haproxy.reload_service")
             if not api_res.get('status'):
