@@ -32,8 +32,10 @@ from django.urls import reverse
 
 # Django project imports
 from darwin.access_control.models import AccessControl
+from gui.forms.form_utils import DivErrorList
 from system.cluster.models import Cluster
 from workflow.models import Workflow, WorkflowACL
+from workflow.form import WorkflowForm
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.user_portal.models import UserAuthentication
 
@@ -133,13 +135,15 @@ def save_workflow(request, workflow_obj, object_id=None):
     had_authentication = workflow_obj.authentication is not None
 
     try:
-        workflow = json.loads(request.POST['workflow'])
-        workflow_name = request.POST['workflow_name']
-        workflow_enabled = request.POST['workflow_enabled'] == "true"
-
-        workflow_obj.enabled = workflow_enabled
-        workflow_obj.name = workflow_name
-        workflow_obj.workflow_json = workflow
+        workflow_obj.workflow_json = json.loads(request.POST['workflow'])
+        workflow_obj.name = request.POST['name']
+        workflow_obj.enabled = request.POST['workflow_enabled'] == "true"
+        if request.POST.get('enable_cors_policy'):
+            workflow_obj.enable_cors_policy = request.POST['enable_cors_policy'] == "true"
+            workflow_obj.cors_allowed_methods = request.POST.getlist('cors_allowed_methods[]')
+            workflow_obj.cors_allowed_origins = request.POST['cors_allowed_origins']
+            workflow_obj.cors_allowed_headers = request.POST['cors_allowed_headers']
+            workflow_obj.cors_max_age = request.POST['cors_max_age']
 
         # Get all current ACLs assigned to this Workflow (in_bulk allows to execute the queryset)
         old_workflow_acls = WorkflowACL.objects.filter(workflow=workflow_obj).in_bulk()
@@ -147,7 +151,7 @@ def save_workflow(request, workflow_obj, object_id=None):
         workflow_obj.authentication = None
         workflow_obj.authentication_filter = None
 
-        for step in workflow:
+        for step in workflow_obj.workflow_json:
             if step['data']['type'] == "frontend":
                 frontend = Frontend.objects.get(pk=step['data']['object_id'])
                 workflow_obj.frontend = frontend
@@ -262,13 +266,20 @@ def workflow_edit(request, object_id=None, api=False):
     else:
         workflow_obj = Workflow()
 
+    if hasattr(request, "JSON") and api:
+        form = WorkflowForm(request.JSON or None, instance=workflow_obj, error_class=DivErrorList)
+    else:
+        form = WorkflowForm(request.POST or None, instance=workflow_obj, error_class=DivErrorList)
+
     if request.method == "GET":
         return render(request, "main/workflow_edit.html", {
-            'workflow': workflow_obj
+            'object_id': object_id,
+            'form': form
         })
-
-    elif request.method == "POST":
-        return save_workflow(request, workflow_obj, object_id)
+    else:
+        if request.method == "POST" and form.is_valid():
+            return save_workflow(request, workflow_obj, object_id)
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 
 COMMAND_LIST = {

@@ -3,6 +3,19 @@ var forbidden_html = {
     "tcp": gettext('Deny')
 }
 
+var cors_methods = {
+    '*': 'All',
+    'GET': 'GET',
+    'POST': 'POST',
+    'PUT': 'PUT',
+    'PATCH': 'PATCH',
+    'DELETE': 'DELETE',
+    'HEAD': 'HEAD',
+    'CONNECT': 'CONNECT',
+    'OPTIONS': 'OPTIONS',
+    'TRACE': 'TRACE'
+}
+
 function form_backend(backend_choices, backend_id){
     var form = `<form action="" class="backend-edit">
         <div class="row">
@@ -26,61 +39,88 @@ function form_backend(backend_choices, backend_id){
     return form;
 }
 
-function form_frontend(edit, frontend_choices, frontend_id, workflow_mode, fqdn, public_dir){
+function form_frontend(edit, cors_policy, frontend_choices, frontend_id, workflow_mode, fqdn, public_dir){
     if (!fqdn)
         fqdn = "";
 
     if (!public_dir)
         public_dir = "/";
 
-    var form = '<form action="" class="frontend-edit">';
-
-    if (edit){
-        var form = `<form action="" class="frontend-edit">
-            <div class="row">
-                <div class="form-group col-md-12">
-                    <label>${gettext('Frontend')}</label>
-                    <select class="form-control frontend">`
-
-        var frontends = {}
-        for (var i in frontend_choices){
-            var frontend = frontend_choices[i];
-            if (frontend.mode === workflow_mode)
-                frontends[frontend.id] = frontend.name
+    if (!cors_policy){
+        cors_policy = {
+            "enable_cors_policy": false,
+            "cors_allowed_methods": "*",
+            "cors_allowed_origins": "*",
+            "cors_allowed_headers": "*",
+            "cors_max_age": 600
         }
-
-        $.each(frontends, function(key, val){
-            var selected = "";
-            if (parseInt(key) === parseInt(frontend_id))
-                selected = "selected='selected'";
-
-            form += `<option ${selected} value='${key}'>${val}</option>`
-        })
-
-        form += "</select></div>"
-
-        if (workflow_mode === "http"){
-            form += `<div class="form-group col-md-12">
-                        <label>${gettext('FQDN')}</label>
-                        <input type="text" class="form-control fqdn" value="${fqdn}"/>
-                    </div>
-                    <div class="form-group col-md-12">
-                        <label>${gettext('Public Directory')}</label>
-                        <input type="text" class="form-control public_dir" value="${public_dir}"/>
-                    </div>`
-        }
-    } else {
-        form += `<div class="form-group col-md-12">
-                    <label>${gettext('FQDN')}</label>
-                    <input type="text" class="form-control fqdn" value="${fqdn}"/>
-                </div>
-                <div class="form-group col-md-12">
-                    <label>${gettext('Public Directory')}</label>
-                    <input type="text" class="form-control public_dir" value="${public_dir}"/>
-                </div>`;
     }
 
-    form += "</div></form>";
+    let form = '<form action="" class="frontend-edit">';
+
+    if (edit){
+        form += `<label class="col-sm-4">${gettext('Frontend')}</label>
+                <div class="col-sm-7 form-group">
+                    <select class="form-control frontend">`
+
+        for (let i in frontend_choices){
+            let frontend = frontend_choices[i];
+            form += `<option ${parseInt(frontend.id) === parseInt(frontend_id) ? "selected='selected'" : ""} value='${frontend.id}'>${frontend.name}</option>`
+        }
+        form += "</select></div>"
+    }
+
+    if (!edit | workflow_mode === "http"){
+        form += `<label class="col-sm-4">${gettext('FQDN')}</label>
+                <div class="col-sm-7 form-group">
+                    <input type="text" class="form-control fqdn" value="${fqdn}"/>
+                </div>
+                <label class="col-sm-4">${gettext('Public Directory')}</label>
+                <div class="col-sm-7 form-group">
+                    <input type="text" class="form-control public_dir" value="${public_dir}"/>
+                </div>
+
+                <label class="col-sm-4">${gettext('Enable CORS policy')}</label>
+                <div class="col-sm-7 form-group">
+                    <input type="checkbox" class="form-control js-switch" ${cors_policy.enable_cors_policy ? "checked" : ""} id="id_enable_cors_policy">
+                </div>
+                <div class="cors_options">
+                <label class="col-sm-4">${gettext('Allowed methods')}</label>
+                <div class="col-sm-7 form-group">
+                    <select class="form-control select2" id="id_cors_allowed_methods" multiple>`
+
+        for (let key in cors_methods){
+            form += `<option value='${key}' ${cors_policy.cors_allowed_methods.includes(key) ? "selected=''" : ""}>${cors_methods[key]}</option>`
+        }
+
+        form += `</select>
+                    </div>
+                    <label class="col-sm-4">${gettext('Allowed origins')}</label>
+                    <div class="col-sm-7 form-group">
+                        <input type="text" value="${cors_policy.cors_allowed_origins}" class="form-control" id="id_cors_allowed_origins">
+                    </div>
+                    <label class="col-sm-4">${gettext('Allowed headers')}</label>
+                    <div class="col-sm-7 form-group">
+                        <input type="text" value="${cors_policy.cors_allowed_headers}" class="form-control" id="id_cors_allowed_headers">
+                    </div>
+                    <label class="col-sm-4">${gettext('Max age')}</label>
+                    <div class="col-sm-7 form-group">
+                        <input type="number" value="${cors_policy.cors_max_age}" class="form-control" min="0" id="id_cors_max_age">
+                    </div>
+                    </div>
+                    <script>
+                    $('#id_enable_cors_policy').on('change', function(event) {
+                        if ($(this).is(':checked')) {
+                            $('.cors_options').show();
+                          } else {
+                            $('.cors_options').hide();
+                          }
+                    });
+                    $('#id_enable_cors_policy').trigger('change');
+                    </script>`
+    }
+
+    form += "</form>";
     return form;
 }
 
@@ -134,7 +174,7 @@ function form_acl(mode, edit, acls_list, acl_id, action_satisfy, redirect_url_sa
         select += "</select>";
         selects[action] = select;
     }
-    
+
     form += `<table class="table">
             <tbody>
                 <tr>
@@ -222,7 +262,7 @@ function form_authentication_filter(authentication_filter_choices, authenticatio
     <div class="col-md-12 form-group">
     <label>${gettext('Authentication Scope Filter')}</label>
     <select class="form-control authentication_filter">`;
-    
+
     var authentication_filter_choice = {}
     for (var i in authentication_filter_choices)
     authentication_filter_choice[authentication_filter_choices[i].id] = authentication_filter_choices[i].name
@@ -231,10 +271,10 @@ function form_authentication_filter(authentication_filter_choices, authenticatio
         var selected = "";
         if (parseInt(key) === authentication_filter_id)
         selected = "selected='selected'";
-        
+
         form += `<option ${selected} value='${key}'>${val}</option>`
     })
     form += "</select></div></div></div></form>";
-    
+
     return form;
 }

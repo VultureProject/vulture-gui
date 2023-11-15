@@ -64,6 +64,19 @@ JINJA_TEMPLATE = "haproxy_portal.conf"
 WORKFLOW_OWNER = HAPROXY_OWNER
 WORKFLOW_PERMS = HAPROXY_PERMS
 
+CORS_METHODS = (
+    ('*', 'All'),
+    ('GET', 'GET'),
+    ('POST', 'POST'),
+    ('PUT', 'PUT'),
+    ('PATCH', 'PATCH'),
+    ('DELETE', 'DELETE'),
+    ('HEAD', 'HEAD'),
+    ('CONNECT', 'CONNECT'),
+    ('OPTIONS', 'OPTIONS'),
+    ('TRACE', 'TRACE')
+)
+
 
 class WorkflowACL(models.Model):
     workflow = models.ForeignKey('Workflow', on_delete=models.CASCADE)
@@ -128,6 +141,37 @@ class Workflow(models.Model):
         on_delete=models.PROTECT,
         help_text=_("Backend"),
     )
+    """ CORS Policy """
+    enable_cors_policy = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable CORS policy"),
+        help_text=_("Switch to enable specified CORS policy")
+    )
+    cors_allowed_methods = models.JSONField(
+        default=[CORS_METHODS[0][0]],
+        choices=CORS_METHODS,
+        blank=True,
+        verbose_name=_("Allowed methods"),
+        help_text=_("Restrict requests to provided methods")
+    )
+    cors_allowed_origins = models.TextField(
+        default="*",
+        blank=True,
+        verbose_name=_("Allowed origins"),
+        help_text=_("Origins allowed to handle the response")
+    )
+    cors_allowed_headers = models.TextField(
+        default="*",
+        blank=True,
+        verbose_name=_("Allowed headers"),
+        help_text=_("Headers field allowed in the request")
+    )
+    cors_max_age = models.PositiveIntegerField(
+        default=600,
+        blank=True,
+        verbose_name=_("Max age"),
+        help_text=_("Maximum number of seconds the results can be cached")
+    )
 
     workflow_json = models.JSONField(default=[])
 
@@ -161,6 +205,11 @@ class Workflow(models.Model):
             'frontend': str(self.frontend),
             'public_dir': self.public_dir,
             'backend': str(self.backend),
+            'enable_cors_policy': self.enable_cors_policy,
+            'cors_allowed_methods': self.cors_allowed_methods,
+            'cors_allowed_origins': self.cors_allowed_origins,
+            'cors_allowed_headers': self.cors_allowed_headers,
+            'cors_max_age': self.cors_max_age,
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
             # Test self.pk to prevent M2M errors when object isn't saved in DB
@@ -246,6 +295,11 @@ class Workflow(models.Model):
             'mode': self.mode,
             'frontend': self.frontend,
             'backend': self.backend,
+            'enable_cors_policy': self.enable_cors_policy,
+            'cors_allowed_methods': self.cors_allowed_methods,
+            'cors_allowed_origins': self.cors_allowed_origins,
+            'cors_allowed_headers': self.cors_allowed_headers,
+            'cors_max_age': self.cors_max_age,
             'authentication': self.authentication.to_template() if self.authentication else None,
             'access_controls_list': set(access_controls_list),
             'access_controls_deny': access_controls_deny,

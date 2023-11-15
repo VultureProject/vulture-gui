@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [FRONTEND] New last_update_time field
+- [GUI] [WORKFLOW] CORS policy settings
+- [HAPROXY] [CONF] CORS policy into config generation
 ### Removed
 - [FRONTEND] [TIMEOUTS] Incoherent "timeout connect" in Frontend attributes
 ### Changed
