@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [HAPROXY] Ensure X-Forwarded-proto header is correctly set on Frontend configuration
 
 
-## [2.12.0]
+## [2.12.0] - 2023-11-15
 ### Added
 - [API_PARSER] [VECTRA] New parser Vectra
 - [MANAGE] [COMMANDS] New command get_api_key
