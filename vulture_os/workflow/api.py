@@ -40,7 +40,7 @@ from system.cluster.models import Cluster
 from services.frontend.models import Frontend
 from applications.backend.models import Backend
 from gui.decorators.apicall import api_need_key
-from workflow.models import Workflow, WorkflowACL
+from workflow.models import Workflow, WorkflowACL, CORS_METHODS
 from workflow.views import COMMAND_LIST, workflow_delete
 
 # Logger configuration imports
@@ -256,6 +256,11 @@ def workflow_edit(request, object_id, action=None):
         authentication = False
         fqdn = ""
         public_dir = "/"
+        enable_cors_policy = False
+        cors_allowed_methods = ["*"]
+        cors_allowed_origins = "*"
+        cors_allowed_headers = "*"
+        cors_max_age = 600
 
         if hasattr(request, "JSON"):
             enabled = request.JSON.get('enabled') is not False
@@ -281,6 +286,18 @@ def workflow_edit(request, object_id, action=None):
                             public_dir = '/' + public_dir
                         if public_dir[-1] != '/':
                             public_dir += '/'
+
+                    enable_cors_policy = form_data.get('enable_cors_policy') == True
+                    cors_allowed_methods = form_data.get('cors_allowed_methods', ['*'])
+                    CORS_VALUES = [i[0] for i in CORS_METHODS]
+                    for method in cors_allowed_methods:
+                        if method not in CORS_VALUES:
+                            return JsonResponse({
+                                'error': _(f'the {method} method is not a valid CORS accepted method, valid methods are {CORS_VALUES}')
+                            }, status=400)
+                    cors_allowed_origins = form_data.get('cors_allowed_origins', '*')
+                    cors_allowed_headers = form_data.get('cors_allowed_headers', '*')
+                    cors_max_age = form_data.get('cors_max_age', 600)
 
                 except KeyError:
                     return JsonResponse({
@@ -337,7 +354,11 @@ def workflow_edit(request, object_id, action=None):
             workflow.public_dir = public_dir
             workflow.frontend = frontend
             workflow.backend = backend
-            had_authentication = workflow.authentication is not None
+            workflow.enable_cors_policy = enable_cors_policy
+            workflow.cors_allowed_methods = cors_allowed_methods
+            workflow.cors_allowed_origins = cors_allowed_origins
+            workflow.cors_allowed_headers = cors_allowed_headers
+            workflow.cors_max_age = cors_max_age
 
             workflow_acls = []
 
