@@ -344,7 +344,8 @@ def workflow_edit(request, object_id, action=None):
             if authentication:
                 workflow.authentication = authentication
 
-            workflow.workflowacl_set.all().delete()
+            if workflow.pk:
+                workflow.workflowacl_set.all().delete()
 
             acl_frontend = form_data.get("acl_frontend", [])
             if isinstance(form_data.get('acl_frontend'), str):
@@ -396,8 +397,9 @@ def workflow_edit(request, object_id, action=None):
                     logger.error("Workflow::edit: API error while trying to "
                                     "restart HAProxy service : {}".format(api_res.get('message')))
 
-                    for workflow_acl in workflow.workflowacl_set.all():
-                        workflow_acl.delete()
+                    if workflow.pk:
+                        for workflow_acl in workflow.workflowacl_set.all():
+                            workflow_acl.delete()
 
                     try:
                         workflow.delete()
