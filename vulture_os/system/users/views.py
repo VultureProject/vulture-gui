@@ -25,7 +25,7 @@ __doc__ = 'Users View'
 from django.http import JsonResponse, HttpResponseRedirect
 from system.users.models import User
 from gui.forms.form_utils import DivErrorList
-from system.users.form import UserForm, UserLDAPForm
+from system.users.form import UserForm, ChangeUserForm, UserLDAPForm, ChangeUserLDAPForm
 from django.shortcuts import render
 from django.urls import reverse
 from django.db.models import Q
@@ -79,15 +79,14 @@ def users_edit(request, object_id=None):
     else:
         user = User()
 
-    # Default User Form
-    user_form = UserForm(request.POST or None, instance=user)
-    # Default User template
-    template = 'system/users_edit.html'
-
-    # If User has been inserted from LDAP, specific form and template (no password edition)
     if user.is_ldapuser:
-        user_form = UserLDAPForm(request.POST or None, instance=user)
+        # If User has been inserted from LDAP, specific form and template
+        user_form = ChangeUserLDAPForm(request.POST or None, instance=user) if user.pk else UserLDAPForm(request.POST or None, instance=user)
         template = 'system/users_ldap_edit.html'
+    else:
+        # Default User Form and template
+        user_form = ChangeUserForm(request.POST or None, instance=user) if user.pk else UserForm(request.POST or None, instance=user) 
+        template = 'system/users_edit.html'
 
     if request.method == "GET" or not user_form.is_valid():
         return render(request, template, {
