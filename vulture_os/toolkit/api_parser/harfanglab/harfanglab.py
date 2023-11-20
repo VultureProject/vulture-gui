@@ -51,6 +51,7 @@ class HarfangLabParser(ApiParser):
     AGENT = "api/data/endpoint/Agent/"
     AGENT_STATS = "api/data/endpoint/Agent/dashboard_stats/"
     POLICY = "api/data/endpoint/Policy/"
+    THREATS = "api/data/alert/alert/Threat/"
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -93,11 +94,11 @@ class HarfangLabParser(ApiParser):
 
     def __execute_query(self, method, url, query, timeout=10):
         '''
-        raw request dosent handle the pagination natively
+        raw request doesn't handle the pagination natively
         '''
         self._connect()
 
-        if (method == "GET"):
+        if method == "GET":
             response = self.session.get(url,
                 params=query,
                 headers=self.HEADERS,
@@ -105,7 +106,7 @@ class HarfangLabParser(ApiParser):
                 proxies=self.proxies,
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
-        elif (method == "POST"):
+        elif method == "POST":
             response = self.session.post(url,
                 data=json.dumps(query),
                 headers=self.HEADERS,
@@ -124,7 +125,7 @@ class HarfangLabParser(ApiParser):
 
     def test(self):
         try:
-            result = self.get_logs(timezone.now()-timedelta(hours=24), timezone.now())
+            result = self.get_alerts(timezone.now()-timedelta(hours=24), timezone.now())
 
             return {
                 "status": True,
@@ -137,7 +138,7 @@ class HarfangLabParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, since=None, to=None, index=0):
+    def get_alerts(self, since, to, index=0):
         alert_url = f"{self.harfanglab_host}/{self.ALERTS}"
         # Remove miliseconds - format not supported
         since_utc = since.isoformat().split('.')[0]
@@ -156,12 +157,36 @@ class HarfangLabParser(ApiParser):
             'ordering': 'alert_time',
             'status': 'new,investigating,probable_false_positive'
         }
-        logger.debug(f"[{__parser__}]:get_logs: HarfangLab query parameters : {payload}",
+        logger.debug(f"[{__parser__}]:get_alerts: HarfangLab query parameters : {payload}",
                      extra={'frontend': str(self.frontend)})
         return self.__execute_query("GET", alert_url, payload)
 
-    def format_log(self, log):
+    def get_threats(self, since, to, index=0):
+        threat_url = f"{self.harfanglab_host}/{self.THREATS}"
+        # Remove miliseconds - format not supported
+        since_utc = since.isoformat().split('.')[0]
+        to_utc = to.isoformat().split('.')[0]
+
+        if '+' not in since_utc:
+            since_utc += "+00:00"
+        if '+' not in to_utc:
+            to_utc += "+00:00"
+
+        payload = {
+            'offset': index,
+            'limit': 100,  # Mandatory
+            'first_seen__gte': since_utc,
+            'first_seen__lt': to_utc,
+            'ordering': 'first_seen',
+            'status': 'new,investigating,probable_false_positive'
+        }
+        logger.debug(f"[{__parser__}]:get_threats: HarfangLab query parameters : {payload}",
+                     extra={'frontend': str(self.frontend)})
+        return self.__execute_query("GET", threat_url, payload)
+
+    def format_log(self, log, log_type):
         log['url'] = f"{self.harfanglab_host}"
+        log['log_type'] = log_type
         return json.dumps(log)
 
     def execute(self):
@@ -174,39 +199,41 @@ class HarfangLabParser(ApiParser):
         msg = f"Parser starting from {since} to {to}."
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        index = 0
-        total = 1
-        while index < total:
+        for log_type in ["alerts", "threats"]:
+            index = 0
+            total = 1
+            while index < total:
 
-            response = self.get_logs(since, to, index)
+                get_func = getattr(self, f"get_{log_type}")
+                response = get_func(since, to, index)
 
-            # Downloading may take some while, so refresh token in Redis
-            self.update_lock()
+                # Downloading may take some while, so refresh token in Redis
+                self.update_lock()
 
-            logs = response['results']
+                logs = response['results']
 
-            total = int(response['count'])
-            msg = f"got {total} lines available"
-            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                total = int(response['count'])
+                msg = f"{log_type}: got {total} lines available"
+                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-            if total == 0:
-                # Means that there are no logs available. It may be for two
-                # reasons: no log during this period or logs not available at
-                # request time.
-                # If there are no logs, no need to write them and we should not
-                # set the last_api_call.
-                break
+                if total == 0:
+                    # Means that there are no logs available. It may be for two
+                    # reasons: no log during this period or logs not available at
+                    # request time.
+                    # If there are no logs, no need to write them and we should not
+                    # set the last_api_call.
+                    break
 
-            index += len(logs)
-            msg = f"retrieved {index} lines"
-            logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                index += len(logs)
+                msg = f"{log_type}: retrieved {index} lines"
+                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-            self.write_to_file([self.format_log(l) for l in logs])
+                self.write_to_file([self.format_log(l, log_type) for l in logs])
 
-            # Writting may take some while, so refresh token in Redis
-            self.update_lock()
+                # Writting may take some while, so refresh token in Redis
+                self.update_lock()
 
-            self.frontend.last_api_call = to
-            self.frontend.save()
+        self.frontend.last_api_call = to
+        self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
