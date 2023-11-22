@@ -436,6 +436,17 @@
                       <div class="row log-mode listening-tcp no-filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
+                            <label class="col-sm-4 control-label">{% translate "Additional Frame Delimiter (AddtlFrameDelimiter)" %}</label>
+                            <div class="col-sm-5">
+                              {{form.custom_tl_frame_delimiter}}
+                              {{form.custom_tl_frame_delimiter.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row log-mode -->
+                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
                             <label class="col-sm-4 control-label">{% translate "rate-limiting interval" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_interval}}

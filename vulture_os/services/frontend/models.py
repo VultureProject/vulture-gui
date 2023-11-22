@@ -344,9 +344,17 @@ class Frontend(models.Model):
         default="",
         help_text=_("Filebeat Input configuration. No output allowed here, as it is handled by Vulture")
     )
+    """ Rsyslog TCP options """
     disable_octet_counting_framing = models.BooleanField(
         default=False,
         help_text=_("Enable option 'SupportOctetCountedFraming' in rsyslog (advanced).")
+    )
+    custom_tl_frame_delimiter = models.IntegerField(
+        default=-1,
+        null=True,
+        help_text=_("Additional frame delimiter"),
+        verbose_name=_("Additional frame delimiter"),
+        validators=[MinValueValidator(-1), MaxValueValidator(255)]
     )
     """ *** HTTP OPTIONS *** """
     """ Log forwarder - File """
