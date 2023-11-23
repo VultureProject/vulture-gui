@@ -23,13 +23,11 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Apex API Parser'
 __parser__ = 'APEX'
 
-import json
 import logging
 import requests
 import base64
 import jwt
 import hashlib
-import urllib.parse
 
 from datetime import datetime, timedelta
 from django.conf import settings
@@ -65,7 +63,7 @@ class ApexParser(ApiParser):
         string_to_hash = http_method.upper() + '|' + raw_url.lower() + '|' + headers + '|' + request_body
         base64_string = base64.b64encode(hashlib.sha256(str.encode(string_to_hash)).digest()).decode('utf-8')
         return base64_string
-    
+
     def create_jwt_token(self, application_id, api_key, http_method, raw_url, headers, request_body,
         iat, algorithm='HS256', version='V1'):
         payload = {'appid': application_id,
@@ -111,7 +109,7 @@ class ApexParser(ApiParser):
                 "status": False,
                 "error": str(e)
             }
-        
+
     def execute_query(self, url, timeout=60):
 
         response = self.session.get(
@@ -122,9 +120,9 @@ class ApexParser(ApiParser):
         )
         if response.status_code != 200:
             error = f"Error at Apex API Call: status : {response.status_code}, content : {response.content}"
-            logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:execute_query: {error}", extra={'frontend': str(self.frontend)})
             raise ApexAPIError(error)
-        
+
         return response.json()
 
 
@@ -147,7 +145,7 @@ class ApexParser(ApiParser):
         except Exception as e:
             return False, e, None
         return True, logs, next_timestamp
-    
+
 
     def execute(self):
         log_kinds = ["data_loss_prevention", "device_access_control", "behaviormonitor_rule", "officescan_virus", "spyware", "web_security", "security", "ncie", "cncdetection", "filehashdetection", "Predictive_Machine_Learning", "Sandbox_Detection_Log", "EACV_Information", "Managed_Product_Logged_Information", "Attack_Discovery_Detections", "pattern_updated_status", "engine_updated_status", "product_auditing_events", "intrusion_prevention"]
@@ -175,4 +173,4 @@ class ApexParser(ApiParser):
                     logger.error(f"[{__parser__}]:execute: {err}",
                                  extra={'frontend': str(self.frontend)})
 
-        logger.info("Apex parser ending.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
