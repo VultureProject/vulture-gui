@@ -14,19 +14,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Gaultier Parain"
+__author__ = "Mael Bonniot"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Safenet API Parser'
-__parser__ = 'SAFENET'
+__doc__ = 'SignalSciences Ngwaf API Parser'
+__parser__ = 'SIGNALSCIENCES_NGWAF'
 
 import json
 import logging
-import time
-
 import requests
 
 from datetime import datetime, timedelta
@@ -60,6 +58,9 @@ class SignalSciencesNgwafParser(ApiParser):
 
         self.session = None
 
+        self.api_parser_verify_ssl = False #TOREMOVE
+        self.api_parser_custom_certificate = None #TOREMOVE
+
     def _connect(self):
         try:
             if self.session is None:
@@ -87,7 +88,8 @@ class SignalSciencesNgwafParser(ApiParser):
             params=query,
             timeout=timeout,
             proxies=self.proxies,
-            verify=self.api_parser_verify_ssl
+            verify=self.api_parser_verify_ssl #TOREMOVE
+            # verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
 
         if response.status_code != 200:
@@ -100,8 +102,8 @@ class SignalSciencesNgwafParser(ApiParser):
         current_time = timezone.now().replace(second=0, microsecond=0)
         try:
             logs = self.get_logs(
-                since=int((current_time - timedelta(minutes=1)).timestamp()),
-                to=int((current_time - timedelta(minutes=5)).timestamp()))
+                since=current_time - timedelta(minutes=7),
+                to=current_time - timedelta(minutes=6))
 
             return {
                 "status": True,
@@ -115,72 +117,59 @@ class SignalSciencesNgwafParser(ApiParser):
             }
 
     def get_logs(self, since=None, to=None):
-        corp_name = 'cbpgroup'
-        site_name = 'prod'
+        corp_name = 'cbpgroup' #TOREMOVE
+        site_name = 'prod' #TOREMOVE
         url = self.API_BASE_URL + '/api/v0/corps/%s/sites/%s/feed/requests'%(corp_name, site_name)
 
         query = {}
-        # logs with 'since' or 'to' values are included in return
         if isinstance(since, datetime):
-            query['from'] = int((since - timedelta(minutes=1)).timestamp())
+            query['from'] = int(since.timestamp() / 60) * 60
         if isinstance(to, datetime):
-            query['until'] = int((to - timedelta(minutes=5)).timestamp())
-
-        # if not to and since:
+            query['until'] = int(to.timestamp() / 60) * 60
+        if not (query['from'] or query['until']):
+            raise SignalSciencesNgwafAPIError(f"Invalid mandatory timestamps - since:{since}({query['from']}) to:{to}({query['until']}")
 
         return self.__execute_query(url, query)
 
-    def format_log(self, log):
-        # adapt timestamp name field
+    def _format_log(self, log):
         log['@timestamp'] = log.pop('timestamp')
 
-        # pretty formating headers
-        headers_in = log.pop("headersIn")
-        for elem in headers_in:
-            log['client.header.'+elem[0]] = elem[1]
-
-        headers_out = log.pop("headersOut")
-        if headers_out:
+        if headers_in := log.pop("headersIn"):
+            for elem in headers_in:
+                log['client.header.'+elem[0]] = elem[1]
+        if headers_out := log.pop("headersOut"):
             for elem in headers_out:
                 log['server.header.'+elem[0]] = elem[1]
+
+        if tags:= log.get("tags", None):
+            log['tags'] = [tag['value'].replace('\n', '\\n') for tag in tags if tag]
 
         return json.dumps(log)
 
     def execute(self):
-        since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=5))
-        to = min(timezone.now(), since + timedelta(minutes=1))
+        since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=7))
+        to = min(timezone.now() - timedelta(minutes=6), since + timedelta(minutes=1))
 
-        since = int(since.replace(second=0, microsecond=0).timestamp())
-        to = int(to.replace(second=0, microsecond=0).timestamp())
-
-        msg = f"Parser starting from {since} to {to}"
-        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}", extra={'frontend': str(self.frontend)})
 
         response = self.get_logs(since, to)
-
-        # Downloading may take some while, so refresh token in Redis
         self.update_lock()
 
-        logs = response.get("data")
-
-        if logs != []:
-            self.write_to_file([self.format_logs(log) for log in logs])
-
-            # Writting may take some while, so refresh token in Redis
+        if logs := response.get("data", None):
+            self.write_to_file([self._format_log(log) for log in logs if log])
             self.update_lock()
 
-        while response["next"].get("uri") != '':
-            response = self.__execute_query(self.API_BASE_URL + response['next']['uri'])
-            self.update_lock()
-            logs = response.get("data")
-            self.write_to_file([self.format_logs(log) for log in logs if log])
-            self.update_lock()
+            while response["next"].get("uri", None) not in [None, '']:
+                response = self.__execute_query(self.API_BASE_URL + response['next']['uri'])
+                self.update_lock()
+                logs = response.get("data", None)
+                self.write_to_file([self._format_log(log) for log in logs if log])
+                self.update_lock()
 
             self.frontend.last_api_call = to
 
+        # If no logs where retrieved during the last 24h -> move forward 1h to prevent stagnate ad vitam eternam
         if self.last_api_call < timezone.now()-timedelta(hours=24):
-            # If no logs where retrieved during the last 24hours,
-            # move forward 1h to prevent stagnate ad vitam eternam
             self.frontend.last_api_call += timedelta(hours=1)
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

@@ -492,7 +492,7 @@ class FrontendForm(ModelForm):
             'safenet_tenant_code': TextInput(attrs={'class': 'form-control'}),
             'safenet_apikey': TextInput(attrs={'class': 'form-control'}),
             'signalsciences_ngwaf_email': TextInput(attrs={'class': 'form-control'}),
-            'signalsciences_ngwaf_token': TextInput(attrs={'type': 'password','class': 'form-control'}),
+            'signalsciences_ngwaf_token': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'proofpoint_casb_api_key': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_casb_client_id': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_casb_client_secret': TextInput(attrs={'type': 'password','class': 'form-control'}),
