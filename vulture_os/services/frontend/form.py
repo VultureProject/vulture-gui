@@ -249,6 +249,7 @@ class FrontendForm(ModelForm):
                            'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                            'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
                            'retarus_token', 'retarus_channel', 'vectra_host', 'vectra_client_id', 'vectra_secret_key',
+                           'apex_server_host', 'apex_application_id', 'apex_api_key',
                            ]:
             self.fields[field_name].required = False
 
@@ -342,6 +343,7 @@ class FrontendForm(ModelForm):
                   'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                   'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
                   'retarus_token', 'retarus_channel', 'vectra_host', 'vectra_secret_key', 'vectra_client_id',
+                  'apex_server_host', 'apex_application_id', 'apex_api_key',
                 )
 
         widgets = {
@@ -512,6 +514,9 @@ class FrontendForm(ModelForm):
             'vectra_host': TextInput(attrs={'class': 'form-control'}),
             'vectra_secret_key': TextInput(attrs={'class': 'form-control'}),
             'vectra_client_id': TextInput(attrs={'class': 'form-control'}),
+            'apex_server_host': TextInput(attrs={'class': 'form-control'}),
+            'apex_api_key': TextInput(attrs={'class': 'form-control'}),
+            'apex_application_id': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
