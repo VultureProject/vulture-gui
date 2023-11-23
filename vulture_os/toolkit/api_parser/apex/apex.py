@@ -143,7 +143,7 @@ class ApexParser(ApiParser):
             next_timestamp = int(content["Data"]["NextPage"]["SinceTime"])
 
         except Exception as e:
-            return False, e, None
+            raise ApexAPIError(e)
         return True, logs, next_timestamp
 
 
