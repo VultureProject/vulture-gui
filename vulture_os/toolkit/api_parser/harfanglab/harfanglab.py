@@ -186,7 +186,7 @@ class HarfangLabParser(ApiParser):
 
     def format_log(self, log, log_type):
         log['url'] = f"{self.harfanglab_host}"
-        log['log_type'] = log_type
+        log['evt_type'] = log_type
         return json.dumps(log)
 
     def execute(self):
