@@ -351,7 +351,7 @@ class Frontend(models.Model):
     )
     custom_tl_frame_delimiter = models.IntegerField(
         default=-1,
-        null=True,
+        blank=True,
         help_text=_("Additional frame delimiter"),
         verbose_name=_("Additional frame delimiter"),
         validators=[MinValueValidator(-1), MaxValueValidator(255)]
