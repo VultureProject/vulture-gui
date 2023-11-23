@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [HAPROXY] [CONF] CORS policy into config generation
 - [API_PARSER] [HARFANGLAB] Fetch new endpoint for Threats logs
 - [API_PARSER] [APEX] New parser
+- [FRONTEND] [TCP] Add advanced option custom_tl_frame_delimiter for Rsyslog tcp frontends
 ### Removed
 - [FRONTEND] [TIMEOUTS] Incoherent "timeout connect" in Frontend attributes
 ### Changed
