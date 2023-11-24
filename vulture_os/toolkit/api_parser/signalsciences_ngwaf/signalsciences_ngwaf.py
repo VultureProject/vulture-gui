@@ -54,12 +54,14 @@ class SignalSciencesNgwafParser(ApiParser):
 
         self.signalsciences_ngwaf_email = data["signalsciences_ngwaf_email"]
         self.signalsciences_ngwaf_token = data["signalsciences_ngwaf_token"]
-        # corp.name & site.name
+        # self.signalsciences_ngwaf_corp_name = data["signalsciences_ngwaf_corp_name"]
+        # self.signalsciences_ngwaf_site_name = data["signalsciences_ngwaf_corp_name"]
 
         self.session = None
 
         self.api_parser_verify_ssl = False #TOREMOVE
         self.api_parser_custom_certificate = None #TOREMOVE
+
 
     def _connect(self):
         try:
@@ -77,33 +79,38 @@ class SignalSciencesNgwafParser(ApiParser):
             return True
 
         except Exception as e:
-            raise SignalSciencesNgwafAPIError(e)
+            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:connect: {str(e)}")
+
 
     def __execute_query(self, url, query=None, timeout=10):
+        try:
+            self._connect()
 
-        self._connect()
+            response = self.session.get(
+                url,
+                params=query,
+                timeout=timeout,
+                proxies=self.proxies,
+                verify=self.api_parser_verify_ssl #TOREMOVE
+                # verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            )
 
-        response = self.session.get(
-            url,
-            params=query,
-            timeout=timeout,
-            proxies=self.proxies,
-            verify=self.api_parser_verify_ssl #TOREMOVE
-            # verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
-        )
+            if response.status_code != 200:
+                raise SignalSciencesNgwafAPIError(
+                    f"Error at SafenetAPI Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
-        if response.status_code != 200:
-            raise SignalSciencesNgwafAPIError(
-                f"Error at SafenetAPI Call URL: {url} Code: {response.status_code} Content: {response.content}")
+            return response.json()
 
-        return response.json()
+        except Exception as e:
+            logger.exception(f"{[__parser__]}:__execute_query: {str(e)}", extra={'frontend': str(self.frontend)})
+
 
     def test(self):
         current_time = timezone.now().replace(second=0, microsecond=0)
         try:
             logs = self.get_logs(
-                since=current_time - timedelta(minutes=7),
-                to=current_time - timedelta(minutes=6))
+                since=current_time - timedelta(minutes=6),
+                to=current_time - timedelta(minutes=5))
 
             return {
                 "status": True,
@@ -116,60 +123,108 @@ class SignalSciencesNgwafParser(ApiParser):
                 "error": str(e)
             }
 
+
     def get_logs(self, since=None, to=None):
-        corp_name = 'cbpgroup' #TOREMOVE
-        site_name = 'prod' #TOREMOVE
-        url = self.API_BASE_URL + '/api/v0/corps/%s/sites/%s/feed/requests'%(corp_name, site_name)
+        try:
+            corp_name = 'cbpgroup' #TOREMOVE
+            site_name = 'prod' #TOREMOVE
+            url = self.API_BASE_URL + '/api/v0/corps/%s/sites/%s/feed/requests'%(corp_name, site_name)
 
-        query = {}
-        if isinstance(since, datetime):
-            query['from'] = int(since.timestamp() / 60) * 60
-        if isinstance(to, datetime):
-            query['until'] = int(to.timestamp() / 60) * 60
-        if not (query['from'] or query['until']):
-            raise SignalSciencesNgwafAPIError(f"Invalid mandatory timestamps - since:{since}({query['from']}) to:{to}({query['until']}")
+            query = {}
+            if isinstance(since, datetime):
+                query['from'] = int(since.timestamp() / 60) * 60
+            if isinstance(to, datetime):
+                query['until'] = int(to.timestamp() / 60) * 60
+            if not (query['from'] or query['until']):
+                raise SignalSciencesNgwafAPIError(f"Invalid mandatory timestamps - since:{since}({query['from']}) to:{to}({query['until']}")
 
-        return self.__execute_query(url, query)
+            return self.__execute_query(url, query)
+
+        except Exception as e:
+            logger.exception(f"{[__parser__]}:get_logs: {str(e)}", extra={'frontend': str(self.frontend)})
+
 
     def _format_log(self, log):
-        log['@timestamp'] = log.pop('timestamp')
+        try:
+            if timestamp := log.pop('timestamp', None):
+                log['@timestamp'] = timestamp
 
-        if headers_in := log.pop("headersIn"):
-            for elem in headers_in:
-                log['client.header.'+elem[0]] = elem[1]
-        if headers_out := log.pop("headersOut"):
-            for elem in headers_out:
-                log['server.header.'+elem[0]] = elem[1]
+            if headersIn := log.pop("headersIn", None):
+                for elem in headersIn:
+                    log['client_header_'+elem[0]] = elem[1]
+            if headersOut := log.pop("headersOut", None):
+                for elem in headersOut:
+                    log['server_header_'+elem[0]] = elem[1]
 
-        if tags:= log.get("tags", None):
-            log['tags'] = [tag['value'].replace('\n', '\\n') for tag in tags if tag]
+            # may look overkill but sometimes we received high number of unprintable/special chars on .tags[].value
+            if tags := log.pop("tags", None):
+                log['tags'] = [str(tag['value'].encode('utf-8')) for tag in tags if tag]
 
-        return json.dumps(log)
+            return json.dumps(log)
+
+        except Exception as e:
+            logger.exception(f"{[__parser__]}:_format_log: {str(e)}", extra={'frontend': str(self.frontend)})
+            return None
+
+
+    # Entering in conflict with crontab on >1min collecting and have an incidence
+    # on contrab/system integrity (parser&logs OK) (~400k entries)
+    # System may get a cpu peak while collecting on a long late time period while crontab 
+    # try to start the process again, moreover crontab doesn't handle correctly the execution of multiple process
+    # this resulting to an indefinitely run of execute() method
+    # def late_handler(self):
+    #     while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
+    #         since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
+    #         to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
+
+    #         logger.info(f"[{__parser__}]:execute: Catch up the delay from {since} to {to}", extra={'frontend': str(self.frontend)})
+
+    #         response = self.get_logs(since, to)
+    #         self.update_lock()
+
+    #         if logs := response.get("data", None):
+    #             self.write_to_file([self._format_log(log) for log in logs if log])
+    #             self.update_lock()
+
+    #             while response["next"].get("uri", None) not in [None, '']:
+    #                 response = self.__execute_query(self.API_BASE_URL + response['next']['uri'])
+    #                 self.update_lock()
+    #                 if logs := response.get("data", None):
+    #                     self.write_to_file([self._format_log(log) for log in logs if log])
+    #                     self.update_lock()
+
+    #             self.frontend.last_api_call = to
+
 
     def execute(self):
-        since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=7))
-        to = min(timezone.now() - timedelta(minutes=6), since + timedelta(minutes=1))
+        try:
+            since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
+            to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
 
-        logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute: Start collecting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
 
-        response = self.get_logs(since, to)
-        self.update_lock()
-
-        if logs := response.get("data", None):
-            self.write_to_file([self._format_log(log) for log in logs if log])
+            response = self.get_logs(since, to)
             self.update_lock()
 
-            while response["next"].get("uri", None) not in [None, '']:
-                response = self.__execute_query(self.API_BASE_URL + response['next']['uri'])
-                self.update_lock()
-                logs = response.get("data", None)
+            if logs := response.get("data", None):
                 self.write_to_file([self._format_log(log) for log in logs if log])
                 self.update_lock()
 
-            self.frontend.last_api_call = to
+                while response["next"].get("uri", None) not in [None, '']:
+                    response = self.__execute_query(self.API_BASE_URL + response['next']['uri'])
+                    self.update_lock()
+                    if logs := response.get("data", None):
+                        self.write_to_file([self._format_log(log) for log in logs if log])
+                        self.update_lock()
 
-        # If no logs where retrieved during the last 24h -> move forward 1h to prevent stagnate ad vitam eternam
-        if self.last_api_call < timezone.now()-timedelta(hours=24):
-            self.frontend.last_api_call += timedelta(hours=1)
+                self.frontend.last_api_call = to
 
-        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+            # # If no logs where retrieved during the last 24h -> move forward 1h to prevent error on API
+            # if self.frontend.last_api_call < timezone.now()-timedelta(hours=24):
+            #     self.frontend.last_api_call += timedelta(hours=1)
+
+            logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
+
+        except Exception as e:
+            logger.exception(f"{[__parser__]}:_format_log: {str(e)}", extra={'frontend': str(self.frontend)})
+            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:execute: {str(e)}")
