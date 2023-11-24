@@ -651,23 +651,21 @@ class UserAuthentication(models.Model):
 
     def get_openid_callback_url(self, req_scheme, workflow_host, workflow_path, repo_id):
         if self.enable_external:
-            base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
+            base_url = build_url("https" if self.external_listener.has_tls() else "http", self.external_fqdn, '' if len(self.external_fqdn.split(':')) > 1 else self.external_listener.listener_set.all()[0].port, '/')
         else:
             base_url = req_scheme + "://" + workflow_host + workflow_path
-        base_url += '/' if base_url[-1] != '/' else ''
-        return base_url+"oauth2/callback/{}".format(repo_id)
+        return f"{base_url}oauth2/callback/{repo_id}"
 
     def get_openid_start_url(self, req_scheme, workflow_host, workflow_path, repo_id):
         if self.enable_external:
-            base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
+            base_url = build_url("https" if self.external_listener.has_tls() else "http", self.external_fqdn, '' if len(self.external_fqdn.split(':')) > 1 else self.external_listener.listener_set.all()[0].port, '/')
         else:
             base_url = req_scheme + "://" + workflow_host + workflow_path
-        base_url += '/' if base_url[-1] != '/' else ''
         return build_url_params(base_url + "oauth2/start/", repo=repo_id)
 
     def get_openid_authorize_url(self, **kwargs):
         if self.enable_external:
-            base_url = build_url("https" if self.external_listener.tls_profiles.count()>0 else "http", self.external_fqdn, self.external_listener.port)
+            base_url = build_url("https" if self.external_listener.has_tls() else "http", self.external_fqdn, '' if len(self.external_fqdn.split(':')) > 1 else self.external_listener.listener_set.all()[0].port, '/')
             full_url = build_url_params(base_url + "oauth2/authorize/", kwargs)
             return full_url
         else:

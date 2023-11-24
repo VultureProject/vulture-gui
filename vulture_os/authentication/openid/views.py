@@ -29,6 +29,9 @@ from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpRespo
 from django.shortcuts import render
 # Django project imports
 from gui.forms.form_utils import DivErrorList
+from authentication.user_portal.models import UserAuthentication
+from system.cluster.models import Cluster
+from workflow.models import Workflow
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -85,12 +88,27 @@ def edit(request, object_id=None, api=False):
         form = OpenIDRepositoryForm(request.POST or None, instance=repo, error_class=DivErrorList)
 
     if request.method in ("POST", "PUT") and form.is_valid():
+        old_jwt_key_filename = repo.get_jwt_key_filename()
         # Save the form to get an id if there is not already one
         repo = form.save(commit=False)
         # If provider_url changed, force reload of configuration
         if "provider_url" in form.changed_data:
             repo.last_config_time = None
+        if "jwt_key" in form.changed_data and repo.jwt_signature_type not in ("HS256", "HS384", "HS512"):
+            Cluster.api_request("system.config.models.delete_conf", old_jwt_key_filename)
+            repo.save_conf()
         repo.save()
+
+        portal = UserAuthentication.objects.get(name=repo.name.replace("Connector_", ""))
+        portal.save_conf()
+
+        workflows = set(Workflow.objects.filter(authentication__repositories=repo) | \
+                      Workflow.objects.filter(authentication=portal))
+        for workflow in workflows:
+            for node in workflow.frontend.get_nodes():
+                node.api_request("workflow.workflow.build_conf", workflow.pk)
+
+        Cluster.api_request("services.haproxy.haproxy.reload_service")
 
         # If everything succeed, redirect to list view
         if api:

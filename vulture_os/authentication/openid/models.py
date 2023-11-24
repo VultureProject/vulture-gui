@@ -33,6 +33,7 @@ from djongo import models
 # Django project imports
 from authentication.base_repository import BaseRepository
 from authentication.user_scope.models import UserScope
+from system.exceptions import VultureSystemConfigError
 from toolkit.auth.authy_client import AuthyClient
 from toolkit.auth.vulturemail_client import VultureMailClient
 from toolkit.auth.totp_client import TOTPClient
@@ -249,10 +250,41 @@ class OpenIDRepository(BaseRepository):
             'callback_url': f"/oauth2/callback/{self.id_alea}"
         }
 
+    def get_jwt_key_filename(self):
+        return f"/var/db/pki/{self.name}-{self.id}.pub"
+
+    def save_conf(self):
+        """ Write IDP publickey on disk
+        This function raise VultureSystemConfigError if failure """
+        from system.cluster.models import Cluster
+
+        params = [self.get_jwt_key_filename(), self.jwt_key, "vlt-os:haproxy", "640"]
+        api_res = Cluster.api_request('system.config.models.write_conf', config=params, internal=True)
+
+        if not api_res.get('status'):
+            raise VultureSystemConfigError(". API request failure ", traceback=api_res.get('message'))
+
+    def delete_conf(self):
+        """ Delete IDP publickey on disk
+        :return   True if success
+        raise VultureSystemConfigError if failure
+        """
+        from system.cluster.models import Cluster
+        # Firstly try to delete the conf, if it fails the object will not be deleted
+
+        api_res = Cluster.api_request("system.config.models.delete_conf", self.get_jwt_key_filename())
+        if not api_res.get('status'):
+            raise VultureSystemConfigError(". API request failure.", traceback=api_res.get('message'))
+        return True
+
     # Do NOT forget this on all BaseRepository subclasses
     def save(self, *args, **kwargs):
         self.subtype = "openid"
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        self.delete_conf()
+        super().delete(*args, **kwargs)
 
     def get_client(self):
         if self.otp_phone_service == "authy" and self.otp_type in ["phone", "onetouch"]:
