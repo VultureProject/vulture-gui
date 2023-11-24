@@ -24,6 +24,8 @@ __doc__ = 'VECTRA API'
 __parser__ = 'VECTRA'
 
 import logging
+import time
+
 import requests
 import json
 from copy import deepcopy
@@ -63,19 +65,30 @@ class VectraParser(ApiParser):
         logger.info(f"[{__parser__}]:get_auth_token: Generating access token.", extra={'frontend': str(self.frontend)})
         url = self.vectra_host + self.TOKEN_ENDPOINT
         try:
-            res = requests.post(
-                url,
-                auth=(self.vectra_client_id , self.vectra_secret_key ),
-                data={"grant_type": "client_credentials"},
-                timeout=30,
-                headers = {"Content-Type": "application/x-www-form-urlencoded"},
-                proxies=self.proxies,
-                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
-            )
+            for i in range(0, 30):  # Max 30 retries
+                res = requests.post(
+                    url,
+                    auth=(self.vectra_client_id , self.vectra_secret_key),
+                    data={"grant_type": "client_credentials"},
+                    timeout=30,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                )
+
+                if res.status_code == 429:
+                    if i == 29:
+                        raise VectraAPIError(f"Status-code {res.status_code} Exception: Too many requests.")
+                    else:
+                        logger.info(f"[{__parser__}]:get_auth_token: Too many requests({i+1}). Waiting 1 second before retry...",
+                                    extra={'frontend': str(self.frontend)})
+                        time.sleep(1)
+                        continue
+                else:
+                    break
+
             if res.status_code == 401:
                 raise VectraAPIError(f"Status-code {res.status_code} Exception: Client ID or Client Secret is incorrect.")
-            if res.status_code == 429:
-                raise VectraAPIError("Too many requests.")
             res.raise_for_status()
             logger.info(f"[{__parser__}]:get_auth_token: Access token generated.", extra={'frontend': str(self.frontend)})
 
@@ -86,7 +99,6 @@ class VectraParser(ApiParser):
             if res:
                 logger.error(f"[{__parser__}]:get_auth_token: response: {res.status_code}", extra={'frontend': str(self.frontend)})
             raise e
-
 
     def _connect(self):
         try:
