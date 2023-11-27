@@ -54,13 +54,10 @@ class SignalSciencesNgwafParser(ApiParser):
 
         self.signalsciences_ngwaf_email = data["signalsciences_ngwaf_email"]
         self.signalsciences_ngwaf_token = data["signalsciences_ngwaf_token"]
-        # self.signalsciences_ngwaf_corp_name = data["signalsciences_ngwaf_corp_name"]
-        # self.signalsciences_ngwaf_site_name = data["signalsciences_ngwaf_corp_name"]
+        self.signalsciences_ngwaf_corp_name = data["signalsciences_ngwaf_corp_name"]
+        self.signalsciences_ngwaf_site_name = data["signalsciences_ngwaf_site_name"]
 
         self.session = None
-
-        self.api_parser_verify_ssl = False #TOREMOVE
-        self.api_parser_custom_certificate = None #TOREMOVE
 
 
     def _connect(self):
@@ -79,7 +76,7 @@ class SignalSciencesNgwafParser(ApiParser):
             return True
 
         except Exception as e:
-            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:connect: {str(e)}")
+            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:connect: An error occurred when creating http session : {str(e)}")
 
 
     def __execute_query(self, url, query=None, timeout=10):
@@ -91,9 +88,7 @@ class SignalSciencesNgwafParser(ApiParser):
                 params=query,
                 timeout=timeout,
                 proxies=self.proxies,
-                verify=self.api_parser_verify_ssl #TOREMOVE
-                # verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
-            )
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl)
 
             if response.status_code != 200:
                 raise SignalSciencesNgwafAPIError(
@@ -103,6 +98,7 @@ class SignalSciencesNgwafParser(ApiParser):
 
         except Exception as e:
             logger.exception(f"{[__parser__]}:__execute_query: {str(e)}", extra={'frontend': str(self.frontend)})
+            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:__execute_query: An error occurred while executing query : {str(e)}")
 
 
     def test(self):
@@ -126,9 +122,7 @@ class SignalSciencesNgwafParser(ApiParser):
 
     def get_logs(self, since=None, to=None):
         try:
-            corp_name = 'cbpgroup' #TOREMOVE
-            site_name = 'prod' #TOREMOVE
-            url = self.API_BASE_URL + '/api/v0/corps/%s/sites/%s/feed/requests'%(corp_name, site_name)
+            url = self.API_BASE_URL + '/api/v0/corps/%s/sites/%s/feed/requests'%(self.signalsciences_ngwaf_corp_name, self.signalsciences_ngwaf_site_name)
 
             query = {}
             if isinstance(since, datetime):
@@ -142,6 +136,7 @@ class SignalSciencesNgwafParser(ApiParser):
 
         except Exception as e:
             logger.exception(f"{[__parser__]}:get_logs: {str(e)}", extra={'frontend': str(self.frontend)})
+            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:get_logs: An error occurred while trying to get logs : {str(e)}")
 
 
     def _format_log(self, log):
@@ -149,16 +144,17 @@ class SignalSciencesNgwafParser(ApiParser):
             if timestamp := log.pop('timestamp', None):
                 log['@timestamp'] = timestamp
 
+            log['header'] = {'client': {}, 'server': {}}
             if headersIn := log.pop("headersIn", None):
                 for elem in headersIn:
-                    log['client_header_'+elem[0]] = elem[1]
+                    log['header']['client'][str(elem[0]).lower()] = str(elem[1])
             if headersOut := log.pop("headersOut", None):
                 for elem in headersOut:
-                    log['server_header_'+elem[0]] = elem[1]
+                    log['header']['server'][str(elem[0]).lower()] = str(elem[1])
 
-            # may look overkill but sometimes we received high number of unprintable/special chars on .tags[].value
-            if tags := log.pop("tags", None):
-                log['tags'] = [str(tag['value'].encode('utf-8')) for tag in tags if tag]
+            if tags := log.get("tags", None):
+                for tag in tags:
+                    tag['value'] = str(tag['value'])
 
             return json.dumps(log)
 
@@ -167,11 +163,9 @@ class SignalSciencesNgwafParser(ApiParser):
             return None
 
 
-    # Entering in conflict with crontab on >1min collecting and have an incidence
-    # on contrab/system integrity (parser&logs OK) (~400k entries)
-    # System may get a cpu peak while collecting on a long late time period while crontab 
-    # try to start the process again, moreover crontab doesn't handle correctly the execution of multiple process
-    # this resulting to an indefinitely run of execute() method
+    # Entering in conflict with crontab on >1min collecting and have an incidence on system integrity (parser&logs OK btw) (~400k entries)
+    # May get a cpu peak while collecting on a long late time period while crontab trying to start another parser process
+    # Moreover crontab doesn't handle correctly the execution of multiple threads this resulting to an indefinitely run of execute() method
     # def late_handler(self):
     #     while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
     #         since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
@@ -219,12 +213,12 @@ class SignalSciencesNgwafParser(ApiParser):
 
                 self.frontend.last_api_call = to
 
-            # # If no logs where retrieved during the last 24h -> move forward 1h to prevent error on API
-            # if self.frontend.last_api_call < timezone.now()-timedelta(hours=24):
-            #     self.frontend.last_api_call += timedelta(hours=1)
+            # If we're late about 24h -> move forward 1h to prevent API error
+            if self.frontend.last_api_call < timezone.now()-timedelta(hours=24):
+                self.frontend.last_api_call += timedelta(hours=1)
 
             logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
-            logger.exception(f"{[__parser__]}:_format_log: {str(e)}", extra={'frontend': str(self.frontend)})
-            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:execute: {str(e)}")
+            logger.exception(f"{[__parser__]}:execute: {str(e)}", extra={'frontend': str(self.frontend)})
+            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:execute: An error occurred on main method : {str(e)}")

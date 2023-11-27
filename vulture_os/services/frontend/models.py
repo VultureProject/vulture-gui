@@ -1053,6 +1053,16 @@ class Frontend(models.Model):
         help_text = _("SignalSciences NGWAF token"),
         default = "",
     )
+    signalsciences_ngwaf_corp_name = models.TextField(
+        verbose_name = _("SignalSciences NGWAF corporation name"),
+        help_text = _("SignalSciences NGWAF corporation name"),
+        default = "",
+    )
+    signalsciences_ngwaf_site_name = models.TextField(
+        verbose_name = _("SignalSciences NGWAF site name"),
+        help_text = _("SignalSciences NGWAF site name"),
+        default = "",
+    )
     # Proofpoint CASB attributes
     proofpoint_casb_api_key = models.TextField(
         help_text=_("Proofpoint CASB API KEY"),
