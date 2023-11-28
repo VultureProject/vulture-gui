@@ -217,6 +217,8 @@ class SignalSciencesNgwafParser(ApiParser):
             if self.frontend.last_api_call < timezone.now()-timedelta(hours=24):
                 self.frontend.last_api_call += timedelta(hours=1)
 
+            self.frontend.save()
+
             logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
