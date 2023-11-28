@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - werkzeug 3.0.0 -> 3.0.1
   - yarl 1.9.2 -> 1.9.3
   - setuptools added -> 69.0.2
+### Fixed
+- [CSC_DOMAINMANAGER] Fix missing json.dumps on logs list
 
 
 ## [2.13.0]
