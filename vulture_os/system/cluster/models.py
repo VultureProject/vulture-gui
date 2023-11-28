@@ -392,7 +392,9 @@ class Node(models.Model):
         logfwds.extend(list(LogOMKAFKA.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
 
         """Second, retrieve Log Forwarders directly associated with the node and not a listener eg. KAFKA and REDIS"""
-        logfwds.extend([LogOM().select_log_om(log_fwd) for log_fwds in self.frontend_set.values_list('log_forwarders', flat=True) for log_fwd in log_fwds])
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            logfwds.extend([LogOM().select_log_om(log_fwd) for log_fwds in self.frontend_set.values_list('log_forwarders', flat=True) for log_fwd in log_fwds])
 
         """Add the protocol, destination ip and port of the log forwarder to the result"""
         for logfwd in logfwds:
@@ -791,9 +793,11 @@ class NetworkInterfaceCard(models.Model):
         """
         # NOT IN is not supported by djongo
         # exclude lagg/vlan addresses as NICs do not hold the address
-        for addr in self.networkaddress_set.exclude(type__in=["lagg", "vlan"]):
-            if addr.ip and ":" not in addr.ip:
-                return True
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            for addr in self.networkaddress_set.exclude(type__in=["lagg", "vlan"]):
+                if addr.ip and ":" not in addr.ip:
+                    return True
         return False
 
     @property
@@ -801,9 +805,12 @@ class NetworkInterfaceCard(models.Model):
         """ Check if there is at least one NetworkAddress IPv6 associated to this NetworkInterface
         :return True if there is, False otherwise
         """
-        # self.networkaddress_set.mongo_find({"ip": re_compile(":")}).count() > 0
         # exclude lagg/vlan addresses as NICs do not hold the address
-        return self.networkaddress_set.exclude(type__in=["lagg", "vlan"]).filter(ip__contains=":").count() > 0
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            return self.networkaddress_set.exclude(type__in=["lagg", "vlan"]).filter(ip__contains=":").count() > 0
+        else:
+            return False
 
 
 class NetworkAddress(models.Model):

@@ -5,7 +5,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [2.12.0]
+## [Unreleased]
+### Changed
+- [DEPENDENCIES] Python dependencies upgrade
+  - aiohttp 3.8.6 -> 3.9.0
+  - boto3 1.28.68 -> 1.29.6
+  - botocore 1.31.68 -> 1.32.6
+  - cachetools 5.3.1 -> 5.3.2
+  - certifi 2023.7.22 -> 2023.11.17
+  - charset-normalizer 3.3.1 -> 3.3.2
+  - cryptography 41.0.4 -> 41.0.5
+  - django 4.2.6 -> 4.2.7
+  - google-api-core 2.12.0 -> 2.14.0
+  - google-api-python-client 2.104.0 -> 2.108.0
+  - google-auth 2.23.3 -> 2.23.4
+  - maxminddb 2.4.0 -> 2.5.1
+  - meraki 1.38.0 -> 1.39.0
+  - protobuf 4.24.4 -> 4.25.1
+  - pyasn1 0.5.0 -> 0.5.1
+  - pyopenssl 23.2.0 -> 23.3.0
+  - python-ldap 3.4.3 -> 3.4.4
+  - urllib3 1.26.18 -> 2.0.7
+  - werkzeug 3.0.0 -> 3.0.1
+  - yarl 1.9.2 -> 1.9.3
+  - setuptools added -> 69.0.2
+
+
+## [2.13.0]
+### Added
+- [FRONTEND] New last_update_time field
+- [GUI] [WORKFLOW] CORS policy settings
+- [HAPROXY] [CONF] CORS policy into config generation
+- [API_PARSER] [HARFANGLAB] Fetch new endpoint for Threats logs
+- [API_PARSER] [APEX] New parser
+- [FRONTEND] [TCP] Add advanced option custom_tl_frame_delimiter for Rsyslog tcp frontends
+### Removed
+- [FRONTEND] [TIMEOUTS] Incoherent "timeout connect" in Frontend attributes
+### Changed
+- [HAPROXY] [CONF] Split Frontend and Workflow config to improve performance
+- [HAPROXY] [CONF] Change test config names by uuids
+- [PERFORMANCES] Avoid high overhead when loading Workflows by simplifying string representation
+### Fixed
+- [GUI] [FRONTEND] Bug allowing the creation of an http or tcp frontend without a listener
+- [LOG_FORWARDER] Rsyslog config generation error when '-' found in LOGOM name
+- [LOG_FORWARDER] Frontends configs aren't refreshed when LOGOM used as parse failure
+- [WORKFLOW] Re-allow multiple workflows on the same FQDN with sub-paths
+- [HAPROXY] Ensure X-Forwarded-proto header is correctly set on Frontend configuration
+- [API_PARSER] [NOZOMI] Set correct timestamp format for query limits
+
+
+## [2.12.1] - 2023-11-16
+### Fixed
+- [API] [BACKEND] Broken API URL
+- [API] [WORKFLOW] Do not error on Workflow creation through API
+- [SYSTEM] [USERS] Change password of an existing user
+
+
+## [2.12.0] - 2023-11-15
 ### Added
 - [API_PARSER] [VECTRA] New parser Vectra
 - [MANAGE] [COMMANDS] New command get_api_key
@@ -35,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - urllib3 1.26.17 -> 1.26.18
   - werkzeug 2.3.7 -> 3.0.0
 - [API] [PF] Changed old PF whitelist/blacklist from config to new API entrypoint 'api/v1/system/pf/'
+- [INTERNAL] Adapt model relationships to Django 4.2
 ### Fixed
 - [PORTAL] [IDP] Refresh token validation with multiple IDP
 - [FRONTEND] Disable log condition if log forwarder disabled

@@ -200,7 +200,7 @@ class FrontendForm(ModelForm):
         for field_name in ['log_condition', 'keep_source_fields', 'ruleset', 'log_level', 'listening_mode',
                            'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'headers', 'custom_haproxy_conf',
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
-                           'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_connect', 'timeout_keep_alive',
+                           'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'nb_workers','mmdb_cache_size','redis_batch_size',
@@ -250,6 +250,7 @@ class FrontendForm(ModelForm):
                            'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                            'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
                            'retarus_token', 'retarus_channel', 'vectra_host', 'vectra_client_id', 'vectra_secret_key',
+                           'apex_server_host', 'apex_application_id', 'apex_api_key',
                            ]:
             self.fields[field_name].required = False
 
@@ -292,8 +293,9 @@ class FrontendForm(ModelForm):
                   'enable_cache', 'cache_total_max_size', 'cache_max_age',
                   'enable_compression', 'compression_algos', 'compression_mime_types', 'error_template',
                   'log_forwarders', 'tenants_config', 'enable_logging_reputation', 'logging_reputation_database_v4',
-                  'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client', 'timeout_connect',
-                  'timeout_keep_alive', 'disable_octet_counting_framing', 'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
+                  'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client',
+                  'timeout_keep_alive', 'disable_octet_counting_framing', 'custom_tl_frame_delimiter',
+                  'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'ratelimit_interval', 'ratelimit_burst', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                   'nb_workers','mmdb_cache_size','redis_batch_size',
@@ -344,6 +346,7 @@ class FrontendForm(ModelForm):
                   'sentinel_one_mobile_host', 'sentinel_one_mobile_apikey',
                   'csc_domainmanager_apikey', 'csc_domainmanager_authorization',
                   'retarus_token', 'retarus_channel', 'vectra_host', 'vectra_secret_key', 'vectra_client_id',
+                  'apex_server_host', 'apex_application_id', 'apex_api_key',
                 )
 
         widgets = {
@@ -363,6 +366,7 @@ class FrontendForm(ModelForm):
             'filebeat_module': Select(choices=FILEBEAT_MODULE_LIST, attrs={'class': 'form-control select2'}),
             'filebeat_config': Textarea(attrs={'class': 'form-control'}),
             'disable_octet_counting_framing': CheckboxInput(attrs={'class': " js-switch"}),
+            'custom_tl_frame_delimiter': NumberInput(attrs={'class': 'form-control'}),
             'custom_haproxy_conf': Textarea(attrs={'class': 'form-control'}),
             'enable_cache': CheckboxInput(attrs={'class': " js-switch"}),
             'cache_total_max_size': NumberInput(attrs={'class': 'form-control'}),
@@ -373,7 +377,6 @@ class FrontendForm(ModelForm):
             'compression_mime_types': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'error_template': Select(choices=ErrorTemplate.objects.all(), attrs={'class': 'form-control select2'}),
             'timeout_client': NumberInput(attrs={'class': 'form-control'}),
-            'timeout_connect': NumberInput(attrs={'class': 'form-control'}),
             'timeout_keep_alive': NumberInput(attrs={'class': 'form-control'}),
             'https_redirect': CheckboxInput(attrs={'class': 'js-switch'}),
             'parser_tag': TextInput(attrs={'class': 'form-control'}),
@@ -519,6 +522,9 @@ class FrontendForm(ModelForm):
             'vectra_host': TextInput(attrs={'class': 'form-control'}),
             'vectra_secret_key': TextInput(attrs={'class': 'form-control'}),
             'vectra_client_id': TextInput(attrs={'class': 'form-control'}),
+            'apex_server_host': TextInput(attrs={'class': 'form-control'}),
+            'apex_api_key': TextInput(attrs={'class': 'form-control'}),
+            'apex_application_id': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
@@ -677,8 +683,6 @@ class FrontendForm(ModelForm):
 
         # If HAProxy conf - for TCP Rsyslog
         if (mode == "log" and "tcp" in cleaned_data.get('listening_mode')) or mode in ("tcp", "http"):
-            if not cleaned_data.get('timeout_connect'):
-                self.add_error('timeout_connect', "This field is required.")
             if not cleaned_data.get('timeout_client'):
                 self.add_error('timeout_client', "This field is required.")
 
@@ -695,8 +699,6 @@ class FrontendForm(ModelForm):
                     self.add_error('filebeat_config', "Filebeat config cannot contains 'type', this is managed by Vulture")
 
         if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "tcp":
-            if not cleaned_data.get('timeout_connect'):
-                self.add_error('timeout_connect', "This field is required.")
             if not cleaned_data.get('timeout_client'):
                 self.add_error('timeout_client', "This field is required.")
 

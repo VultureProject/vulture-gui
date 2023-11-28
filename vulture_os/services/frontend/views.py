@@ -28,6 +28,7 @@ from django.conf import settings
 from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect)
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # Django project imports
@@ -261,7 +262,7 @@ def frontend_edit(request, object_id=None, api=False):
             for header in DEFAULT_FRONTEND_HEADERS:
                 header_form_list.append(HeaderForm(header))
 
-        if not reputationctx_form_list and front:
+        if not reputationctx_form_list and front and front.pk:
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
@@ -351,7 +352,9 @@ def frontend_edit(request, object_id=None, api=False):
             reputationctx_objs.append(reputationctx_f.save(commit=False))
 
         listener_objs = []
-        if form.data.get('mode') not in ["filebeat"] and form.data.get('listening_mode') not in ("file", "api", "kafka", "redis"):
+        if form.data.get('mode') in ("http", "tcp") \
+        or form.data.get('mode') == "log" and form.data.get('listening_mode') in ("tcp", "udp", "tcp,udp", "relp") \
+        or form.data.get('mode') == "filebeat" and form.data.get('filebeat_listening_mode') in ("tcp", "udp"):
 
             # At least one Listener is required if Frontend enabled, except for listener of type "File", and "API"
             if form.data.get('enabled') and not listener_ids:
@@ -374,40 +377,8 @@ def frontend_edit(request, object_id=None, api=False):
 
                 if not listener_f.is_valid():
                     form.add_error("listeners", listener_f.errors.as_json() if api else [error for error_list in listener_f.errors.as_data().values() for error in error_list])
-
-                    continue
-                listener_form_list.append(listener_f)
-                listener_obj = listener_f.save(commit=False)
-                listener_objs.append(listener_obj)
-
-                """ For each listener, get node """
-                for nic in listener_obj.network_address.nic.all().only('node'):
-                    if nic.node:
-                        if not node_listeners.get(nic.node):
-                            node_listeners[nic.node] = list()
-                        node_listeners[nic.node].append(listener_obj)
-
-        elif form.data.get('mode') == "filebeat" and form.data.get('filebeat_listening_mode') not in ("file", "api"):
-            # At least one Listener is required if Frontend enabled, except for listener of type "File", and "API"
-            if form.data.get('enabled') and not listener_ids:
-                form.add_error(None, "At least one listener is required if frontend is enabled.")
-
-            """ For each listener in list """
-            for listener in listener_ids:
-                """ If id is given, retrieve object from mongo """
-                try:
-                    instance_l = Listener.objects.get(pk=listener['id']) if listener.get('id') else None
-                except ObjectDoesNotExist:
-                    form.add_error("listeners", "Listener with id {} not found.".format(listener['id']))
                     continue
 
-                """ And instantiate form with the object, or None """
-                listener_f = ListenerForm(listener, instance=instance_l)
-                if not listener_f.is_valid():
-                    if api:
-                        form.add_error("listeners", listener_f.errors.as_json() if api else
-                                                    listener_f.errors.as_ul())
-                    continue
                 listener_form_list.append(listener_f)
                 listener_obj = listener_f.save(commit=False)
                 listener_objs.append(listener_obj)
@@ -559,6 +530,7 @@ def frontend_edit(request, object_id=None, api=False):
                 frontend.log_forwarders_id = log_forwarders
 
             logger.debug("Saving frontend")
+            frontend.last_update_time = timezone.now()
             frontend.save()
             logger.debug("Frontend '{}' (id={}) saved in MongoDB.".format(frontend.name, frontend.id))
 
@@ -655,7 +627,7 @@ def frontend_edit(request, object_id=None, api=False):
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """
             """ The object has been saved, delete-it if needed """
-            if first_save:
+            if not frontend.id:
                 for listener in frontend.listener_set.all():
                     listener.delete()
 

@@ -84,7 +84,7 @@ class NozomiProbeParser(ApiParser):
 
     def get_logs(self, since=None):
         if isinstance(since, datetime):
-            since = since.timestamp()*1000
+            since = int(since.timestamp()*1000)
 
         self._connect()
 

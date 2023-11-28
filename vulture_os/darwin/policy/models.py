@@ -324,8 +324,10 @@ class DarwinPolicy(models.Model):
         return_data = model_to_dict(self, fields=fields)
         if not fields or "filters" in fields:
             return_data['filters'] = []
-            for filt in self.filterpolicy_set.all():
-                return_data['filters'].append(filt.to_dict())
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            if self.pk:
+                for filt in self.filterpolicy_set.all():
+                    return_data['filters'].append(filt.to_dict())
 
         return return_data
 
@@ -347,8 +349,9 @@ class DarwinPolicy(models.Model):
             'status': []
         }
         try:
-            return_data['inputs'] = [f.name for f in self.frontend_set.all()]
-            return_data['status'] = [{f.filter_type.name: f.status} for f in self.filterpolicy_set.all() if not f.filter_type.is_internal]
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            return_data['inputs'] = [f.name for f in self.frontend_set.all()] if self.pk else []
+            return_data['status'] = [{f.filter_type.name: f.status} for f in self.filterpolicy_set.all() if not f.filter_type.is_internal] if self.pk else []
         except ObjectDoesNotExist:
             pass
 
