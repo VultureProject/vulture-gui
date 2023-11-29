@@ -1402,7 +1402,12 @@ class Frontend(models.Model):
                     'backend_name': w.backend.name,
                     'mode': w.mode,
                     'fqdn': w.fqdn,
-                    'public_dir': w.public_dir
+                    'public_dir': w.public_dir,
+                    'enable_cors_policy': w.enable_cors_policy,
+                    'cors_allowed_methods': w.cors_allowed_methods,
+                    'cors_allowed_origins': w.cors_allowed_origins,
+                    'cors_allowed_headers': w.cors_allowed_headers,
+                    'cors_max_age': w.cors_max_age,
                 })
 
         result = {
