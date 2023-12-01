@@ -84,6 +84,10 @@ def _find_user(ldap_repo, user_dn, attr_list):
         if attrs.get(key):
             user[key] = attrs.get(key)
 
+    for ldap_key, _ in ldap_repo.custom_attribute_mappings:
+        if ldap_key in attrs:
+            user[ldap_key] = attrs[ldap_key]
+
     return user
 
 

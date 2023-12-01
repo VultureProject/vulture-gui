@@ -127,6 +127,7 @@ class IDPApiView(View):
                     except IndexError:
                         pass
 
+                    # TODO deprecate in favor of dynamic custom attributes
                     for key, value in MAPPING_ATTRIBUTES.items():
                         if value["type"] == str:
                             try:
@@ -136,6 +137,10 @@ class IDPApiView(View):
 
                         elif value["type"] == list:
                             tmp_user[key] = tmp.get(value["internal_key"], [])
+
+                    # New dynamic custom attributes
+                    for ldap_attr, output_attr in ldap_repo.ldapcustomattributemapping_set.values_list('ldap_attribute', 'output_attribute'):
+                        tmp_user[output_attr] = tmp.get(ldap_attr, [''])[0]
 
                     data.append(tmp_user)
 
@@ -240,8 +245,13 @@ class IDPApiUserView(View):
                 # Variable needed to send user's registration
                 user_mail = request.JSON.get('email')
 
+                # TODO deprecate in favor of new dynamic custom attributes
                 for key, value in MAPPING_ATTRIBUTES.items():
                     attrs[value["internal_key"]] = request.JSON.get(key)
+
+                # New dynamic attributes
+                for ldap_attr, output_attr in ldap_repo.ldapcustomattributemapping_set.values_list('ldap_attribute', 'output_attribute'):
+                    attrs[ldap_attr] = request.JSON.get(output_attr)
 
                 group_name = None
                 if portal.update_group_registration:
@@ -443,8 +453,13 @@ class IDPApiUserView(View):
             if ldap_repo.user_mobile_attr:
                 attrs[ldap_repo.user_mobile_attr] = request.JSON.get('mobile')
 
+            # TODO deprecate in favor of new dynamic custom attributes
             for key, value in MAPPING_ATTRIBUTES.items():
                 attrs[value["internal_key"]] = request.JSON.get(key)
+
+            # New custom attributes
+            for ldap_attr, output_attr in ldap_repo.ldapcustomattributemapping_set.values_list('ldap_attribute', 'output_attribute'):
+                attrs[ldap_attr] = request.JSON.get(output_attr)
 
             logger.info(f"IDPApiUserView::PUT::[{portal.name}/{ldap_repo}] Changing user {user_dn} with new attributes {attrs}")
 
