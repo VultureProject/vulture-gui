@@ -117,7 +117,7 @@ def _create_user(ldap_repository, user_dn, username, userPassword, attrs, group_
     }
 
     for k, v in attrs.items():
-        if not v:
+        if v is None:
             attrs[k] = []
         elif not isinstance(v, list):
             attrs[k] = [v]
@@ -239,7 +239,7 @@ def update_user(ldap_repository, user_dn, attrs, userPassword):
     # Add new attributes to old user
     attrs = dict(old_user, **attrs)
     for k, v in attrs.items():
-        if not v:
+        if v is None:
             attrs[k] = []
         elif not isinstance(v, list):
             attrs[k] = [v]

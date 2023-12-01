@@ -117,9 +117,9 @@ class RepoAttribute(models.Model):
 
     def get_condition_var(self, claims, repo_attrs):
         if self.condition_var_kind == "repo":
-            return repo_attrs.get(self.condition_var_name, "")
+            return repo_attrs.get(self.condition_var_name, None)
         elif self.condition_var_kind == "claim":
-            return claims.get(self.condition_var_name, "")
+            return claims.get(self.condition_var_name, None)
         elif self.condition_var_kind == "constant":
             return self.condition_var_name
         elif self.condition_var_kind == "always":
@@ -157,9 +157,9 @@ class RepoAttribute(models.Model):
         if self.condition_criterion == "not equals":
             return value != self.condition_match
         elif self.condition_criterion == "exists":
-            return (len(value) != 0) if hasattr(value, "__len__") else bool(value)
+            return value is not None
         elif self.condition_criterion == "not exists":
-            return (len(value) == 0) if hasattr(value, "__len__") else not bool(value)
+            return value is None
         elif self.condition_criterion == "contains":
             return (self.condition_match in value) if hasattr(value, "__contains__") else False
         elif self.condition_criterion == "not contains":
