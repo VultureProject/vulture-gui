@@ -44,6 +44,7 @@ from portal.system.redis_sessions import REDISOauth2Session, REDISBase
 from toolkit.portal.registration import perform_email_registration, perform_email_reset
 from toolkit.network.smtp import test_smtp_server
 from uuid import UUID, uuid4
+from ldap import LDAPError
 
 from system.cluster.models import Cluster
 
@@ -129,7 +130,7 @@ class IDPApiView(View):
                     for key, value in MAPPING_ATTRIBUTES.items():
                         if value["type"] == str:
                             try:
-                                tmp_user[key] = tmp.get(value["internal_key"], [])[0]
+                                tmp_user[key] = tmp.get(value["internal_key"], [''])[0]
                             except (IndexError, TypeError):
                                 tmp_user[key] = ""
 
@@ -181,7 +182,7 @@ class IDPApiView(View):
 
             return JsonResponse({
                 "status": False,
-                "error": str(err)
+                "error": _("An unknown error occurred during operation, could not execute request")
             }, status=500)
 
 
@@ -387,6 +388,13 @@ class IDPApiUserView(View):
                 "status": False,
                 "error": _("Portal does not exist")
             }, status=404)
+        
+        except LDAPError as e:
+            logger.error(e)
+            return JsonResponse({
+                "status": False,
+                "error": _("LDAP error, couldn't create user")
+            }, status=500)
 
         except Exception as err:
             logger.critical(err, exc_info=1)
@@ -395,7 +403,7 @@ class IDPApiUserView(View):
 
             return JsonResponse({
                 "status": False,
-                "error": str(err)
+                "error": _("An unknown error occurred during operation, could not execute request")
             }, status=500)
 
     @api_need_key('cluster_api_key')
@@ -478,6 +486,13 @@ class IDPApiUserView(View):
                 "error": _("Portal does not exist")
             }, status=404)
 
+        except LDAPError as e:
+            logger.exception(e)
+            return JsonResponse({
+                "status": False,
+                "error": _("LDAP error, couldn't update user")
+            }, status=500)
+
         except Exception as err:
             logger.critical(err, exc_info=1)
             if settings.DEV_MODE:
@@ -485,7 +500,7 @@ class IDPApiUserView(View):
 
             return JsonResponse({
                 "status": False,
-                "error": str(err)
+                "error": _("An unknown error occurred during operation, could not execute request")
             }, status=500)
 
     @api_need_key('cluster_api_key')
@@ -558,6 +573,13 @@ class IDPApiUserView(View):
                 "error": _("Portal does not exist")
             }, status=404)
 
+        except LDAPError as e:
+            logger.error(e)
+            return JsonResponse({
+                "status": False,
+                "error": _("LDAP error, couldn't remove user")
+            }, status=500)
+
         except Exception as err:
             logger.critical(err, exc_info=1)
             if settings.DEV_MODE:
@@ -565,7 +587,7 @@ class IDPApiUserView(View):
 
             return JsonResponse({
                 "status": False,
-                "error": str(err)
+                "error": _("An unknown error occurred during operation, could not execute request")
             }, status=500)
 
 
@@ -681,7 +703,7 @@ class IDPApiUserTokenView(View):
             logger.exception(e)
             return JsonResponse({
                 "status": False,
-                "error": _("An unknown error occured")
+                "error": _("An unknown error occurred during operation, could not execute request")
             }, status=500)
 
         return JsonResponse({
@@ -767,7 +789,7 @@ class IDPApiUserTokenModificationView(View):
             logger.exception(e)
             return JsonResponse({
                 "status": False,
-                "error": _("An unknown error occured")
+                "error": _("An unknown error occurred during operation, could not execute request")
             }, status=500)
 
         return JsonResponse({
@@ -847,7 +869,7 @@ class IDPApiUserTokenModificationView(View):
             logger.exception(e)
             return JsonResponse({
                 "status": False,
-                "error": _("An unknown error occured")
+                "error": _("An unknown error occurred during operation, could not execute request")
             }, status=500)
 
         return JsonResponse({
