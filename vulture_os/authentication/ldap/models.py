@@ -230,7 +230,7 @@ class LDAPRepository(BaseRepository):
             regex = r"\((.*)=.*"
             return re.findall(regex, self.user_change_password_attr)[0]
         return False
-    
+
     @property
     def get_user_change_password_value(self):
         if self.user_change_password_attr:

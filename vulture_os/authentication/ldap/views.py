@@ -48,9 +48,9 @@ logger = logging.getLogger('gui')
 
 def ldap_clone(request, object_id):
     """ LDAPRepository view used to clone an object
-    N.B: Do not totally clone the object and save-it in MongoDB 
+    N.B: Do not totally clone the object and save-it in MongoDB
         because some attributes are unique constraints
- 
+
     :param request: Django request object
     :param object_id: MongoDB object_id of an LDAPRepository object
     """

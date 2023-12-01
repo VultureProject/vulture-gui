@@ -189,12 +189,11 @@ class RepoAttribute(models.Model):
 
     def get_scope(self, scope, claims, repo_attrs):
         if self.validate_condition(self.get_condition_var(claims, repo_attrs)):
-            #scope[self.action_var_name] = self.get_action_var_value(claims, repo_attrs)
             scope = self.assign(scope, self.get_action_var_value(claims, repo_attrs))
         return scope
 
     def __getitem__(self, item):
-        """ PATCH FOR DJONGO ERROR (RepoAttributes is not subscriptable) """
+        """ PATCH FOR DJONGO ERROR (RepoAttribute is not subscriptable) """
         return getattr(self, item)
 
 

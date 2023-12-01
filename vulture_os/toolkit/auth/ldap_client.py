@@ -624,7 +624,6 @@ class LDAPClient(BaseAuth):
         """Authentication method of LDAP repository, which returns dict of specified attributes:their values
         :param username: String with username
         :param password: String with password
-        :param oauth2_attributes: List of attributes to retrieve
         :return:
         """
         return_status = kwargs.get('return_status', False)
