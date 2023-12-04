@@ -66,6 +66,7 @@ from toolkit.api_parser.sentinel_one_mobile.sentinel_one_mobile import SentinelO
 from toolkit.api_parser.csc_domainmanager.csc_domainmanager import CscDomainManagerParser
 from toolkit.api_parser.retarus.retarus import RetarusParser
 from toolkit.api_parser.vectra.vectra import VectraParser
+from toolkit.api_parser.apex.apex import ApexParser
 from toolkit.api_parser.signalsciences_ngwaf.signalsciences_ngwaf import SignalSciencesNgwafParser
 
 
@@ -114,6 +115,7 @@ PARSER_LIST = {
     "csc_domainmanager": CscDomainManagerParser,
     "retarus": RetarusParser,
     "vectra": VectraParser,
+    "apex": ApexParser,
     "signalsciences_ngwaf": SignalSciencesNgwafParser
 }
 

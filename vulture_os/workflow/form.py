@@ -27,15 +27,38 @@ __doc__ = 'Backends & Servers dedicated form classes'
 from django.utils.translation import gettext_lazy as _
 from django.utils.crypto import get_random_string
 from django.conf import settings
-from django.forms import Form
+from django.forms import (ModelForm, CheckboxInput, NumberInput, SelectMultiple, TextInput)
 import validators
 import logging
+
+# Django project imports
+from workflow.models import Workflow, CORS_METHODS
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 
-class WorkflowForm(Form):
+class WorkflowForm(ModelForm):
+
+    class Meta:
+        model = Workflow
+        fields = ('enabled', 'name', 'enable_cors_policy', 'cors_allowed_methods',
+                  'cors_allowed_origins', 'cors_allowed_headers', 'cors_max_age')
+        widgets = {
+            'enabled': CheckboxInput(attrs={'class': 'js-switch'}),
+            'name': TextInput(attrs={'class': 'form-control'}),
+            'enable_cors_policy': CheckboxInput(attrs={'class': 'js-switch'}),
+            'cors_allowed_methods': SelectMultiple(choices=CORS_METHODS, attrs={'class': 'form-control select2'}),
+            'cors_allowed_origins': TextInput(attrs={'class': 'form-control'}),
+            'cors_allowed_headers': TextInput(attrs={'class': 'form-control'}),
+            'cors_max_age': NumberInput(attrs={'class': 'form-control'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        """ Initialize form and special attributes """
+        super().__init__(*args, **kwargs)
+        self.fields['cors_allowed_methods'].empty_label = ""
+
     # Exclude LOG Frontends
     def clean_public_dir(self):
         """ """

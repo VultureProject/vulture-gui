@@ -355,6 +355,7 @@
                           </div>
                         </div>
                       </div> <!-- /.row darwin-mode -->
+                    </div> <!-- /.row -->
                     <!-- Advanced tab -->
                     <div class="row log-mode">
                       <div class="col-sm-4 pull-right">
@@ -435,6 +436,17 @@
                       <div class="row log-mode listening-tcp no-filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
+                            <label class="col-sm-4 control-label">{% translate "Additional Frame Delimiter (AddtlFrameDelimiter)" %}</label>
+                            <div class="col-sm-5">
+                              {{form.custom_tl_frame_delimiter}}
+                              {{form.custom_tl_frame_delimiter.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row log-mode -->
+                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
                             <label class="col-sm-4 control-label">{% translate "rate-limiting interval" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_interval}}
@@ -458,7 +470,6 @@
                         </div>
                       </div> <!-- /.row log-mode -->
                     </div> <!-- /advanced_options -->
-                    </div> <!-- /.row -->
                   </div> <!-- /.tab-pane tab_general -->
                   <div class="tab-pane" id="tab_network">
 
@@ -496,20 +507,6 @@
 
                     <fieldset class="col-lg-12 sol-sm-12 haproxy-conf">
                       <legend>{% translate "Timeout options" %}</legend>
-                      <div class="row haproxy-conf">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "Timeout connect" %}</label>
-                            <div class="col-sm-5">
-                              {{form.timeout_connect}}
-                              {{form.timeout_connect.errors|safe}}
-                            </div>
-                            <div class="col-sm-2">
-                              {% translate " ms" %}
-                            </div>
-                          </div>
-                        </div>
-                      </div> <!-- /.row -->
                       <div class="row tcp-mode haproxy-conf">
                         <div class="col-md-12">
                           <div class="form-group">
@@ -1841,6 +1838,29 @@
                           <div class="col-sm-5">
                             {{ form.vectra_client_id }}
                             {{ form.vectra_client_id.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-12 api_clients_row" id="api_apex_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.apex_server_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.apex_server_host }}
+                            {{ form.apex_server_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.apex_api_key.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.apex_api_key }}
+                            {{ form.apex_api_key.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.apex_application_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.apex_application_id }}
+                            {{ form.apex_application_id.errors|safe }}
                           </div>
                         </div>
                       </div>

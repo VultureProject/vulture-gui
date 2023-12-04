@@ -256,7 +256,8 @@ from the upstream server or application.</p>
         return {
             'id': str(self.id),
             'name': self.name,
-            'frontends': [str(frontend) for frontend in self.frontend_set.all()]
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            'frontends': [str(frontend) for frontend in self.frontend_set.all()] if self.pk else []
         }
 
     def to_dict(self, fields=None):
@@ -264,7 +265,8 @@ from the upstream server or application.</p>
         if not fields or "id" in fields:
             result['id'] = str(result['id'])
         if not fields or "frontends" in fields:
-            result['frontends'] = [str(frontend) for frontend in self.frontend_set.all()]
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            result['frontends'] = [str(frontend) for frontend in self.frontend_set.all()] if self.pk else []
 
         return result
 

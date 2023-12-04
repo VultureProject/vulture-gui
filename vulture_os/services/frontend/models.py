@@ -24,11 +24,12 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
-import uuid
+from uuid import uuid4
 import datetime
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.template import Context, Template as JinjaTemplate
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
@@ -166,6 +167,11 @@ class Frontend(models.Model):
         default="Listener",
         help_text=_("Name of HAProxy frontend"),
     )
+    last_update_time = models.DateTimeField(
+        default=timezone.now,
+        editable=False,
+        help_text=_("Datetime of the last frontend's update"),
+    )
     """ Tags """
     tags = models.JSONField(
         models.SlugField(default=""),
@@ -177,12 +183,6 @@ class Frontend(models.Model):
         default="tcp",
         choices=MODE_CHOICES,
         help_text=_("Listening mode"),
-    )
-    timeout_connect = models.PositiveIntegerField(
-        default=5000,
-        validators=[MaxValueValidator(20000)],
-        help_text=_("HTTP request Timeout"),
-        verbose_name=_("Timeout")
     )
     timeout_client = models.PositiveIntegerField(
         default=60,
@@ -344,9 +344,17 @@ class Frontend(models.Model):
         default="",
         help_text=_("Filebeat Input configuration. No output allowed here, as it is handled by Vulture")
     )
+    """ Rsyslog TCP options """
     disable_octet_counting_framing = models.BooleanField(
         default=False,
         help_text=_("Enable option 'SupportOctetCountedFraming' in rsyslog (advanced).")
+    )
+    custom_tl_frame_delimiter = models.IntegerField(
+        default=-1,
+        blank=True,
+        help_text=_("Additional frame delimiter"),
+        verbose_name=_("Additional frame delimiter"),
+        validators=[MinValueValidator(-1), MaxValueValidator(255)]
     )
     """ *** HTTP OPTIONS *** """
     """ Log forwarder - File """
@@ -1204,7 +1212,26 @@ class Frontend(models.Model):
         help_text=_("Vectra client id"),
         default="",
     )
-
+    # Apex attributes
+    apex_server_host = models.TextField(
+        verbose_name=_("Apex server host"),
+        help_text=_("Apex server host"),
+        default = ""
+    )
+    apex_api_key = models.TextField(
+        verbose_name=_("Apex api key"),
+        help_text=_("Apex api key"),
+        default="",
+    )
+    apex_application_id = models.TextField(
+        verbose_name=_("Apex application id"),
+        help_text=_("Apex application id"),
+        default="",
+    )
+    apex_timestamp = models.JSONField(
+        default={}
+    )
+    
     def reload_haproxy_conf(self):
         for node in self.get_nodes():
             api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
@@ -1243,13 +1270,15 @@ class Frontend(models.Model):
         if not fields or "listeners" in fields:
             result['listeners'] = []
             """ Add listeners, except if listening_mode is file """
-            for listener in self.listener_set.all():
-                l = listener.to_template()
-                # Remove frontend to prevent infinite loop
-                del l['frontend']
-                result['listeners'].append(l)
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            if self.pk:
+                for listener in self.listener_set.all():
+                    l = listener.to_template()
+                    # Remove frontend to prevent infinite loop
+                    del l['frontend']
+                    result['listeners'].append(l)
         if not fields or "backend" in fields:
-            result['backend'] = [b.to_dict() for b in self.backend.all()]
+            result['backend'] = [b.to_dict() for b in self.backend.all()] if self.pk else []
         if not fields or "darwin_policies" in fields:
             result['darwin_policies'] = list(self.darwin_policies.all())
         if not fields or "darwin_policies" in fields:
@@ -1266,7 +1295,8 @@ class Frontend(models.Model):
 
         if self.enable_logging_reputation:
             if not fields or "reputation_contexts" in fields:
-                result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()]
+                # Test self.pk to prevent M2M errors when object isn't saved in DB
+                result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()] if self.pk else []
             if not fields or "logging_reputation_database_v4" in fields:
                 if self.logging_reputation_database_v4:
                     result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
@@ -1303,7 +1333,8 @@ class Frontend(models.Model):
         elif self.listening_mode == "api":
             listeners_list = [self.api_parser_type]
         else:
-            listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())]
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())] if self.pk else []
 
         log_forwarders = [str(l) for l in self.log_forwarders.all()]
 
@@ -1342,14 +1373,15 @@ class Frontend(models.Model):
             'additional_infos': additional_infos
         }
 
-    def to_template(self, listener_list=None, header_list=None, node=None):
+    def to_template(self, listener_list=[], header_list=None, node=None):
         """ Dictionary used to create configuration file
 
         :return     Dictionnary of configuration parameters
         """
         """ Retrieve list/custom objects """
         # If facultative arg listener_list is not given
-        if not listener_list:
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if not listener_list and self.pk:
             # Retrieve listeners into database
             # No .only ! Used to generated conf, neither str, we need the whole object
             if node:
@@ -1377,66 +1409,30 @@ class Frontend(models.Model):
             geoip_database = DATABASES_PATH + '/' + self.logging_geoip_database.filename
 
         reputation_ctxs = []
-        if self.enable_logging:
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.enable_logging and self.pk:
             for reputation_ctx in self.frontendreputationcontext_set.filter(enabled=True):
                 reputation_ctxs.append(reputation_ctx)
 
         workflow_list = []
-        access_controls_list = []
-        if self.id:
-            for workflow in self.workflow_set.filter(enabled=True):
-                tmp = workflow.to_template()
-
-                access_controls_deny = []
-                access_controls_301 = []
-                access_controls_302 = []
-                for acl in workflow.workflowacl_set.filter(before_policy=True):
-                    rules, acls_name = acl.access_control.generate_rules()
-                    access_controls_list.append(rules)
-
-                    conditions = acl.generate_condition(acls_name)
-
-                    redirect_url = None
-                    deny = acl.action_satisfy == "403"
-                    redirect = acl.action_satisfy in ("301", "302")
-                    for type_acl in ('action_satisfy', 'action_not_satisfy'):
-                        action = getattr(acl, type_acl)
-                        if action != "200":
-                            if action in ("301", "302"):
-                                redirect_url = getattr(acl, type_acl.replace('action', 'redirect_url'))
-
-                            break
-
-                    tmp_acl = {
-                        'before_policy': acl.before_policy,
-                        'redirect_url': redirect_url,
-                        'conditions': conditions,
-                        'action': action,
-                        'deny': deny,
-                        "redirect": redirect,
-                    }
-
-                    if action == "403":
-                        access_controls_deny.append(tmp_acl)
-                    elif action == "301":
-                        access_controls_301.append(tmp_acl)
-                    elif action == "302":
-                        access_controls_302.append(tmp_acl)
-
-                tmp['access_controls_deny'] = access_controls_deny
-                tmp['access_controls_302'] = access_controls_302
-                tmp['access_controls_301'] = access_controls_301
-
-                workflow_list.append(tmp)
+        if self.pk:
+            for w in self.workflow_set.filter(enabled=True):
+                workflow_list.append({
+                    'id': w.pk,
+                    'name': w.name,
+                    'backend_name': w.backend.name,
+                    'mode': w.mode,
+                    'fqdn': w.fqdn,
+                    'public_dir': w.public_dir
+                })
 
         result = {
-            'id': str(self.id),
+            'id': str(self.pk),
             'enabled': self.enabled,
             'name': self.name,
             'listeners': listener_list,
             'https_redirect': self.https_redirect,
             'mode': self.mode,
-            'timeout_connect': self.timeout_connect,
             'timeout_client': self.timeout_client,
             'timeout_keep_alive': self.timeout_keep_alive,
             'enable_logging': self.enable_logging,
@@ -1461,8 +1457,7 @@ class Frontend(models.Model):
             'reputation_database_v6': reputation_database_v6,
             'geoip_database': geoip_database,
             'reputation_ctxs': reputation_ctxs,
-            'workflows': workflow_list,
-            'access_controls_list': set(access_controls_list),
+            'workflows': sorted(workflow_list, reverse=True, key=lambda x: len(x['public_dir'].split('/'))),
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
@@ -1476,9 +1471,8 @@ class Frontend(models.Model):
             'filebeat_module': self.filebeat_module,
             'filebeat_config': self.filebeat_config,
             'filebeat_listening_mode': self.filebeat_listening_mode,
-            'external_idps': self.userauthentication_set.filter(enable_external=True),
-            'session_enabled': self.workflow_set.filter(authentication__isnull=False).count() > 0
-
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            'external_idps': self.userauthentication_set.filter(enable_external=True) if self.pk else [],
         }
 
         """ And returns the attributes of the class """
@@ -1525,11 +1519,11 @@ class Frontend(models.Model):
         conf = self.configuration.get(node_name)
         if not conf:
             return
-        test_conf = conf.replace("frontend {}".format(self.name),
-                                 "frontend test_{}".format(self.id or "test")) \
-                        .replace("listen {}".format(self.name),
-                                 "listen test_{}".format(self.id or "test")) \
-                        .replace('filter spoe engine', '#filter spoe engine') # don't test spoe files, they won't be up-to-date
+        test_conf = conf.replace(f"frontend {self.name}", f"frontend {uuid4()}") \
+                        .replace(f"listen {self.name}", f"listen test_{uuid4()}")
+        if self.pk:
+            for workflow in self.workflow_set.all():
+                test_conf = test_conf.replace(f"backend Workflow_{workflow.pk}", f"backend {uuid4()}")
         if node_name != Cluster.get_current_node().name:
             try:
                 global_config = Cluster().get_global_config()
@@ -1611,6 +1605,7 @@ class Frontend(models.Model):
 
     def render_log_condition(self):
         log_oms = {}
+        clean_log_condition = self.log_condition
         for line in self.log_condition.split('\n'):
             if line.count('{') < 2:
                 continue
@@ -1620,11 +1615,13 @@ class Frontend(models.Model):
                 if log_om.enabled:
                     if log_om.internal and isinstance(log_om, LogOMMongoDB):
                         log_om.collection = self.ruleset
-                    log_oms[match.group(1)] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
+                    # Ensure variable names don't have a '-' character (and only those variables)
+                    clean_log_condition = self.log_condition.replace(match.group(1), match.group(1).replace('-','_'))
+                    log_oms[match.group(1).replace('-','_')] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
                     logger.info("Configuration of Log Forwarder named '{}' generated.".format(log_om.name))
         internal_ruleset = ""
 
-        tpl = JinjaTemplate(self.log_condition)
+        tpl = JinjaTemplate(clean_log_condition)
         return internal_ruleset + "\n\n" + tpl.render(Context(log_oms, autoescape=False)) + "\n"
 
     def render_log_condition_failure(self):
@@ -1903,9 +1900,11 @@ class Frontend(models.Model):
         return self.mode == "filebeat" and self.filebeat_listening_mode in ("udp", "file", "api")
 
     def has_tls(self):
-        for listener in self.listener_set.all():
-            if listener.is_tls:
-                return True
+        # Test self.pk to prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            for listener in self.listener_set.all():
+                if listener.is_tls:
+                    return True
         return False
 
 
@@ -2277,7 +2276,7 @@ class BlacklistWhitelist(models.Model):
 
         acl_name = "acl_"
         acl_name_list = []
-        current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+        current_acl_name = "{}{}".format(acl_name, str(uuid4()))
         acl_name_list.append(current_acl_name)
         acl_str = ""
         spaces = "    "
@@ -2285,7 +2284,7 @@ class BlacklistWhitelist(models.Model):
         if mode == "$or":
             for condition_tuple in condition_list:
                 acl_str += "acl {} {}\n{}".format(current_acl_name, condition_tuple[0], spaces)
-                current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+                current_acl_name = "{}{}".format(acl_name, str(uuid4()))
                 acl_name_list.append(current_acl_name)
 
             acl_str += "http-request deny if"
@@ -2305,7 +2304,7 @@ class BlacklistWhitelist(models.Model):
         else:
             for condition_tuple in condition_list:
                 acl_str += "acl {} {}\n{}".format(current_acl_name, condition_tuple[0], spaces)
-                current_acl_name = "{}{}".format(acl_name, str(uuid.uuid4()))
+                current_acl_name = "{}{}".format(acl_name, str(uuid4()))
                 acl_name_list.append(current_acl_name)
 
             acl_str += "http-request deny if"

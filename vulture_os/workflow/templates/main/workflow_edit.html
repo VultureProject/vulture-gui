@@ -36,11 +36,13 @@
                                     <div class="panel-body" id="toolbox">
                                         <div class="form-group">
                                             <label>{% translate "Enabled" %}:</label>
-                                            <input type="checkbox" class="js-switch" id="id_enabled" name="enabled" {% if workflow.enabled %} checked="checked" {% endif %}/>
+                                            {{form.enabled}}
+                                            {{form.enabled.errors|safe}}
                                         </div>
                                         <div class="form-group">
                                             <label>{% translate "Workflow name" %}:</label>
-                                            <input type="text" class="form-control" id="id_name" name="name" value="{{ workflow.name }}"/>
+                                            {{form.name}}
+                                            {{form.name.errors|safe}}
                                         </div>
                                         <div class="input-group" id="toolbox-workflow">
                                             <input type="text" id="search-toolbox" placeholder="{% translate 'Search' %}" class="form-control input-sm"/>
@@ -96,7 +98,7 @@
 
 {% block jquery_code %}
 
-    var workflow_id = "{{ workflow.pk }}";
+    var workflow_id = "{{ object_id }}";
     var vulture_logo = "{% static 'img/vulture-logo.png' %}";
     var radius_logo = "{% static 'img/logos/radius.png' %}";
     var kerberos_logo = "{% static 'img/logos/kerberos.png' %}";

@@ -57,9 +57,6 @@ class SignalSciencesNgwafParser(ApiParser):
         self.signalsciences_ngwaf_corp_name = data["signalsciences_ngwaf_corp_name"]
         self.signalsciences_ngwaf_site_name = data["signalsciences_ngwaf_site_name"]
 
-        self.api_parser_verify_ssl = False
-        self.api_parser_custom_certificate = None
-
         self.session = None
 
 
@@ -91,8 +88,7 @@ class SignalSciencesNgwafParser(ApiParser):
                 params=query,
                 timeout=timeout,
                 proxies=self.proxies,
-                verify=False)
-                # verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl)
+                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl)
 
             if response.status_code != 200:
                 raise SignalSciencesNgwafAPIError(
@@ -173,7 +169,7 @@ class SignalSciencesNgwafParser(ApiParser):
             if self.frontend.last_api_call < timezone.now() - timedelta(hours=24):
                 self.frontend.last_api_call = timezone.now() - timedelta(hours=23)
 
-            # while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
+            #TODO:while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
             since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
             to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
 
@@ -185,7 +181,6 @@ class SignalSciencesNgwafParser(ApiParser):
                     to)
             self.update_lock()
 
-            # logger.info(f"[{__parser__}]:execute: TOTO", extra={'frontend': str(self.frontend)})
             if logs := response.get("data"):
                 self.write_to_file([self._format_log(log) for log in logs if log])
                 self.update_lock()

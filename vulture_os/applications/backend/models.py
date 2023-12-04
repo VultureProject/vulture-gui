@@ -388,10 +388,12 @@ class Backend(models.Model):
         if not fields or "servers" in fields:
             result['servers'] = []
             """ Add listeners """
-            for server in self.server_set.all():
-                # Remove backend to prevent infinite loop
-                s = server.to_dict(fields=['id','target','port','mode','weight', 'tls_profile'])
-                result['servers'].append(s)
+            # Prevent M2M errors when object isn't saved in DB
+            if self.pk:
+                for server in self.server_set.all():
+                    # Remove backend to prevent infinite loop
+                    s = server.to_dict(fields=['id','target','port','mode','weight', 'tls_profile'])
+                    result['servers'].append(s)
         if not fields or "status" in fields:
             result['status'] = dict(self.status)
         if not fields or "headers" in fields:
@@ -408,7 +410,11 @@ class Backend(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ Retrieve list/custom objects """
-        servers_list = [str(s) for s in self.server_set.all().only(*Server.str_attrs())]
+        # Prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            servers_list = [str(s) for s in self.server_set.all().only(*Server.str_attrs())]
+        else:
+            servers_list = []
 
         mode = "UNKNOWN"
         for m in MODE_CHOICES:
@@ -433,7 +439,7 @@ class Backend(models.Model):
             'tags': self.tags
         }
 
-    def to_template(self, server_list=None, header_list=None):
+    def to_template(self, server_list=[], header_list=None):
         """ Dictionary used to create configuration file
 
         :return     Dictionnary of configuration parameters
@@ -441,49 +447,51 @@ class Backend(models.Model):
 
         workflow_list = []
         access_controls_list = []
-        for workflow in self.workflow_set.filter(enabled=True):
-            tmp = workflow.to_template()
+        # Prevent M2M errors when object isn't saved in DB
+        if self.pk:
+            for workflow in self.workflow_set.filter(enabled=True):
+                tmp = workflow.to_template()
 
-            access_controls_deny = []
-            access_controls_301 = []
-            access_controls_302 = []
-            for acl in workflow.workflowacl_set.filter(before_policy=False):
-                rules, acls_name = acl.access_control.generate_rules()
-                access_controls_list.append(rules)
+                access_controls_deny = []
+                access_controls_301 = []
+                access_controls_302 = []
+                for acl in workflow.workflowacl_set.filter(before_policy=False):
+                    rules, acls_name = acl.access_control.generate_rules()
+                    access_controls_list.append(rules)
 
-                condition = acl.generate_condition(acls_name)
+                    condition = acl.generate_condition(acls_name)
 
-                redirect_url = None
-                deny = acl.action_satisfy == "403"
-                redirect = acl.action_satisfy in ("301", "302")
-                for type_acl in ('action_satisfy', 'action_not_satisfy'):
-                    action = getattr(acl, type_acl)
-                    if action != "200":
-                        if action in ("301", "302"):
-                            redirect_url = getattr(acl, type_acl.replace('action', 'redirect_url'))
+                    redirect_url = None
+                    deny = acl.action_satisfy == "403"
+                    redirect = acl.action_satisfy in ("301", "302")
+                    for type_acl in ('action_satisfy', 'action_not_satisfy'):
+                        action = getattr(acl, type_acl)
+                        if action != "200":
+                            if action in ("301", "302"):
+                                redirect_url = getattr(acl, type_acl.replace('action', 'redirect_url'))
 
-                        break
+                            break
 
-                tmp_acl = {
-                    'before_policy': acl.before_policy,
-                    'redirect_url': redirect_url,
-                    'conditions': condition,
-                    'action': action,
-                    'deny': deny,
-                    "redirect": redirect,
-                }
+                    tmp_acl = {
+                        'before_policy': acl.before_policy,
+                        'redirect_url': redirect_url,
+                        'conditions': condition,
+                        'action': action,
+                        'deny': deny,
+                        "redirect": redirect,
+                    }
 
-                if action == "403":
-                    access_controls_deny.append(tmp_acl)
-                elif action == "301":
-                    access_controls_301.append(tmp_acl)
-                elif action == "302":
-                    access_controls_302.append(tmp_acl)
+                    if action == "403":
+                        access_controls_deny.append(tmp_acl)
+                    elif action == "301":
+                        access_controls_301.append(tmp_acl)
+                    elif action == "302":
+                        access_controls_302.append(tmp_acl)
 
-            tmp['access_controls_deny'] = access_controls_deny
-            tmp['access_controls_302'] = access_controls_302
-            tmp['access_controls_301'] = access_controls_301
-            workflow_list.append(tmp)
+                tmp['access_controls_deny'] = access_controls_deny
+                tmp['access_controls_302'] = access_controls_302
+                tmp['access_controls_301'] = access_controls_301
+                workflow_list.append(tmp)
 
         """ Simple attributes of the class """
         result = {
@@ -527,7 +535,11 @@ class Backend(models.Model):
         # If facultative arg listener_list is not given
         # Retrieve all the objects used by the current frontend
         # No .only ! Used to generated conf, neither str cause we need the object
-        result['servers'] = server_list or self.server_set.all()  # No .only() ! Used to generated conf
+        # test self.pk to prevent M2M errors when object isn't saved in DB
+        if not server_list and self.pk:
+            server_list = self.server_set.all()
+
+        result['servers'] = server_list
         if self.mode == "http":
             # Same for headers
             result['headers'] = header_list or self.headers.all()

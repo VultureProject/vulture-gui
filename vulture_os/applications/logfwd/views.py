@@ -152,12 +152,13 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
             updated_nodes = set()
             for node in Node.objects.all():
                 """ If the LogForwarder is used by an enable frontend on this node """
-                frontends = set()
-                # FIXME : Add .distinct("frontend") when implemented in djongo
-                frontends.update([listener.frontend for listener in Listener.objects.filter(Q(frontend__log_forwarders=log_om.id) |
-                                                        Q(frontend__log_forwarders_parse_failure=log_om.id),
-                                                        network_address__nic__node=node.id).distinct()])
-                frontends.update(Frontend.objects.filter(node=node.id, log_forwarders= log_om.id))
+                frontends = Frontend.objects.filter((
+                        Q(enabled=True)
+                    ) & (
+                        Q(listener__network_address__nic__node=node.pk) | Q(node=node.pk) | Q(listening_mode="api")
+                    ) & (
+                        Q(log_forwarders=log_om.id) | Q(log_forwarders_parse_failure=log_om.id)
+                    )).distinct()
                 for frontend  in frontends:
                     # If the name of the log forwarder is changed, update it in the log_condition of the frontend
                     if log_om_old_name:

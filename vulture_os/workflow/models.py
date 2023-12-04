@@ -64,6 +64,19 @@ JINJA_TEMPLATE = "haproxy_portal.conf"
 WORKFLOW_OWNER = HAPROXY_OWNER
 WORKFLOW_PERMS = HAPROXY_PERMS
 
+CORS_METHODS = (
+    ('*', 'All'),
+    ('GET', 'GET'),
+    ('POST', 'POST'),
+    ('PUT', 'PUT'),
+    ('PATCH', 'PATCH'),
+    ('DELETE', 'DELETE'),
+    ('HEAD', 'HEAD'),
+    ('CONNECT', 'CONNECT'),
+    ('OPTIONS', 'OPTIONS'),
+    ('TRACE', 'TRACE')
+)
+
 
 class WorkflowACL(models.Model):
     workflow = models.ForeignKey('Workflow', on_delete=models.CASCADE)
@@ -128,6 +141,37 @@ class Workflow(models.Model):
         on_delete=models.PROTECT,
         help_text=_("Backend"),
     )
+    """ CORS Policy """
+    enable_cors_policy = models.BooleanField(
+        default=False,
+        verbose_name=_("Enable CORS policy"),
+        help_text=_("Switch to enable specified CORS policy")
+    )
+    cors_allowed_methods = models.JSONField(
+        default=[CORS_METHODS[0][0]],
+        choices=CORS_METHODS,
+        blank=True,
+        verbose_name=_("Allowed methods"),
+        help_text=_("Restrict requests to provided methods")
+    )
+    cors_allowed_origins = models.TextField(
+        default="*",
+        blank=True,
+        verbose_name=_("Allowed origins"),
+        help_text=_("Origins allowed to handle the response")
+    )
+    cors_allowed_headers = models.TextField(
+        default="*",
+        blank=True,
+        verbose_name=_("Allowed headers"),
+        help_text=_("Headers field allowed in the request")
+    )
+    cors_max_age = models.PositiveIntegerField(
+        default=600,
+        blank=True,
+        verbose_name=_("Max age"),
+        help_text=_("Maximum number of seconds the results can be cached")
+    )
 
     workflow_json = models.JSONField(default=[])
 
@@ -137,10 +181,14 @@ class Workflow(models.Model):
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
-        return ['name', 'frontend', 'backend']
+        return ['name']
 
     def __str__(self):
-        return "{}: '{}' ==> '{}'".format(self.name, str(self.frontend), str(self.backend))
+        return f"Workflow {self.name}"
+
+    @property
+    def mode(self):
+        return "http" if self.frontend.mode == "http" else "tcp"
 
     def to_html_template(self):
         """ Dictionary used to render object as html
@@ -157,9 +205,15 @@ class Workflow(models.Model):
             'frontend': str(self.frontend),
             'public_dir': self.public_dir,
             'backend': str(self.backend),
+            'enable_cors_policy': self.enable_cors_policy,
+            'cors_allowed_methods': self.cors_allowed_methods,
+            'cors_allowed_origins': self.cors_allowed_origins,
+            'cors_allowed_headers': self.cors_allowed_headers,
+            'cors_max_age': self.cors_max_age,
             'frontend_status': dict(self.frontend.status),
             'backend_status': dict(self.backend.status),
-            'acls': self.workflowacl_set.count(),
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            'acls': self.workflowacl_set.count() if self.pk else 0,
             'authentication': str(self.authentication)
         }
         return tmp
@@ -179,7 +233,8 @@ class Workflow(models.Model):
         if not fields or "authentication" in fields:
             result['authentication'] = self.authentication.to_dict() if self.authentication else None
         if not fields or "acls" in fields:
-            result['acls'] = [acl.to_dict() for acl in self.workflowacl_set.all()]
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            result['acls'] = [acl.to_dict() for acl in self.workflowacl_set.all()] if self.pk else []
         return result
 
     def to_template(self):
@@ -189,19 +244,67 @@ class Workflow(models.Model):
         """
         """ Retrieve list/custom objects """
         """ And returns the attributes of the class """
+
+        access_controls_list = list()
+        access_controls_deny = []
+        access_controls_301 = []
+        access_controls_302 = []
+        for acl in self.workflowacl_set.filter(before_policy=True):
+            rules, acls_name = acl.access_control.generate_rules()
+            access_controls_list.append(rules)
+
+            conditions = acl.generate_condition(acls_name)
+
+            redirect_url = None
+            deny = acl.action_satisfy == "403"
+            redirect = acl.action_satisfy in ("301", "302")
+            action = "200"
+            for type_acl in ('action_satisfy', 'action_not_satisfy'):
+                action = getattr(acl, type_acl)
+                if action != "200":
+                    if action in ("301", "302"):
+                        redirect_url = getattr(acl, type_acl.replace('action', 'redirect_url'))
+
+                    break
+
+            tmp_acl = {
+                'redirect_url': redirect_url,
+                'conditions': conditions,
+                'deny': deny,
+                "redirect": redirect,
+            }
+
+            if action == "403":
+                access_controls_deny.append(tmp_acl)
+            elif action == "301":
+                access_controls_301.append(tmp_acl)
+            elif action == "302":
+                access_controls_302.append(tmp_acl)
+
         client_ids = []
         if self.authentication:
             client_ids = [repo.get_daughter().client_id for repo in self.authentication.repositories.filter(subtype="openid")]
             client_ids.append(self.authentication.oauth_client_id)
+
         return {
-            'id': str(self.id),
+            'id': str(self.pk),
             'name': self.name,
             'enabled': self.enabled,
             'fqdn': self.fqdn,
             'public_dir': self.public_dir,
+            'mode': self.mode,
             'frontend': self.frontend,
             'backend': self.backend,
+            'enable_cors_policy': self.enable_cors_policy,
+            'cors_allowed_methods': self.cors_allowed_methods,
+            'cors_allowed_origins': self.cors_allowed_origins,
+            'cors_allowed_headers': self.cors_allowed_headers,
+            'cors_max_age': self.cors_max_age,
             'authentication': self.authentication.to_template() if self.authentication else None,
+            'access_controls_list': set(access_controls_list),
+            'access_controls_deny': access_controls_deny,
+            'access_controls_302': access_controls_302,
+            'access_controls_301': access_controls_301,
             'openid_client_ids': client_ids,
             'disconnect_url': self.get_disconnect_url()
         }
@@ -222,7 +325,8 @@ class Workflow(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
             return template.render({'conf': self.to_template(),
-                                    'nodes': Node.objects.exclude(name=get_hostname())})
+                                    'nodes': Node.objects.exclude(name=get_hostname()),
+                                    'global_config': Cluster.get_global_config().to_dict(fields=['public_token', 'portal_cookie_name'])})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound:
