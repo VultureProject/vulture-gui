@@ -156,7 +156,7 @@ class CscDomainManagerParser(ApiParser):
 
                 self.update_lock()
 
-                self.write_to_file(logs['events'])
+                self.write_to_file([json.dumps(log) for log in logs['events']])
 
                 self.update_lock()
 
