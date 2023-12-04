@@ -57,6 +57,9 @@ class SignalSciencesNgwafParser(ApiParser):
         self.signalsciences_ngwaf_corp_name = data["signalsciences_ngwaf_corp_name"]
         self.signalsciences_ngwaf_site_name = data["signalsciences_ngwaf_site_name"]
 
+        self.api_parser_verify_ssl = False
+        self.api_parser_custom_certificate = None
+
         self.session = None
 
 
@@ -88,7 +91,8 @@ class SignalSciencesNgwafParser(ApiParser):
                 params=query,
                 timeout=timeout,
                 proxies=self.proxies,
-                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl)
+                verify=False)
+                # verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl)
 
             if response.status_code != 200:
                 raise SignalSciencesNgwafAPIError(
@@ -105,8 +109,9 @@ class SignalSciencesNgwafParser(ApiParser):
         current_time = timezone.now().replace(second=0, microsecond=0)
         try:
             logs = self.get_logs(
-                since=current_time - timedelta(minutes=6),
-                to=current_time - timedelta(minutes=5))
+                self.API_BASE_URL + f'/api/v0/corps/{self.signalsciences_ngwaf_corp_name}/sites/{self.signalsciences_ngwaf_site_name}/feed/requests',
+                since = current_time - timedelta(minutes=6),
+                to = current_time - timedelta(minutes=5))
 
             return {
                 "status": True,
@@ -120,17 +125,14 @@ class SignalSciencesNgwafParser(ApiParser):
             }
 
 
-    def get_logs(self, since=None, to=None):
+    def get_logs(self, url, since, to):
         try:
-            url = self.API_BASE_URL + '/api/v0/corps/%s/sites/%s/feed/requests'%(self.signalsciences_ngwaf_corp_name, self.signalsciences_ngwaf_site_name)
-
             query = {}
+
             if isinstance(since, datetime):
                 query['from'] = int(since.timestamp() / 60) * 60
             if isinstance(to, datetime):
                 query['until'] = int(to.timestamp() / 60) * 60
-            if not (query['from'] or query['until']):
-                raise SignalSciencesNgwafAPIError(f"Invalid mandatory timestamps - since:{since}({query['from']}) to:{to}({query['until']}")
 
             return self.__execute_query(url, query)
 
@@ -143,6 +145,9 @@ class SignalSciencesNgwafParser(ApiParser):
         try:
             if timestamp := log.pop('timestamp', None):
                 log['@timestamp'] = timestamp
+            else:
+                logger.exception(f"{[__parser__]}:_format_log: {str(e)}", extra={'frontend': str(self.frontend)})
+                raise SignalSciencesNgwafAPIError(f"{[__parser__]}:_format_log: Missing timestamp from log {log}")
 
             log['header'] = {'client': {}, 'server': {}}
             if headersIn := log.pop("headersIn", None):
@@ -152,9 +157,8 @@ class SignalSciencesNgwafParser(ApiParser):
                 for elem in headersOut:
                     log['header']['server'][str(elem[0]).lower()] = str(elem[1])
 
-            if tags := log.get("tags", None):
-                for tag in tags:
-                    tag['value'] = str(tag['value'])
+            for tag in log.get("tags"):
+                tag['value'] = str(tag['value'])
 
             return json.dumps(log)
 
@@ -163,59 +167,34 @@ class SignalSciencesNgwafParser(ApiParser):
             return None
 
 
-    # Entering in conflict with crontab on >1min collecting and have an incidence on system integrity (parser&logs OK btw) (~400k entries)
-    # May get a cpu peak while collecting on a long late time period while crontab trying to start another parser process
-    # Moreover crontab doesn't handle correctly the execution of multiple threads this resulting to an indefinitely run of execute() method
-    # def late_handler(self):
-    #     while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
-    #         since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
-    #         to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
-
-    #         logger.info(f"[{__parser__}]:execute: Catch up the delay from {since} to {to}", extra={'frontend': str(self.frontend)})
-
-    #         response = self.get_logs(since, to)
-    #         self.update_lock()
-
-    #         if logs := response.get("data", None):
-    #             self.write_to_file([self._format_log(log) for log in logs if log])
-    #             self.update_lock()
-
-    #             while response["next"].get("uri", None) not in [None, '']:
-    #                 response = self.__execute_query(self.API_BASE_URL + response['next']['uri'])
-    #                 self.update_lock()
-    #                 if logs := response.get("data", None):
-    #                     self.write_to_file([self._format_log(log) for log in logs if log])
-    #                     self.update_lock()
-
-    #             self.frontend.last_api_call = to
-
-
     def execute(self):
         try:
+            # If we're late about 24h -> move forward 1h to prevent API error
+            if self.frontend.last_api_call < timezone.now() - timedelta(hours=24):
+                self.frontend.last_api_call = timezone.now() - timedelta(hours=23)
+
+            # while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
             since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
             to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
 
             logger.info(f"[{__parser__}]:execute: Start collecting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
 
-            response = self.get_logs(since, to)
+            response = self.get_logs(
+                    self.API_BASE_URL + f'/api/v0/corps/{self.signalsciences_ngwaf_corp_name}/sites/{self.signalsciences_ngwaf_site_name}/feed/requests',
+                    since,
+                    to)
             self.update_lock()
 
-            if logs := response.get("data", None):
+            # logger.info(f"[{__parser__}]:execute: TOTO", extra={'frontend': str(self.frontend)})
+            if logs := response.get("data"):
                 self.write_to_file([self._format_log(log) for log in logs if log])
                 self.update_lock()
 
-                while response["next"].get("uri", None) not in [None, '']:
-                    response = self.__execute_query(self.API_BASE_URL + response['next']['uri'])
+                if next_url := response.get("next", {}).get("uri", {}):
+                    response = self.get_logs(self.API_BASE_URL + next_url, since, to)
                     self.update_lock()
-                    if logs := response.get("data", None):
-                        self.write_to_file([self._format_log(log) for log in logs if log])
-                        self.update_lock()
 
                 self.frontend.last_api_call = to
-
-            # If we're late about 24h -> move forward 1h to prevent API error
-            if self.frontend.last_api_call < timezone.now()-timedelta(hours=24):
-                self.frontend.last_api_call += timedelta(hours=1)
 
             logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
