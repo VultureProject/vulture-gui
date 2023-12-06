@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - setuptools added -> 69.0.2
 ### Fixed
 - [CSC_DOMAINMANAGER] Fix missing json.dumps on logs list
+- [PORTAL] [SELF_SERVICE] Correct wrong password change/logout links in self-service page
 
 
 ## [2.13.0] - 2023-11-29
