@@ -568,35 +568,35 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         ret = {}
 
         ## JWT ##
-        try:
-            jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
-        except jwt.exceptions.ExpiredSignatureError as e:
-            logger.debug(f"PORTAL::openid_userinfo: Token is expired")
-            return HttpResponse(status=401)
-        except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
-            logger.debug(f"PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
-        else:
-            if jwt_unverified:
-                logger.debug("PORTAL::openid_userinfo: Token is a valid JWT")
-                jwt_iss = jwt_unverified["iss"]
-                for connector in OpenIDRepository.objects.filter(enable_jwt=True, provider_url=jwt_iss):
-                    try:
-                        jwt_verified = jwt.decode(jwt=token,
-                                                  algorithms=[connector.jwt_signature_type],
-                                                  key=connector.jwt_key,
-                                                  issuer=connector.provider_url,
-                                                  audience=f"{scheme}://{fqdn}" if connector.jwt_validate_audience else jwt_unverified['aud']
-                                                  )
-                    except Exception as e:
-                        logger.exception(f"PORTAL::openid_userinfo: Fail to verify JWT : {e}")
-                    else:
-                        logger.debug(f"PORTAL::openid_userinfo: JWT verified")
-                        jwt_verified['scope'].update({'exp': jwt_verified['exp'], 'iat': jwt_verified['iat']})
-                        ret = jwt_verified['scope']
-                        break
+        if len(token.split('.')) == 3:
+            try:
+                jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
+            except jwt.exceptions.ExpiredSignatureError as e:
+                logger.debug(f"PORTAL::openid_userinfo: Token is expired")
+            except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
+                logger.debug(f"PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
+            else:
+                if jwt_unverified:
+                    logger.debug(f"PORTAL::openid_userinfo: Token is a valid JWT {jwt_unverified}")
+                    jwt_iss = jwt_unverified["iss"]
+                    for connector in OpenIDRepository.objects.filter(enable_jwt=True, provider_url=jwt_iss):
+                        try:
+                            jwt_verified = jwt.decode(jwt=token,
+                                                    algorithms=[connector.jwt_signature_type],
+                                                    key=connector.jwt_key,
+                                                    issuer=connector.provider_url,
+                                                    audience=f"{scheme}://{fqdn}/" if connector.jwt_validate_audience else jwt_unverified['aud']
+                                                    )
+                        except Exception as e:
+                            logger.exception(f"PORTAL::openid_userinfo: Fail to verify JWT : {e}")
+                        else:
+                            logger.debug(f"PORTAL::openid_userinfo: JWT verified")
+                            jwt_verified['scope'].update({'exp': jwt_verified['exp'], 'iat': jwt_verified['iat']})
+                            ret = jwt_verified['scope']
+                            break
 
         ## OAUTH2 ##
-        if not ret:
+        else:
             session = REDISOauth2Session(REDISBase(), f"oauth2_{token}")
             assert session.exists(), "Session not found."
             assert session['scope'], "Session does not contain any scope."
@@ -604,7 +604,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
             session['scope'].update({'exp': session['exp'], 'iat': session['iat']})
             ret = session['scope']
 
-        assert ret != {}, "Token authentication failure"
+        assert ret != {}, "Authentication failure"
         return JsonResponse(ret)
 
     except AssertionError as e:

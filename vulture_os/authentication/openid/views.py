@@ -102,8 +102,8 @@ def edit(request, object_id=None, api=False):
         portal = UserAuthentication.objects.get(name=repo.name.replace("Connector_", ""))
         portal.save_conf()
 
-        workflows = set(Workflow.objects.filter(authentication__repositories=repo) | \
-                      Workflow.objects.filter(authentication=portal))
+        workflows = Workflow.objects.filter(authentication__repositories=repo) | \
+                    Workflow.objects.filter(authentication=portal)
         for workflow in workflows:
             for node in workflow.frontend.get_nodes():
                 node.api_request("workflow.workflow.build_conf", workflow.pk)

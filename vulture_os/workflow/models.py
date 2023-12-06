@@ -306,6 +306,7 @@ class Workflow(models.Model):
             'access_controls_302': access_controls_302,
             'access_controls_301': access_controls_301,
             'openid_client_ids': client_ids,
+            'redirect_uri': self.get_redirect_uri(),
             'disconnect_url': self.get_disconnect_url()
         }
 
