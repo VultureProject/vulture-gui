@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [CSC_DOMAINMANAGER] Fix missing json.dumps on logs list
 - [PORTAL] [SELF_SERVICE] Correct wrong password change/logout links in self-service page
+- [GUI] [WORKFLOW] Correctly print items' list when editing a Workflow
 
 
 ## [2.13.0] - 2023-11-29
