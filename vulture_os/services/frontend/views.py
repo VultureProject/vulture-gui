@@ -427,6 +427,9 @@ def frontend_edit(request, object_id=None, api=False):
         if frontend.mode == "log" and frontend.listening_mode in ("file", "kafka", "redis"):
             if frontend.node:
                 node_listeners[frontend.node] = []
+            else:
+                for node in Node.objects.all():
+                    node_listeners[node] = []
         elif frontend.mode == "filebeat" and frontend.filebeat_listening_mode in ("file", "api"):
             # For now, with filebeat API, we have to select a dedicated node
             # FIXME: Be able to automaticaly distribute API parsers among Vulture cluster
@@ -495,7 +498,7 @@ def frontend_edit(request, object_id=None, api=False):
                         if frontend.rsyslog_only_conf \
                         or frontend.filebeat_only_conf \
                         or node not in new_nodes:
-                            logger.info("HAProxy config '{old_haproxy_filename}' deletion asked on node {node}.")
+                            logger.info(f"HAProxy config '{old_haproxy_filename}' deletion asked on node {node}.")
                             # API request deletion of frontend filename
                             node.api_request('services.haproxy.haproxy.delete_conf', old_haproxy_filename)
                             # And reload of HAProxy service

@@ -490,7 +490,7 @@ class Frontend(models.Model):
         help_text=_("Size of debatch queue for redis pipeline during *POP operations."),
         verbose_name=_("imhiredis debatch queue size")
     )
-    """ Node is mandatory for KAFKA, FILE and REDIS modes """
+    """ Node is optional for KAFKA, FILE and REDIS modes """
     node = models.ForeignKey(
         to=Node,
         null=True,
@@ -1782,11 +1782,12 @@ class Frontend(models.Model):
 
     def get_nodes(self):
         """
-        :return: Return the node where the frontend has been declared
+        :return: Return node(s) where the frontend has been declared
         """
         result = set()
-        if self.mode == "log" and self.listening_mode in ["file", "kafka", "redis"] \
-        or self.mode == "filebeat" and self.filebeat_listening_mode in ["file", "api"] :
+        if self.mode == "log" and self.listening_mode in ["file", "kafka", "redis"]:
+            result = {self.node} if self.node else set(Node.objects.all())
+        elif self.mode == "filebeat" and self.filebeat_listening_mode in ["file", "api"] :
             result = {self.node}
         elif self.mode == "log" and self.listening_mode == "api":
             result = set(Node.objects.all())

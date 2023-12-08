@@ -697,8 +697,6 @@ class FrontendForm(ModelForm):
                 self.add_error('timeout_client', "This field is required.")
 
         if mode == "log" and cleaned_data.get('listening_mode') == "file":
-            if not cleaned_data.get('node'):
-                self.add_error('node', "This field is required.")
             if not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
 
@@ -722,8 +720,6 @@ class FrontendForm(ModelForm):
                 cleaned_data['api_parser_custom_proxy'] = custom_proxy
 
         if mode == "log" and cleaned_data.get('listening_mode') == "kafka":
-            if not cleaned_data.get('node'):
-                self.add_error('node', "This field is required.")
             if not cleaned_data.get('kafka_brokers'):
                 self.add_error('kafka_brokers', "This field is required.")
             if not cleaned_data.get('kafka_topic'):
@@ -732,8 +728,6 @@ class FrontendForm(ModelForm):
                 self.add_error('kafka_consumer_group', "This field is required.")
 
         if mode == "log" and cleaned_data.get('listening_mode') == "redis":
-            if not cleaned_data.get('node'):
-                self.add_error('node', "This field is required.")
             if not cleaned_data.get('redis_server'):
                 self.add_error('redis_server', "This field is required.")
             if not cleaned_data.get('redis_port'):

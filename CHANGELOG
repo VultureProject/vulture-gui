@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - werkzeug 3.0.0 -> 3.0.1
   - yarl 1.9.2 -> 1.9.3
   - setuptools added -> 69.0.2
+- [FRONTEND] Deploy a listener on every node when listening_node is empty
 ### Fixed
 - [CSC_DOMAINMANAGER] Fix missing json.dumps on logs list
 - [PORTAL] [SELF_SERVICE] Correct wrong password change/logout links in self-service page
