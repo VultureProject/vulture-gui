@@ -125,10 +125,8 @@ class SignalSciencesNgwafParser(ApiParser):
         try:
             query = {}
 
-            if isinstance(since, datetime):
-                query['from'] = int(since.timestamp() / 60) * 60
-            if isinstance(to, datetime):
-                query['until'] = int(to.timestamp() / 60) * 60
+            query['from'] = int(since.timestamp() / 60) * 60
+            query['until'] = int(to.timestamp() / 60) * 60
 
             return self.__execute_query(url, query)
 
@@ -142,8 +140,9 @@ class SignalSciencesNgwafParser(ApiParser):
             if timestamp := log.pop('timestamp', None):
                 log['@timestamp'] = timestamp
             else:
-                logger.exception(f"{[__parser__]}:_format_log: {str(e)}", extra={'frontend': str(self.frontend)})
-                raise SignalSciencesNgwafAPIError(f"{[__parser__]}:_format_log: Missing timestamp from log {log}")
+                msg = f"Missing timestamp for log {log}"
+                logger.exception(f"{[__parser__]}:_format_log: {msg}", extra={'frontend': str(self.frontend)})
+                raise SignalSciencesNgwafAPIError(f"{[__parser__]}:_format_log: {msg}")
 
             log['header'] = {'client': {}, 'server': {}}
             if headersIn := log.pop("headersIn", None):
@@ -153,24 +152,24 @@ class SignalSciencesNgwafParser(ApiParser):
                 for elem in headersOut:
                     log['header']['server'][str(elem[0]).lower()] = str(elem[1])
 
-            for tag in log.get("tags"):
+            for tag in log.get("tags", []):
                 tag['value'] = str(tag['value'])
 
             return json.dumps(log)
 
         except Exception as e:
             logger.exception(f"{[__parser__]}:_format_log: {str(e)}", extra={'frontend': str(self.frontend)})
-            return None
+            raise SignalSciencesNgwafAPIError(f"{[__parser__]}:_format_log: An unknown error occured!")
 
 
     def execute(self):
         try:
             # If we're late about 24h -> move forward 1h to prevent API error
-            if self.frontend.last_api_call < timezone.now() - timedelta(hours=24):
-                self.frontend.last_api_call = timezone.now() - timedelta(hours=23)
+            if self.last_api_call < timezone.now() - timedelta(hours=24):
+                self.last_api_call += timedelta(hours=1)
 
             #TODO:while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
-            since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
+            since = min(self.last_api_call, timezone.now() - timedelta(minutes=6))
             to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
 
             logger.info(f"[{__parser__}]:execute: Start collecting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
@@ -185,12 +184,11 @@ class SignalSciencesNgwafParser(ApiParser):
                 self.write_to_file([self._format_log(log) for log in logs if log])
                 self.update_lock()
 
-                if next_url := response.get("next", {}).get("uri", {}):
+                if next_url := response.get("next", {}).get("uri", None):
                     response = self.get_logs(self.API_BASE_URL + next_url, since, to)
                     self.update_lock()
 
-                self.frontend.last_api_call = to
-
+            self.last_api_call = to
             logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
