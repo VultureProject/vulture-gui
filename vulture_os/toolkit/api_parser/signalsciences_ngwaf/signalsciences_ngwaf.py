@@ -165,31 +165,31 @@ class SignalSciencesNgwafParser(ApiParser):
     def execute(self):
         try:
             # If we're late about 24h -> move forward 1h to prevent API error
-            if self.last_api_call < timezone.now() - timedelta(hours=24):
-                self.last_api_call += timedelta(hours=1)
+            if self.frontend.last_api_call < timezone.now() - timedelta(hours=24):
+                self.frontend.last_api_call += timedelta(hours=1)
 
-            #TODO:while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
-            since = min(self.last_api_call, timezone.now() - timedelta(minutes=6))
-            to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
+            while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
+                since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
+                to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
 
-            logger.info(f"[{__parser__}]:execute: Start collecting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}]:execute: Start collecting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
 
-            response = self.get_logs(
-                    self.API_BASE_URL + f'/api/v0/corps/{self.signalsciences_ngwaf_corp_name}/sites/{self.signalsciences_ngwaf_site_name}/feed/requests',
-                    since,
-                    to)
-            self.update_lock()
-
-            if logs := response.get("data"):
-                self.write_to_file([self._format_log(log) for log in logs if log])
+                response = self.get_logs(
+                        self.API_BASE_URL + f'/api/v0/corps/{self.signalsciences_ngwaf_corp_name}/sites/{self.signalsciences_ngwaf_site_name}/feed/requests',
+                        since,
+                        to)
                 self.update_lock()
 
-                if next_url := response.get("next", {}).get("uri", None):
-                    response = self.get_logs(self.API_BASE_URL + next_url, since, to)
+                if logs := response.get("data"):
+                    self.write_to_file([self._format_log(log) for log in logs if log])
                     self.update_lock()
 
-            self.last_api_call = to
-            logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
+                    if next_url := response.get("next", {}).get("uri", None):
+                        response = self.get_logs(self.API_BASE_URL + next_url, since, to)
+                        self.update_lock()
+
+                self.frontend.last_api_call = to
+                logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
             logger.exception(f"{[__parser__]}:execute: {str(e)}", extra={'frontend': str(self.frontend)})
