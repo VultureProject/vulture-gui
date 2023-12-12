@@ -220,7 +220,7 @@ class SELFService(object):
         return final_apps
 
     def main_response(self, request, app_list, error=None):
-        return self_message_main(request, self.workflow.authentication, f"https://{self.workflow.fqdn}/", self.token_name, app_list, self.username, error)
+        return self_message_main(request, self.workflow.authentication, f"https://{self.workflow.fqdn}{self.workflow.public_dir.rstrip('/')}/", self.token_name, app_list, self.username, error)
 
     def message_response(self, request, message):
         # If IDP => user can come from /authorize, so get redirect_url
