@@ -172,13 +172,12 @@ class SignalSciencesNgwafParser(ApiParser):
             since = min(self.last_api_call, now - timedelta(minutes=6)).replace(second=0, microsecond=0)
             to = min(since + timedelta(hours=1), now - timedelta(minutes=5)).replace(second=0, microsecond=0)
 
-            while to <= now - timedelta(minutes=5) and not self.evt_stop.is_set():
+            while since != to and to <= now - timedelta(minutes=5) and not self.evt_stop.is_set():
                 logger.info(f"[{__parser__}]:execute: Start collecting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
 
                 response = self.get_logs(
                         self.API_BASE_URL + f'/api/v0/corps/{self.signalsciences_ngwaf_corp_name}/sites/{self.signalsciences_ngwaf_site_name}/feed/requests',
-                        since,
-                        to)
+                        since, to)
                 self.update_lock()
 
                 if logs := response.get("data"):
@@ -196,7 +195,7 @@ class SignalSciencesNgwafParser(ApiParser):
 
                 self.frontend.last_api_call = to
                 since = to
-                to = min(since + timedelta(hours=1), timezone.now() - timedelta(minutes=5)).replace(second=0, microsecond=0)
+                to = min(since + timedelta(hours=1), now - timedelta(minutes=5)).replace(second=0, microsecond=0)
 
             logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
