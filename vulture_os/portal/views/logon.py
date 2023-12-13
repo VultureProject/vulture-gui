@@ -538,7 +538,6 @@ def openid_token(request, portal_id):
 
 
 def openid_userinfo(request, portal_id=None, workflow_id=None):
-    fqdn = request.headers['host']
     token = None
     try:
         scheme = request.headers['x-forwarded-proto']
@@ -568,43 +567,41 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         ret = {}
 
         ## JWT ##
-        if len(token.split('.')) == 3:
-            try:
-                jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
-            except jwt.exceptions.ExpiredSignatureError as e:
-                logger.debug(f"PORTAL::openid_userinfo: Token is expired")
-            except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
-                logger.debug(f"PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
-            else:
-                if jwt_unverified:
-                    logger.debug(f"PORTAL::openid_userinfo: Token is a valid JWT {jwt_unverified}")
-                    jwt_iss = jwt_unverified["iss"]
-                    for connector in OpenIDRepository.objects.filter(enable_jwt=True, provider_url=jwt_iss):
-                        try:
-                            jwt_verified = jwt.decode(jwt=token,
-                                                    algorithms=[connector.jwt_signature_type],
-                                                    key=connector.jwt_key,
-                                                    issuer=connector.provider_url,
-                                                    audience=f"{scheme}://{fqdn}/" if connector.jwt_validate_audience else jwt_unverified['aud']
-                                                    )
-                        except Exception as e:
-                            logger.exception(f"PORTAL::openid_userinfo: Fail to verify JWT : {e}")
-                        else:
-                            logger.debug(f"PORTAL::openid_userinfo: JWT verified")
-                            jwt_verified['scope'].update({'exp': jwt_verified['exp'], 'iat': jwt_verified['iat']})
-                            ret = jwt_verified['scope']
-                            break
+        try:
+            jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
+        except jwt.exceptions.ExpiredSignatureError as e:
+            logger.debug(f"PORTAL::openid_userinfo: Token is expired")
+        except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
+            logger.debug(f"PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
+        else:
+            if jwt_unverified:
+                logger.debug(f"PORTAL::openid_userinfo: Token is a valid JWT")
+                jwt_iss = jwt_unverified["iss"]
+                for connector in OpenIDRepository.objects.filter(enable_jwt=True, provider_url=jwt_iss):
+                    try:
+                        jwt_verified = jwt.decode(jwt=token,
+                                                algorithms=[connector.jwt_signature_type],
+                                                key=connector.jwt_key,
+                                                issuer=connector.provider_url,
+                                                options={"verify_aud": False}
+                                                )
+                    except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.InvalidIssuerError, jwt.exceptions.InvalidAlgorithmError) as e:
+                        logger.exception(f"PORTAL::openid_userinfo: Fail to verify JWT : {e}")
+                    else:
+                        logger.debug(f"PORTAL::openid_userinfo: JWT verified")
+                        ret = jwt_verified['scope']
+                        ret.update({'exp': jwt_verified['exp'], 'iat': jwt_verified['iat']})
+                        break
 
         ## OAUTH2 ##
-        else:
+        if not ret:
             session = REDISOauth2Session(REDISBase(), f"oauth2_{token}")
             assert session.exists(), "Session not found."
             assert session['scope'], "Session does not contain any scope."
             # Add internal Oauth2 attributes
-            session['scope'].update({'exp': session['exp'], 'iat': session['iat']})
             ret = session['scope']
+            ret.update({'exp': session['exp'], 'iat': session['iat']})
 
-        assert ret != {}, "Authentication failure"
         return JsonResponse(ret)
 
     except AssertionError as e:

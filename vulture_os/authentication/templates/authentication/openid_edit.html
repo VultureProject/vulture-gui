@@ -343,12 +343,12 @@
   })
 
   /* Show jwt class if enable_jwt is True */
-  $('#id_enable_jwt').on('click', () => {
-    if( self.checked )
+  $('#id_enable_jwt').on('change', function(e) {
+    if ( $(this).is(':checked') )
       $('.jwt').show();
     else
       $('.jwt').hide();
-  }).trigger();
+  }).trigger('change');
 
   function handle_form_errors(data){
     if (typeof(data['form_errors']) !== 'undefined'){

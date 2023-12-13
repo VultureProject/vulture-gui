@@ -29,7 +29,6 @@ from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpRespo
 from django.shortcuts import render
 # Django project imports
 from gui.forms.form_utils import DivErrorList
-from authentication.user_portal.models import UserAuthentication
 from system.cluster.models import Cluster
 from workflow.models import Workflow
 
@@ -94,17 +93,13 @@ def edit(request, object_id=None, api=False):
         # If provider_url changed, force reload of configuration
         if "provider_url" in form.changed_data:
             repo.last_config_time = None
-        if "jwt_key" in form.changed_data and repo.jwt_signature_type not in ("HS256", "HS384", "HS512"):
+        if ("name" in form.changed_data or "jwt_signature_type" in form.changed_data) and repo.jwt_signature_type not in ("HS256", "HS384", "HS512"):
             Cluster.api_request("system.config.models.delete_conf", old_jwt_key_filename)
+        if ("name" in form.changed_data or "jwt_key" in form.changed_data) and repo.jwt_signature_type not in ("HS256", "HS384", "HS512"):
             repo.save_conf()
         repo.save()
 
-        portal = UserAuthentication.objects.get(name=repo.name.replace("Connector_", ""))
-        portal.save_conf()
-
-        workflows = Workflow.objects.filter(authentication__repositories=repo) | \
-                    Workflow.objects.filter(authentication=portal)
-        for workflow in workflows:
+        for workflow in Workflow.objects.filter(authentication__repositories=repo):
             for node in workflow.frontend.get_nodes():
                 node.api_request("workflow.workflow.build_conf", workflow.pk)
 

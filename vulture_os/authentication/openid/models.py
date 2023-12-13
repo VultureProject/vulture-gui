@@ -251,7 +251,7 @@ class OpenIDRepository(BaseRepository):
         }
 
     def get_jwt_key_filename(self):
-        return f"/var/db/pki/{self.name}-{self.id}.pub"
+        return f"/var/db/pki/openid_{self.name}-{self.pk}.pub"
 
     def save_conf(self):
         """ Write IDP publickey on disk
