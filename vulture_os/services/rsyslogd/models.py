@@ -53,7 +53,11 @@ class RsyslogSettings(models.Model):
         """ Variables used by template rendering """
         current_node = Cluster.get_current_node()
         frontends = set(listener.frontend for listener in Listener.objects.filter(network_address__nic__node=current_node).distinct())
-        frontends.update(Frontend.objects.filter(Q(mode="log", listening_mode__in=['redis', 'kafka', 'file'], node=current_node) | Q(mode="filebeat", filebeat_listening_mode__in=["file", "api"], node=current_node) | Q(mode="log", listening_mode="api")).distinct())
+        frontends.update(Frontend.objects.filter(
+            Q(mode="log", listening_mode__in=['redis', 'kafka', 'file'], node=current_node) |
+            Q(mode="log", listening_mode__in=['redis', 'kafka', 'file'], node=None) |
+            Q(mode="filebeat", filebeat_listening_mode__in=["file", "api"], node=current_node) |
+            Q(mode="log", listening_mode="api")).distinct())
         return {
             'frontends': frontends,
             'node': current_node,
