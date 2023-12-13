@@ -654,19 +654,19 @@ class UserAuthentication(models.Model):
             base_url = build_url("https" if self.external_listener.has_tls() else "http", self.external_fqdn, '' if len(self.external_fqdn.split(':')) > 1 else self.external_listener.listener_set.first().port, '/')
         else:
             base_url = req_scheme + "://" + workflow_host + workflow_path
-        return f"{base_url}oauth2/callback/{repo_id}"
+        return f"{base_url.rstrip('/')}/oauth2/callback/{repo_id}"
 
     def get_openid_start_url(self, req_scheme, workflow_host, workflow_path, repo_id):
         if self.enable_external:
             base_url = build_url("https" if self.external_listener.has_tls() else "http", self.external_fqdn, '' if len(self.external_fqdn.split(':')) > 1 else self.external_listener.listener_set.first().port, '/')
         else:
             base_url = req_scheme + "://" + workflow_host + workflow_path
-        return build_url_params(base_url + "oauth2/start/", repo=repo_id)
+        return build_url_params(base_url.rstrip('/') + "/oauth2/start/", repo=repo_id)
 
     def get_openid_authorize_url(self, **kwargs):
         if self.enable_external:
             base_url = build_url("https" if self.external_listener.has_tls() else "http", self.external_fqdn, '' if len(self.external_fqdn.split(':')) > 1 else self.external_listener.listener_set.first().port, '/')
-            full_url = build_url_params(base_url + "oauth2/authorize/", kwargs)
+            full_url = build_url_params(base_url.rstrip('/') + "/oauth2/authorize/", **kwargs)
             return full_url
         else:
             return ""
