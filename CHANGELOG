@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - yarl 1.9.2 -> 1.9.3
   - setuptools added -> 69.0.2
 ### Fixed
+- [API_PARSER] [FORCEPOINT] Avoid duplicate processes when input takes long to process
 - [CSC_DOMAINMANAGER] Fix missing json.dumps on logs list
 - [PORTAL] [SELF_SERVICE] Correct wrong password change/logout links in self-service page
 - [GUI] [WORKFLOW] Correctly print items' list when editing a Workflow

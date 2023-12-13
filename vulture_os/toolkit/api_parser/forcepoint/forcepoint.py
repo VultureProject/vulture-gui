@@ -192,6 +192,7 @@ class ForcepointParser(ApiParser):
                 status, file_content = self.get_logs(file_url)
                 assert status, "Status is not 200"
                 lines = self.parse_file(file_content, file_url[-3:] == ".gz")
+                self.update_lock()
                 # Extract mapping in first line
                 ## Keys of json must be string, not bytes
                 ## Remove quotes and spaces in keys + split by comma
@@ -199,6 +200,7 @@ class ForcepointParser(ApiParser):
                 mapping = [line.replace('"','').replace(' ','').replace('&','').replace('.','').replace('/','') for line in lines.pop(0).decode('utf8').strip().split(',')]
                 # Use mapping to convert lines to json format
                 json_lines = [self.parse_line(mapping, line.strip(), file_type) for line in lines]
+                self.update_lock()
                 # Send those lines to Rsyslog
                 self.write_to_file(json_lines)
                 # And update lock after sending lines to Rsyslog
