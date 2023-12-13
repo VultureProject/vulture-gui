@@ -27,7 +27,7 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
@@ -123,10 +123,10 @@ class SignalSciencesNgwafParser(ApiParser):
 
     def get_logs(self, url, since, to):
         try:
-            query = {}
-
-            query['from'] = int(since.timestamp() / 60) * 60
-            query['until'] = int(to.timestamp() / 60) * 60
+            query = {
+                'from': int(since.timestamp()),
+                'until': int(to.timestamp()),
+            }
 
             return self.__execute_query(url, query)
 
@@ -164,14 +164,15 @@ class SignalSciencesNgwafParser(ApiParser):
 
     def execute(self):
         try:
-            # If we're late about 24h -> move forward 1h to prevent API error
-            if self.frontend.last_api_call < timezone.now() - timedelta(hours=24):
+            now = timezone.now()
+            # If we are more than 24h05m late -> move forward 1h to prevent API error
+            if self.frontend.last_api_call < now - timedelta(hours=24, minutes=5):
                 self.frontend.last_api_call += timedelta(hours=1)
 
-            while self.frontend.last_api_call < timezone.now() - timedelta(minutes=6):
-                since = min(self.frontend.last_api_call, timezone.now() - timedelta(minutes=6))
-                to = min(timezone.now() - timedelta(minutes=5), since + timedelta(minutes=1))
+            since = min(self.last_api_call, now - timedelta(minutes=6)).replace(second=0, microsecond=0)
+            to = min(since + timedelta(hours=1), now - timedelta(minutes=5)).replace(second=0, microsecond=0)
 
+            while to <= now - timedelta(minutes=5) and not self.evt_stop.is_set():
                 logger.info(f"[{__parser__}]:execute: Start collecting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
 
                 response = self.get_logs(
@@ -184,12 +185,20 @@ class SignalSciencesNgwafParser(ApiParser):
                     self.write_to_file([self._format_log(log) for log in logs if log])
                     self.update_lock()
 
-                    if next_url := response.get("next", {}).get("uri", None):
-                        response = self.get_logs(self.API_BASE_URL + next_url, since, to)
+                while next_url := response.get("next", {}).get("uri", None):
+                    logger.info(f"[{__parser__}]:execute: Getting more logs...", extra={'frontend': str(self.frontend)})
+                    logger.debug(f"[{__parser__}]:execute: next_url is {next_url}", extra={'frontend': str(self.frontend)})
+                    response = self.get_logs(self.API_BASE_URL + next_url, since, to)
+                    self.update_lock()
+                    if logs := response.get("data"):
+                        self.write_to_file([self._format_log(log) for log in logs if log])
                         self.update_lock()
 
                 self.frontend.last_api_call = to
-                logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
+                since = to
+                to = min(since + timedelta(hours=1), now - timedelta(minutes=5)).replace(second=0, microsecond=0)
+
+            logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
         except Exception as e:
             logger.exception(f"{[__parser__]}:execute: {str(e)}", extra={'frontend': str(self.frontend)})
