@@ -196,7 +196,7 @@ class SignalSciencesNgwafParser(ApiParser):
 
                 self.frontend.last_api_call = to
                 since = to
-                to = min(since + timedelta(hours=1), now - timedelta(minutes=5)).replace(second=0, microsecond=0)
+                to = min(since + timedelta(hours=1), timezone.now() - timedelta(minutes=5)).replace(second=0, microsecond=0)
 
             logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
 
