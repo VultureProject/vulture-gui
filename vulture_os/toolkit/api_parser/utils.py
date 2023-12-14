@@ -67,6 +67,7 @@ from toolkit.api_parser.csc_domainmanager.csc_domainmanager import CscDomainMana
 from toolkit.api_parser.retarus.retarus import RetarusParser
 from toolkit.api_parser.vectra.vectra import VectraParser
 from toolkit.api_parser.apex.apex import ApexParser
+from toolkit.api_parser.signalsciences_ngwaf.signalsciences_ngwaf import SignalSciencesNgwafParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -115,6 +116,7 @@ PARSER_LIST = {
     "retarus": RetarusParser,
     "vectra": VectraParser,
     "apex": ApexParser,
+    "signalsciences_ngwaf": SignalSciencesNgwafParser
 }
 
 class ParserDoesNotExist(Exception):
