@@ -57,8 +57,14 @@ function refresh_api_parser_type(type_){
     $('#id_node').hide();
     $('#api_' + type_ + "_row").show();
 
-    if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
+    if ($("#id_ruleset option[value='api_" + type_ + "-ecs']").length > 0) {
+      $('#id_ruleset').val("api_" + type_ + "-ecs").trigger('change');
+    } else if ($("#id_ruleset option[value='api_" + type_ + "']").length > 0) {
       $('#id_ruleset').val("api_" + type_).trigger('change');
+    } else if ($("#id_ruleset option[value='" + type_ + "-ecs']").length > 0) {
+      $('#id_ruleset').val(type_ + "-ecs").trigger('change');
+    } else if ($("#id_ruleset option[value='" + type_ + "']").length > 0) {
+      $('#id_ruleset').val(type_).trigger('change');
     } else {
       $('#id_ruleset').val('generic_json').trigger('change');
     }
@@ -292,7 +298,7 @@ $(function() {
 
   function refresh_input_logs_type(mode, listening_mode, filebeat_listening_mode){
     var first = true;
-    if((mode === "log" && listening_mode !== "api") || (mode === "filebeat") ){
+    if((mode === "log") || (mode === "filebeat") ){
       $('#ruleset-div').show();
       $('#id_node').show();
     }
@@ -450,7 +456,9 @@ $(function() {
   }
 
   function refresh_filebeat_ruleset(module) {
-    if ($("#id_ruleset option[value='beat_" + module + "']").length > 0) {
+    if ($("#id_ruleset option[value='beat_" + module + "-ecs']").length > 0) {
+      $('#id_ruleset').val("beat_" + module + "-ecs").trigger('change');
+    } else if ($("#id_ruleset option[value='beat_" + module + "']").length > 0) {
       $('#id_ruleset').val("beat_" + module).trigger('change');
     } else {
       $('#id_ruleset').val('generic_json').trigger('change');
