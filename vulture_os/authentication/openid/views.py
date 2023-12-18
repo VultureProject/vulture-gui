@@ -80,6 +80,11 @@ def edit(request, object_id=None, api=False):
             repo = OpenIDRepository.objects.get(pk=object_id)
         except ObjectDoesNotExist:
             return HttpResponseForbidden("Injection detected")
+    old_jwt_key_filename = ""
+    was_jwt_certificate = False
+    if repo and repo.enable_jwt:
+        old_jwt_key_filename = repo.get_jwt_key_filename()
+        was_jwt_certificate = OpenIDRepository.jwt_validate_with_certificate(repo.jwt_signature_type)
 
     if hasattr(request, "JSON") and api:
         form = OpenIDRepositoryForm(request.JSON or None, instance=repo, error_class=DivErrorList)
@@ -87,16 +92,22 @@ def edit(request, object_id=None, api=False):
         form = OpenIDRepositoryForm(request.POST or None, instance=repo, error_class=DivErrorList)
 
     if request.method in ("POST", "PUT") and form.is_valid():
-        old_jwt_key_filename = repo.get_jwt_key_filename()
         # Save the form to get an id if there is not already one
         repo = form.save(commit=False)
+
         # If provider_url changed, force reload of configuration
         if "provider_url" in form.changed_data:
             repo.last_config_time = None
-        if ("name" in form.changed_data or "jwt_signature_type" in form.changed_data) and repo.jwt_signature_type not in ("HS256", "HS384", "HS512"):
-            Cluster.api_request("system.config.models.delete_conf", old_jwt_key_filename)
-        if ("name" in form.changed_data or "jwt_key" in form.changed_data) and repo.jwt_signature_type not in ("HS256", "HS384", "HS512"):
-            repo.save_conf()
+
+        if repo.enable_jwt:
+            is_jwt_certificate = OpenIDRepository.jwt_validate_with_certificate(repo.jwt_signature_type)
+            if was_jwt_certificate and not is_jwt_certificate:
+                Cluster.api_request("system.config.models.delete_conf", old_jwt_key_filename)
+            if any(map(lambda x: x in form.changed_data, ["enable_jwt", "jwt_signature_type", "jwt_key"])) and is_jwt_certificate:
+                repo.write_jwt_certificate()
+        elif "enable_jwt" in form.changed_data and was_jwt_certificate:
+                Cluster.api_request("system.config.models.delete_conf", old_jwt_key_filename)
+
         repo.save()
 
         for workflow in Workflow.objects.filter(authentication__repositories=repo):

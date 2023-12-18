@@ -32,6 +32,7 @@ from authentication.openid.models import OpenIDRepository, PROVIDERS_TYPE, JWT_S
 from authentication.user_scope.models import UserScope
 
 # Extern modules imports
+from cryptography import x509
 from re import match as re_match
 import json
 
@@ -102,7 +103,12 @@ class OpenIDRepositoryForm(ModelForm):
         if cleaned_data.get('enable_jwt'):
             if not cleaned_data.get('jwt_key'):
                 self.add_error('jwt_key', "This field is required when jwt is enabled.")
-
+            if OpenIDRepository.jwt_validate_with_certificate(cleaned_data.get('jwt_signature_type')):
+                try:
+                    x509.load_pem_x509_certificate(cleaned_data.get('jwt_key', '').encode())
+                except (TypeError, ValueError) as e:
+                    logger.error(e)
+                    self.add_error('jwt_key', "Invalid PEM X509 certificate")
 
 class OpenIDRepositoryTestForm(Form):
     provider_url = URLField()
