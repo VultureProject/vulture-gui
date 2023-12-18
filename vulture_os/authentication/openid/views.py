@@ -29,6 +29,8 @@ from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpRespo
 from django.shortcuts import render
 # Django project imports
 from gui.forms.form_utils import DivErrorList
+from system.cluster.models import Cluster
+from workflow.models import Workflow
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -78,6 +80,11 @@ def edit(request, object_id=None, api=False):
             repo = OpenIDRepository.objects.get(pk=object_id)
         except ObjectDoesNotExist:
             return HttpResponseForbidden("Injection detected")
+    old_jwt_key_filename = ""
+    was_jwt_certificate = False
+    if repo and repo.enable_jwt:
+        old_jwt_key_filename = repo.get_jwt_key_filename()
+        was_jwt_certificate = OpenIDRepository.jwt_validate_with_certificate(repo.jwt_signature_type)
 
     if hasattr(request, "JSON") and api:
         form = OpenIDRepositoryForm(request.JSON or None, instance=repo, error_class=DivErrorList)
@@ -87,10 +94,27 @@ def edit(request, object_id=None, api=False):
     if request.method in ("POST", "PUT") and form.is_valid():
         # Save the form to get an id if there is not already one
         repo = form.save(commit=False)
+
         # If provider_url changed, force reload of configuration
         if "provider_url" in form.changed_data:
             repo.last_config_time = None
+
+        if repo.enable_jwt:
+            is_jwt_certificate = OpenIDRepository.jwt_validate_with_certificate(repo.jwt_signature_type)
+            if was_jwt_certificate and not is_jwt_certificate:
+                Cluster.api_request("system.config.models.delete_conf", old_jwt_key_filename)
+            if any(map(lambda x: x in form.changed_data, ["enable_jwt", "jwt_signature_type", "jwt_key"])) and is_jwt_certificate:
+                repo.write_jwt_certificate()
+        elif "enable_jwt" in form.changed_data and was_jwt_certificate:
+                Cluster.api_request("system.config.models.delete_conf", old_jwt_key_filename)
+
         repo.save()
+
+        for workflow in Workflow.objects.filter(authentication__repositories=repo):
+            for node in workflow.frontend.get_nodes():
+                node.api_request("workflow.workflow.build_conf", workflow.pk)
+
+        Cluster.api_request("services.haproxy.haproxy.reload_service")
 
         # If everything succeed, redirect to list view
         if api:

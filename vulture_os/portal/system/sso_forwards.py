@@ -31,8 +31,7 @@ from django.conf                      import settings
 from authentication.base_repository             import BaseRepository
 from authentication.learning_profiles.models    import LearningProfile
 from portal.system.sso_clients                  import SSOClient
-from portal.views.responses                     import HttpResponseTemporaryRedirect
-from views.responses                            import create_gzip_response
+from portal.views.responses                     import HttpResponseTemporaryRedirect, create_gzip_response
 from toolkit.system.aes_utils                   import AESCipher
 from system.pki.models                          import PROTOCOLS_TO_INT, CERT_PATH
 from toolkit.http.utils                         import parse_html

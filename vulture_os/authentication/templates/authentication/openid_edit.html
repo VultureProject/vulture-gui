@@ -304,15 +304,6 @@
     return data;
   }
 
-  /* Show jwt class if enable_jwt is True */
-  function toggle_jwt(){
-    if( document.querySelector('#id_enable_jwt').checked ) {
-      $('.jwt').show();
-    }
-    else {
-      $('.jwt').hide();
-    }
-  }
 
   $('#test_provider').unbind('click');
   $('#test_provider').on('click', function(){
@@ -351,10 +342,13 @@
     })
   })
 
-  $('#id_enable_jwt').on("change", function(e){
-    toggle_jwt();
-  })
-  toggle_jwt();
+  /* Show jwt class if enable_jwt is True */
+  $('#id_enable_jwt').on('change', function(e) {
+    if ( $(this).is(':checked') )
+      $('.jwt').show();
+    else
+      $('.jwt').hide();
+  }).trigger('change');
 
   function handle_form_errors(data){
     if (typeof(data['form_errors']) !== 'undefined'){

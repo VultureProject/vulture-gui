@@ -536,6 +536,7 @@ def openid_token(request, portal_id):
         logger.exception(e)
         return JsonResponse({"error": "internal_error", "error_description": "An unknown error occurred"}, status=500)
 
+
 def openid_userinfo(request, portal_id=None, workflow_id=None):
     token = None
     try:
@@ -568,17 +569,28 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         ## JWT ##
         try:
             jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
+        except jwt.exceptions.ExpiredSignatureError as e:
+            logger.debug(f"PORTAL::openid_userinfo: Token is expired")
         except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
             logger.debug(f"PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
         else:
             if jwt_unverified:
-                logger.debug("PORTAL::openid_userinfo: Token is a valid JWT")
+                logger.debug(f"PORTAL::openid_userinfo: Token is a valid JWT")
                 jwt_iss = jwt_unverified["iss"]
                 for connector in OpenIDRepository.objects.filter(enable_jwt=True, provider_url=jwt_iss):
-                    jwt_verified = jwt.decode(jwt=token, algorithms=[connector.jwt_signature_type], key=connector.jwt_key, issuer=connector.provider_url)
-                    if jwt_verified:
-                        logger.debug(f"PORTAL::openid_userinfo: JWT verified")
-                        ret = jwt_verified
+                    try:
+                        jwt_verified = jwt.decode(jwt=token,
+                                                algorithms=[connector.jwt_signature_type],
+                                                key=connector.jwt_key,
+                                                issuer=connector.provider_url,
+                                                options={"verify_aud": False}
+                                                )
+                    except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.InvalidIssuerError, jwt.exceptions.InvalidAlgorithmError) as e:
+                        logger.debug(f"PORTAL::openid_userinfo: Failed to verify JWT : {e}")
+                    else:
+                        logger.info(f"PORTAL::openid_userinfo: JWT verified")
+                        ret = jwt_verified['scope']
+                        ret.update({'exp': jwt_verified['exp'], 'iat': jwt_verified['iat']})
                         break
 
         ## OAUTH2 ##
@@ -587,9 +599,8 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
             assert session.exists(), "Session not found."
             assert session['scope'], "Session does not contain any scope."
             # Add internal Oauth2 attributes
-            session['scope'].update({'exp': session['exp']})
-            session['scope'].update({'iat': session['iat']})
-            ret = session["scope"]
+            ret = session['scope']
+            ret.update({'exp': session['exp'], 'iat': session['iat']})
 
         return JsonResponse(ret)
 

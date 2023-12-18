@@ -33,6 +33,8 @@ from djongo import models
 # Django project imports
 from authentication.base_repository import BaseRepository
 from authentication.user_scope.models import UserScope
+from system.exceptions import VultureSystemConfigError
+from system.pki.models import CERT_OWNER, CERT_PERMS
 from toolkit.auth.authy_client import AuthyClient
 from toolkit.auth.vulturemail_client import VultureMailClient
 from toolkit.auth.totp_client import TOTPClient
@@ -40,9 +42,11 @@ from toolkit.system.hashes import random_sha1
 from toolkit.network.network import get_proxy
 
 # Extern modules imports
-import requests
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 from datetime import timedelta
 from requests_oauthlib import OAuth2Session
+import requests
 
 # Required exceptions imports
 
@@ -74,7 +78,7 @@ PROVIDERS_TYPE = (
 )
 
 JWT_SIG_ALG_CHOICES = (
-    ('HS256', 'hmac using sha265'),
+    ('HS256', 'hmac using sha256'),
     ('HS384', 'hmac using sha384'),
     ('HS512', 'hmac using sha512'),
     ('RS256', 'rsa_pkcs1 using sha256'),
@@ -249,10 +253,48 @@ class OpenIDRepository(BaseRepository):
             'callback_url': f"/oauth2/callback/{self.id_alea}"
         }
 
+    def get_jwt_key_filename(self):
+        return f"/var/db/pki/openid-{self.pk}.pub"
+
+    @staticmethod
+    def jwt_validate_with_certificate(jwt_signature_type):
+        return jwt_signature_type not in ("HS256", "HS384", "HS512")
+
+    def write_jwt_certificate(self):
+        """ Write IDP publickey on disk
+        This function raises VultureSystemConfigError if failure """
+        from system.cluster.models import Cluster
+
+        cert = x509.load_pem_x509_certificate(self.jwt_key.encode())
+        pubkey = cert.public_key()
+
+        params = [self.get_jwt_key_filename(), pubkey.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo).decode(), CERT_OWNER, CERT_PERMS]
+        api_res = Cluster.api_request('system.config.models.write_conf', config=params, internal=True)
+
+        if not api_res.get('status'):
+            raise VultureSystemConfigError("Could not write JWT certificate to disk.", traceback=api_res.get('message'))
+
+    def delete_jwt_certificate(self):
+        """ Delete IDP publickey on disk
+        :return   True if success
+        raises VultureSystemConfigError if failure
+        """
+        from system.cluster.models import Cluster
+
+        api_res = Cluster.api_request("system.config.models.delete_conf", self.get_jwt_key_filename())
+        if not api_res.get('status'):
+            raise VultureSystemConfigError("Failed to delete JWT certificate from disk", traceback=api_res.get('message'))
+        return True
+
     # Do NOT forget this on all BaseRepository subclasses
     def save(self, *args, **kwargs):
         self.subtype = "openid"
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.enable_jwt and self.jwt_signature_type not in ["HS256", "HS384", "HS512"]:
+            self.delete_jwt_certificate()
+        super().delete(*args, **kwargs)
 
     def get_client(self):
         if self.otp_phone_service == "authy" and self.otp_type in ["phone", "onetouch"]:
