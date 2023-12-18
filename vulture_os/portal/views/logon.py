@@ -586,9 +586,9 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
                                                 options={"verify_aud": False}
                                                 )
                     except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.InvalidIssuerError, jwt.exceptions.InvalidAlgorithmError) as e:
-                        logger.exception(f"PORTAL::openid_userinfo: Fail to verify JWT : {e}")
+                        logger.debug(f"PORTAL::openid_userinfo: Failed to verify JWT : {e}")
                     else:
-                        logger.debug(f"PORTAL::openid_userinfo: JWT verified")
+                        logger.info(f"PORTAL::openid_userinfo: JWT verified")
                         ret = jwt_verified['scope']
                         ret.update({'exp': jwt_verified['exp'], 'iat': jwt_verified['iat']})
                         break
