@@ -12,6 +12,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.DeleteModel(
+            name='RepoAttributes',
+        ),
         migrations.AlterField(
             model_name='openidrepository',
             name='jwt_signature_type',
