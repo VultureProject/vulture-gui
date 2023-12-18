@@ -230,13 +230,17 @@ class LDAPRepository(BaseRepository):
             regex = r"\((.*)=.*"
             return re.findall(regex, self.user_change_password_attr)[0]
         return False
-    
+
     @property
     def get_user_change_password_value(self):
         if self.user_change_password_attr:
             regex = r"\(.*=(.*)\)"
             return re.findall(regex, self.user_change_password_attr)[0]
         return False
+
+    @property
+    def custom_attribute_mappings(self):
+        return list(self.ldapcustomattributemapping_set.values_list('ldap_attribute', 'output_attribute'))
 
     def create_user_dn(self, user_name):
         return f"{self.user_attr}={escape_dn_chars(user_name)},{self.user_dn},{self.base_dn}"
@@ -245,7 +249,15 @@ class LDAPRepository(BaseRepository):
         return f"{self.group_attr}={escape_dn_chars(group_name)},{self.group_dn},{self.base_dn}"
 
     def to_dict(self, fields=None):
-        return model_to_dict(self, fields=fields)
+        result = model_to_dict(self, fields=fields)
+        if not fields or "custom_attributes" in fields:
+            result["custom_attributes"] = list()
+            for ldap_attr, output_attr in self.custom_attribute_mappings:
+                result["custom_attributes"].append({
+                    "ldap_attribute": ldap_attr,
+                    "output_attribute": output_attr,
+                })
+        return result
 
     def to_template(self):
         """  returns the attributes of the class """
@@ -271,3 +283,22 @@ class LDAPRepository(BaseRepository):
 
     def get_client(self):
         return LDAPClient(self)
+
+
+class LDAPCustomAttributeMapping(models.Model):
+    repository = models.ForeignKey(
+        LDAPRepository,
+        verbose_name=_("Reference on the LDAP repository using this mapping"),
+        on_delete=models.CASCADE)
+
+    ldap_attribute = models.TextField(
+        verbose_name=_("LDAP internal attribute to get the value from"))
+
+    output_attribute = models.TextField(
+        verbose_name=_("Output field to put the value in"))
+
+    def __str__(self):
+        return f"{self.ldap_attribute} -> {self.output_attribute}"
+
+    def to_dict(self, fields=None):
+        return model_to_dict(self, fields=fields)

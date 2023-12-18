@@ -162,24 +162,6 @@ class LDAPClient(BaseAuth):
                 return str(exception.args[0]['info'])
         return "LDAP Error: Unknown Error"
 
-    def get_user_attributes_list(self):
-        res = [self.user_attr]
-        if self.user_account_locked_attr:
-            res.append(self.user_account_locked_attr)
-        if self.user_change_password_attr:
-            res.append(self.user_change_password_attr)
-        if self.user_mobile_attr:
-            res.append(self.user_mobile_attr)
-        if self.user_email_attr:
-            res.append(self.user_email_attr)
-        if self.user_groups_attr:
-            res.append(self.user_groups_attr)
-        if self.user_mobile_attr:
-            res.append(self.user_mobile_attr)
-        if self.user_email_attr:
-            res.append(self.user_email_attr)
-        return res
-
 
     def _get_connection(self):
         """ Internal method used to initialize/retrieve LDAP connection
@@ -197,6 +179,29 @@ class LDAPClient(BaseAuth):
                 self._ldap_connection.start_tls_s()
 
         return self._ldap_connection
+
+
+    @classmethod
+    def _format_attributes_for_ldap(cls, attributes: dict) -> dict[str, list]:
+        formatted = dict()
+        for k, v in attributes.items():
+            if not isinstance(v, list):
+                v = [v]
+
+            formatted[k] = list()
+            for d in v:
+                if isinstance(d, bool):
+                    d = 'TRUE' if d else 'FALSE'
+                if isinstance(d, (int, float)):
+                    d = str(d)
+
+                # Do not store empty values
+                if not d:
+                    continue
+
+                formatted[k].append(bytes(d, "utf-8"))
+
+        return formatted
 
 
     def _bind_connection(self, bind_username, bind_password):
@@ -624,7 +629,6 @@ class LDAPClient(BaseAuth):
         """Authentication method of LDAP repository, which returns dict of specified attributes:their values
         :param username: String with username
         :param password: String with password
-        :param oauth2_attributes: List of attributes to retrieve
         :return:
         """
         return_status = kwargs.get('return_status', False)
@@ -695,6 +699,10 @@ class LDAPClient(BaseAuth):
                 val = val[0]
             if isinstance(val, bytes):
                 val = val.hex()
+            if val == "TRUE":
+                val = True
+            if val == "FALSE":
+                val = False
             res[key] = val
             # Add user_email and user_phone keys for OTP + SSO compatibility
             if key == self.user_mobile_attr:
@@ -878,11 +886,7 @@ class LDAPClient(BaseAuth):
 
         self._bind_connection(self.user, self.password)
 
-        for k, v in attributes.items():
-            if not isinstance(v, list):
-                v = [v]
-
-            attributes[k] = [bytes(str(d), "utf-8") for d in v if d]
+        attributes = LDAPClient._format_attributes_for_ldap(attributes)
 
         ldif = modlist.addModlist(attributes)
         try:
@@ -903,12 +907,8 @@ class LDAPClient(BaseAuth):
     def update_user(self, dn, old_attributes, new_attributes, userPassword):
         self._bind_connection(self.user, self.password)
 
-        # Convert values to bytes
-        for k, v in old_attributes.items():
-            old_attributes[k] = [bytes(str(d), "utf-8") for d in v if d]
-
-        for k, v in new_attributes.items():
-            new_attributes[k] = [bytes(str(d), "utf-8") for d in v if d]
+        old_attributes = LDAPClient._format_attributes_for_ldap(old_attributes)
+        new_attributes = LDAPClient._format_attributes_for_ldap(new_attributes)
 
         ldif = modlist.modifyModlist(old_attributes, new_attributes)
         self._get_connection().modify_s(dn, ldif)

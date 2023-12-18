@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [API_PARSER] [SIGNALSCIENCES_NGWAF] New collector
 - [HAPROXY] [CONF] JWT verification through workflow
+- [IDP] [LDAP] Allow to map custom IDP fields to LDAP attributes
 ### Changed
 - [DEPENDENCIES] Python dependencies upgrade
   - aiohttp 3.8.6 -> 3.9.1
@@ -43,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] [FRONTEND] Correctly select a good ruleset for API collector but let user override the value
 - [CONFIG] [SYSTEM] Correct issue preventing some certificates to be deleted from system
 - [OPENID] [MODELS] Get correct URLs for OpenID IDPs
+- [LDAP] Correctly get boolean values from LDAP replies
 
 
 ## [2.13.0] - 2023-11-29

@@ -25,11 +25,12 @@ __doc__ = 'LDAPRepository dedicated form class'
 # Django system imports
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.forms import CheckboxInput, ModelForm, NumberInput, PasswordInput, Select, TextInput
+from django.forms import ModelForm, NumberInput, PasswordInput, Select, TextInput
+from django.utils.translation import gettext_lazy as _
 
 # Django project imports
-from authentication.ldap.models import (LDAPRepository, LDAP_ENC_SCHEMES_CHOICES, LDAP_PROTO_CHOICES,
-                                        LDAP_SCOPES_CHOICES, OAUTH2_TYPE_CHOICES, OAUTH2_TOKEN_CHOICES)
+from authentication.ldap.models import (LDAPRepository, LDAPCustomAttributeMapping,
+                                        LDAP_ENC_SCHEMES_CHOICES, LDAP_PROTO_CHOICES, LDAP_SCOPES_CHOICES)
 
 # Extern modules imports
 from re import match as re_match
@@ -210,3 +211,47 @@ class LDAPRepositoryForm(ModelForm):
 
     def clean_group_filter(self):
         return self.clean_ldap_filter('group_filter')
+
+
+class LDAPCustomAttributeMappingForm(ModelForm):
+    class Meta:
+        model = LDAPCustomAttributeMapping
+        fields = ('ldap_attribute', 'output_attribute')
+        widgets = {
+            'ldap_attribute': TextInput(attrs={'class': 'form-control'}),
+            'output_attribute': TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean_ldap_attribute(self):
+        validator = RegexValidator("^[A-Za-z]+$")
+        value = self.cleaned_data.get('ldap_attribute')
+        if not value:
+            raise ValidationError("This field cannot be left empty")
+        validator(value)
+        return value
+
+    def clean_output_attribute(self):
+        validator = RegexValidator("^[A-Za-z0-9_-]+$")
+        value = self.cleaned_data.get('output_attribute')
+        if not value:
+            raise ValidationError("This field cannot be left empty")
+        validator(value)
+        return value
+
+
+    def as_table_headers(self):
+        """ Format field names as table head """
+        result = "<tr><th class='col-md-1' style='visibility:hidden;'></th>\n"
+        for field in self:
+            result += "<th>{}</th>\n".format(_(field.name.replace("_", " ")))
+        result += "<th class='col-md-1'>Delete</th></tr>\n"
+        return result
+
+    def as_table_td(self):
+        """ Format fields as a table with <td></td> """
+        result = "<tr><td style='visibility:hidden;'>{}</td>".format(self.instance.id or "")
+        for field in self:
+            result += "<td>{}{}</td>".format(field, field.errors)
+        result += "<td style='text-align:center' class='btnDelete'><a><i style='color:grey' " \
+                  "class='fas fa-trash-alt'></i></a></td></tr>\n"
+        return result

@@ -84,6 +84,10 @@ def _find_user(ldap_repo, user_dn, attr_list):
         if attrs.get(key):
             user[key] = attrs.get(key)
 
+    for ldap_key, _ in ldap_repo.custom_attribute_mappings:
+        if ldap_key in attrs:
+            user[ldap_key] = attrs[ldap_key]
+
     return user
 
 
@@ -117,7 +121,7 @@ def _create_user(ldap_repository, user_dn, username, userPassword, attrs, group_
     }
 
     for k, v in attrs.items():
-        if not v:
+        if v is None:
             attrs[k] = []
         elif not isinstance(v, list):
             attrs[k] = [v]
@@ -239,7 +243,7 @@ def update_user(ldap_repository, user_dn, attrs, userPassword):
     # Add new attributes to old user
     attrs = dict(old_user, **attrs)
     for k, v in attrs.items():
-        if not v:
+        if v is None:
             attrs[k] = []
         elif not isinstance(v, list):
             attrs[k] = [v]

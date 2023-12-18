@@ -250,52 +250,93 @@
                           <div class="col-md-12">
                             <div class="form-group">
                               <label class="col-sm-4 control-label">{{form.user_change_password_attr.label}}</label>
-                                <div class="col-sm-5">
-                                  {{form.user_change_password_attr}}
-                                  {{form.user_change_password_attr.errors|safe}}
-                                </div>
-                            </div>
-                          </div>
-                        </div> <!-- /.row -->
-                        <div class="row log-mode">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.user_groups_attr.label}}</label>
                               <div class="col-sm-5">
-                                {{form.user_groups_attr}}
-                                {{form.user_groups_attr.errors|safe}}
+                                {{form.user_change_password_attr}}
+                                {{form.user_change_password_attr.errors|safe}}
                               </div>
                             </div>
                           </div>
                         </div> <!-- /.row -->
+                        <!-- Advanced tab -->
                         <div class="row">
-                          <div class="col-md-12">
+                          <div class="col-sm-4 pull-right">
                             <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.user_mobile_attr.label}}</label>
-                                <div class="col-sm-5">
-                                  {{form.user_mobile_attr}}
-                                  {{form.user_mobile_attr.errors|safe}}
-                                </div>
+                              <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".user_attributes">
+                                <i class="fa fa-plus"></i> {% trans "Attributes" %}
+                              </button>
                             </div>
                           </div>
-                        </div> <!-- /.row -->
-                        <div class="row">
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label class="col-sm-4 control-label">{{form.user_email_attr.label}}</label>
+                        </div>
+                        <div class="form-group collapse user_attributes">
+                          <div class="row log-mode">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.user_groups_attr.label}}</label>
                                 <div class="col-sm-5">
-                                  {{form.user_email_attr}}
-                                  {{form.user_email_attr.errors|safe}}
+                                  {{form.user_groups_attr}}
+                                  {{form.user_groups_attr.errors|safe}}
                                 </div>
+                              </div>
                             </div>
-                          </div>
-                        </div> <!-- /.row -->
+                          </div> <!-- /.row -->
+                          <div class="row">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.user_mobile_attr.label}}</label>
+                                  <div class="col-sm-5">
+                                    {{form.user_mobile_attr}}
+                                    {{form.user_mobile_attr.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.user_email_attr.label}}</label>
+                                  <div class="col-sm-5">
+                                    {{form.user_email_attr}}
+                                    {{form.user_email_attr.errors|safe}}
+                                  </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                          <div class="row">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{% trans "Custom attributes mapping" %}</label>
+                                <div class="col-sm-5">
+                                  <div class="row">
+                                    <div class="col-sm-12">
+                                      <table id="custom_attributes_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable collapse">
+                                        <thead>
+                                          {{custom_attributes_form.as_table_headers|safe}}
+                                        </thead>
+                                        <tbody>
+                                          {% for custom_attribute in custom_attributes %}
+                                          {{ custom_attribute.as_table_td|safe }}
+                                          {% endfor %}
+                                        </tbody>
+                                      </table>
+                                      <input id="custom_attributes" name="custom_attributes" value="" type="hidden">
+                                    </div>
+                                  </div>
+                                  <div class="row">
+                                    <div class="col-sm-12">
+                                      <button class="addlink addplus" id="add_custom_attribute" type="button">{% trans "Add an attribute" %}</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div> <!-- /.row -->
+                        </div>  <!-- /.user_attributes -->
                         <div class="row">
                           <div class="col-sm-12" style="text-align:center;">
                             <button name="user_search_test" id="user_search_test" class="btn btn-success btn-flat"><span>{% translate "Test User authentication settings" %}</span></button>
                           </div>
                         </div> <!-- /.row -->
-                      </div> <!-- /.tab-pane -->
+                      </div> <!-- /.tab-pane /#tab_user -->
                       <div class="tab-pane" id="tab_group">
                         <div class="row">
                           <div class="col-md-12">
@@ -461,6 +502,32 @@
 
 {% block jquery_code %}
 
+  var custom_attributes_form_td = `{{custom_attributes_form.as_table_td|safe}}`;
+
+  function show_hide_custom_attributes_table_header() {
+    var numRows = $('#custom_attributes_table tbody tr').length;
+    if (numRows === 0) {
+      $('#custom_attributes_table').addClass('collapse');
+    } else {
+      $('#custom_attributes_table').removeClass('collapse');
+    }
+  }
+
+  /* All events to refresh (re-apply) after a table is modified */
+  function refresh_table_events() {
+
+    show_hide_custom_attributes_table_header();
+
+    /* Function used to delete an object .btnDelete */
+    $('.btnDelete').on('click', function(e) {
+      $(this).parent().remove();
+      var numRows = $('#custom_attributes_table tbody tr').length;
+      if (numRows === 0) {
+        $('#custom_attributes_table').addClass('collapse');
+      }
+    });
+  }
+
   if (!String.prototype.endsWith) {
     String.prototype.endsWith = function(searchString, position) {
       var subjectString = this.toString();
@@ -531,6 +598,13 @@
       });
     }
   }
+
+  /* Add default LDAPCustomAttributeMappingForm to custom_attributes_table */
+  $("#add_custom_attribute").on("click", function(e) {
+    show_hide_custom_attributes_table_header();
+    $('#custom_attributes_table').append(custom_attributes_form_td);
+    refresh_table_events();
+  });
 
 
   /*User search test*/
@@ -641,6 +715,29 @@
       });
   });
 
+  $('#ldap_edit_form').submit(function(event) {
+
+    var custom_attributes = new Array();
+
+    $('#custom_attributes_table tbody tr').each(function(index, tr) {
+      var id = tr.children[0].innerHTML;
+      var ldap_attribute = tr.children[1].children[0].value;
+      var output_attribute = tr.children[2].children[0].value;
+
+      custom_attributes.push(
+        {
+          'id': id,
+          'ldap_attribute': ldap_attribute,
+          'output_attribute': output_attribute
+        });
+
+      console.log(custom_attributes);
+    });
+    $('#custom_attributes').val(JSON.stringify(custom_attributes));
+
+  });
+
+  refresh_table_events();
 
   //}); // end of function()
 

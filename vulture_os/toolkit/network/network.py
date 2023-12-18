@@ -29,7 +29,6 @@ from iptools.ipv4 import netmask2prefix
 from ast import literal_eval
 import subprocess
 import logging
-import glob
 import os
 import re
 

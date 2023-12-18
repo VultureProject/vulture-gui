@@ -117,9 +117,9 @@ class RepoAttribute(models.Model):
 
     def get_condition_var(self, claims, repo_attrs):
         if self.condition_var_kind == "repo":
-            return repo_attrs.get(self.condition_var_name, "")
+            return repo_attrs.get(self.condition_var_name, None)
         elif self.condition_var_kind == "claim":
-            return claims.get(self.condition_var_name, "")
+            return claims.get(self.condition_var_name, None)
         elif self.condition_var_kind == "constant":
             return self.condition_var_name
         elif self.condition_var_kind == "always":
@@ -157,9 +157,9 @@ class RepoAttribute(models.Model):
         if self.condition_criterion == "not equals":
             return value != self.condition_match
         elif self.condition_criterion == "exists":
-            return (len(value) != 0) if hasattr(value, "__len__") else bool(value)
+            return value is not None
         elif self.condition_criterion == "not exists":
-            return (len(value) == 0) if hasattr(value, "__len__") else not bool(value)
+            return value is None
         elif self.condition_criterion == "contains":
             return (self.condition_match in value) if hasattr(value, "__contains__") else False
         elif self.condition_criterion == "not contains":
@@ -189,12 +189,11 @@ class RepoAttribute(models.Model):
 
     def get_scope(self, scope, claims, repo_attrs):
         if self.validate_condition(self.get_condition_var(claims, repo_attrs)):
-            #scope[self.action_var_name] = self.get_action_var_value(claims, repo_attrs)
             scope = self.assign(scope, self.get_action_var_value(claims, repo_attrs))
         return scope
 
     def __getitem__(self, item):
-        """ PATCH FOR DJONGO ERROR (RepoAttributes is not subscriptable) """
+        """ PATCH FOR DJONGO ERROR (RepoAttribute is not subscriptable) """
         return getattr(self, item)
 
 
