@@ -75,7 +75,7 @@ PROVIDERS_TYPE = (
 )
 
 JWT_SIG_ALG_CHOICES = (
-    ('HS256', 'hmac using sha265'),
+    ('HS256', 'hmac using sha256'),
     ('HS384', 'hmac using sha384'),
     ('HS512', 'hmac using sha512'),
     ('RS256', 'rsa_pkcs1 using sha256'),
