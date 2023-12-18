@@ -301,6 +301,7 @@ class Workflow(models.Model):
             'cors_allowed_headers': self.cors_allowed_headers,
             'cors_max_age': self.cors_max_age,
             'authentication': self.authentication.to_template() if self.authentication else None,
+            'check_jwt': self.authentication.repositories.filter(openidrepository__enable_jwt=True).exists() if self.authentication else False,
             'access_controls_list': set(access_controls_list),
             'access_controls_deny': access_controls_deny,
             'access_controls_302': access_controls_302,
