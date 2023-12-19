@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CONFIG] [SYSTEM] Correct issue preventing some certificates to be deleted from system
 - [OPENID] [MODELS] Get correct URLs for OpenID IDPs
 - [LDAP] Correctly get boolean values from LDAP replies
+- [REPUTATION_CONTEXT] Add missing fixture for default GeoLite MMDBs download
 
 
 ## [2.13.0] - 2023-11-29

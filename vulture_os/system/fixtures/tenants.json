@@ -1,0 +1,10 @@
+[
+    {
+        "model": "system.tenants",
+        "pk": 1,
+        "fields": {
+            "name": "ACME_Corporation",
+            "chameleon_apikey": ""
+            }
+    }
+]

@@ -1,0 +1,34 @@
+[
+    {
+        "model": "applications.reputationcontext",
+        "fields": {
+            "name": "Geolite2 Country",
+            "db_type": "GeoIP",
+            "method": "GET",
+            "url": "https://predator.vultureproject.org/ipsets/GeoLite2-Country.mmdb",
+            "verify_cert": true,
+            "filename": "GeoLite2-Country.mmdb",
+            "description": "Maxmind DBs Geoip country database",
+            "nb_netset": 0,
+            "nb_unique": 0,
+            "internal": true,
+            "enable_hour_download": true
+        }
+    },
+    {
+        "model": "applications.reputationcontext",
+        "fields": {
+            "name": "Geolite2 City",
+            "db_type": "GeoIP",
+            "method": "GET",
+            "url": "https://predator.vultureproject.org/ipsets/GeoLite2-City.mmdb",
+            "verify_cert": true,
+            "filename": "GeoLite2-City.mmdb",
+            "description": "Maxmind DBs Geoip city database",
+            "nb_netset": 0,
+            "nb_unique": 0,
+            "internal": true,
+            "enable_hour_download": true
+        }
+    }
+]
