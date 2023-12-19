@@ -9,7 +9,7 @@ import djongo.models.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('authentication', '0023_remove_repoattributes'),
+        ('authentication', '0023_typo_jwt_signature_type_choices_and_more'),
     ]
 
     operations = [
