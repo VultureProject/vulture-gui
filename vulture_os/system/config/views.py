@@ -22,7 +22,6 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Config View'
 
-
 # Django system imports
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
@@ -41,6 +40,12 @@ from gui.forms.form_utils import DivErrorList
 from system.exceptions import VultureSystemConfigError
 
 # Extern modules imports
+
+# Extern modules imports
+from requests import patch
+
+# Required exceptions imports
+from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
 import logging
@@ -77,14 +82,17 @@ def build_response_config(module_url, command_list):
 
 def config_edit(request, object_id=None, api=False, update=False):
     config_model = Cluster.get_global_config()
-    old_redis_password = config_model.redis_password
 
     if hasattr(request, "JSON") and api:
         if update:
             request.JSON = {**config_model.to_dict(), **request.JSON}
         request_data = request.JSON
+        if request_data.get('redis_password') and request_data.get('old_redis_password') == None:
+            return JsonResponse({'error': "'old_redis_password' is mandatory"}, status=401)
+        old_redis_password = request_data.get('old_redis_password', config_model.redis_password)
     else:
         request_data = request.POST
+        old_redis_password = config_model.redis_password
 
     form = ConfigForm(request_data or None, instance=config_model, error_class=DivErrorList)
 
@@ -125,9 +133,23 @@ def config_edit(request, object_id=None, api=False, update=False):
                 portal.save_conf()
             Cluster.api_request("services.haproxy.haproxy.reload_service")
         if "redis_password" in form.changed_data:
+            # Deploy redis password on other nodes
+            if not api:
+                for node in Node.objects.exclude(name=Cluster.get_current_node().name):
+                    try:
+                        infos = patch(f"https://{node.name}:8000/api/v1/system/config/",
+                                    headers={'cluster-api-key': config_model.cluster_api_key},
+                                    data={'redis_password': config.redis_password, 'old_redis_password': old_redis_password},
+                                    verify=False, timeout=30).json()
+                    except Exception as e:
+                        logger.error(e)
+                        raise VultureSystemConfigError(f"on node '{node.name}'\n Request failure.")
+                    if not infos.get('links'):
+                        raise VultureSystemConfigError(f"on node '{node.name}'\n{infos.get('error')}", traceback=infos.get('error_details'))
             # Authenticate with previous password
             redis = RedisBase(password=old_redis_password)
-            redis.reset_password(config.redis_password)
+            if not redis.reset_password(config.redis_password) and api:
+                return JsonResponse({'error': 'Unable to reset Redis password'}, status=500)
             Cluster.api_request("services.haproxy.haproxy.configure_node")
         if "logs_ttl" in form.changed_data:
             res, mess = config_model.set_logs_ttl()

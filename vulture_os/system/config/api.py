@@ -62,7 +62,7 @@ class ConfigAPIv1(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def put(self, request, object_id):
+    def put(self, request, object_id=None):
         try:
             return config_edit(request, object_id, api=True)
         except Exception as e:
@@ -78,11 +78,11 @@ class ConfigAPIv1(View):
         }, status=500)
 
     @api_need_key('cluster_api_key')
-    def patch(self, request, object_id):
+    def patch(self, request, object_id=None):
         allowed_fields = ('pf_ssh_restrict', 'pf_admin_restrict', 'pf_whitelist', 'pf_blacklist',
                           'cluster_api_key', 'ldap_repository', 'oauth2_header_name', 'portal_cookie_name',
-                          'public_token', 'redis_password', 'branch', 'smtp_server', 'ssh_authorized_key', 'rsa_encryption_key',
-                          'logs_ttl', 'internal_tenants')
+                          'public_token', 'redis_password', 'old_redis_password', 'branch', 'smtp_server',
+                          'ssh_authorized_key', 'rsa_encryption_key', 'logs_ttl', 'internal_tenants')
         try:
             for key in request.JSON.keys():
                 if key not in allowed_fields:

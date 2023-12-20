@@ -88,15 +88,16 @@ class RedisBase:
         return self.redis.config_rewrite()
 
     def reset_password(self, password=""):
-        logger.info(f"[REDIS RESET PASSWORD] old {self.password} new {password}")
         try:
             self.config_set("requirepass", password)
             self.config_set("masterauth", password)
             self.config_rewrite()
         except Exception as e:
-            logger.exception(f"[REDIS RESET PASSWORD] old {self.password} new {password} Error: {e}")
+            logger.exception(f"[REDIS RESET PASSWORD] Error: {e}")
         else:
             self.password = password
+            return True
+        return False
 
     def sentinel_monitor(self, node=None):
         """
