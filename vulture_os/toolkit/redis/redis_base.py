@@ -32,17 +32,18 @@ logger = logging.getLogger('debug')
 
 class RedisBase:
 
-    def __init__(self, node=None, port=None):
+    def __init__(self, node=None, port=None, password=None):
         self.port = port
         self.node = node
+        self.password = password
         self.db = '/var/sockets/redis/redis.sock'
 
         if node and port:
-            self.redis = Redis(host=node, port=port, socket_connect_timeout=1.0)
+            self.redis = Redis(host=node, port=port, password=password, socket_connect_timeout=1.0)
         elif node:
-            self.redis = Redis(host=node, socket_connect_timeout=1.0)
+            self.redis = Redis(host=node, password=password, socket_connect_timeout=1.0)
         else:
-            self.redis = Redis(unix_socket_path=self.db, socket_connect_timeout=1.0)
+            self.redis = Redis(unix_socket_path=self.db, password=password, socket_connect_timeout=1.0)
 
     def get_master(self, node=None):
         """ return the master node of the redis cluster or query the given node
@@ -51,7 +52,7 @@ class RedisBase:
 
         try:
             if node:
-                redis = Redis(host=node, socket_connect_timeout=1.0)
+                redis = Redis(host=node, password=self.password, socket_connect_timeout=1.0)
             else:
                 redis = self.redis
             redis_info = redis.info()
@@ -80,14 +81,27 @@ class RedisBase:
     def config_set(self, key, value):
         return self.redis.config_set(key,value)
 
+    def config_get(self, key, value):
+        return self.redis.config_get(key,value)
+
     def config_rewrite(self):
         return self.redis.config_rewrite()
 
+    def reset_password(self, password=""):
+        logger.info(f"[REDIS RESET PASSWORD] old {self.password} new {password}")
+        try:
+            self.config_set("requirepass", password)
+            self.config_set("masterauth", password)
+            self.config_rewrite()
+        except Exception as e:
+            logger.exception(f"[REDIS RESET PASSWORD] old {self.password} new {password} Error: {e}")
+        else:
+            self.password = password
 
     def sentinel_monitor(self, node=None):
         """
         Dynamically configure sentinel to monitor the local redis node.
-         WARNING: FOr sentinel to work properly, self.node is supposed to be an IP address)
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
         :param node: IP address of an existing node
         :return: False if we are not connected to sentinel
         """
@@ -97,6 +111,23 @@ class RedisBase:
 
         return self.redis.sentinel_monitor('mymaster', node or self.node, 6379, 2)
 
+    def sentinel_reset(self, password):
+        """
+        Set sentinel configuration through RedisBase class.
+        :param password: redis_password of redis nodes
+        :return: False if we are not connected to sentinel
+        """
+
+        if not self.node or not self.port or self.port != 26379:
+            return False
+
+        try:
+            self.redis.execute_command('sentinel', 'config', 'set', 'announce-ip', self.node)
+            self.redis.sentinel_set('mymaster', 'auth-pass', password)
+        except Exception as e:
+            logger.exception(f"[SENTINEL RESET PASSWORD] Error: {e}")
+
+        return True
 
     # Write function : need master Redis
     def hmset(self, hash, mapping):
@@ -109,7 +140,7 @@ class RedisBase:
             r_backup = self.redis
             # And connect to master
             try:
-                self.redis = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], db=0)
+                self.redis = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], password=self.password, db=0)
                 result = self.redis.hmset(hash, mapping)
             except Exception as e:
                 self.logger.info("REDISSession: Redis connexion issue")
@@ -132,7 +163,7 @@ class RedisBase:
             r_backup = self.redis
             # And connect to master
             try:
-                self.redis = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], db=0)
+                self.redis = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], password=self.password, db=0)
                 result = self.redis.expire(key, ttl)
             except Exception as e:
                 self.logger.info("REDISSession: Redis connexion issue")

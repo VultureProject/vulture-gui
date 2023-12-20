@@ -31,6 +31,7 @@ from django.utils.crypto            import get_random_string
 # Django project imports
 from authentication.base_repository import BaseRepository
 from authentication.learning_profiles.models import LearningProfile
+from system.cluster.models import Cluster
 
 # Required exceptions imports
 from .exceptions                     import TokenNotFoundError, REDISWriteError
@@ -665,7 +666,12 @@ class REDISBase(object):
 
         try:
             #self.r = Redis(host=self.ip, port=self.port, db=0)
-            self.r = Redis(unix_socket_path='/var/sockets/redis/redis.sock', db=0, decode_responses=True)
+            self.r = Redis(
+                unix_socket_path='/var/sockets/redis/redis.sock',
+                password=Cluster.get_global_config().redis_password,
+                db=0,
+                decode_responses=True
+            )
             self.r.info()
         except Exception as e:
             self.logger.info("REDISBase: REDIS connexion issue")

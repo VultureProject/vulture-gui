@@ -81,7 +81,7 @@ class ConfigAPIv1(View):
     def patch(self, request, object_id):
         allowed_fields = ('pf_ssh_restrict', 'pf_admin_restrict', 'pf_whitelist', 'pf_blacklist',
                           'cluster_api_key', 'ldap_repository', 'oauth2_header_name', 'portal_cookie_name',
-                          'public_token', 'branch', 'smtp_server', 'ssh_authorized_key', 'rsa_encryption_key',
+                          'public_token', 'redis_password', 'branch', 'smtp_server', 'ssh_authorized_key', 'rsa_encryption_key',
                           'logs_ttl', 'internal_tenants')
         try:
             for key in request.JSON.keys():

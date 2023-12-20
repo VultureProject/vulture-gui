@@ -31,6 +31,7 @@ import time
 
 from django.conf import settings
 from services.frontend.models import Frontend
+from system.cluster.models import Cluster
 from system.config.models import Config
 from toolkit.network.network import get_proxy
 from toolkit.redis.redis_base import RedisBase
@@ -83,7 +84,7 @@ class ApiParser:
             else:
                 self.proxies = self.get_system_proxy()
 
-        self.redis_cli = RedisBase()
+        self.redis_cli = RedisBase(password=Cluster.get_global_config().redis_password)
 
         assert self.connect(), "Failed to connect to Rsyslog"
 

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - [FRONTEND] Redis stream support for input log
+- [REDIS] Password support for local redis
 ### Changed
 - [CLUSTER] Evolve daemon's code to allow correctly handling tasks during service shutdowns
 ### Fixed

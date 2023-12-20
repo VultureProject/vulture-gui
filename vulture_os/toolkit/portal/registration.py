@@ -88,13 +88,12 @@ def perform_email_reset(logger, base_url, app_name, template, user_email, user_n
         return False
 
 
-
 def create_redis_reset(user_email, user_name, expire, repo_id=None):
     reset_key = str(uuid4())
 
     redis_key = 'password_reset_' + reset_key
 
-    redis_base = RedisBase()
+    redis_base = RedisBase(password=Cluster.get_global_config().redis_password)
 
     """ Store the reset-key in Redis """
     # The 'a' is for Redis stats, to make a distinction with Token entries

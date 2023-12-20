@@ -138,10 +138,11 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Config object can not exists yet """
     system_config = cluster.get_global_config()
     system_config.cluster_api_key = get_random_string(
-        16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,+')
+        32, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,+')
     system_config.portal_cookie_name = get_random_string(
         8, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
     system_config.public_token = get_random_string(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    system_config.redis_password = get_random_string(64, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
     system_config.set_logs_ttl()
     system_config.save()
 
@@ -160,10 +161,14 @@ def cluster_create(admin_user=None, admin_password=None):
 
     time.sleep(5)
     """ Tell local sentinel to monitor local redis server """
-    c = RedisBase(get_management_ip(), 26379)
+    redis = RedisBase(get_management_ip(), 26379)
     try:
         # It may fail if Redis / Sentinel is already configured
-        c.sentinel_monitor()
+        redis.reset_password(system_config.redis_password)
+        redis.sentinel_monitor()
+        redis.sentinel_reset(system_config.redis_password)
+    except redis.exceptions.AuthenticationError as e:
+        logger.exception(f"Install::Redis password set: Error: {e}")
     except Exception as e:
         logger.error("Install::Sentinel monitor: Error: ")
         logger.exception(e)
@@ -361,21 +366,32 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     try:
         """ Join our redis server to the redis master """
         logger.info("[+] Making local Redis join the existing cluster")
-        c = RedisBase()
+        redis_password = Cluster.get_global_config().redis_password
+        redis = RedisBase()
+        try:
+            redis.config_get("port")
+            # set the Redis cluster password if not set locally
+            redis.reset_password(redis_password)
+        except redis.exceptions.AuthenticationError as e:
+            logger.exception(f"Redis authentication failure :{e}")
+            redis = RedisBase(password=redis_password)
+            redis.reset_password(redis_password)
+
         redis_master_node = None
         retries = 0
         while not redis_master_node and retries < 5:
             logger.info("Getting current redis master from main node...")
-            redis_master_node = c.get_master(master_ip)
+            redis_master_node = redis.get_master(master_ip)
             if not redis_master_node:
                 time.sleep(5)
 
         logger.info(f"Current Redis master is {redis_master_node}, linking local redis to it")
-        c.replica_of(redis_master_node, 6379)
+        redis.replica_of(redis_master_node, 6379)
 
         """ Tell local sentinel to monitor local redis server """
-        c = RedisBase(get_management_ip(), 26379)
-        c.sentinel_monitor(node=redis_master_node)
+        redis = RedisBase(get_management_ip(), 26379)
+        redis.sentinel_monitor(node=redis_master_node)
+        redis.sentinel_reset(redis_password)
 
         logger.info("[-] Ok!")
 

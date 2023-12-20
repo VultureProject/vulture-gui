@@ -31,8 +31,9 @@ from django.utils.translation import gettext as _
 
 # Django project imports
 from authentication.user_portal.models import UserAuthentication
-from system.config.form import ConfigForm
 from system.cluster.models import Cluster, Node
+from system.config.form import ConfigForm
+from toolkit.redis.redis_base import RedisBase
 from workflow.models import Workflow
 
 # Required exceptions imports
@@ -76,6 +77,7 @@ def build_response_config(module_url, command_list):
 
 def config_edit(request, object_id=None, api=False, update=False):
     config_model = Cluster.get_global_config()
+    old_redis_password = config_model.redis_password
 
     if hasattr(request, "JSON") and api:
         if update:
@@ -122,6 +124,11 @@ def config_edit(request, object_id=None, api=False, update=False):
             for portal in UserAuthentication.objects.filter(enable_external=True):
                 portal.save_conf()
             Cluster.api_request("services.haproxy.haproxy.reload_service")
+        if "redis_password" in form.changed_data:
+            # Authenticate with previous password
+            redis = RedisBase(password=old_redis_password)
+            redis.reset_password(config.redis_password)
+            Cluster.api_request("services.haproxy.haproxy.configure_node")
         if "logs_ttl" in form.changed_data:
             res, mess = config_model.set_logs_ttl()
             if not res:

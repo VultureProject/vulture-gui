@@ -58,6 +58,13 @@ class Config(models.Model):
     oauth2_header_name = models.TextField(blank=False, null=False, default='X-Vlt-Token')
     portal_cookie_name = models.TextField(blank=False, null=False, default='changeme')
     public_token = models.TextField(blank=False, null=False, default='changeme')
+    redis_password = models.TextField(
+        blank=True,
+        null=True,
+        default="",
+        verbose_name=_("Redis cluster password"),
+        help_text=_("Set the password for local Redis cluster")
+    )
     ldap_repository = models.ForeignKey(to=LDAPRepository, null=True, blank=False, on_delete=models.SET_NULL)
     branch = models.TextField(default="community")
     smtp_server = models.TextField(blank=True, default="")

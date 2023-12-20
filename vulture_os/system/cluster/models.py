@@ -302,7 +302,7 @@ class Node(models.Model):
         """
 
         if self.management_ip:
-            c = RedisBase()
+            c = RedisBase(password=Cluster.get_global_config().redis_password)
             master_node = c.get_master(self.name)
             if master_node == self.name:
                 return True
@@ -550,7 +550,7 @@ class Node(models.Model):
         return self._vstate
 
 
-class Cluster (models.Model):
+class Cluster(models.Model):
     """
     Vulture Cluster class.
 
