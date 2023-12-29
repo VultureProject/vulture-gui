@@ -49,10 +49,11 @@ class FilebeatSettings(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ Variables used by template rendering """
+        config = Cluster.get_global_config()
         return {
-            'cluster_redis_password': Cluster.get_global_config().redis_password,
+            'cluster_redis_password': config.redis_password,
             'frontends': Frontend.objects.filter(enabled=True, mode="filebeat"),
-            'tenants_name': Config.objects.get().internal_tenants.name,
+            'tenants_name': config.internal_tenants.name,
             'nodes': Node.objects.exclude(name=settings.HOSTNAME),
             'jail_addresses': JAIL_ADDRESSES,
         }
