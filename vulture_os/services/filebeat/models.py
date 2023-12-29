@@ -29,7 +29,6 @@ from django.db.models import Q
 
 # Django project imports
 from services.frontend.models import Frontend
-from system.config.models import Config
 from system.cluster.models import Cluster, Node
 from toolkit.network.network import get_hostname, JAIL_ADDRESSES
 
@@ -50,11 +49,13 @@ class FilebeatSettings(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ Variables used by template rendering """
+        config = Cluster.get_global_config()
         return {
             'frontends': Frontend.objects.filter(enabled=True, mode="filebeat"),
-            'tenants_name': Config.objects.get().internal_tenants.name,
+            'tenants_name': config.internal_tenants.name,
             'nodes': Node.objects.exclude(name=get_hostname()),
             'jail_addresses': JAIL_ADDRESSES,
+            'redis_password': config.redis_password,
         }
 
     def __str__(self):

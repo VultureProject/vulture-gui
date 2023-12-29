@@ -52,6 +52,7 @@ class RsyslogSettings(models.Model):
         """
         """ Variables used by template rendering """
         current_node = Cluster.get_current_node()
+        config = Cluster.get_global_config()
         frontends = set(listener.frontend for listener in Listener.objects.filter(network_address__nic__node=current_node).distinct())
         frontends.update(Frontend.objects.filter(
             Q(mode="log", listening_mode__in=['redis', 'kafka', 'file'], node=current_node) |
@@ -64,7 +65,8 @@ class RsyslogSettings(models.Model):
             'max_tcp_listeners': Listener.objects.filter(frontend__listening_mode__icontains="tcp",frontend__enabled=True).count() + Frontend.objects.filter(enabled=True, listening_mode="api").count() + 1,
             'log_forwarders': LogOM.objects.all(),
             'DATABASES_PATH': DATABASES_PATH,
-            'tenants_name': Config.objects.get().internal_tenants.name
+            'tenants_name': config.internal_tenants.name,
+            'redis_password': config.redis_password,
         }
 
     def __str__(self):

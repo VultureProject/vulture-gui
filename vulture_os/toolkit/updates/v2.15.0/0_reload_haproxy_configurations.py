@@ -21,7 +21,7 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
-__doc__ = "Reload HAProxy configurations"
+__doc__ = "Reload all service configurations that communicate with Redis"
 
 import sys
 import os
@@ -32,9 +32,11 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
 from django.conf import settings
+from django.db.models import Q
 django.setup()
 
 from system.cluster.models import Cluster
+from services.frontend.models import Frontend
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
@@ -50,6 +52,16 @@ if __name__ == "__main__":
             api_res = node.api_request("services.haproxy.haproxy.reload_service")
             if not api_res.get('status'):
                 print(f"API error while trying to restart HAProxy service : {api_res.get('message')}")
+
+            query = Q(mode="log", listening_mode="redis") | Q(mode="filebeat")
+            for frontend in Frontend.objects.filter(query).only(*Frontend.str_attrs(), 'ruleset'):
+                if node in frontend.get_nodes():
+                    node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
+                    print(f"Listener {frontend}({frontend.ruleset}) Rsyslog configuration reload asked.")
+                    if frontend.mode == "filebeat":
+                        node.api_request("services.filebeat.filebeat.build_conf", frontend.id)
+                        print(f"Listener {frontend}({frontend.ruleset}) Filebeat configuration reload asked.")
+            node.api_request("services.rsyslogd.rsyslog.restart_service")
 
         except Exception as e:
             print(f"Failed to update some Haproxy configurations: {e}")

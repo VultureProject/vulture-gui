@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Allow to simply use local Redis without worrying about parameters when creating a Redis Listener
 - [REDIS] Password support for local redis
 - [REDIS] New api function set_password and set_replica_of
+- [FILEBEAT] Use local redis password on log insertion
 ### Changed
 - [CLUSTER] Evolve daemon's code to allow correctly handling tasks during service shutdowns
 - [API] Increase API key length for new clusters from 16 to 32 characters
