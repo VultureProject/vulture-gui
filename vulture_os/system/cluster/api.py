@@ -59,9 +59,8 @@ logger = logging.getLogger('system')
 @require_http_methods(["POST"])
 def cluster_add(request):
 
-    # TODO Legacy 'slave_ip' and 'slave_name' will need to be removed soon
-    new_node_ip = request.POST.get('ip') or request.POST.get('slave_ip')
-    new_node_name = request.POST.get('name') or request.POST.get('slave_name')
+    new_node_ip = request.POST.get('ip')
+    new_node_name = request.POST.get('name')
 
     current_node = Cluster.get_current_node()
 

@@ -346,8 +346,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         infos = requests.post(
             "https://{}:8000/api/system/cluster/add/".format(master_ip),
             headers={'Cluster-api-key': secret_key},
-            # TODO will need to replace 'slave_ip' and 'slave_name' by 'ip' and 'name' resp.
-            data={'slave_ip': get_management_ip(), 'slave_name': get_hostname()},
+            data={'ip': get_management_ip(), 'name': get_hostname()},
             verify=False
         )
 
