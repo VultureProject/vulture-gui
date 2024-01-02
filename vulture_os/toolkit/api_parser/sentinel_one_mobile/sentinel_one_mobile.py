@@ -51,6 +51,8 @@ class SentinelOneMobileParser(ApiParser):
         self.sentinel_one_mobile_host = data["sentinel_one_mobile_host"]
         if not self.sentinel_one_mobile_host.startswith('https://'):
             self.sentinel_one_mobile_host = f"https://{self.sentinel_one_mobile_host}"
+        if self.sentinel_one_mobile_host.endswith('/'):
+            self.sentinel_one_mobile_host = self.sentinel_one_mobile_host[:-1]
 
         self.sentinel_one_mobile_apikey = data["sentinel_one_mobile_apikey"]
 
@@ -86,7 +88,7 @@ class SentinelOneMobileParser(ApiParser):
                     params=query,
                     headers=headers,
                     proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl,
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl,
                     timeout=timeout
                 )
 
@@ -110,7 +112,7 @@ class SentinelOneMobileParser(ApiParser):
             else:
                 break  # no error we break from the loop
 
-        if response is None:
+        if not response:
             msg = f"[{__parser__}]:execute_query: Error Cybereason API Call URL: {url} [TIMEOUT]"
             raise Exception(msg)
 
@@ -201,5 +203,3 @@ class SentinelOneMobileParser(ApiParser):
 
         logger.info(f"[{__parser__}]:execute: update last_api_call to {self.frontend.last_api_call}",
                     extra={'frontend': str(self.frontend)})
-
-        logger.info(f"[{__parser__}]:execute: ### End of collect ###\r\n", extra={'frontend': str(self.frontend)})
