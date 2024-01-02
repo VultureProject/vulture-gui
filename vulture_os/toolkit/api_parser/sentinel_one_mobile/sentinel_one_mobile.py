@@ -106,7 +106,7 @@ class SentinelOneMobileParser(ApiParser):
                 continue
             except requests.exceptions.HTTPError:
                 msg = f"Status Code {response.status_code}, waiting {sleep_retry}s before retrying"
-                logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleep_retry)
                 continue
             else:
