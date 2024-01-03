@@ -62,9 +62,9 @@ class ConfigAPIv1(View):
             }, status=500)
 
     @api_need_key('cluster_api_key')
-    def put(self, request, object_id=None):
+    def put(self, request):
         try:
-            return config_edit(request, object_id, api=True)
+            return config_edit(request, api=True)
         except Exception as e:
             logger.critical(e, exc_info=1)
             if settings.DEV_MODE:
@@ -78,18 +78,18 @@ class ConfigAPIv1(View):
         }, status=500)
 
     @api_need_key('cluster_api_key')
-    def patch(self, request, object_id=None):
+    def patch(self, request):
         allowed_fields = ('pf_ssh_restrict', 'pf_admin_restrict', 'pf_whitelist', 'pf_blacklist',
                           'cluster_api_key', 'ldap_repository', 'oauth2_header_name', 'portal_cookie_name',
-                          'public_token', 'redis_password', 'old_redis_password', 'branch', 'smtp_server',
-                          'ssh_authorized_key', 'rsa_encryption_key', 'logs_ttl', 'internal_tenants')
+                          'public_token', 'redis_password', 'branch', 'smtp_server', 'ssh_authorized_key',
+                          'rsa_encryption_key', 'logs_ttl', 'internal_tenants')
         try:
             for key in request.JSON.keys():
                 if key not in allowed_fields:
                     return JsonResponse({'error': _("Attribute not allowed : '{}'."
                                                     "Allowed attributes are {}".format(key, allowed_fields))},
                                                     status=400)
-            return config_edit(request, object_id, api=True, update=True)
+            return config_edit(request, api=True, update=True)
 
         except Exception as e:
             logger.critical(e, exc_info=1)

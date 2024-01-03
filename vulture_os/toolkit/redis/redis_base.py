@@ -23,8 +23,8 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'System Utils Redis Toolkit'
 
 
-from redis import Redis
-from toolkit.network.network import get_hostname
+from redis import Redis, RedisError
+from toolkit.network.network import get_hostname, get_management_ip
 
 import logging
 logger = logging.getLogger('debug')
@@ -79,15 +79,15 @@ class RedisBase:
         return self.redis.slaveof(node, port)
 
     def config_set(self, key, value):
-        return self.redis.config_set(key,value)
+        return self.redis.config_set(key, value)
 
-    def config_get(self, key, value):
-        return self.redis.config_get(key,value)
+    def config_get(self, key):
+        return self.redis.config_get(key)
 
     def config_rewrite(self):
         return self.redis.config_rewrite()
 
-    def reset_password(self, password=""):
+    def set_password(self, password=""):
         try:
             self.config_set("requirepass", password)
             self.config_set("masterauth", password)
@@ -106,28 +106,38 @@ class RedisBase:
         :param node: IP address of an existing node
         :return: False if we are not connected to sentinel
         """
-
         if not node and not self.node or not self.port or self.port != 26379:
             return False
-
         return self.redis.sentinel_monitor('mymaster', node or self.node, 6379, 2)
 
-    def sentinel_reset(self, password):
+    def sentinel_set_announce_ip(self):
         """
-        Set sentinel configuration through RedisBase class.
+        Set sentinel announce_ip through RedisBase class.
+        :return: False if we are not connected to sentinel
+        """
+        if not self.node or not self.port or self.port != 26379:
+            return False
+        try:
+            self.redis.execute_command('sentinel', 'config', 'set', 'announce-ip', self.node)
+        except Exception as e:
+            logger.exception(f"[SENTINEL SET ANNOUNCE IP] Error: {e}")
+            return False
+        return True
+
+    def sentinel_set_cluster_password(self, password):
+        """
+        Set sentinel password to authenticate against
+        redis servers through RedisBase class.
         :param password: redis_password of redis nodes
         :return: False if we are not connected to sentinel
         """
-
         if not self.node or not self.port or self.port != 26379:
             return False
-
         try:
-            self.redis.execute_command('sentinel', 'config', 'set', 'announce-ip', self.node)
             self.redis.sentinel_set('mymaster', 'auth-pass', password)
         except Exception as e:
-            logger.exception(f"[SENTINEL RESET PASSWORD] Error: {e}")
-
+            logger.exception(f"[SENTINEL SET CLUSTER PASSWORD] Error: {e}")
+            return False
         return True
 
     # Write function : need master Redis
@@ -175,3 +185,26 @@ class RedisBase:
         else:  # If current cluster is Master
             result = self.redis.expire(key, ttl)
         return result
+
+
+def set_password(logger, old_redis_password=""):
+    """
+    Set Redis server password
+    :param passwords: tuple of old redis password and new redis password
+    :return: True if Redis password successfully set
+    """
+    from system.cluster.models import Cluster
+    redis_password = Cluster.get_global_config().redis_password
+
+    redis = RedisBase(password=old_redis_password)
+    result = redis.set_password(redis_password)
+    if not result:
+        logger.error("Unable to set Redis password")
+        raise RedisError("Unable to set Redis password")
+
+    sentinel = RedisBase(get_management_ip(), 26379)
+    result = sentinel.sentinel_set_cluster_password(redis_password)
+    if not result:
+        logger.error("Unable to set Redis password in Sentinel")
+        raise RedisError("Unable to set Redis password in Sentinel")
+    return result

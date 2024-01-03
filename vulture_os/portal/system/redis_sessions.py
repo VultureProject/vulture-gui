@@ -665,9 +665,9 @@ class REDISBase(object):
         super(REDISBase, self).__init__()
 
         try:
-            #self.r = Redis(host=self.ip, port=self.port, db=0)
             self.r = Redis(
-                unix_socket_path='/var/sockets/redis/redis.sock',
+                host='127.0.0.5', # Haproxy load-balancing
+                port=6379,
                 password=Cluster.get_global_config().redis_password,
                 db=0,
                 decode_responses=True

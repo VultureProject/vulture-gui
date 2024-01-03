@@ -36,6 +36,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.system.secret_key import set_key
 from toolkit.system.rc import get_rc_config
+from redis import AuthenticationError
 import logging
 import requests
 import subprocess
@@ -160,18 +161,26 @@ def cluster_create(admin_user=None, admin_password=None):
         user.save()
 
     time.sleep(5)
-    """ Tell local sentinel to monitor local redis server """
-    redis = RedisBase(get_management_ip(), 26379)
+    """ Set local redis server password """
+    redis = RedisBase(get_management_ip(), 6379)
     try:
-        # It may fail if Redis / Sentinel is already configured
-        redis.reset_password(system_config.redis_password)
-        redis.sentinel_monitor()
-        redis.sentinel_reset(system_config.redis_password)
-    except redis.exceptions.AuthenticationError as e:
+        # It may fail if Redis is already configured
+        redis.config_get("port")
+        redis.set_password(system_config.redis_password)
+    except AuthenticationError as e:
         logger.exception(f"Install::Redis password set: Error: {e}")
+        redis = RedisBase(password=system_config.redis_password)
+        redis.set_password(system_config.redis_password)
+
+    """ Tell local sentinel to monitor local redis server """
+    sentinel = RedisBase(get_management_ip(), 26379)
+    try:
+        # It may fail if Sentinel is already configured
+        sentinel.sentinel_monitor()
+        sentinel.sentinel_set_announce_ip()
+        sentinel.sentinel_set_cluster_password(system_config.redis_password)
     except Exception as e:
-        logger.error("Install::Sentinel monitor: Error: ")
-        logger.exception(e)
+        logger.exception(f"Install::Sentinel monitor: Error: {e}")
 
     """ Update uri of internal Log Forwarder """
     logfwd = LogOMMongoDB.objects.get()
@@ -240,7 +249,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             logger.info('Nodes not at the same date. Please sync with NTP Server')
             print('Nodes not at the same date. Please sync with NTP Server')
             return False
-        
+
         logger.info("[-] OK!")
 
     except Exception as e:
@@ -369,12 +378,11 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         redis = RedisBase()
         try:
             redis.config_get("port")
-            # set the Redis cluster password if not set locally
-            redis.reset_password(redis_password)
-        except redis.exceptions.AuthenticationError as e:
-            logger.exception(f"Redis authentication failure :{e}")
+            redis.set_password(redis_password)
+        except AuthenticationError as e:
+            logger.exception(f"Install::Redis password set: Error: {e}")
             redis = RedisBase(password=redis_password)
-            redis.reset_password(redis_password)
+            redis.set_password(redis_password)
 
         redis_master_node = None
         retries = 0
@@ -388,9 +396,10 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         redis.replica_of(redis_master_node, 6379)
 
         """ Tell local sentinel to monitor local redis server """
-        redis = RedisBase(get_management_ip(), 26379)
-        redis.sentinel_monitor(node=redis_master_node)
-        redis.sentinel_reset(redis_password)
+        sentinel = RedisBase(get_management_ip(), 26379)
+        sentinel.sentinel_monitor(node=redis_master_node)
+        sentinel.sentinel_set_announce_ip()
+        sentinel.sentinel_set_cluster_password(redis_password)
 
         logger.info("[-] Ok!")
 
