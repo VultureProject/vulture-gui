@@ -25,7 +25,10 @@ __parser__ = 'RETARUS'
 
 import json
 import logging
+import time
+
 import websocket
+from threading import Thread
 
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
@@ -33,11 +36,12 @@ from toolkit.api_parser.api_parser import ApiParser
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
+
 class RetarusAPIError(Exception):
     pass
 
-class RetarusParser(ApiParser):
 
+class RetarusParser(ApiParser):
     HEADERS = {
         "Content-Type": "application/json",
         'Accept': 'application/json'
@@ -67,39 +71,47 @@ class RetarusParser(ApiParser):
                 "error": str(e)
             }
 
-    
-    def format_log(self, log):
+    @staticmethod
+    def format_log(log):
         return json.dumps(log)
 
-    def execute(self):
-
-        url = self.ENDPOINT + "?channel=" +self.retarus_channel
+    def get_logs(self):
+        url = f"{self.ENDPOINT}?channel={self.retarus_channel}"
         ws = websocket.WebSocketApp(
-	        url,
-	        header=["Authorization: Bearer " + self.retarus_token],
-	        on_open=self.on_open,
-	        on_message=self.on_message,
-	        on_error=self.on_error,
-	        on_close=self.on_close
-	    )
+            url,
+            header=[f"Authorization: Bearer {self.retarus_token}"],
+            on_open=self.on_open,
+            on_message=self.on_message,
+            on_error=self.on_error,
+            on_close=self.on_close
+        )
         ws.run_forever(ping_interval=60)
 
-        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+    def _update_lock(self):
+        while not self.evt_stop.is_set():
+            # Updating lock every 60s to prevent multiprocessing
+            self.update_lock()
+            time.sleep(60)
+
+    def execute(self):
+        thread_get_logs = Thread(target=self.get_logs)
+        thread_update_lock = Thread(target=self._update_lock)
+
+        thread_get_logs.start()
+        thread_update_lock.start()
+
+        thread_get_logs.join()
+        thread_update_lock.join()
 
     def on_open(self, ws):
-        logger.info(f"[{__parser__}]:execute: Connection established.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: Connection established.", extra={'frontend': str(self.frontend)})
 
     def on_message(self, ws, message):
-
-        self.update_lock()
-
         ## WRITE TO FILE ##
-
         self.write_to_file([self.format_log(json.loads(message))])
-        self.update_lock()
 
-    def on_error(self, error):
-        logger.error(f"[{__parser__}]:execute: {error}", extra={'frontend': str(self.frontend)})
+    def on_error(self, ws, error):
+        logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
 
-    def on_close(self):
-        logger.info(f"[{__parser__}]:execute: Connection closed.", extra={'frontend': str(self.frontend)})
+    def on_close(self, ws, status_code, close_msg):
+        logger.info(f"[{__parser__}]:get_logs: Connection closed.", extra={'frontend': str(self.frontend)})
