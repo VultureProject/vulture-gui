@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [REDIS] Password support for local redis
 ### Changed
 - [CLUSTER] Evolve daemon's code to allow correctly handling tasks during service shutdowns
+- [API] Increase API key length for new clusters from 16 to 32 characters
 ### Fixed
 - [FRONTEND] Allow skipping unresponsive nodes during HAProxy test_conf
 - [REPUTATION] Changed predator references to barricade
