@@ -157,14 +157,14 @@ class RedisBase:
             r_backup = self.redis
             # And connect to master
             try:
-                self.redis = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], password=self.password, db=0)
+                self._redis_client = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], password=self.password, db=0)
                 result = self.redis.hmset(hash, mapping)
             except Exception as e:
                 self.logger.info("REDISSession: Redis connexion issue")
                 self.logger.exception(e)
                 result = None
             # Finally restore the backuped cluster
-            self.redis = r_backup
+            self._redis_client = r_backup
         else:  # If current cluster is Master
             result = self.redis.hmset(hash, mapping)
         return result
@@ -180,14 +180,14 @@ class RedisBase:
             r_backup = self.redis
             # And connect to master
             try:
-                self.redis = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], password=self.password, db=0)
+                self._redis_client = Redis(host=cluster_info['master_host'], port=cluster_info['master_port'], password=self.password, db=0)
                 result = self.redis.expire(key, ttl)
             except Exception as e:
                 self.logger.info("REDISSession: Redis connexion issue")
                 self.logger.exception(e)
                 result = None
             # Finally restore the backuped cluster
-            self.redis = r_backup
+            self._redis_client = r_backup
         else:  # If current cluster is Master
             result = self.redis.expire(key, ttl)
         return result
