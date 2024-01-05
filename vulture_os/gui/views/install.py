@@ -153,10 +153,8 @@ def cluster_create(admin_user=None, admin_password=None):
             name=name
         )
 
-    """ Delete any existing user """
-    User.objects.all().delete()
-
     if admin_user and admin_password:
+        User.objects.filter(is_superuser=True).delete()
         user = User.objects.create_superuser(admin_user, 'changeme@localhost', admin_password)
         user.save()
 
