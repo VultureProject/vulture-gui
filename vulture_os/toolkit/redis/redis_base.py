@@ -37,13 +37,18 @@ class RedisBase:
         self.node = node
         self.password = password
         self.db = '/var/sockets/redis/redis.sock'
+        self._redis_client = None
 
-        if node and port:
-            self.redis = Redis(host=node, port=port, password=password, socket_connect_timeout=1.0)
-        elif node:
-            self.redis = Redis(host=node, password=password, socket_connect_timeout=1.0)
-        else:
-            self.redis = Redis(unix_socket_path=self.db, password=password, socket_connect_timeout=1.0)
+    @property
+    def redis(self):
+        if not self._redis_client:
+            if self.node and self.port:
+                self._redis_client = Redis(host=self.node, port=self.port, password=self.password, socket_connect_timeout=1.0)
+            elif self.node:
+                self._redis_client = Redis(host=self.node, password=self.password, socket_connect_timeout=1.0)
+            else:
+                self._redis_client = Redis(unix_socket_path=self.db, password=self.password, socket_connect_timeout=1.0)
+        return self._redis_client
 
     def get_master(self, node=None):
         """ return the master node of the redis cluster or query the given node
@@ -96,6 +101,7 @@ class RedisBase:
             logger.exception(f"[REDIS RESET PASSWORD] Error: {e}")
         else:
             self.password = password
+            self._redis_client = None
             return True
         return False
 
