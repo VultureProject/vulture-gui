@@ -196,6 +196,29 @@ class RedisBase:
         return result
 
 
+def set_replica_of(logger, main_node):
+    """
+    Set Redis as a replica of the current main node
+    :param main_node: the IP of the current main Redis node
+    :return: True if Redis replication was successfully set
+    """
+    from system.cluster.models import Cluster
+    redis_password = Cluster.get_global_config().redis_password
+
+    redis = RedisBase(password=redis_password)
+    result = redis.replica_of(main_node, 6379)
+    if not result:
+        logger.error("Unable to set Redis password")
+        raise RedisError("Unable to set Redis password")
+
+    sentinel = RedisBase(get_management_ip(), 26379)
+    result = sentinel.sentinel_monitor(node=main_node)
+    if not result:
+        logger.error("Unable to set Redis password in Sentinel")
+        raise RedisError("Unable to set Redis password in Sentinel")
+    return result
+
+
 def set_password(logger, old_redis_password=""):
     """
     Set Redis server password

@@ -36,7 +36,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.system.secret_key import set_key
 from toolkit.system.rc import get_rc_config
-from redis import AuthenticationError
+from redis import AuthenticationError, ResponseError
 import logging
 import requests
 import subprocess
@@ -162,14 +162,12 @@ def cluster_create(admin_user=None, admin_password=None):
 
     time.sleep(5)
     """ Set local redis server password """
-    redis = RedisBase(get_management_ip(), 6379)
     try:
-        # It may fail if Redis is already configured
-        redis.config_get("port")
-        redis.set_password(system_config.redis_password)
+        redis = RedisBase(get_management_ip(), 6379)
+        redis.redis.ping()
     except AuthenticationError as e:
-        logger.exception(f"Install::Redis password set: Error: {e}")
-        redis = RedisBase(password=system_config.redis_password)
+        redis = RedisBase(get_management_ip(), 6379, password=system_config.redis_password)
+    finally:
         redis.set_password(system_config.redis_password)
 
     """ Tell local sentinel to monitor local redis server """
@@ -177,10 +175,10 @@ def cluster_create(admin_user=None, admin_password=None):
     try:
         # It may fail if Sentinel is already configured
         sentinel.sentinel_monitor()
-        sentinel.sentinel_set_announce_ip()
-        sentinel.sentinel_set_cluster_password(system_config.redis_password)
-    except Exception as e:
-        logger.exception(f"Install::Sentinel monitor: Error: {e}")
+    except ResponseError:
+        logger.info(f"Install::Sentinel monitor: Monitoring cluster already configured")
+    sentinel.sentinel_set_announce_ip()
+    sentinel.sentinel_set_cluster_password(system_config.redis_password)
 
     """ Update uri of internal Log Forwarder """
     logfwd = LogOMMongoDB.objects.get()
@@ -369,42 +367,6 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     except Exception:
         logger.error("Error at API Call on /system/cluster/add/ Response code: {}".format(infos.status_code))
-        return False
-
-    try:
-        """ Join our redis server to the redis master """
-        logger.info("[+] Making local Redis join the existing cluster")
-        redis_password = Cluster.get_global_config().redis_password
-        redis = RedisBase()
-        try:
-            redis.config_get("port")
-            redis.set_password(redis_password)
-        except AuthenticationError as e:
-            logger.exception(f"Install::Redis password set: Error: {e}")
-            redis = RedisBase(password=redis_password)
-            redis.set_password(redis_password)
-
-        redis_master_node = None
-        retries = 0
-        while not redis_master_node and retries < 5:
-            logger.info("Getting current redis master from main node...")
-            redis_master_node = redis.get_master(master_ip)
-            if not redis_master_node:
-                time.sleep(5)
-
-        logger.info(f"Current Redis master is {redis_master_node}, linking local redis to it")
-        redis.replica_of(redis_master_node, 6379)
-
-        """ Tell local sentinel to monitor local redis server """
-        sentinel = RedisBase(get_management_ip(), 26379)
-        sentinel.sentinel_monitor(node=redis_master_node)
-        sentinel.sentinel_set_announce_ip()
-        sentinel.sentinel_set_cluster_password(redis_password)
-
-        logger.info("[-] Ok!")
-
-    except Exception as e:
-        logger.error(f"Could not synchronize Redis instances: {e}")
         return False
 
     """ Sleep a few seconds in order for the replication to occur """

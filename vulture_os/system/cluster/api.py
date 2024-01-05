@@ -42,6 +42,7 @@ from system.cluster.views import COMMAND_LIST, cluster_edit
 from system.cluster.models import Cluster
 from system.pki.models import X509Certificate
 from toolkit.mongodb.mongo_base import MongoBase
+from toolkit.redis.redis_base import RedisBase
 from services.frontend.models import Frontend
 from workflow.models import Workflow
 
@@ -81,7 +82,7 @@ def cluster_add(request):
         })
     new_node_is_resolvable = new_node_is_resolvable.get('instance', None)
 
-    """ Now the new node should be in the cluster: Add it's management IP """
+    """ Now the new node should be in the cluster: Add its management IP """
     new_node = Node()
     new_node.name = new_node_name
     new_node.management_ip = new_node_ip
@@ -124,7 +125,7 @@ def cluster_add(request):
             'message': 'Error during repl_add. Check logs'
         })
 
-    """ Add NEW node into the REPLICASET, as a pending member """
+    """ Add NEW MongoDB node into the REPLICASET, as a pending member """
     mongo = MongoBase()
     response = None
     if mongo.connect_with_retries(retries=10, timeout=2):
@@ -162,6 +163,12 @@ def cluster_add(request):
         """ Save certificates on new node """
         for cert in X509Certificate.objects.all():
             cert.save_conf()
+
+        """ Synchronize Redis Node with cluster """
+        cluster_redis_password = Cluster.get_global_config().redis_password
+        redis_current_main = RedisBase().get_master()
+        new_node.api_request("toolkit.redis.redis_base.set_password", cluster_redis_password)
+        new_node.api_request("toolkit.redis.redis_base.set_replica_of", redis_current_main)
 
         """ Download reputation databases before crontab """
         new_node.api_request("gui.crontab.feed.security_update")
