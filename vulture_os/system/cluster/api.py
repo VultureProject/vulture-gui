@@ -42,7 +42,6 @@ from system.cluster.views import COMMAND_LIST, cluster_edit
 from system.cluster.models import Cluster
 from system.pki.models import X509Certificate
 from toolkit.mongodb.mongo_base import MongoBase
-from toolkit.redis.redis_base import RedisBase
 from services.frontend.models import Frontend
 from workflow.models import Workflow
 
