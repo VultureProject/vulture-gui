@@ -74,6 +74,9 @@ class RedisBase:
 
         return False
 
+    def get_role(self):
+        return self.redis.role()[0].decode()
+
     def replica_of(self, node, port):
         """
         Make the current redis node a replica of the specified one
@@ -112,7 +115,7 @@ class RedisBase:
         :param node: IP address of an existing node
         :return: False if we are not connected to sentinel
         """
-        if not node and not self.node or not self.port or self.port != 26379:
+        if not self.get_role() == "sentinel":
             return False
         return self.redis.sentinel_monitor('mymaster', node or self.node, 6379, 2)
 
@@ -121,7 +124,7 @@ class RedisBase:
         Set sentinel announce_ip through RedisBase class.
         :return: False if we are not connected to sentinel
         """
-        if not self.node or not self.port or self.port != 26379:
+        if not self.get_role() == "sentinel":
             return False
         try:
             self.redis.execute_command('sentinel', 'config', 'set', 'announce-ip', self.node)
@@ -137,7 +140,7 @@ class RedisBase:
         :param password: redis_password of redis nodes
         :return: False if we are not connected to sentinel
         """
-        if not self.node or not self.port or self.port != 26379:
+        if not self.get_role() == "sentinel":
             return False
         try:
             self.redis.sentinel_set('mymaster', 'auth-pass', password)
