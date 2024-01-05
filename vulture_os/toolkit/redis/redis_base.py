@@ -212,21 +212,21 @@ def set_replica_of(logger, args):
     redis = RedisBase(password=redis_password)
     result = redis.replica_of(main_node, 6379)
     if not result:
-        logger.error("Unable to set Redis password")
-        raise RedisError("Unable to set Redis password")
+        logger.error("Unable to set Redis replication")
+        raise RedisError("Unable to set Redis replication")
 
     sentinel = RedisBase(get_management_ip(), 26379)
     result = sentinel.sentinel_monitor(node=main_node)
     if not result:
-        logger.error("Unable to set Redis password in Sentinel")
-        raise RedisError("Unable to set Redis password in Sentinel")
+        logger.error("Unable to set Sentinel monitor")
+        raise RedisError("Unable to set Sentinel monitor")
     return result
 
 
-def set_password(logger, passwords):
+def set_password(logger, passwords=("","")):
     """
     Set Redis server password
-    :param passwords: tuple of old redis password and new redis password
+    :param passwords: tuple of (redis_password, old_redis_password)
     :return: True if Redis password successfully set
     """
     if isinstance(passwords, str):
