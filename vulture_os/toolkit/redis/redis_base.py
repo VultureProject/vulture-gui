@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'System Utils Redis Toolkit'
 
 
+from ast import literal_eval
 from redis import Redis, RedisError
 from toolkit.network.network import get_hostname, get_management_ip
 
@@ -97,8 +98,8 @@ class RedisBase:
 
     def set_password(self, password=""):
         try:
-            self.config_set("requirepass", password)
-            self.config_set("masterauth", password)
+            self.config_set("requirepass", password or "")
+            self.config_set("masterauth", password or "")
             self.config_rewrite()
         except Exception as e:
             logger.exception(f"[REDIS RESET PASSWORD] Error: {e}")
@@ -196,13 +197,18 @@ class RedisBase:
         return result
 
 
-def set_replica_of(logger, main_node, redis_password=None):
+def set_replica_of(logger, args):
     """
     Set Redis as a replica of the current main node
-    :param main_node: the IP of the current main Redis node
-    :param redis_password: If the instance is (already) protected by password, allows to specify it
+    :param args: tuple of
+        - IP of the main node to set the replication to
+        - the potential redis_password already configured on the node/cluster
     :return: True if Redis replication was successfully set
     """
+    if isinstance(args, str):
+        main_node, redis_password = literal_eval(args)
+    else:
+        main_node, redis_password = args
     redis = RedisBase(password=redis_password)
     result = redis.replica_of(main_node, 6379)
     if not result:
@@ -217,12 +223,16 @@ def set_replica_of(logger, main_node, redis_password=None):
     return result
 
 
-def set_password(logger, redis_password, old_redis_password=None):
+def set_password(logger, passwords):
     """
     Set Redis server password
     :param passwords: tuple of old redis password and new redis password
     :return: True if Redis password successfully set
     """
+    if isinstance(passwords, str):
+        redis_password, old_redis_password = literal_eval(passwords)
+    else:
+        redis_password, old_redis_password = passwords
     redis = RedisBase(password=old_redis_password)
     result = redis.set_password(redis_password)
     if not result:

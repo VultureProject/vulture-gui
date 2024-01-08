@@ -168,10 +168,10 @@ def cluster_add(request):
         # Replication is configured BEFORE password, as replication state must be defined for the sentinel to set a password
         for node in Node.objects.exclude(id=new_node.pk):
             if node.is_master_redis:
-                new_node.api_request("toolkit.redis.redis_base.set_replica_of", node.management_ip)
+                new_node.api_request("toolkit.redis.redis_base.set_replica_of", (node.management_ip, ""))
                 break
         cluster_redis_password = Cluster.get_global_config().redis_password
-        new_node.api_request("toolkit.redis.redis_base.set_password", cluster_redis_password, internal=True)
+        new_node.api_request("toolkit.redis.redis_base.set_password", (cluster_redis_password, ""), internal=True)
 
         """ Download reputation databases before crontab """
         new_node.api_request("gui.crontab.feed.security_update")
