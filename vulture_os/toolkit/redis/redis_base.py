@@ -219,15 +219,12 @@ def set_replica_of(logger, main_node):
     return result
 
 
-def set_password(logger, old_redis_password=""):
+def set_password(logger, redis_password, old_redis_password=None):
     """
     Set Redis server password
     :param passwords: tuple of old redis password and new redis password
     :return: True if Redis password successfully set
     """
-    from system.cluster.models import Cluster
-    redis_password = Cluster.get_global_config().redis_password
-
     redis = RedisBase(password=old_redis_password)
     result = redis.set_password(redis_password)
     if not result:

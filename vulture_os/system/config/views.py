@@ -129,7 +129,7 @@ def config_edit(request, api=False, update=False):
             Cluster.api_request("services.haproxy.haproxy.reload_service")
         if "redis_password" in form.changed_data:
             # Deploy redis password
-            Cluster.api_request("toolkit.redis.redis_base.set_password", old_redis_password, internal=True)
+            Cluster.api_request("toolkit.redis.redis_base.set_password", (config.redis_password, old_redis_password), internal=True)
             Cluster.api_request("services.haproxy.haproxy.configure_node")
             for frontend in Frontend.objects.filter(Q(mode="log", listening_mode="redis") | Q(mode="filebeat")):
                 for node in frontend.get_nodes():
