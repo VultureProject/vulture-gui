@@ -196,15 +196,13 @@ class RedisBase:
         return result
 
 
-def set_replica_of(logger, main_node):
+def set_replica_of(logger, main_node, redis_password=None):
     """
     Set Redis as a replica of the current main node
     :param main_node: the IP of the current main Redis node
+    :param redis_password: If the instance is (already) protected by password, allows to specify it
     :return: True if Redis replication was successfully set
     """
-    from system.cluster.models import Cluster
-    redis_password = Cluster.get_global_config().redis_password
-
     redis = RedisBase(password=redis_password)
     result = redis.replica_of(main_node, 6379)
     if not result:
