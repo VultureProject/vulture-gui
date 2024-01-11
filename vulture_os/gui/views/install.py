@@ -282,7 +282,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         return False
 
     if not ca_cert:
-        logger.info("[+] Getting ca certificate")
+        logger.info("[+] Getting ca certificate and key")
 
         try:
             infos = requests.post(
@@ -292,6 +292,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             ).json()
 
             ca_cert = infos.get('ca_cert')
+            ca_key= infos.get('ca_key')
         except Exception as e:
             logger.error("Unable to retrieve CA certificate: {}".format(e))
             return False
@@ -326,6 +327,9 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     with open("/var/tmp/ca.pem", "w") as f:
         f.write(ca_cert)
+
+    with open("/var/tmp/ca.key", "w") as f:
+        f.write(ca_key)
 
     with open("/var/tmp/node.cert", "w") as f:
         f.write(cert)

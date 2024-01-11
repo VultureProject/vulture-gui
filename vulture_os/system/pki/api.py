@@ -54,7 +54,8 @@ def pki_get_ca(request):
         return HttpResponseForbidden("Node is not initialized")
 
     return JsonResponse({
-        "ca_cert": internal_ca.cert
+        "ca_cert": internal_ca.cert,
+        "ca_key": internal_ca.key
     })
 
 

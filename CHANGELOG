@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Allow skipping unresponsive nodes during HAProxy test_conf
 - [REPUTATION] Changed predator references to barricade
 - [REPUTATION_CTX] Ensure internally defined DBs cannot be modified
+- [SYSTEM] [PKI] Fix wrong ca.key after cluster_join
 
 
 ## [2.14.2] - Unreleased
