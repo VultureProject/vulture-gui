@@ -452,7 +452,10 @@ def frontend_edit(request, object_id=None, api=False):
                                                                            header_list=header_objs,
                                                                            node=node)
                     frontend.test_conf(node.name)
-                    logger.info(f"FRONTEND::Edit: Configuration test ok on node {node.name}")
+                    if node.state == "UP":
+                        logger.info(f"FRONTEND::Edit: Configuration test ok on node {node.name}")
+                    else:
+                        logger.warning(f"FRONTEND::Edit: Configuration test skipped on node {node.name}")
         except ServiceError as e:
             logger.exception(e)
             return render_form(frontend, save_error=[str(e), e.traceback])
