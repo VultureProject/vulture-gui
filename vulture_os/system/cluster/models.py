@@ -265,15 +265,13 @@ class Node(models.Model):
         c = MongoBase()
         ok = c.connect()
         if ok:
-            primary_node = c.get_primary()
-        else:
-            return None
-
-        if ok and primary_node == self.name + ':9091':
-            return True
-        elif ok:
-            return False
-
+            members = c.repl_state()
+            for member in members:
+                if member['name'] == self.name + ':9091':
+                    if member['stateStr'] == 'PRIMARY':
+                        return True
+                    elif member['stateStr'] == 'SECONDARY':
+                        return False
         return None
 
     @property

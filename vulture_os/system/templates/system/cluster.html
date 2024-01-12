@@ -109,11 +109,14 @@
       mData: "name",
       mRender: function(data, type, row) {
         buffer =  '';
-        if (row.is_master_mongo) {
+        if (row.is_master_mongo === true) {
             buffer = buffer + '<label class="label label-success">PRIMARY</label>&nbsp;&nbsp;<button class="btn btn-flat btn-xs btn-danger" id="stepdown" title="{% translate "Step Down" %}"><span><i class="fa fa-chevron-down"></i></span></button>';
         }
-        else if (row.addresses) {
+        else if (row.is_master_mongo === false) {
             buffer = buffer + '<label class="label label-warning">SECONDARY</label>';
+        }
+        else if (row.addresses) {
+            buffer = buffer + '<label class="label label-danger">UNKNOWN</label>';
         }
         else {
             buffer = 'Not configured';

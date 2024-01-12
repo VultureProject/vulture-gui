@@ -28,6 +28,7 @@ from pymongo.errors import OperationFailure
 from toolkit.network.network import get_hostname
 from django.conf import settings
 from re import search as re_search
+from time import sleep
 import subprocess
 import logging
 
@@ -231,6 +232,9 @@ class MongoBase:
     def connect_primary(self):
         return self.connect(self.get_primary())
 
+    def repl_state(self):
+        return self.db.admin.command("replSetGetStatus")['members']
+
     def repl_initiate(self):
         """
             ADD ourself to a local Vulture replicaset (bootstrap process)
@@ -374,13 +378,15 @@ class MongoBase:
 
         This command MUST be executed on a PRIMARY node
 
-        :return: Tuple (status, message) 
+        :return: Tuple (status, message)
         """
 
         self.connect_primary()
         try:
             logger.info("MongoBase::replSetStepDown: calling replSetStepDown")
-            return True, self.db.admin.command({"replSetStepDown": 60})
+            message = self.db.admin.command({"replSetStepDown": 60})
+            sleep(5)
+            return True, message
         except Exception as e:
             logger.error("MongoBase::replSetStepDown: Error during mongoDB replSetStepDown: {}".format(str(e)))
             return False, str(e)
@@ -391,7 +397,7 @@ class MongoBase:
 
         This command MUST be executed on a PRIMARY node
 
-        :return: Tuple (status, message) 
+        :return: Tuple (status, message)
         """
         self.connect_primary()
         # Try to create index
