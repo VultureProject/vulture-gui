@@ -85,14 +85,8 @@ class ForcepointParser(ApiParser):
 
     def test(self):
         try:
-            status, logs = self.get_logs()
-
-            if not status:
-                return {
-                    "status": False,
-                    "error": logs
-                }
-
+            url = f"{self.forcepoint_host}/siem/logs"
+            _ = self.get_logs(url)
             return {
                 "status": True,
                 "data": _('Success')
@@ -103,30 +97,25 @@ class ForcepointParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, url=None, allow_redirects=False):
-        if url is None:
-            url = f"{self.forcepoint_host}/siem/logs"
+    def get_logs(self, url, allow_redirects=False):
+        try:
+            response = requests.get(
+                url,
+                auth=(self.forcepoint_username, self.forcepoint_password),
+                allow_redirects=allow_redirects,
+                headers=self.user_agent,
+                proxies=self.proxies,
+                timeout=30,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
+            )
 
-        response = requests.get(
-            url,
-            auth=(self.forcepoint_username, self.forcepoint_password),
-            allow_redirects=allow_redirects,
-            headers=self.user_agent,
-            proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
-        )
-
-        if response.status_code == 401:
-            return False, _('Authentication failed')
-
-        if response.status_code != 200:
-            error = f"Error at Forcepoint API Call: {response.content}"
+            response.raise_for_status()
+        except Exception as e:
+            error = f"Error at Forcepoint API Call: {e}"
             logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
             raise ForcepointAPIError(error)
-
-        content = response.content
-
-        return True, content
+        else:
+            return response.content
 
     def parse_xml(self, logs):
         for child in ET.fromstring(logs):
@@ -134,7 +123,7 @@ class ForcepointParser(ApiParser):
             stream = child.attrib['stream']
             yield url, stream
 
-    def parse_line(self, mapping, orig_line, stream):
+    def parse_line(self, mapping_keys, orig_line, stream):
         res = {}
         # Convert line to BytesIO to use csv
         stream_line = StringIO(orig_line.decode('utf-8'))
@@ -144,12 +133,12 @@ class ForcepointParser(ApiParser):
         # Loop other the fields of the only line
         try:
             for cpt, value in enumerate(list(r)[0]):
-                field = mapping[cpt]
+                field = mapping_keys[cpt]
                 res[field] = value.split(',') if field in self.TO_SPLIT_FIELDS else value
             res['stream'] = stream
             return json_dumps(res)
         except Exception as e:
-            msg = f"Failed to parse line: {r}"
+            msg = f"Failed to parse line: {r} -> Error: {e}"
             logger.error(f"[{__parser__}]:parse_line: {msg}", extra={'frontend': str(self.frontend)})
             raise ForcepointAPIError()
 
@@ -171,38 +160,47 @@ class ForcepointParser(ApiParser):
                     auth=(self.forcepoint_username, self.forcepoint_password),
                     headers=self.user_agent,
                     proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                    timeout=30,
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                 )
 
                 response.raise_for_status()
                 break
             except Exception as e:
-                msg = f"Failed to delete file {file_url} : {str(e)}"
+                msg = f"Failed to delete file {file_url} : {e}"
                 logger.error(f"[{__parser__}]:delete_file: {msg}", extra={'frontend': str(self.frontend)})
                 attempt += 1
 
+    @staticmethod
+    def format_log(line):
+        chars_to_delete = ['"', ' ', '&', '.', '/']
+        line = "".join(c for c in line if c not in chars_to_delete)
+        return line
+
     def execute(self):
-        status, tmp_logs = self.get_logs()
-        if not status:
-            raise ForcepointAPIError(tmp_logs)
+        url = f"{self.forcepoint_host}/siem/logs"
+        tmp_logs = self.get_logs(url)
+        self.update_lock()
 
         for file_url, file_type in self.parse_xml(tmp_logs):
             try:
                 # Parse file depending on extension
-                status, file_content = self.get_logs(file_url)
-                assert status, "Status is not 200"
+                file_content = self.get_logs(file_url)
                 lines = self.parse_file(file_content, file_url[-3:] == ".gz")
+
                 self.update_lock()
+
                 # Extract mapping in first line
                 ## Keys of json must be string, not bytes
                 ## Remove quotes and spaces in keys + split by comma
                 ## Remove '&' in keys, not valid for Rsyslog
-                mapping = [line.replace('"','').replace(' ','').replace('&','').replace('.','').replace('/','') for line in lines.pop(0).decode('utf8').strip().split(',')]
+                mapping_keys = [self.format_log(line) for line in lines.pop(0).decode('utf8').strip().split(',')]
                 # Use mapping to convert lines to json format
-                json_lines = [self.parse_line(mapping, line.strip(), file_type) for line in lines]
-                self.update_lock()
+                json_lines = [self.parse_line(mapping_keys, line.strip(), file_type) for line in lines]
+
                 # Send those lines to Rsyslog
                 self.write_to_file(json_lines)
+
                 # And update lock after sending lines to Rsyslog
                 self.update_lock()
                 # When logs are sent to Rsyslog, delete file on external host
