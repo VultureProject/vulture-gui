@@ -56,8 +56,6 @@ class RetarusParser(ApiParser):
         self.retarus_token = data["retarus_token"]
         self.retarus_channel = data["retarus_channel"]
 
-        self.buffer = list()
-
     def _connect(self):
         try:
             extra_headers = {
@@ -71,13 +69,12 @@ class RetarusParser(ApiParser):
                 extra_headers['http_proxy_host'] = proxy_split[0]
                 extra_headers['http_proxy_port'] = proxy_split[1] if len(proxy_split) > 1 else 80
 
-            return websocket.create_connection(url, timeout=20, **extra_headers)
+            return websocket.create_connection(url, timeout=10, **extra_headers)
         except Exception as e:
             logger.error(f"[{__parser__}]:_connect: WebSocket connection error: {e}", extra={'frontend': str(self.frontend)})
             raise RetarusAPIError(f"Could not connect to API: {e}")
 
     def test(self):
-
         ws = websocket.create_connection(self.ENDPOINT, header=["Authorization: Bearer " + self.retarus_token])
         try:
             result = ws.recv()
@@ -92,35 +89,31 @@ class RetarusParser(ApiParser):
                 "error": str(e)
             }
 
+    def update_lock(self):
+        self.current_time = timezone.now()
+        super(RetarusParser, self).update_lock()
+
     @staticmethod
     def format_log(log):
         return json.dumps(log)
 
-    def _flush_buffer(self):
-        if self.buffer:
-            self.write_to_file(self.buffer)
-            self.buffer.clear()
-
     def execute(self):
-        current_time = timezone.now()
+        self.current_time = timezone.now()
         ws = self._connect()
 
-        try:
-            while not self.evt_stop.is_set():
+        while not self.evt_stop.is_set():
+            try:
                 if msg := ws.recv():
-                    self.buffer.append(self.format_log(msg))
-                    if len(self.buffer) >= 128:
-                        self._flush_buffer()
+                    self.write_to_file([self.format_log(msg)])
 
-                if timezone.now() >= (current_time + datetime.timedelta(seconds=10)):
-                    current_time = timezone.now()
+                if timezone.now() >= (self.current_time + datetime.timedelta(seconds=10)):
                     self.update_lock()
-        except websocket._exceptions.WebSocketConnectionClosedException:
-            logger.info(f"[{__parser__}]:execute: Connection was closed, finalizing...", extra={'frontend': str(self.frontend)})
-        except Exception as e:
-            logger.error(f"[{__parser__}]:execute: WebSocket recv error -> {e}", extra={'frontend': str(self.frontend)})
-            raise RetarusAPIError(f"Unknown error: {e}")
-
-        if self.buffer:
-            logger.debug(f"[{__parser__}]:execute: flushing remaining logs", extra={'frontend': str(self.frontend)})
-            self._flush_buffer()
+            except websocket._exceptions.WebSocketTimeoutException:
+                self.update_lock()
+                continue
+            except websocket._exceptions.WebSocketConnectionClosedException:
+                logger.info(f"[{__parser__}]:execute: Connection was closed, finalizing...", extra={'frontend': str(self.frontend)})
+                break
+            except Exception as e:
+                logger.error(f"[{__parser__}]:execute: WebSocket recv error -> {e}", extra={'frontend': str(self.frontend)})
+                raise RetarusAPIError(f"Unknown error: {e}")
