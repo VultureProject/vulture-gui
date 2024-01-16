@@ -28,7 +28,6 @@ from django.utils.translation import gettext as _
 from gui.forms.form_utils import DivErrorList
 from services.frontend.models import Frontend
 from system.config.form import ConfigForm
-from system.config.models import write_conf
 from system.cluster.models import Cluster, Node
 from system.exceptions import VultureSystemConfigError
 from django.shortcuts import render
@@ -107,10 +106,12 @@ def config_edit(request, object_id=None, api=False, update=False):
         if "internal_tenants" in form.changed_data:
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
             Cluster.api_request("services.rsyslogd.rsyslog.restart_service")
-        if "portal_cookie_name" in form.changed_data:
+        if "portal_cookie_name" or "public_token" in form.changed_data:
             # Reload Frontends with authenticated Workflows: session checks must be updated with the new cookie's name
             for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():
-                frontend.reload_conf()
+                for node in frontend.reload_conf():
+                    node.api_request("workflow.workflow.build_conf", workflow.pk)
+            Cluster.api_request("services.haproxy.haproxy.reload_service")
         if "logs_ttl" in form.changed_data:
             res, mess = config_model.set_logs_ttl()
             if not res:

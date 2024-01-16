@@ -245,7 +245,7 @@ class Workflow(models.Model):
         """ Retrieve list/custom objects """
         """ And returns the attributes of the class """
 
-        access_controls_list = list()
+        access_controls_list = []
         access_controls_deny = []
         access_controls_301 = []
         access_controls_302 = []

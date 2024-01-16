@@ -403,7 +403,8 @@ def backend_edit(request, object_id=None, api=False):
                 workflow_list =  backend.workflow_set.all()
                 for workflow in workflow_list:
                     logger.info("reloading frontend '{}' haproxy configuration".format(workflow.frontend))
-                    workflow.frontend.reload_conf()
+                    for node in workflow.frontend.reload_conf():
+                        node.api_request("workflow.workflow.build_conf", workflow.pk)
 
             # Re-generate config AFTER save, to get ID
             backend.configuration = backend.generate_conf()

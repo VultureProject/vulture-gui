@@ -276,7 +276,7 @@ def tls_profile_edit(request, object_id=None, api=False):
             logger.info("TLSProfile '{}' write on disk requested.".format(tls_profile.name))
 
             for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
-                frontend.reload_haproxy_conf()
+                frontend.reload_conf()
                 logger.info("Frontend confs reloaded")
 
             for backend in set(server.backend for server in tls_profile.server_set.all()):
