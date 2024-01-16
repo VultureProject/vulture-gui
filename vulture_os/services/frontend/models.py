@@ -1546,10 +1546,11 @@ class Frontend(models.Model):
                 # Node may be unavailable for the moment
                 # Changes will be synced if node is up within 30 days
                 logger.error(e)
-                logger.warning(f"on node '{node_name}'\n Request failure.", "haproxy")
-            if not infos.get('status'):
-                raise ServiceTestConfigError(f"on node '{node_name}'\n{infos.get('error')}", "haproxy",
-                                             traceback=infos.get('error_details'))
+                logger.warning(f"on node '{node_name}'\n Request failure.")
+            else:
+                if infos.get('status'):
+                    raise ServiceTestConfigError(f"on node '{node_name}'\n{infos.get('error')}", "haproxy",
+                                                traceback=infos.get('error_details'))
         else:
             # Replace name of frontend to prevent duplicate frontend while testing conf
             test_haproxy_conf(test_filename,
