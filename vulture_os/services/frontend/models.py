@@ -1212,6 +1212,16 @@ class Frontend(models.Model):
         help_text=_("Vectra client id"),
         default="",
     )
+    vectra_access_token = models.TextField(
+        verbose_name=_("Vectra access token"),
+        help_text=_("Vectra access token"),
+        default="",
+    )
+    vectra_expire_at = models.DateTimeField(
+        verbose_name=_("Vectra access token expire at"),
+        help_text=_("Vectra access token expire at"),
+        default="",
+    )
     # Apex attributes
     apex_server_host = models.TextField(
         verbose_name=_("Apex server host"),
