@@ -23,11 +23,11 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'RETARUS API'
 __parser__ = 'RETARUS'
 
-import datetime
 import json
 import logging
 
 import websocket
+from datetime import timedelta
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -58,7 +58,7 @@ class RetarusParser(ApiParser):
 
     def _connect(self):
         try:
-            extra_headers = {
+            extra_options = {
                 'header': [f"Authorization: Bearer {self.retarus_token}"],
             }
             url = f"{self.ENDPOINT}?channel={self.retarus_channel}"
@@ -66,10 +66,10 @@ class RetarusParser(ApiParser):
             if self.proxies:
                 proxy_ = urlparse(self.proxies.get('http'))
                 proxy_split = proxy_.netloc.split(':')
-                extra_headers['http_proxy_host'] = proxy_split[0]
-                extra_headers['http_proxy_port'] = proxy_split[1] if len(proxy_split) > 1 else 80
+                extra_options['http_proxy_host'] = proxy_split[0]
+                extra_options['http_proxy_port'] = proxy_split[1] if len(proxy_split) > 1 else 80
 
-            return websocket.create_connection(url, timeout=10, **extra_headers)
+            return websocket.create_connection(url, timeout=10, **extra_options)
         except Exception as e:
             logger.error(f"[{__parser__}]:_connect: WebSocket connection error: {e}", extra={'frontend': str(self.frontend)})
             raise RetarusAPIError(f"Could not connect to API: {e}")
@@ -106,7 +106,7 @@ class RetarusParser(ApiParser):
                 if msg := ws.recv():
                     self.write_to_file([self.format_log(msg)])
 
-                if timezone.now() >= (self.current_time + datetime.timedelta(seconds=10)):
+                if timezone.now() >= (self.current_time + timedelta(seconds=10)):
                     self.update_lock()
             except websocket._exceptions.WebSocketTimeoutException:
                 self.update_lock()
@@ -115,5 +115,8 @@ class RetarusParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: Connection was closed, finalizing...", extra={'frontend': str(self.frontend)})
                 break
             except Exception as e:
-                logger.error(f"[{__parser__}]:execute: WebSocket recv error -> {e}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:execute: Unknown error -> {e}", extra={'frontend': str(self.frontend)})
                 raise RetarusAPIError(f"Unknown error: {e}")
+
+        ws.close()
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
