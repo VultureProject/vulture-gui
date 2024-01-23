@@ -110,7 +110,7 @@ class SentinelOneMobileParser(ApiParser):
             else:
                 break  # no error we break from the loop
 
-        if not response:
+        if not response or response.status_code != 200:
             msg = f"[{__parser__}]:execute_query: Error SentinelOne Mobile API Call URL: {url} [TIMEOUT]"
             raise SentinelOneMobileAPIError(msg)
 
