@@ -419,14 +419,23 @@ $(function() {
   }).trigger('change');
 
   $('#id_redis_mode').on('change', function(event) {
-    var redis_mode = $(this).val();
-
-    if (redis_mode === "queue") {
+    if ($(this).val() === "queue") {
       $('.redis-queue-mode').show();
+    }
+    else if ($(this).val() === "stream") {
+      $('.redis-stream-mode').show();
     }
     else {
       $('.redis-queue-mode').hide();
+      $('.redis-stream-mode').hide();
     }
+    $('#id_redis_stream_consumerGroup').trigger('change')
+  }).trigger('change');
+
+  $('#id_redis_stream_consumerGroup').on('change', function(e){
+    if ($(this).val() !== "" && $('#id_redis_mode').val() === "stream") {
+      $('.redis-consumer-group').show();
+    } else $('.redis-consumer-group').hide();
   }).trigger('change');
 
   /* Show logging options if logging enabled */

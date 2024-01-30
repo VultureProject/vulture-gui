@@ -35,9 +35,10 @@ from applications.logfwd.models import LogOM
 from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
-from services.frontend.models import (COMPRESSION_ALGO_CHOICES, Frontend, FrontendReputationContext, Listener,
-                                      LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES,
-                                      DARWIN_MODE_CHOICES, REDIS_MODE_CHOICES, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
+from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
+                                      LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
+                                      REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES, FILEBEAT_LISTENING_MODE,
+                                      FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
 
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress
@@ -298,8 +299,9 @@ class FrontendForm(ModelForm):
                   'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'ratelimit_interval', 'ratelimit_burst', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
-                  'nb_workers','mmdb_cache_size','redis_batch_size',
-                  'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
+                  'nb_workers','mmdb_cache_size','redis_batch_size', 'redis_mode', 'redis_use_lpop',
+                  'redis_server', 'redis_port', 'redis_key', 'redis_password', 'redis_stream_consumerGroup',
+                  'redis_stream_consumerName', 'redis_stream_startID', 'redis_stream_acknowledge', 'redis_stream_reclaim_timeout',
                   'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
                   'api_parser_custom_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
                   'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
@@ -393,6 +395,11 @@ class FrontendForm(ModelForm):
             'redis_port': TextInput(attrs={'class': 'form-control'}),
             'redis_key': TextInput(attrs={'class': 'form-control'}),
             'redis_password': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'redis_stream_consumerGroup': TextInput(attrs={'class': 'form-control'}),
+            'redis_stream_consumerName': TextInput(attrs={'class': 'form-control'}),
+            'redis_stream_startID': Select(choices=REDIS_STARTID_CHOICES, attrs={'class': 'form-control select2'}),
+            'redis_stream_acknowledge': CheckboxInput(attrs={'class': 'js-switch'}),
+            'redis_stream_reclaim_timeout': NumberInput(attrs={'class': 'form-control'}),
             'nb_workers': NumberInput(attrs={'class': 'form-control'}),
             'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
             'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
@@ -742,6 +749,14 @@ class FrontendForm(ModelForm):
                 self.add_error('redis_key', "This field is required.")
             if not cleaned_data.get('redis_mode'):
                 self.add_error('redis_mode', "This field is required.")
+            elif cleaned_data.get('redis_mode') == "stream":
+                if cleaned_data.get('redis_stream_consumerGroup'):
+                    if not cleaned_data.get('redis_stream_consumerName'):
+                        self.add_error('redis_stream_consumerName', "This field is required if Consumer Group is set.")
+                    if cleaned_data.get('redis_stream_startID') != ">":
+                        self.add_error('redis_stream_consumerName', "This field has to be \"Undelivered entries\" if Consumer Group is set.")
+                elif cleaned_data.get('redis_stream_startID') == ">":
+                    self.add_error('redis_stream_consumerName', "This field isn't permitted when Consumer Group unused.")
 
         """ If cache is enabled, cache_total_max_size and cache_max_age required """
         if cleaned_data.get('enable_cache'):

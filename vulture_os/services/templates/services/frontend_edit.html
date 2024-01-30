@@ -400,6 +400,61 @@
                           </div>
                         </div>
                       </div>
+                      <div class="row log-mode redis-mode redis-stream-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.redis_stream_startID.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.redis_stream_startID}}
+                              {{form.redis_stream_startID.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row log-mode redis-mode redis-stream-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.redis_stream_consumerGroup.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.redis_stream_consumerGroup}}
+                              {{form.redis_stream_consumerGroup.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row log-mode redis-mode redis-stream-mode redis-consumer-group">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.redis_stream_consumerName.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.redis_stream_consumerName}}
+                              {{form.redis_stream_consumerName.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row log-mode redis-mode redis-stream-mode redis-consumer-group">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.redis_stream_acknowledge.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.redis_stream_acknowledge}}
+                              {{form.redis_stream_acknowledge.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row log-mode redis-mode redis-stream-mode redis-consumer-group">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.redis_stream_reclaim_timeout.label }}</label>
+                            <div class="col-sm-5">
+                              {{form.redis_stream_reclaim_timeout}}
+                              {{form.redis_stream_reclaim_timeout.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       <div class="row log-mode">
                         <div class="col-md-12">
                           <div class="form-group">
