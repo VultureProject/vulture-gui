@@ -155,7 +155,7 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                 frontends = Frontend.objects.filter((
                         Q(enabled=True)
                     ) & (
-                        Q(listener__network_address__nic__node=node.pk) | Q(node=node.pk) | Q(listening_mode="api")
+                        Q(listener__network_address__nic__node=node.pk) | Q(node=node.pk) | Q(listening_mode__in=("api","file","redis","kafka"), node=None)
                     ) & (
                         Q(log_forwarders=log_om.id) | Q(log_forwarders_parse_failure=log_om.id)
                     )).distinct()
