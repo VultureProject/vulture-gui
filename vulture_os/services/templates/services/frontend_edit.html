@@ -282,6 +282,16 @@
                     <div class="row log-mode filebeat-mode redis-mode">
                       <div class="col-md-12">
                         <div class="form-group">
+                          <label class="col-sm-4 control-label">Use local Redis</label>
+                          <div class="col-sm-5">
+                            <input type="checkbox" name="redis_use_local" class="js-switch" id="id_redis_use_local">
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row log-mode -->
+                    <div class="row log-mode filebeat-mode redis-mode">
+                      <div class="col-md-12">
+                        <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.redis_server.label }}</label>
                           <div class="col-sm-5">
                             {{form.redis_server}}

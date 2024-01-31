@@ -438,6 +438,13 @@ $(function() {
     } else $('.redis-consumer-group').hide();
   }).trigger('change');
 
+  $('#id_redis_use_local').on('change', function(event) {
+    if ($(this).is(':checked')) {
+      $('#id_redis_server').val("127.0.0.5");
+      $('#id_redis_port').val(6379);
+    }
+  }).trigger('change');
+
   /* Show logging options if logging enabled */
   $('#id_enable_logging').on("change", function(e) {
     $('.log-mode-logging').hide();
