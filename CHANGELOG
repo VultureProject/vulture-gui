@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [SENTINEL_ONE_MOBILE] Fix try..except raises
 - [API_PARSER] [FORCEPOINT] Fix update lock to prevent multiprocess
 - [API_PARSER] [FORCEPOINT] Use a safer alternative to XML decoding
-- [WORKFLOW] Trigger build_conf on various change
+- [WORKFLOW] Trigger build_conf on various changes
 ### Changed
 - [API_PARSER] [VECTRA] Store current access token to avoid re-generating it every time
 
