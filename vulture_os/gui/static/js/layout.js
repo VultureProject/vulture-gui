@@ -114,6 +114,9 @@ process_queue_table = $('#table-process').dataTable({
           fnCallback(data);
       }
     })
+    .done( function( data ) {
+      processQueueResponse = true;
+    });
   },
   fnCreatedRow: function(nRow, aData, iDataIndex){
     /* Events binding to print a frontend conf */
@@ -135,11 +138,14 @@ process_queue_table = $('#table-process').dataTable({
   }
 });
 
-setInterval(function(){
-  if (!is_open)
+let processQueueResponse = true;
+function getQueue() {
+  if (!is_open && processQueueResponse == true) {
+    processQueueResponse = false;
     process_queue_table.fnDraw();
-}, 5000);
+  }
+}
 
-$('#reload_process_queue').on('click', function(){
-  process_queue_table.fnDraw();
-})
+setInterval(getQueue(), 5000);
+
+$('#reload_process_queue').on('click', getQueue())
