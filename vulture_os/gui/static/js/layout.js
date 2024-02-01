@@ -72,7 +72,7 @@ var aoColumns_process = [
   }
 ];
 
-var is_open = false;
+var datatableCanRedraw = true;
 
 var columns_task_table = [];
 for (var i in aoColumns_process){
@@ -124,22 +124,33 @@ process_queue_table = $('#table-process').dataTable({
         html += "</br><pre>" + aData['config'] + "</pre>"
 
       if (process_queue_table.fnIsOpen(nRow)){
+        // User closed a row details
         process_queue_table.fnClose(nRow);
-        is_open = false;
+        datatableCanRedraw = true;
       } else {
         process_queue_table.fnOpen(nRow, html, 'details');
-        is_open = true;
+        // User opened a row details
+        datatableCanRedraw = false;
       }
 
     });
-  }
+  }, // fnCreatedRow: function
+
+  fnDrawCallback: function(settings){
+    datatableCanRedraw = true;
+  }, // fnDrawCallback: function
+
 });
 
+function doRedrawDatatable() {
+  processQueueResponse = false;
+  process_queue_table.fnDraw();
+};
+
 setInterval(function(){
-  if (!is_open)
-    process_queue_table.fnDraw();
+  if(datatableCanRedraw == true) {
+    doRedrawDatatable();
+  }
 }, 5000);
 
-$('#reload_process_queue').on('click', function(){
-  process_queue_table.fnDraw();
-})
+$('#reload_process_queue').on('click', doRedrawDatatable());

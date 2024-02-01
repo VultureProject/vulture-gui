@@ -37,6 +37,8 @@
 
 {% block jquery_code %}
 
+  var datatableCanRedraw = true;
+
   var aoColumns = [
     {
       sTitle: "ID",
@@ -249,12 +251,20 @@
         $('#details_openvpn').hide();
         e.stopPropagation();
       });
-    }
+    }, // fnCreatedRow: function
+
+    fnDrawCallback: function(settings){
+      datatableCanRedraw = true;
+    }, // fnDrawCallback: function
+
   }); // var openvpn_table = $("#openvpn_list").dataTable
 
-  /* Reload table data every 5 seconds */
-  setInterval( function() {
-    openvpn_table.fnDraw(false);
+  /* Reload table data every 5 seconds if previous one answered */
+  setInterval(function(){
+    if(datatableCanRedraw == true) {
+      datatableCanRedraw = false;
+      openvpn_table.fnDraw(false);
+    }
   }, 5000);
 
 
