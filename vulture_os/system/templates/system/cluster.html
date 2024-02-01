@@ -109,10 +109,10 @@
       mData: "name",
       mRender: function(data, type, row) {
         buffer =  '';
-        if (row.is_master_mongo === true) {
+        if (row.mongo_state === "PRIMARY") {
             buffer = buffer + '<label class="label label-success">PRIMARY</label>&nbsp;&nbsp;<button class="btn btn-flat btn-xs btn-danger" id="stepdown" title="{% translate "Step Down" %}"><span><i class="fa fa-chevron-down"></i></span></button>';
         }
-        else if (row.is_master_mongo === false) {
+        else if (row.mongo_state === "SECONDARY") {
             buffer = buffer + '<label class="label label-warning">SECONDARY</label>';
         }
         else if (row.addresses) {
@@ -198,6 +198,9 @@
               fnCallback(data);
           }
         })
+        .done( function( data ) {
+          apiResponse = true;
+        });
       },
       fnCreatedRow: function(nRow, aData, iDataIndex){
 
@@ -222,9 +225,16 @@
                   fnCallback(data);
             }
           }).fail( function( jqXHR, textStatus ) {
-            $('#node_msg').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
-                                     "Status code : " + jqXHR.status + "</br>" +
-                                     "Message : " + jqXHR.statusText);
+            if (jqXHR.status == 400) {
+              $('#node_msg').html("<b style='color:green;'>{% translate 'API request succeed: '%}</b></br>" +
+                                      "Status code : " + 200 + "</br>" +
+                                      "Message : node " + id + " stepped down" );
+            }
+            else {
+              $('#node_msg').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
+                                      "Status code : " + jqXHR.status + "</br>" +
+                                      "Message : " + jqXHR.statusText);
+            }
           }).done( function( msg ) {
             $('#node_msg').html('<p>' + msg['message'] + '</p>')
           });
@@ -288,5 +298,13 @@
         });
       }
   });
+
+  let apiResponse = true;
+  setInterval( function() {
+    if(apiResponse == true) {
+      apiResponse = false;
+      cluster_table.fnDraw(false);
+    }
+  }, 10000);
 
 {% endblock %}

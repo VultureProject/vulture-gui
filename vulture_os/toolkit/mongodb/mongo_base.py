@@ -28,7 +28,6 @@ from pymongo.errors import OperationFailure
 from toolkit.network.network import get_hostname
 from django.conf import settings
 from re import search as re_search
-from time import sleep
 import subprocess
 import logging
 
@@ -384,9 +383,7 @@ class MongoBase:
         self.connect_primary()
         try:
             logger.info("MongoBase::replSetStepDown: calling replSetStepDown")
-            message = self.db.admin.command({"replSetStepDown": 60})
-            sleep(5)
-            return True, message
+            return True, self.db.admin.command({"replSetStepDown": 60})
         except Exception as e:
             logger.error("MongoBase::replSetStepDown: Error during mongoDB replSetStepDown: {}".format(str(e)))
             return False, str(e)
