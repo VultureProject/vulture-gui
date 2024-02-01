@@ -41,6 +41,8 @@
     $('[data-toggle="tooltip"]').tooltip();
   });
 
+  var datatableCanRedraw = true;
+
   var aoColumns = [
     {
       sTitle: "ID",
@@ -275,15 +277,38 @@
           $('#details_frontend').hide();
       }); // $(nRow).on('mouseover'
       */
-    } // fnCreatedRow: function
+    }, // fnCreatedRow: function
+
+    fnDrawCallback: function(settings){
+      datatableCanRedraw = true;
+    }, // fnDrawCallback: function
+
   }); // var frontends_table = $("#frontend_list").dataTable
 
+  /* Filter datatable only 1s after end of user input */
+  $(".dataTables_filter input")
+  .off("keyup.DT input.DT")
+  .bind("input", (delay(function (e) {
+    frontends_table.fnFilter($(".dataTables_filter input").val());
+  }, 1000)));
 
-  /* Reload table data every 5 seconds */
-  setInterval( function() {
-    frontends_table.fnDraw(false);
-  }, 5000);
+  function delay(callback, ms) {
+    var timer = 0;
+    return function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        callback.apply(this, arguments);
+      }, ms || 0);
+    };
+  }
 
+  /* Reload table data every 5 seconds if previous one answered */
+  setInterval(function(){
+    if(datatableCanRedraw == true) {
+      datatableCanRedraw = false;
+      frontends_table.fnDraw(false);
+    }
+  }, 5000)
 
   /* Listener to reload haproxy service on all nodes */
   $('#reload_all').on('click', function(event) {

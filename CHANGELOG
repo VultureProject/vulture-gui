@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Hot-disable a collector manually
 ### Changed
 - [FILEBEAT] Separate building configurations and restarting service
+- [GUI] Improve AJAX requests management
 
 
 ## [2.25.0] - 2025-04-30

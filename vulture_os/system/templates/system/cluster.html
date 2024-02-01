@@ -60,6 +60,8 @@
 
 {% block jquery_code %}
 
+  var datatableCanRedraw = true;
+
    var aoColumns = [
     {
       sTitle: "ID",
@@ -197,9 +199,6 @@
             if (check_json_error(data))
               fnCallback(data);
           }
-        })
-        .done( function( data ) {
-          apiResponse = true;
         });
       },
       fnCreatedRow: function(nRow, aData, iDataIndex){
@@ -278,15 +277,19 @@
           var id = aData['id'];
           window.location.href = "/system/cluster/edit/" + id;
         });
-      }
+      }, // fnCreatedRow: function
+
+      fnDrawCallback: function(settings){
+        datatableCanRedraw = true;
+      }, // fnDrawCallback: function
   });
 
-  let apiResponse = true;
-  setInterval( function() {
-    if(apiResponse == true) {
-      apiResponse = false;
+  /* Reload table data every 5 seconds if previous one answered */
+  setInterval(function(){
+    if(datatableCanRedraw == true) {
+      datatableCanRedraw = false;
       cluster_table.fnDraw(false);
     }
-  }, 10000);
+  }, 5000);
 
 {% endblock %}

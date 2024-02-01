@@ -13,7 +13,7 @@
 
 
 {% block content %}
-  
+
   <section class="content">
     <div class="row">
         <div class="col-md-12">
@@ -43,12 +43,14 @@
     $('[data-toggle="tooltip"]').tooltip();
   });
 
+  var datatableCanRedraw = true;
+
   var aoColumns = [
     {
       sTitle: "ID",
       name: "id",
       aTargets: [0],
-      defaultContent: "", 
+      defaultContent: "",
       mData: "id",
       bVisible: false,
     },
@@ -144,13 +146,20 @@
       /* Events binding to print a parser conf
 
       */
-    } // fnCreatedRow: function
+    }, // fnCreatedRow: function
+
+    fnDrawCallback: function(settings){
+      datatableCanRedraw = true;
+    }, // fnDrawCallback: function
+
   }); // var parser_table = $("#parser_list").dataTable
 
-
-  /* Reload table data every 5 seconds */
-  setInterval( function() {
-    parser_table.fnDraw(false);
+  /* Reload table data every 5 seconds if previous one answered */
+  setInterval(function(){
+    if(datatableCanRedraw == true) {
+      datatableCanRedraw = false;
+      parser_table.fnDraw(false);
+    }
   }, 5000);
 
 

@@ -37,6 +37,8 @@
     $('[data-toggle="tooltip"]').tooltip();
   });
 
+  var datatableCanRedraw = true;
+
   var aoColumns = [
     {
       sTitle: "ID",
@@ -125,12 +127,20 @@
         }
       }); // /$.done
     }, // /fnServerData
+
+    fnDrawCallback: function(settings){
+      datatableCanRedraw = true;
+    }, // fnDrawCallback: function
+
   }); // var otp_table = $("#otp_list").dataTable
 
 
-  /* Reload table data every 5 seconds */
-  setInterval( function() {
-    otp_table.fnDraw(false);
+  /* Reload table data every 5 seconds if previous one answered */
+  setInterval(function(){
+    if(datatableCanRedraw == true) {
+      datatableCanRedraw = false;
+      otp_table.fnDraw(false);
+    }
   }, 5000);
 
 

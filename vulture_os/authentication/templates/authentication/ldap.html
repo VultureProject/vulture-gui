@@ -40,6 +40,8 @@
     $('[data-toggle="tooltip"]').tooltip();
   });
 
+  var datatableCanRedraw = true;
+
   var aoColumns = [
     {
       sTitle: "ID",
@@ -143,13 +145,20 @@
           var id = aData['id'];
           window.location.href = "/authentication/ldap/edit/" + id;
       });
-    } // fnCreatedRow: function
+    }, // fnCreatedRow: function
+    
+    fnDrawCallback: function(settings){
+      datatableCanRedraw = true;
+    }, // fnDrawCallback: function
   }); // var ldap_table = $("#ldap_list").dataTable
 
 
-  /* Reload table data every 5 seconds */
-  setInterval( function() {
-    ldap_table.fnDraw(false);
+  /* Reload table data every 5 seconds if previous one answered */
+  setInterval(function(){
+    if(datatableCanRedraw == true) {
+      datatableCanRedraw = false;
+      ldap_table.fnDraw(false);
+    }
   }, 5000);
 
 

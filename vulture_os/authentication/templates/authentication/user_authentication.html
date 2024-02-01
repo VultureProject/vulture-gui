@@ -40,6 +40,8 @@
     $('[data-toggle="tooltip"]').tooltip();
   });
 
+  var datatableCanRedraw = true;
+
   var aoColumns = [
     {
       sTitle: "ID",
@@ -197,14 +199,36 @@
           var id = aData['id'];
           window.location.href = "{% url 'portal.user_authentication.edit' %}" + id;
       });
-    } // fnCreatedRow: function
+    }, // fnCreatedRow: function
+
+    fnDrawCallback: function(settings){
+      datatableCanRedraw = true;
+    }, // fnDrawCallback: function
   }); // var user_authentication_table = $("#user_authentication_list").dataTable
 
+  /* Filter datatable only 1s after end of user input */
+  $(".dataTables_filter input")
+  .off("keyup.DT input.DT")
+  .bind("input", (delay(function (e) {
+    user_authentication_table.fnFilter($(".dataTables_filter input").val());
+  }, 1000)));
 
-  /* Reload table data every 5 seconds
-  setInterval( function() {
-    user_authentication_table.fnDraw(false);
-  }, 5000);
-*/
+  function delay(callback, ms) {
+    var timer = 0;
+    return function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        callback.apply(this, arguments);
+      }, ms || 0);
+    };
+  }
+
+  /* Reload table data every 5 seconds if previous one answered */
+  setInterval(function(){
+    if(datatableCanRedraw == true) {
+      datatableCanRedraw = false;
+      user_authentication_table.fnDraw(false);
+    }
+  }, 5000)
 
 {% endblock %}
