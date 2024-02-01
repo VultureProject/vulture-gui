@@ -191,8 +191,8 @@
       bSort         : true,
       sAjaxSource   : '',
       sServerMethod : 'POST',
-      aoColumnDefs: aoColumns,
-      language: language_datatable,
+      aoColumnDefs  : aoColumns,
+      language      : language_datatable,
       fnServerData  : function(sSource, aoData, fnCallback){
 
         var columns = [];
@@ -225,6 +225,7 @@
           } else {
             fnCallback(data);
           }
+          apiResponse = true;
         }); // /$.done
       }, // /fnServerData
 
@@ -235,13 +236,36 @@
             var id = aData.id;
             window.location.href = "/workflow/edit/" + id;
         });
-      } 
-    });
+      }
+    }); // var workflow_table = $("#workflow_table").dataTable
+
+    /* Filter datatable only 1s after end of user input */
+    $(".dataTables_filter input")
+    .off("keyup.DT input.DT")
+    .bind("input", (delay(function (e) {
+      workflow_table.fnFilter($(".dataTables_filter input").val());
+      //$("#workflow_table").DataTable().search($(this).val()).draw(false); // for datatable 1.10
+    }, 1000)));
+
+    function delay(callback, ms) {
+      var timer = 0;
+      return function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          callback.apply(this, arguments);
+        }, ms || 0);
+      };
+    }
+
+    /* Reload table data every 5 seconds if previous one answered */
+    let apiResponse = true;
+    setInterval(function(){
+      if(apiResponse == true) {
+        apiResponse = false;
+        workflow_table.fnDraw(false);
+        //$("#workflow_table").DataTable().draw(false); // for datatable 1.10
+      }
+    }, 5000)
   });
-
-  setInterval(function(){
-    $("#workflow_table").DataTable().fnDraw(false)
-  }, 5000)
-
 
 {% endblock %}
