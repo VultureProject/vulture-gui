@@ -24,13 +24,12 @@ __doc__ = 'Sentinel One Mobile API Parser toolkit'
 __parser__ = 'SENTINEL ONE MOBILE'
 
 
-import datetime
 import time
 import requests
 import json
 import logging
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
@@ -51,6 +50,7 @@ class SentinelOneMobileParser(ApiParser):
         self.sentinel_one_mobile_host = data["sentinel_one_mobile_host"]
         if not self.sentinel_one_mobile_host.startswith('https://'):
             self.sentinel_one_mobile_host = f"https://{self.sentinel_one_mobile_host}"
+        self.sentinel_one_mobile_host = self.sentinel_one_mobile_host.rstrip("/")
 
         self.sentinel_one_mobile_apikey = data["sentinel_one_mobile_apikey"]
 
@@ -86,7 +86,7 @@ class SentinelOneMobileParser(ApiParser):
                     params=query,
                     headers=headers,
                     proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl,
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl,
                     timeout=timeout
                 )
 
@@ -94,25 +94,25 @@ class SentinelOneMobileParser(ApiParser):
                     raise requests.exceptions.HTTPError()
             except requests.exceptions.ReadTimeout:
                 msg = f"ReadTimeout, waiting {sleep_retry}s before retrying"
-                logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
+                logger.warning(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleep_retry)
                 continue
             except requests.exceptions.ConnectionError:
                 msg = f"ConnectionError, waiting {sleep_retry}s before retrying"
-                logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
+                logger.warning(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleep_retry)
                 continue
             except requests.exceptions.HTTPError:
                 msg = f"Status Code {response.status_code}, waiting {sleep_retry}s before retrying"
-                logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
+                logger.warning(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleep_retry)
                 continue
             else:
                 break  # no error we break from the loop
 
-        if response is None:
-            msg = f"[{__parser__}]:execute_query: Error Cybereason API Call URL: {url} [TIMEOUT]"
-            raise Exception(msg)
+        if not response or response.status_code != 200:
+            msg = f"[{__parser__}]:execute_query: Error SentinelOne Mobile API Call URL: {url} [TIMEOUT]"
+            raise SentinelOneMobileAPIError(msg)
 
         return response.json()
 
@@ -199,7 +199,6 @@ class SentinelOneMobileParser(ApiParser):
                         f"setting it to {self.frontend.last_api_call}",
                         extra={'frontend': str(self.frontend)})
 
-        logger.info(f"[{__parser__}]:execute: update last_api_call to {self.frontend.last_api_call}",
+        logger.debug(f"[{__parser__}]:execute: update last_api_call to {self.frontend.last_api_call}",
                     extra={'frontend': str(self.frontend)})
-
-        logger.info(f"[{__parser__}]:execute: ### End of collect ###\r\n", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})
