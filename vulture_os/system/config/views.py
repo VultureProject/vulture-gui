@@ -114,7 +114,7 @@ def config_edit(request, object_id=None, api=False, update=False):
         if "internal_tenants" in form.changed_data:
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
             Cluster.api_request("services.rsyslogd.rsyslog.restart_service")
-        if "portal_cookie_name" or "public_token" in form.changed_data:
+        if "portal_cookie_name" in form.changed_data or "public_token" in form.changed_data:
             # Reload Workflows with authentication : session checks must be updated with the new cookie's name/public token
             for workflow in Workflow.objects.filter(authentication__isnull=False):
                 for node in workflow.frontend.get_nodes():
