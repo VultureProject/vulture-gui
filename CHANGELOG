@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Fixed
 - [API_PARSER] [CSC_DOMAINMANAGER] Correct missing import...
+- [API_PARSER] [RETARUS] Fix update lock to prevent multiprocess
 
 
 ## [2.14.0] - 2024-01-10
