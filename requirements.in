@@ -13,7 +13,7 @@ authy
 pyotp
 qrcode
 captcha
-bs4
+beautifulsoup4
 robobrowser
 python-magic
 kerberos
