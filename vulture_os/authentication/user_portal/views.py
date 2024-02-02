@@ -27,31 +27,30 @@ __doc__ = 'LDAP Repository views'
 from django.conf import settings
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.http.response import HttpResponseNotFound
-from django.utils.translation import gettext_lazy as _
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 # Django project imports
-from gui.forms.form_utils import DivErrorList
+from authentication.openid.models import OpenIDRepository
+from authentication.user_portal.form import UserAuthenticationForm
+from authentication.user_portal.models import UserAuthentication
+from portal.system.sso_clients import SSOClient
+from system.cluster.models  import Cluster
+from system.pki.models import X509Certificate, PROTOCOLS_TO_INT
 from toolkit.api.responses import build_response
+from toolkit.http.utils import parse_html
+from toolkit.system.hashes import random_sha256
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from authentication.user_portal.form import UserAuthenticationForm
-from authentication.user_portal.models import UserAuthentication
-from system.cluster.models  import Cluster
-from system.pki.models import X509Certificate, PROTOCOLS_TO_INT
-from portal.system.sso_clients import SSOClient
-from toolkit.http.utils import parse_html
-from toolkit.system.hashes import random_sha256
-from authentication.openid.models import OpenIDRepository
+from gui.forms.form_utils import DivErrorList
 
 # Extern modules imports
-from json import loads as json_loads
 from traceback import format_exception
 from sys import exc_info
-import ssl
 from copy import deepcopy
+import ssl
 
 # Logger configuration imports
 import logging

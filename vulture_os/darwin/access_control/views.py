@@ -149,11 +149,10 @@ def access_control_edit(request, object_id=None, api=None):
 
                 nodes = set()
                 reload_all = False
-                for frontend in Frontend.objects.filter(
-                    workflow__workflowacl__access_control=ac,
-                    # This is still necessary, because Workflow ACLs can still be assigned to backends, but only via API...
-                    workflow__workflowacl__before_policy=True).distinct():
-                    nodes.update(frontend.reload_conf())
+                for workflow in Workflow.objects.filter(workflowacl__access_control=ac, workflowacl__before_policy=True).distinct():
+                    for node in workflow.frontend.get_nodes():
+                        node.api_request("workflow.workflow.build_conf", workflow.pk)
+                        nodes.add(node)
 
                 for backend in Backend.objects.filter(
                     workflow__workflowacl__access_control=ac,

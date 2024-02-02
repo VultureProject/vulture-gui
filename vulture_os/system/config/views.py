@@ -23,16 +23,23 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Config View'
 
 
+# Django system imports
 from django.http import HttpResponseRedirect, JsonResponse
-from django.utils.translation import gettext as _
-from gui.forms.form_utils import DivErrorList
-from services.frontend.models import Frontend
-from system.config.form import ConfigForm
-from system.config.models import write_conf
-from system.cluster.models import Cluster, Node
-from system.exceptions import VultureSystemConfigError
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.translation import gettext as _
+
+# Django project imports
+from authentication.user_portal.models import UserAuthentication
+from system.config.form import ConfigForm
+from system.cluster.models import Cluster, Node
+from workflow.models import Workflow
+
+# Required exceptions imports
+from gui.forms.form_utils import DivErrorList
+from system.exceptions import VultureSystemConfigError
+
+# Extern modules imports
 
 # Logger configuration imports
 import logging
@@ -107,10 +114,14 @@ def config_edit(request, object_id=None, api=False, update=False):
         if "internal_tenants" in form.changed_data:
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
             Cluster.api_request("services.rsyslogd.rsyslog.restart_service")
-        if "portal_cookie_name" in form.changed_data:
-            # Reload Frontends with authenticated Workflows: session checks must be updated with the new cookie's name
-            for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():
-                frontend.reload_conf()
+        if "portal_cookie_name" in form.changed_data or "public_token" in form.changed_data:
+            # Reload Workflows with authentication : session checks must be updated with the new cookie's name/public token
+            for workflow in Workflow.objects.filter(authentication__isnull=False):
+                for node in workflow.frontend.get_nodes():
+                    node.api_request("workflow.workflow.build_conf", workflow.pk)
+            for portal in UserAuthentication.objects.filter(enable_external=True):
+                portal.save_conf()
+            Cluster.api_request("services.haproxy.haproxy.reload_service")
         if "logs_ttl" in form.changed_data:
             res, mess = config_model.set_logs_ttl()
             if not res:

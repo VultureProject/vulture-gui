@@ -1241,13 +1241,6 @@ class Frontend(models.Model):
     apex_timestamp = models.JSONField(
         default={}
     )
-    
-    def reload_haproxy_conf(self):
-        for node in self.get_nodes():
-            api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
-            if not api_res.get('status'):
-                logger.error("Access_Control::edit: API error while trying to "
-                             "restart HAProxy service : {}".format(api_res.get('message')))
 
     @staticmethod
     def str_attrs():
@@ -1832,12 +1825,13 @@ class Frontend(models.Model):
 
     def reload_conf(self):
         """ Generate conf based on MongoDB data and save-it on concerned nodes
-         :return  A set of the updated nodes    or raise a ServiceError or SystemError
+         :return  A set of the updated nodes or raise a ServiceError or SystemError
          """
         nodes = set()
         for node in self.get_nodes():
-            node.api_request("services.haproxy.haproxy.build_conf", self.id)
-            # Add node to nodes, it's a set (unicity implicitly handled)
+            api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
+            if not api_res.get('status'):
+                logger.error(f"[FRONTEND] API error while trying to reload {self.name} conf : {api_res.get('message')}")
             nodes.add(node)
 
         return nodes
