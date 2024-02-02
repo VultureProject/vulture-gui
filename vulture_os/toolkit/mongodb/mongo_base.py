@@ -232,7 +232,11 @@ class MongoBase:
         return self.connect(self.get_primary())
 
     def repl_state(self):
-        return self.db.admin.command("replSetGetStatus")['members']
+        try:
+            return self.db.admin.command("replSetGetStatus")['members']
+        except Exception as e:
+            logger.error("repl_state: Error while getting MongoDB replication info: {}".format(str(e)), exc_info=1)
+            return ""
 
     def repl_initiate(self):
         """
