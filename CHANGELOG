@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WORKFLOW] Trigger build_conf on various changes
 - [GUI] [NODES] Wrong state of mongo replica when a node is down
 - [GUI] [NODES] Correctly print result when stepping down a Mongodb node
+- [LOG_FORWARDER] Reload related frontends of type "file", "redis" or "kafka" without any node selected
 ### Changed
 - [API_PARSER] [VECTRA] Store current access token to avoid re-generating it every time
 
