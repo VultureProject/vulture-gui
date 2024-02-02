@@ -165,6 +165,8 @@ class Node(models.Model):
             result['intfs'] = [n.to_dict() for n in NetworkInterfaceCard.objects.filter(node=self).exclude(dev__in=excluded_intf)]
         if not fields or "is_master_mongo" in fields:
             result['is_master_mongo'] = self.is_master_mongo
+        if not fields or "mongo_state" in fields:
+            result['mongo_state'] = self.mongo_state
         if not fields or "is_standalone" in fields:
             result['is_standalone'] = self.is_standalone
         if not fields or "is_configured" in fields:
@@ -236,6 +238,7 @@ class Node(models.Model):
             'addresses': addresses,
             'is_master_redis': self.is_master_redis,
             'is_master_mongo': self.is_master_mongo,
+            'mongo_state': self.mongo_state,
             'is_standalone': self.is_standalone
         }
 
@@ -275,6 +278,21 @@ class Node(models.Model):
             return False
 
         return None
+
+    @property
+    def mongo_state(self):
+        """
+        Check state of the current Node
+        :return: state returned by mongo
+        """
+        c = MongoBase()
+        ok = c.connect()
+        if ok:
+            members = c.repl_state()
+            for member in members:
+                if member['name'] == self.name + ':9091':
+                    return member.get('stateStr')
+        return "UNKNOWN"
 
     @property
     def is_master_redis(self):
