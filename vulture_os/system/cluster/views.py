@@ -65,6 +65,9 @@ def cluster_stepdown(request, object_id, api=False):
 
     status, message = c.repl_set_step_down()  # Automagically connect to the primary node
 
+    c = MongoBase()
+    c.connect()
+
     return JsonResponse({'status': status, 'message': message})
 
 

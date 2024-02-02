@@ -24,7 +24,7 @@ __doc__ = 'System Utils Database Toolkit'
 
 
 from pymongo import MongoClient, ReadPreference
-from pymongo.errors import OperationFailure
+from pymongo.errors import OperationFailure, AutoReconnect
 from toolkit.network.network import get_hostname
 from django.conf import settings
 from re import search as re_search
@@ -388,6 +388,8 @@ class MongoBase:
         try:
             logger.info("MongoBase::replSetStepDown: calling replSetStepDown")
             return True, self.db.admin.command({"replSetStepDown": 60})
+        except AutoReconnect:
+            return True, "Node stepped down"
         except Exception as e:
             logger.error("MongoBase::replSetStepDown: Error during mongoDB replSetStepDown: {}".format(str(e)))
             return False, str(e)

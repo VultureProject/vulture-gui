@@ -221,18 +221,12 @@
             type   : "GET",
             url    : url,
           }).fail( function( jqXHR, textStatus ) {
-            if (jqXHR.status == 400) {
-              $('#node_msg').html("<b style='color:green;'>{% translate 'API request succeed: '%}</b></br>" +
-                                      "Status code : " + 200 + "</br>" +
-                                      "Message : node " + id + " stepped down" );
-            }
-            else {
-              $('#node_msg').html("<b style='color:red;'>{% translate 'API request failure: '%}" + textStatus + "</b></br>" +
-                                      "Status code : " + jqXHR.status + "</br>" +
-                                      "Message : " + jqXHR.statusText);
-            }
+            $('#node_msg').html("<b style='color:red;'>{% translate 'Failure: '%}" + textStatus + "</b></br>" +
+                                    "Status code : " + jqXHR.status + "</br>" +
+                                    "Message : " + jqXHR.statusText);
           }).done( function( msg ) {
-            $('#node_msg').html('<p>' + msg['message'] + '</p>')
+            $('#node_msg').html("<b style='color:green;'>{% translate 'Success: '%}</b><br>" +
+                                      "node " + id + " stepped down" );
           });
         });
 
