@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CSC_DOMAINMANAGER] Correct missing import...
 - [API_PARSER] [RETARUS] Fix update lock to prevent multiprocess
 - [API_PARSER] [SENTINEL_ONE_MOBILE] Fix try..except raises
+- [API_PARSER] [FORCEPOINT] Fix update lock to prevent multiprocess
+- [API_PARSER] [FORCEPOINT] Use a safer alternative to XML decoding
 
 
 ## [2.14.0] - 2024-01-10
