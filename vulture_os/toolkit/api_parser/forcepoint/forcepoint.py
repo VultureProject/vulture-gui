@@ -86,7 +86,7 @@ class ForcepointParser(ApiParser):
     def test(self):
         try:
             url = f"{self.forcepoint_host}/siem/logs"
-            _ = self.get_logs(url)
+            self.get_logs(url)
             return {
                 "status": True,
                 "data": _('Success')
