@@ -61,7 +61,9 @@ def cluster_stepdown(request, object_id, api=False):
 
     # If the asked node is not primary, return error
     if c.get_primary() != node_model.name + ":9091":
-        return JsonResponse({'status': False, 'error': _("Cannot step down a non-primary node.")})
+        return JsonResponse({'status': False, 'error': _("Cannot step down a non-primary node.")}, status=400)
+    if Node.objects.count() < 2:
+        return JsonResponse({'status': False, 'error': _("Cannot step down a node outside a cluster")}, status=400)
 
     status, message = c.repl_set_step_down()  # Automagically connect to the primary node
 
