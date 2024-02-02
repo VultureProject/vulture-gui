@@ -29,7 +29,7 @@ from sys import maxsize as sys_maxsize
 import gzip
 import logging
 import requests
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 from django.conf import settings
 from django.utils import timezone
