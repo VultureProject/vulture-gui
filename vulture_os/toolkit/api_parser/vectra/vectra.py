@@ -24,6 +24,8 @@ __doc__ = 'VECTRA API'
 __parser__ = 'VECTRA'
 
 import logging
+import time
+
 import requests
 import json
 from copy import deepcopy
@@ -35,8 +37,10 @@ from toolkit.api_parser.api_parser import ApiParser
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
+
 class VectraAPIError(Exception):
     pass
+
 
 class VectraParser(ApiParser):
 
@@ -53,8 +57,6 @@ class VectraParser(ApiParser):
         self.vectra_client_id = data["vectra_client_id"]
         self.vectra_secret_key = data["vectra_secret_key"]
 
-        self.access_token = None
-        self.expire_at = None
         self.session = None
 
     def get_auth_token(self):
@@ -65,21 +67,27 @@ class VectraParser(ApiParser):
         try:
             res = requests.post(
                 url,
-                auth=(self.vectra_client_id , self.vectra_secret_key ),
+                auth=(self.vectra_client_id, self.vectra_secret_key),
                 data={"grant_type": "client_credentials"},
                 timeout=30,
-                headers = {"Content-Type": "application/x-www-form-urlencoded"},
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
                 proxies=self.proxies,
-                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
             )
-            if res.status_code == 401:
-                raise VectraAPIError(f"Status-code {res.status_code} Exception: Client ID or Client Secret is incorrect.")
+
             if res.status_code == 429:
-                raise VectraAPIError("Too many requests.")
+                raise VectraAPIError(f"Status-code {res.status_code} Exception: Too many requests.")
+            elif res.status_code == 401:
+                raise VectraAPIError(f"Status-code {res.status_code} Exception: Client ID or Client Secret is incorrect.")
+
             res.raise_for_status()
+
             logger.info(f"[{__parser__}]:get_auth_token: Access token generated.", extra={'frontend': str(self.frontend)})
 
-            return res.json().get("access_token"), res.json().get('expires_in')
+            results = res.json()
+            self.frontend.vectra_access_token = results.get("access_token")
+            self.frontend.vectra_expire_at = timezone.now() + timedelta(seconds=results.get('expires_in'))
+            self.frontend.save()
 
         except Exception as e:
             logger.error(f"[{__parser__}]:get_auth_token: An exception occurred: {e}", extra={'frontend': str(self.frontend)})
@@ -87,26 +95,21 @@ class VectraParser(ApiParser):
                 logger.error(f"[{__parser__}]:get_auth_token: response: {res.status_code}", extra={'frontend': str(self.frontend)})
             raise e
 
-
     def _connect(self):
         try:
             if self.session is None:
                 self.session = requests.Session()
 
                 headers = self.HEADERS
-
                 self.session.headers.update(headers)
 
             # Check for expiration with 10 seconds difference to be sure token will still be valid for some time
-            if not self.access_token or not self.expire_at or (self.expire_at - timedelta(seconds=10)) < timezone.now():
-                access_token, expires_in = self.get_auth_token()
-                self.access_token = access_token
-                self.expire_at = timezone.now() + timedelta(seconds=expires_in)
-                self.session.headers.update({"Authorization": f"Bearer {self.access_token}"})
+            if not self.frontend.vectra_access_token or not self.frontend.vectra_expire_at or (self.frontend.vectra_expire_at - timedelta(seconds=10)) < timezone.now():
+                self.get_auth_token()
+
+            self.session.headers.update({"Authorization": f"Bearer {self.frontend.vectra_access_token}"})
         except Exception as err:
             raise VectraAPIError(err)
-
-        return True
 
 
     def get_data_from_entity_api(self, query = {}):
@@ -140,9 +143,7 @@ class VectraParser(ApiParser):
         results.extend(self.get_data_from_entity_api(query))
         return results
 
-
     def __execute_query(self, query, endpoint, timeout=20):
-
         self._connect()
 
         url = self.vectra_host.strip('/') + '/' + endpoint.strip('/')
@@ -150,31 +151,33 @@ class VectraParser(ApiParser):
         msg = "URL : " + url + " Query : " + str(query)
         logger.info(f"[{__parser__}]:__execute_query: Request API : {msg}", extra={'frontend': str(self.frontend)})
 
-        response = self.session.get(
-            url,
-            params=query,
-            timeout=timeout,
-            proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+        for _ in range(2):
+            response = self.session.get(
+                url,
+                params=query,
+                timeout=timeout,
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
+            )
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                time.sleep(10)
+                continue
+
+        raise VectraAPIError(
+            f"Error at Vectra API Call URL: {url} Code: {response.status_code} Content: {response.content}, Headers: {self.session.headers}, Query: {query}"
         )
 
-        # Other error
-        if response.status_code != 200:
-            raise VectraAPIError(
-                f"Error at Vectra API Call URL: {url} Code: {response.status_code} Content: {response.content}, Headers: {self.session.headers}, Query: f{query}")
-
-        return response.json()
-
-
-    def format_log(self, log):
+    @staticmethod
+    def format_log(log):
         return json.dumps(log)
-
 
     def test(self):
         logger.info(f"[{__parser__}]:test: Launching test", extra={'frontend': str(self.frontend)})
 
         try:
-            self.expire_at = None
             since = timezone.now() - timedelta(hours=24)
             to = timezone.now()
             result = self.get_logs(since, to)
