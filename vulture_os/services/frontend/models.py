@@ -1424,6 +1424,8 @@ class Frontend(models.Model):
                     'id': w.pk,
                     'name': w.name,
                     'backend_name': w.backend.name,
+                    'timeout_connect': w.backend.timeout_connect,
+                    'timeout_server': w.backend.timeout_server,
                     'mode': w.mode,
                     'fqdn': w.fqdn,
                     'public_dir': w.public_dir,
