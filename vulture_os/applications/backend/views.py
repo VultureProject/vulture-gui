@@ -398,8 +398,10 @@ def backend_edit(request, object_id=None, api=False):
                     logger.debug("HTTP Headers {} associated to Frontend {}".format(header, backend))
 
             """ if the Backend is updated and its name was changed """
-            if not first_save and "name" in form.changed_data:
-                logger.info("Backend name changed, looking for associated frontends...")
+            if not first_save and ("name" in form.changed_data
+                                    or "timeout_connect" in form.changed_data
+                                    or "timeout_server" in form.changed_data):
+                logger.info("Backend changed, looking for associated frontends...")
                 workflow_list =  backend.workflow_set.all()
                 for workflow in workflow_list:
                     logger.info("reloading frontend '{}' haproxy configuration".format(workflow.frontend))
