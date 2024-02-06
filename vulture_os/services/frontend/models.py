@@ -1220,7 +1220,7 @@ class Frontend(models.Model):
     vectra_expire_at = models.DateTimeField(
         verbose_name=_("Vectra access token expire at"),
         help_text=_("Vectra access token expire at"),
-        default="",
+        default=timezone.now,
     )
     # Apex attributes
     apex_server_host = models.TextField(
