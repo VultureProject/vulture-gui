@@ -10,7 +10,7 @@
 
 
 {% block content %}
-  
+
   <section class="content">
     <div class="row">
         <div class="col-md-12">
@@ -48,7 +48,7 @@
       sTitle: "ID",
       name: "id",
       aTargets: [0],
-      defaultContent: "", 
+      defaultContent: "",
       mData: "id",
       bVisible: false,
     },
@@ -257,12 +257,24 @@
         e.stopPropagation();
       }); // /$(nRow).on('click', '.action'
 
-
       /* Events binding to edit a frontend */
-      $(nRow).on('click', function(e){
-          var id = aData['id'];
-          window.location.href = "/services/frontend/edit/" + id;
-      });
+      $(nRow).on('click', 'td', function(e) {
+        if (e.target.tagName !== "TD") return;
+        const url = "{% url 'services.frontend.edit' %}" + aData.id
+        /* Open a frontend edition in a new tab with ctrl click */
+        if (e.ctrlKey || e.metaKey) {
+          window.open(url, '_blank');
+        } else {
+          window.location.href = url;
+        }
+      }); // /$(nRow).on('click', 'td'
+
+      /* Open a frontend edition in a new tab with middle click */
+      $(nRow).on('mousedown', 'td', function(e){
+        if (e.target.tagName === "TD" && e.button === 1) {
+          window.open("{% url 'services.frontend.edit' %}" + aData.id, '_blank');
+        }
+      }); // /$(nRow).on('mousedown', 'td'
 
       /* Events binding to print a frontend conf
       $(nRow).on('mouseover', function(e) {

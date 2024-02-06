@@ -62,7 +62,7 @@
 
   var datatableCanRedraw = true;
 
-   var aoColumns = [
+  var aoColumns = [
     {
       sTitle: "ID",
       name: "id",
@@ -271,12 +271,24 @@
           });
         });
 
+        /* Events binding to edit a cluster */
+        $(nRow).on('click', 'td', function(e) {
+          if (e.target.tagName !== "TD") return;
+          const url = "/system/cluster/edit/" + aData.id
+          /* Open a cluster edition in a new tab with ctrl click */
+          if (e.ctrlKey || e.metaKey) {
+            window.open(url, '_blank');
+          } else {
+            window.location.href = url;
+          }
+        }); // /$(nRow).on('click', 'td'
 
-
-        $(nRow).on('click', function(e){
-          var id = aData['id'];
-          window.location.href = "/system/cluster/edit/" + id;
-        });
+        /* Open a cluster edition in a new tab with middle click */
+        $(nRow).on('mousedown', 'td', function(e){
+          if (e.target.tagName === "TD" && e.button === 1) {
+            window.open("/system/cluster/edit/" + aData.id, '_blank');
+          }
+        }); // /$(nRow).on('mousedown', 'td'
       }, // fnCreatedRow: function
 
       fnDrawCallback: function(settings){

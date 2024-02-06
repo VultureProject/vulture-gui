@@ -10,7 +10,7 @@
 
 
 {% block content %}
-  
+
   <section class="content">
     <div class="row">
         <div class="col-md-12">
@@ -145,11 +145,24 @@
         })
       },
       fnCreatedRow: function(nRow, aData, iDataIndex){
-        $(nRow).on('click', function(e){
-          var id = aData['id'];
-          var type = aData['type'];
-          window.location.href = "/apps/logfwd/edit/" + type + "/" + id;
-        });
+        /* Events binding to edit a logfwd */
+        $(nRow).on('click', 'td', function(e) {
+          if (e.target.tagName !== "TD") return;
+          const url = "/apps/logfwd/edit/" + aData.type + "/" + aData.id
+          /* Open a logfwd edition in a new tab with ctrl click */
+          if (e.ctrlKey || e.metaKey) {
+            window.open(url, '_blank');
+          } else {
+            window.location.href = url;
+          }
+        }); // /$(nRow).on('click', 'td'
+
+        /* Open a logfwd edition in a new tab with middle click */
+        $(nRow).on('mousedown', 'td', function(e){
+          if (e.target.tagName === "TD" && e.button === 1) {
+            window.open("/apps/logfwd/edit/" + aData.type + "/" + aData.id, '_blank');
+          }
+        }); // /$(nRow).on('mousedown', 'td'
       }
   });
 

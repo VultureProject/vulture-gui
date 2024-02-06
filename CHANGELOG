@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [GUI] Middle click to edit an object in a new tab
 ### Fixed
 - [PORTAL] [SELF_SERVICE] Disabled workflows listed
 - [MONGODB] Allow clusters with more than 7 nodes
