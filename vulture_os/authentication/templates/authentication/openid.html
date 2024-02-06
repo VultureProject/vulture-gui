@@ -142,11 +142,24 @@
 
     fnCreatedRow: function(nRow, aData, iDataIndex){
 
-      /* Events binding to edit a template */
-      $(nRow).find(".edit").on('click', function(e){
-          var id = aData['id'];
-          window.location.href = "{% url 'authentication.openid.edit' %}" + id;
-      });
+      /* Events binding to edit an openid profile */
+      $(nRow).find(".edit").on('click', function(e) {
+        if (e.target.tagName !== "TD") return;
+        const url = "{% url 'authentication.openid.edit' %}" + aData.id
+        /* Open an openid edition in a new tab with ctrl click */
+        if (e.ctrlKey || e.metaKey) {
+          window.open(url, '_blank');
+        } else {
+          window.location.href = url;
+        }
+      }); // /$(nRow).on('click', 'td'
+
+      /* Open an openid edition in a new tab with middle click */
+      $(nRow).find(".edit").on('mousedown', function(e){
+        if (e.target.tagName === "TD" && e.button === 1) {
+          window.open("{% url 'authentication.openid.edit' %}" + aData.id, '_blank');
+        }
+      }); // /$(nRow).on('mousedown', 'td'
 
       $(nRow).find('.btn-copy-callback-url').on('click', function(e) {
         e.stopPropagation();

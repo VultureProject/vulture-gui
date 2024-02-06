@@ -141,11 +141,23 @@
     }, // /fnServerData
 
     fnCreatedRow: function(nRow, aData, iDataIndex) {
-      $(nRow).on('click', function(e){
-        e.stopPropagation();
-        let id = aData['id'];
-        window.location.href = `/portal/authentication/acl/edit/${id}`
-      })
+      $(nRow).on('click', 'td', function(e) {
+        if (e.target.tagName !== "TD") return;
+        const url = "{% url 'portal.authentication_access_control.edit' %}" + aData.id
+        /* Open edition in a new tab with ctrl click */
+        if (e.ctrlKey || e.metaKey) {
+          window.open(url, '_blank');
+        } else {
+          window.location.href = url;
+        }
+      }); // /$(nRow).on('click', 'td'
+
+      /* Open edition in a new tab with middle click */
+      $(nRow).on('mousedown', 'td', function(e){
+        if (e.target.tagName === "TD" && e.button === 1) {
+          window.open("{% url 'portal.authentication_access_control.edit' %}" + aData.id, '_blank');
+        }
+      }); // /$(nRow).on('mousedown', 'td'
       
       $(nRow).find('.btn-clone').on('click', function(e) {
         e.stopPropagation();
