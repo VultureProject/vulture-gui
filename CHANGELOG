@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] Reload related frontends of type "file", "redis" or "kafka" without any node selected
 - [CLUSTER_CREATE] Correctly reset Admin user during cluster creation
 - [HAPROXY] Wrong backend timeout caused by the new intermediate backend
+- [WORKFLOW] Correctly update Haproxy's old Frontend configuration when a different one is choosen on a Workflow
 
 
 ## [2.14.0] - 2024-01-10

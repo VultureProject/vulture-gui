@@ -133,6 +133,7 @@ def save_workflow(request, workflow_obj, object_id=None):
     before_policy = True
     order = 1
     had_authentication = workflow_obj.authentication is not None
+    previous_frontend = workflow_obj.frontend
 
     try:
         # TODO replace by proper form validation and saving!
@@ -230,6 +231,11 @@ def save_workflow(request, workflow_obj, object_id=None):
         # THEN reload backend and frontend configurations
         workflow_obj.backend.reload_conf()
         workflow_obj.frontend.reload_conf()
+
+        # If Frontend changed, its configuration should also be updated
+        if previous_frontend and workflow_obj.frontend != previous_frontend:
+            previous_frontend.reload_conf()
+            nodes.update(previous_frontend.get_nodes())
 
         for node in nodes:
             # Finally, Reload HAProxy on concerned nodes
