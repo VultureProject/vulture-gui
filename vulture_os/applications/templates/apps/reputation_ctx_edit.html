@@ -395,6 +395,8 @@
           indexed_data[n['name']] = n['value'];
       });
       indexed_data['headers'] = get_headers();
+      indexed_data['db_type'] = $('#id_db_type').val();
+      indexed_data['method'] = $('#id_method').val();
       $.ajax({
         type   : "POST",
         url    : url,
