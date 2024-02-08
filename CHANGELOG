@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Redis stream support for input log
 ### Fixed
 - [FRONTEND] Allow skipping unresponsive nodes during HAProxy test_conf
+- [REPUTATION] Changed predator references to barricade
 
 
 ## [2.14.2] - Unreleased

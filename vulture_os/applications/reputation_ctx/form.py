@@ -76,10 +76,6 @@ class ReputationContextForm(ModelForm):
                 self.fields[field].widget.attrs['readonly'] = True
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
 
-    def clean_name(self):
-        """ HAProxy does not support space in frontend/listen name directive, replace them by _ """
-        return self.cleaned_data['name'].replace(' ', '_')
-
     def clean_tags(self):
         tags = self.cleaned_data.get('tags')
         if tags:
