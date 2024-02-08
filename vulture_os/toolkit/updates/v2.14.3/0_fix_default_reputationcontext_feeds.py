@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture 4.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Theo Bertin"
+__author__ = "Fabien Amelinck"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
@@ -47,7 +47,13 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            db, created = ReputationContext.objects.get_or_create(
+            try:
+                existing_wrong_name = ReputationContext.objects.get(name="Geolite2_Country")
+                existing_wrong_name.name = "Geolite2 Country"
+                existing_wrong_name.save()
+            except ReputationContext.DoesNotExist:
+                pass
+            db, created = ReputationContext.objects.update_or_create(
                 name="Geolite2 Country",
                 defaults={
                     "db_type": "GeoIP",
@@ -65,7 +71,14 @@ if __name__ == "__main__":
             if created:
                 print("GeoLite Country default feed created")
 
-            db, created = ReputationContext.objects.get_or_create(
+            try:
+                existing_wrong_name = ReputationContext.objects.get(name="Geolite2_City")
+                existing_wrong_name.name = "Geolite2 City"
+                existing_wrong_name.save()
+            except ReputationContext.DoesNotExist:
+                pass
+
+            db, created = ReputationContext.objects.update_or_create(
                 name="Geolite2 City",
                 defaults={
                     "db_type": "GeoIP",
