@@ -367,17 +367,18 @@ class LogOMElasticSearchForm(ModelForm):
 
     class Meta:
         model = LogOMElasticSearch
-        fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'data_stream_mode', 'index_pattern', 'uid', 'pwd',
+        fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'data_stream_mode', 'retry_on_els_failures', 'index_pattern', 'uid', 'pwd',
                   'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown',
                   'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry',
                   'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
+            'enabled': CheckboxInput(attrs={"class": "js-switch"}),
             'name': TextInput(attrs={'class': 'form-control'}),
             'servers': TextInput(attrs={'class': 'form-control'}),
-            'es8_compatibility': CheckboxInput(attrs={"class": " js-switch"}),
-            'data_stream_mode': CheckboxInput(attrs={"class": " js-switch"}),
+            'es8_compatibility': CheckboxInput(attrs={"class": "js-switch"}),
+            'data_stream_mode': CheckboxInput(attrs={"class": "js-switch"}),
+            'retry_on_els_failures': CheckboxInput(attrs={"class": "js-switch"}),
             'index_pattern': TextInput(attrs={'class': 'form-control'}),
             'uid': TextInput(attrs={'class': 'form-control'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
@@ -389,8 +390,8 @@ class LogOMElasticSearchForm(ModelForm):
             'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
             'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
             'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
+            'enable_retry': CheckboxInput(attrs={"class": "js-switch"}),
+            'enable_disk_assist': CheckboxInput(attrs={"class": "js-switch"}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
@@ -417,6 +418,8 @@ class LogOMElasticSearchForm(ModelForm):
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
+        if cleaned_data.get('retry_on_els_failures') == True and cleaned_data.get('data_stream_mode') == False:
+            self.add_error('retry_on_els_failures', "This field cannot be set if Stream Mode is disabled.")
         if cleaned_data.get('enable_disk_assist') == True:
             try:
                 assert cleaned_data.get('high_watermark'), "high_watermark"

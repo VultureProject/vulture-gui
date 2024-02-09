@@ -1,11 +1,32 @@
-    {%- if data_stream_mode %}
-    if $.generated_uuid == "" then {
+{%- if retry_on_els_failures %}
+ruleset(name="{{output_name}}_retry_failure") {
+    action(type="omfile" template="RSYSLOG_DebugFormat" file="/var/log/internal/{{output_name}}_error.log")
+}
+
+ruleset(name="{{output_name}}_retry") {
+    if strlen($.omes!status) > 0 then {
+        # retry case
+        if ($.omes!status == 200) or ($.omes!status == 201) or (($.omes!status == 409) and ($.omes!writeoperation == "create")) then {
+            stop # successful
+        }
+        if ($.omes!writeoperation == "unknown") or (strlen($.omes!error!type) == 0) or (strlen($.omes!error!reason) == 0) then {
+            call {{output_name}}_retry_failure
+            stop
+        }
+        if ($.omes!status == 400) or ($.omes!status < 200) then {
+            call {{output_name}}_retry_failure
+            stop
+        }
+        # else fall through to retry operation
+    }
+    if strlen($.omes!_id) > 0 then {
+        set $.generated_uuid = $.omes!_id;
+    } else {
         set $.generated_uuid = $uuid;
     }
-    {%- endif %}
 
     action(type="omelasticsearch"
-            name="{{output_name}}"
+            name="{{output_name}}_retry"
             server={{ servers }}
         {%- if es8_compatibility %}
             esVersion.major="8"
@@ -49,25 +70,19 @@
             queue.highWatermark="{{high_watermark}}"
             queue.lowWatermark="{{low_watermark}}"
             queue.spoolDirectory="/var/tmp"
-            queue.filename="{{output_name}}_disk-queue"
+            queue.filename="{{output_name}}_retry_disk-queue"
             queue.maxFileSize="{{max_file_size}}m"
             queue.maxDiskSpace="{{max_disk_space}}m"
             queue.checkpointInterval="128"
             queue.saveOnShutdown="on"
         {%- endif -%} {# if enable_disk_assist #}
     {%- endif -%} {# if enable_retry #}
-    {%- if data_stream_mode %}
             searchType=""
             bulkid="bulkid-template"
             dynbulkid="on"
             writeoperation="create"
-        {%- if retry_on_els_failures %}
             retryfailures="on"
             retryruleset="{{output_name}}_retry"
-        {%- else -%} {# if retry_on_els_failures #}
-            errorFile="/var/log/internal/{{output_name}}_error.log"
-        {%- endif -%}
-    {%- else -%} {# if data_stream_mode #}
-            errorFile="/var/log/internal/{{output_name}}_error.log"
-    {%- endif -%}
             )
+}
+{%- endif -%} {# if retry_on_els_failures #}
