@@ -451,11 +451,11 @@ def frontend_edit(request, object_id=None, api=False):
                     frontend.configuration[node.name] = frontend.generate_conf(listener_list=listeners,
                                                                            header_list=header_objs,
                                                                            node=node)
-                    frontend.test_conf(node.name)
                     if node.state == "UP":
+                        frontend.test_conf(node.name)
                         logger.info(f"FRONTEND::Edit: Configuration test ok on node {node.name}")
                     else:
-                        logger.warning(f"FRONTEND::Edit: Configuration test skipped on node {node.name}")
+                        logger.warning(f"FRONTEND::Edit: Configuration test skipped on node {node.name} (state {node.state})")
         except ServiceError as e:
             logger.exception(e)
             return render_form(frontend, save_error=[str(e), e.traceback])
