@@ -1536,18 +1536,19 @@ class Frontend(models.Model):
                 test_conf = test_conf.replace(f"backend Workflow_{workflow.pk}", f"backend {uuid4()}")
         if node_name != Cluster.get_current_node().name:
             try:
-                global_config = Cluster().get_global_config()
-                cluster_api_key = global_config.cluster_api_key
-                infos = post("https://{}:8000/api/services/frontend/test_conf/".format(node_name),
+                cluster_api_key = Cluster().get_global_config().cluster_api_key
+                infos = post(f"https://{node_name}:8000/api/services/frontend/test_conf/",
                              headers={'cluster-api-key': cluster_api_key},
                              data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
-                             verify=False, timeout=30).json()
+                             verify=X509Certificate.objects.get(name=node_name).ca_filename(), timeout=30).json()
             except Exception as e:
+                # Node may be unavailable for the moment
+                # Changes will be synced if node is up within 30 days
                 logger.error(e)
                 raise ServiceTestConfigError("on node '{}'\n Request failure.".format(node_name), "haproxy")
             if not infos.get('status'):
-                raise ServiceTestConfigError("on node '{}'\n{}".format(node_name, infos.get('error')), "haproxy",
-                                             traceback=infos.get('error_details'))
+                raise ServiceTestConfigError(f"on node '{node_name}'\n{infos.get('error')}", "haproxy",
+                                            traceback=infos.get('error_details'))
         else:
             # Replace name of frontend to prevent duplicate frontend while testing conf
             test_haproxy_conf(test_filename,
