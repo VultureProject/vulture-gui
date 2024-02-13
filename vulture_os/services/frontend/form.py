@@ -753,10 +753,8 @@ class FrontendForm(ModelForm):
                 if cleaned_data.get('redis_stream_consumerGroup'):
                     if not cleaned_data.get('redis_stream_consumerName'):
                         self.add_error('redis_stream_consumerName', "This field is required if Consumer Group is set.")
-                    if cleaned_data.get('redis_stream_startID') != ">":
-                        self.add_error('redis_stream_consumerName', "This field has to be \"Undelivered entries\" if Consumer Group is set.")
                 elif cleaned_data.get('redis_stream_startID') == ">":
-                    self.add_error('redis_stream_consumerName', "This field isn't permitted when Consumer Group unused.")
+                    self.add_error('redis_stream_startID', "Undelivered entries can only be set when a consumer group is declared.")
 
         """ If cache is enabled, cache_total_max_size and cache_max_age required """
         if cleaned_data.get('enable_cache'):
