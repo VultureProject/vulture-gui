@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
 __author__ = "Jérémie JOURDIN"
-__credits__ = ["Kevin GUILLEMOT"]
+__credits__ = ["Kevin GUILLEMOT", "Théo Bertin"]
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
@@ -39,84 +39,64 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('daemon')
 
-from system.cluster.models import Cluster
-from services.pf.pf import PFService
 from daemons.monitor import MonitorJob
-from services.exceptions import ServiceExit
+from daemons.tasks import TasksJob
 from signal import signal, SIGTERM, SIGINT
+from threading import Event
 
+SERVICE_SHUTDOWN = Event()
+JOB_DEFINITIONS = {
+    'tasks': {
+        'function': TasksJob,
+        'frequency': 5,
+    },
+    'monitor': {
+        'function': MonitorJob,
+        'frequency': 10,
+    }
+}
+RUNNING_JOBS = dict()
 
-def service_shutdown(signum, frame):
-    print('Caught signal %d' % signum)
-    raise ServiceExit
+def service_shutdown(signum, _):
+    logger.debug(f'Caught signal {signum}')
+    SERVICE_SHUTDOWN.set()
+    for jobname, job in RUNNING_JOBS.items():
+        logger.debug(f"asking {jobname} to stop...")
+        job.stop()
+
 
 
 """ This is for the cluster daemon process """
 if __name__ == '__main__':
-    """ Launch monitor job """
-    monitor_job = MonitorJob(10)
-    monitor_job.start()
+    """ Launch jobs """
+    SERVICE_SHUTDOWN.clear()
+    logger.info("Vultured started.")
+
+    for jobname, jobdef in JOB_DEFINITIONS.items():
+        logger.info(f"Vultured:: starting job {jobname}")
+        job = jobdef['function'](jobdef['frequency'], name=jobname)
+        job.start()
+        RUNNING_JOBS[jobname] = job
 
     signal(SIGTERM, service_shutdown)
     signal(SIGINT, service_shutdown)
 
-    error = False
-    this_node = None
+    while not SERVICE_SHUTDOWN.wait(5):
+        for jobname, job in RUNNING_JOBS.items():
+            if not job.is_alive():
+                logger.warning(f"Vultured:: job {jobname} crashed, relauching...")
+                try:
+                    jobdef = JOB_DEFINITIONS[jobname]
+                    job.join()
+                    job = jobdef['function'](jobdef['frequency'], name=jobname)
+                    job.start()
+                    RUNNING_JOBS[jobname] = job
+                except Exception as e:
+                    logger.error(f"Vultured:: Failed restarting job {jobname}!")
+                    continue
 
-    """ Continue as a daemon """
-    while True:
-        try:
-            """ May be False for pending new nodes """
-            if this_node:
-
-                # Process messages FIRST
-                """ Process inter-cluster messages """
-                this_node.process_messages()
-
-                if error:
-                    logger.info("Cluster::daemon: Recovered from previous failure")
-                    error = False
-            else:
-                this_node = Cluster.get_current_node()
-
-            time.sleep(5)
-
-        except ServiceExit as e:
-            """ Exiting asked """
-            logger.info("Cluster::daemon: Exit asked.")
-            break
-        except Exception as e:
-            # Try to log, in case of Mongodb failure
-            try:
-                logger.error("Cluster::daemon: General failure: {}".format(str(e)))
-            except ServiceExit:
-                """ Exiting asked """
-                print("Cluster::daemon: Exit asked.")
-                break
-            except Exception as e:
-                print("Cluster::daemon: General failure: {}".format(str(e)))
-
-            try:
-                pf = PFService()
-                stats = pf.get_rules()
-                # If PF enabled and 0 rules loaded
-                if len(stats) == 0:
-                    logger.info("Cluster::daemon: Loading pf rules")
-                    # Reload PF with conf file - in case of boot issue (e.g: domain in config file)
-                    pf.reload()
-            except ServiceExit:
-                print("Cluster::daemon: Exit asked.")
-                break
-            except Exception as e:
-                logger.error("Cluster::daemon: Failed to load PF rules : {}".format(str(e)))
-
-            time.sleep(5)
-            logger.info("Cluster::daemon: Trying to resume...")
-            error = True
-            this_node = None
-            continue
-
-    # Ask the jobs to terminate.
-    monitor_job.stop()
+    logger.info("Vultured stopping...")
+    for job in RUNNING_JOBS.values():
+        job.join()
 
     logger.info("Vultured stopped.")
