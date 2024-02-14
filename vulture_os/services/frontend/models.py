@@ -100,6 +100,13 @@ LISTENING_MODE_CHOICES = (
 REDIS_MODE_CHOICES = (
     ('queue', "Queue mode, using push/pop"),
     ('subscribe',"Channel mode, using pub/sub"),
+    ('stream',"Stream mode, using xread/xreadgroup"),
+)
+
+REDIS_STARTID_CHOICES = (
+    ('$',"New entries"),
+    ('-', "All entries"),
+    ('>',"Undelivered entries"),
 )
 
 DARWIN_MODE_CHOICES = (
@@ -473,6 +480,35 @@ class Frontend(models.Model):
         default="",
         help_text=_("Optional password to use via the 'AUTH' redis command when connecting to redis"),
         verbose_name=_("Redis password")
+    )
+    redis_stream_consumerGroup = models.TextField(
+        default="",
+        blank=True,
+        help_text=_("Redis stream consumer group"),
+        verbose_name=_("Redis stream consumer group")
+    )
+    redis_stream_consumerName = models.TextField(
+        default="",
+        blank=True,
+        help_text=_("Redis stream consumer name"),
+        verbose_name=_("Redis stream consumer name")
+    )
+    redis_stream_startID = models.TextField(
+        default=REDIS_STARTID_CHOICES[0][0],
+        choices=REDIS_STARTID_CHOICES,
+        help_text=_("Redis stream start choice"),
+        verbose_name=_("Redis stream start choice")
+    )
+    redis_stream_acknowledge = models.BooleanField(
+        default=True,
+        help_text=_("Acknowledge processed entries to Redis"),
+        verbose_name=_("Acknowledge processed entries")
+    )
+    redis_stream_reclaim_timeout = models.PositiveIntegerField(
+        default=0,
+        blank=True,
+        help_text=_("Automatically reclaim pending messages after X milliseconds"),
+        verbose_name=_("Reclaim pending messages (ms)")
     )
     """ Performance settings """
     nb_workers = models.PositiveIntegerField(
