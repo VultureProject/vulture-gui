@@ -473,6 +473,15 @@ class Node(models.Model):
 
         return result
 
+    def get_pending_messages(self, count=None):
+        try:
+            return MessageQueue.objects.filter(
+            node=self, status__in=[MessageQueue.MessageQueueStatus.NEW, MessageQueue.MessageQueueStatus.RUNNING]).order_by('modified')[0:count]
+
+        except Exception as e:
+            logger.error(f"Could not get list of pending messages: {str(e)}")
+            return []
+
     def process_messages(self):
         """
         Function called from Cluster daemon: read
@@ -488,7 +497,7 @@ class Node(models.Model):
                 message.action, message.config, message.node)
             )
 
-            message.status = 'running'
+            message.status = MessageQueue.MessageQueueStatus.RUNNING
             message.save()
 
             try:
@@ -503,18 +512,18 @@ class Node(models.Model):
                     args.append(message.config)
 
                 message.result = my_function(*args)
-                message.status = 'done'
+                message.status = MessageQueue.MessageQueueStatus.DONE
             except ServiceExit as e:
                 """ Service stop asked """
                 raise e
             except KeyError as e:
                 logger.exception(e)
                 message.result = "KeyError {}".format(str(e))
-                message.status = 'failure'
+                message.status = MessageQueue.MessageQueueStatus.FAILURE
             except Exception as e:
                 logger.exception(e)
                 logger.error("Cluster::process_messages: {}".format(str(e)))
-                message.status = 'failure'
+                message.status = MessageQueue.MessageQueueStatus.FAILURE
                 message.result = str(e)
 
             message.save()
@@ -681,15 +690,24 @@ class Cluster (models.Model):
             return {'status': True, 'message': '', 'instance': m}
 
 
-class MessageQueue (models.Model):
+class MessageQueue(models.Model):
     """
         Cluster Queue
     """
+
+    class MessageQueueStatus(models.TextChoices):
+        NEW = "new", _("New")
+        RUNNING = "running", _("Running")
+        DONE = "done", _("Done")
+        FAILURE = "failure", _("Failure")
+
     date_add = models.DateTimeField(default=timezone.now)
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
 
     # status of the action (new/running/done)
-    status = models.TextField(default='new')
+    status = models.TextField(
+        choices=MessageQueueStatus.choices,
+        default=MessageQueueStatus.NEW)
 
     result = models.TextField(default="")
 
@@ -721,6 +739,35 @@ class MessageQueue (models.Model):
         self.modified = timezone.now()
         return super().save(*args, **kwargs)
 
+
+    def execute(self):
+        self.status = MessageQueue.MessageQueueStatus.RUNNING
+        self.save()
+
+        try:
+            """ Big try in case of import or execution error """
+
+            # Call the function
+            my_function = import_string(self.action)
+            args = list()
+
+            args.append(logging.getLogger('daemon'))
+
+            if self.config:
+                args.append(self.config)
+
+            self.result = my_function(*args)
+            self.status = MessageQueue.MessageQueueStatus.DONE
+        except Exception as e:
+            logger.exception(e)
+            logger.error("MessageQueue::execute: {}".format(str(e)))
+            self.status = MessageQueue.MessageQueueStatus.FAILURE
+            self.result = str(e)
+
+        self.save()
+        return self.status, self.result
+
+
     def await_result(self, interval=2, tries=10):
         """
 
@@ -735,9 +782,9 @@ class MessageQueue (models.Model):
         try:
             for _ in range(0, tries):
                 message_instance = MessageQueue.objects.get(pk=self.id)
-                if message_instance.status == "done":
+                if message_instance.status == MessageQueue.MessageQueueStatus.DONE:
                     return True, message_instance.result
-                if message_instance.status == "failure":
+                if message_instance.status == MessageQueue.MessageQueueStatus.FAILURE:
                     return False, message_instance.result
                 time.sleep(interval)
 
