@@ -84,6 +84,11 @@ class ReputationContextForm(ModelForm):
 
     def clean(self, *args, **kwargs):
         cleaned_data = super().clean()
+        if self.instance.internal:
+            for field in ('name', 'description', 'db_type', 'method', 'url', 'verify_cert', 'post_data', 'auth_type', 'user',
+                  'password'):
+                self.cleaned_data.pop(field)
+
         if cleaned_data.get('auth_type') and not cleaned_data.get('user'):
             self.add_error('user', "At least User is required is any authentication method is selected.")
         return cleaned_data
