@@ -26,7 +26,7 @@ __doc__ = 'Frontends & Listeners dedicated form classes'
 import ast
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.forms import (CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
+from django.forms import (BooleanField, CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
                           ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
 from django.utils.translation import gettext_lazy as _
 
@@ -111,6 +111,13 @@ class FrontendForm(ModelForm):
     headers = NoValidationField()
     reputation_ctx = NoValidationField()
     keep_source_fields = NoValidationField()
+    redis_use_local = BooleanField(
+        widget=CheckboxInput(attrs={'class': 'js-switch'})
+    )
+
+    REDIS_DEFAULT_SERVER = '127.0.0.5'
+    REDIS_DEFAULT_PORT = 6379
+    REDIS_DEFAULT_PASSWORD = ''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -204,7 +211,7 @@ class FrontendForm(ModelForm):
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
-                           'nb_workers','mmdb_cache_size','redis_batch_size',
+                           'nb_workers','mmdb_cache_size','redis_batch_size', 'redis_use_local',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
                            'api_parser_verify_ssl', 'api_parser_custom_certificate',
@@ -286,6 +293,12 @@ class FrontendForm(ModelForm):
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
+
+        if  not self.instance or \
+            self.instance.redis_server == self.REDIS_DEFAULT_SERVER and \
+            self.instance.redis_port == self.REDIS_DEFAULT_PORT and \
+            self.instance.redis_password == self.REDIS_DEFAULT_PASSWORD:
+            self.fields['redis_use_local'].initial = True
 
     class Meta:
         model = Frontend
