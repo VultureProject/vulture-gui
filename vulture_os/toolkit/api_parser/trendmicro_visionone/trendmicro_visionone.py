@@ -65,12 +65,11 @@ class TrendmicroVisiononeParser(ApiParser):
         link = self.URL_BASE + url_path
         try:
             while True:
-                r = requests.get(link, params=query, headers=headers,
-                                 proxies=self.proxies, verify=self.api_parser_verify_ssl, timeout=timeout)
+                r = requests.get(link, params=query, headers=headers,proxies=self.proxies, verify=self.api_parser_verify_ssl, timeout=timeout)
                 if r.status_code != 200:
                     status = False
-                    raise TrendmicroVisionOneAPIError(
-                        f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
+                    logger.error(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
+                    raise TrendmicroVisionOneAPIError(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
 
                 items.extend(r.json()['items'])
 
@@ -119,7 +118,7 @@ class TrendmicroVisiononeParser(ApiParser):
         query = {
             'detectedStartDateTime': since,
             'detectedEndDateTime': to,
-            'top': 200
+            'top': 5000
         }
 
         oat, status = self.__execute_query(url_path, query, timeout=30)
@@ -134,16 +133,15 @@ class TrendmicroVisiononeParser(ApiParser):
         for kind in ["alerts", "oat", "audit"]:
 
             try:
-                since = getattr(self, f"trendmicro_visionone_{kind}_timestamp") or (timezone.now() - timedelta(days=2)) - timedelta(minutes=10)
-                to = min(timezone.now(), since + timedelta(minutes=5))
+                since = getattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp") or (timezone.now() - timedelta(days=2))
+                to = since + timedelta(minutes=1)
 
-                if to <= timezone.now() - timedelta(minutes=5):
-
-                    msg = f"Parser gets {kind} logs from {since} to {to}"
-                    logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                while to <= timezone.now() - timedelta(minutes=5):
+                    logger.info(f"[{__parser__}]:execute: Parser gets {kind} logs from {since} to {to}", extra={'frontend': str(self.frontend)})
                     start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
                     end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+                    self.update_lock()
                     if kind == "alerts":
                         logs, status = self._get_alerts(start_time, end_time)
                     elif kind == "audit":
@@ -151,15 +149,21 @@ class TrendmicroVisiononeParser(ApiParser):
                     elif kind == "oat":
                         logs, status = self._get_OAT(start_time, end_time)
 
-                    self.update_lock()
                     if status:
                         self.write_to_file([self._format_logs(log) for log in logs])
+                        self.update_lock()
                         setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to)
-                    self.frontend.save()
+                        since = to
+                        to += timedelta(minutes=1)
+                        self.frontend.save()
+                    else:
+                        break
+
+                else:
+                    logger.info(f"[{__parser__}]:execute: Delayed gathering by 5min for {kind}'s logs (last api call : {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')})", extra={'frontend': str(self.frontend)})
 
             except Exception as e:
-                msg = f"Failed on {kind} logs, between time of {since} and {to} : {e} "
-                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, between time of {since} and {to} : {e}", extra={'frontend': str(self.frontend)})
                 logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
@@ -168,12 +172,13 @@ class TrendmicroVisiononeParser(ApiParser):
         since = timezone.now() - timedelta(hours=24)
         to = timezone.now()
         start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+        start_time_oat = (since + timedelta(hours=23, minutes=59)).strftime("%Y-%m-%dT%H:%M:%SZ")
         end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         try:
-            alerts = self._get_alerts(start_time, end_time)
-            auditlogs = self._get_auditlogs(start_time, end_time)
-            detection_logs = self._get_OAT(since, to)
+            alerts, status = self._get_alerts(start_time, end_time)
+            auditlogs, status = self._get_auditlogs(start_time, end_time)
+            detection_logs, status = self._get_OAT(start_time_oat, end_time)
 
             return {
                 "status": True,
