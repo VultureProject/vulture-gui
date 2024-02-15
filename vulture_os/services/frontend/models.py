@@ -467,7 +467,7 @@ class Frontend(models.Model):
         verbose_name=_("Redis server to use")
     )
     redis_port = models.PositiveIntegerField(
-        default="6379",
+        default=6379,
         help_text=_("Default redis port is 6379"),
         verbose_name=_("Redis port to use")
     )

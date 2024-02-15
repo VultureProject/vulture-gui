@@ -40,4 +40,9 @@ class Migration(migrations.Migration):
             name='redis_mode',
             field=models.TextField(choices=[('queue', 'Queue mode, using push/pop'), ('subscribe', 'Channel mode, using pub/sub'), ('stream', 'Stream mode, using xread/xreadgroup')], default='queue', help_text="Redis comsumer mode - 'Queue' mode is recommended to avoid data loss", verbose_name='Redis consumer mode'),
         ),
+        migrations.AlterField(
+            model_name='frontend',
+            name='redis_port',
+            field=models.PositiveIntegerField(default=6379, help_text='Default redis port is 6379', verbose_name='Redis port to use'),
+        ),
     ]
