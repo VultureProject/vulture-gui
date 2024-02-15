@@ -233,13 +233,22 @@ def set_password(logger, passwords=("","")):
         redis_password, old_redis_password = literal_eval(passwords)
     else:
         redis_password, old_redis_password = passwords
-    redis = RedisBase(password=old_redis_password)
+    try:
+        redis = RedisBase(password=old_redis_password)
+        redis.redis.ping()
+    except Exception as e:
+        raise RedisError(f"Cannot connect to Redis: {e}")
+    try:
+        sentinel = RedisBase(get_management_ip(), 26379)
+        sentinel.redis.ping()
+    except Exception as e:
+        raise RedisError(f"Cannot connect to Redis Sentinel: {e}")
+
     result = redis.set_password(redis_password)
     if not result:
         logger.error("Unable to set Redis password")
         raise RedisError("Unable to set Redis password")
 
-    sentinel = RedisBase(get_management_ip(), 26379)
     result = sentinel.sentinel_set_cluster_password(redis_password)
     if not result:
         logger.error("Unable to set Redis password in Sentinel")
