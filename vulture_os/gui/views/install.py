@@ -36,6 +36,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.system.secret_key import set_key
 from toolkit.system.rc import get_rc_config
+from redis import AuthenticationError, ResponseError
 import logging
 import requests
 import subprocess
@@ -137,11 +138,16 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Generate random API Key for cluster management and NMAP """
     """ Config object can not exists yet """
     system_config = cluster.get_global_config()
-    system_config.cluster_api_key = get_random_string(
-        16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,+')
-    system_config.portal_cookie_name = get_random_string(
-        8, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
-    system_config.public_token = get_random_string(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    if not system_config.cluster_api_key:
+        system_config.cluster_api_key = get_random_string(
+            32, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,+')
+    if not system_config.portal_cookie_name:
+        system_config.portal_cookie_name = get_random_string(
+            8, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    if not system_config.public_token:
+        system_config.public_token = get_random_string(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    if not system_config.redis_password:
+        system_config.redis_password = get_random_string(64, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
     system_config.set_logs_ttl()
     system_config.save()
 
@@ -159,14 +165,24 @@ def cluster_create(admin_user=None, admin_password=None):
         user.save()
 
     time.sleep(5)
-    """ Tell local sentinel to monitor local redis server """
-    c = RedisBase(get_management_ip(), 26379)
+    """ Set local redis server password """
     try:
-        # It may fail if Redis / Sentinel is already configured
-        c.sentinel_monitor()
-    except Exception as e:
-        logger.error("Install::Sentinel monitor: Error: ")
-        logger.exception(e)
+        redis = RedisBase(get_management_ip(), 6379)
+        redis.redis.ping()
+    except AuthenticationError as e:
+        redis = RedisBase(get_management_ip(), 6379, password=system_config.redis_password)
+    finally:
+        redis.set_password(system_config.redis_password)
+
+    """ Tell local sentinel to monitor local redis server """
+    sentinel = RedisBase(get_management_ip(), 26379)
+    try:
+        # It may fail if Sentinel is already configured
+        sentinel.sentinel_monitor()
+    except ResponseError:
+        logger.info(f"Install::Sentinel monitor: Monitoring cluster already configured")
+    sentinel.sentinel_set_announce_ip()
+    sentinel.sentinel_set_cluster_password(system_config.redis_password)
 
     """ Update uri of internal Log Forwarder """
     logfwd = LogOMMongoDB.objects.get()
@@ -235,7 +251,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             logger.info('Nodes not at the same date. Please sync with NTP Server')
             print('Nodes not at the same date. Please sync with NTP Server')
             return False
-        
+
         logger.info("[-] OK!")
 
     except Exception as e:
@@ -341,8 +357,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         infos = requests.post(
             "https://{}:8000/api/system/cluster/add/".format(master_ip),
             headers={'Cluster-api-key': secret_key},
-            # TODO will need to replace 'slave_ip' and 'slave_name' by 'ip' and 'name' resp.
-            data={'slave_ip': get_management_ip(), 'slave_name': get_hostname()},
+            data={'ip': get_management_ip(), 'name': get_hostname()},
             verify=False
         )
 
@@ -356,31 +371,6 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     except Exception:
         logger.error("Error at API Call on /system/cluster/add/ Response code: {}".format(infos.status_code))
-        return False
-
-    try:
-        """ Join our redis server to the redis master """
-        logger.info("[+] Making local Redis join the existing cluster")
-        c = RedisBase()
-        redis_master_node = None
-        retries = 0
-        while not redis_master_node and retries < 5:
-            logger.info("Getting current redis master from main node...")
-            redis_master_node = c.get_master(master_ip)
-            if not redis_master_node:
-                time.sleep(5)
-
-        logger.info(f"Current Redis master is {redis_master_node}, linking local redis to it")
-        c.replica_of(redis_master_node, 6379)
-
-        """ Tell local sentinel to monitor local redis server """
-        c = RedisBase(get_management_ip(), 26379)
-        c.sentinel_monitor(node=redis_master_node)
-
-        logger.info("[-] Ok!")
-
-    except Exception as e:
-        logger.error(f"Could not synchronize Redis instances: {e}")
         return False
 
     """ Sleep a few seconds in order for the replication to occur """

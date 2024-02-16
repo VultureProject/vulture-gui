@@ -83,7 +83,7 @@ class ApiParser:
             else:
                 self.proxies = self.get_system_proxy()
 
-        self.redis_cli = RedisBase()
+        self.redis_cli = RedisBase(password=config.redis_password)
 
         assert self.connect(), "Failed to connect to Rsyslog"
 

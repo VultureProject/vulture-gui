@@ -207,7 +207,6 @@ def monitor():
         # If there is no VPNSSL conf on that node, pass
         pass
     else:
-
         openvpn.tunnels_status = get_ssl_tunnels_stats()
         openvpn.status = openvpn_status.status
         openvpn.save()

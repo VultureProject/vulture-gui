@@ -302,7 +302,7 @@ class Node(models.Model):
         """
 
         if self.management_ip:
-            c = RedisBase()
+            c = RedisBase(password=Cluster.get_global_config().redis_password)
             master_node = c.get_master(self.name)
             if master_node == self.name:
                 return True
@@ -550,7 +550,7 @@ class Node(models.Model):
         return self._vstate
 
 
-class Cluster (models.Model):
+class Cluster(models.Model):
     """
     Vulture Cluster class.
 
@@ -586,7 +586,7 @@ class Cluster (models.Model):
 
         return global_config
 
-
+    @staticmethod
     def await_api_request(action, config=None, node=None, internal=False, interval=2, tries=10):
         """
         Call the usual api_request(), but wait for some time for a result before returning
@@ -630,7 +630,6 @@ class Cluster (models.Model):
                 })
 
             return status, results
-
 
     @staticmethod
     def api_request(action, config=None, node=None, internal=False):
