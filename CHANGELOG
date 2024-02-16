@@ -8,11 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - [FRONTEND] Redis stream support for input log
+- [FRONTEND] Allow to simply use local Redis without worrying about parameters when creating a Redis Listener
 - [REDIS] Password support for local redis
 - [REDIS] New api function set_password and set_replica_of
 ### Changed
 - [CLUSTER] Evolve daemon's code to allow correctly handling tasks during service shutdowns
 - [API] Increase API key length for new clusters from 16 to 32 characters
+- [INSTALL] Improve and stabilize the Redis bootstrapping process
+- [CONFIG] [API] Remove the object ID from the API: there is only one configuration object!
 ### Fixed
 - [FRONTEND] Allow skipping unresponsive nodes during HAProxy test_conf
 - [REPUTATION] Changed predator references to barricade
