@@ -138,12 +138,16 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Generate random API Key for cluster management and NMAP """
     """ Config object can not exists yet """
     system_config = cluster.get_global_config()
-    system_config.cluster_api_key = get_random_string(
-        32, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,+')
-    system_config.portal_cookie_name = get_random_string(
-        8, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
-    system_config.public_token = get_random_string(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
-    system_config.redis_password = get_random_string(64, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    if not system_config.cluster_api_key:
+        system_config.cluster_api_key = get_random_string(
+            32, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,+')
+    if not system_config.portal_cookie_name:
+        system_config.portal_cookie_name = get_random_string(
+            8, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    if not system_config.public_token:
+        system_config.public_token = get_random_string(16, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    if not system_config.redis_password:
+        system_config.redis_password = get_random_string(64, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
     system_config.set_logs_ttl()
     system_config.save()
 
