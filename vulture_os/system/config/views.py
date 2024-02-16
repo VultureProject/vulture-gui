@@ -71,7 +71,7 @@ def build_response_config(module_url, command_list):
         result[command] = {
             'rel': 'self', 'type': "POST", 'name': command,
             'href': reverse(module_url, kwargs={
-                'object_id': str(id), 'action': command,
+                'action': command,
             })
         }
 
