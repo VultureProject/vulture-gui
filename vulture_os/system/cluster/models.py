@@ -31,6 +31,7 @@ from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
 
 from django.db.models import Q
+from django.db.utils import DatabaseError
 from django.utils.translation import gettext as _
 from django.utils.module_loading import import_string
 from django.utils import timezone
@@ -575,7 +576,11 @@ class Cluster(models.Model):
 
     @staticmethod
     def is_node_bootstrapped():
-        return True if Cluster.get_current_node() else False
+        try:
+            return True if Cluster.get_current_node() else False
+        except DatabaseError as e:
+            logger.error(f"Cluster:is_node_bootstrapped: MongoDB error: {e}")
+            return False
 
     @staticmethod
     def get_global_config():
