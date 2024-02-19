@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 
-## [2.14.2] - Unreleased
+## [2.14.2] - 2024-02-19
 ### Changed
 - [API_PARSER] [VECTRA] Store current access token to avoid re-generating it every time
 - [DEPENDENCIES] Python dependencies upgrade
