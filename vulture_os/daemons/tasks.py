@@ -38,14 +38,6 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('daemon')
 
 
-def execute_tasks(node, count=1):
-    tasks = node.get_pending_messages(count=count)
-
-    for task in tasks:
-        status, result = task.execute()
-        logger.debug(f"TaskJob::execute_tasks: task {task.action} results are ({status}, '{result}')")
-
-
 class TasksJob(Thread):
 
     def __init__(self, delay, **kwargs):
@@ -67,7 +59,12 @@ class TasksJob(Thread):
                     logger.error(f"Cluster::tasks: Could not get local Node configuration")
                     continue
             try:
-                execute_tasks(node)
+                tasks = node.get_pending_messages(count=1)
+                while not self.shutdown_flag.is_set() and tasks:
+                    for task in tasks:
+                        status, result = task.execute()
+                        logger.debug(f"TaskJob::execute_tasks: task {task.action} results are ({status}, '{result}')")
+                    tasks = node.get_pending_messages(count=1)
             except Exception as e:
                 logger.exception("Tasks job failure: {}".format(e))
                 logger.info("Resuming ...")
