@@ -275,7 +275,6 @@ $(function() {
       $('.kafka-mode').hide();
       // ALWAYS put show at last
       $('.redis-mode').show();
-      refresh_redis_local_use();
     } else {
       $('.file-mode').hide();
       $('.api-mode').hide();
@@ -289,6 +288,8 @@ $(function() {
     if (mode === "filebeat") {
       $('.filebeat-mode.redis-mode').show();
     }
+
+    refresh_redis_local_use();
   }
 
   /* Show rsyslog only fields, or hide them */
