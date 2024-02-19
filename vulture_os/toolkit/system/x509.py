@@ -69,8 +69,8 @@ def mk_cert_valid(builder: x509.CertificateBuilder, start: datetime = datetime.n
     """
     if not start.tzinfo:
         start = start.replace(tzinfo=timezone.utc)
-    builder = builder.not_valid_before(start)
-    builder = builder.not_valid_after(start + timedelta(days=days))
+    builder = builder.not_valid_before_utc(start)
+    builder = builder.not_valid_after_utc(start + timedelta(days=days))
 
     return builder
 
