@@ -34,8 +34,8 @@ logger = logging.getLogger('debug')
 class RedisBase:
 
     def __init__(self, node=None, port=None, password=None):
-        self.port = port
         self.node = node
+        self.port = port
         self.password = password
         self.db = '/var/sockets/redis/redis.sock'
         self._redis_client = None
