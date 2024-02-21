@@ -21,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [REPUTATION] Changed predator references to barricade
 - [REPUTATION_CTX] Ensure internally defined DBs cannot be modified
 - [SYSTEM] [PKI] Fix wrong ca.key after cluster_join
-- [SYSTEM] [PKI] Cryptography deprecated methods
 
 
 ## [2.14.2] - 2024-02-19
