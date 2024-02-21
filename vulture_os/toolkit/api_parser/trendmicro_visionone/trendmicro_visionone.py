@@ -136,7 +136,7 @@ class TrendmicroVisiononeParser(ApiParser):
                 since = getattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp") or (timezone.now() - timedelta(days=2))
                 to = since + timedelta(minutes=1)
 
-                while to <= timezone.now() - timedelta(minutes=5):
+                while to <= timezone.now() - timedelta(minutes=5) and not self.evt_stop.is_set():
                     logger.info(f"[{__parser__}]:execute: Parser gets {kind} logs from {since} to {to}", extra={'frontend': str(self.frontend)})
                     start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
                     end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -160,7 +160,7 @@ class TrendmicroVisiononeParser(ApiParser):
                         break
 
                 else:
-                    logger.info(f"[{__parser__}]:execute: Delayed gathering by 5min for {kind}'s logs (last api call : {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')})", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}]:execute: Log collection for {kind}'s logs stopped at {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')}", extra={'frontend': str(self.frontend)})
 
             except Exception as e:
                 logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, between time of {since} and {to} : {e}", extra={'frontend': str(self.frontend)})
@@ -177,11 +177,13 @@ class TrendmicroVisiononeParser(ApiParser):
 
         try:
             alerts, status = self._get_alerts(start_time, end_time)
-            auditlogs, status = self._get_auditlogs(start_time, end_time)
-            detection_logs, status = self._get_OAT(start_time_oat, end_time)
+            if status:
+                auditlogs, status = self._get_auditlogs(start_time, end_time)
+            if status:
+                detection_logs, status = self._get_OAT(start_time_oat, end_time)
 
             return {
-                "status": True,
+                "status": status,
                 "data": ([self._format_logs(log) for log in alerts] + [self._format_logs(log) for log in auditlogs] + [self._format_logs(log) for log in detection_logs])
             }
         except Exception as e:
