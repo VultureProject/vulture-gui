@@ -29,7 +29,7 @@ from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, 
 
 # Django project imports
 from applications.logfwd.models import (LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA,
-                                        OMFWD_PROTOCOL)
+                                        OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES)
 from system.pki.models import X509Certificate
 
 # Required exceptions imports
@@ -201,19 +201,25 @@ class LogOMHIREDISForm(ModelForm):
 
     class Meta:
         model = LogOMHIREDIS
-        fields = ('name', 'enabled', 'target', 'port', 'key', 'dynamic_key', 'pwd', 'send_as_raw',
+        fields = ('name', 'enabled', 'target', 'port', 'mode', 'key', 'dynamic_key', 'pwd', 'use_rpush',
+                  'expire_key', 'stream_outfield', 'stream_capacitylimit', 'send_as_raw',
                   'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
                   'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
                   'max_file_size', 'max_disk_space')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
+            'enabled': CheckboxInput(attrs={'class': 'js-switch'}),
             'name': TextInput(attrs={'class': 'form-control'}),
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
+            'mode': Select(choices=OMHIREDIS_MODE_CHOICES, attrs={'class': 'form-control select2'}),
             'key': TextInput(attrs={'class': 'form-control'}),
-            'dynamic_key': CheckboxInput(attrs={'class': ' js-switch'}),
+            'dynamic_key': CheckboxInput(attrs={'class': 'js-switch'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
+            'use_rpush': CheckboxInput(attrs={'class': 'js-switch'}),
+            'expire_key': NumberInput(attrs={'class': 'form-control'}),
+            'stream_outfield': TextInput(attrs={'class': 'form-control'}),
+            'stream_capacitylimit': NumberInput(attrs={'class': 'form-control'}),
             'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
@@ -221,8 +227,8 @@ class LogOMHIREDISForm(ModelForm):
             'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
             'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
             'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
+            'enable_retry': CheckboxInput(attrs={'class': 'js-switch'}),
+            'enable_disk_assist': CheckboxInput(attrs={'class': 'js-switch'}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),

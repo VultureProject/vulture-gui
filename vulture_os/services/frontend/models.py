@@ -99,8 +99,8 @@ LISTENING_MODE_CHOICES = (
 
 REDIS_MODE_CHOICES = (
     ('queue', "Queue mode, using push/pop"),
-    ('subscribe',"Channel mode, using pub/sub"),
-    ('stream',"Stream mode, using xread/xreadgroup"),
+    ('subscribe', "Channel mode, using pub/sub"),
+    ('stream', "Stream mode, using xread/xreadgroup"),
 )
 
 REDIS_STARTID_CHOICES = (
@@ -451,7 +451,7 @@ class Frontend(models.Model):
     )
     """ Redis attributes """
     redis_mode = models.TextField(
-        default="queue",
+        default=REDIS_MODE_CHOICES[0][0],
         choices=REDIS_MODE_CHOICES,
         help_text=_("Redis comsumer mode - 'Queue' mode is recommended to avoid data loss"),
         verbose_name=_("Redis consumer mode")

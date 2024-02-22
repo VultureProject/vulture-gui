@@ -100,6 +100,17 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.mode.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.mode}}
+                      {{form.mode.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
                     <label class="col-sm-4 control-label">{% translate "Key" %}</label>
                     <div class="col-sm-5">
                       {{form.key}}
@@ -126,6 +137,50 @@
                     <div class="col-sm-5">
                       {{form.pwd}}
                       {{form.pwd.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row queue-mode">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.use_rpush.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.use_rpush}}
+                      {{form.use_rpush.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row set-mode">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.expire_key.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.expire_key}}
+                      {{form.expire_key.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row stream-mode">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.stream_outfield.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.stream_outfield}}
+                      {{form.stream_outfield.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row stream-mode">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.stream_capacitylimit.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.stream_capacitylimit}}
+                      {{form.stream_capacitylimit.errors|safe}}
                     </div>
                   </div>
                 </div>
@@ -329,16 +384,11 @@
 
     /* Show fields depending on chosen mode */
     $('#id_mode').on('change', function(event) {
-      var value = $(this).val();
-      $('.http-mode').hide();
-      $('.tcp-mode').hide();
-      $('.'+value+'-mode').show();
-    });
-    $('#id_mode').trigger('change');
-
-    $("#id_fqdns").tagEditor({
-      delimiter: ' '
-    });
+      $('.queue-mode').hide();
+      $('.set-mode').hide();
+      $('.stream-mode').hide();
+      $('.'+$(this).val()+'-mode').show();
+    }).trigger('change');
 
     $('#id_enable_retry').on('change', function(e){
       if ($(this).is(':checked')) {
