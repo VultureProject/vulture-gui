@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [REPUTATION_CTX] Ensure internally defined DBs cannot be modified
 - [SYSTEM] [PKI] Fix wrong ca.key after cluster_join
 - [API_PARSER] Connect automatically to redis matser
+- [API_PARSER] [TRENDMICRO_VISIONONE] Correctly handle errors in log fetches
+- [API_PARSER] [TRENDMICRO_VISIONONE] Avoid 429 errors by increasing default pagination
+- [API_PARSER] [TRENDMICRO_VISIONONE] Delay log fetching by 5 minutes to be sure to get all logs
 
 
 ## [2.14.2] - 2024-02-19
