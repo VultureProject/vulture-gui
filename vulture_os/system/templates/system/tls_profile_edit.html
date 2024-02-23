@@ -188,7 +188,13 @@
     var cipher_choices = {{ cipher_choices|safe }};
     var protocols_handler = {{ protocols_handler|safe }};
 
-    $('.select2').select2();
+    let selects = Array.prototype.slice.call(document.querySelectorAll('.select2'));
+    selects.forEach(function(html) {
+      $(html).select2();
+      if (html.attributes['data-original-title']) {
+        $(html.nextElementSibling).tooltip({title: html.attributes['data-original-title'].value, placement: "bottom"});
+      }
+    });
 
     /* If browsers compatibility is not custom,
      * hide and disable protocol choice and ciphers area
