@@ -33,7 +33,7 @@ from django.utils.translation import gettext_lazy as _
 from applications.logfwd.models import LogOM
 from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy
-from gui.forms.form_utils import NoValidationField
+from gui.forms.form_utils import NoValidationField, bootstrap_tooltips
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
                                       REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES,
@@ -86,6 +86,7 @@ class FrontendReputationContextForm(ModelForm):
         # Do not set id of html fields, that causes issues in JS/JQuery
         kwargs['auto_id'] = False
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['reputation_ctx'].empty_label = None
 
     def as_table_headers(self):
@@ -127,6 +128,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
 
         AVAILABLE_API_PARSER = [("", "--------")]
         AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
@@ -983,6 +985,7 @@ class ListenerForm(ModelForm):
         # Do not set id of html fields, that causes issues in JS/JQuery
         kwargs['auto_id'] = False
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['network_address'] = ModelChoiceField(
             label=_("Network address"),
             queryset=NetworkAddress.objects.all(),
@@ -1117,6 +1120,7 @@ class LogOMTableForm(Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['action'].empty_label = None
 
     def as_table_headers(self):

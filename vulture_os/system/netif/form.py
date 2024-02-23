@@ -25,6 +25,9 @@ __doc__ = 'Haproxy dedicated form class'
 # Django system imports
 from django.conf import settings
 from django.forms import ModelForm, TextInput, SelectMultiple, Select, NumberInput, ModelMultipleChoiceField, ValidationError
+
+# Django project imports
+from gui.forms.form_utils import bootstrap_tooltips
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress, NetworkAddressNIC, NET_ADDR_TYPES, LAGG_PROTO_TYPES
 
 # External libraries
@@ -49,6 +52,7 @@ class NetIfForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
 
         self.fields['iface_id'].disabled = True
 

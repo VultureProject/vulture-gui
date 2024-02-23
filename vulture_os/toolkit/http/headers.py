@@ -29,6 +29,7 @@ from django.forms import CheckboxInput, ModelForm, Select, TextInput, Form, Choi
 from djongo import models
 
 # Django project imports
+from gui.forms.form_utils import bootstrap_tooltips
 
 # Extern modules imports
 from copy import deepcopy
@@ -234,6 +235,7 @@ class HeaderForm(ModelForm):
     def __init__(self, *args, **kwargs):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         # Set required in POST data to False
         for field_name in ['enabled', 'match', 'replace', 'condition_action', 'condition']:
             self.fields[field_name].required = False
@@ -295,6 +297,7 @@ class HttpHealthCheckHeaderForm(Form):
         # Do not set id of html fields, that causes issues in JS/JQuery
         kwargs['auto_id'] = False
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
 
     def as_table_headers(self):
         """ Format field names as table head """
