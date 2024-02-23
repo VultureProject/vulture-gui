@@ -19,6 +19,9 @@ function init_application_form(btn, html, app_id){
 
 				elems.forEach(function(elem) {
 				  var switchery = new Switchery(elem);
+				  if (elem.attributes['data-original-title']) {
+					$(elem.nextElementSibling).tooltip({title: elem.attributes['data-original-title'].value, placement: "bottom"});
+				  }
 				});
 
 				$('.tagsinput').tagsinput();
