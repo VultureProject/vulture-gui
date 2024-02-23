@@ -27,9 +27,9 @@ from django.conf import settings
 from django.forms import (CheckboxInput, ModelForm, Select, TextInput, ModelChoiceField)
 
 # Django project imports
+from gui.forms.form_utils import bootstrap_tooltips
 from services.openvpn.models import Openvpn, PROTO
 from system.cluster.models import Node
-
 from system.pki.models import TLSProfile
 
 # Logger configuration imports
@@ -41,6 +41,7 @@ logger = logging.getLogger('gui')
 class OpenvpnForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
 
         self.fields['node'] = ModelChoiceField(
             queryset=Node.objects.all(),
