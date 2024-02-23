@@ -28,7 +28,7 @@ from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInpu
     ChoiceField, CharField
 
 # Django project imports
-from gui.forms.form_utils import NoValidationField
+from gui.forms.form_utils import NoValidationField, bootstrap_tooltips
 from applications.reputation_ctx.models import (DBTYPE_CHOICES, HTTP_METHOD_CHOICES, HTTP_AUTH_TYPE_CHOICES,
                                                 ReputationContext)
 
@@ -38,7 +38,6 @@ from applications.reputation_ctx.models import (DBTYPE_CHOICES, HTTP_METHOD_CHOI
 
 # Logger configuration imports
 import logging
-
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
@@ -68,6 +67,7 @@ class ReputationContextForm(ModelForm):
     def __init__(self, *args, **kwargs):
         """ Initialize form and special attributes """
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         for field_name in ['auth_type', 'verify_cert', 'post_data', 'user', 'password', 'tags']:
             self.fields[field_name].required = False
         # Set readonly if internal reputation context

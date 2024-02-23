@@ -23,7 +23,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Frontends & Listeners dedicated form classes'
 
 # Django system imports
-import ast
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (BooleanField, CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
@@ -34,26 +33,26 @@ from django.utils.translation import gettext_lazy as _
 from applications.logfwd.models import LogOM
 from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy
-from gui.forms.form_utils import NoValidationField
+from gui.forms.form_utils import NoValidationField, bootstrap_tooltips
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
                                       REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES, FILEBEAT_LISTENING_MODE,
                                       FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
 
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
-from system.cluster.models import NetworkInterfaceCard, NetworkAddress
+from system.cluster.models import Node, NetworkAddress
 from system.error_templates.models import ErrorTemplate
+from system.pki.models import TLSProfile, X509Certificate
+from system.tenants.models import Tenants
 from toolkit.api_parser.utils import get_available_api_parser
 from toolkit.network.network import parse_proxy_url
-from system.pki.models import TLSProfile, X509Certificate
-from system.cluster.models import Node
-from system.tenants.models import Tenants
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 from django.forms import ValidationError
 
 # Extern modules imports
+import ast
 from ast import literal_eval as ast_literal_eval
 from ipaddress import ip_address
 from json import loads as json_loads
@@ -86,6 +85,7 @@ class FrontendReputationContextForm(ModelForm):
         # Do not set id of html fields, that causes issues in JS/JQuery
         kwargs['auto_id'] = False
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['reputation_ctx'].empty_label = None
 
     def as_table_headers(self):
@@ -121,6 +121,7 @@ class FrontendForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
 
         AVAILABLE_API_PARSER = [("", "--------")]
         AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
@@ -823,6 +824,7 @@ class ListenerForm(ModelForm):
         # Do not set id of html fields, that causes issues in JS/JQuery
         kwargs['auto_id'] = False
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['network_address'] = ModelChoiceField(
             label=_("Network address"),
             queryset=NetworkAddress.objects.all(),
@@ -949,6 +951,7 @@ class LogOMTableForm(Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['action'].empty_label = None
 
     def as_table_headers(self):

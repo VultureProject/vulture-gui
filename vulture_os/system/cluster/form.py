@@ -28,6 +28,7 @@ from django.forms import (ModelForm, TextInput, Textarea, HiddenInput, ModelChoi
                           ValidationError)
 
 # Django project imports
+from gui.forms.form_utils import bootstrap_tooltips
 from system.cluster.models import Node, NetworkAddress
 from toolkit.network.network import get_hostname
 
@@ -76,6 +77,7 @@ class NodeForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         # Set non required fields
         self.fields["pstats_forwarders"].required = False
         # Protect hostname change, has it will entirely break the cluster: hostname has to be changed via the "admin.sh" system menu

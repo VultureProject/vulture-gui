@@ -31,7 +31,7 @@ from django.utils.translation import gettext_lazy as _
 
 # Django project imports
 from authentication.user_scope.models import UserScope
-from gui.forms.form_utils import NoValidationField
+from gui.forms.form_utils import NoValidationField, bootstrap_tooltips
 
 # Extern modules imports
 
@@ -58,3 +58,4 @@ class UserScopeForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
