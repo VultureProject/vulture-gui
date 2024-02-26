@@ -58,6 +58,11 @@ class NozomiProbeParser(ApiParser):
         try:
             if self.session is None:
                 self.session = requests.Session()
+                self.session.headers = {
+                    "User-Agent": "Advens Nozomi (python-requests)",  # override ua because Nozomi seems to blacklist the exact following string : "python-requests/2.31.0" (returning field total==null instead of 0, causing collection crash)
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Accept": "application/json"
+                }
                 self.session.auth = (self.nozomi_probe_login, self.nozomi_probe_password)
             return True
 
@@ -89,11 +94,10 @@ class NozomiProbeParser(ApiParser):
         self._connect()
 
         url = f"https://{self.nozomi_probe_host}/{self.ALERT_ENDPOINT}"
-        param = "|" + quote_plus(f"where time > {since} | sort time asc")
-        msg = f"Get user events request params: {param}"
-        logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+        param = quote_plus(f"|where time > {since} | sort time asc")
+        logger.debug(f"[{__parser__}]:get_logs: Get user events request params: {param}", extra={'frontend': str(self.frontend)})
         response = self.session.get(
-            f"{url} {param}",
+            f"{url}%20{param}",
             proxies=self.proxies,
             verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
@@ -106,9 +110,7 @@ class NozomiProbeParser(ApiParser):
             logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
             raise NozomiProbeAPIError(error)
 
-        content = response.json()
-
-        return True, content
+        return True, response.json()
 
     def execute(self):
 
@@ -124,8 +126,10 @@ class NozomiProbeParser(ApiParser):
             self.update_lock()
 
             total = tmp_logs['total']
-            cpt += len(tmp_logs['result'])
             logs = tmp_logs['result']
+            cpt += len(logs)
+
+            logger.info(f"[{__parser__}]:execute: Parser gets {total} log(s) from {self.last_api_call}", extra={'frontend': str(self.frontend)})
 
             def format_log(log):
                 log['timestamp'] = datetime.fromtimestamp(log['time']/1000).isoformat()
@@ -137,5 +141,3 @@ class NozomiProbeParser(ApiParser):
 
             if len(logs) > 0:
                 self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(logs[-1]['time']/1000))
-
-        logger.info("NozomiProbe parser ending.", extra={'frontend': str(self.frontend)})
