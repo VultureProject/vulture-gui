@@ -35,6 +35,7 @@ from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster
+from services.frontend.models import Frontend
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
@@ -46,6 +47,9 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
+            for frontend in Frontend.objects.filter(mode__in=['log', 'filebeat']).distinct():
+                print(f"Triggering configuration rebuild for Frontend '{frontend.name}'")
+                node.api_request("services.haproxy.haproxy.build_conf", frontend.pk)
             node.api_request("services.haproxy.haproxy.configure_node")
             api_res = node.api_request("services.haproxy.haproxy.reload_service")
             if not api_res.get('status'):
