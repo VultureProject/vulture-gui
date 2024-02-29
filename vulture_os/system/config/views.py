@@ -113,6 +113,7 @@ def config_edit(request, api=False, update=False):
                 except:
                     pass
                 form.add_error('redis_password', error_msg)
+                Cluster.await_api_request("toolkit.redis.redis_base.set_password", (old_redis_password, config.redis_password), internal=True)
 
         if not form.is_valid():
             return render_form()
