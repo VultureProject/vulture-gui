@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [HAPROXY] [LISTENERS] Put back a correct 60s server timeout for Rsyslog/Filebeat communication
 
 
+## [2.14.3] - 2024-02-20
+### Fixed
+- [REPUTATION] Changed predator references to barricade
+
+
 ## [2.14.2] - 2024-02-19
 ### Changed
 - [API_PARSER] [VECTRA] Store current access token to avoid re-generating it every time
