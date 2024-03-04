@@ -12,6 +12,16 @@
         {%- if pwd %}
             ServerPassword="{{pwd}}"
         {%- endif %}
+        {%- if mode == "queue" %}
+            Userpush="{{ "on" if use_rpush else "off" }}"
+        {%- endif %}
+        {%- if mode == "set" %}
+            Expiration="{{expire_key}}"
+        {%- endif %}
+        {%- if mode == "stream" %}
+            stream.outField="{{stream_outfield}}"
+            stream.capacityLimit="{{stream_capacitylimit}}"
+        {%- endif %}
             Template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}_json{% endif %}"
             queue.type="LinkedList"
             queue.size="{{queue_size}}"

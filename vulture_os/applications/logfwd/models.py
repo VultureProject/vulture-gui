@@ -24,7 +24,7 @@ __doc__ = 'Log forwarder model classes'
 
 # Django system imports
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.template import Context, Template
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
@@ -72,6 +72,13 @@ ROTATION_PERIOD_CHOICES = (
     ('weekly', "Every week"),
     ('monthly', "Every month"),
     ('yearly', "Every year")
+)
+
+OMHIREDIS_MODE_CHOICES = (
+    ('queue', "Queue/list mode, using lpush/rpush"),
+    ('set', "Set/keys mode, using set/setex"),
+    ('publish', "Channel mode, using publish"),
+    ('stream', "Stream mode, using xadd"),
 )
 
 CONF_PATH = "/usr/local/etc/rsyslog.d/10-applications.conf"
@@ -419,10 +426,46 @@ class LogOMRELP(LogOM):
 class LogOMHIREDIS(LogOM):
     target = models.TextField(null=False, default="1.2.3.4")
     port = models.IntegerField(null=False, default=6379)
+    mode = models.TextField(
+        default=OMHIREDIS_MODE_CHOICES[0][0],
+        choices=OMHIREDIS_MODE_CHOICES,
+        help_text=_("Specify how Rsyslog insert logs in Redis"),
+        verbose_name=_("Redis insertion mode"),
+    )
     key = models.TextField(null=False, default="MyKey")
     dynamic_key = models.BooleanField(default=False)
     pwd = models.TextField(blank=True, default=None)
     enabled = models.BooleanField(default=True)
+    use_rpush = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=_("Use RPUSH instead of LPUSH in list mode"),
+        verbose_name=_("Use RPUSH"),
+    )
+    expire_key = models.PositiveIntegerField(
+        default=0,
+        blank=True,
+        help_text=_("Use SETEX instead of SET in key mode with an expiration in seconds"),
+        verbose_name=_("Expiration of the key (s)"),
+    )
+    stream_outfield = models.TextField(
+        default="msg",
+        validators=[
+            RegexValidator(
+                regex=r"^\S+$",
+                message="Value shouldn't have any spaces"
+            )
+        ],
+        blank=True,
+        help_text=_("Set the name of the index field to use when inserting log, in stream mode"),
+        verbose_name=_("Index name of the log"),
+    )
+    stream_capacitylimit = models.PositiveIntegerField(
+        default=0,
+        blank=True,
+        help_text=_("Set a stream capacity limit, if set to more than 0 (zero), oldest values in the stream will be evicted to stay under the max value"),
+        verbose_name=_("Maximum stream size"),
+    )
 
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)
@@ -457,11 +500,15 @@ class LogOMHIREDIS(LogOM):
         template.update({
             'target': self.target,
             'port': self.port,
+            'mode': self.mode,
             'key': key,
             'dynamic_key': self.dynamic_key,
             'pwd': self.pwd,
+            'use_rpush': self.use_rpush,
+            'expire_key': self.expire_key,
+            'stream_outfield': self.stream_outfield,
+            'stream_capacitylimit': self.stream_capacitylimit,
             'type': 'Redis',
-            'mode': "queue",
             'output': f"{self.target}:{self.port} (key = {self.key})"
         })
         return template
