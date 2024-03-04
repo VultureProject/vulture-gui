@@ -24,7 +24,7 @@ __doc__ = 'Log forwarder model classes'
 
 # Django system imports
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.template import Context, Template
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
@@ -450,6 +450,12 @@ class LogOMHIREDIS(LogOM):
     )
     stream_outfield = models.TextField(
         default="msg",
+        validators=[
+            RegexValidator(
+                regex=r"^\S+$",
+                message="Value shouldn't have any spaces"
+            )
+        ],
         blank=True,
         help_text=_("Set the name of the index field to use when inserting log, in stream mode"),
         verbose_name=_("Index name of the log"),

@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='logomhiredis',
             name='stream_outfield',
-            field=models.TextField(blank=True, default='msg', help_text='Set the name of the index field to use when inserting log, in stream mode', verbose_name='Index name of the log'),
+            field=models.TextField(blank=True, default='msg', help_text='Set the name of the index field to use when inserting log, in stream mode', validators=[django.core.validators.RegexValidator(message="Value shouldn't have any spaces", regex='^\\S+$')], verbose_name='Index name of the log'),
         ),
         migrations.AddField(
             model_name='logomhiredis',
