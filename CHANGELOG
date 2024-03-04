@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## Unreleased
+
+
+## [2.15.0] - 2024-03-04
 ### Added
 - [FRONTEND] Redis stream support for input log
 - [FRONTEND] Allow to simply use local Redis without worrying about parameters when creating a Redis Listener
