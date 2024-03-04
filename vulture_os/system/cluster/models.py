@@ -624,15 +624,17 @@ class Cluster(models.Model):
             instances = action_cmd.get('instances')
             for instance in instances:
                 try:
-                    status, result = instance.await_result(interval, tries)
+                    partial_status, result = instance.await_result(interval, tries)
                 except APISyncResultTimeOutException:
                     status = False
                     logger.error(f"Cluster::await_api_request:: Action didn't return in {interval*tries}s, returning")
                     result = ""
                 results.append({
-                    "status": status,
+                    "status": partial_status,
                     "result": result
                 })
+                if not partial_status:
+                    status = partial_status
 
             return status, results
 
