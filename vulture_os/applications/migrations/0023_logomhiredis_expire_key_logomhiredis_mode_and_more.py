@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='logomhiredis',
             name='expire_key',
-            field=models.PositiveIntegerField(blank=True, default=0, help_text='Use SETX instead of SET in key mode with an expiration in seconds', verbose_name='Expiration of the key (s)'),
+            field=models.PositiveIntegerField(blank=True, default=0, help_text='Use SETEX instead of SET in key mode with an expiration in seconds', verbose_name='Expiration of the key (s)'),
         ),
         migrations.AddField(
             model_name='logomhiredis',
@@ -25,12 +25,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='logomhiredis',
             name='stream_capacitylimit',
-            field=models.PositiveIntegerField(blank=True, default=0, help_text='Set a maximum size of a stream to prevent out of range index', verbose_name='Maximum stream size'),
+            field=models.PositiveIntegerField(blank=True, default=0, help_text='Set a stream capacity limit, if set to more than 0 (zero), oldest values in the stream will be evicted to stay under the max value', verbose_name='Maximum stream size'),
         ),
         migrations.AddField(
             model_name='logomhiredis',
             name='stream_outfield',
-            field=models.TextField(blank=True, default='msg', help_text='Set the name of the log index in stream mode', verbose_name='Index name of the log'),
+            field=models.TextField(blank=True, default='msg', help_text='Set the name of the index field to use when inserting log, in stream mode', verbose_name='Index name of the log'),
         ),
         migrations.AddField(
             model_name='logomhiredis',

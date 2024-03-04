@@ -20,8 +20,6 @@
         {%- endif %}
         {%- if mode == "stream" %}
             stream.outField="{{stream_outfield}}"
-        {%- endif %}
-        {%- if mode == "stream" %}
             stream.capacityLimit="{{stream_capacitylimit}}"
         {%- endif %}
             Template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}_json{% endif %}"

@@ -445,19 +445,19 @@ class LogOMHIREDIS(LogOM):
     expire_key = models.PositiveIntegerField(
         default=0,
         blank=True,
-        help_text=_("Use SETX instead of SET in key mode with an expiration in seconds"),
+        help_text=_("Use SETEX instead of SET in key mode with an expiration in seconds"),
         verbose_name=_("Expiration of the key (s)"),
     )
     stream_outfield = models.TextField(
         default="msg",
         blank=True,
-        help_text=_("Set the name of the log index in stream mode"),
+        help_text=_("Set the name of the index field to use when inserting log, in stream mode"),
         verbose_name=_("Index name of the log"),
     )
     stream_capacitylimit = models.PositiveIntegerField(
         default=0,
         blank=True,
-        help_text=_("Set a maximum size of a stream to prevent out of range index"),
+        help_text=_("Set a stream capacity limit, if set to more than 0 (zero), oldest values in the stream will be evicted to stay under the max value"),
         verbose_name=_("Maximum stream size"),
     )
 
