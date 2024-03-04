@@ -1683,6 +1683,23 @@ class Frontend(models.Model):
                 result += LogOM.generate_conf(log_om, self.ruleset+"_garbage", frontend=self.name+"_garbage") + "\n"
         return result
 
+    def render_pre_ruleset(self):
+        """ Render pre_ruleset's config from self.pre_ruleset
+        :return  Str containing the rendered config
+        """
+        result = ""
+        for log_forwarder in self.log_forwarders.all():
+            log_om = LogOM().select_log_om(log_forwarder.id)
+            if log_om.enabled:
+                result += f"{log_om.generate_pre_conf(self.ruleset, frontend=self.name)}\n"
+                logger.info(f"[RENDER PRE RULESET] {log_om}")
+        for log_forwarder in self.log_forwarders_parse_failure.all():
+            log_om = LogOM().select_log_om(log_forwarder.id)
+            if log_om.enabled:
+                result += f"{log_om.generate_pre_conf(self.ruleset+'_garbage', frontend=self.name+'_garbage')}\n"
+                logger.info(f"[RENDER PRE RULESET FAILURE] {log_om}")
+        return result
+
     @property
     def api_rsyslog_port(self):
         return 20000+self.id
@@ -1719,6 +1736,7 @@ class Frontend(models.Model):
             conf['ruleset'] = self.ruleset
             conf['log_condition'] = self.render_log_condition() if self.enabled and self.enable_logging else ""
             conf['log_condition_failure'] = self.render_log_condition_failure() if self.enabled and self.enable_logging else ""
+            conf['pre_ruleset'] = self.render_pre_ruleset() if self.enabled and self.enable_logging else ""
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
 
             darwin_actions = []

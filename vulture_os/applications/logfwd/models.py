@@ -174,10 +174,10 @@ class LogOM (models.Model):
     )
 
     def __unicode__(self):
-        return "{} ({})".format(self.name, self.__class__.__name__)
+        return f"{self.name} ({self.__class__.__name__})"
 
     def __str__(self):
-        return "{}".format(self.name)
+        return f"{self.name}"
 
     @staticmethod
     def str_attrs():
@@ -210,7 +210,7 @@ class LogOM (models.Model):
             log_om = obj.objects.filter(name=name).only(*attrs).first()
             if log_om:
                 return log_om
-        raise ObjectDoesNotExist("Log Forwarder named '{}' not found.".format(name))
+        raise ObjectDoesNotExist(f"Log Forwarder named '{name}' not found.")
 
     @classmethod
     def generate_conf(cls, log_om, rsyslog_template_name, **kwargs):
@@ -219,6 +219,9 @@ class LogOM (models.Model):
         conf = log_om.to_template(**kwargs, ruleset=rsyslog_template_name)
         conf['out_template'] = rsyslog_template_name
         return template.render(conf)
+
+    def generate_pre_conf(self, rsyslog_template_name, **kwargs):
+        return ""
 
     def template_id(self):
         return hashlib.sha256(self.name.encode('utf-8')).hexdigest()
@@ -246,7 +249,7 @@ class LogOM (models.Model):
         elif hasattr(self, "logom_ptr") and type(self.logom_ptr) != LogOM:
             subclass_obj = self.logom_ptr
         else:
-            raise Exception("Cannot find type of LogOM named '{}' !".format(self.name))
+            raise Exception(f"Cannot find type of LogOM named '{self.name}' !")
         # Prevent infinite loop if subclass method does not exists
         if subclass_obj.get_rsyslog_template.__doc__ == LogOM.get_rsyslog_template.__doc__:
             return ""
@@ -262,7 +265,7 @@ class LogOM (models.Model):
         """  returns the attributes of the class """
         return {
             'id': str(self.id),
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+            'output_name': f"{self.name}_{kwargs.get('frontend', '')}",
             'name': self.name,
             'template_id': self.template_id(),
             'send_as_raw': self.send_as_raw,
@@ -350,8 +353,8 @@ class LogOMFile(LogOM):
 
     def render_file_template(self, ruleset):
         tpl = Template(self.file)
-        return "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
-               .format(self.template_id(ruleset=ruleset), tpl.render(Context({'ruleset': ruleset})))
+        return f"""template(name=\"{self.template_id(ruleset=ruleset)}\" type=\"string\"
+                    string=\"{tpl.render(Context({'ruleset': ruleset}))}\")\n"""
 
     def get_rsyslog_template(self):
         res = ""
@@ -591,6 +594,11 @@ class LogOMElasticSearch(LogOM):
         help_text=_("Enable Elasticsearch datastreams support"),
         verbose_name=_("Enable Elasticsearch datastreams support")
     )
+    retry_on_els_failures = models.BooleanField(
+        default=False,
+        help_text=_("Let Rsyslog's Elasticsearch module handle and retry insertion failure"),
+        verbose_name=_("Handle failures and retries on ELS insertion")
+    )
     index_pattern = models.TextField(unique=True, null=False, default='mylog-%$!timestamp:1:10%')
     uid = models.TextField(null=True, blank=True, default=None)
     pwd = models.TextField(null=True, blank=True, default=None)
@@ -626,6 +634,22 @@ class LogOMElasticSearch(LogOM):
     def template(self):
         return 'om_elasticsearch.tpl'
 
+    @property
+    def pre_template(self):
+        return 'om_elasticsearch_pre.tpl'
+
+    def generate_pre_conf(self, rsyslog_template_name, **kwargs):
+        jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
+        try:
+            template = jinja2_env.get_template(self.pre_template)
+            conf = self.to_template(**kwargs)
+            conf['out_template'] = rsyslog_template_name
+            rendered = template.render(conf)
+        except Exception as e:
+            logger.exception(e)
+            rendered = ""
+        return rendered
+
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
         template = super().to_template(**kwargs)
@@ -633,6 +657,7 @@ class LogOMElasticSearch(LogOM):
             'servers': self.servers,
             'es8_compatibility': self.es8_compatibility,
             'data_stream_mode': self.data_stream_mode,
+            'retry_on_els_failures': self.retry_on_els_failures,
             'index_pattern': self.index_pattern,
             'uid': self.uid,
             'pwd': self.pwd,
