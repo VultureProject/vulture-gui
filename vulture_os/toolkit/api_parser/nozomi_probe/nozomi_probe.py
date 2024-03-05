@@ -141,3 +141,5 @@ class NozomiProbeParser(ApiParser):
 
             if len(logs) > 0:
                 self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(logs[-1]['time']/1000))
+
+        logger.info("NozomiProbe parser ending.", extra={'frontend': str(self.frontend)})
