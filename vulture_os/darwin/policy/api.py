@@ -47,7 +47,6 @@ from toolkit.api.responses import build_response
 from glob import glob as file_glob
 import json
 from os import path as os_path
-from pymongo.errors import DuplicateKeyError
 from sys import exc_info
 
 # Logger configuration imports

@@ -759,7 +759,7 @@ class LogOMMongoDB(LogOM):
 
             kwargs.update({
                 'ssl': True,
-                "ssl_certfile": self.x509_certificate.get_base_filename() + ".pem"
+                "tlsCertificateKeyFile": self.x509_certificate.get_base_filename() + ".pem"
             })
 
         return pymongo.MongoClient(**kwargs)

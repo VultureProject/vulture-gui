@@ -206,8 +206,8 @@ class MongoBase:
 
             args = {'host': host,
                     'ssl': True,
-                    'ssl_certfile': "/var/db/pki/node.pem",
-                    'ssl_ca_certs': "/var/db/pki/ca.pem",
+                    'tlsCertificateKeyFile': "/var/db/pki/node.pem",
+                    'tlsCAFile': "/var/db/pki/ca.pem",
                     'read_preference': ReadPreference.PRIMARY_PREFERRED,
                     "serverSelectionTimeoutMS": timeout_ms}
             if primary:

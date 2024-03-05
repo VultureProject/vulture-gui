@@ -3,7 +3,6 @@ Django settings for vulture project.
 """
 
 import os
-from pymongo import ReadPreference
 from toolkit.network.network import get_hostname
 from toolkit.system.secret_key import set_key
 
@@ -108,8 +107,8 @@ DATABASES = {
             'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
             'SSL': True,
-            'SSL_CERTFILE': '/var/db/pki/node.pem',
-            'SSL_CA_CERTS': '/var/db/pki/ca.pem',
+            'tlsCertificateKeyFile': '/var/db/pki/node.pem',
+            'tlsCAFile': '/var/db/pki/ca.pem',
             'READPREFERENCE': "primaryPreferred"
         },
     }
