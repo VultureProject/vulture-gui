@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API] Increase API key length for new clusters from 16 to 32 characters
 - [INSTALL] Improve and stabilize the Redis bootstrapping process
 - [CONFIG] [API] Remove the object ID from the API: there is only one configuration object!
+- [API_PARSER] [NOZOMI] Add missing 'Content-Type' and 'Accept' headers in requests
 ### Fixed
 - [FRONTEND] Allow skipping unresponsive nodes during HAProxy test_conf
 - [REPUTATION] Changed predator references to barricade
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [TRENDMICRO_VISIONONE] Correctly handle errors in log fetches
 - [API_PARSER] [TRENDMICRO_VISIONONE] Avoid 429 errors by increasing default pagination
 - [API_PARSER] [TRENDMICRO_VISIONONE] Delay log fetching by 5 minutes to be sure to get all logs
+- [API_PARSER] [NOZOMI] Set a custom User-Agent to prevent request blacklisting from technology
 - [HAPROXY] [LISTENERS] Put back a correct 60s server timeout for Rsyslog/Filebeat communication
 
 
