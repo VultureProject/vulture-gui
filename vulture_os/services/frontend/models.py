@@ -563,7 +563,7 @@ class Frontend(models.Model):
         help_text=_("Custom certificate to use.")
     )
     last_api_call = models.DateTimeField(
-        default=datetime.datetime.utcnow
+        default=timezone.now
     )
     # Forcepoint attributes
     forcepoint_host = models.TextField(
@@ -919,7 +919,7 @@ class Frontend(models.Model):
     )
     # Only used internally to keep a valid access_token across runs
     vadesecure_o365_access_token_expiry = models.DateTimeField(
-        default=datetime.datetime.utcnow
+        default=timezone.now
     )
     # Nozomi Probe attributes
     nozomi_probe_host = models.TextField(
