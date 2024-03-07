@@ -14,9 +14,9 @@ def update_repo_attributes(apps, schema_editor):
     m = MongoBase()
     m.connect_primary()
     # If the node is not yet installed, no need to drop collections
-    if m.db and m.db['vulture']:
+    if m.db and m.db['vulture'] is not None:
         coll = m.db['vulture']['authentication_userauthentication']
-        if coll:
+        if coll is not None:
             for portal in coll.find():
                 repo_attributes = [
                     {

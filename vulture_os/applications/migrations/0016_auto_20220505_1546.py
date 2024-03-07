@@ -10,9 +10,9 @@ def remove_server_target_port_unicity_constraint(apps, schema_editor):
     m = MongoBase()
     m.connect_primary()
     # If the node is not yet installed, no need to drop collections
-    if m.db and m.db['vulture']:
+    if m.db and m.db['vulture'] is not None:
         coll = m.db['vulture']['applications_server']
-        if coll:
+        if coll is not None:
             for index in coll.list_indexes():
                 # Unpack index key values
                 # we're searching for 'target' and 'port' keys defining the index

@@ -12,12 +12,12 @@ def remove_session_and_logs_filters(apps, schema_editor):
     m = MongoBase()
     m.connect_primary()
     # If the node is not yet installed, no need to drop collections
-    if m.db and m.db['vulture']:
+    if m.db and m.db['vulture'] is not None:
         coll = m.db['vulture']['darwin_filterpolicy']
-        if coll:
+        if coll is not None:
             coll.delete_many({})
         coll = m.db['vulture']['darwin_darwinfilter']
-        if coll:
+        if coll is not None:
             coll.delete_many({})
 
 

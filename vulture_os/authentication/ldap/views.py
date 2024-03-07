@@ -124,6 +124,7 @@ def ldap_edit(request, object_id=None, api=False):
     if request.method in ("POST", "PUT") and form.is_valid():
         # Save the form to get an id if there is not already one
         ldap = form.save(commit=False)
+        cattr_objs = list()
 
         try:
             if api and hasattr(request, "JSON"):
@@ -154,7 +155,7 @@ def ldap_edit(request, object_id=None, api=False):
             custom_attributes.append(cattr_form)
             cattr_obj = cattr_form.save(commit=False)
             cattr_obj.repository = ldap
-            cattr_form.save()
+            cattr_objs.append(cattr_obj)
 
         # If errors has been added in form
         if not form.is_valid():
@@ -164,8 +165,10 @@ def ldap_edit(request, object_id=None, api=False):
         logger.debug(f"Removing obsolete Custom attributes for {ldap}: {list_cattr_ids_to_delete}")
         LDAPCustomAttributeMapping.objects.filter(id__in=list_cattr_ids_to_delete).delete()
 
-        # Really save object in DB
+        # Really save objects in DB
         ldap.save()
+        for cattr_obj in cattr_objs:
+            cattr_obj.save()
         # If everything succeed, redirect to list view
         if api:
             return build_response(ldap.id, "authentication.api.ldap", [])
