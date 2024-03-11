@@ -31,6 +31,7 @@ from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
 
 from django.db.models import Q
+from django.db.utils import DatabaseError
 from django.utils.translation import gettext as _
 from django.utils.module_loading import import_string
 from django.utils import timezone
@@ -302,7 +303,7 @@ class Node(models.Model):
         """
 
         if self.management_ip:
-            c = RedisBase()
+            c = RedisBase(password=Cluster.get_global_config().redis_password)
             master_node = c.get_master(self.name)
             if master_node == self.name:
                 return True
@@ -473,6 +474,15 @@ class Node(models.Model):
 
         return result
 
+    def get_pending_messages(self, count=None):
+        try:
+            return MessageQueue.objects.filter(
+            node=self, status__in=[MessageQueue.MessageQueueStatus.NEW, MessageQueue.MessageQueueStatus.RUNNING]).order_by('modified')[0:count]
+
+        except Exception as e:
+            logger.error(f"Could not get list of pending messages: {str(e)}")
+            return []
+
     def process_messages(self):
         """
         Function called from Cluster daemon: read
@@ -488,7 +498,7 @@ class Node(models.Model):
                 message.action, message.config, message.node)
             )
 
-            message.status = 'running'
+            message.status = MessageQueue.MessageQueueStatus.RUNNING
             message.save()
 
             try:
@@ -503,18 +513,18 @@ class Node(models.Model):
                     args.append(message.config)
 
                 message.result = my_function(*args)
-                message.status = 'done'
+                message.status = MessageQueue.MessageQueueStatus.DONE
             except ServiceExit as e:
                 """ Service stop asked """
                 raise e
             except KeyError as e:
                 logger.exception(e)
                 message.result = "KeyError {}".format(str(e))
-                message.status = 'failure'
+                message.status = MessageQueue.MessageQueueStatus.FAILURE
             except Exception as e:
                 logger.exception(e)
                 logger.error("Cluster::process_messages: {}".format(str(e)))
-                message.status = 'failure'
+                message.status = MessageQueue.MessageQueueStatus.FAILURE
                 message.result = str(e)
 
             message.save()
@@ -541,7 +551,7 @@ class Node(models.Model):
         return self._vstate
 
 
-class Cluster (models.Model):
+class Cluster(models.Model):
     """
     Vulture Cluster class.
 
@@ -566,7 +576,11 @@ class Cluster (models.Model):
 
     @staticmethod
     def is_node_bootstrapped():
-        return True if Cluster.get_current_node() else False
+        try:
+            return True if Cluster.get_current_node() else False
+        except DatabaseError as e:
+            logger.error(f"Cluster:is_node_bootstrapped: MongoDB error: {e}")
+            return False
 
     @staticmethod
     def get_global_config():
@@ -577,7 +591,7 @@ class Cluster (models.Model):
 
         return global_config
 
-
+    @staticmethod
     def await_api_request(action, config=None, node=None, internal=False, interval=2, tries=10):
         """
         Call the usual api_request(), but wait for some time for a result before returning
@@ -610,18 +624,19 @@ class Cluster (models.Model):
             instances = action_cmd.get('instances')
             for instance in instances:
                 try:
-                    status, result = instance.await_result(interval, tries)
+                    partial_status, result = instance.await_result(interval, tries)
                 except APISyncResultTimeOutException:
                     status = False
                     logger.error(f"Cluster::await_api_request:: Action didn't return in {interval*tries}s, returning")
                     result = ""
                 results.append({
-                    "status": status,
+                    "status": partial_status,
                     "result": result
                 })
+                if not partial_status:
+                    status = partial_status
 
             return status, results
-
 
     @staticmethod
     def api_request(action, config=None, node=None, internal=False):
@@ -681,15 +696,24 @@ class Cluster (models.Model):
             return {'status': True, 'message': '', 'instance': m}
 
 
-class MessageQueue (models.Model):
+class MessageQueue(models.Model):
     """
         Cluster Queue
     """
+
+    class MessageQueueStatus(models.TextChoices):
+        NEW = "new", _("New")
+        RUNNING = "running", _("Running")
+        DONE = "done", _("Done")
+        FAILURE = "failure", _("Failure")
+
     date_add = models.DateTimeField(default=timezone.now)
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
 
     # status of the action (new/running/done)
-    status = models.TextField(default='new')
+    status = models.TextField(
+        choices=MessageQueueStatus.choices,
+        default=MessageQueueStatus.NEW)
 
     result = models.TextField(default="")
 
@@ -721,6 +745,35 @@ class MessageQueue (models.Model):
         self.modified = timezone.now()
         return super().save(*args, **kwargs)
 
+
+    def execute(self):
+        self.status = MessageQueue.MessageQueueStatus.RUNNING
+        self.save()
+
+        try:
+            """ Big try in case of import or execution error """
+
+            # Call the function
+            my_function = import_string(self.action)
+            args = list()
+
+            args.append(logging.getLogger('daemon'))
+
+            if self.config:
+                args.append(self.config)
+
+            self.result = my_function(*args)
+            self.status = MessageQueue.MessageQueueStatus.DONE
+        except Exception as e:
+            logger.exception(e)
+            logger.error("MessageQueue::execute: {}".format(str(e)))
+            self.status = MessageQueue.MessageQueueStatus.FAILURE
+            self.result = str(e)
+
+        self.save()
+        return self.status, self.result
+
+
     def await_result(self, interval=2, tries=10):
         """
 
@@ -735,9 +788,9 @@ class MessageQueue (models.Model):
         try:
             for _ in range(0, tries):
                 message_instance = MessageQueue.objects.get(pk=self.id)
-                if message_instance.status == "done":
+                if message_instance.status == MessageQueue.MessageQueueStatus.DONE:
                     return True, message_instance.result
-                if message_instance.status == "failure":
+                if message_instance.status == MessageQueue.MessageQueueStatus.FAILURE:
                     return False, message_instance.result
                 time.sleep(interval)
 

@@ -100,6 +100,13 @@ LISTENING_MODE_CHOICES = (
 REDIS_MODE_CHOICES = (
     ('queue', "Queue mode, using push/pop"),
     ('subscribe',"Channel mode, using pub/sub"),
+    ('stream',"Stream mode, using xread/xreadgroup"),
+)
+
+REDIS_STARTID_CHOICES = (
+    ('$',"New entries"),
+    ('-', "All entries"),
+    ('>',"Undelivered entries"),
 )
 
 DARWIN_MODE_CHOICES = (
@@ -460,7 +467,7 @@ class Frontend(models.Model):
         verbose_name=_("Redis server to use")
     )
     redis_port = models.PositiveIntegerField(
-        default="6379",
+        default=6379,
         help_text=_("Default redis port is 6379"),
         verbose_name=_("Redis port to use")
     )
@@ -473,6 +480,35 @@ class Frontend(models.Model):
         default="",
         help_text=_("Optional password to use via the 'AUTH' redis command when connecting to redis"),
         verbose_name=_("Redis password")
+    )
+    redis_stream_consumerGroup = models.TextField(
+        default="",
+        blank=True,
+        help_text=_("Redis stream consumer group"),
+        verbose_name=_("Redis stream consumer group")
+    )
+    redis_stream_consumerName = models.TextField(
+        default="",
+        blank=True,
+        help_text=_("Redis stream consumer name"),
+        verbose_name=_("Redis stream consumer name")
+    )
+    redis_stream_startID = models.TextField(
+        default=REDIS_STARTID_CHOICES[0][0],
+        choices=REDIS_STARTID_CHOICES,
+        help_text=_("Redis stream start choice"),
+        verbose_name=_("Redis stream start choice")
+    )
+    redis_stream_acknowledge = models.BooleanField(
+        default=True,
+        help_text=_("Acknowledge processed entries to Redis"),
+        verbose_name=_("Acknowledge processed entries")
+    )
+    redis_stream_reclaim_timeout = models.PositiveIntegerField(
+        default=0,
+        blank=True,
+        help_text=_("Automatically reclaim pending messages after X milliseconds"),
+        verbose_name=_("Reclaim pending messages (ms)")
     )
     """ Performance settings """
     nb_workers = models.PositiveIntegerField(
@@ -1536,18 +1572,19 @@ class Frontend(models.Model):
                 test_conf = test_conf.replace(f"backend Workflow_{workflow.pk}", f"backend {uuid4()}")
         if node_name != Cluster.get_current_node().name:
             try:
-                global_config = Cluster().get_global_config()
-                cluster_api_key = global_config.cluster_api_key
-                infos = post("https://{}:8000/api/services/frontend/test_conf/".format(node_name),
+                cluster_api_key = Cluster().get_global_config().cluster_api_key
+                infos = post(f"https://{node_name}:8000/api/services/frontend/test_conf/",
                              headers={'cluster-api-key': cluster_api_key},
                              data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
-                             verify=False, timeout=30).json()
+                             verify=X509Certificate.objects.get(name=node_name).ca_filename(), timeout=30).json()
             except Exception as e:
+                # Node may be unavailable for the moment
+                # Changes will be synced if node is up within 30 days
                 logger.error(e)
                 raise ServiceTestConfigError("on node '{}'\n Request failure.".format(node_name), "haproxy")
             if not infos.get('status'):
-                raise ServiceTestConfigError("on node '{}'\n{}".format(node_name, infos.get('error')), "haproxy",
-                                             traceback=infos.get('error_details'))
+                raise ServiceTestConfigError(f"on node '{node_name}'\n{infos.get('error')}", "haproxy",
+                                            traceback=infos.get('error_details'))
         else:
             # Replace name of frontend to prevent duplicate frontend while testing conf
             test_haproxy_conf(test_filename,

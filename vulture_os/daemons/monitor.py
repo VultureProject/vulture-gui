@@ -51,9 +51,8 @@ from services.exceptions import ServiceError
 from django.core.exceptions import ObjectDoesNotExist
 
 # Extern modules imports
-from datetime import datetime, timedelta
+from datetime import timedelta
 from threading import Thread, Event
-from time import sleep
 
 # Logger configuration imports
 import logging
@@ -71,7 +70,7 @@ def monitor():
     logger.debug(f"Node state was: {node.state} {node.heartbeat}")
 
     def get_service_status(service_class):
-        """ Get a service_class (eg HaproxyService) 
+        """ Get a service_class (eg HaproxyService)
         :return  a dict {'name':service_name, 'status': status} """
         service_inst = service_class()
         service_status = ServiceStatus.objects.filter(name=service_inst.service_name).first() \
@@ -88,7 +87,7 @@ def monitor():
     )
     mon.services_id = set()
 
-    for service in [HaproxyService, DarwinService, PFService, 
+    for service in [HaproxyService, DarwinService, PFService,
                     StrongswanService, OpenvpnService, RsyslogService, FilebeatService]:
 
         # Get some statuses outside for reusing variable later
@@ -208,7 +207,6 @@ def monitor():
         # If there is no VPNSSL conf on that node, pass
         pass
     else:
-
         openvpn.tunnels_status = get_ssl_tunnels_stats()
         openvpn.status = openvpn_status.status
         openvpn.save()
@@ -252,8 +250,8 @@ def monitor():
 
 class MonitorJob(Thread):
 
-    def __init__(self, delay):
-        super().__init__()
+    def __init__(self, delay, **kwargs):
+        super().__init__(**kwargs)
         # The shutdown_flag is a threading.Event object that
         # indicates whether the thread should be terminated.
         self.shutdown_flag = Event()
@@ -270,9 +268,8 @@ class MonitorJob(Thread):
                 logger.exception("Monitor job failure: {}".format(e))
                 logger.info("Resuming ...")
 
-        logger.info("Monitor job stopped.")
+        logger.info("Monitor job finished.")
 
     def stop(self):
-        logger.info("Monitor shutdown asked !")
+        logger.info("Monitor shutdown asked!")
         self.shutdown_flag.set()
-        self.join()

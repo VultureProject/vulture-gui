@@ -22,8 +22,8 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Config View'
 
-
 # Django system imports
+from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
@@ -31,8 +31,9 @@ from django.utils.translation import gettext as _
 
 # Django project imports
 from authentication.user_portal.models import UserAuthentication
-from system.config.form import ConfigForm
+from services.frontend.models import Frontend
 from system.cluster.models import Cluster, Node
+from system.config.form import ConfigForm
 from workflow.models import Workflow
 
 # Required exceptions imports
@@ -40,6 +41,9 @@ from gui.forms.form_utils import DivErrorList
 from system.exceptions import VultureSystemConfigError
 
 # Extern modules imports
+
+# Required exceptions imports
+from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
 import logging
@@ -67,15 +71,16 @@ def build_response_config(module_url, command_list):
         result[command] = {
             'rel': 'self', 'type': "POST", 'name': command,
             'href': reverse(module_url, kwargs={
-                'object_id': str(id), 'action': command,
+                'action': command,
             })
         }
 
     return JsonResponse(result, status=201)
 
 
-def config_edit(request, object_id=None, api=False, update=False):
+def config_edit(request, api=False, update=False):
     config_model = Cluster.get_global_config()
+    old_redis_password = config_model.redis_password
 
     if hasattr(request, "JSON") and api:
         if update:
@@ -97,6 +102,22 @@ def config_edit(request, object_id=None, api=False, update=False):
 
     if request.method in ("POST", "PUT", "PATCH") and form.is_valid():
         config = form.save(commit=False)
+
+        if "redis_password" in form.changed_data:
+            # Deploy redis password
+            status, results = Cluster.await_api_request("toolkit.redis.redis_base.set_password", (config.redis_password, old_redis_password), internal=True)
+            if not status:
+                error_msg = "Could not change password"
+                try:
+                    error_msg += f": {results[0]['result']}"
+                except:
+                    pass
+                form.add_error('redis_password', error_msg)
+                Cluster.await_api_request("toolkit.redis.redis_base.set_password", (old_redis_password, config.redis_password), internal=True)
+
+        if not form.is_valid():
+            return render_form()
+
         config.save()
 
         """ Write .ssh/authorized_keys if any change detected """
@@ -109,7 +130,6 @@ def config_edit(request, object_id=None, api=False, update=False):
                     raise VultureSystemConfigError("on node '{}'.\nRequest failure.".format(node.name))
 
         """ If customer name has changed, rewrite rsyslog templates """
-        error = ""
         # If the internal Tenants config has changed, reload Rsyslog configuration of pstats
         if "internal_tenants" in form.changed_data:
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
@@ -122,6 +142,18 @@ def config_edit(request, object_id=None, api=False, update=False):
             for portal in UserAuthentication.objects.filter(enable_external=True):
                 portal.save_conf()
             Cluster.api_request("services.haproxy.haproxy.reload_service")
+        if "redis_password" in form.changed_data:
+            Cluster.api_request("services.haproxy.haproxy.configure_node")
+            for frontend in Frontend.objects.filter(\
+                    (Q(mode="log", listening_mode="redis") | Q(mode="filebeat")) &\
+                    Q(redis_server="127.0.0.5", redis_port=6379)):
+                frontend.redis_password = config.redis_password
+                frontend.save()
+                for node in frontend.get_nodes():
+                    node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
+                    if frontend.mode == "filebeat":
+                        node.api_request("services.filebeat.filebeat.build_conf", frontend.pk)
+            Cluster.api_request("services.rsyslogd.rsyslog.restart_service")
         if "logs_ttl" in form.changed_data:
             res, mess = config_model.set_logs_ttl()
             if not res:
@@ -129,17 +161,10 @@ def config_edit(request, object_id=None, api=False, update=False):
         if any(value in form.changed_data for value in ["pf_whitelist", "pf_blacklist"]):
             Cluster.api_request("services.pf.pf.gen_config")
 
-        if error:
-            return render_form(save_error=error)
         if api:
             return build_response_config("system.config.api", [])
 
         return HttpResponseRedirect('/system/config/')
-
-    # If request PATCH or PUT & form not valid - return error
-    if api:
-        logger.error("Config api form error : {}".format(form.errors.get_json_data()))
-        return JsonResponse(form.errors.get_json_data(), status=400)
 
     return render_form()
 

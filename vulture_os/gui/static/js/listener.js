@@ -182,6 +182,21 @@ $(function() {
     });
   }
 
+  function refresh_redis_local_use() {
+    if (  $('#id_redis_server').val() === redis_local.server
+          && parseInt($('#id_redis_port').val()) === redis_local.port
+          && $('#id_redis_password').val() === redis_local.password
+        ) {
+      $('#id_redis_use_local').prop('checked', true).trigger('change');
+    }
+
+    if ($("#id_redis_use_local").is(':checked')) {
+      $('.redis-connect').hide();
+    } else {
+      $('.redis-connect').show();
+    }
+  }
+
   $('#stock_logs_locally').on('change', function(){
     var selected_forwarders = $('#id_log_forwarders').val();
 
@@ -273,6 +288,8 @@ $(function() {
     if (mode === "filebeat") {
       $('.filebeat-mode.redis-mode').show();
     }
+
+    refresh_redis_local_use();
   }
 
   /* Show rsyslog only fields, or hide them */
@@ -419,13 +436,43 @@ $(function() {
   }).trigger('change');
 
   $('#id_redis_mode').on('change', function(event) {
-    var redis_mode = $(this).val();
-
-    if (redis_mode === "queue") {
+    if ($(this).val() === "queue") {
       $('.redis-queue-mode').show();
+    }
+    else if ($(this).val() === "stream") {
+      $('.redis-stream-mode').show();
     }
     else {
       $('.redis-queue-mode').hide();
+      $('.redis-stream-mode').hide();
+    }
+    $('#id_redis_stream_consumerGroup').trigger('change')
+  }).trigger('change');
+
+  $('#id_redis_stream_consumerGroup').on('change', function(e){
+    if ($(this).val() !== "" && $('#id_redis_mode').val() === "stream") {
+      $('.redis-consumer-group').show();
+    } else $('.redis-consumer-group').hide();
+  }).trigger('change');
+
+  var last_redis_server = $('#id_redis_server').val();
+  var last_redis_port = $('#id_redis_port').val();
+  var last_redis_password = $('#id_redis_password').val();
+
+  $('#id_redis_use_local').on('change', function(event) {
+    if ($(this).is(':checked')) {
+      last_redis_server = $('#id_redis_server').val();
+      last_redis_port = $('#id_redis_port').val();
+      last_redis_password = $('#id_redis_password').val();
+      $('#id_redis_server').val(redis_local.server);
+      $('#id_redis_port').val(redis_local.port);
+      $('#id_redis_password').val(redis_local.password);
+      $('.redis-connect').hide();
+    } else {
+      $('#id_redis_server').val(last_redis_server);
+      $('#id_redis_port').val(last_redis_port);
+      $('#id_redis_password').val(last_redis_password);
+      $('.redis-connect').show();
     }
   }).trigger('change');
 

@@ -26,8 +26,9 @@ __parser__ = 'API PARSER'
 import logging
 import signal
 import socket
-from threading import Event, current_thread, main_thread
 import time
+from threading import Event, current_thread, main_thread
+from redis import ReadOnlyError
 
 from django.conf import settings
 from services.frontend.models import Frontend
@@ -83,7 +84,7 @@ class ApiParser:
             else:
                 self.proxies = self.get_system_proxy()
 
-        self.redis_cli = RedisBase()
+        self.redis_cli = RedisBase(node="127.0.0.5", port=6379, password=config.redis_password)
 
         assert self.connect(), "Failed to connect to Rsyslog"
 
@@ -129,7 +130,11 @@ class ApiParser:
         if self.redis_cli.redis.get(self.key_redis):
             return False
 
-        self.redis_cli.redis.setex(self.key_redis, 300, 1)
+        try:
+            self.redis_cli.redis.setex(self.key_redis, 300, 1)
+        except ReadOnlyError as e:
+            logger.error(f"[{__parser__}]:can_run: {e}", extra={'frontend': str(self.frontend)})
+            return False
         return True
 
     def update_lock(self):

@@ -33,13 +33,11 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 # Django project imports
-from system.cluster.models import NetworkAddress, Node
-from system.pki.models import TLSProfile, X509Certificate
+from system.cluster.models import Cluster, Node
+from system.pki.models import TLSProfile
 from system.users.models import User
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
-from services.frontend.models import Frontend
-from applications.backend.models import Backend
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -133,7 +131,7 @@ class DeleteNode(DeleteView):
             c.repl_remove(obj_inst.name + ":9091")
 
             """ Before Deleting the node we need to remove it from Redis """
-            c = RedisBase(obj_inst.management_ip)
+            c = RedisBase(obj_inst.management_ip, password=Cluster.get_global_config().redis_password)
             c.replica_of('NO', 'ONE')
 
             # Fixme: Cleanup Sentinel ?

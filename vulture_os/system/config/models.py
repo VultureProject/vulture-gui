@@ -54,10 +54,17 @@ class Config(models.Model):
 
     pf_ssh_restrict = models.TextField(blank=False, null=False, default='any')
     pf_admin_restrict = models.TextField(blank=False, null=False, default='any')
-    cluster_api_key = models.TextField(blank=False, null=False, default='changeme')
+    cluster_api_key = models.TextField(blank=False, null=False, default='')
     oauth2_header_name = models.TextField(blank=False, null=False, default='X-Vlt-Token')
-    portal_cookie_name = models.TextField(blank=False, null=False, default='changeme')
-    public_token = models.TextField(blank=False, null=False, default='changeme')
+    portal_cookie_name = models.TextField(blank=False, null=False, default='')
+    public_token = models.TextField(blank=False, null=False, default='')
+    redis_password = models.TextField(
+        blank=True,
+        null=True,
+        default="",
+        verbose_name=_("Redis cluster password"),
+        help_text=_("Set the password for local Redis cluster")
+    )
     ldap_repository = models.ForeignKey(to=LDAPRepository, null=True, blank=False, on_delete=models.SET_NULL)
     branch = models.TextField(default="community")
     smtp_server = models.TextField(blank=True, default="")

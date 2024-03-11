@@ -31,7 +31,5 @@ urlpatterns = [
     path('system/pf/list', views.pf_whitelist_blacklist, name="system.pf.list"),
 
     path('api/v1/system/config/', api.ConfigAPIv1.as_view(), name="system.config.api"),
-    path('api/v1/system/config/<int:object_id>/', api.ConfigAPIv1.as_view(), name="system.config.api"),
     path('api/v1/system/pf/<str:list_type>/', api.PfAPIv1.as_view(), name="system.pf.api")
-
 ]

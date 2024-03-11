@@ -58,109 +58,112 @@ class TrendmicroVisiononeParser(ApiParser):
 
     def __execute_query(self, url_path, query, timeout=10):
         items = []
+        status = True
 
         headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token, 'TMV1-Filter': ""}
 
         link = self.URL_BASE + url_path
         try:
             while True:
-                r = requests.get(link, params=query, headers=headers,
-                                 proxies=self.proxies, verify=self.api_parser_verify_ssl, timeout=timeout)
+                r = requests.get(link, params=query, headers=headers,proxies=self.proxies, verify=self.api_parser_verify_ssl, timeout=timeout)
                 if r.status_code != 200:
-                    raise TrendmicroVisionOneAPIError(
-                        f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
+                    status = False
+                    logger.error(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
+                    raise TrendmicroVisionOneAPIError(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
 
                 items.extend(r.json()['items'])
 
                 if link := r.json().get('nextLink'):
                     query = None
+                    self.update_lock()
                     continue
                 else:
                     break
         except Exception as e:
+            status = False
             logger.error(f"[{__parser__}]:__execute_query: Error on link '{link}' : {e}", extra={'frontend': str(self.frontend)})
-        return items
+
+        return items, status
 
     def _get_alerts(self, since=None, to=None):
         url_path = '/v3.0/workbench/alerts'
-
         query = {
             'startDateTime': since,
             'endDateTime': to,
             'dateTimeTarget': 'createdDateTime',
-            'orderBy': 'createdDateTime desc'
+            'orderBy': 'createdDateTime desc',
+            'top': 200
         }
 
-        alerts = self.__execute_query(url_path, query)
+        alerts, status = self.__execute_query(url_path, query)
 
-        return alerts
+        return alerts, status
 
     def _get_auditlogs(self, since=None, to=None):
         url_path = '/v3.0/audit/logs'
-
         query = {
             'startDateTime': since,
             'endDateTime': to,
             'orderBy': 'createdDateTime desc',
-            'labels': 'all'
+            'labels': 'all',
+            'top': 200
         }
 
-        auditlogs = self.__execute_query(url_path, query)
+        auditlogs, status = self.__execute_query(url_path, query)
 
-        return auditlogs
+        return auditlogs, status
 
     def _get_OAT(self, since=None, to=None):
         url_path = '/v3.0/oat/detections'
-
         query = {
             'detectedStartDateTime': since,
             'detectedEndDateTime': to,
+            'top': 5000
         }
 
-        oat = self.__execute_query(url_path, query, timeout=30)
+        oat, status = self.__execute_query(url_path, query, timeout=30)
 
-        return oat
+        return oat, status
     
     @staticmethod
-    def _format_alert(log):
-        return json.dumps(log)
-    
-    @staticmethod
-    def _format_auditlog(log):
-        return json.dumps(log)
-
-    @staticmethod
-    def _format_OAT_log(log):
+    def _format_logs(log):
         return json.dumps(log)
 
     def execute(self):
         for kind in ["alerts", "oat", "audit"]:
 
             try:
-                since = getattr(self, f"trendmicro_visionone_{kind}_timestamp") or (timezone.now() - timedelta(days=2))
-                to = min(timezone.now(), since + timedelta(hours=24))
+                since = getattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp") or (timezone.now() - timedelta(days=2))
+                to = since + timedelta(minutes=1)
 
-                msg = f"Parser gets {kind} logs from {since} to {to}"
-                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-                start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
-                end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
-                if kind == "alerts":
-                    logs = self._get_alerts(start_time, end_time)
-                    self.write_to_file([self._format_alert(log) for log in logs])
-                elif kind == "audit":
-                    logs = self._get_auditlogs(start_time, end_time)
-                    self.write_to_file([self._format_auditlog(log) for log in logs])
-                elif kind == "oat":
-                    logs = self._get_OAT(start_time, end_time)
-                    self.write_to_file([self._format_OAT_log(log) for log in logs])
+                while to <= timezone.now() - timedelta(minutes=5) and not self.evt_stop.is_set():
+                    logger.info(f"[{__parser__}]:execute: Parser gets {kind} logs from {since} to {to}", extra={'frontend': str(self.frontend)})
+                    start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-                self.update_lock()
-                setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to)
-                self.frontend.save()
+                    self.update_lock()
+                    if kind == "alerts":
+                        logs, status = self._get_alerts(start_time, end_time)
+                    elif kind == "audit":
+                        logs, status = self._get_auditlogs(start_time, end_time)
+                    elif kind == "oat":
+                        logs, status = self._get_OAT(start_time, end_time)
+
+                    if status:
+                        self.write_to_file([self._format_logs(log) for log in logs])
+                        self.update_lock()
+                        setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to)
+                        since = to
+                        to += timedelta(minutes=1)
+                        self.frontend.save()
+                    else:
+                        break
+
+                else:
+                    logger.info(f"[{__parser__}]:execute: Log collection for {kind}'s logs stopped at {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')}", extra={'frontend': str(self.frontend)})
 
             except Exception as e:
-                msg = f"Failed on {kind} logs, between time of {since} and {to} : {e} "
-                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, between time of {since} and {to} : {e}", extra={'frontend': str(self.frontend)})
                 logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
@@ -169,16 +172,19 @@ class TrendmicroVisiononeParser(ApiParser):
         since = timezone.now() - timedelta(hours=24)
         to = timezone.now()
         start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+        start_time_oat = (since + timedelta(hours=23, minutes=59)).strftime("%Y-%m-%dT%H:%M:%SZ")
         end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         try:
-            alerts = self._get_alerts(start_time, end_time)
-            auditlogs = self._get_auditlogs(start_time, end_time)
-            detection_logs = self._get_OAT(since, to)
+            alerts, status = self._get_alerts(start_time, end_time)
+            if status:
+                auditlogs, status = self._get_auditlogs(start_time, end_time)
+            if status:
+                detection_logs, status = self._get_OAT(start_time_oat, end_time)
 
             return {
-                "status": True,
-                "data": ([self._format_alert(log) for log in alerts] + [self._format_auditlog(log) for log in auditlogs] + [self._format_OAT_log(log) for log in detection_logs])
+                "status": status,
+                "data": ([self._format_logs(log) for log in alerts] + [self._format_logs(log) for log in auditlogs] + [self._format_logs(log) for log in detection_logs])
             }
         except Exception as e:
             logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})

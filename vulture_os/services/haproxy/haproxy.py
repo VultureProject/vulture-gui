@@ -80,7 +80,7 @@ class HaproxyService(Service):
         self.perms = HAPROXY_PERMS
         self.jinja_template = {
             'tpl_name': self.config_file,
-            'tpl_path': "{}/{}".format(HAPROXY_PATH, self.config_file),
+            'tpl_path': "{}/00_{}".format(HAPROXY_PATH, self.config_file),
         }
 
     def __str__(self):
