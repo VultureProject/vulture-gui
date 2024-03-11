@@ -9,10 +9,10 @@ def print_detailed_results(test_modules):
     for mod in test_modules:
 
         if mod.nb_failed:
-            print "--------------------------------------------------"
-            print " " * (25 - len(str(mod)) / 2) + str(mod)
-            print "--------------------------------------------------\n"
-            print mod.buffer
+            print("--------------------------------------------------")
+            print(" " * (25 - len(str(mod)) / 2) + str(mod))
+            print("--------------------------------------------------\n")
+            print(mod.buffer)
 
 
 def print_summarized_results(test_modules):
@@ -38,15 +38,15 @@ def print_summarized_results(test_modules):
 
     # Create the separation line
     sep_line = " *" + ("-" * (reduce(lambda a, b: a + b, length) + 11)) + "*"
-    print sep_line
+    print(sep_line)
 
     # Print the title row
     line  = " | Module"         + (" " * (length[0] - 6))
     line += " | Time (seconds)" + (" " * (length[1] - 14))
     line += " | Failed"         + (" " * (length[2] - 6))
     line += " | Total"          + (" " * (length[3] - 5)) + " |"
-    print line
-    print sep_line
+    print(line)
+    print(sep_line)
 
     # Print the overview results for each module
     for mod in test_modules:
@@ -54,6 +54,6 @@ def print_summarized_results(test_modules):
         line += " | " + str(mod.time)      + (" " * (length[1] - len(str(mod.time))))
         line += " | " + str(mod.nb_failed) + (" " * (length[2] - len(str(mod.nb_failed))))
         line += " | " + str(mod.nb_test)   + (" " * (length[3] - len(str(mod.nb_test)))) + " |"
-        print line
+        print(line)
 
-    print sep_line
+    print(sep_line)

@@ -73,8 +73,7 @@ def launch_setup(setup_modules, save, node_name, summary):
                                         'node_name': node_name
                                     })
                 else:
-                    print "[ERROR] <{}> {}:: Test failure out of testing scope, " \
-                          "please check the code twice.\n{}".format(str(mod), method, traceback.format_exc())
+                    print (f"[ERROR] <{str(mod)}> {method}:: Test failure out of testing scope, please check the code twice.\n{traceback.format_exc()}")
         if failed_methods:
             failed_setup[str(mod)] = failed_methods
 
@@ -113,8 +112,7 @@ def launch_cleanup(cleanup_modules, failed_setup, save, node_name, summary):
                                         'node_name': node_name
                                     })
                 else:
-                    print "[ERROR] <{}> {}:: Test failure out of testing scope, " \
-                          "please check the code twice.\n{}".format(str(mod), method, traceback.format_exc())
+                    print (f"[ERROR] <{str(mod)}> {method}:: Test failure out of testing scope, please check the code twice.\n{traceback.format_exc()}")
 
 
 def launch_testing(test_modules, output_level, save, failed_setup, node_name, summary):
@@ -164,8 +162,7 @@ def launch_testing(test_modules, output_level, save, failed_setup, node_name, su
                                         'node_name': node_name
                                     })
                 else:
-                    print "[ERROR] <{}> {}:: Test failure out of testing scope, " \
-                          "please check the code twice.\n{}".format(str(mod), method, traceback.format_exc())
+                    print (f"[ERROR] <{str(mod)}> {method}:: Test failure out of testing scope, please check the code twice.\n{traceback.format_exc()}")
 
             try:
                 mod.tear_down()
