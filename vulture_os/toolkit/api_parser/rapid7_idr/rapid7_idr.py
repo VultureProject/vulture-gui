@@ -162,7 +162,7 @@ class Rapid7IDRParser(ApiParser):
         msg = f"Parser retrieving priority from investigation {id}"
         logger.info(f"[{__parser__}]:get_priority: {msg}", extra={'frontend': str(self.frontend)})
 
-        return alert['data']['priority']
+        return alert['priority']
 
     def format_log(self, log):
         log['type'] = [x['type'] for x in log['alerts']]
