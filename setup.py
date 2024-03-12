@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = "vulture-gui",
-    version = "2.15.0",
+    version = "2.16.0",
     packages = ["home", "vulture_os"],
     author = "VultureProject",
     author_email = "contact@vultureproject.org",
@@ -12,7 +12,7 @@ setup(
     classifiers=[],
     install_requires = [
         "django~=4.2.0",
-        "djongo[json]",
+        "djongo[json] @ https://github.com/VultureProject/djongo/archive/refs/tags/v1.3.6.post5.zip",
         "pymongo",
         "jinja2",
         "iptools",
@@ -42,7 +42,7 @@ setup(
         "websocket-client ~= 1.3.2",
         "google-auth",
         "google-api-python-client",
-        "add_setup-py",
+        "sophos-central-siem-integration @ https://github.com/VultureProject/Sophos-Central-SIEM-Integration/archive/refs/heads/add_setup-py.zip",
         "defusedxml",
     ],
 )
