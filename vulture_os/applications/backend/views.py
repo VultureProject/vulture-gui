@@ -94,7 +94,6 @@ def backend_clone(request, object_id):
                    'headers': header_form_list, 'header_form': HeaderForm(),
                    'http_health_check_headers': httpchk_header_form_list,
                    'http_health_check_headers_form': HttpHealthCheckHeaderForm(),
-                   'sockets_choice': available_sockets,
                    'cloned': True})
 
 
@@ -215,9 +214,7 @@ def backend_edit(request, object_id=None, api=False):
         return render(request, 'apps/backend_edit.html',
                       {'form': form, 'servers': server_form_list,
                        'net_server_form': ServerForm(mode='net'),
-                       'unix_server_form': ServerForm(mode='unix'),
                        'headers': header_form_list, 'header_form': HeaderForm(),
-                       'sockets_choice': available_sockets,
                        'http_health_check_headers': httpchk_header_form_list,
                        'http_health_check_headers_form': HttpHealthCheckHeaderForm(),
                        **kwargs})

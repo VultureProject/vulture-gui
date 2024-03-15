@@ -229,9 +229,6 @@ class ServerForm(ModelForm):
         self.fields['tls_profile'].empty_label = "Plain text"
         self.fields['tls_profile'].required = False
         self.fields['source'].required = False
-        if mode == 'unix':
-            self.fields['target'].label = 'Socket'
-            del self.fields['port']
 
 
     def as_table_headers(self):
@@ -249,7 +246,7 @@ class ServerForm(ModelForm):
         result = "<tr><td style=\"visibility:hidden;\">{}</td>\n".format(self.instance.id or "")
         mode = self.instance.mode
         for field in self:
-            if field.name == 'mode' or (mode == 'unix' and field.name == 'port'):
+            if field.name == 'mode':
                 continue
             result += "<td>{}</td>\n".format(field)
         result += "<td style='text-align:center'><a class='btnDelete'><i style='color:grey' " \

@@ -58,6 +58,7 @@ MODE_CHOICES = (
     ('http', 'HTTP'),
 )
 
+#TODO DEPRECATED
 SERVER_MODE_CHOICES = (
     ('net', 'network'),
     ('unix', 'unix sockets'),
@@ -656,6 +657,7 @@ class Server(models.Model):
         default="1.2.3.4"
     )
     """ Server mode """
+    #TODO DEPRECATED
     mode = models.TextField(
         default=SERVER_MODE_CHOICES[0][0],
         choices=SERVER_MODE_CHOICES,

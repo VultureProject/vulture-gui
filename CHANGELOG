@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DARWIN] Deprecated all Darwin-related features
   - Darwin policies and filters are no longer available
   - DEPRECATED: API URLs under api/v1/darwin/acl/ are now obsolete and will be removed, please use api/v1/security/acl/ instead
+- [BACKENDS] Removed 'unix' Servers from Backends
 ### Added
 - [LOG_FORWARDER] [REDIS] Support for queues, sets, publish and streams modes for log insertion
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
