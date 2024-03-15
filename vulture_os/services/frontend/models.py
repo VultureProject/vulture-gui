@@ -37,7 +37,6 @@ from djongo import models
 # Django project imports
 from applications.logfwd.models import LogOM, LogOMMongoDB
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
-from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinBuffering
 from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, NetworkInterfaceCard, Node
@@ -109,10 +108,6 @@ REDIS_STARTID_CHOICES = (
     ('>',"Undelivered entries"),
 )
 
-DARWIN_MODE_CHOICES = (
-    ('darwin', "generate alerts"),
-    ('both', "enrich logs and generate alerts")
-)
 SENTINEL_ONE_ACCOUNT_TYPE_CHOICES = (
     ('console', 'console'),
     ('user service', 'user service')
@@ -206,22 +201,6 @@ class Frontend(models.Model):
         default=False,
         help_text=_("Redirect http requests to https, if available"),
         verbose_name=_("Redirect HTTP to HTTPS")
-    )
-    """ *** DARWIN OPTIONS *** """
-    """ Darwin policy """
-    darwin_policies = models.ArrayReferenceField(
-        to=DarwinPolicy,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=False,
-        related_name="frontend_set",
-        help_text=_("Darwin policies to use")
-    )
-    """ Darwin mode """
-    darwin_mode = models.TextField(
-        default=DARWIN_MODE_CHOICES[0][0],
-        choices=DARWIN_MODE_CHOICES,
-        help_text=_("Ways to call Darwin: 'enrich' will wait for a score and add it to the data, 'alert' will simply pass the data for Darwin to process and will rely on its configured alerting methods")
     )
     """ *** LOGGING OPTIONS *** """
     """ Enable logging to Rsyslog """
@@ -1318,10 +1297,6 @@ class Frontend(models.Model):
                     result['listeners'].append(l)
         if not fields or "backend" in fields:
             result['backend'] = [b.to_dict() for b in self.backend.all()] if self.pk else []
-        if not fields or "darwin_policies" in fields:
-            result['darwin_policies'] = list(self.darwin_policies.all())
-        if not fields or "darwin_policies" in fields:
-            result['darwin_policies'] = list(self.darwin_policies.all())
         if not fields or "compression_algos" in fields:
             result['compression_algos'] = self.compression_algos.split(' ')
 
@@ -1510,9 +1485,7 @@ class Frontend(models.Model):
             'nb_workers': self.nb_workers,
             'mmdb_cache_size': self.mmdb_cache_size,
             'redis_batch_size': self.redis_batch_size,
-            'darwin_filters': FilterPolicy.objects.filter(policy__in=self.darwin_policies.all()),
             'keep_source_fields': self.keep_source_fields,
-            'darwin_mode': self.darwin_mode,
             'tenants_config': self.tenants_config,
             'filebeat_module': self.filebeat_module,
             'filebeat_config': self.filebeat_config,
@@ -1739,47 +1712,9 @@ class Frontend(models.Model):
             conf['pre_ruleset'] = self.render_pre_ruleset() if self.enabled and self.enable_logging else ""
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
 
-            darwin_actions = []
-            for darwin_filter in FilterPolicy.objects.filter(policy__in=self.darwin_policies.all(), enabled=True):
-                if not darwin_filter.filter_type.is_launchable:
-                    continue
-
-                action = {
-                    "filter_type": darwin_filter.filter_type.name,
-                    "threshold": darwin_filter.threshold,
-                    "enrichment_tags": ["darwin.{}".format(darwin_filter.filter_type.name)],
-                    "calls": []
-                }
-
-                # if filter is buffered
-                # - enrichment should be disabled
-                # - socket should point to related buffer filter
-                # - inputs should include buffer source
-                if darwin_filter.buffering.exists():
-                    # shouldn't raise, but exceptions are handled at the end of the function anyway
-                    buffering = darwin_filter.buffering.get()
-                    action['disable_enrichment'] = True
-                    action['buffer_source'] = "{}_{}_{}".format(buffering.destination_filter.name, self.name, buffering.destination_filter.policy.id)
-                    action['filter_socket'] = buffering.buffer_filter.socket_path
-                else:
-                    action['filter_socket'] = darwin_filter.socket_path
-
-                if darwin_filter.mmdarwin_enabled and darwin_filter.mmdarwin_parameters:
-                    call = {
-                        "inputs": darwin_filter.mmdarwin_parameters,
-                        "outputs": [p.replace('.', '!') for p in darwin_filter.mmdarwin_parameters if p[0] in ['!', '.']]
-                    }
-                    action['calls'].append(call)
-
-                if darwin_filter.enrichment_tags:
-                    action['enrichment_tags'].extend(darwin_filter.enrichment_tags)
-
-                darwin_actions.append(action)
-
             return template.render({'frontend': conf,
                                     'node': Cluster.get_current_node(),
-                                    'global_config': Cluster.get_global_config(),
-                                    'darwin_actions': darwin_actions})
+                                    'global_config': Cluster.get_global_config()})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__
         except TemplateNotFound as e:
@@ -1793,8 +1728,6 @@ class Frontend(models.Model):
                                           "{}".format(e.message), "rsyslog")
         except TemplateSyntaxError as e:
             exception = ServiceJinjaError("Syntax error in the template: '{}'".format(e.message), "rsyslog")
-        except (DarwinBuffering.DoesNotExist, DarwinBuffering.MultipleObjectsReturned) as e:
-            exception = ServiceJinjaError("Could not get the expected unique buffering from a darwin filter: '{}'".format(e.message), "rsyslog")
         # If there was an exception, raise a more general exception with the message and the traceback
         raise exception
 
@@ -1833,9 +1766,7 @@ class Frontend(models.Model):
                      "\\\"server_port\\\": \\\"%sp\\\", " \
                      "\\\"server_queue\\\": %sq, " \
                      "\\\"date_time\\\": \\\"%t\\\", " \
-                     "\\\"termination_state\\\": \\\"%ts\\\", " \
-                     "\\\"darwin_reputation_error\\\": \\\"%[var(txn.reputation.error)]\\\", " \
-                     "\\\"darwin_reputation_score\\\": \\\"%[var(sess.reputation.ip_score)]\\\" "
+                     "\\\"termination_state\\\": \\\"%ts\\\" "
 
         if self.mode == "http":
             log_format += ", \\\"unique_id\\\": \\\"%{+E}ID\\\", " \
@@ -1848,14 +1779,10 @@ class Frontend(models.Model):
                           "\\\"http_version\\\": \\\"%{+E}HV\\\", " \
                           "\\\"http_user_agent\\\": \\\"%[capture.req.hdr(0)]\\\", " \
                           "\\\"http_request_time\\\": %Ta, " \
-                          "\\\"darwin_session_error\\\": \\\"%[var(txn.session.error)]\\\", " \
-                          "\\\"darwin_user_agent_error\\\": \\\"%[var(txn.user_agent.error)]\\\", " \
-                          "\\\"darwin_session_score\\\": \\\"%[var(sess.session.ip_score)]\\\", " \
-                          "\\\"darwin_user_agent_score\\\": \\\"%[var(sess.user_agent.ip_score)]\\\", " \
-                          ", \\\"http_request_cookies\\\": \\\"%[capture.req.hdr(1),json(ascii)]\\\"" \
-                          ", \\\"http_request_body\\\": \\\"%[var(sess.body),json(ascii)]\\\"" \
-                          ", \\\"http_request_content_type\\\": \\\"%[capture.req.hdr(3),json(ascii)]\\\"" \
-                          ", \\\"http_request_host\\\": \\\"%[capture.req.hdr(4),json(ascii)]\\\""
+                          "\\\"http_request_cookies\\\": \\\"%[capture.req.hdr(1),json(ascii)]\\\", " \
+                          "\\\"http_request_body\\\": \\\"%[var(sess.body),json(ascii)]\\\", " \
+                          "\\\"http_request_content_type\\\": \\\"%[capture.req.hdr(3),json(ascii)]\\\", " \
+                          "\\\"http_request_host\\\": \\\"%[capture.req.hdr(4),json(ascii)]\\\""
         log_format += "}"
         # TODO: Verify                          minimum one listener uses https
         # If yes : Add \\\"ssl_ciphers\\\": \\\"%sslc\\\", \\\"ssl_version\\\": \\\"%sslv\\\"
@@ -2224,12 +2151,6 @@ CRITERION_MAPPING = {
     "bytes_received": None,  # TODO: TO IMPLEMENT
     "captured_request_cookie": "hdr(cookie)",
     "captured_response_cookie": None,  # TODO: TO IMPLEMENT
-    "darwin_reputation_error": None,  # TODO: TO IMPLEMENT
-    "darwin_reputation_score": None,  # TODO: TO IMPLEMENT
-    "darwin_session_error": None,  # TODO: TO IMPLEMENT
-    "darwin_session_score": None,  # TODO: TO IMPLEMENT
-    "darwin_user_agent_error": None,  # TODO: TO IMPLEMENT
-    "darwin_user_agent_score": None,  # TODO: TO IMPLEMENT
     "feconn": None,  # TODO: TO IMPLEMENT
     "frontend_ip": None,  # TODO: TO IMPLEMENT
     "frontend_name": None,  # TODO: TO IMPLEMENT

@@ -32,7 +32,6 @@ from gui.forms.form_utils import DivErrorList
 from services.haproxy.form import HAProxyForm
 from services.haproxy.models import HAProxySettings
 from services.pf.models import PFSettings
-from services.darwin.models import DarwinSettings
 from system.cluster.models import Node
 
 # Required exceptions imports
@@ -51,7 +50,6 @@ def haproxy_edit(request, object_id=None):
         try:
             haproxy_model = HAProxySettings.objects.get(pk=object_id)
             pf_model = PFSettings.objects.get()
-            darwin_model = DarwinSettings.objects.get()
             if not haproxy_model:
                 raise InvalidId()
         except InvalidId:

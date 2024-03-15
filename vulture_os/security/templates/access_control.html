@@ -1,0 +1,169 @@
+{% extends 'layout2.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+
+{% block content %}
+  
+  <section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div class="panel-control">
+                      <a class="btn btn-flat btn-primary" href="{% url 'security.access_control.edit' %}"><i class="fas fa-plus-circle">&nbsp;</i>{% translate "Add an entry" %}</a>
+                    </div>
+                    <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Access control" %}</h1>
+                </div>
+                <div class="panel-body">
+                  <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="access_control_table">
+                  </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<i class="fa fa-fw fa-fighter-jet"></i>-->
+
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+
+  var aoColumns = [
+    {
+      sTitle: "ID",
+      name: "id",
+      aTargets: [0],
+      defaultContent: "",
+      mData: "id",
+      bVisible: false,
+    },
+    {
+      sTitle: '{% translate "Name" %}',
+      name: "name",
+      aTargets: [1],
+      defaultContent: "",
+      mData: "name"
+    },
+    {
+      sTitle: '{% translate "Used by" %}',
+      name: "used_by",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "used_by",
+      mRender: function(data, type, row) {
+        result = "<ul>";
+        data.forEach(function(item) {
+          result += "<li>" + item + "</li>";
+        })
+        result += "</ul>";
+        return result;
+      }
+    },
+    {
+      sTitle: '{% translate "NB Rules" %}',
+      name: "rules",
+      aTargets: [3],
+      defaultContent: "",
+      mData: "rules",
+      mRender: function(data, type, row){
+        return JSON.parse(data).length;
+      }
+    },
+    {
+      sTitle: '{% translate "Action" %}',
+      mData:"id",
+      aTargets: [4],
+      sWidth: "5%",
+      defaultContent: "",
+      mRender: function(data, type, row) {
+        return '<a class="btn btn-flat btn-xs btn-primary btn-clone" data-toggle="tooltip" data-placement="top" title="{% translate 'Copy' %}"><span><i class="fa fa-copy"></i></span></a>' +
+        '&nbsp;<a class="btn btn-flat btn-xs btn-danger btn-delete" data-toggle="tooltip" data-placement="top" href="/security/acl/delete/' + data + '"" title="{% translate 'Delete' %}"><span><i class="fas fa-trash-alt"></i></span></a>';
+      }
+    }
+  ];
+
+  var access_control_table = $("#access_control_table").dataTable({
+    bServerSide   : true,
+    order         : [[1, 'desc']],
+    iDisplayLength: 10,
+    bProcessing   : true,
+    bSort         : true,
+    sAjaxSource   : '',
+    sServerMethod : 'POST',
+    aoColumnDefs: aoColumns,
+    language: language_datatable,
+    fnServerData  : function(sSource, aoData, fnCallback){
+
+      var columns = [];
+      for (var i in aoColumns){
+        if( aoColumns[i].bSearchable !== false && aoColumns[i].mData !== null )
+          columns.push(aoColumns[i].mData);
+      }
+
+      aoData.push({
+        name: 'columns',
+        value: JSON.stringify(columns)
+      });
+
+      $.ajax({
+        type   : "POST",
+        url    : sSource,
+        data   : aoData,
+        success: function(data, callback){
+          if (check_json_error(data)){
+            fnCallback(data);
+          }
+        }
+      }) // /$.ajax
+      .fail( function( jqXHR, textStatus ) {
+        check_json_error(data)
+      }) // /$.fail
+      .done( function( data ) {
+        if (!data.status){
+          check_json_error(data);
+        } else {
+          fnCallback(data);
+        }
+      }); // /$.done
+    }, // /fnServerData
+
+    fnCreatedRow: function(nRow, aData, iDataIndex){
+
+      /* Events binding to edit a template */
+      $(nRow).on('click', function(e){
+          console.log(aData);
+          var id = aData['id'];
+          window.location.href = "/security/acl/edit/" + id;
+      });
+
+      $(nRow).find('.btn-clone').on('click', function(e){
+        e.stopPropagation();
+
+        $.post(
+          '{% url "security.access_control.clone" %}',
+          {'pk': aData.id},
+
+          function(response){
+            if (check_json_error(response)){
+              notify('success', '{% translate "Success" %}', '{% translate "ACL cloned" %}');
+              access_control_table.DataTable().fnDraw(false);
+            }
+          }
+        )
+      })
+    } 
+  });
+
+{% endblock %}

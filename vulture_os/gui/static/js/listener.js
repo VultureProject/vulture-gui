@@ -334,15 +334,6 @@ $(function() {
     }
   }
 
-  function show_darwin_mode(darwin_policy) {
-    if( darwin_policy ) {
-      $('.darwin-mode').show();
-    }
-    else {
-      $('.darwin-mode').hide();
-    }
-  }
-
   $('#id_api_parser_use_proxy').on('change', function(e){
     if ($(this).is(':checked')) {
       $('#api_parser_custom_proxy').show();
@@ -491,11 +482,6 @@ $(function() {
     }
     redrawSwitch('id_enable_logging');
   }).trigger("change");
-
-  $('#id_darwin_policies').on("change", function(e) {
-    var policy = $(this).val();
-    show_darwin_mode(policy);
-  }).trigger('change');
 
   function refresh_filebeat_module() {
     var module = $("#id_filebeat_module").val();

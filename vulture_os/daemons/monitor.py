@@ -29,20 +29,17 @@ from django.utils import timezone
 
 # Django project imports
 from applications.backend.models import Backend
-from darwin.policy.models import FilterPolicy
 from gui.models.monitor import Monitor, ServiceStatus
 from gui.crontab.api_clients_parser import node_selected
 from services.service import Service
 from services.strongswan.strongswan import get_ipsec_tunnels_stats, StrongswanService
 from services.openvpn.openvpn import get_ssl_tunnels_stats, OpenvpnService
-from services.darwin.darwin import monitor_filters as monitor_darwin_filters
 from services.haproxy.haproxy import get_stats, HaproxyService
 from services.strongswan.models import Strongswan
 from services.openvpn.models import Openvpn
 from services.pf.pf import PFService
 from services.rsyslogd.rsyslog import RsyslogService
 from services.filebeat.filebeat import FilebeatService
-from services.darwin.darwin import DarwinService
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 
@@ -87,7 +84,7 @@ def monitor():
     )
     mon.services_id = set()
 
-    for service in [HaproxyService, DarwinService, PFService,
+    for service in [HaproxyService, PFService,
                     StrongswanService, OpenvpnService, RsyslogService, FilebeatService]:
 
         # Get some statuses outside for reusing variable later
@@ -210,30 +207,6 @@ def monitor():
         openvpn.tunnels_status = get_ssl_tunnels_stats()
         openvpn.status = openvpn_status.status
         openvpn.save()
-
-    """ DARWIN """
-    filters = FilterPolicy.objects.all()
-    if filters.count() > 0:
-        filter_statuses = {}
-        default = "ERROR"
-        try:
-            filter_statuses = monitor_darwin_filters()
-
-        except ServiceError as e:
-            logger.error(str(e))
-            default = "DOWN"
-
-        for dfilter in filters:
-            dfilter.status[node.name] = default
-
-            filter_status = filter_statuses.get(dfilter.name, False)
-            if not dfilter.enabled:
-                dfilter.status[node.name] = "DISABLED"
-            elif filter_status is None or not dfilter.filter_type.is_launchable:
-                dfilter.status[node.name] = "DOWN"
-            elif filter_statuses.get(dfilter.name, {}).get('status') is not None:
-                dfilter.status[node.name] = filter_statuses.get(dfilter.name).get('status').upper()
-            dfilter.save()
 
     """ Update Node state and heartbeat """
     node.heartbeat = timezone.now()

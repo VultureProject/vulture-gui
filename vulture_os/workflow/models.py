@@ -33,7 +33,7 @@ from django.template import Template
 
 # Django project imports
 from applications.backend.models import Backend
-from darwin.access_control.models import AccessControl
+from security.access_control.models import AccessControl
 from authentication.auth_access_control.models import AuthAccessControl
 from authentication.user_portal.models import UserAuthentication
 from services.frontend.models import Frontend

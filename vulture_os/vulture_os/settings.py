@@ -64,7 +64,8 @@ AVAILABLE_APPS = [
     'system',
     'authentication',
     'applications',
-    'darwin',
+    'darwin', #TODO DEPRECATED: remove
+    'security',
     'toolkit',
     'workflow'
 ]
@@ -114,7 +115,7 @@ TEMPLATES = [
             BASE_DIR + "/gui/templates/gui/",
             BASE_DIR + "/services/templates/services/",
             BASE_DIR + "/system/templates/system/",
-            BASE_DIR + "/darwin/access_control/config"
+            BASE_DIR + "/security/access_control/config"
         ],
         'APP_DIRS': True,
         'OPTIONS': {

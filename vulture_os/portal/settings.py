@@ -48,7 +48,8 @@ AVAILABLE_APPS = [
     'system',
     'authentication',
     'applications',
-    'darwin',
+    'darwin', # TODO DEPRECATED: remove
+    'security',
     'toolkit',
     'workflow'
 ]

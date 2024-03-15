@@ -913,11 +913,6 @@ ul li{
     max-height: 400px;
 }
 
-.hint_darwin_filter{
-    margin-top: 0;
-    margin-bottom: 25px;
-}
-
 .label-ldap{
     font-size: 12px;
 }

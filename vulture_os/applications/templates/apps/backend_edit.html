@@ -184,26 +184,6 @@
                           </table>
                           <button class="addlink addplus" id="add_net_server" type="button">{% translate "Add an Entry" %}</button>
                           {{ form.servers.errors|safe }}
-                        </div>
-                      </div>
-                      <legend>{% translate "Backend Unix servers" %}</legend>
-                      <div class="row">
-                        <div class="col-md-12">
-                          <table id="unix_server_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
-                            <!-- Here are the attributes of Server class -->
-                            <thead>
-                              {{ unix_server_form.as_table_headers|safe }}
-                            </thead>
-                            <tbody>
-                              {% for s in servers %}
-                                {% if s.mode.value == "unix" %}
-                                {{ s.as_table_td|safe }}
-                                {% endif %}
-                              {% endfor %}
-                            </tbody>
-                          </table>
-                          <button class="addlink addplus" id="add_unix_server" type="button">{% translate "Add an Entry" %}</button>
-                          {{ form.servers.errors|safe }}
                           <input id="servers" name="servers" value="" type="hidden">
                         </div>
                       </div>
@@ -606,26 +586,6 @@
       id++;
     });
 
-    /* Add default ServerForm to unix_server_table */
-    $("#add_unix_server").on("click", function(e) {
-      $('#unix_server_table').append(`{{unix_server_form.as_table_td|safe}}`);
-      /* tagEditor config set when a unix socket is added (one more down for initial data) */
-      newObj = $('#unix_server_table input[value="1.2.3.4"]');
-      newObj.attr('value', '');
-      newObj.tagEditor({
-        initialTags: [],
-        maxTags: 1,
-        forceLowercase: false,
-        autocomplete: {
-          delay: 0,
-          minLength: 0,
-          source: {{sockets_choice|safe}}
-        }
-      });
-      refresh_table_events();
-      id++;
-    });
-
 
     /* Request-headers code */
     var id2 = 0;
@@ -656,16 +616,6 @@
         var source = tr.children[5].children[0].value;
         servers.push({'id': id, 'target': target, 'port': port, 'tls_profile': tls_profile,
                         'weight': weight, 'source': source, 'mode': 'net'});
-      });
-      $('#unix_server_table tbody tr').each(function(index, tr) {
-        // TODO : Do this as generic
-        var id = tr.children[0].innerHTML;
-        var target = tr.children[1].children[0].value;
-        var tls_profile = tr.children[2].children[0].value;
-        var weight = tr.children[3].children[0].valueAsNumber;
-        var source = tr.children[4].children[0].value;
-        servers.push({'id': id, 'target': target, 'port': 1, 'tls_profile': tls_profile,
-                        'weight': weight, 'source': source, 'mode': 'unix'});
       });
       $('#servers').val(JSON.stringify(servers));
       if( $('#id_mode').val() == "http" ) {
@@ -707,19 +657,6 @@
           delay: 0,
           minLength: 0,
           source: []
-        },
-        onChange: function(field, editor, tags){}
-      });
-
-      /* initial tagEditor set for existing fields (one more up when one is added) */
-      $("#unix_server_table input[name='target']").tagEditor({
-        initialTags: [],
-        forceLowercase: false,
-        maxTags: 1,
-        autocomplete: {
-          delay: 0,
-          minLength: 0,
-          source: {{sockets_choice|safe}}
         },
         onChange: function(field, editor, tags){}
       });

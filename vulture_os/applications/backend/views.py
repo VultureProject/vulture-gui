@@ -34,7 +34,6 @@ from django.utils.translation import gettext_lazy as _
 from gui.forms.form_utils import DivErrorList
 from applications.backend.form import BackendForm, ServerForm
 from applications.backend.models import Backend, BACKEND_OWNER, BACKEND_PERMS, Server
-from services.darwin.darwin import get_darwin_sockets
 from system.cluster.models import Cluster, Node
 from toolkit.api.responses import build_response
 from toolkit.http.headers import HeaderForm, Header, HttpHealthCheckHeaderForm
@@ -90,14 +89,11 @@ def backend_clone(request, object_id):
     backend.name = 'Copy of {}'.format(backend.name)
     form = BackendForm(None, instance=backend, error_class=DivErrorList)
 
-    available_sockets = get_darwin_sockets()
-
     return render(request, 'apps/backend_edit.html',
                   {'form': form, 'servers': server_form_list, 'server_form': ServerForm(),
                    'headers': header_form_list, 'header_form': HeaderForm(),
                    'http_health_check_headers': httpchk_header_form_list,
                    'http_health_check_headers_form': HttpHealthCheckHeaderForm(),
-                   'sockets_choice': available_sockets,
                    'cloned': True})
 
 
@@ -203,8 +199,6 @@ def backend_edit(request, object_id=None, api=False):
             if save_error:
                 return JsonResponse({'error': save_error[0], 'details': save_error[1]}, status=500)
 
-        available_sockets = get_darwin_sockets()
-
         if not server_form_list and back:
             for l_tmp in back.server_set.all():
                 server_form_list.append(ServerForm(instance=l_tmp))
@@ -220,9 +214,7 @@ def backend_edit(request, object_id=None, api=False):
         return render(request, 'apps/backend_edit.html',
                       {'form': form, 'servers': server_form_list,
                        'net_server_form': ServerForm(mode='net'),
-                       'unix_server_form': ServerForm(mode='unix'),
                        'headers': header_form_list, 'header_form': HeaderForm(),
-                       'sockets_choice': available_sockets,
                        'http_health_check_headers': httpchk_header_form_list,
                        'http_health_check_headers_form': HttpHealthCheckHeaderForm(),
                        **kwargs})

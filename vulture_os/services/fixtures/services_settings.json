@@ -12,12 +12,6 @@
     }
   },
   {
-    "model": "services.DarwinSettings",
-    "pk": 1,
-    "fields": {
-    }
-  },
-  {
     "model": "services.HAProxySettings",
     "pk": 1,
     "fields": {
