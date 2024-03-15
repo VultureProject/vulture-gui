@@ -33,10 +33,9 @@ from django.utils.translation import gettext_lazy as _
 # Django project imports
 from applications.logfwd.models import LogOM
 from applications.reputation_ctx.models import ReputationContext
-from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
-                                      LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
+                                      LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES,
                                       REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES, FILEBEAT_LISTENING_MODE,
                                       FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
 
@@ -126,13 +125,6 @@ class FrontendForm(ModelForm):
         AVAILABLE_API_PARSER.extend([(parser, parser.upper().replace('_', ' '))
                                      for parser in get_available_api_parser()])
 
-        """ Darwin policy """
-        self.fields['darwin_policies'] = ModelMultipleChoiceField(
-            label=_("Darwin policies"),
-            queryset=DarwinPolicy.objects.filter(is_internal=False),
-            widget=SelectMultiple(attrs={'class': 'form-control select2'}),
-            required=False
-        )
         """ Log forwarders """
         self.fields['log_forwarders'] = ModelMultipleChoiceField(
             label=_("Log forwarders"),
@@ -213,7 +205,7 @@ class FrontendForm(ModelForm):
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'nb_workers','mmdb_cache_size','redis_batch_size', 'redis_use_local',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
-                           'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
+                           'node', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
                            'api_parser_verify_ssl', 'api_parser_custom_certificate',
                            'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
                            "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
@@ -315,7 +307,7 @@ class FrontendForm(ModelForm):
                   'nb_workers','mmdb_cache_size','redis_batch_size', 'redis_mode', 'redis_use_lpop',
                   'redis_server', 'redis_port', 'redis_key', 'redis_password', 'redis_stream_consumerGroup',
                   'redis_stream_consumerName', 'redis_stream_startID', 'redis_stream_acknowledge', 'redis_stream_reclaim_timeout',
-                  'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
+                  'node', 'api_parser_type', 'api_parser_use_proxy',
                   'api_parser_custom_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
                   'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
                   "symantec_username", "symantec_password",
@@ -373,7 +365,6 @@ class FrontendForm(ModelForm):
             'tenants_config': Select(choices=Tenants.objects.all(), attrs={'class': "form-control select2"}),
             'enable_logging_reputation': CheckboxInput(attrs={'class': "js-switch"}),
             'log_level': Select(choices=LOG_LEVEL_CHOICES, attrs={'class': 'form-control select2'}),
-            'darwin_mode': Select(choices=DARWIN_MODE_CHOICES, attrs={'class': 'form-control select2'}),
             'log_condition': Textarea(attrs={'class': 'form-control'}),
             'ruleset': Select(attrs={'class': 'form-control select2'}),
             'listening_mode': Select(choices=LISTENING_MODE_CHOICES, attrs={'class': 'form-control select2'}),
@@ -789,11 +780,6 @@ class FrontendForm(ModelForm):
                     not cleaned_data.get('logging_reputation_database_v6'):
                 self.add_error('logging_reputation_database_v4', "One of those fields is required.")
                 self.add_error('logging_reputation_database_v6', "One of those fields is required.")
-
-        """ If Darwin policy is enabled, darwin_mode is required """
-        if cleaned_data.get('darwin_policies'):
-            if not cleaned_data.get("darwin_mode"):
-                self.add_error("darwin_mode", "This field is required when a darwin policy is set")
 
         """ if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank """
         if cleaned_data.get('ratelimit_interval') and not cleaned_data.get('ratelimit_burst'):

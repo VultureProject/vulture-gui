@@ -24,7 +24,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Install View of Vulture OS'
 
 from applications.logfwd.models import LogOMMongoDB
-from darwin.policy.models import DarwinPolicy
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
@@ -204,10 +203,6 @@ def cluster_create(admin_user=None, admin_password=None):
 
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")
-
-    logger.debug("API call to reload whole darwin configuration")
-    DarwinPolicy.update_buffering()
-    node.api_request("services.darwin.darwin.reload_all")
 
     logger.debug("API call to configure Logrotate")
     node.api_request("services.logrotate.logrotate.reload_conf")

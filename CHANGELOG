@@ -6,9 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## Unreleased
+### Removed
+- [DARWIN] Deprecated all Darwin-related features
+  - Darwin policies and filters are no longer available
+  - DEPRECATED: API URLs under api/v1/darwin/acl/ are now obsolete and will be removed, please use api/v1/security/acl/ instead
 ### Added
 - [LOG_FORWARDER] [REDIS] Support for queues, sets, publish and streams modes for log insertion
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
+- [SECURITY] Add new 'security' app to replace the previous 'darwin' app
+  - api/v1/security/acl/ has been copied from darwin/acl to replace those endpoints
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 

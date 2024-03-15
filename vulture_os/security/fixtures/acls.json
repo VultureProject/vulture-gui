@@ -1,0 +1,26 @@
+[
+    {
+        "model": "security.AccessControl",
+        "pk": 1,
+        "fields": {
+            "enabled": false,
+            "name": "Source IP Verification",
+            "rules": [
+                {
+                    "pk": "2hd780o",
+                    "lines": [
+                        {
+                            "acl_name": "8hdk79h",
+                            "criterion": "src",
+                            "criterion_name": "",
+                            "dns": true,
+                            "case": false,
+                            "operator": "",
+                            "pattern": "192.168.1.1"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

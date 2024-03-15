@@ -29,7 +29,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from applications.apps import Apps
 from authentication.authentication import Authentication
 from authentication.portal import Portal
-from darwin.darwin import Darwin
+from security.security import Security
 from services.service import Service
 from system.cluster.models import Cluster
 from system.system import System
@@ -59,7 +59,7 @@ def admin_media(request):
     except (ObjectDoesNotExist, AssertionError):
         node_name = ""
 
-    menu = (System().menu, Service().menu, Authentication().menu, Portal().menu, Darwin().menu, Apps().menu, Workflows().menu)
+    menu = (System().menu, Service().menu, Authentication().menu, Portal().menu, Security().menu, Apps().menu, Workflows().menu)
     results = {
         'MENUS': menu,
         'VERSION': settings.VERSION,

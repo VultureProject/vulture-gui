@@ -186,14 +186,12 @@ def delete_conf(logger, filenames):
     from system.error_templates.models import CONF_PATH as ERROR_TPL_PATH
     from applications.reputation_ctx.models import DATABASES_PATH as REPUTATION_CTX_DB_PATH
     from system.pki.models import CERT_PATH
-    from services.darwin.darwin import DARWIN_PATH
     from services.rsyslogd.rsyslog import RSYSLOG_PATH
 
     allowed_files_regex = ["{}/\w+_\d+\.html".format(ERROR_TPL_PATH),
                            "{}/.*\.(mmdb|netset|lookup)".format(REPUTATION_CTX_DB_PATH),
                            "{}/[\w\_\-\.]+-\d+\.(chain|crt|pem|key|pub)".format(CERT_PATH),
-                           "{}/parser_[0-9]+\.rb".format(RSYSLOG_PATH),
-                           "{}/f[\w-]+/f[\w-]+_[0-9]+.conf".format(DARWIN_PATH)]
+                           "{}/parser_[0-9]+\.rb".format(RSYSLOG_PATH)]
 
     # Filenames can be a list casted to string
     if filenames[0] == '[':

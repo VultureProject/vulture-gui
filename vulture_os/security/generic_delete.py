@@ -26,24 +26,17 @@ __doc__ = 'Classes used to delete objects'
 # Django system imports
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models.deletion import ProtectedError
-from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 # Django project imports
-from darwin.access_control.models import AccessControl
-from services.frontend.models import BlacklistWhitelist, Frontend
-from system.cluster.models import Cluster
-from workflow.models import Workflow
+from security.access_control.models import AccessControl
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from services.exceptions import ServiceError
-
-from bson import ObjectId
 
 # Logger configuration imports
 import logging
@@ -97,8 +90,8 @@ class DeleteView(View):
 class DeleteAccessControl(DeleteView):
     menu_name = _("Security Engine -> Access Control -> Delete")
     obj = AccessControl
-    redirect_url = "/darwin/acl/"
-    delete_url = "/darwin/acl/delete/"
+    redirect_url = "/security/acl/"
+    delete_url = "/security/acl/delete/"
 
     # This method is mandatory for all child classes
     # Returns [] if nothing to do
@@ -107,10 +100,3 @@ class DeleteAccessControl(DeleteView):
         Return a list of strings, printed in template as "Used by this object:"
         """
         return [str(acl.access_control) for acl in object.workflowacl_set.all()]
-
-    # get, post and used_by methods herited from mother class
-    def get(self, request, object_id, **kwargs):
-        return super().get(request, ObjectId(object_id), **kwargs)
-
-    def post(self, request, object_id, **kwargs):
-        return super().post(request, ObjectId(object_id), **kwargs)

@@ -14,25 +14,43 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Kevin GUILLEMOT"
+__author__ = "Jérémie JOURDIN"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Darwin daemon dedicated urls entries'
-
-# Django system imports
-
-# Django project imports
-
-# Required exceptions imports
-
-# Extern modules imports
-
-# Logger configuration imports
+__doc__ = 'Security main models'
 
 
-urlpatterns = [
+from django.utils.translation import gettext as _
+from django.conf import settings
 
-]
+import logging
+import logging.config
+
+logging.config.dictConfig(settings.LOG_SETTINGS)
+
+
+class Security:
+
+    def __init__(self):
+        self.logger = logging.getLogger('gui')
+
+    @property
+    def menu(self):
+        MENU = {
+            'link': 'security',
+            'icon': 'fas fa-atom',
+            'text': _('Security engine'),
+            'url': "#",
+            'submenu': [
+                {
+                    'link': 'access_control',
+                    'text': _('Access Control'),
+                    'url': '/security/acl/'
+                },
+            ]
+        }
+
+        return MENU

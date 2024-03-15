@@ -439,7 +439,7 @@ class REDISPortalSession(REDISSession):
 
     def allow_access_to_app(self, app_id, timeout):
         """
-        Set Redis key for Darwin to validate the portal session on this specific app
+        Set Redis key to validate the portal session on this specific app
         """
         self.set_in_redis(f"{self.key}_{app_id}", "1", timeout)
 
@@ -465,7 +465,7 @@ class REDISPortalSession(REDISSession):
         if refresh_token:
             self.keys[f"refresh_{backend_id}"] = refresh_token
 
-        # Save additional related key for Darwin Session quick verification
+        # Save additional related key Session quick verification
 
         if not self.write_in_redis(timeout):
             raise REDISWriteError("REDISPortalSession::register_sso: Unable to write SSO infos in REDIS")

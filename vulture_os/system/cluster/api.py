@@ -189,9 +189,6 @@ def cluster_add(request):
         # Reload/Build global haproxy configurations and reload service for all nodes
         Cluster.api_request("services.haproxy.haproxy.configure_node")
 
-        logger.debug("API call to reload whole darwin configuration")
-        new_node.api_request("services.darwin.darwin.reload_all")
-
         """ The method configure restart rsyslog if needed """
         logger.debug("API calls to configure rsyslog")
         new_node.api_request("services.rsyslogd.rsyslog.build_conf")

@@ -1,0 +1,191 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+{% endblock %}
+
+{% block js_include %}
+	<script src="{% static 'js/access_control.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+  <section class="content form-horizontal" id="access_control_vue">
+  	<div class="row">
+  		<div class="col-md-12">
+  			<div class="panel">
+  				<div class="panel-header with-border">
+  					<h3 class="panel-title">{% translate "Access control" %}</h3>
+  				</div>
+  				<div class="panel-body" id="ac-body">
+					<div class="nav-tabs-custom nav-tabs-no-margin">
+					    <ul class="nav nav-tabs">
+						    <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+						    <li><a href="#tab_conditions" data-toggle="tab">{% translate "Conditions" %}</a></li>
+						</ul>
+						<div class="tab-content">
+							<div class="tab-pane active" id="tab_general">
+                  				<br/>
+								<div class="row">
+									<div class="col-md-12">
+										<div class="form-group">
+											<label class="col-sm-4 control-label">{{ form.name.label }}</label>
+											<div class="col-sm-5">{{form.name}}</div>
+										</div>
+									</div>
+								</div>
+							</div>
+                  			<div class="tab-pane" id="tab_conditions">
+                  				<br/>
+								<div class="row">
+									<div class="col-md-12" id="condition-list">
+										<div v-for="(or_line, or_index) in or_lines" class="panel panel-bordered-primary condition_block" :data-index="or_index">
+											<div class="panel-heading">
+												<div class="panel-control">
+													<button v-if="or_lines.length > 0" type="button" class="btn btn-xs btn-danger btn-flat" v-on:click="remove_or(or_line.pk)"><i class="fas fa-trash-alt"></i></button>
+												</div>
+											</div>
+											<div class="panel-body">
+												<table class="table table_acl">
+													<thead>
+														<tr>
+															<th></th>
+															<th colspan="2">{% translate "Criterion" %}</th>
+															<th>{% translate "Converter" %}</th>
+															<th>{% translate "Forbid DNS resolution" %}</th>
+															<th>{% translate "Case insensitive" %}</th>
+															<th>{% translate "Operator" %}</th>
+															<th>{% translate "Pattern" %}</th>
+															<th>{% translate "Action" %}</th>
+														</tr>
+													</thead>
+													<tbody class="body_lines">
+														<tr v-for="(and, and_index) in or_line.lines" :id="render_id(or_index, and_index)" :class="render_class_end_line(and.error)" :data-index="and_index">
+															<td v-html="render_and(and_index)"></td>
+															<td>
+																<select class="form-control criterion reload">
+																	<option :selected="is_selected('criterion', and, 'src')" value="src">{% translate "Source IP" %}</option>
+																	<option :selected="is_selected('criterion', and, 'base')" value="base">{% translate "Base" %}</option>
+																	<option :selected="is_selected('criterion', and, 'hdr')" value="hdr">{% translate "Request Header" %}</option>
+																	<option :selected="is_selected('criterion', and, 'shdr')" value="shdr">{% translate "Response Header" %}</option>
+																	<option :selected="is_selected('criterion', and, 'http_auth_group')" value="http_auth_group">{% translate "Authentication group" %}</option>
+																	<option :selected="is_selected('criterion', and, 'method')" value="method">{% translate "Method" %}</option>
+																	<option :selected="is_selected('criterion', and, 'path')" value="path">{% translate "Path" %}</option>
+																	<option :selected="is_selected('criterion', and, 'url')" value="url">{% translate "URL" %}</option>
+																	<option :selected="is_selected('criterion', and, 'urlp')" value="urlp">{% translate "URLP" %}</option>
+																	<option :selected="is_selected('criterion', and, 'cook')" value="cook">{% translate "Request Cookie" %}</option>
+																	<option :selected="is_selected('criterion', and, 'scook')" value="scook">{% translate "Response Cookie" %}</option>
+																	<option :selected="is_selected('criterion', and, 'rdp_cookie')" value="rdp_cookie">{% translate "RDP Cookie" %}</option>
+																</select>
+																<span class="text-danger" v-html="render_error(and.error, 'criterion')"></span>
+															</td>
+															<td>
+																<input type="text" class="criterion_name" style="display: none;" :value="and.criterion_name"/>
+															</td>
+															<td>
+																<select class="form-control converter reload">
+																	<option value="">{% translate "Choose your Converter" %}</option>
+																	<option :selected="is_selected('converter', and, 'beg')" value="beg">{% translate "Prefix match" %}</option>
+																	<option :selected="is_selected('converter', and, 'dir')" value="dir">{% translate "Subdir match" %}</option>
+																	<option :selected="is_selected('converter', and, 'dom')" value="dom">{% translate "Domain match" %}</option>
+																	<option :selected="is_selected('converter', and, 'end')" value="end">{% translate "Suffix match" %}</option>
+																	<option :selected="is_selected('converter', and, 'hex')" value="hex">{% translate "Hex block match" %}</option>
+																	<option :selected="is_selected('converter', and, 'int')" value="int">{% translate "Integer match" %}</option>
+																	<option :selected="is_selected('converter', and, 'ip')" value="ip">{% translate "IP address match" %}</option>
+																	<option :selected="is_selected('converter', and, 'len')" value="len">{% translate "Length match" %}</option>
+																	<option :selected="is_selected('converter', and, 'reg')" value="reg">{% translate "Regex match" %}</option>
+																	<option :selected="is_selected('converter', and, 'str')" value="str">{% translate "Exact string match" %}</option>
+																	<option :selected="is_selected('converter', and, 'sub')" value="sub">{% translate "Substring match" %}</option>
+																	<option :selected="is_selected('converter', and, 'found')" value="found">{% translate "Found" %}</option>
+																</select>
+																<span class="text-danger" v-html="render_error(and.error, 'converter')"></span>
+															</td>
+															<td>
+																<input type="checkbox" class="reload" value="-i" :checked="is_selected('dns', and, 'dns')" class="dns">
+															</td>
+															<td>
+																<input type="checkbox" class="reload" value="-n" :checked="is_selected('case', and, 'case')" class="case">
+															</td>
+															<td>
+																<span class="nooperator">N/A</span>
+																<select class="form-control operator reload">
+																	<option value="">{% translate "Select your Operator" %}</option>
+																	<option :selected="is_selected('operator', and, 'eq')" value="eq">{% translate "Equal (int)" %}</option>
+																	<option :selected="is_selected('operator', and, 'ge')" value="ge">{% translate "Greater than or Equal (int)" %}</option>
+																	<option :selected="is_selected('operator', and, 'gt')" value="gt">{% translate "Greater than (int)" %}</option>
+																	<option :selected="is_selected('operator', and, 'le')" value="le">{% translate "Lesser than or Equal (int)" %}</option>
+																	<option :selected="is_selected('operator', and, 'lt')" value="lt">{% translate "Lesser than (int)" %}</option>
+																</select>
+																<span class="text-danger" v-html="render_error(and.error, 'operator')"></span>
+															</td>
+															<td class="td-pattern">
+																<input type="text" placeholder="{% translate 'Insert your Pattern' %}" class="form-control pattern reload" :value="and.pattern"/>
+																<span class="text-danger" v-html="render_error(and.error, 'pattern')"></span>
+															</td>
+															<td>
+																<button class="btn btn-xs btn-danger" type="button" v-on:click="remove_and(or_line.pk, and_index)"><i class="fas fa-trash-alt"></i> Delete</button>
+															</td>
+														</tr>
+													</tbody>
+													<tfoot>
+														<tr>
+															<td></td>
+															<td></td>
+															<td></td>
+															<td></td>
+															<td></td>
+															<td></td>
+															<td></td>
+															<td></td>
+															<td>
+																<button type="button" v-on:click="add_and(or_line.pk, or_index)" class="btn btn-success btn-flat"><i class="fa fa-plus">&nbsp;&nbsp;</i>{% translate "Add Rule" %}</button>
+															</td>
+														</tr>
+													</tfoot>
+												</table>
+											</div>
+										</div>
+										<button type="button" class="btn btn-warning btn-flat pull-right" v-on:click="add_or"><i class="fas fa-plus">&nbsp;&nbsp;</i>{% translate "OR" %}</button>
+									</div>
+								</div>
+								<br/>
+								<div class="row">
+									<div class="col-md-12">
+										<pre v-html="rule"></pre>
+									</div>
+								</div>
+							</div> 
+						</div>
+					</div>
+				</div>
+  				<div class="panel-footer">
+  					<a href="{% url 'security.access_control.list' %}" class="btn btn-flat btn-default"><i class="fa fa-times">&nbsp;&nbsp;</i>{% translate "Cancel" %}</a>
+        			<button type="button" v-on:click="save_form" id="save_form_btn" class="btn btn-flat btn-success pull-right"><i class="fa fa-check">&nbsp;&nbsp;</i>{% translate "Save" %}</button>
+  				</div>
+  			</div>
+  		</div>
+  	</div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+	var pk_acl = '{{ access_control.pk }}';
+	var log_id = '{{ log_id }}';
+	var access_control_list_uri = '{% url "security.access_control.list" %}';
+	var access_control_get_uri = '{% url "security.access_control.get" %}';
+
+	$(function() {
+		/* Switchery mandatory code */
+		var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+		  elems.forEach(function(html) {
+		  var switchery = new Switchery(html, {
+			'color': '#FA9834',
+		  });
+		});
+
+		/* Re-initialize select2 objects */
+		$('.select2').select2({placeholder: 'Select an option'});
+	})
+{% endblock %}

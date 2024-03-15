@@ -34,9 +34,7 @@ from django.views.generic import View
 
 # Django project imports
 from authentication.generic_list import ListLDAPRepository
-from services.frontend.models import BlacklistWhitelist
-from darwin.access_control.models import AccessControl
-from services.frontend.models import BlacklistWhitelist
+from security.access_control.models import AccessControl
 
 # Extern modules imports
 from json import loads as json_loads
