@@ -162,11 +162,11 @@ class LogOM (models.Model):
         validators=[MinValueValidator(1)]
     )
     max_disk_space = models.IntegerField(
-        default=1024,
+        default=0,
         null=False,
         help_text=_("Limit the maximum disk space used by the queue in MB"),
-        verbose_name=_("Max disk space used by the queue in MB"),
-        validators=[MinValueValidator(1)]
+        verbose_name=_("Max disk space used by the queue in MB (set to zero to disable)"),
+        validators=[MinValueValidator(0)]
     )
     send_as_raw = models.BooleanField(
         default=False,
