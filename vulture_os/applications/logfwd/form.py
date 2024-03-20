@@ -289,6 +289,13 @@ class LogOMFWDForm(LogOMForm):
 
 class LogOMElasticSearchForm(LogOMForm):
 
+    x509_certificate = ModelChoiceField(
+        queryset=X509Certificate.objects.filter(is_ca=False).only(*(X509Certificate.str_attrs())),
+        required=False,
+        widget=Select(attrs={'class': 'form-control select2'}),
+        empty_label="No SSL"
+    )
+
     class Meta:
         model = LogOMElasticSearch
         fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'data_stream_mode', 'retry_on_els_failures', 'index_pattern', 'uid', 'pwd',
