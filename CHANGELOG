@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 - [LOGOM] Code and logic factorization
+- [LOGOM] [ELASTICSEARCH] Limit available certificates to non-CA ones
 
 
 ## [2.15.0] - 2024-03-04

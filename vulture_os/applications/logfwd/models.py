@@ -607,7 +607,8 @@ class LogOMElasticSearch(LogOM):
         on_delete=models.CASCADE,
         help_text=_("X509Certificate object to use."),
         default=None,
-        null=True
+        null=True,
+        blank=True
     )
 
     def to_dict(self, fields=None):
