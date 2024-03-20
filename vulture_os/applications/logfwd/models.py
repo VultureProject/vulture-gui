@@ -168,6 +168,15 @@ class LogOM (models.Model):
         verbose_name=_("Max disk space used by the queue in MB (set to zero to disable)"),
         validators=[MinValueValidator(0)]
     )
+    spool_directory = models.TextField(
+        default="/var/tmp",
+        null=False,
+        help_text=_("Defines an existing folder to store queue files into"),
+        verbose_name=_("Existing folder to store queue files to"),
+        validators=[RegexValidator(
+                regex=r"^/.*$",
+                message="Value should be a valid fullpath, beginning with a '/'"
+        )])
     send_as_raw = models.BooleanField(
         default=False,
         help_text=_("Send logs without any modification"),

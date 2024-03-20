@@ -50,7 +50,8 @@ class LogOMForm(ModelForm):
         model = LogOM
         fields = ('name', 'enabled', 'send_as_raw', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown',
                   'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space',
+                  'spool_directory')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -68,11 +69,12 @@ class LogOMForm(ModelForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
+        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory']:
             self.fields[field_name].required = False
 
     def clean_name(self):
@@ -109,7 +111,7 @@ class LogOMFileForm(LogOMForm):
         fields = ('name', 'enabled', 'file', 'flush_interval', 'async_writing', 'send_as_raw', 'retention_time',
                   'rotation_period', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers',
                   'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist',
-                  'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+                  'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -132,6 +134,7 @@ class LogOMFileForm(LogOMForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
@@ -154,7 +157,7 @@ class LogOMRELPForm(LogOMForm):
         fields = ('name', 'enabled', 'target', 'port', 'tls_enabled', 'x509_certificate', 'send_as_raw', 'queue_size',
                   'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
                   'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space')
+                  'max_file_size', 'max_disk_space', 'spool_directory')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -176,6 +179,7 @@ class LogOMRELPForm(LogOMForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -197,7 +201,7 @@ class LogOMHIREDISForm(LogOMForm):
                   'expire_key', 'stream_outfield', 'stream_capacitylimit', 'send_as_raw',
                   'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
                   'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space')
+                  'max_file_size', 'max_disk_space', 'spool_directory')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': 'js-switch'}),
@@ -225,6 +229,7 @@ class LogOMHIREDISForm(LogOMForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_key(self):
@@ -250,7 +255,7 @@ class LogOMFWDForm(LogOMForm):
         fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level', 'queue_size', 'dequeue_size',
                   'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown',
                   'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
-                  'max_disk_space', 'ratelimit_interval', 'ratelimit_burst', 'send_as_raw')
+                  'max_disk_space', 'spool_directory', 'ratelimit_interval', 'ratelimit_burst', 'send_as_raw')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -271,6 +276,7 @@ class LogOMFWDForm(LogOMForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
             'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
             'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
             'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'})
@@ -301,7 +307,8 @@ class LogOMElasticSearchForm(LogOMForm):
         fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'data_stream_mode', 'retry_on_els_failures', 'index_pattern', 'uid', 'pwd',
                   'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown',
                   'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space',
+                  'spool_directory')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": "js-switch"}),
@@ -327,6 +334,7 @@ class LogOMElasticSearchForm(LogOMForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_index_pattern(self):
@@ -355,7 +363,7 @@ class LogOMMongoDBForm(LogOMForm):
         fields = ('name', 'enabled', 'db', 'collection', 'uristr', 'x509_certificate', 'send_as_raw', 'queue_size',
                   'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
                   'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space')
+                  'max_file_size', 'max_disk_space', 'spool_directory')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -376,6 +384,7 @@ class LogOMMongoDBForm(LogOMForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
 
 
@@ -387,7 +396,7 @@ class LogOMKafkaForm(LogOMForm):
                   'partitions_auto', 'confParam', 'topicConfParam', 'queue_size', 'dequeue_size',
                   'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown',
                   'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
-                  'max_disk_space')
+                  'max_disk_space', 'spool_directory')
 
         widgets = {
             'enabled': CheckboxInput(attrs={"class": " js-switch"}),
@@ -413,6 +422,7 @@ class LogOMKafkaForm(LogOMForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
