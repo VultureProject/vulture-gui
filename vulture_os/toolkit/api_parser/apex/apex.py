@@ -91,7 +91,7 @@ class ApexParser(ApiParser):
     def test(self):
         start_time = timezone.now() - timedelta(days=1)
         try:
-            status, logs, next_time = self.get_logs("data_loss_prevention", start_time)
+            status, logs, next_api_token, next_timestamp = self.get_logs_with_timestamp("data_loss_prevention", start_time)
 
             if not status:
                 return {
@@ -126,7 +126,7 @@ class ApexParser(ApiParser):
         return response.json()
 
 
-    def get_logs(self, kind, since):
+    def get_logs_with_timestamp(self, kind, since):
 
         url_path = f"/WebApp/api/v1/Logs/{kind}?output_format=CEF&since_time={int(since.timestamp())}"
         logs = []
@@ -141,21 +141,44 @@ class ApexParser(ApiParser):
                 else:
                     break
             next_timestamp = int(content["Data"]["NextPage"]["SinceTime"])
+            next_page_token = int(content["Data"]["NextPage"]["PageToken"])
 
         except Exception as e:
             raise ApexAPIError(e)
-        return True, logs, next_timestamp
+        return True, logs, next_page_token, next_timestamp
+
+    def get_logs_with_page_token(self, kind, page_token):
+
+        url_path = f"/WebApp/api/v1/Logs/{kind}?output_format=CEF&page_token={page_token}"
+        logs = []
+        try:
+            while True:
+                self._connect(url_path)
+                content = self.execute_query(self.apex_server_host + url_path)
+                if data_logs := content["Data"]["Logs"]:
+                    logs.extend(data_logs)
+                if next_url := content["Data"].get("Next"):
+                    url_path = f"/WebApp/api/v1/Logs/{kind}" + next_url[next_url.index("?"):]
+                else:
+                    break
+            next_page_token = int(content["Data"]["NextPage"]["PageToken"])
+
+        except Exception as e:
+            raise ApexAPIError(e)
+        return True, logs, next_page_token
 
 
     def execute(self):
-        log_kinds = ["data_loss_prevention", "device_access_control", "behaviormonitor_rule", "officescan_virus", "spyware", "web_security", "security", "ncie", "cncdetection", "filehashdetection", "Predictive_Machine_Learning", "Sandbox_Detection_Log", "EACV_Information", "Managed_Product_Logged_Information", "Attack_Discovery_Detections", "pattern_updated_status", "engine_updated_status", "product_auditing_events", "intrusion_prevention"]
-        for kind in log_kinds:
+        log_kinds_page_token = ["data_loss_prevention", "device_access_control", "behaviormonitor_rule", "officescan_virus", "spyware", "web_security", "security", "ncie", "cncdetection", "filehashdetection", "Predictive_Machine_Learning", "Sandbox_Detection_Log", "EACV_Information", "Managed_Product_Logged_Information", "Attack_Discovery_Detections", "product_auditing_events", "intrusion_prevention"]
+        log_kinds_timestamp = ["pattern_updated_status", "engine_updated_status"]
+        for kind in log_kinds_page_token:
             logger.info(f"[{__parser__}]:execute: Getting {kind}", extra={'frontend': str(self.frontend)})
-            if f"apex_{kind}_timestamp" in self.frontend.apex_timestamp.keys():
-                since = datetime.fromtimestamp(self.frontend.apex_timestamp[f"apex_{kind}_timestamp"])
+            if f"apex_{kind}_page_token" in self.frontend.apex_page_token.keys():
+                page_token = self.frontend.apex_page_token[f"apex_{kind}_page_token"]
+                status, logs, next_page_token = self.get_logs_with_page_token(kind, page_token)
             else:
                 since = (timezone.now() - timedelta(hours=24))
-            status, logs, next_time = self.get_logs(kind, since)
+                status, logs, next_page_token, next_timestamp = self.get_logs_with_timestamp(kind, since)
 
             if not status:
                 raise ApexAPIError(logs)
@@ -167,7 +190,30 @@ class ApexParser(ApiParser):
             self.update_lock()
             if len(logs) > 0:
                 try:
-                    self.frontend.apex_timestamp[f"apex_{kind}_timestamp"] = next_time
+                    self.frontend.apex_page_token[f"apex_{kind}_page_token"] = next_page_token
+                    self.frontend.save()
+                except Exception as err:
+                    logger.error(f"[{__parser__}]:execute: {err}",
+                                 extra={'frontend': str(self.frontend)})
+        for kind in log_kinds_timestamp:
+            logger.info(f"[{__parser__}]:execute: Getting {kind}", extra={'frontend': str(self.frontend)})
+            if f"apex_{kind}_timestamp" in self.frontend.apex_timestamp.keys():
+                since = datetime.fromtimestamp(self.frontend.apex_timestamp[f"apex_{kind}_timestamp"])
+            else:
+                since = (timezone.now() - timedelta(hours=24))
+            status, logs, next_page_token, next_timestamp = self.get_logs_with_timestamp(kind, since)
+
+            if not status:
+                raise ApexAPIError(logs)
+
+            # Downloading may take some while, so refresh token in Redis
+            self.update_lock()
+            self.write_to_file(logs)
+            # Writting may take some while, so refresh token in Redis
+            self.update_lock()
+            if len(logs) > 0:
+                try:
+                    self.frontend.apex_timestamp[f"apex_{kind}_timestamp"] = next_timestamp
                     self.frontend.save()
                 except Exception as err:
                     logger.error(f"[{__parser__}]:execute: {err}",

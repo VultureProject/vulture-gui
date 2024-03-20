@@ -1277,6 +1277,10 @@ class Frontend(models.Model):
     apex_timestamp = models.JSONField(
         default={}
     )
+    apex_page_token = models.JSONField(
+        default={}
+    )
+
 
     @staticmethod
     def str_attrs():
