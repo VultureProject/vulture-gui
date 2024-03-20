@@ -142,28 +142,28 @@ class LogOM (models.Model):
     )
     high_watermark = models.PositiveIntegerField(
         default=8000,
-        null=True,
+        null=False,
         help_text=_("Target of the high watermark"),
         verbose_name=_("High watermark target"),
         validators=[MinValueValidator(100)]
     )
     low_watermark = models.PositiveIntegerField(
         default=6000,
-        null=True,
+        null=False,
         help_text=_("Set the value of the low watermark"),
         verbose_name=_("Low watermark target"),
         validators=[MinValueValidator(100)]
         )
     max_file_size = models.IntegerField(
         default=256,
-        null=True,
+        null=False,
         help_text=_("Set the value of the queue in MB"),
         verbose_name=_("Max file size of the queue in MB"),
         validators=[MinValueValidator(1)]
     )
     max_disk_space = models.IntegerField(
         default=1024,
-        null=True,
+        null=False,
         help_text=_("Limit the maximum disk space used by the queue in MB"),
         verbose_name=_("Max disk space used by the queue in MB"),
         validators=[MinValueValidator(1)]
