@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
-
+- [API_PARSER] [APEX] Use the page_token parameter to prevent duplication of logs
 
 ## [2.15.0] - 2024-03-04
 ### Added
