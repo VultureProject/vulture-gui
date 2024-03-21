@@ -89,4 +89,39 @@ class Migration(migrations.Migration):
             field=models.BooleanField(default=True),
         ),
         migrations.RunPython(restore_enabled_state, migrations.RunPython.noop),
+        migrations.AddField(
+            model_name='logom',
+            name='spool_directory',
+            field=models.TextField(null=False, default='/var/tmp', help_text='Defines an existing folder to store queue files into', validators=[django.core.validators.RegexValidator(message="Value should be a valid fullpath, beginning with a '/'", regex='^/.*$')], verbose_name='Existing folder to store queue files to'),
+        ),
+        migrations.AddField(
+            model_name='logomelasticsearch',
+            name='retry_on_els_failures',
+            field=models.BooleanField(default=False, help_text="Let Rsyslog's Elasticsearch module handle and retry insertion failure", verbose_name='Handle failures and retries on ELS insertion'),
+        ),
+        migrations.AlterField(
+            model_name='logomelasticsearch',
+            name='x509_certificate',
+            field=models.ForeignKey(default=None, help_text='X509Certificate object to use.', null=True, on_delete=django.db.models.deletion.CASCADE, to='system.x509certificate'),
+        ),
+        migrations.AlterField(
+            model_name='logom',
+            name='high_watermark',
+            field=models.PositiveIntegerField(null=False, default=8000, help_text='Target of the high watermark', validators=[django.core.validators.MinValueValidator(100)], verbose_name='High watermark target'),
+        ),
+        migrations.AlterField(
+            model_name='logom',
+            name='low_watermark',
+            field=models.PositiveIntegerField(null=False, default=6000, help_text='Set the value of the low watermark', validators=[django.core.validators.MinValueValidator(100)], verbose_name='Low watermark target'),
+        ),
+        migrations.AlterField(
+            model_name='logom',
+            name='max_disk_space',
+            field=models.IntegerField(null=False, default=0, help_text='Limit the maximum disk space used by the queue in MB', validators=[django.core.validators.MinValueValidator(0)], verbose_name='Max disk space used by the queue in MB (set to zero to disable)'),
+        ),
+        migrations.AlterField(
+            model_name='logom',
+            name='max_file_size',
+            field=models.IntegerField(null=False, default=256, help_text='Set the value of the queue in MB', validators=[django.core.validators.MinValueValidator(1)], verbose_name='Max file size of the queue in MB'),
+        ),
     ]
