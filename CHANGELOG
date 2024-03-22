@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 
 
+## [2.15.1] - 2024-03-22
+### Fixed
+- [FRONTEND] TCP session were not received properly when LOG Frontend was set to TCP+UDP
+
+
 ## [2.15.0] - 2024-03-04
 ### Added
 - [FRONTEND] Redis stream support for input log
