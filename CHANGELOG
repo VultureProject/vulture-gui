@@ -10,11 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] TCP session were not received properly when LOG Frontend was set to TCP+UDP
 
 
-## [2.14.3] - 2024-02-20
-### Fixed
-- [REPUTATION] Changed predator references to barricade
-
-
 ## [2.15.0] - 2024-03-04
 ### Added
 - [FRONTEND] Redis stream support for input log
@@ -39,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [NOZOMI] Set a custom User-Agent to prevent request blacklisting from technology
 - [HAPROXY] [LISTENERS] Put back a correct 60s server timeout for Rsyslog/Filebeat communication
 - [HAPROXY] [CONFIGURATION] Prevent configuration failures when using packaged lua scripts
+
+
+## [2.14.3] - 2024-02-20
+### Fixed
+- [REPUTATION] Changed predator references to barricade
 
 
 ## [2.14.2] - 2024-02-19
