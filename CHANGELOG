@@ -9,8 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [LOG_FORWARDER] [REDIS] Support for queues, sets, publish and streams modes for log insertion
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
+- [LOGOM] Add the ability to define the spooling directory for DA queues
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
+- [LOGOM] Code and logic factorization
+- [LOGOM] Allow to deactivate limitation of the size of DA queues on disk
+- [LOGOM] [ELASTICSEARCH] Limit available certificates to non-CA ones
 
 
 ## [2.15.1] - 2024-03-22
