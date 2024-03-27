@@ -168,9 +168,6 @@ class Rapid7IDRParser(ApiParser):
         log['type'] = [x['type'] for x in log['alerts']]
         log['url'] = f"{self.INVESTIGATION_URL}/{log['id']}"
 
-        # Retrieve priority with api/v2
-        log['priority'] = self.get_priority(log['id'])
-
         try:
             # min() works to sort ISO8601 timestamps as strings, because numbers are logically-ordered and consistent
             log['event_start'] = min([x['first_event_time'] for x in log['alerts']])
@@ -199,6 +196,10 @@ class Rapid7IDRParser(ApiParser):
             self.update_lock()
 
             logs = response['data']
+            for log in logs:
+                # Retrieve priority with api/v2
+                log['priority'] = self.get_priority(log['id'])
+                self.update_lock()
 
             available = int(response['metadata']['total_data'])
             msg = f"got {available} lines available"
