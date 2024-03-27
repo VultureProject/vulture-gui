@@ -151,7 +151,7 @@ class Rapid7IDRParser(ApiParser):
     def get_priority(self, id):
         """
         Get the priority of the event
-        This function is necessary because api /v1 doesn't content the priority and api /v1 doesn't content the id 
+        This function is necessary because api /v1 doesn't contain the priority and api /v1 doesn't contain the id
         :param id: the id of the event
         :returns: a string with the value of the priority
         :raises Rapid7IDRAPIError: in case the function could not connect or the reply's status code wasn't 200
