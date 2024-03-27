@@ -43,7 +43,8 @@ class Rapid7IDRAPIError(Exception):
 
 class Rapid7IDRParser(ApiParser):
     VALIDATE_ENDPOINT = "/validate"
-    INVESTIGATIONS_ENDPOINT = "/idr/v1/investigations"
+    INVESTIGATIONS_V1_ENDPOINT = "/idr/v1/investigations" #v1 is used because id is missing in v2 response
+    INVESTIGATIONS_V2_ENDPOINT = "/idr/v2/investigations" #v2 is used because priority is missing in v1 response
     INVESTIGATION_URL = "https://insight.rapid7.com/login#/investigations"
 
     HEADERS = {
@@ -123,7 +124,7 @@ class Rapid7IDRParser(ApiParser):
         :returns: a json object containing the events in the 'data' list
         :raises Rapid7IDRAPIError: in case the function could not connect or the reply's status code wasn't 200
         """
-        alert_url = self.rapid7_idr_host + self.INVESTIGATIONS_ENDPOINT
+        alert_url = self.rapid7_idr_host + self.INVESTIGATIONS_V1_ENDPOINT
 
         # Format timestamp for query
         if isinstance(since, datetime):
@@ -146,6 +147,22 @@ class Rapid7IDRParser(ApiParser):
             query['end_time'] = to
 
         return self.__execute_query(alert_url, query)
+
+    def get_priority(self, id):
+        """
+        Get the priority of the event
+        This function is necessary because api /v1 doesn't contain the priority and api /v1 doesn't contain the id
+        :param id: the id of the event
+        :returns: a string with the value of the priority
+        :raises Rapid7IDRAPIError: in case the function could not connect or the reply's status code wasn't 200
+        """
+        alert_url = f"{self.rapid7_idr_host}{self.INVESTIGATIONS_V2_ENDPOINT}/{id}"
+        query = {}
+        alert = self.__execute_query(alert_url, query)
+        msg = f"Parser retrieving priority from investigation {id}"
+        logger.info(f"[{__parser__}]:get_priority: {msg}", extra={'frontend': str(self.frontend)})
+
+        return alert['priority']
 
     def format_log(self, log):
         log['type'] = [x['type'] for x in log['alerts']]
@@ -179,6 +196,10 @@ class Rapid7IDRParser(ApiParser):
             self.update_lock()
 
             logs = response['data']
+            for log in logs:
+                # Retrieve priority with api/v2
+                log['priority'] = self.get_priority(log['id'])
+                self.update_lock()
 
             available = int(response['metadata']['total_data'])
             msg = f"got {available} lines available"
