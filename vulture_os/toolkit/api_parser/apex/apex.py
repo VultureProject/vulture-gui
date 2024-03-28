@@ -91,7 +91,7 @@ class ApexParser(ApiParser):
     def test(self):
         start_time = timezone.now() - timedelta(days=1)
         try:
-            status, logs, next_api_token, next_timestamp = self.get_logs_with_timestamp("data_loss_prevention", start_time)
+            status, logs, _, _ = self.get_logs_with_timestamp("pattern_updated_status", start_time)
 
             if not status:
                 return {
@@ -177,7 +177,10 @@ class ApexParser(ApiParser):
                 page_token = self.frontend.apex_page_token[f"apex_{kind}_page_token"]
                 status, logs, next_page_token = self.get_logs_with_page_token(kind, page_token)
             else:
-                since = (timezone.now() - timedelta(hours=24))
+                if f"apex_{kind}_timestamp" in self.frontend.apex_timestamp.keys():
+                    since = datetime.fromtimestamp(self.frontend.apex_timestamp[f"apex_{kind}_timestamp"])
+                else:
+                    since = (timezone.now() - timedelta(hours=24))
                 status, logs, next_page_token, next_timestamp = self.get_logs_with_timestamp(kind, since)
 
             if not status:
