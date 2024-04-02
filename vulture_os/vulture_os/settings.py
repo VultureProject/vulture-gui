@@ -77,7 +77,8 @@ CRONJOBS = [
     ("* * * * *", "gui.crontab.api_clients_parser.api_clients_parser"),  # Every minute
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
-    ("1 * * * *", "gui.crontab.feed.security_update"),  # Every hour
+    ("0 23 * * *", "gui.crontab.feed.security_update"),  # Every day at 23:00
+    ("0 2 * * wed,sat", "gui.crontab.feed.update_reputation_ctx"),  # Every wednesday and saturday at 02:00
     ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
 ]
 
