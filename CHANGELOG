@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+
+## [2.15.2] - 2024-04-02
+### Changed
+- [CRON] Only update Reputation Context DB on Wednesdays and Saturdays at 2am
+- [CRON] Only update security audits every night at 11pm
+
+
 ## [2.15.1] - 2024-03-22
 ### Fixed
 - [FRONTEND] TCP session were not received properly when LOG Frontend was set to TCP+UDP
