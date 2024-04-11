@@ -151,7 +151,7 @@ class HarfangLabParser(ApiParser):
 
         payload = {
             'offset': index,
-            'limit': 100, # Mandatory
+            'limit': 1000, # Mandatory
             'alert_time__gte': since_utc,
             'alert_time__lt': to_utc,
             'ordering': 'alert_time',
@@ -174,7 +174,7 @@ class HarfangLabParser(ApiParser):
 
         payload = {
             'offset': index,
-            'limit': 100,  # Mandatory
+            'limit': 1000,  # Mandatory
             'first_seen__gte': since_utc,
             'first_seen__lt': to_utc,
             'ordering': 'first_seen',
@@ -191,10 +191,9 @@ class HarfangLabParser(ApiParser):
 
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
-        to = timezone.now()
 
         # delay the times of 2 minutes, to let the times at the API to have all logs
-        to = to - timedelta(minutes=2)
+        to = min(timezone.now() - timedelta(minutes=2), since + timedelta(hours=6))
 
         msg = f"Parser starting from {since} to {to}."
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLUSTER] [CONFIG] Reload all Rsyslog/Filebeat Listeners when updating the Redis cluster password
 ### Fixed
 - [FRONTEND] Missing redis fields in template infos
+- [API_PARSER] [HARFANGLAB] Increase the limit of logs in request and reduce time range of requests
 
 
 ## [2.15.3] - 2024-04-24
