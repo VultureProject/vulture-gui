@@ -54,17 +54,17 @@ class LogOMForm(ModelForm):
                   'spool_directory')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
+            'enabled': CheckboxInput(attrs={'class': 'js-switch'}),
             'name': TextInput(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={"class": " js-switch"}),
+            'send_as_raw': CheckboxInput(attrs={'class': 'js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
             'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
             'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
             'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
             'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
+            'enable_retry': CheckboxInput(attrs={'class': 'js-switch'}),
+            'enable_disk_assist': CheckboxInput(attrs={'class': 'js-switch'}),
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
@@ -106,42 +106,19 @@ class LogOMForm(ModelForm):
 
 class LogOMFileForm(LogOMForm):
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMFile
-        fields = ('name', 'enabled', 'file', 'flush_interval', 'async_writing', 'send_as_raw', 'retention_time',
-                  'rotation_period', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers',
-                  'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist',
-                  'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory')
+        fields = LogOMForm.Meta.fields + ('file', 'flush_interval', 'async_writing', 'retention_time',
+                  'rotation_period')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'file': TextInput(attrs={'class': 'form-control'}),
             'flush_interval': NumberInput(attrs={'class': 'form-control'}),
-            'async_writing': CheckboxInput(attrs={"class": " js-switch"}),
-            'send_as_raw': CheckboxInput(attrs={"class": " js-switch"}),
-            'retention_time': NumberInput(attrs={"class": "form-control"}),
-            'rotation_period': Select(attrs={"class": "select2"}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control'}),
+            'async_writing': CheckboxInput(attrs={'class': 'js-switch'}),
+            'retention_time': NumberInput(attrs={'class': 'form-control'}),
+            'rotation_period': Select(attrs={'class': 'select2'}),
         }
-
-    def clean_name(self):
-        field = self.cleaned_data.get('name')
-        if not field:
-            raise ValidationError("This field is required.")
-        return field.replace(' ', '_')
+        widgets.update(LogOMForm.Meta.widgets)
 
     def clean_file(self):
         value = self.cleaned_data['file']
@@ -152,35 +129,17 @@ class LogOMFileForm(LogOMForm):
 
 class LogOMRELPForm(LogOMForm):
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMRELP
-        fields = ('name', 'enabled', 'target', 'port', 'tls_enabled', 'x509_certificate', 'send_as_raw', 'queue_size',
-                  'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
-                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space', 'spool_directory')
+        fields = LogOMForm.Meta.fields + ('target', 'port', 'tls_enabled', 'x509_certificate')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
-            'tls_enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'x509_certificate': Select(attrs={'class': 'form-control select2'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control'}),
+            'tls_enabled': CheckboxInput(attrs={'class': 'js-switch'}),
+            'x509_certificate': Select(attrs={'class': 'select2'}),
         }
+        widgets.update(LogOMForm.Meta.widgets)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -195,20 +154,15 @@ class LogOMRELPForm(LogOMForm):
 
 class LogOMHIREDISForm(LogOMForm):
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMHIREDIS
-        fields = ('name', 'enabled', 'target', 'port', 'mode', 'key', 'dynamic_key', 'pwd', 'use_rpush',
-                  'expire_key', 'stream_outfield', 'stream_capacitylimit', 'send_as_raw',
-                  'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
-                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space', 'spool_directory')
+        fields = LogOMForm.Meta.fields + ('target', 'port', 'mode', 'key', 'dynamic_key', 'pwd',
+                  'use_rpush', 'expire_key', 'stream_outfield', 'stream_capacitylimit')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={'class': 'js-switch'}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
-            'mode': Select(choices=OMHIREDIS_MODE_CHOICES, attrs={'class': 'form-control select2'}),
+            'mode': Select(choices=OMHIREDIS_MODE_CHOICES, attrs={'class': 'select2'}),
             'key': TextInput(attrs={'class': 'form-control'}),
             'dynamic_key': CheckboxInput(attrs={'class': 'js-switch'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
@@ -216,21 +170,8 @@ class LogOMHIREDISForm(LogOMForm):
             'expire_key': NumberInput(attrs={'class': 'form-control'}),
             'stream_outfield': TextInput(attrs={'class': 'form-control'}),
             'stream_capacitylimit': NumberInput(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={'class': 'js-switch'}),
-            'enable_disk_assist': CheckboxInput(attrs={'class': 'js-switch'}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
+        widgets.update(LogOMForm.Meta.widgets)
 
     def clean_key(self):
         key = self.cleaned_data['key']
@@ -250,37 +191,20 @@ class LogOMHIREDISForm(LogOMForm):
 
 class LogOMFWDForm(LogOMForm):
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMFWD
-        fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level', 'queue_size', 'dequeue_size',
-                  'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown',
-                  'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
-                  'max_disk_space', 'spool_directory', 'ratelimit_interval', 'ratelimit_burst', 'send_as_raw')
+        fields = LogOMForm.Meta.fields + ('target', 'port', 'protocol', 'zip_level',
+                  'ratelimit_interval', 'ratelimit_burst')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
-            'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'form-control select2'}),
+            'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'select2'}),
             'zip_level': NumberInput(attrs={'class': 'form-control'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control'}),
             'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
             'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'})
         }
+        widgets.update(LogOMForm.Meta.widgets)
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
@@ -298,44 +222,26 @@ class LogOMElasticSearchForm(LogOMForm):
     x509_certificate = ModelChoiceField(
         queryset=X509Certificate.objects.filter(is_ca=False).only(*(X509Certificate.str_attrs())),
         required=False,
-        widget=Select(attrs={'class': 'form-control select2'}),
+        widget=Select(attrs={'class': 'select2'}),
         empty_label="No SSL"
     )
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMElasticSearch
-        fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'data_stream_mode', 'retry_on_els_failures', 'index_pattern', 'uid', 'pwd',
-                  'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown',
-                  'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space',
-                  'spool_directory')
+        fields = LogOMForm.Meta.fields + ('servers', 'es8_compatibility', 'data_stream_mode',
+                  'retry_on_els_failures', 'index_pattern', 'uid', 'pwd', 'x509_certificate')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": "js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'servers': TextInput(attrs={'class': 'form-control'}),
-            'es8_compatibility': CheckboxInput(attrs={"class": "js-switch"}),
-            'data_stream_mode': CheckboxInput(attrs={"class": "js-switch"}),
-            'retry_on_els_failures': CheckboxInput(attrs={"class": "js-switch"}),
+            'es8_compatibility': CheckboxInput(attrs={'class': 'js-switch'}),
+            'data_stream_mode': CheckboxInput(attrs={'class': 'js-switch'}),
+            'retry_on_els_failures': CheckboxInput(attrs={'class': 'js-switch'}),
             'index_pattern': TextInput(attrs={'class': 'form-control'}),
             'uid': TextInput(attrs={'class': 'form-control'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
             'x509_certificate': Select(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": "js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": "js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
+        widgets.update(LogOMForm.Meta.widgets)
 
     def clean_index_pattern(self):
         field = self.cleaned_data.get('index_pattern')
@@ -354,76 +260,41 @@ class LogOMMongoDBForm(LogOMForm):
     x509_certificate = ModelChoiceField(
         queryset=X509Certificate.objects.filter(is_ca=False).only(*(X509Certificate.str_attrs())),
         required=False,
-        widget=Select(attrs={'class': 'form-control select2'}),
+        widget=Select(attrs={'class': 'select2'}),
         empty_label="No SSL"
     )
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMMongoDB
-        fields = ('name', 'enabled', 'db', 'collection', 'uristr', 'x509_certificate', 'send_as_raw', 'queue_size',
-                  'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
-                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space', 'spool_directory')
+        fields = LogOMForm.Meta.fields + ('db', 'collection', 'uristr', 'x509_certificate')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'db': TextInput(attrs={'class': 'form-control'}),
             'collection': TextInput(attrs={'class': 'form-control'}),
             'uristr': TextInput(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
+        widgets.update(LogOMForm.Meta.widgets)
 
 
 class LogOMKafkaForm(LogOMForm):
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMKAFKA
-        fields = ('name', 'enabled', 'broker', 'topic', 'key', 'dynaKey', 'dynaTopic', 'partitions_useFixed',
-                  'partitions_auto', 'confParam', 'topicConfParam', 'queue_size', 'dequeue_size',
-                  'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown',
-                  'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
-                  'max_disk_space', 'spool_directory')
+        fields = LogOMForm.Meta.fields + ('broker', 'topic', 'key', 'dynaKey', 'dynaTopic', 'partitions_useFixed',
+                  'partitions_auto', 'confParam', 'topicConfParam')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'broker': TextInput(attrs={'class': 'form-control'}),
             'topic': TextInput(attrs={'class': 'form-control'}),
             'key': TextInput(attrs={'class': 'form-control'}),
-            'dynaKey': CheckboxInput(attrs={"class": " js-switch"}),
-            'dynaTopic': CheckboxInput(attrs={"class": " js-switch"}),
+            'dynaKey': CheckboxInput(attrs={'class': 'js-switch'}),
+            'dynaTopic': CheckboxInput(attrs={'class': 'js-switch'}),
             'partitions_useFixed': NumberInput(attrs={'class': 'form-control'}),
-            'partitions_auto': CheckboxInput(attrs={"class": " js-switch"}),
+            'partitions_auto': CheckboxInput(attrs={'class': 'js-switch'}),
             'confParam': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'topicConfParam': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
+        widgets.update(LogOMForm.Meta.widgets)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
