@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [WORKFLOW] Silent error when saving a new worflow
 - [FRONTEND] [API] Correctly return Frontend information when Reputation Contexts are set
+- [API_PARSER] [RETARUS] Fix bad json formatting leading to escaped string sended over rsyslog
 
 
 ## [2.15.2] - 2024-04-02

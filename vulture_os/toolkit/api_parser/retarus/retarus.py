@@ -77,7 +77,7 @@ class RetarusParser(ApiParser):
     def test(self):
         ws = websocket.create_connection(self.ENDPOINT, header=["Authorization: Bearer " + self.retarus_token])
         try:
-            result = ws.recv()
+            result = self.format_log(ws.recv())
             return {
                 "status": True,
                 "data": [result]
@@ -95,7 +95,7 @@ class RetarusParser(ApiParser):
 
     @staticmethod
     def format_log(log):
-        return json.dumps(log)
+        return json.dumps(json.loads(log))
 
     def execute(self):
         self.current_time = timezone.now()
