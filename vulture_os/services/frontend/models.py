@@ -1291,6 +1291,25 @@ class Frontend(models.Model):
         help_text=_("Gatewatcher alerts api key"),
         default="",
     )
+    # Cisco-Umbrella attributes
+    cisco_umbrella_client_id = models.TextField(
+        verbose_name=_("Cisco-Umbrella client id"),
+        help_text=_("Cisco-Umbrella client id"),
+        default="",
+    )
+    cisco_umbrella_secret_key = models.TextField(
+        verbose_name=_("Cisco-Umbrella secret key"),
+        help_text=_("Cisco-Umbrella secret key"),
+        default="",
+    )
+    cisco_umbrella_access_token = models.TextField(
+        verbose_name=_("Cisco-Umbrella access token"),
+        default="",
+    )
+    cisco_umbrella_expires_at = models.DateTimeField(
+        verbose_name=_("Cisco-Umbrella token expiration time"),
+        default=timezone.now,
+    )
 
     @staticmethod
     def str_attrs():
