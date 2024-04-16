@@ -1367,10 +1367,16 @@ class Frontend(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ Retrieve list/custom objects """
-        if self.listening_mode == "file":
+        if self.mode == "log" and self.listening_mode == "file" or\
+            self.mode == "filebeat" and self.filebeat_listening_mode == "file":
             listeners_list = [self.file_path]
-        elif self.listening_mode == "api":
+        elif self.mode == "log" and self.listening_mode == "api" or\
+            self.mode == "filebeat" and self.filebeat_listening_mode == "api":
             listeners_list = [self.api_parser_type]
+        elif self.mode == "log" and self.listening_mode == "redis":
+            listeners_list = ["Redis:", f"{self.redis_server}:{self.redis_port}"]
+        elif self.mode == "log" and self.listening_mode == "kafka":
+            listeners_list = ["Kafka:"] + self.kafka_brokers
         else:
             # Test self.pk to prevent M2M errors when object isn't saved in DB
             listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())] if self.pk else []

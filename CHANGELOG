@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
+- [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
 
 
 ## [2.15.2] - 2024-04-02
