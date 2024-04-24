@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CRON] Update Reputation Context DBs at 6:00am instead of 2:00am
 
 
+## [2.15.3] - 2024-04-24
+### Added
+- [API_PARSER] [RAPID7_IDR] Add priority field in the logs from rapid7_idr api
+- [API_PARSER] [APEX] Use the page_token parameter to prevent duplication of logs
+### Fixed
+- [WORKFLOW] Silent error when saving a new worflow
+- [FRONTEND] [API] Correctly return Frontend information when Reputation Contexts are set
+- [API_PARSER] [RETARUS] Fix bad json formatting leading to escaped string sent over rsyslog
+
+
 ## [2.15.2] - 2024-04-02
 ### Changed
 - [CRON] Only update Reputation Context DB on Wednesdays and Saturdays at 2am
