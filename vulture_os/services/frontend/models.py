@@ -1277,6 +1277,10 @@ class Frontend(models.Model):
     apex_timestamp = models.JSONField(
         default={}
     )
+    apex_page_token = models.JSONField(
+        default={}
+    )
+
 
     @staticmethod
     def str_attrs():
@@ -1332,17 +1336,16 @@ class Frontend(models.Model):
                 for header in self.headers.all():
                     result['headers'].append(header.to_template())
 
-        if self.enable_logging_reputation:
-            if not fields or "reputation_contexts" in fields:
-                # Test self.pk to prevent M2M errors when object isn't saved in DB
-                result["reputation_contexts"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()] if self.pk else []
-            if not fields or "logging_reputation_database_v4" in fields:
-                if self.logging_reputation_database_v4:
-                    result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
+        if not fields or "reputation_ctxs" in fields:
+            # Test self.pk to prevent M2M errors when object isn't saved in DB
+            result["reputation_ctxs"] = [ctx.to_dict() for ctx in self.frontendreputationcontext_set.all()] if self.pk else []
+        if not fields or "logging_reputation_database_v4" in fields:
+            if self.logging_reputation_database_v4:
+                result['logging_reputation_database_v4'] = self.logging_reputation_database_v4.to_template()
 
-            if not fields or "logging_reputation_database_v6" in fields:
-                if self.logging_reputation_database_v6:
-                    result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
+        if not fields or "logging_reputation_database_v6" in fields:
+            if self.logging_reputation_database_v6:
+                result['logging_reputation_database_v6'] = self.logging_reputation_database_v6.to_template()
 
         if not fields or "logging_geoip_database" in fields:
             if self.enable_logging_geoip:

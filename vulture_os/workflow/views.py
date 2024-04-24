@@ -132,8 +132,7 @@ def save_workflow(request, workflow_obj, object_id=None):
     workflow_acls = []
     before_policy = True
     order = 1
-    had_authentication = workflow_obj.authentication is not None
-    previous_frontend = workflow_obj.frontend
+    previous_frontend = workflow_obj.frontend if hasattr(workflow_obj, "frontend") else None
 
     try:
         # TODO replace by proper form validation and saving!
