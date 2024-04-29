@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CYBEREASON] Update malops fetching
 - [DEPENDENCIES] Python dependencies upgrade
   - gunicorn 21.2.0 -> 22.0.0
+### Fixed
+- [FRONTEND] Missing redis fields in template infos
+
 
 ## [2.15.3] - 2024-04-24
 ### Added
