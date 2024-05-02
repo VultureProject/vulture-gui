@@ -38,7 +38,6 @@ from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, FILEBEAT_MODULE_CONFIG
 from system.cluster.models import Cluster, Node
-from system.pki.models import X509Certificate
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
 from toolkit.api_parser.utils import get_api_parser
@@ -704,9 +703,6 @@ def frontend_test_apiparser(request):
                 v = v == "true"
 
             data[k] = v
-
-        if data.get('api_parser_verify_ssl', True) and data.get('api_parser_custom_certificate', None):
-            data['api_parser_custom_certificate'] = X509Certificate.objects.get(pk=data['api_parser_custom_certificate']).bundle_filename
 
         if data.get('api_parser_use_proxy', True) and data.get('api_parser_custom_proxy', None):
             # parse_proxy_url will validate and return a correct url
