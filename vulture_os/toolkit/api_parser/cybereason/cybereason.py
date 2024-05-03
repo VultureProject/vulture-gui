@@ -36,7 +36,6 @@ import time
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
-
 class CybereasonAPIError(Exception):
     pass
 
@@ -198,8 +197,20 @@ class CybereasonParser(ApiParser):
                 }
             ]
         }
-        logs = self.execute_query("POST", url_alert, query, timeout=30)
-        return logs.get("data", {}).get("data", [])
+
+        logs = []
+        offset = 0
+        while True:
+            ret = self.execute_query("POST", url_alert, query, timeout=30)
+            received_logs = ret.get('data', {}).get('data', [])
+            if 'data' not in ret or not received_logs:
+                break
+            logs.extend(received_logs)
+            offset += len(received_logs)
+            query['pagination']['offset'] = offset
+            if ret.get('status') != 'SUCCESS' or offset >= ret.get('data', {}).get('totalHits', 0):
+                break
+        return logs
 
     def get_malwares(self, since):
         malware_uri = f"{self.host}/{self.MALWARE_URI}"
@@ -251,14 +262,14 @@ class CybereasonParser(ApiParser):
         if kind == "malops":
 
             suspicions_process, suspicions_network = self.suspicions(alert['id'])
-            suspicions = list(suspicions_process['data']['suspicionsMap'].keys())
-            suspicions.extend(list(suspicions_network['data']['suspicionsMap'].keys()))
+            suspicions = list(suspicions_process.get('data', {}).get('suspicionsMap', {}).keys())
+            suspicions.extend(list(suspicions_network.get('data', {}).get('suspicionsMap', {}).keys()))
             alert['suspicion_list'] = suspicions
 
             if alert['isEdr']:
                 alert['kind'] = 'malops'
                 alert['comments'] = self.get_comments(alert['id'])
-                alert['process_details'] = suspicions_process['data'].get('resultIdToElementDataMap')
+                alert['process_details'] = suspicions_process.get('data', {}).get('resultIdToElementDataMap', {})
             else:
                 alert['kind'] = 'detection-malops'
                 alert['malop_details'] = self.get_malop_detection_details(alert['guid'])
@@ -328,10 +339,10 @@ class CybereasonParser(ApiParser):
             url = f"{self.host}/{self.DESCRIPTION_URI}"
             self.DESC_TRANSLATION = self.execute_query("GET", url)
 
-        status, suspicions_process = self.suspicions_process(alert_id)
-        status, suspicions_network = self.suspicions_network(alert_id)
+        process_status, suspicions_process = self.suspicions_process(alert_id)
+        network_status, suspicions_network = self.suspicions_network(alert_id)
 
-        return (suspicions_process, suspicions_network) if status else ({}, {})
+        return (suspicions_process, suspicions_network) if all([process_status, network_status]) else ({}, {})
 
     def suspicions_process(self, alert_id):
         query = {
@@ -367,8 +378,8 @@ class CybereasonParser(ApiParser):
 
         url = f"{self.host}/{self.SEARCH_URI}"
         data = self.execute_query("POST", url, query)
-        if data['status'] != 'SUCCESS':
-            return False, data['message']
+        if data.get('status', '') != 'SUCCESS':
+            return False, data.get('message', '')
         return True, data
 
     def suspicions_network(self, alert_id):
