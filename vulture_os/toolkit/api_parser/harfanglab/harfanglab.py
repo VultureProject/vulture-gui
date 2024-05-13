@@ -92,7 +92,7 @@ class HarfangLabParser(ApiParser):
         except Exception as err:
             raise HarfangLabAPIError(err)
 
-    def __execute_query(self, method, url, query, timeout=10):
+    def __execute_query(self, method, url, query, timeout=20):
         '''
         raw request doesn't handle the pagination natively
         '''
