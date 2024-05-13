@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Missing redis fields in template infos
 - [API_PARSER] [HARFANGLAB] Increase the limit of logs in request and reduce time range of requests
 - [API_PARSER] [CSC_DOMAINMANAGER] Split logs with several records
+- [API_PARSER] Correctly select custom parser certificate when set
 
 
 ## [2.15.3] - 2024-04-24
