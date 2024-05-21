@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CSC_DOMAINMANAGER] Split logs with several records
 - [API_PARSER] Correctly select custom parser certificate when set
 - [REPUTATION_CTX] Ensure there are no duplicates left for GeoLite files in Mongodb
+- [API_PARSER] [HARFANGLAB] Add threshold check to avoid infinite loop while getting more than >=10k logs on single execution
 
 
 ## [2.15.3] - 2024-04-24
