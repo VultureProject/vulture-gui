@@ -174,6 +174,8 @@ class TrendmicroVisiononeParser(ApiParser):
         start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
         start_time_oat = (since + timedelta(hours=23, minutes=59)).strftime("%Y-%m-%dT%H:%M:%SZ")
         end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
+        auditlogs = list()
+        detection_logs = list()
 
         try:
             alerts, status = self._get_alerts(start_time, end_time)
