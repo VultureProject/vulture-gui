@@ -28,6 +28,7 @@ from datetime import datetime, timedelta
 import logging
 import json
 
+from copy import deepcopy
 from requests import Session
 
 from django.conf import settings
@@ -157,7 +158,91 @@ class CscDomainManagerParser(ApiParser):
 
                 self.update_lock()
 
-                self.write_to_file([json.dumps(log) for log in logs['events']])
+                #Splitting of logs with several records
+                """For example :
+                    "records": {
+                    "a": [
+                        {
+                        "action": "PURGE",
+                        "key": "indicedeperformancesociale",
+                        "value": "109.2.147.92",
+                        "previousKey": "indicedeperformancesociale",
+                        "previousValue": "109.2.147.92",
+                        "ttl": null,
+                        "previousTtl": null
+                        }
+                    ],
+                    "cname": [
+                        {
+                        "action": "ADD",
+                        "key": "indicedeperformancesociale",
+                        "value": "swyavfi.impervadns.net.",
+                        "previousKey": null,
+                        "previousValue": null,
+                        "ttl": null,
+                        "previousTtl": null
+                        },
+                        {
+                        "action": "ADD",
+                        "key": "toto",
+                        "value": "toto.toto.net.",
+                        "previousKey": null,
+                        "previousValue": null,
+                        "ttl": null,
+                        "previousTtl": null
+                        }
+                    ]
+                    }
+                    Is splitted in 3 logs :
+                    "records": {
+                    "a":
+                        {
+                        "action": "PURGE",
+                        "key": "indicedeperformancesociale",
+                        "value": "109.2.147.92",
+                        "previousKey": "indicedeperformancesociale",
+                        "previousValue": "109.2.147.92",
+                        "ttl": null,
+                        "previousTtl": null
+                        }
+                    }
+                    "records": {
+                    "cname":
+                        {
+                        "action": "ADD",
+                        "key": "indicedeperformancesociale",
+                        "value": "swyavfi.impervadns.net.",
+                        "previousKey": null,
+                        "previousValue": null,
+                        "ttl": null,
+                        "previousTtl": null
+                        },
+                    }
+                    "records": {
+                    "cname":
+                        {
+                        "action": "ADD",
+                        "key": "toto",
+                        "value": "toto.toto.net.",
+                        "previousKey": null,
+                        "previousValue": null,
+                        "ttl": null,
+                        "previousTtl": null
+                        }
+                    }
+                """
+                split_logs = []
+                for log in logs['events']:
+                    if 'records' in log.get('event', []):
+                        for record_key, record_values in log['event']['records'].items():
+                            for record in record_values:
+                                split_log = deepcopy(log)
+                                split_log['event']['records'] = {record_key : deepcopy(record)}
+                                split_logs.append(split_log)
+                    else:
+                        split_logs.append(log)
+
+                self.write_to_file([json.dumps(log) for log in split_logs])
 
                 self.update_lock()
 

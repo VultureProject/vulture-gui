@@ -23,7 +23,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Cybereason API Parser toolkit'
 __parser__ = 'CYBEREASON'
 
-
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
@@ -37,16 +36,15 @@ import time
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
-
 class CybereasonAPIError(Exception):
     pass
 
 
 class CybereasonParser(ApiParser):
-
     LOGIN_URI = "login.html"
-    ALERT_URI = "rest/detection/inbox"
+    ALERT_URI = "rest/mmng/v2/malops"
     ALERT_MALOP_COMMENT_URI = "rest/crimes/get-comments"
+    ALERT_DETAILS = "/rest/detection/details"
     MALWARE_URI = "rest/malware/query"
     SEARCH_URI = "rest/visualsearch/query/simple"
     DESCRIPTION_URI = "rest/translate/features/all"
@@ -71,7 +69,7 @@ class CybereasonParser(ApiParser):
             self.host = self.host[:-1]
 
         # Remove scheme for observer
-        if not "://" in self.host:
+        if "://" not in self.host:
             self.observer_name = self.host
             self.host = f"https://{self.host}"
         else:
@@ -102,7 +100,6 @@ class CybereasonParser(ApiParser):
                     raise CybereasonAPIError(f"Authentication failed on {login_url} for user {self.username}")
                 logger.info(f"[{__parser__}]:_connect: Successfully logged-in",
                             extra={'frontend': str(self.frontend)})
-
             return True
 
         except Exception as err:
@@ -177,14 +174,43 @@ class CybereasonParser(ApiParser):
             }
 
     def get_malops(self, since, to):
-        url_alert = self.host + '/' + self.ALERT_URI
+        url_alert = f'{self.host}/{self.ALERT_URI}'
 
         query = {
-            "startTime": int(since.timestamp()) * 1000,
-            "endTime": int(to.timestamp()) * 1000
+            "search": {},
+            "range":
+                {
+                    "from": int(since.timestamp()) * 1000,
+                    "to": int(to.timestamp()) * 1000
+                },
+            "pagination": {
+                "pageSize": 50,
+                "offset": 0
+            },
+            "federation": {
+                "groups": []
+            },
+            "sort": [
+                {
+                    "field": "LastUpdateTime",
+                    "order": "desc"
+                }
+            ]
         }
-        logs = self.execute_query("POST", url_alert, query, timeout=30)
-        return logs.get("malops", [])
+
+        logs = []
+        offset = 0
+        while True:
+            ret = self.execute_query("POST", url_alert, query, timeout=30)
+            received_logs = ret.get('data', {}).get('data', [])
+            if 'data' not in ret or not received_logs:
+                break
+            logs.extend(received_logs)
+            offset += len(received_logs)
+            query['pagination']['offset'] = offset
+            if ret.get('status') != 'SUCCESS' or offset >= ret.get('data', {}).get('totalHits', 0):
+                break
+        return logs
 
     def get_malwares(self, since):
         malware_uri = f"{self.host}/{self.MALWARE_URI}"
@@ -235,16 +261,22 @@ class CybereasonParser(ApiParser):
 
         if kind == "malops":
 
-            if alert['edr']:
+            suspicions_process, suspicions_network = self.suspicions(alert['id'])
+            suspicions = list(suspicions_process.get('data', {}).get('suspicionsMap', {}).keys())
+            suspicions.extend(list(suspicions_network.get('data', {}).get('suspicionsMap', {}).keys()))
+            alert['suspicion_list'] = suspicions
+
+            if alert['isEdr']:
                 alert['kind'] = 'malops'
                 alert['comments'] = self.get_comments(alert['id'])
+                alert['process_details'] = suspicions_process.get('data', {}).get('resultIdToElementDataMap', {})
             else:
                 alert['kind'] = 'detection-malops'
+                alert['malop_details'] = self.get_malop_detection_details(alert['guid'])
 
             # Requesting may take some while, so refresh token in Redis
             self.update_lock()
 
-            alert['suspicion_list'] = self.suspicions(alert['id'])
             # Keep only 100 devices
             devices_names = [machine['displayName'] for machine in alert['machines'][:100]]
 
@@ -285,35 +317,34 @@ class CybereasonParser(ApiParser):
 
         return alert
 
+    def get_malop_detection_details(self, alert_id):
+        query = {
+            "malopGuid": alert_id
+        }
+        url = f"{self.host}/{self.ALERT_DETAILS}"
+        return self.execute_query("POST", url, query)
+
     def get_comments(self, alert_malop_id):
 
-        url_alert_malop_comments = self.host + '/' + self.ALERT_MALOP_COMMENT_URI
+        url_alert_malop_comments = f'{self.host}/{self.ALERT_MALOP_COMMENT_URI}'
 
         header = {
             'Content-Type': 'text/plain'
         }
         return self.execute_query(method="POST", url=url_alert_malop_comments, data=alert_malop_id, header=header)
 
-    def suspicions(self, alert_id):
+    def suspicions(self, alert_id: str) -> (dict, dict):
 
-        if not (len(self.DESC_TRANSLATION) > 0):
-            url = self.host + "/" + self.DESCRIPTION_URI
+        if len(self.DESC_TRANSLATION) <= 0:
+            url = f"{self.host}/{self.DESCRIPTION_URI}"
             self.DESC_TRANSLATION = self.execute_query("GET", url)
 
-        status, suspicions_process = self.suspicions_process(alert_id)
-        if not status:
-            return []
+        process_status, suspicions_process = self.suspicions_process(alert_id)
+        network_status, suspicions_network = self.suspicions_network(alert_id)
 
-        status, suspicions_network = self.suspicions_network(alert_id)
-        if not status:
-            return []
-
-        suspicions = [key for key in suspicions_process['data']['suspicionsMap'].keys()]
-        suspicions.extend([key for key in suspicions_network['data']['suspicionsMap'].keys()])
-        return suspicions
+        return (suspicions_process, suspicions_network) if all([process_status, network_status]) else ({}, {})
 
     def suspicions_process(self, alert_id):
-        # cyb.suspicions('11.-2981478659050288999')
         query = {
             "queryPath": [{
                 "requestedType": "MalopProcess",
@@ -331,13 +362,24 @@ class CybereasonParser(ApiParser):
             "perGroupLimit": 100,
             "perFeatureLimit": 100,
             "templateContext": "SPECIFIC",
-            "queryTimeout": 120000
+            "queryTimeout": 120000,
+            'customFields': [
+                'commandLine',
+                'ownerMachine.name',
+                'parentProcess.name',
+                'imageFile.name',
+                'imageFile.sha1String',
+                'imageFile.md5String',
+                'imageFile.sha256String',
+                'imageFile.companyName',
+                'imageFile.productName'
+            ]
         }
 
-        url = f"{self.host}/rest/visualsearch/query/simple"
+        url = f"{self.host}/{self.SEARCH_URI}"
         data = self.execute_query("POST", url, query)
-        if data['status'] != 'SUCCESS':
-            return False, data['message']
+        if data.get('status', '') != 'SUCCESS':
+            return False, data.get('message', '')
         return True, data
 
     def suspicions_network(self, alert_id):
@@ -382,14 +424,54 @@ class CybereasonParser(ApiParser):
             'sortingFieldName': 'machineName',
             'filters': [
                 {'fieldName': "machineName", 'operator': "ContainsIgnoreCase", 'values': devices_names},
-                {"fieldName": "status", "operator":"NotEquals", "values":["Archived"]}
+                {"fieldName": "status", "operator": "NotEquals", "values": ["Archived"]}
             ]
         }
         data = self.execute_query("POST", sensors_url, query)
         return data.get('sensors', [])
 
     @staticmethod
-    def format_log(kind, log):
+    def _process_details_flattener(process_details: dict) -> list:
+        flattened_process_details = [
+            {
+                'name': v['simpleValues'].get('imageFile.name', {}).get('values', []),
+                'cmdline': v['simpleValues'].get('commandLine', {}).get('values', []),
+                'hash': {
+                    'md5': v['simpleValues'].get('imageFile.md5String', {}).get('values', []),
+                    'sha1': v['simpleValues'].get('imageFile.sha1String', {}).get('values', []),
+                    'sha256': v['simpleValues'].get('imageFile.sha256String', {}).get('values', []),
+                },
+                'signature': {
+                    'product_name': v['simpleValues'].get('imageFile.productName', {}).get('values', []),
+                    'company_name': v['simpleValues'].get('imageFile.companyName', {}).get('values', []),
+                },
+                'parent': {
+                    'name': v['simpleValues'].get('parentProcess.name', {}).get('values', []),
+                    'machine': v['simpleValues'].get('ownerMachine.name', {}).get('values', []),
+                },
+            } for v in process_details.values()
+        ]
+        return flattened_process_details
+
+    @staticmethod
+    def _malops_details_flattener(malop_details: dict) -> list:
+        flattened_process_details = [
+            {
+                "name": i.get('elementDisplayName', ''),
+                "path": i.get('correctedPath', ''),
+                "hash": {
+                    "sha1": i.get('sha1String', '')
+                },
+                "machine": {
+                    "hostname": i.get('ownerMachineName', '')
+                },
+                "action": i.get('detectionDecisionStatus', ''),
+                "last_seen": i.get('lastSeen', ''),
+            } for i in malop_details.get('fileSuspects', []) or []
+        ]
+        return flattened_process_details
+
+    def format_log(self, kind, log):
 
         if kind == "malops":
             log['iconBase64'] = ""
@@ -406,16 +488,29 @@ class CybereasonParser(ApiParser):
                 if device['hostname'] not in flattened_hostname:
                     flattened_hostname.append(device['hostname'])
                 if device['domain'] not in flattened_domain:
-                   flattened_domain.append(device['domain'])
+                    flattened_domain.append(device['domain'])
 
             for user in log['users']:
                 domain = (user['displayName']).split('\\')[0]
                 if domain not in flattened_domain:
                     flattened_domain.append(domain)
 
+            if process_details := log.get('process_details'):
+                log['formated_process_details'] = self._process_details_flattener(process_details)
+
+                log['flattened_cmdline'] = list({v for i in log['formated_process_details'] for v in i['cmdline']})
+                log['flattened_hash_md5'] = list({v for i in log['formated_process_details'] for v in i['hash']['md5']})
+                log['flattened_hash_sha1'] = list({v for i in log['formated_process_details'] for v in i['hash']['sha1']})
+                log['flattened_hash_sha256'] = list({v for i in log['formated_process_details'] for v in i['hash']['sha256']})
+
+            if malop_details := log.get('malop_details'):
+                log['formated_malops_details'] = self._malops_details_flattener(malop_details)
+                log['flattened_hash_sha1'] = list({i['hash']['sha1'] for i in log['formated_malops_details']})
+
             log['flattened_ip'] = flattened_ip
             log['flattened_hostname'] = flattened_hostname
             log['flattened_domain'] = flattened_domain
+
         elif kind == "malwares":
             log['original_timestamp'] = log.pop("timestamp")
 
@@ -453,5 +548,6 @@ class CybereasonParser(ApiParser):
 
         # update last_api_call only if logs are retrieved
         self.frontend.last_api_call = to
+
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

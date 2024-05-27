@@ -44,14 +44,14 @@ class HarfangLabAPIError(Exception):
 
 class HarfangLabParser(ApiParser):
     VERSION = "api/version/"
-    STATUS = "api/status/"
-    CONFIG = "api/config/"
     ALERTS = "api/data/alert/alert/Alert/"
-    ALERT_DETAILS = "api/data/alert/alert/Alert/{id}/details/"
-    AGENT = "api/data/endpoint/Agent/"
-    AGENT_STATS = "api/data/endpoint/Agent/dashboard_stats/"
-    POLICY = "api/data/endpoint/Policy/"
     THREATS = "api/data/alert/alert/Threat/"
+    # STATUS = "api/status/"
+    # CONFIG = "api/config/"
+    # ALERT_DETAILS = "api/data/alert/alert/Alert/{id}/details/"
+    # AGENT = "api/data/endpoint/Agent/"
+    # AGENT_STATS = "api/data/endpoint/Agent/dashboard_stats/"
+    # POLICY = "api/data/endpoint/Policy/"
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -92,7 +92,7 @@ class HarfangLabParser(ApiParser):
         except Exception as err:
             raise HarfangLabAPIError(err)
 
-    def __execute_query(self, method, url, query, timeout=10):
+    def __execute_query(self, method, url, query, timeout=15):
         '''
         raw request doesn't handle the pagination natively
         '''
@@ -125,7 +125,7 @@ class HarfangLabParser(ApiParser):
 
     def test(self):
         try:
-            result = self.get_alerts(timezone.now()-timedelta(hours=24), timezone.now())
+            result = self.get_alerts(timezone.now()-timedelta(hours=12), timezone.now())
 
             return {
                 "status": True,
@@ -151,7 +151,7 @@ class HarfangLabParser(ApiParser):
 
         payload = {
             'offset': index,
-            'limit': 100, # Mandatory
+            'limit': 1000, # Mandatory
             'alert_time__gte': since_utc,
             'alert_time__lt': to_utc,
             'ordering': 'alert_time',
@@ -174,7 +174,7 @@ class HarfangLabParser(ApiParser):
 
         payload = {
             'offset': index,
-            'limit': 100,  # Mandatory
+            'limit': 1000,  # Mandatory
             'first_seen__gte': since_utc,
             'first_seen__lt': to_utc,
             'ordering': 'first_seen',
@@ -191,47 +191,58 @@ class HarfangLabParser(ApiParser):
 
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
-        to = timezone.now()
-
-        # delay the times of 2 minutes, to let the times at the API to have all logs
-        to = to - timedelta(minutes=2)
-
-        msg = f"Parser starting from {since} to {to}."
-        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+        # Don't get the last 2 minutes of logs, as some can appear delayed at the API
+        to = min(timezone.now() - timedelta(minutes=2), since + timedelta(hours=24))
 
         for log_type in ["alerts", "threats"]:
             index = 0
             total = 1
-            while index < total:
+            logs = list()
 
+            msg = f"{log_type}: parser starting from {since} to {to}."
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
+            while index < total:
                 get_func = getattr(self, f"get_{log_type}")
                 response = get_func(since, to, index)
 
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
 
-                logs = response['results']
+                logs += response['results']
 
                 total = int(response['count'])
                 msg = f"{log_type}: got {total} lines available"
                 logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
                 if total == 0:
-                    # Means that there are no logs available. It may be for two
-                    # reasons: no log during this period or logs not available at
-                    # request time.
-                    # If there are no logs, no need to write them and we should not
-                    # set the last_api_call.
+                    """
+                    Means that there are no logs available. It may be for two
+                    reasons: no log during this period or logs not available at
+                    request time. If there are no logs, no need to write them.
+                    """
                     break
+
+                if total >= 10000:
+                    """
+                    API have a return threshold set to 10k logs by default (maybe elastic underlying layer)
+                    for every server response. This leads to an infinite loop in case of a large volume returned
+                    on the requested time range (mostly ~0.001eps but spikes can be much larger)
+                    """
+                    msg = f"{log_type}: retrieved {total} lines >= 10k logs, shortening time range to avoid API error"
+                    logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                    to -= (to - since)/2
+                    index = 0
+                    logs = list()
+                    continue
 
                 index += len(logs)
                 msg = f"{log_type}: retrieved {index} lines"
                 logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-                self.write_to_file([self.format_log(l, log_type) for l in logs])
-
-                # Writting may take some while, so refresh token in Redis
-                self.update_lock()
+            self.write_to_file([self.format_log(l, log_type) for l in logs])
+            # Writting may take some while, so refresh token in Redis
+            self.update_lock()
 
         self.frontend.last_api_call = to
         self.frontend.save()

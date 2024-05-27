@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CRON] Update Reputation Context DBs at 6:00am instead of 2:00am
 
 
+## [2.15.4] - 2024-05-27
+### Changed
+- [API_PARSER] [CYBEREASON] Update malops fetching
+- [DEPENDENCIES] Python dependencies upgrade
+  - gunicorn 21.2.0 -> 22.0.0
+- [CLUSTER] [CONFIG] Reload all Rsyslog/Filebeat Listeners when updating the Redis cluster password
+### Fixed
+- [FRONTEND] Missing redis fields in template infos
+- [API_PARSER] [HARFANGLAB] Increase the limit of logs in request and reduce time range of requests
+- [API_PARSER] [CSC_DOMAINMANAGER] Split logs with several records
+- [API_PARSER] Correctly select custom parser certificate when set
+- [REPUTATION_CTX] Ensure there are no duplicates left for GeoLite files in Mongodb
+- [API_PARSER] [HARFANGLAB] Add threshold check to avoid infinite loop while getting more than >=10k logs on single execution
+- [API_PARSER] [TRENDMICRO_VISIONONE] Avoid sporadic errors on collector's GUI test
+
+
 ## [2.15.3] - 2024-04-24
 ### Added
 - [API_PARSER] [RAPID7_IDR] Add priority field in the logs from rapid7_idr api
