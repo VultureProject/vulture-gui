@@ -33,6 +33,7 @@ from redis import ReadOnlyError
 from django.conf import settings
 from services.frontend.models import Frontend
 from system.config.models import Config
+from system.pki.models import X509Certificate
 from toolkit.network.network import get_proxy
 from toolkit.redis.redis_base import RedisBase
 from toolkit.network.network import JAIL_ADDRESSES
@@ -49,8 +50,11 @@ class ApiParser:
     def __init__(self, data):
         self.data = data
 
-        self.api_parser_verify_ssl = data.get("api_parser_verify_ssl", True)
-        self.api_parser_custom_certificate = data.get("api_parser_custom_certificate", None)
+        self.api_parser_verify_ssl = self.data.get("api_parser_verify_ssl", True)
+        if self.api_parser_verify_ssl and self.data.get("api_parser_custom_certificate", None):
+            self.api_parser_custom_certificate = X509Certificate.objects.get(pk=self.data["api_parser_custom_certificate"]).bundle_filename
+        else:
+            self.api_parser_custom_certificate = None
 
         if current_thread() is main_thread():
             signal.signal(signal.SIGINT, self._handle_stop)
