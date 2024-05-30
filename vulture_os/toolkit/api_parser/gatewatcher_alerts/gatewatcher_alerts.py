@@ -1,0 +1,140 @@
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture OS.
+
+Vulture OS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture OS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
+"""
+__author__ = "Gaultier Parain"
+__credits__ = [""]
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture OS"
+__email__ = "contact@vultureproject.org"
+__doc__ = 'GATEWATCHER ALERTS API'
+__parser__ = 'GATEWATCHER ALERTS'
+
+import json
+import logging
+import requests
+
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.conf import settings
+from toolkit.api_parser.api_parser import ApiParser
+
+logging.config.dictConfig(settings.LOG_SETTINGS)
+logger = logging.getLogger('api_parser')
+
+class GatewatcherAlertsAPIError(Exception):
+    pass
+
+class GatewatcherAlertsParser(ApiParser):
+
+    HEADERS = {
+        "Content-Type": "application/json",
+        'Accept': 'application/json'
+    }
+
+    def __init__(self, data):
+        super().__init__(data)
+
+        self.gatewatcher_alerts_host = data["gatewatcher_alerts_host"]
+        self.gatewatcher_alerts_api_key = data["gatewatcher_alerts_api_key"]
+
+        self.ALERTS_ENDPOINT = "/api/alerts/"
+        self.RAW_ALERTS_ENDPOINT = "/api/raw-alerts/"
+
+        self.session = None
+
+    def _connect(self):
+        try:
+            if self.session is None:
+                self.session = requests.Session()
+
+                self.session.headers.update(self.HEADERS)
+                self.session.headers.update({'API-KEY': self.gatewatcher_alerts_api_key})
+            return True
+
+        except Exception as err:
+            raise GatewatcherAlertsAPIError(err)
+
+    def execute_query(self, url, params={}, timeout=60):
+
+        response = self.session.get(
+            url,
+            params=params,
+            proxies=self.proxies,
+            timeout=timeout,
+            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+        )
+        if response.status_code != 200:
+            error = f"Error at Gatewatcher API Call: status : {response.status_code}, content : {response.content}"
+            logger.error(f"[{__parser__}]:execute_query: {error}", extra={'frontend': str(self.frontend)})
+            raise GatewatcherAlertsAPIError(error)
+
+        return response.json()
+
+    def get_logs(self, since, to=timezone.now()):
+        self._connect()
+        alert_url = f"https://{self.gatewatcher_alerts_host}{self.ALERTS_ENDPOINT}"
+        raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.ALERTS_ENDPOINT}"
+        query = {
+            'date_from': since,
+            'date_to': to
+        }
+        alerts = self.execute_query(alert_url, params=query)
+        results = []
+
+        for alert in alerts.get("results", []):
+            raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.RAW_ALERTS_ENDPOINT}/{alert['uuid']}"
+            raw_alert = self.execute_query(raw_alert_url)
+            results.append({'alert': alert, 'raw_alert': raw_alert})
+
+        return results
+
+    def test(self):
+        try:
+            logs = self.get_logs(timezone.now()-timedelta(days=1))
+            return {
+                "status": True,
+                "data": logs
+            }
+
+        except Exception as e:
+            logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
+            return {
+                "status": False,
+                "error": str(e)
+            }
+
+    def format_log(self, log):
+        return json.dumps(log)
+
+    def execute(self):
+        since = self.last_api_call or (timezone.now() - timedelta(hours=24))
+        to = timezone.now()
+
+        logs = self.get_logs(since)
+
+        # Downloading may take some while, so refresh token in Redis
+        self.update_lock()
+
+        self.write_to_file([self.format_log(l) for l in logs])
+
+        # Writting may take some while, so refresh token in Redis
+        self.update_lock()
+
+        self.frontend.last_api_call = to
+        self.frontend.save()
+
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
