@@ -129,10 +129,9 @@ def netif_edit(request, object_id=None, api=False):
         """ Write permanent network configuration on disk """
         Cluster.api_request('toolkit.network.network.write_network_config')
 
-        if netif.type in ['vlan', 'lagg']:
+        if netif.type in ['vlan', 'lagg'] and form.changed_data != ["name"]:
             iface_name = netif.type + str(netif.iface_id)
-            Cluster.api_request('toolkit.network.network.destroy_virtual_interface', iface_name)
-            Cluster.api_request('toolkit.network.network.create_virtual_interface', iface_name)
+            Cluster.api_request('toolkit.network.network.recreate_virtual_interface', iface_name)
             # Be sure that NIC are assigned to correct nodes, by removing and recreating virtual ones
             if node:
                 NIC, created = NetworkInterfaceCard.objects.update_or_create(
