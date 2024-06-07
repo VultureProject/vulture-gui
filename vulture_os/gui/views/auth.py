@@ -81,6 +81,7 @@ def authent(request):
                         else:
                             logger.info("User {} successfully authenticated on LDAP, and is_active.".
                                         format(user.username))
+                            login(request, user)
                             return HttpResponseRedirect(url_next)
                     except ObjectDoesNotExist:
                         """ If user not found in internal MongoDB """
