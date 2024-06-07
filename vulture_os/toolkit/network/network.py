@@ -264,6 +264,7 @@ def address_cleanup(logger):
             ip, prefix = addr.split("/")
             if ":" in ip:
                 family = "inet6"
+                ip = ip.split('%')[0]
             else:
                 family = "inet"
 
