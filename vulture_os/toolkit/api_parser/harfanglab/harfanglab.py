@@ -192,7 +192,7 @@ class HarfangLabParser(ApiParser):
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
         # Don't get the last 2 minutes of logs, as some can appear delayed at the API
-        to = min(timezone.now() - timedelta(minutes=2), since + timedelta(hours=24))
+        to = min(timezone.now() - timedelta(minutes=10), since + timedelta(hours=24))
 
         for log_type in ["alerts", "threats"]:
             index = 0
