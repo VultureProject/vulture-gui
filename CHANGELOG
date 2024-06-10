@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 - [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
 - [CRON] Update Reputation Context DBs at 6:00am instead of 2:00am
+- [API_PARSER] [HARFANGLAB] Increase delay to 10 minutes to be sure to get all logs
 
 
 ## [2.15.4] - 2024-05-27
