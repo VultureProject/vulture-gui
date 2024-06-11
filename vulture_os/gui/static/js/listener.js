@@ -165,7 +165,13 @@ $(function() {
     });
 
     /* Re-initialize select2 objects */
-    $('.select2').select2();
+    let selects = Array.prototype.slice.call(document.querySelectorAll('.select2'));
+    selects.forEach(function(html) {
+      $(html).select2();
+      if (html.attributes['data-original-title']) {
+        $(html.nextElementSibling).tooltip({title: html.attributes['data-original-title'].value, placement: "bottom"});
+      }
+    });
 
     /* Re-initialize Tag-Editor events */
     /* Try to destroy old tag-editor elements */
@@ -433,6 +439,22 @@ $(function() {
     show_network_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_log_condition_failure();
     old_mode = mode;
+  }).trigger('change');
+
+  $('#id_queue_type').on('change', function(e){
+    if ($(this).val() === "direct") {
+      $('#tab-queue').hide();
+    } else {
+      $('#tab-queue').show();
+    }
+  }).trigger('change');
+
+  $('#id_enable_disk_assist').on('change', function(e){
+    if ($(this).is(':checked')) {
+      $('#tab-disk').show();
+    } else {
+      $('#tab-disk').hide();
+    }
   }).trigger('change');
 
   $('#id_redis_mode').on('change', function(event) {
