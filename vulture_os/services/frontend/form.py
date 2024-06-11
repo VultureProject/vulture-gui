@@ -37,8 +37,9 @@ from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
-                                      REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES, FILEBEAT_LISTENING_MODE,
-                                      FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES, get_available_timezones)
+                                      REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES, RSYSLOG_QUEUE_TYPE_CHOICES,
+                                      FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES,
+                                      get_available_timezones)
 
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkAddress
@@ -211,7 +212,10 @@ class FrontendForm(ModelForm):
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst', 'expected_timezone',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
-                           'healthcheck_service', 'nb_workers', 'mmdb_cache_size', 'redis_batch_size', 'redis_use_local',
+                           'healthcheck_service', 'queue_type', 'queue_size', 'dequeue_batch_size', 'nb_workers',
+                           'new_worker_minimum_messages', 'shutdown_timeout', 'enable_disk_assist', 'high_watermark',
+                           'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory', 'save_on_shutdown',
+                           'mmdb_cache_size','redis_batch_size', 'redis_use_local',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
                            'api_parser_verify_ssl', 'api_parser_custom_certificate',
@@ -331,7 +335,10 @@ class FrontendForm(ModelForm):
                   'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'ratelimit_interval', 'ratelimit_burst', 'expected_timezone', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
-                  'healthcheck_service', 'nb_workers', 'mmdb_cache_size', 'redis_batch_size', 'redis_mode', 'redis_use_lpop',
+                  'healthcheck_service', 'queue_type', 'queue_size', 'dequeue_batch_size', 'nb_workers',
+                  'new_worker_minimum_messages', 'shutdown_timeout', 'enable_disk_assist', 'high_watermark',
+                  'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory', 'save_on_shutdown',
+                  'mmdb_cache_size','redis_batch_size', 'redis_mode', 'redis_use_lpop',
                   'redis_server', 'redis_port', 'redis_key', 'redis_password', 'redis_stream_consumerGroup',
                   'redis_stream_consumerName', 'redis_stream_startID', 'redis_stream_acknowledge', 'redis_stream_reclaim_timeout',
                   'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
@@ -455,7 +462,19 @@ class FrontendForm(ModelForm):
             'redis_stream_acknowledge': CheckboxInput(attrs={'class': 'js-switch'}),
             'redis_stream_reclaim_timeout': NumberInput(attrs={'class': 'form-control'}),
             'healthcheck_service': CheckboxInput(attrs={'class': 'js-switch'}),
+            'queue_type': Select(choices=RSYSLOG_QUEUE_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
+            'queue_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '50000'}),
+            'dequeue_batch_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '1024'}),
             'nb_workers': NumberInput(attrs={'class': 'form-control'}),
+            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue.size/queue.workerthreads'}),
+            'shutdown_timeout': NumberInput(attrs={'class': 'form-control', 'placeholder': '1500'}),
+            'enable_disk_assist': CheckboxInput(attrs={'class': 'js-switch'}),
+            'high_watermark': NumberInput(attrs={'class': 'form-control', 'placeholder': '90% of queue.size'}),
+            'low_watermark': NumberInput(attrs={'class': 'form-control', 'placeholder': '70% of queue.size'}),
+            'max_file_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '16MB'}),
+            'max_disk_space': NumberInput(attrs={'class': 'form-control', 'placeholder': 'Unlimited'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
+            'save_on_shutdown': CheckboxInput(attrs={'class': 'js-switch'}),
             'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
             'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
@@ -739,12 +758,6 @@ class FrontendForm(ModelForm):
             return ast.literal_eval(data)
         return data.split(',')
 
-    def clean_nb_workers(self):
-        data = self.cleaned_data.get('nb_workers')
-        if data == 0:
-            self.add_error('nb_workers', "Number of workers should be strictly positive")
-        return data
-
     def clean_mmdb_cache_size(self):
         data = self.cleaned_data.get('mmdb_cache_size')
         if data and data !=0 and data % 2 != 0:
@@ -918,6 +931,25 @@ class FrontendForm(ModelForm):
             self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
         if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):
             self.add_error("ratelimit_interval", "This field cannot be left blank if rate-limiting burst is set")
+
+        """ Rsyslog queue fields verification """
+        if cleaned_data.get('dequeue_batch_size'):
+            if cleaned_data['dequeue_batch_size'] > cleaned_data.get('queue_size', 50000):
+                self.add_error("dequeue_batch_size", "This value cannot be over the queue size")
+
+        if cleaned_data.get('new_worker_minimum_messages'):
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 50000):
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
+
+        if cleaned_data.get('enable_disk_assist') == True:
+            if cleaned_data.get('high_watermark') > cleaned_data.get('queue_size', 50000) \
+            or cleaned_data.get('low_watermark') > cleaned_data.get('queue_size', 50000):
+                self.add_error("queue_size", "Queue size is lower than a watermark")
+            if cleaned_data.get('high_watermark', cleaned_data.get('queue_size', 50000) * 0.9) < cleaned_data.get('low_watermark', cleaned_data.get('queue_size', 50000) * 0.7):
+                self.add_error("high_watermark", "High watermark is lower than the low watermark value")
+                self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
+            if cleaned_data.get('max_disk_space') and cleaned_data.get('max_file_size', 16) > cleaned_data.get('max_disk_space'):
+                self.add_error("max_file_size", "File size is higher than the disk space")
 
         return cleaned_data
 
