@@ -120,7 +120,7 @@ class GatewatcherAlertsParser(ApiParser):
 
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(hours=24))
-        to = timezone.now()
+        to = min(timezone.now(), since + timedelta(hours=24))
 
         logs = self.get_logs(since, to)
 
