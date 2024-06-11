@@ -7,7 +7,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('services', '0066_frontend_redis_stream_acknowledge_and_more'),
+        ('services', '0067_frontend_apex_page_token'),
     ]
 
     operations = [
