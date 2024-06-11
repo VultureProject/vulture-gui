@@ -82,7 +82,7 @@ class GatewatcherAlertsParser(ApiParser):
 
         return response.json()
 
-    def get_logs(self, since, to=timezone.now()):
+    def get_logs(self, since, to):
         self._connect()
         alert_url = f"https://{self.gatewatcher_alerts_host}{self.ALERTS_ENDPOINT}"
         raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.ALERTS_ENDPOINT}"
@@ -102,7 +102,7 @@ class GatewatcherAlertsParser(ApiParser):
 
     def test(self):
         try:
-            logs = self.get_logs(timezone.now()-timedelta(days=1))
+            logs = self.get_logs(timezone.now()-timedelta(days=1), timezone.now())
             return {
                 "status": True,
                 "data": logs
@@ -122,7 +122,7 @@ class GatewatcherAlertsParser(ApiParser):
         since = self.last_api_call or (timezone.now() - timedelta(hours=24))
         to = timezone.now()
 
-        logs = self.get_logs(since)
+        logs = self.get_logs(since, to)
 
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
