@@ -77,12 +77,15 @@ class CiscoUmbrellaParser(ApiParser):
     def _connect(self):
         try:
             # Check for expiration with 10 seconds difference to be sure token will still be valid for some time
-            if not self.cisco_umbrella_access_token or not self.cisco_umbrella_expires_at or (self.cisco_umbrella_expires_at - timedelta(seconds=10)) < timezone.now():
+            if not self.cisco_umbrella_access_token or \
+                not self.cisco_umbrella_expires_at or \
+                    (self.cisco_umbrella_expires_at - timedelta(seconds=10)) < timezone.now():
                 self._get_token()
-                self.session = requests.Session()
-                headers = self.HEADERS
-                headers.update({'Authorization': f"Bearer {self.cisco_umbrella_access_token}"})
-                self.session.headers.update(headers)
+
+            self.session = requests.Session()
+            headers = self.HEADERS
+            headers.update({'Authorization': f"Bearer {self.cisco_umbrella_access_token}"})
+            self.session.headers.update(headers)
 
         except Exception as err:
             raise CiscoUmbrellaAPIError(err)
