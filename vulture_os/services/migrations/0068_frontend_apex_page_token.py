@@ -4,26 +4,16 @@ from django.db import migrations, models
 import djongo.models.fields
 
 
-def set_default_apex_page_tokens(apps, schema_editor):
-    frontend_model = apps.get_model("services", "frontend")
-    db_alias = schema_editor.connection.alias
-    frontends = frontend_model.objects.using(db_alias)
-
-    for frontend in frontends.all():
-        frontend.apex_page_token = dict()
-        frontend.save()
-
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('services', '0066_frontend_redis_stream_acknowledge_and_more'),
+        ('services', '0067_alter_frontend_filebeat_module_and_more'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='frontend',
             name='apex_page_token',
-            field=djongo.models.fields.JSONField(default={}),
+            field=djongo.models.fields.JSONField(default=dict),
         ),
-        migrations.RunPython(set_default_apex_page_tokens, migrations.RunPython.noop),
     ]

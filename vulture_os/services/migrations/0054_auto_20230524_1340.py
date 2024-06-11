@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='cisco_duo_offsets',
-            field=djongo.models.fields.JSONField(default={}),
+            field=djongo.models.fields.JSONField(default=dict),
         ),
         migrations.AddField(
             model_name='frontend',

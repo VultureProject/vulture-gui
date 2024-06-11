@@ -752,7 +752,7 @@ class Frontend(models.Model):
         default="",
     )
     cisco_meraki_timestamp = models.JSONField(
-        default={}
+        default=dict
     )
     # Proofpoint TAP attributes
     proofpoint_tap_host = models.TextField(
@@ -1210,7 +1210,7 @@ class Frontend(models.Model):
         help_text=_("Sentinel One Mobile API integration key"),
         default="",
     )
-    #CSC DomainManager attributes
+    # CSC DomainManager attributes
     csc_domainmanager_apikey = models.TextField(
         verbose_name = ("CSC DomainManager API Key"),
         help_text = ("CSC DomainManager API Key"),
@@ -1275,10 +1275,10 @@ class Frontend(models.Model):
         default="",
     )
     apex_timestamp = models.JSONField(
-        default={}
+        default=dict
     )
     apex_page_token = models.JSONField(
-        default={}
+        default=dict
     )
 
 
