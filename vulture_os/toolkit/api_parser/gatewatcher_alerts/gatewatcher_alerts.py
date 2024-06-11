@@ -27,7 +27,7 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
@@ -39,6 +39,8 @@ class GatewatcherAlertsAPIError(Exception):
     pass
 
 class GatewatcherAlertsParser(ApiParser):
+    ALERTS_ENDPOINT = "/api/alerts/"
+    RAW_ALERTS_ENDPOINT = "/api/raw-alerts/"
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -50,10 +52,6 @@ class GatewatcherAlertsParser(ApiParser):
 
         self.gatewatcher_alerts_host = data["gatewatcher_alerts_host"]
         self.gatewatcher_alerts_api_key = data["gatewatcher_alerts_api_key"]
-
-        self.ALERTS_ENDPOINT = "/api/alerts/"
-        self.RAW_ALERTS_ENDPOINT = "/api/raw-alerts/"
-
         self.session = None
 
     def _connect(self):
@@ -75,7 +73,7 @@ class GatewatcherAlertsParser(ApiParser):
             params=params,
             proxies=self.proxies,
             timeout=timeout,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
         )
         if response.status_code != 200:
             error = f"Error at Gatewatcher API Call: status : {response.status_code}, content : {response.content}"
