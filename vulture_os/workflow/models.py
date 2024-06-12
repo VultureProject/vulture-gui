@@ -373,30 +373,22 @@ class Workflow(models.Model):
 
         return "Workflow configuration written."
 
-    def get_redirect_uri(self):
-        listener = None
-        for l in self.frontend.listener_set.all().only('tls_profiles', 'port'):
+    def get_redirect_uri(self, original_host=None):
+        urls = []
+        for l in self.frontend.listener_set.all().only('port'):
             """ TLS priority """
-            if l.tls_profiles.count() > 0:
-                listener = l
-
-        """ No TLS listener, get the first one """
-        if not listener:
-            listener = self.frontend.listener_set.first()
-
-        port = listener.port
-
-        if listener.tls_profiles.count() > 0:
-            if port in ("443", 443):
-                url = "https://" + str(self.fqdn) + str(self.public_dir)
+            if l.is_tls:
+                if l.port in ("443", 443):
+                    urls.append(f"https://{self.fqdn}{self.public_dir}")
+                else:
+                    urls.append(f"https://{self.fqdn}:{l.port}{self.public_dir}")
             else:
-                url = "https://" + str(self.fqdn) + ":" + str(port) + str(self.public_dir)
-        else:
-            if port in ("80", 80):
-                url = "http://" + str(self.fqdn) + str(self.public_dir)
-            else:
-                url = "http://" + str(self.fqdn) + ":" + str(port) + str(self.public_dir)
-        return url
+                """ No TLS listener, get the first one """
+                if l.port in ("80", 80):
+                    urls.append(f"http://{self.fqdn}{self.public_dir}")
+                else:
+                    urls.append(f"http://{self.fqdn}:{l.port}{self.public_dir}")
+        return original_host if original_host in urls else next(iter(urls), None)
 
     def get_and_validate_scope(self, claims, repo_attributes):
         user_scope = {}
