@@ -88,10 +88,7 @@ def self(request, workflow_id=None, portal_id=None, action=None):
                                 name=portal.name,
                                 frontend=portal.external_listener)
 
-        scheme = request.headers['x-forwarded-proto']
-        fqdn = request.headers['host']
-        w_path = workflow.public_dir
-        redirect_url = scheme + "://" + fqdn + w_path
+        redirect_url = workflow.get_redirect_uri(request.headers['host'])
 
         config = Cluster.get_global_config()
         token_name = config.public_token
