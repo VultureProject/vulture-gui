@@ -119,7 +119,7 @@ class GatewatcherAlertsParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-        since = self.last_api_call or (timezone.now() - timedelta(hours=24))
+        since = self.frontend.last_api_call or (timezone.now() - timedelta(hours=24))
         to = min(timezone.now(), since + timedelta(hours=24))
 
         logs = self.get_logs(since, to)
@@ -131,8 +131,8 @@ class GatewatcherAlertsParser(ApiParser):
 
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
-
-        self.frontend.last_api_call = to
+        # increment by 1ms to avoid duplication of logs
+        self.frontend.last_api_call = to + timedelta(microseconds=1)
         self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
