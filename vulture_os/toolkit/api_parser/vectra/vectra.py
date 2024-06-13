@@ -57,7 +57,18 @@ class VectraParser(ApiParser):
         self.vectra_client_id = data["vectra_client_id"]
         self.vectra_secret_key = data["vectra_secret_key"]
 
+        self.vectra_access_token = getattr(self.frontend, "vectra_access_token", "")
+        self.vectra_expire_at = getattr(self.frontend, "vectra_expire_at", None)
+
         self.session = None
+
+    def save_access_token(self):
+        try:
+            self.frontend.vectra_access_token = self.vectra_access_token
+            self.frontend.vectra_expire_at = self.vectra_expire_at
+            self.frontend.save()
+        except Exception as e:
+            raise VectraAPIError(f"Unable to save access token: {e}")
 
     def get_auth_token(self):
         res = {}
@@ -85,10 +96,10 @@ class VectraParser(ApiParser):
             logger.info(f"[{__parser__}]:get_auth_token: Access token generated.", extra={'frontend': str(self.frontend)})
 
             results = res.json()
-            self.frontend.vectra_access_token = results.get("access_token")
-            self.frontend.vectra_expire_at = timezone.now() + timedelta(seconds=results.get('expires_in'))
-            self.frontend.save()
-
+            self.vectra_access_token = results.get("access_token")
+            self.vectra_expire_at = timezone.now() + timedelta(seconds=results.get('expires_in'))
+            if all(hasattr(self.frontend, attr) for attr in ["vectra_access_token", "vectra_expire_at"]):
+                self.save_access_token()
         except Exception as e:
             logger.error(f"[{__parser__}]:get_auth_token: An exception occurred: {e}", extra={'frontend': str(self.frontend)})
             if res:
@@ -104,10 +115,10 @@ class VectraParser(ApiParser):
                 self.session.headers.update(headers)
 
             # Check for expiration with 10 seconds difference to be sure token will still be valid for some time
-            if not self.frontend.vectra_access_token or not self.frontend.vectra_expire_at or (self.frontend.vectra_expire_at - timedelta(seconds=10)) < timezone.now():
+            if not self.vectra_access_token or not self.vectra_expire_at or (self.vectra_expire_at - timedelta(seconds=10)) < timezone.now():
                 self.get_auth_token()
 
-            self.session.headers.update({"Authorization": f"Bearer {self.frontend.vectra_access_token}"})
+            self.session.headers.update({"Authorization": f"Bearer {self.vectra_access_token}"})
         except Exception as err:
             raise VectraAPIError(err)
 
