@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [AUTHENTICATION] [GUI] LDAP Users can now authenticate once activated
 - [NETWORK] Correctly assign a new/changed IPv6 IP to an existing interface
 - [FRONTEND] JSONField default value
+- [FRONTEND] Redis settings improperly displayed
 
 
 ## [2.15.4] - 2024-05-27
