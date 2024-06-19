@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+- [API_PARSER] [VECTRA] Correctly allow to test the Collector before saving it
 
 
 ## [2.15.4] - 2024-05-27

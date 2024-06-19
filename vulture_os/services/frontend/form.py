@@ -540,7 +540,7 @@ class FrontendForm(ModelForm):
             'retarus_token': TextInput(attrs={'class': 'form-control'}),
             'retarus_channel': TextInput(attrs={'class': 'form-control'}),
             'vectra_host': TextInput(attrs={'class': 'form-control'}),
-            'vectra_secret_key': TextInput(attrs={'class': 'form-control'}),
+            'vectra_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'vectra_client_id': TextInput(attrs={'class': 'form-control'}),
             'apex_server_host': TextInput(attrs={'class': 'form-control'}),
             'apex_api_key': TextInput(attrs={'class': 'form-control'}),
