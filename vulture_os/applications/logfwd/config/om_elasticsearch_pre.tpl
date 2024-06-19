@@ -69,7 +69,7 @@ ruleset(name="{{output_name}}_retry") {
         {%- if enable_disk_assist %}
             queue.highWatermark="{{high_watermark}}"
             queue.lowWatermark="{{low_watermark}}"
-            queue.spoolDirectory="/var/tmp"
+            queue.spoolDirectory="{{spool_directory}}"
             queue.filename="{{output_name}}_retry_disk-queue"
             queue.maxFileSize="{{max_file_size}}m"
             queue.maxDiskSpace="{{max_disk_space}}m"

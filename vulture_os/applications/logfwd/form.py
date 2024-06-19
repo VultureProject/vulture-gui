@@ -80,6 +80,9 @@ class LogOMForm(ModelForm):
     def clean_name(self):
         return self.cleaned_data['name'].replace(' ', '_')
 
+    def clean_spool_directory(self):
+        return "/" + self.cleaned_data['spool_directory'].strip("/")
+
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()

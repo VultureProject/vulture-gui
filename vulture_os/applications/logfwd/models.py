@@ -291,6 +291,7 @@ class LogOM (models.Model):
             'low_watermark': self.low_watermark,
             'max_file_size': self.max_file_size,
             'max_disk_space': self.max_disk_space,
+            'spool_directory': self.spool_directory,
         }
 
 
