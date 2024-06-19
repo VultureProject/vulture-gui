@@ -57,16 +57,17 @@ class VectraParser(ApiParser):
         self.vectra_client_id = data["vectra_client_id"]
         self.vectra_secret_key = data["vectra_secret_key"]
 
-        self.vectra_access_token = getattr(self.frontend, "vectra_access_token", "")
-        self.vectra_expire_at = getattr(self.frontend, "vectra_expire_at", None)
+        self.vectra_access_token = data.get("vectra_access_token")
+        self.vectra_expire_at = data.get("vectra_expire_at")
 
         self.session = None
 
     def save_access_token(self):
         try:
-            self.frontend.vectra_access_token = self.vectra_access_token
-            self.frontend.vectra_expire_at = self.vectra_expire_at
-            self.frontend.save()
+            if self.frontend:
+                self.frontend.vectra_access_token = self.vectra_access_token
+                self.frontend.vectra_expire_at = self.vectra_expire_at
+                self.frontend.save()
         except Exception as e:
             raise VectraAPIError(f"Unable to save access token: {e}")
 
@@ -74,7 +75,7 @@ class VectraParser(ApiParser):
         res = {}
 
         logger.info(f"[{__parser__}]:get_auth_token: Generating access token.", extra={'frontend': str(self.frontend)})
-        url = self.vectra_host + self.TOKEN_ENDPOINT
+        url = self.vectra_host.rstrip("/") + '/' + self.TOKEN_ENDPOINT
         try:
             res = requests.post(
                 url,
@@ -98,8 +99,7 @@ class VectraParser(ApiParser):
             results = res.json()
             self.vectra_access_token = results.get("access_token")
             self.vectra_expire_at = timezone.now() + timedelta(seconds=results.get('expires_in'))
-            if all(hasattr(self.frontend, attr) for attr in ["vectra_access_token", "vectra_expire_at"]):
-                self.save_access_token()
+            self.save_access_token()
         except Exception as e:
             logger.error(f"[{__parser__}]:get_auth_token: An exception occurred: {e}", extra={'frontend': str(self.frontend)})
             if res:
