@@ -56,25 +56,10 @@
       name: "name",
       aTargets: [1],
       defaultContent: "",
-      mData: "name"
-    },
-    {
-      sTitle: '{% translate "Internal" %}',
-      name: "internal",
-      aTargets: [2],
-      defaultContent: "",
-      mData: "internal",
-      bVisible: false
-    },
-    {
-      sTitle: '{% translate "Enabled" %}',
-      name: "enabled",
-      aTargets: [3],
-      defaultContent: "",
-      mData: "enabled",
+      mData: "name",
       mRender: function(data, type, row) {
         var result = "";
-          switch( data ) {
+          switch( row.enabled ) {
             case true:
               result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
               break;
@@ -85,25 +70,35 @@
               result += '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
               break;
           }
-        return result;
+        return result + data;
       }
     },
     {
+      sTitle: '{% translate "Internal" %}',
+      name: "internal",
+      aTargets: [2],
+      defaultContent: "",
+      mData: "internal",
+      bVisible: false
+    },
+    {
       sTitle: '{% translate "Type" %}',
-      name: "type", aTargets: [4],
+      name: "type",
+      aTargets: [3],
       defaultContent: "",
       mData: "type",
     },
     {
       sTitle: '{% translate "Output" %}',
-      name: "output", aTargets: [5],
+      name: "output",
+      aTargets: [4],
       defaultContent: "",
       mData: "output"
     },
     {
       sTitle: '{% translate "Action" %}',
       mData:"id",
-      aTargets: [6],
+      aTargets: [5],
       defaultContent: "",
       mRender: function(data, type, row) {
         var type = row.type;
