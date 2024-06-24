@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] JSONField default value
 - [FRONTEND] Redis settings improperly displayed
 - [API_PARSER] [VECTRA] Correctly allow to test the Collector before saving it
+- [NETWORK] [GUI] Prevent missing interfaces in selection when refreshing interfaces on a cluster
 
 
 ## [2.15.4] - 2024-05-27
