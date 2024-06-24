@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
 - [CRON] Update Reputation Context DBs at 6:00am instead of 2:00am
 - [LOGOM] Increment checkpoint interval for DA queues, to increase performances
+- [LOGOM] Code and logic factorization
+- [LOGOM] Allow to deactivate limitation of the size of DA queues on disk
+- [LOGOM] [ELASTICSEARCH] Limit available certificates to non-CA ones
 ### Fixed
 - [AUTHENTICATION] [GUI] LDAP Users can now authenticate once activated
 - [NETWORK] Correctly assign a new/changed IPv6 IP to an existing interface
@@ -22,9 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Redis settings improperly displayed
 - [API_PARSER] [VECTRA] Correctly allow to test the Collector before saving it
 - [NETWORK] [GUI] Prevent missing interfaces in selection when refreshing interfaces on a cluster
-- [LOGOM] Code and logic factorization
-- [LOGOM] Allow to deactivate limitation of the size of DA queues on disk
-- [LOGOM] [ELASTICSEARCH] Limit available certificates to non-CA ones
 
 
 ## [2.15.4] - 2024-05-27
