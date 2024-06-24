@@ -397,7 +397,7 @@ def recreate_virtual_interface(logger, iface_name):
     """ Recreate an interface
 
     :param logger: A logger handler
-    :param interface: a string representing the exact name of the interface (as seen by the system)
+    :param iface_name: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
     return destroy_virtual_interface(logger, iface_name) and create_virtual_interface(logger, iface_name)
