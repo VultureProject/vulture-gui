@@ -53,26 +53,45 @@
     },
     {
       sTitle: '{% translate "Name" %}',
-      name: "name", aTargets: [1],
+      name: "name",
+      aTargets: [1],
       defaultContent: "",
-      mData: "name"
+      mData: "name",
+      mRender: function(data, type, row) {
+        var result = "";
+          switch( row.enabled ) {
+            case true:
+              result += '<img width="16" height="16" src="{% static 'img/status_green.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+            case false:
+              result += '<img width="16" height="16" src="{% static 'img/status_grey.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+            default:
+              result += '<img width="16" height="16" src="{% static 'img/status_red.png' %}" class="img_responsive"/>&nbsp;';
+              break;
+          }
+        return result + data;
+      }
     },
     {
       sTitle: '{% translate "Internal" %}',
       name: "internal",
       aTargets: [2],
       defaultContent: "",
-      mData: "internal"
+      mData: "internal",
+      bVisible: false
     },
     {
       sTitle: '{% translate "Type" %}',
-      name: "type", aTargets: [3],
+      name: "type",
+      aTargets: [3],
       defaultContent: "",
       mData: "type",
     },
     {
       sTitle: '{% translate "Output" %}',
-      name: "output", aTargets: [4],
+      name: "output",
+      aTargets: [4],
       defaultContent: "",
       mData: "output"
     },

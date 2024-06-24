@@ -89,6 +89,7 @@ class LogOM (models.Model):
     name = models.TextField(unique=True, blank=False, null=False,
                             default="Log Output Module", help_text=_("Name of the Log Output Module"))
     internal = models.BooleanField(default=False, help_text=_("Is this LogForwarder internal"))
+    enabled = models.BooleanField(default=True)
     queue_size = models.PositiveIntegerField(
         default=10000,
         help_text=_("Size of the queue in nb of message"),
@@ -141,32 +142,41 @@ class LogOM (models.Model):
     )
     high_watermark = models.PositiveIntegerField(
         default=8000,
-        null=True,
+        null=False,
         help_text=_("Target of the high watermark"),
         verbose_name=_("High watermark target"),
         validators=[MinValueValidator(100)]
     )
     low_watermark = models.PositiveIntegerField(
         default=6000,
-        null=True,
+        null=False,
         help_text=_("Set the value of the low watermark"),
         verbose_name=_("Low watermark target"),
         validators=[MinValueValidator(100)]
         )
     max_file_size = models.IntegerField(
         default=256,
-        null=True,
+        null=False,
         help_text=_("Set the value of the queue in MB"),
         verbose_name=_("Max file size of the queue in MB"),
         validators=[MinValueValidator(1)]
     )
     max_disk_space = models.IntegerField(
-        default=1024,
-        null=True,
+        default=0,
+        null=False,
         help_text=_("Limit the maximum disk space used by the queue in MB"),
-        verbose_name=_("Max disk space used by the queue in MB"),
-        validators=[MinValueValidator(1)]
+        verbose_name=_("Max disk space used by the queue in MB (set to zero to disable)"),
+        validators=[MinValueValidator(0)]
     )
+    spool_directory = models.TextField(
+        default="/var/tmp",
+        null=False,
+        help_text=_("Defines an existing folder to store queue files into"),
+        verbose_name=_("Existing folder to store queue files to"),
+        validators=[RegexValidator(
+                regex=r"^/.*$",
+                message="Value should be a valid fullpath, beginning with a '/'"
+        )])
     send_as_raw = models.BooleanField(
         default=False,
         help_text=_("Send logs without any modification"),
@@ -281,6 +291,7 @@ class LogOM (models.Model):
             'low_watermark': self.low_watermark,
             'max_file_size': self.max_file_size,
             'max_disk_space': self.max_disk_space,
+            'spool_directory': self.spool_directory,
         }
 
 
@@ -288,7 +299,6 @@ class LogOMFile(LogOM):
     file = models.TextField(null=False)
     flush_interval = models.IntegerField(default=1, null=False)
     async_writing = models.BooleanField(default=True)
-    enabled = models.BooleanField(default=True)
     retention_time = models.PositiveIntegerField(default=30, validators=[MinValueValidator(1)])
     rotation_period = models.TextField(default=ROTATION_PERIOD_CHOICES[0][0], choices=ROTATION_PERIOD_CHOICES)
 
@@ -313,6 +323,7 @@ class LogOMFile(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'File',
             'output': self.file
@@ -372,7 +383,6 @@ class LogOMFile(LogOM):
 class LogOMRELP(LogOM):
     target = models.TextField(null=False, default="1.2.3.4")
     port = models.IntegerField(null=False, default=514)
-    enabled = models.BooleanField(default=True)
     tls_enabled = models.BooleanField(
         default=True,
         help_text=_("If set to on, the RELP connection will be encrypted by TLS.")
@@ -400,6 +410,7 @@ class LogOMRELP(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'RELP',
             'output': self.target + ':' + str(self.port)
@@ -438,7 +449,6 @@ class LogOMHIREDIS(LogOM):
     key = models.TextField(null=False, default="MyKey")
     dynamic_key = models.BooleanField(default=False)
     pwd = models.TextField(blank=True, default=None)
-    enabled = models.BooleanField(default=True)
     use_rpush = models.BooleanField(
         default=False,
         blank=True,
@@ -486,6 +496,7 @@ class LogOMHIREDIS(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'Redis',
             'output': f"{self.target}:{self.port} ({'dynamic ' if self.dynamic_key else ''}key = {self.key})"
@@ -532,7 +543,6 @@ class LogOMFWD(LogOM):
         help_text=_("Port on which to send logs to <target>.")
     )
     protocol = models.TextField(null=False, choices=OMFWD_PROTOCOL, default="tcp")
-    enabled = models.BooleanField(default=True)
     zip_level = models.PositiveIntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(9)],
@@ -553,6 +563,7 @@ class LogOMFWD(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'Syslog',
             'output': self.target + ':' + str(self.port) + ' ({})'.format(self.protocol)
@@ -582,7 +593,6 @@ class LogOMFWD(LogOM):
 
 
 class LogOMElasticSearch(LogOM):
-    enabled = models.BooleanField(default=True)
     servers = models.TextField(null=False, default='["https://els-1:9200", "https://els-2:9200"]')
     es8_compatibility = models.BooleanField(
         default=False,
@@ -607,7 +617,8 @@ class LogOMElasticSearch(LogOM):
         on_delete=models.CASCADE,
         help_text=_("X509Certificate object to use."),
         default=None,
-        null=True
+        null=True,
+        blank=True
     )
 
     def to_dict(self, fields=None):
@@ -626,6 +637,7 @@ class LogOMElasticSearch(LogOM):
             'id': str(self.id),
             'name': self.name,
             'internal': self.internal,
+            'enabled': self.enabled,
             'type': 'Elasticsearch',
             'output': self.servers + ' (index = {})'.format(self.index_pattern)
         }
@@ -696,7 +708,6 @@ class LogOMMongoDB(LogOM):
     db = models.TextField(unique=True, null=False, default='MyDatabase')
     collection = models.TextField(unique=True, null=False, default='MyLogs')
     uristr = models.TextField(null=False, default='mongodb://1.2.3.4:9091/?replicaset=Vulture&ssl=true')
-    enabled = models.BooleanField(default=True)
     x509_certificate = models.ForeignKey(
         X509Certificate,
         on_delete=models.CASCADE,
@@ -716,6 +727,7 @@ class LogOMMongoDB(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'MongoDB',
             'output': self.uristr + ' (db = {})'.format(self.db)
@@ -772,7 +784,6 @@ class LogOMMongoDB(LogOM):
 
 class LogOMKAFKA(LogOM):
     broker = models.TextField(blank=True, default='["1.2.3.4:9092"]')
-    enabled = models.BooleanField(default=True)
     topic = models.TextField()
     key = models.TextField(blank=True)
     dynaKey = models.BooleanField(default=False)
@@ -798,6 +809,7 @@ class LogOMKAFKA(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'Kafka',
             'output': self.broker + ' (topic = {})'.format(self.topic)

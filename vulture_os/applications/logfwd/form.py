@@ -28,8 +28,8 @@ from django.core.validators import RegexValidator
 from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, NumberInput, Select
 
 # Django project imports
-from applications.logfwd.models import (LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA,
-                                        OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES)
+from applications.logfwd.models import (LogOM, LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch,
+                                        LogOMMongoDB, LogOMKAFKA, OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES)
 from system.pki.models import X509Certificate
 
 # Required exceptions imports
@@ -44,183 +44,19 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 
-class LogOMFileForm(ModelForm):
+class LogOMForm(ModelForm):
 
     class Meta:
-        model = LogOMFile
-        fields = ('name', 'enabled', 'file', 'flush_interval', 'async_writing', 'send_as_raw', 'retention_time',
-                  'rotation_period', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers',
-                  'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist',
-                  'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
-
-        widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
-            'file': TextInput(attrs={'class': 'form-control'}),
-            'flush_interval': NumberInput(attrs={'class': 'form-control'}),
-            'async_writing': CheckboxInput(attrs={"class": " js-switch"}),
-            'send_as_raw': CheckboxInput(attrs={"class": " js-switch"}),
-            'retention_time': NumberInput(attrs={"class": "form-control"}),
-            'rotation_period': Select(attrs={"class": "select2"}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'})
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['retention_time'].empty_label = None
-        self.fields['rotation_period'].empty_label = None
-        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
-            self.fields[field_name].required = False
-
-    def clean_name(self):
-        field = self.cleaned_data.get('name')
-        if not field:
-            raise ValidationError("This field is required.")
-        return field.replace(' ', '_')
-
-    def clean_file(self):
-        value = self.cleaned_data.get('file')
-        if not value.startswith('/'):
-            raise ValidationError("That field needs absolute path.")
-        return value
-
-    def clean(self):
-        """ Verify needed fields - depending on mode chosen """
-        cleaned_data = super().clean()
-        if cleaned_data.get('enable_disk_assist') == True:
-            try:
-                assert cleaned_data.get('high_watermark'), "high_watermark"
-                assert cleaned_data.get('low_watermark'), "low_watermark"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('queue_size') and (cleaned_data.get('queue_size') < cleaned_data.get('high_watermark') or cleaned_data.get('queue_size') < cleaned_data.get('low_watermark')):
-                    self.add_error("queue_size", "Queue size is lower than a watermark")
-                if cleaned_data.get('high_watermark') < cleaned_data.get('low_watermark'):
-                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
-                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            try:
-                assert cleaned_data.get('max_file_size'), "max_file_size"
-                assert cleaned_data.get('max_disk_space'), "max_disk_space"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
-                    self.add_error("max_file_size", "File size is higher than the disk space")
-        if cleaned_data.get('new_worker_minimum_messages'):
-            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
-                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
-        return cleaned_data
-
-
-class LogOMRELPForm(ModelForm):
-
-    class Meta:
-        model = LogOMRELP
-        fields = ('name', 'enabled', 'target', 'port', 'tls_enabled', 'x509_certificate', 'send_as_raw', 'queue_size',
-                  'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
-                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space')
-
-        widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
-            'target': TextInput(attrs={'class': 'form-control'}),
-            'port': NumberInput(attrs={'class': 'form-control'}),
-            'tls_enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'x509_certificate': Select(attrs={'class': 'form-control select2'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'})
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['x509_certificate'].empty_label = "No TLS certificate"
-        for field_name in ['x509_certificate', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
-            self.fields[field_name].required = False
-
-    def clean_name(self):
-        field = self.cleaned_data.get('name')
-        if not field:
-            raise ValidationError("This field is required.")
-        return field.replace(' ', '_')
-
-    def clean(self):
-        cleaned_data = super().clean()
-        if not cleaned_data.get('tls_enabled') and cleaned_data.get('x509_certificate'):
-            self.add_error('tls_enabled', "You must enable tls to specify a certificate.")
-        if cleaned_data.get('enable_disk_assist') == True:
-            try:
-                assert cleaned_data.get('high_watermark'), "high_watermark"
-                assert cleaned_data.get('low_watermark'), "low_watermark"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('queue_size') and (cleaned_data.get('queue_size') < cleaned_data.get('high_watermark') or cleaned_data.get('queue_size') < cleaned_data.get('low_watermark')):
-                    self.add_error("queue_size", "Queue size is lower than a watermark")
-                if cleaned_data.get('high_watermark') < cleaned_data.get('low_watermark'):
-                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
-                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            try:
-                assert cleaned_data.get('max_file_size'), "max_file_size"
-                assert cleaned_data.get('max_disk_space'), "max_disk_space"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
-                    self.add_error("max_file_size", "File size is higher than the disk space")
-        if cleaned_data.get('new_worker_minimum_messages'):
-            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
-                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
-        return cleaned_data
-
-
-class LogOMHIREDISForm(ModelForm):
-
-    class Meta:
-        model = LogOMHIREDIS
-        fields = ('name', 'enabled', 'target', 'port', 'mode', 'key', 'dynamic_key', 'pwd', 'use_rpush',
-                  'expire_key', 'stream_outfield', 'stream_capacitylimit', 'send_as_raw',
-                  'queue_size', 'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
-                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space')
+        model = LogOM
+        fields = ('name', 'enabled', 'send_as_raw', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown',
+                  'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry',
+                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space',
+                  'spool_directory')
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': 'js-switch'}),
             'name': TextInput(attrs={'class': 'form-control'}),
-            'target': TextInput(attrs={'class': 'form-control'}),
-            'port': NumberInput(attrs={'class': 'form-control'}),
-            'mode': Select(choices=OMHIREDIS_MODE_CHOICES, attrs={'class': 'form-control select2'}),
-            'key': TextInput(attrs={'class': 'form-control'}),
-            'dynamic_key': CheckboxInput(attrs={'class': 'js-switch'}),
-            'pwd': TextInput(attrs={'class': 'form-control'}),
-            'use_rpush': CheckboxInput(attrs={'class': 'js-switch'}),
-            'expire_key': NumberInput(attrs={'class': 'form-control'}),
-            'stream_outfield': TextInput(attrs={'class': 'form-control'}),
-            'stream_capacitylimit': NumberInput(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'send_as_raw': CheckboxInput(attrs={'class': 'js-switch'}),
             'queue_size': NumberInput(attrs={'class': 'form-control'}),
             'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
             'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
@@ -232,22 +68,116 @@ class LogOMHIREDISForm(ModelForm):
             'high_watermark': NumberInput(attrs={'class': 'form-control'}),
             'low_watermark': NumberInput(attrs={'class': 'form-control'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'})
+            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
+        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory']:
             self.fields[field_name].required = False
 
     def clean_name(self):
-        field = self.cleaned_data.get('name')
-        if not field:
-            raise ValidationError("This field is required.")
-        return field.replace(' ', '_')
+        return self.cleaned_data['name'].replace(' ', '_')
+
+    def clean_spool_directory(self):
+        return "/" + self.cleaned_data['spool_directory'].strip("/")
+
+    def clean(self):
+        """ Verify needed fields - depending on mode chosen """
+        cleaned_data = super().clean()
+        logger.info(self.initial)
+        if cleaned_data['enable_disk_assist'] == True:
+            if cleaned_data['queue_size'] is not None and cleaned_data['high_watermark'] is not None:
+                if cleaned_data['queue_size'] < cleaned_data['high_watermark']:
+                    self.add_error("queue_size", "Queue size is lower than the high watermark")
+            if cleaned_data['queue_size'] is not None and cleaned_data['low_watermark'] is not None:
+                if cleaned_data['queue_size'] < cleaned_data['low_watermark']:
+                    self.add_error("queue_size", "Queue size is lower than the low watermark")
+            if cleaned_data['low_watermark'] is not None and cleaned_data['high_watermark'] is not None:
+                if cleaned_data['high_watermark'] < cleaned_data['low_watermark']:
+                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
+                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
+            if cleaned_data['max_disk_space'] is not None and cleaned_data['max_file_size'] is not None:
+                if cleaned_data['max_disk_space'] > 0 and cleaned_data['max_file_size'] > cleaned_data.get('max_disk_space'):
+                    self.add_error("max_file_size", "File size is higher than the disk space")
+        if cleaned_data['new_worker_minimum_messages'] is not None and cleaned_data['queue_size'] is not None:
+            if cleaned_data['new_worker_minimum_messages'] > cleaned_data['queue_size']:
+                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
+        return cleaned_data
+
+
+class LogOMFileForm(LogOMForm):
+
+    class Meta(LogOMForm.Meta):
+        model = LogOMFile
+        fields = LogOMForm.Meta.fields + ('file', 'flush_interval', 'async_writing', 'retention_time',
+                  'rotation_period')
+
+        widgets = {
+            'file': TextInput(attrs={'class': 'form-control'}),
+            'flush_interval': NumberInput(attrs={'class': 'form-control'}),
+            'async_writing': CheckboxInput(attrs={'class': 'js-switch'}),
+            'retention_time': NumberInput(attrs={'class': 'form-control'}),
+            'rotation_period': Select(attrs={'class': 'select2'}),
+        }
+        widgets.update(LogOMForm.Meta.widgets)
+
+    def clean_file(self):
+        value = self.cleaned_data['file']
+        if not value.startswith('/'):
+            raise ValidationError("That field needs absolute path.")
+        return value
+
+
+class LogOMRELPForm(LogOMForm):
+
+    class Meta(LogOMForm.Meta):
+        model = LogOMRELP
+        fields = LogOMForm.Meta.fields + ('target', 'port', 'tls_enabled', 'x509_certificate')
+
+        widgets = {
+            'target': TextInput(attrs={'class': 'form-control'}),
+            'port': NumberInput(attrs={'class': 'form-control'}),
+            'tls_enabled': CheckboxInput(attrs={'class': 'js-switch'}),
+            'x509_certificate': Select(attrs={'class': 'select2'}),
+        }
+        widgets.update(LogOMForm.Meta.widgets)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['x509_certificate'].empty_label = "No TLS certificate"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get('tls_enabled') and cleaned_data.get('x509_certificate'):
+            self.add_error('tls_enabled', "You must enable tls to specify a certificate.")
+        return cleaned_data
+
+
+class LogOMHIREDISForm(LogOMForm):
+
+    class Meta(LogOMForm.Meta):
+        model = LogOMHIREDIS
+        fields = LogOMForm.Meta.fields + ('target', 'port', 'mode', 'key', 'dynamic_key', 'pwd',
+                  'use_rpush', 'expire_key', 'stream_outfield', 'stream_capacitylimit')
+
+        widgets = {
+            'target': TextInput(attrs={'class': 'form-control'}),
+            'port': NumberInput(attrs={'class': 'form-control'}),
+            'mode': Select(choices=OMHIREDIS_MODE_CHOICES, attrs={'class': 'select2'}),
+            'key': TextInput(attrs={'class': 'form-control'}),
+            'dynamic_key': CheckboxInput(attrs={'class': 'js-switch'}),
+            'pwd': TextInput(attrs={'class': 'form-control'}),
+            'use_rpush': CheckboxInput(attrs={'class': 'js-switch'}),
+            'expire_key': NumberInput(attrs={'class': 'form-control'}),
+            'stream_outfield': TextInput(attrs={'class': 'form-control'}),
+            'stream_capacitylimit': NumberInput(attrs={'class': 'form-control'}),
+        }
+        widgets.update(LogOMForm.Meta.widgets)
 
     def clean_key(self):
-        key = self.cleaned_data.get('key')
+        key = self.cleaned_data['key']
         if " " in key:
             raise ValidationError("Cannot contain spaces")
         return key
@@ -255,160 +185,66 @@ class LogOMHIREDISForm(ModelForm):
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
-        if cleaned_data.get('enable_disk_assist') == True:
-            try:
-                assert cleaned_data.get('high_watermark'), "high_watermark"
-                assert cleaned_data.get('low_watermark'), "low_watermark"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('queue_size') and (cleaned_data.get('queue_size') < cleaned_data.get('high_watermark') or cleaned_data.get('queue_size') < cleaned_data.get('low_watermark')):
-                    self.add_error("queue_size", "Queue size is lower than a watermark")
-                if cleaned_data.get('high_watermark') < cleaned_data.get('low_watermark'):
-                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
-                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            try:
-                assert cleaned_data.get('max_file_size'), "max_file_size"
-                assert cleaned_data.get('max_disk_space'), "max_disk_space"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
-                    self.add_error("max_file_size", "File size is higher than the disk space")
         if cleaned_data.get('dynamic_key') == True and cleaned_data.get('key'):
-            key = cleaned_data.get('key')
+            key = cleaned_data['key']
             if key.count("%") % 2 != 0:
                 self.add_error("key", "seems like your number of '%' is incorrect, please check your templated key")
-        if cleaned_data.get('new_worker_minimum_messages'):
-            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
-                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
-class LogOMFWDForm(ModelForm):
+class LogOMFWDForm(LogOMForm):
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMFWD
-        fields = ('name', 'enabled', 'target', 'port', 'protocol', 'zip_level', 'queue_size', 'dequeue_size',
-                  'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown',
-                  'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
-                  'max_disk_space', 'ratelimit_interval', 'ratelimit_burst', 'send_as_raw')
+        fields = LogOMForm.Meta.fields + ('target', 'port', 'protocol', 'zip_level',
+                  'ratelimit_interval', 'ratelimit_burst')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'target': TextInput(attrs={'class': 'form-control'}),
             'port': NumberInput(attrs={'class': 'form-control'}),
-            'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'form-control select2'}),
+            'protocol': Select(choices=OMFWD_PROTOCOL, attrs={'class': 'select2'}),
             'zip_level': NumberInput(attrs={'class': 'form-control'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'}),
             'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
             'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'})
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
-            self.fields[field_name].required = False
-
-    def clean_name(self):
-        field = self.cleaned_data.get('name')
-        if not field:
-            raise ValidationError("This field is required.")
-        return field.replace(' ', '_')
+        widgets.update(LogOMForm.Meta.widgets)
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
-        if cleaned_data.get('enable_disk_assist') == True:
-            try:
-                assert cleaned_data.get('high_watermark'), "high_watermark"
-                assert cleaned_data.get('low_watermark'), "low_watermark"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('queue_size') and (cleaned_data.get('queue_size') < cleaned_data.get('high_watermark') or cleaned_data.get('queue_size') < cleaned_data.get('low_watermark')):
-                    self.add_error("queue_size", "Queue size is lower than a watermark")
-                if cleaned_data.get('high_watermark') < cleaned_data.get('low_watermark'):
-                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
-                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            try:
-                assert cleaned_data.get('max_file_size'), "max_file_size"
-                assert cleaned_data.get('max_disk_space'), "max_disk_space"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
-                    self.add_error("max_file_size", "File size is higher than the disk space")
         """ if ratelimit_interval or ratelimit_burst is specified, the other cannot be left blank"""
         if cleaned_data.get('ratelimit_interval') and not cleaned_data.get('ratelimit_burst'):
             self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
         if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):
             self.add_error("ratelimit_interval", "This field cannot be left blank if rate-limiting burst is set")
-        if cleaned_data.get('new_worker_minimum_messages'):
-            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
-                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
-class LogOMElasticSearchForm(ModelForm):
+class LogOMElasticSearchForm(LogOMForm):
 
-    class Meta:
+    x509_certificate = ModelChoiceField(
+        queryset=X509Certificate.objects.filter(is_ca=False).only(*(X509Certificate.str_attrs())),
+        required=False,
+        widget=Select(attrs={'class': 'select2'}),
+        empty_label="No SSL"
+    )
+
+    class Meta(LogOMForm.Meta):
         model = LogOMElasticSearch
-        fields = ('name', 'enabled', 'servers', 'es8_compatibility', 'data_stream_mode', 'retry_on_els_failures', 'index_pattern', 'uid', 'pwd',
-                  'x509_certificate', 'send_as_raw', 'queue_size', 'dequeue_size', 'queue_timeout_shutdown',
-                  'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown', 'enable_retry',
-                  'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space')
+        fields = LogOMForm.Meta.fields + ('servers', 'es8_compatibility', 'data_stream_mode',
+                  'retry_on_els_failures', 'index_pattern', 'uid', 'pwd', 'x509_certificate')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": "js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'servers': TextInput(attrs={'class': 'form-control'}),
-            'es8_compatibility': CheckboxInput(attrs={"class": "js-switch"}),
-            'data_stream_mode': CheckboxInput(attrs={"class": "js-switch"}),
-            'retry_on_els_failures': CheckboxInput(attrs={"class": "js-switch"}),
+            'es8_compatibility': CheckboxInput(attrs={'class': 'js-switch'}),
+            'data_stream_mode': CheckboxInput(attrs={'class': 'js-switch'}),
+            'retry_on_els_failures': CheckboxInput(attrs={'class': 'js-switch'}),
             'index_pattern': TextInput(attrs={'class': 'form-control'}),
             'uid': TextInput(attrs={'class': 'form-control'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
             'x509_certificate': Select(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": "js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": "js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'})
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['x509_certificate'].empty_label = "No TLS certificate"
-        for field_name in ['x509_certificate', 'high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
-            self.fields[field_name].required = False
-
-    def clean_name(self):
-        field = self.cleaned_data.get('name')
-        if not field:
-            raise ValidationError("This field is required.")
-        return field.replace(' ', '_')
+        widgets.update(LogOMForm.Meta.widgets)
 
     def clean_index_pattern(self):
         field = self.cleaned_data.get('index_pattern')
@@ -420,166 +256,62 @@ class LogOMElasticSearchForm(ModelForm):
         cleaned_data = super().clean()
         if cleaned_data.get('retry_on_els_failures') == True and cleaned_data.get('data_stream_mode') == False:
             self.add_error('retry_on_els_failures', "This field cannot be set if Stream Mode is disabled.")
-        if cleaned_data.get('enable_disk_assist') == True:
-            try:
-                assert cleaned_data.get('high_watermark'), "high_watermark"
-                assert cleaned_data.get('low_watermark'), "low_watermark"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('queue_size') and (cleaned_data.get('queue_size') < cleaned_data.get('high_watermark') or cleaned_data.get('queue_size') < cleaned_data.get('low_watermark')):
-                    self.add_error("queue_size", "Queue size is lower than a watermark")
-                if cleaned_data.get('high_watermark') < cleaned_data.get('low_watermark'):
-                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
-                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            try:
-                assert cleaned_data.get('max_file_size'), "max_file_size"
-                assert cleaned_data.get('max_disk_space'), "max_disk_space"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
-                    self.add_error("max_file_size", "File size is higher than the disk space")
-        if cleaned_data.get('new_worker_minimum_messages'):
-            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
-                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
 
 
-class LogOMMongoDBForm(ModelForm):
+class LogOMMongoDBForm(LogOMForm):
     x509_certificate = ModelChoiceField(
         queryset=X509Certificate.objects.filter(is_ca=False).only(*(X509Certificate.str_attrs())),
         required=False,
-        widget=Select(attrs={'class': 'form-control select2'}),
+        widget=Select(attrs={'class': 'select2'}),
         empty_label="No SSL"
     )
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMMongoDB
-        fields = ('name', 'enabled', 'db', 'collection', 'uristr', 'x509_certificate', 'send_as_raw', 'queue_size',
-                  'dequeue_size', 'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages',
-                  'worker_timeout_shutdown', 'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark',
-                  'max_file_size', 'max_disk_space')
+        fields = LogOMForm.Meta.fields + ('db', 'collection', 'uristr', 'x509_certificate')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'db': TextInput(attrs={'class': 'form-control'}),
             'collection': TextInput(attrs={'class': 'form-control'}),
             'uristr': TextInput(attrs={'class': 'form-control'}),
-            'send_as_raw': CheckboxInput(attrs={'class': 'form-control js-switch'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'})
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
-            self.fields[field_name].required = False
-
-    def clean_name(self):
-        field = self.cleaned_data.get('name')
-        if not field:
-            raise ValidationError("This field is required.")
-        return field.replace(' ', '_')
-
-    def clean(self):
-        """ Verify needed fields - depending on mode chosen """
-        cleaned_data = super().clean()
-        if cleaned_data.get('enable_disk_assist') == True:
-            try:
-                assert cleaned_data.get('high_watermark'), "high_watermark"
-                assert cleaned_data.get('low_watermark'), "low_watermark"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('queue_size') and (cleaned_data.get('queue_size') < cleaned_data.get('high_watermark') or cleaned_data.get('queue_size') < cleaned_data.get('low_watermark')):
-                    self.add_error("queue_size", "Queue size is lower than a watermark")
-                if cleaned_data.get('high_watermark') < cleaned_data.get('low_watermark'):
-                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
-                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            try:
-                assert cleaned_data.get('max_file_size'), "max_file_size"
-                assert cleaned_data.get('max_disk_space'), "max_disk_space"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
-                    self.add_error("max_file_size", "File size is higher than the disk space")
-        if cleaned_data.get('new_worker_minimum_messages'):
-            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
-                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
-        return cleaned_data
+        widgets.update(LogOMForm.Meta.widgets)
 
 
-class LogOMKafkaForm(ModelForm):
+class LogOMKafkaForm(LogOMForm):
 
-    class Meta:
+    class Meta(LogOMForm.Meta):
         model = LogOMKAFKA
-        fields = ('name', 'enabled', 'broker', 'topic', 'key', 'dynaKey', 'dynaTopic', 'partitions_useFixed',
-                  'partitions_auto', 'confParam', 'topicConfParam', 'queue_size', 'dequeue_size',
-                  'queue_timeout_shutdown', 'max_workers', 'new_worker_minimum_messages', 'worker_timeout_shutdown',
-                  'enable_retry', 'enable_disk_assist', 'high_watermark', 'low_watermark', 'max_file_size',
-                  'max_disk_space')
+        fields = LogOMForm.Meta.fields + ('broker', 'topic', 'key', 'dynaKey', 'dynaTopic', 'partitions_useFixed',
+                  'partitions_auto', 'confParam', 'topicConfParam')
 
         widgets = {
-            'enabled': CheckboxInput(attrs={"class": " js-switch"}),
-            'name': TextInput(attrs={'class': 'form-control'}),
             'broker': TextInput(attrs={'class': 'form-control'}),
             'topic': TextInput(attrs={'class': 'form-control'}),
             'key': TextInput(attrs={'class': 'form-control'}),
-            'dynaKey': CheckboxInput(attrs={"class": " js-switch"}),
-            'dynaTopic': CheckboxInput(attrs={"class": " js-switch"}),
+            'dynaKey': CheckboxInput(attrs={'class': 'js-switch'}),
+            'dynaTopic': CheckboxInput(attrs={'class': 'js-switch'}),
             'partitions_useFixed': NumberInput(attrs={'class': 'form-control'}),
-            'partitions_auto': CheckboxInput(attrs={"class": " js-switch"}),
+            'partitions_auto': CheckboxInput(attrs={'class': 'js-switch'}),
             'confParam': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'topicConfParam': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
-            'queue_size': NumberInput(attrs={'class': 'form-control'}),
-            'dequeue_size': NumberInput(attrs={'class': 'form-control'}),
-            'queue_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 10}),
-            'max_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': 1}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue size / max workers'}),
-            'worker_timeout_shutdown': NumberInput(attrs={'class': 'form-control', 'placeholder': 60_000}),
-            'enable_retry': CheckboxInput(attrs={"class": " js-switch"}),
-            'enable_disk_assist': CheckboxInput(attrs={"class": " js-switch"}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control'})
         }
+        widgets.update(LogOMForm.Meta.widgets)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space']:
-            self.fields[field_name].required = False
-
         self.initial['confParam'] = ','.join(self.initial.get('confParam', []) or self.fields['confParam'].initial)
         self.initial['topicConfParam'] = ','.join(self.initial.get('topicConfParam', []) or self.fields['topicConfParam'].initial)
 
-    def clean_name(self):
-        field = self.cleaned_data.get('name')
-        if not field:
-            raise ValidationError("This field is required.")
-        return field.replace(' ', '_')
-
     def clean_key(self):
-        key = self.cleaned_data.get('key')
-        if " " in key:
+        key = self.cleaned_data['key']
+        if key is not None and " " in key:
             raise ValidationError("Cannot contain spaces")
         return key
 
     def clean_topic(self):
-        topic = self.cleaned_data.get('topic')
+        topic = self.cleaned_data['topic']
         if " " in topic:
             raise ValidationError("Cannot contain spaces")
         return topic
@@ -631,38 +363,15 @@ class LogOMKafkaForm(ModelForm):
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
-        if cleaned_data.get('enable_disk_assist') == True:
-            try:
-                assert cleaned_data.get('high_watermark'), "high_watermark"
-                assert cleaned_data.get('low_watermark'), "low_watermark"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('queue_size') and (cleaned_data.get('queue_size') < cleaned_data.get('high_watermark') or cleaned_data.get('queue_size') < cleaned_data.get('low_watermark')):
-                    self.add_error("queue_size", "Queue size is lower than a watermark")
-                if cleaned_data.get('high_watermark') < cleaned_data.get('low_watermark'):
-                    self.add_error("high_watermark", "High watermark is lower than the low watermark value")
-                    self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            try:
-                assert cleaned_data.get('max_file_size'), "max_file_size"
-                assert cleaned_data.get('max_disk_space'), "max_disk_space"
-            except AssertionError as e:
-                self.add_error(str(e), "This field is required.")
-            else:
-                if cleaned_data.get('max_file_size') > cleaned_data.get('max_disk_space'):
-                    self.add_error("max_file_size", "File size is higher than the disk space")
         if cleaned_data.get('dynaKey') == True:
             if cleaned_data.get('key'):
-                key = cleaned_data.get('key')
+                key = cleaned_data['key']
                 if key.count("%") % 2 != 0:
                     self.add_error("key", "seems like your number of '%' is incorrect, please check your templated key")
             else:
                 self.add_error("key", "This field is required.")
         if cleaned_data.get('dynaTopic') == True and cleaned_data.get('topic'):
-            topic = cleaned_data.get('topic')
+            topic = cleaned_data['topic']
             if topic.count("%") % 2 != 0:
                 self.add_error("topic", "seems like your number of '%' is incorrect, please check your templated topic")
-        if cleaned_data.get('new_worker_minimum_messages'):
-            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 10000):
-                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
