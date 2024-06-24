@@ -52,7 +52,7 @@
             queue.filename="{{output_name}}_disk-queue"
             queue.maxFileSize="{{max_file_size}}m"
             queue.maxDiskSpace="{{max_disk_space}}m"
-            queue.checkpointInterval="128"
+            queue.checkpointInterval="1024"
             queue.saveOnShutdown='"on"'
         {%- endif -%} {# if enable_disk_assist #}
     {%- endif -%} {# if enable_retry #}

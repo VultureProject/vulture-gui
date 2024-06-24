@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 - [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
 - [CRON] Update Reputation Context DBs at 6:00am instead of 2:00am
+- [LOGOM] Increment checkpoint interval for DA queues, to increase performances
 ### Fixed
 - [AUTHENTICATION] [GUI] LDAP Users can now authenticate once activated
 - [NETWORK] Correctly assign a new/changed IPv6 IP to an existing interface
