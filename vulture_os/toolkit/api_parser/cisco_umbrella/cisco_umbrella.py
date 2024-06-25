@@ -165,7 +165,7 @@ class CiscoUmbrellaParser(ApiParser):
             self.update_lock()
         #When there are more than 15000 logs, last_api_call is the timestamp of the last log
         if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX:
-            timestamp_iso = logs[-1]['date'] + "T" + logs[-1]['time']
+            timestamp_iso = logs[-1]['date'] + "T" + logs[-1]['time'] + "Z"
             self.frontend.last_api_call = datetime.fromisoformat(timestamp_iso)
         else:
             self.frontend.last_api_call = to
