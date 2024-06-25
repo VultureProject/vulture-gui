@@ -548,7 +548,7 @@ class FrontendForm(ModelForm):
             'apex_api_key': TextInput(attrs={'class': 'form-control'}),
             'apex_application_id': TextInput(attrs={'class': 'form-control'}),
             'gatewatcher_alerts_host': TextInput(attrs={'class': 'form-control'}),
-            'gatewatcher_alerts_api_key': TextInput(attrs={'class': 'form-control'}),
+            'gatewatcher_alerts_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         }
 
     def clean_name(self):
