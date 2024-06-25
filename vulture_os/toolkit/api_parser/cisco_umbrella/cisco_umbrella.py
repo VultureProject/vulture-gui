@@ -163,7 +163,12 @@ class CiscoUmbrellaParser(ApiParser):
             self.write_to_file([self.format_log(l) for l in logs])
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
-        self.frontend.last_api_call = to
+        #When there are more than 15000 logs, last_api_call is the timestamp of the last log
+        if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX:
+            timestamp_iso = logs[-1]['date'] + "T" + logs[-1]['time']
+            self.frontend.last_api_call = datetime.fromisoformat(timestamp_iso)
+        else:
+            self.frontend.last_api_call = to
         self.frontend.cisco_umbrella_access_token = self.cisco_umbrella_access_token
         self.frontend.cisco_umbrella_expires_at = self.cisco_umbrella_expires_at
         self.frontend.save()
