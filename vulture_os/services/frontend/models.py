@@ -1280,7 +1280,17 @@ class Frontend(models.Model):
     apex_page_token = models.JSONField(
         default={}
     )
-
+    # Gatewatcher attributes
+    gatewatcher_alerts_host = models.TextField(
+        verbose_name=_("Gatewatcher alerts host"),
+        help_text=_("Gatewatcher alerts host"),
+        default = "",
+    )
+    gatewatcher_alerts_api_key = models.TextField(
+        verbose_name=_("Gatewatcher alerts api key"),
+        help_text=_("Gatewatcher alerts api key"),
+        default="",
+    )
 
     @staticmethod
     def str_attrs():
