@@ -141,34 +141,36 @@ class CiscoUmbrellaParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-        since = self.last_api_call or (timezone.now() - timedelta(minutes=15))
-        to = min(timezone.now(), since + timedelta(minutes=15))
+        # Due to a limitation in the API, we have update from and to dynamically
+        # to collect all logs during the minute of execution
+        uptodate = False
+        while not uptodate:
+            since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=15))
+            to = timezone.now()
+            logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}.", extra={'frontend': str(self.frontend)})
 
-        msg = f"Parser starting from {since} to {to}."
-        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
-        index = 0
-        logs_count = self.LIMIT_MAX
-        while logs_count == self.LIMIT_MAX and index <= self.OFFSET_MAX:
-            response = self.get_logs(since, to, index)
-            # Downloading may take some while, so refresh token in Redis
-            self.update_lock()
-            logs = response['data']
-            logs_count = len(logs)
-            msg = f" got {logs_count} lines"
-            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-            index += logs_count
-            msg = f" retrieved {index} lines"
-            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-            self.write_to_file([self.format_log(l) for l in logs])
-            # Writting may take some while, so refresh token in Redis
-            self.update_lock()
-        #When there are more than 15000 logs, last_api_call is the timestamp of the last log
-        if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX:
-            timestamp_iso = logs[-1]['date'] + "T" + logs[-1]['time'] + "Z"
-            self.frontend.last_api_call = datetime.fromisoformat(timestamp_iso)
-        else:
-            self.frontend.last_api_call = to
+            index = 0
+            logs_count = self.LIMIT_MAX
+            while logs_count == self.LIMIT_MAX and index <= self.OFFSET_MAX:
+                response = self.get_logs(since, to, index)
+                # Downloading may take some while, so refresh token in Redis
+                self.update_lock()
+                logs = response['data']
+                logs_count = len(logs)
+                logger.info(f"[{__parser__}]:execute: got {logs_count} lines", extra={'frontend': str(self.frontend)})
+                index += logs_count
+                logger.info(f"[{__parser__}]:execute: retrieved {index} lines", extra={'frontend': str(self.frontend)})
+                self.write_to_file([self.format_log(l) for l in logs])
+                # Writting may take some while, so refresh token in Redis
+                self.update_lock()
+            # When there are more than 15000 logs, last_api_call is the timestamp of the last log
+            if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX + self.LIMIT_MAX:
+                timestamp = logs[-1]['timestamp']/1000
+                self.frontend.last_api_call = datetime.fromtimestamp(timestamp, tz=timezone.now().astimezone().tzinfo)
+            else:
+                self.frontend.last_api_call = to
+                uptodate = True
+            self.frontend.save()
         self.frontend.cisco_umbrella_access_token = self.cisco_umbrella_access_token
         self.frontend.cisco_umbrella_expires_at = self.cisco_umbrella_expires_at
         self.frontend.save()
