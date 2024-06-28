@@ -67,6 +67,14 @@ class HarfangLabParser(ApiParser):
 
         self.harfanglab_apikey = data["harfanglab_apikey"]
 
+        self.last_api_call_by_name = self.frontend.get("last_api_call_by_name")
+        if not self.last_api_call_by_name and self.last_api_call:
+            self.last_api_call_by_name = {
+                "alerts": self.last_api_call,
+                "threats": self.last_api_call,
+            }
+            self.frontend.last_api_call_by_name = self.last_api_call_by_name
+            self.frontend.save()
         self.session = None
 
     def _connect(self):
@@ -190,50 +198,53 @@ class HarfangLabParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-        since = self.last_api_call or (timezone.now() - timedelta(days=7))
-        to = timezone.now()
-
-        # delay the times of 2 minutes, to let the times at the API to have all logs
-        to = to - timedelta(minutes=2)
-
-        msg = f"Parser starting from {since} to {to}."
-        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
         for log_type in ["alerts", "threats"]:
-            index = 0
-            total = 1
-            while index < total:
+            try:
+                since = self.last_api_call_by_name.get(log_type) or (timezone.now() - timedelta(days=7))
+                to = timezone.now()
 
-                get_func = getattr(self, f"get_{log_type}")
-                response = get_func(since, to, index)
+                # delay the times of 2 minutes, to let the times at the API to have all logs
+                to = to - timedelta(minutes=2)
 
-                # Downloading may take some while, so refresh token in Redis
-                self.update_lock()
+                msg = f"Parser starting from {since} to {to}."
+                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-                logs = response['results']
+                index = 0
+                total = 1
+                while index < total:
 
-                total = int(response['count'])
-                msg = f"{log_type}: got {total} lines available"
-                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                    get_func = getattr(self, f"get_{log_type}")
+                    response = get_func(since, to, index)
 
-                if total == 0:
-                    # Means that there are no logs available. It may be for two
-                    # reasons: no log during this period or logs not available at
-                    # request time.
-                    # If there are no logs, no need to write them and we should not
-                    # set the last_api_call.
-                    break
+                    # Downloading may take some while, so refresh token in Redis
+                    self.update_lock()
 
-                index += len(logs)
-                msg = f"{log_type}: retrieved {index} lines"
-                logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                    logs = response['results']
 
-                self.write_to_file([self.format_log(l, log_type) for l in logs])
+                    total = int(response['count'])
+                    msg = f"{log_type}: got {total} lines available"
+                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-                # Writting may take some while, so refresh token in Redis
-                self.update_lock()
+                    if total == 0:
+                        # Means that there are no logs available. It may be for two
+                        # reasons: no log during this period or logs not available at
+                        # request time.
+                        # If there are no logs, no need to write them and we should not
+                        # set the last_api_call.
+                        break
 
-        self.frontend.last_api_call = to
-        self.frontend.save()
+                    index += len(logs)
+                    msg = f"{log_type}: retrieved {index} lines"
+                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
+                    self.write_to_file([self.format_log(l, log_type) for l in logs])
+
+                    # Writting may take some while, so refresh token in Redis
+                    self.update_lock()
+
+                self.frontend.last_api_call_by_name[log_type] = to
+                self.frontend.save()
+            except Exception as e:
+                logger.error(f"[{__parser__}]:execute: Parsing error for type \"{log_type}\": {e}")
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
