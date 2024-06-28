@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.15.5] - 2024-06-28
 ### Added
 - [API_PARSER] [SIGNALSCIENCES_NGWAF] Add site_name key in logs
 - [API_PARSER] [GATEWATCHER_ALERTS] New collector
