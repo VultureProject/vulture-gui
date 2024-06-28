@@ -3,14 +3,6 @@
 from django.db import migrations, models
 import djongo.models.fields
 
-def add_default_cisco_duo_offsets(apps, schema_editor):
-    frontend_model = apps.get_model("services", "frontend")
-    db_alias = schema_editor.connection.alias
-    frontends = frontend_model.objects.using(db_alias)
-
-    for frontend in frontends:
-        frontend.cisco_duo_offsets = dict()
-        frontend.save()
 
 class Migration(migrations.Migration):
 
@@ -19,12 +11,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-
-        migrations.AddField(
-            model_name='frontend',
-            name='cisco_duo_offsets',
-            field=djongo.models.fields.JSONField(default=dict),
-        ),
         migrations.AlterField(
             model_name='frontend',
             name='cisco_duo_ikey',
@@ -35,5 +21,4 @@ class Migration(migrations.Migration):
             name='cisco_duo_skey',
             field=models.TextField(default='', help_text='Cisco Duo API secret key', verbose_name='Cisco Duo API skey'),
         ),
-        migrations.RunPython(add_default_cisco_duo_offsets, migrations.RunPython.noop),
     ]
