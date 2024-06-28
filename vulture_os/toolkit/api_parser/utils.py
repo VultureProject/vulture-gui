@@ -69,6 +69,7 @@ from toolkit.api_parser.vectra.vectra import VectraParser
 from toolkit.api_parser.apex.apex import ApexParser
 from toolkit.api_parser.signalsciences_ngwaf.signalsciences_ngwaf import SignalSciencesNgwafParser
 from toolkit.api_parser.gatewatcher_alerts.gatewatcher_alerts import GatewatcherAlertsParser
+from toolkit.api_parser.cisco_umbrella.cisco_umbrella import CiscoUmbrellaParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -118,7 +119,8 @@ PARSER_LIST = {
     "vectra": VectraParser,
     "apex": ApexParser,
     "signalsciences_ngwaf": SignalSciencesNgwafParser,
-    "gatewatcher_alerts": GatewatcherAlertsParser
+    "gatewatcher_alerts": GatewatcherAlertsParser,
+    "cisco_umbrella": CiscoUmbrellaParser,
 }
 
 class ParserDoesNotExist(Exception):

@@ -260,6 +260,7 @@ class FrontendForm(ModelForm):
                            'retarus_token', 'retarus_channel', 'vectra_host', 'vectra_client_id', 'vectra_secret_key',
                            'apex_server_host', 'apex_application_id', 'apex_api_key',
                            'gatewatcher_alerts_host', 'gatewatcher_alerts_api_key',
+                           'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
                            ]:
             self.fields[field_name].required = False
 
@@ -364,6 +365,7 @@ class FrontendForm(ModelForm):
                   'retarus_token', 'retarus_channel', 'vectra_host', 'vectra_secret_key', 'vectra_client_id',
                   'apex_server_host', 'apex_application_id', 'apex_api_key',
                   'gatewatcher_alerts_host', 'gatewatcher_alerts_api_key',
+                  'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
                 )
 
         widgets = {
@@ -549,6 +551,8 @@ class FrontendForm(ModelForm):
             'apex_application_id': TextInput(attrs={'class': 'form-control'}),
             'gatewatcher_alerts_host': TextInput(attrs={'class': 'form-control'}),
             'gatewatcher_alerts_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'cisco_umbrella_client_id': TextInput(attrs={'class': 'form-control'}),
+            'cisco_umbrella_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         }
 
     def clean_name(self):

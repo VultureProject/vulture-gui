@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [SIGNALSCIENCES_NGWAF] Add site_name key in logs
-- [API_PARSER] [GATEWATCHER_ALERTS] New connector
+- [API_PARSER] [GATEWATCHER_ALERTS] New collector
+- [API_PARSER] [CISCO_UMBRELLA] New collector
 ### Fixed
 - [API_PARSER] [VECTRA] Correctly allow to test the Collector before saving it
 - [API_PARSER] [HARFANGLAB] Increase delay to 10 minutes to be sure to get all logs
