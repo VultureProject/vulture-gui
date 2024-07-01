@@ -73,7 +73,7 @@ class HarfangLabParser(ApiParser):
         if self.frontend:
             self.last_api_call_by_name = {
                 name: datetime.fromisoformat(timestamp_str)
-                for name, timestamp_str in self.frontend.get("last_api_call_by_name", {}).items()
+                for name, timestamp_str in getattr(self.frontend, "last_api_call_by_name", {}).items()
             }
 
     def _connect(self):
