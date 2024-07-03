@@ -143,8 +143,8 @@ class CiscoUmbrellaParser(ApiParser):
     def execute(self):
         # Due to a limitation in the API, we have update from and to dynamically
         # to collect all logs during the minute of execution
-        uptodate = False
-        while not uptodate:
+        # So this parser will keep running as long as it's not up-to-date or asked to stop
+        while not self.evt_stop.is_set():
             since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=15))
             to = timezone.now()
             logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}.", extra={'frontend': str(self.frontend)})
@@ -168,8 +168,9 @@ class CiscoUmbrellaParser(ApiParser):
                 timestamp = logs[-1]['timestamp']/1000
                 self.frontend.last_api_call = datetime.fromtimestamp(timestamp, tz=timezone.now().astimezone().tzinfo)
             else:
+                # All logs have been recovered, the parser can be stopped
                 self.frontend.last_api_call = to
-                uptodate = True
+                break
             self.frontend.save()
         self.frontend.cisco_umbrella_access_token = self.cisco_umbrella_access_token
         self.frontend.cisco_umbrella_expires_at = self.cisco_umbrella_expires_at
