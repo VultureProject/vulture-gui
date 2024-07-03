@@ -70,7 +70,10 @@ class CiscoUmbrellaParser(ApiParser):
         auth = HTTPBasicAuth(self.cisco_umbrella_client_id, self.cisco_umbrella_secret_key)
         client = BackendApplicationClient(client_id=self.cisco_umbrella_client_id)
         oauth = OAuth2Session(client=client)
-        token = oauth.fetch_token(token_url=self.TOKEN_URL, auth=auth)
+        token = oauth.fetch_token(
+            token_url=self.TOKEN_URL,
+            auth=auth,
+            proxies=self.proxies)
         self.cisco_umbrella_access_token = token["access_token"]
         self.cisco_umbrella_expires_at = datetime.fromtimestamp(token["expires_at"]/1000, tz=timezone.now().astimezone().tzinfo)
 
