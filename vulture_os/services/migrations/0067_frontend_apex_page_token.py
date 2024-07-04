@@ -7,7 +7,7 @@ import djongo.models.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('services', '0067_alter_frontend_filebeat_module_and_more'),
+        ('services', '0066_frontend_redis_stream_acknowledge_and_more'),
     ]
 
     operations = [

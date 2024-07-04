@@ -155,6 +155,8 @@ class SignalSciencesNgwafParser(ApiParser):
             for tag in log.get("tags", []):
                 tag['value'] = str(tag['value'])
 
+            log['site_name'] = self.signalsciences_ngwaf_site_name
+
             return json.dumps(log)
 
         except Exception as e:
