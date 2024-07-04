@@ -34,7 +34,6 @@ from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
 
-
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
@@ -44,7 +43,6 @@ class ProofpointTRAPAPIError(Exception):
 
 
 class ProofpointTRAPParser(ApiParser):
-
     HEADERS = {
         "Content-Type": "application/json",
         'Accept': 'application/json'
@@ -93,14 +91,15 @@ class ProofpointTRAPParser(ApiParser):
 
         # handler rate limit exceeding
         if response.status_code == 429:
-            logger.info(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...",
+                        extra={'frontend': str(self.frontend)})
             time.sleep(10)
             return self.__execute_query(url, query, timeout)
         elif response.status_code != 200:
             raise ProofpointTRAPAPIError(
                 f"Error at Proofpoint TRAP API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
-        return response.json() 
+        return response.json()
 
     def test(self):
 
@@ -146,12 +145,10 @@ class ProofpointTRAPParser(ApiParser):
         incident_details = {}
 
         for item in incident_log["incident_field_values"]:
-
             key_name = item["name"].replace(" ", "_").lower()
             incident_details[key_name] = item["value"]
 
         for alert in incident_log['events']:
-
             alert['incidentId'] = incident_log['id']
             alert['users'] = incident_log['users']
             alert['score'] = incident_log['score']
@@ -163,7 +160,7 @@ class ProofpointTRAPParser(ApiParser):
 
     def format_alerts_logs(self, alert_log):
 
-        for email in alert_log['emails']:
+        for email in alert_log.get('emails', []):
             # Choose the right email
             if email['recipient']['email'].startswith('trapclear'):
                 continue
@@ -205,7 +202,7 @@ class ProofpointTRAPParser(ApiParser):
 
         # delay the times of 15 minutes, to get the "updated" event
         to = to - timedelta(minutes=15)
-        
+
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
@@ -217,12 +214,11 @@ class ProofpointTRAPParser(ApiParser):
         logger.info(f"[{__parser__}]: GET LOG OK", extra={'frontend': str(self.frontend)})
 
         for incident_log in response:
-
             formated_incident_log = self.format_incidents_logs(incident_log)
             alert_logs = formated_incident_log['events']
 
             self.write_to_file([self.format_alerts_logs(log) for log in alert_logs])
-            
+
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
