@@ -1313,6 +1313,13 @@ class Frontend(models.Model):
         verbose_name=_("Cisco-Umbrella token expiration time"),
         default=timezone.now,
     )
+    # Waf Barracuda attributes
+    waf_barracuda_token = models.TextField(
+        verbose_name=_("Waf Barracuda token"),
+        help_text=_("Waf Barracuda token"),
+        default="",
+    )
+
 
     @staticmethod
     def str_attrs():

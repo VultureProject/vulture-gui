@@ -70,6 +70,7 @@ from toolkit.api_parser.apex.apex import ApexParser
 from toolkit.api_parser.signalsciences_ngwaf.signalsciences_ngwaf import SignalSciencesNgwafParser
 from toolkit.api_parser.gatewatcher_alerts.gatewatcher_alerts import GatewatcherAlertsParser
 from toolkit.api_parser.cisco_umbrella.cisco_umbrella import CiscoUmbrellaParser
+from toolkit.api_parser.waf_barracuda.waf_barracuda import WAFBarracudaParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -121,6 +122,7 @@ PARSER_LIST = {
     "signalsciences_ngwaf": SignalSciencesNgwafParser,
     "gatewatcher_alerts": GatewatcherAlertsParser,
     "cisco_umbrella": CiscoUmbrellaParser,
+    "waf_barracuda": WAFBarracudaParser
 }
 
 class ParserDoesNotExist(Exception):

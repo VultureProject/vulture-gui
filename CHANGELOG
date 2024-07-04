@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [WAF_BARRACUDA] New API parser WAF_BARRACUDA
 ### Fixed
 - [API_PARSER] [HARFANGLAB] Handle independent saved timestamps for 'alerts' and 'threats' logs
 

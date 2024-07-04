@@ -1960,6 +1960,15 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-12 api_clients_row" id="api_waf_barracuda_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.waf_barracuda_token.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.waf_barracuda_token }}
+                            {{ form.waf_barracuda_token.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
