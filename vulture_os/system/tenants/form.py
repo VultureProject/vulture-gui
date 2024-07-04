@@ -24,7 +24,7 @@ __doc__ = 'Global Config dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput
+from django.forms import ModelForm, TextInput, HiddenInput
 
 # Django project imports
 from gui.forms.form_utils import bootstrap_tooltips
@@ -34,6 +34,7 @@ from system.tenants.models import Tenants
 from django.forms import ValidationError
 
 # Extern modules imports
+from json import loads as json_loads, JSONDecodeError
 
 # Logger configuration imports
 import logging
@@ -47,11 +48,13 @@ class TenantsForm(ModelForm):
         model = Tenants
 
         fields = [
-            'name'
+            'name',
+            'additional_config'
         ]
 
         widgets = {
-            'name': TextInput(attrs={'class': 'form-control'})
+            'name': TextInput(attrs={'class': 'form-control'}),
+            'additional_config': HiddenInput()
         }
 
     def __init__(self, *args, **kwargs):
@@ -64,3 +67,19 @@ class TenantsForm(ModelForm):
         if not field:
             raise ValidationError("This field is required.")
         return field.replace(' ', '_')
+
+    def clean_additional_config(self):
+        additional_config = self.cleaned_data.get('additional_config')
+        if isinstance(additional_config, str):
+            if additional_config != "":
+                try:
+                    logger.info(f"additional_config is {additional_config}")
+                    additional_config = json_loads(additional_config.replace("'",'"'))
+                except JSONDecodeError as e:
+                    logger.error(f"Could not parse value as json: {str(e)}")
+                    self.add_error('additional_config', "This field must be a valid dict.")
+            else:
+                additional_config = dict()
+        elif not isinstance(additional_config, dict):
+                self.add_error('additional_config', "This field must be a dict.")
+        return additional_config

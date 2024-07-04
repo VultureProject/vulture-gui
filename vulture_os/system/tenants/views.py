@@ -22,17 +22,23 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Tenants View'
 
+# Django system imports
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponseForbidden
+from django.shortcuts import render
+from django.urls import reverse
 from django.utils.translation import gettext as _
+
+# Django project imports
 from gui.forms.form_utils import DivErrorList
 from system.tenants.form import TenantsForm
 from system.tenants.models import Tenants
 from system.cluster.models import Cluster
-from django.shortcuts import render
 from toolkit.api.responses import build_response
-from django.urls import reverse
 
+# Required exceptions import
+
+# Extern modules imports
 
 # Logger configuration imports
 import logging

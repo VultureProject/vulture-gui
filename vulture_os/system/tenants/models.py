@@ -39,6 +39,12 @@ class Tenants(models.Model):
     """
     name = models.TextField(default="ACME_Corporation", unique=True)
     chameleon_apikey = models.TextField(default="", blank=True)
+    additional_config = models.JSONField(
+        default= dict,
+        blank=True,
+        help_text=_("Add a more flexible configuration for the tenant"),
+        verbose_name=_("Custom tenant configuration")
+    )
 
     """ Use DjongoManager to use mongo_find() & Co """
     objects = models.DjongoManager()
