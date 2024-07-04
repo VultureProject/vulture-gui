@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.15.5] - 2024-06-28
+### Added
+- [API_PARSER] [SIGNALSCIENCES_NGWAF] Add site_name key in logs
+- [API_PARSER] [GATEWATCHER_ALERTS] New collector
+- [API_PARSER] [CISCO_UMBRELLA] New collector
+### Fixed
+- [API_PARSER] [VECTRA] Correctly allow to test the Collector before saving it
+- [API_PARSER] [HARFANGLAB] Increase delay to 10 minutes to be sure to get all logs
+- [AUTHENTICATION] [GUI] LDAP Users can now authenticate once activated
+
+
 ## [2.15.4] - 2024-05-27
 ### Changed
 - [API_PARSER] [CYBEREASON] Update malops fetching

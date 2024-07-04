@@ -563,7 +563,7 @@ class Frontend(models.Model):
         help_text=_("Custom certificate to use.")
     )
     last_api_call = models.DateTimeField(
-        default=datetime.datetime.utcnow
+        default=timezone.now
     )
     # Forcepoint attributes
     forcepoint_host = models.TextField(
@@ -919,7 +919,7 @@ class Frontend(models.Model):
     )
     # Only used internally to keep a valid access_token across runs
     vadesecure_o365_access_token_expiry = models.DateTimeField(
-        default=datetime.datetime.utcnow
+        default=timezone.now
     )
     # Nozomi Probe attributes
     nozomi_probe_host = models.TextField(
@@ -1280,7 +1280,36 @@ class Frontend(models.Model):
     apex_page_token = models.JSONField(
         default={}
     )
-
+    # Gatewatcher attributes
+    gatewatcher_alerts_host = models.TextField(
+        verbose_name=_("Gatewatcher alerts host"),
+        help_text=_("Gatewatcher alerts host"),
+        default = "",
+    )
+    gatewatcher_alerts_api_key = models.TextField(
+        verbose_name=_("Gatewatcher alerts api key"),
+        help_text=_("Gatewatcher alerts api key"),
+        default="",
+    )
+    # Cisco-Umbrella attributes
+    cisco_umbrella_client_id = models.TextField(
+        verbose_name=_("Cisco-Umbrella client id"),
+        help_text=_("Cisco-Umbrella client id"),
+        default="",
+    )
+    cisco_umbrella_secret_key = models.TextField(
+        verbose_name=_("Cisco-Umbrella secret key"),
+        help_text=_("Cisco-Umbrella secret key"),
+        default="",
+    )
+    cisco_umbrella_access_token = models.TextField(
+        verbose_name=_("Cisco-Umbrella access token"),
+        default="",
+    )
+    cisco_umbrella_expires_at = models.DateTimeField(
+        verbose_name=_("Cisco-Umbrella token expiration time"),
+        default=timezone.now,
+    )
 
     @staticmethod
     def str_attrs():
