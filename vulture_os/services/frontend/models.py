@@ -565,6 +565,9 @@ class Frontend(models.Model):
     last_api_call = models.DateTimeField(
         default=timezone.now
     )
+    last_collected_timestamps = models.JSONField(
+        default=dict
+    )
     # Forcepoint attributes
     forcepoint_host = models.TextField(
         help_text=_('Forcepoint URL'),
