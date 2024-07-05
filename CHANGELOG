@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [API_PARSER] [HARFANGLAB] Handle independent saved timestamps for 'alerts' and 'threats' logs
 
 
 ## [2.15.5] - 2024-06-28
