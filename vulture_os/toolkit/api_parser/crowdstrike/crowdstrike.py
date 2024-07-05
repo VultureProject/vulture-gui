@@ -215,24 +215,25 @@ class CrowdstrikeParser(ApiParser):
             for alert in alerts:
                 finalRawAlerts += [alert]
 
-        # then retrive the incident raw ids
-        alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
-        payload = {
-            "filter": f"start:>'{since}'+start:<='{to}'",
-            "sort": "end|desc"
-        }
+        if self.frontend.crowdstrike_request_incident:
+            # then retrive the incident raw ids
+            alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
+            payload = {
+                "filter": f"start:>'{since}'+start:<='{to}'",
+                "sort": "end|desc"
+            }
 
-        ret = self.execute_query("GET", alert_url, payload)
-        ids = ret['resources']
+            ret = self.execute_query("GET", alert_url, payload)
+            ids = ret['resources']
 
-        if(len(ids) > 0):
-            # retrive the content of incident selected
-            alert_url = f"{self.api_host}/{self.INCIDENT_DETAILS_URI}"
-            payload = {"ids": ids}
-            ret = self.execute_query("POST", alert_url, payload)
-            alerts = ret['resources']
-            for alert in alerts:
-                finalRawAlerts += [alert]
+            if(len(ids) > 0):
+                # retrive the content of incident selected
+                alert_url = f"{self.api_host}/{self.INCIDENT_DETAILS_URI}"
+                payload = {"ids": ids}
+                ret = self.execute_query("POST", alert_url, payload)
+                alerts = ret['resources']
+                for alert in alerts:
+                    finalRawAlerts += [alert]
         return finalRawAlerts
 
     def get_logs(self, kind, since, to):
