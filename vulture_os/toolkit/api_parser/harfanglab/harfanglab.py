@@ -28,7 +28,7 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
@@ -68,13 +68,6 @@ class HarfangLabParser(ApiParser):
         self.harfanglab_apikey = data["harfanglab_apikey"]
 
         self.session = None
-
-        self.last_api_call_by_name = {}
-        if self.frontend:
-            self.last_api_call_by_name = {
-                name: datetime.fromisoformat(timestamp_str)
-                for name, timestamp_str in getattr(self.frontend, "last_api_call_by_name", {}).items()
-            }
 
     def _connect(self):
         try:
@@ -199,7 +192,7 @@ class HarfangLabParser(ApiParser):
     def execute(self):
         for log_type in ["alerts", "threats"]:
             try:
-                since = self.last_api_call_by_name.get(log_type, self.last_api_call) or (timezone.now() - timedelta(days=7))
+                since = self.last_collected_timestamps.get(log_type, self.last_api_call) or (timezone.now() - timedelta(days=7))
                 # Don't get the last 10 minutes of logs, as some can appear delayed at the API
                 to = min(timezone.now() - timedelta(minutes=10), since + timedelta(hours=24))
 
@@ -252,11 +245,9 @@ class HarfangLabParser(ApiParser):
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
 
-                self.last_api_call_by_name[log_type] = to
-                self.frontend.last_api_call_by_name[log_type] = to.isoformat()
-                self.frontend.save()
+                self.last_collected_timestamps[log_type] = to
 
             except Exception as e:
-                logger.error(f"[{__parser__}]:execute: Parsing error for type \"{log_type}\": {e}")
+                logger.error(f"[{__parser__}]:execute: Parsing error for type \"{log_type}\": {e}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
