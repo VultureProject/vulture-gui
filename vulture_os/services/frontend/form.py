@@ -555,7 +555,7 @@ class FrontendForm(ModelForm):
             'gatewatcher_alerts_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'cisco_umbrella_client_id': TextInput(attrs={'class': 'form-control'}),
             'cisco_umbrella_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'waf_barracuda_token': TextInput(attrs={'class': 'form-control'}),
+            'waf_barracuda_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         }
 
     def clean_name(self):
