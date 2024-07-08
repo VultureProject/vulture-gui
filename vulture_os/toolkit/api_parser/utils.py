@@ -122,7 +122,7 @@ PARSER_LIST = {
     "signalsciences_ngwaf": SignalSciencesNgwafParser,
     "gatewatcher_alerts": GatewatcherAlertsParser,
     "cisco_umbrella": CiscoUmbrellaParser,
-    "waf_barracuda": WAFBarracudaParser
+    "waf_barracuda": WAFBarracudaParser,
 }
 
 class ParserDoesNotExist(Exception):

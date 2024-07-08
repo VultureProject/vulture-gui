@@ -46,12 +46,14 @@ class WAFBarracudaParser(ApiParser):
     }
     WAF_BARRACUDA_HOST = "api.waas.barracudanetworks.com"
 
+
     def __init__(self, data):
         super().__init__(data)
 
         self.waf_barracuda_token = data["waf_barracuda_token"]
 
         self.session = None
+
 
     def __connect(self):
 
@@ -61,56 +63,67 @@ class WAFBarracudaParser(ApiParser):
             self.session.headers.update(self.HEADERS)
             self.session.headers.update({"Authorization": f"Bearer {self.waf_barracuda_token}"})
 
+
     def __execute_query(self, url, query={}, timeout=15):
         response = self.session.get(url,
             params=query,
             headers=self.HEADERS,
             timeout=timeout,
             proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
         )
         if response.status_code != 200:
             raise WAFBarracudaAPIError(f"{[__parser__]}:get_logs: Status code = {response.status_code}, Error = {response.text}")
         else:
             return response.json()
 
+
+    def get_applications(self):
+        url = f"https://{self.WAF_BARRACUDA_HOST}/v2/waasapi/applications/"
+        reply = self.__execute_query(url)
+        return [app.get("id") for app in reply.get("results", [])]
+
+
+    def get_logs_by_type(self, since, to, app_id, log_type):
+        url = f"https://{self.WAF_BARRACUDA_HOST}/v2/waasapi/applications/{app_id}/{log_type}/logs"
+        page = 1
+        query = {
+            "from": since.timestamp(),
+            "to": to.timestamp(),
+            "itemsPerPage": "1000",
+            "page": page,
+            "sortingType": "timestamp",
+            "sortingDirection": "asc"
+        }
+        logs = []
+
+        logger.debug(f"{[__parser__]}:get_logs_by_type: params for {log_type} logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
+        data = self.__execute_query(url, query=query)
+        logger.debug(f"{[__parser__]}:get_logs_by_type: {int(data['count'])} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
+        logs.extend(data["results"])
+        while int(data["count"]) > query['itemsPerPage'] * page:
+            page += 1
+            query["page"] = page
+            logger.debug(f"{[__parser__]}:get_logs_by_type: params for {log_type} logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
+            data = self.__execute_query(url, query=query)
+            logs.extend(data["results"])
+
+        return logs
+
+
     def get_logs(self, since, to):
         self.__connect()
         result = []
-        #itemsPerPage max is 1000
-        query = {"from": since.timestamp(), "to": to.timestamp(), "itemsPerPage": "1000", "sortingType": "timestamp", "sortingDirection": "asc"}
-        url = f"https://{self.WAF_BARRACUDA_HOST}/v2/waasapi/applications/"
-        applications = self.__execute_query(url)
-        app_ids = [app.get("id") for app in applications.get("results")]
+        app_ids = self.get_applications()
         for app_id in app_ids:
-            page = 1
-            query["page"] = page
-            url = f"https://{self.WAF_BARRACUDA_HOST}/v2/waasapi/applications/{app_id}/access/logs"
-            logger.debug(f"{[__parser__]}:get_logs: params for access logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
-            data = self.__execute_query(url, query=query)
-            logger.debug(f"{[__parser__]}:get_logs: {int(data['count'])} access logs from application {app_id}", extra={'frontend': str(self.frontend)})
-            result.extend(data["results"])
-            while int(data["count"]) > 1000 * page:
-                page += 1
-                query["page"] = page
-                logger.debug(f"{[__parser__]}:get_logs: params for access logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
-                data = self.__execute_query(url, query=query)
-                result.extend(data["results"])
-            page = 1
-            query["page"] = page
-            url = f"https://{self.WAF_BARRACUDA_HOST}/v2/waasapi/applications/{app_id}/waf/logs"
-            logger.debug(f"{[__parser__]}:get_logs: params for waf logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
-            data = self.__execute_query(url, query=query)
-            logger.debug(f"{[__parser__]}:get_logs: {int(data['count'])} waf logs from application {app_id}", extra={'frontend': str(self.frontend)})
-            result.extend(data["results"])
-            while int(data["count"]) > 1000 * page:
-                page += 1
-                query["page"] = page
-                logger.debug(f"{[__parser__]}:get_logs: params for waf logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
-                data = self.__execute_query(url, query=query)
-                result.extend(data["results"])
-            
+            self.update_lock()
+            logs = self.get_logs_by_type(since, to, app_id, "access")
+            result.extend(logs)
+            logs = self.get_logs_by_type(since, to, app_id, "waf")
+            result.extend(logs)
+
         return result
+
 
     def test(self):
         try:
@@ -127,8 +140,10 @@ class WAFBarracudaParser(ApiParser):
                 "error": str(e)
             }
 
+
     def format_log(self, log):
         return json.dumps(log)
+
 
     def execute(self):
         try:
