@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
 __author__ = "Gaultier Parain"
-__credits__ = ["Kevin Guillemot"]
+__credits__ = ["Kevin Guillemot", "Théo Bertin"]
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
@@ -27,7 +27,7 @@ import json
 import logging
 import requests
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
@@ -65,6 +65,8 @@ class WAFBarracudaParser(ApiParser):
 
 
     def __execute_query(self, url, query={}, timeout=15):
+        self.__connect()
+        logger.debug(f"{[__parser__]}:__execute_query: querying '{url}' with parameters '{query}'", extra={'frontend': str(self.frontend)})
         response = self.session.get(url,
             params=query,
             headers=self.HEADERS,
@@ -79,14 +81,21 @@ class WAFBarracudaParser(ApiParser):
 
 
     def get_applications(self):
+        app_ids = []
         url = f"https://{self.WAF_BARRACUDA_HOST}/v2/waasapi/applications/"
-        reply = self.__execute_query(url)
-        return [app.get("id") for app in reply.get("results", [])]
-
-
-    def get_logs_by_type(self, since, to, app_id, log_type):
-        url = f"https://{self.WAF_BARRACUDA_HOST}/v2/waasapi/applications/{app_id}/{log_type}/logs"
         page = 1
+        reply = self.__execute_query(url, query={"page": page})
+        logger.debug(f"{[__parser__]}:get_applications: got {reply['count']} applications", extra={'frontend': str(self.frontend)})
+        app_ids.extend([app.get("id") for app in reply.get("results", [])])
+        while reply.get('count', 0) > len(app_ids):
+            page += 1
+            reply = self.__execute_query(url, query={"page": page})
+            app_ids.extend([app.get("id") for app in reply.get("results", [])])
+        return app_ids
+
+
+    def get_logs(self, app_id, log_type, since, to, page):
+        url = f"https://{self.WAF_BARRACUDA_HOST}/v2/waasapi/applications/{app_id}/{log_type}/logs"
         query = {
             "from": since.timestamp(),
             "to": to.timestamp(),
@@ -95,43 +104,32 @@ class WAFBarracudaParser(ApiParser):
             "sortingType": "timestamp",
             "sortingDirection": "asc"
         }
-        logs = []
 
-        logger.debug(f"{[__parser__]}:get_logs_by_type: params for {log_type} logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"{[__parser__]}:get_logs: params for {log_type} logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
         data = self.__execute_query(url, query=query)
-        logger.debug(f"{[__parser__]}:get_logs_by_type: {int(data['count'])} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
-        logs.extend(data["results"])
-        while int(data["count"]) > query['itemsPerPage'] * page:
-            page += 1
-            query["page"] = page
-            logger.debug(f"{[__parser__]}:get_logs_by_type: params for {log_type} logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
-            data = self.__execute_query(url, query=query)
-            logs.extend(data["results"])
+        logger.info(f"{[__parser__]}:get_logs: got {int(data['count'])} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
 
-        return logs
-
-
-    def get_logs(self, since, to):
-        self.__connect()
-        result = []
-        app_ids = self.get_applications()
-        for app_id in app_ids:
-            self.update_lock()
-            logs = self.get_logs_by_type(since, to, app_id, "access")
-            result.extend(logs)
-            logs = self.get_logs_by_type(since, to, app_id, "waf")
-            result.extend(logs)
-
-        return result
+        return data
 
 
     def test(self):
         try:
-            result = self.get_logs(timezone.now()-timedelta(hours=12), timezone.now())
+            app_ids = self.get_applications()
+            since = timezone.now() - timedelta(hours=12)
+            to = timezone.now()
+            results = { 'count': 0,
+                        'apps': app_ids,
+                        'since': since,
+                        'to': to,
+                        'sample': []}
+            for log_type in ['access', 'waf']:
+                data = self.get_logs(app_id=app_ids[0], log_type=log_type, since=since, to=to, page=1)
+            results['count'] += int(data['count'])
+            results['sample'].extend(data['results'])
 
             return {
                 "status": True,
-                "data": result
+                "data": results
             }
         except Exception as e:
             logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
@@ -146,19 +144,53 @@ class WAFBarracudaParser(ApiParser):
 
 
     def execute(self):
+        app_ids = []
+        logger.info(f"[{__parser__}]:execute: getting the list of available applications", extra={'frontend': str(self.frontend)})
         try:
-            since = self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
-            to = min(timezone.now(), since + timedelta(hours=24))
-
-            logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={'frontend': str(self.frontend)})
-            results = self.get_logs(since, to)
-            self.update_lock()
-
-            self.write_to_file([self.format_log(l) for l in results])
-            self.update_lock()
-            # increment by 1ms to avoid duplication of logs with timestamp equal to 'to'
-            self.frontend.last_api_call = to + timedelta(microseconds=1000)
-            self.frontend.save()
+            app_ids = self.get_applications()
         except Exception as e:
-            logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:execute: could not get the list of available applications: {e}", extra={'frontend': str(self.frontend)})
+
+        for app_id in app_ids:
+            for log_type in ['access', 'waf']:
+                timestamp_field_name = f"app{app_id}_{log_type}"
+
+                # Stop collector if asked nicely
+                if self.evt_stop.is_set():
+                    break
+
+                try:
+                    self.update_lock()
+                    since = self.last_collected_timestamps.get(timestamp_field_name) or (timezone.now() - timedelta(days=1))
+                    to = min(timezone.now(), since + timedelta(hours=24))
+
+                    page = 1
+                    logs = []
+
+                    logger.info(f"[{__parser__}]:execute: getting {log_type} logs from {since} to {to}, for application {app_id}", extra={'frontend': str(self.frontend)})
+                    data = self.get_logs(app_id, log_type, since, to, page)
+                    logger.debug(f"{[__parser__]}:execute: must fetch {int(data['count'])} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
+                    logs.extend(data['results'])
+                    while int(data['count']) > len(logs) and not self.evt_stop.is_set():
+                        self.update_lock()
+                        page += 1
+                        logger.debug(f"{[__parser__]}:execute: page {page}", extra={'frontend': str(self.frontend)})
+                        data = self.get_logs(app_id, log_type, since, to, page)
+                        logs.extend(data['results'])
+                        logger.debug(f"{[__parser__]}:execute: {len(logs)} logs in cache", extra={'frontend': str(self.frontend)})
+
+                    self.write_to_file([self.format_log(l) for l in logs])
+                    self.update_lock()
+
+                    # API doesn't give more than 10 pages (10k logs) by call
+                    if page > 10:
+                        # logs are ordered, so last one is most recent
+                        real_to = logs[-1].get("logData_EpochTime")
+                        if real_to:
+                            to = datetime.fromtimestamp(int(real_to)/1000, tz=timezone.utc)
+
+                    self.last_collected_timestamps[timestamp_field_name] = to + timedelta(microseconds=1000)
+                except Exception as e:
+                    logger.exception(f"[{__parser__}]:execute: error while trying to handle {log_type} logs for application {app_id}: {e}", extra={'frontend': str(self.frontend)})
+
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
