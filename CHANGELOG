@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [WAF_BARRACUDA] New API parser WAF_BARRACUDA
 ### Fixed
 - [API_PARSER] [HARFANGLAB] Handle independent saved timestamps for 'alerts' and 'threats' logs
+- [API_PARSER] [PROOFPOINT_TRAP] Avoid errors on missing 'emails' field
 
 
 ## [2.15.5] - 2024-06-28
