@@ -107,7 +107,7 @@ class WAFBarracudaParser(ApiParser):
 
         logger.debug(f"{[__parser__]}:get_logs: params for {log_type} logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
         data = self.__execute_query(url, query=query)
-        logger.info(f"{[__parser__]}:get_logs: got {int(data['count'])} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"{[__parser__]}:get_logs: got {len(data['results'])} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
 
         return data
 
@@ -169,7 +169,7 @@ class WAFBarracudaParser(ApiParser):
 
                     logger.info(f"[{__parser__}]:execute: getting {log_type} logs from {since} to {to}, for application {app_id}", extra={'frontend': str(self.frontend)})
                     data = self.get_logs(app_id, log_type, since, to, page)
-                    logger.debug(f"{[__parser__]}:execute: must fetch {int(data['count'])} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"{[__parser__]}:execute: {int(data['count'])} {log_type} logs available on application {app_id}", extra={'frontend': str(self.frontend)})
                     logs.extend(data['results'])
                     while int(data['count']) > len(logs) and not self.evt_stop.is_set():
                         self.update_lock()
@@ -179,6 +179,7 @@ class WAFBarracudaParser(ApiParser):
                         logs.extend(data['results'])
                         logger.debug(f"{[__parser__]}:execute: {len(logs)} logs in cache", extra={'frontend': str(self.frontend)})
 
+                    logger.info(f"{[__parser__]}:execute: got {len(logs)} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
                     self.write_to_file([self.format_log(l) for l in logs])
                     self.update_lock()
 
