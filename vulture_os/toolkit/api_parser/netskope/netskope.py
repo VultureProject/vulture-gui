@@ -43,6 +43,9 @@ class NetskopeAPIError(Exception):
 
 class NetskopeParser(ApiParser):
     ALERTS_ENDPOINT = "/api/v2/events/data/alert"
+    PAGE_ENDPOINT = "/api/v2/events/data/page"
+    APP_ENDPOINT = "/api/v2/events/data/application"
+    NETWORK_ENDPOINT = "/api/v2/events/data/network"
     BULK_SIZE = 1000
 
     HEADERS = {
@@ -57,6 +60,12 @@ class NetskopeParser(ApiParser):
         self.netskope_apikey = data["netskope_apikey"]
 
         self.session = None
+        self.endpoints = {
+            "alerts": self.ALERTS_ENDPOINT,
+            "page": self.PAGE_ENDPOINT,
+            "app": self.APP_ENDPOINT,
+            "network": self.NETWORK_ENDPOINT
+        }
 
     def _connect(self):
         try:
@@ -71,7 +80,7 @@ class NetskopeParser(ApiParser):
 
     def test(self):
         try:
-            logs = self.get_logs(timezone.now()-timedelta(days=10))
+            logs = self.get_logs(self.ALERTS_ENDPOINT, timezone.now()-timedelta(days=10))
 
             return {
                 "status": True,
@@ -84,10 +93,10 @@ class NetskopeParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, since, to=timezone.now(), cursor=0):
+    def get_logs(self, endpoint, since, to=timezone.now(), offset=0):
         self._connect()
 
-        alert_url = f"https://{self.netskope_host}{self.ALERTS_ENDPOINT}"
+        url = f"https://{self.netskope_host}{endpoint}"
 
         # Format timestamp for query, API wants a Z at the end
         if isinstance(since, datetime):
@@ -98,10 +107,10 @@ class NetskopeParser(ApiParser):
             'starttime': since,
             'endtime': to,
             'limit': self.BULK_SIZE,
-            'offset': cursor
+            'offset': offset
         }
         response = self.session.get(
-            alert_url,
+            url,
             params=query,
             proxies=self.proxies,
             verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
@@ -115,44 +124,46 @@ class NetskopeParser(ApiParser):
         return result
 
     def parse_log(self, log):
-        if log['timestamp'] > self.upper_timestamp:
-            self.upper_timestamp = log['timestamp']
-        log['alert_type'] = log['alert_type'].lower()
+        if 'alert_type' in log:
+            log['alert_type'] = log['alert_type'].lower()
         return json.dumps(log)
 
     def execute(self):
-        self.upper_timestamp = int(self.frontend.last_api_call.timestamp()) if self.frontend.last_api_call else 0
-        since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
-        to = min(timezone.now(), since + timedelta(hours=24))
-        offset = 0
+        for name, endpoint in self.endpoints.items():
+            try:
+                since = self.last_collected_timestamps.get(name, self.frontend.last_api_call) or datetime.utcnow() - timedelta(hours=24)
+                to = min(timezone.now(), since + timedelta(hours=24))
+                offset = 0
 
-        while offset%self.BULK_SIZE == 0:
+                while offset%self.BULK_SIZE == 0:
 
-            response = self.get_logs(since, to, offset)
+                    response = self.get_logs(endpoint, since, to, offset)
 
-            # Downloading may take some while, so refresh token in Redis
-            self.update_lock()
+                    # Downloading may take some while, so refresh token in Redis
+                    self.update_lock()
 
-            logs = response['result']
-            if len(logs) == 0:
-                logger.info(f"[{__parser__}][execute]: No more log to fetch. End of the parsing",
-                            extra={'frontend': str(self.frontend)})
-                break
-            offset += len(logs)
+                    logs = response['result']
+                    if len(logs) == 0:
+                        logger.info(f"[{__parser__}][execute]: No more log to fetch. End of the parsing",
+                                    extra={'frontend': str(self.frontend)})
+                        break
+                    offset += len(logs)
 
-            self.write_to_file([self.parse_log(l) for l in logs])
+                    self.write_to_file([self.parse_log(l) for l in logs])
 
-            # Writting may take some while, so refresh token in Redis
-            self.update_lock()
+                    # Writting may take some while, so refresh token in Redis
+                    self.update_lock()
 
-        if offset > 0:
-            logger.info(f"[{__parser__}][execute]: Total logs fetched : {offset}",
-                        extra={'frontend': str(self.frontend)})
-            self.frontend.last_api_call = to
+                if offset > 0:
+                    logger.info(f"[{__parser__}][execute]: Total logs fetched : {offset}",
+                                extra={'frontend': str(self.frontend)})
+                    self.last_collected_timestamps[name] = to
 
-        elif self.last_api_call < timezone.now() - timedelta(hours=24):
-            # If no logs where retrieved during the last 24hours,
-            # move forward 1h to prevent stagnate ad vitam eternam
-            self.frontend.last_api_call += timedelta(hours=1)
+                elif since < timezone.now() - timedelta(hours=24):
+                    # If no logs where retrieved during the last 24hours,
+                    # move forward 1h to prevent stagnate ad vitam eternam
+                    self.last_collected_timestamps[name] = since + timedelta(hours=1)
+            except Exception as e:
+                logger.info(f"[{__parser__}]:error: Parsing for endpoint \"{name}\" error {e}.", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
