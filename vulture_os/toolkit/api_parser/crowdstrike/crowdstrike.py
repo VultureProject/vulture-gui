@@ -215,7 +215,7 @@ class CrowdstrikeParser(ApiParser):
             for alert in alerts:
                 finalRawAlerts += [alert]
 
-        if self.frontend.crowdstrike_request_incident:
+        if self.frontend.crowdstrike_request_incidents:
             # then retrieve the incident raw ids
             alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
             payload = {
