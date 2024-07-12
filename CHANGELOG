@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.16.6] - 2024-07-12
 ### Added
 - [API_PARSER] [WAF_BARRACUDA] New API parser WAF_BARRACUDA
 ### Fixed
