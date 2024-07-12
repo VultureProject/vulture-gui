@@ -871,6 +871,11 @@ class Frontend(models.Model):
         default = "",
     )
     # CrowdStrike attributes
+    crowdstrike_request_incidents = models.BooleanField(
+        verbose_name = _("Get incident logs"),
+        help_text = _("Request Crowdstrike incident api"),
+        default = True,
+    )
     crowdstrike_host = models.TextField(
         verbose_name = _("CrowdStrike Host"),
         help_text = _("Complete enpoint address"),

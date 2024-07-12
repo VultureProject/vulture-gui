@@ -167,7 +167,7 @@ class CrowdstrikeParser(ApiParser):
         totalToRetrieve = jsonResp.get('meta', {}).get('pagination', {}).get('total', 0)
 
         while(totalToRetrieve > 0 and totalToRetrieve != len(jsonResp.get('resources', []))):
-            # we retrived enough data
+            # we retrieved enough data
             if(customLimit > 0 and customLimit <= len(jsonResp['resources'])):
                 break
             query['offset'] = int(jsonResp['meta']['pagination']['offset'])
@@ -192,12 +192,12 @@ class CrowdstrikeParser(ApiParser):
 
     def getAlerts(self, since, to):
         '''
-        we retrive raw incidents and detections
+        we retrieve raw incidents and detections
         '''
         logger.debug(f"[{__parser__}][getAlerts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
 
         finalRawAlerts = []
-        # first retrive the detection raw ids
+        # first retrieve the detection raw ids
         alert_url = f"{self.api_host}/{self.DETECTION_URI}"
         payload = {
             "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
@@ -206,7 +206,7 @@ class CrowdstrikeParser(ApiParser):
         ret = self.execute_query("GET", alert_url, payload)
         ids = ret['resources']
         if(len(ids) > 0):
-            # retrive the content of detection selected
+            # retrieve the content of detection selected
             alert_url = f"{self.api_host}/{self.DETECTION_DETAILS_URI}"
             payload = {"ids": ids}
             ret = self.execute_query("POST", alert_url, payload)
@@ -215,24 +215,25 @@ class CrowdstrikeParser(ApiParser):
             for alert in alerts:
                 finalRawAlerts += [alert]
 
-        # then retrive the incident raw ids
-        alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
-        payload = {
-            "filter": f"start:>'{since}'+start:<='{to}'",
-            "sort": "end|desc"
-        }
+        if self.frontend.crowdstrike_request_incidents:
+            # then retrieve the incident raw ids
+            alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
+            payload = {
+                "filter": f"start:>'{since}'+start:<='{to}'",
+                "sort": "end|desc"
+            }
 
-        ret = self.execute_query("GET", alert_url, payload)
-        ids = ret['resources']
+            ret = self.execute_query("GET", alert_url, payload)
+            ids = ret['resources']
 
-        if(len(ids) > 0):
-            # retrive the content of incident selected
-            alert_url = f"{self.api_host}/{self.INCIDENT_DETAILS_URI}"
-            payload = {"ids": ids}
-            ret = self.execute_query("POST", alert_url, payload)
-            alerts = ret['resources']
-            for alert in alerts:
-                finalRawAlerts += [alert]
+            if(len(ids) > 0):
+                # retrieve the content of selected incidents
+                alert_url = f"{self.api_host}/{self.INCIDENT_DETAILS_URI}"
+                payload = {"ids": ids}
+                ret = self.execute_query("POST", alert_url, payload)
+                alerts = ret['resources']
+                for alert in alerts:
+                    finalRawAlerts += [alert]
         return finalRawAlerts
 
     def get_logs(self, kind, since, to):
