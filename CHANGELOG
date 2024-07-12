@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.16.6] - 2024-07-12
+### Added
+- [API_PARSER] [WAF_BARRACUDA] New API parser WAF_BARRACUDA
+### Fixed
+- [API_PARSER] [HARFANGLAB] Handle independent saved timestamps for 'alerts' and 'threats' logs
+- [API_PARSER] [PROOFPOINT_TRAP] Avoid errors on missing 'emails' field
+
+
 ## [2.15.5] - 2024-06-28
 ### Added
 - [API_PARSER] [SIGNALSCIENCES_NGWAF] Add site_name key in logs
