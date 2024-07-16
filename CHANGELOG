@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] JSONField default value
 - [FRONTEND] Redis settings improperly displayed
 - [NETWORK] [GUI] Prevent missing interfaces in selection when refreshing interfaces on a cluster
+- [GUI] Wrong date formatting in the task list
 
 
 ## [2.15.5] - 2024-06-28
