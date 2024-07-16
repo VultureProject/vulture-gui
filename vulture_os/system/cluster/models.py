@@ -457,17 +457,26 @@ class Node(models.Model):
             route_ipv6 = None
             logger.debug(f"Getting valid routes for ip/hostname {ip}")
 
-            if is_valid_ip4(ip) or is_valid_hostname(ip):
+            if is_valid_ip4(ip):
                 route_ipv4 = default_logom_nat_ipv4
                 # Get the facultative IPv4 route for IP
                 success, reply = get_route_interface(destination=ip)
                 if success:
                     route_ipv4 = reply
 
-            if is_valid_ip6(ip) or is_valid_hostname(ip):
+            if is_valid_ip6(ip):
                 route_ipv6 = default_logom_nat_ipv6
                 # Get the facultative IPv6 route for IP
                 success, reply = get_route_interface(destination=ip, ip6=True)
+                if success:
+                    route_ipv6 = reply
+
+            # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
+            if is_valid_hostname(ip):
+                success, reply = get_route_interface(ip)
+                if success:
+                    route_ipv4 = reply
+                success, reply = get_route_interface(ip, ip6=True)
                 if success:
                     route_ipv6 = reply
 
