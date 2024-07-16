@@ -43,7 +43,7 @@ def _parse_route_output(input: str) -> dict:
         split_line = line.strip().split(':', 1)
         if len(split_line) == 2:
             key, value = split_line
-            output[key] = value
+            output[key.strip()] = value.strip()
     return output
 
 def get_route_interface(destination: str, ip6=False) -> tuple[bool, str]:
