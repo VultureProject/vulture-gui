@@ -29,6 +29,7 @@ import socket
 import time
 from threading import Event, current_thread, main_thread
 from redis import ReadOnlyError
+from datetime import datetime
 
 from django.conf import settings
 from services.frontend.models import Frontend
@@ -63,8 +64,15 @@ class ApiParser:
 
         try:
             self.frontend = Frontend.objects.get(pk=self.data['id'])
+            # Convert from string-representation to datetime object
+            # (cannot store datetime directly, as TZ is lost on reload from mongodb with djongo/JSONField)
+            self.last_collected_timestamps = {
+                name: datetime.fromisoformat(timestamp_str)
+                for name, timestamp_str in getattr(self.frontend, "last_collected_timestamps", {}).items()
+            }
         except (Frontend.DoesNotExist, KeyError):
             self.frontend = None
+            self.last_collected_timestamps = dict()
 
         self.socket = None
 
@@ -175,7 +183,13 @@ class ApiParser:
         Remove redis lock & save frontend
         """
         self.redis_cli.redis.delete(self.key_redis)
-        self.frontend.save()
+        if self.frontend:
+            # Save timestamps in string-representation to keep timezone
+            self.frontend.last_collected_timestamps = {
+                name: timestamp_str.isoformat()
+                for name, timestamp_str in self.last_collected_timestamps.items()
+            }
+            self.frontend.save()
 
     def test(self):
         raise NotImplemented()

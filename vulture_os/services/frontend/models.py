@@ -565,6 +565,9 @@ class Frontend(models.Model):
     last_api_call = models.DateTimeField(
         default=timezone.now
     )
+    last_collected_timestamps = models.JSONField(
+        default=dict
+    )
     # Forcepoint attributes
     forcepoint_host = models.TextField(
         help_text=_('Forcepoint URL'),
@@ -1315,6 +1318,13 @@ class Frontend(models.Model):
         verbose_name=_("Cisco-Umbrella token expiration time"),
         default=timezone.now,
     )
+    # Waf Barracuda attributes
+    waf_barracuda_token = models.TextField(
+        verbose_name=_("Waf Barracuda token"),
+        help_text=_("Waf Barracuda token"),
+        default="",
+    )
+
 
     @staticmethod
     def str_attrs():
