@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] [REDIS] Support for queues, sets, publish and streams modes for log insertion
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
 - [LOGOM] Add the ability to define the spooling directory for DA queues
+- [NETWORK] Automatically select the best interface for outgoing Backend/LogForwarders using system routes
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 - [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
