@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
 - [LOGOM] Add the ability to define the spooling directory for DA queues
 - [TENANTS] New additional_config field
+- [NETWORK] Automatically select the best interface for outgoing Backend/LogForwarders using system routes
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 - [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
