@@ -98,6 +98,7 @@ class GatewatcherAlertsParser(ApiParser):
         page = 1
         while(nb_logs < count):
             query['page'] = page
+            logger.debug(f"{[__parser__]}:get_logs: params for request are '{query}'", extra={'frontend': str(self.frontend)})
             page += 1
             alerts = self.execute_query(alert_url, params=query)
             count = int(alerts["count"])
@@ -144,7 +145,7 @@ class GatewatcherAlertsParser(ApiParser):
         self.update_lock()
         # increment by 1ms to avoid duplication of logs
         if logs:
-            self.frontend.last_api_call = datetime.fromisoformat(logs[-1]["alert"]["date"].replace("Z", "+00:00")) + timedelta(microseconds=1)
+            self.frontend.last_api_call = datetime.fromisoformat(logs[-1]["alert"]["date"].replace("Z", "+00:00")) + timedelta(milliseconds=1)
             self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
