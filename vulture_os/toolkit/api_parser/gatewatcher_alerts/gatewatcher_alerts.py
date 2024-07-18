@@ -85,7 +85,10 @@ class GatewatcherAlertsParser(ApiParser):
     def get_logs(self, since, to):
         self._connect()
         alert_url = f"https://{self.gatewatcher_alerts_host}{self.ALERTS_ENDPOINT}"
-        raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.ALERTS_ENDPOINT}"
+        if isinstance(since, datetime):
+            since = since.isoformat()
+        if isinstance(to, datetime):
+            to = to.isoformat()
         query = {
             'date_from': since,
             'date_to': to,
