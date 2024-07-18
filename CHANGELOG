@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - [API_PARSER] [CROWDSTRIKE] Allow to disable fetching of 'incident' logs
+### Fixed
 - [API_PARSER] [GATEWATCHER_ALERTS] Avoid missing logs by setting the last_api_call the timestamp of the last retrieved log
 
 
