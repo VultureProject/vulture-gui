@@ -71,7 +71,7 @@ class NozomiProbeParser(ApiParser):
 
     def test(self):
         try:
-            status, logs = self.get_logs(since=(timezone.now()-timedelta(days=30)))
+            status, logs = self.get_logs(to=timezone.now(), since=(timezone.now()-timedelta(days=1)))
 
             return {
                 "status": status,
@@ -87,15 +87,19 @@ class NozomiProbeParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, since=None):
+    def get_logs(self, since=None, to=None):
         if isinstance(since, datetime):
-            since = int(since.timestamp()*1000)
+            since = int(since.timestamp() * 1000)
+        if isinstance(to, datetime):
+            to = int(to.timestamp() * 1000)
 
         self._connect()
 
         url = f"https://{self.nozomi_probe_host}/{self.ALERT_ENDPOINT}"
-        param = quote_plus(f"|where time > {since} | sort time asc")
-        logger.debug(f"[{__parser__}]:get_logs: Get user events request params: {param}", extra={'frontend': str(self.frontend)})
+        param = quote_plus(f"| sort record_created_at asc | where record_created_at > {since} "
+                           f"| where record_created_at <= {to}")
+        logger.debug(f"[{__parser__}]:get_logs: Get user events request params: {param}",
+                     extra={'frontend': str(self.frontend)})
         response = self.session.get(
             f"{url}%20{param}",
             proxies=self.proxies,
@@ -113,11 +117,12 @@ class NozomiProbeParser(ApiParser):
         return True, response.json()
 
     def execute(self):
-
+        since = self.last_api_call or timezone.now()-timedelta(days=30)
+        to = timezone.now() - timedelta(minutes=1)
         cpt = 0
         total = 1
         while cpt < total:
-            status, tmp_logs = self.get_logs(since=self.last_api_call or timezone.now()-timedelta(days=30))
+            status, tmp_logs = self.get_logs(since=since, to=to)
 
             if not status:
                 raise NozomiProbeAPIError(tmp_logs)
@@ -140,6 +145,11 @@ class NozomiProbeParser(ApiParser):
             self.update_lock()
 
             if len(logs) > 0:
-                self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(logs[-1]['time']/1000))
+                if logs[-1].get('record_created_at'):
+                    self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(logs[-1]['record_created_at']/1000))
+                else:
+                    self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(logs[-1]['time']/1000))
+                logger.info(f"[{__parser__}]:execute: Setting last_api_call to {self.frontend.last_api_call}",
+                            extra={'frontend': str(self.frontend)})
 
         logger.info("NozomiProbe parser ending.", extra={'frontend': str(self.frontend)})
