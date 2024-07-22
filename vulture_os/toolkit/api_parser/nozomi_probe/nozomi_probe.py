@@ -71,7 +71,7 @@ class NozomiProbeParser(ApiParser):
 
     def test(self):
         try:
-            status, logs = self.get_logs(to=timezone.now(), since=(timezone.now()-timedelta(days=1)))
+            status, logs = self.get_logs(since=(timezone.now()-timedelta(days=1)), to=timezone.now())
 
             return {
                 "status": status,
@@ -118,7 +118,7 @@ class NozomiProbeParser(ApiParser):
 
     def execute(self):
         since = self.last_api_call or timezone.now()-timedelta(days=30)
-        to = timezone.now() - timedelta(minutes=1)
+        to = min(timezone.now() - timedelta(minutes=1), since + timedelta(hours=24))
         cpt = 0
         total = 1
         while cpt < total:
