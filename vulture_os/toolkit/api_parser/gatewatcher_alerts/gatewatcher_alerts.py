@@ -27,7 +27,7 @@ import json
 import logging
 import requests
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
@@ -35,8 +35,10 @@ from toolkit.api_parser.api_parser import ApiParser
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
+
 class GatewatcherAlertsAPIError(Exception):
     pass
+
 
 class GatewatcherAlertsParser(ApiParser):
     ALERTS_ENDPOINT = "/api/alerts/"
@@ -66,7 +68,7 @@ class GatewatcherAlertsParser(ApiParser):
         except Exception as err:
             raise GatewatcherAlertsAPIError(err)
 
-    def execute_query(self, url, params={}, timeout=60):
+    def execute_query(self, url, params=None, timeout=20):
 
         response = self.session.get(
             url,
@@ -85,24 +87,40 @@ class GatewatcherAlertsParser(ApiParser):
     def get_logs(self, since, to):
         self._connect()
         alert_url = f"https://{self.gatewatcher_alerts_host}{self.ALERTS_ENDPOINT}"
-        raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.ALERTS_ENDPOINT}"
+        if isinstance(since, datetime):
+            since = since.isoformat()
+        if isinstance(to, datetime):
+            to = to.isoformat()
         query = {
             'date_from': since,
-            'date_to': to
+            'date_to': to,
+            'sort_by': "date",
+            'page_size': 1000
         }
-        alerts = self.execute_query(alert_url, params=query)
         results = []
+        nb_logs = 0
+        count = 1
+        page = 1
+        while nb_logs < count:
+            query['page'] = page
+            logger.debug(f"{[__parser__]}:get_logs: params for request are '{query}'",
+                         extra={'frontend': str(self.frontend)})
+            page += 1
+            alerts = self.execute_query(alert_url, params=query)
+            count = int(alerts["count"])
+            nb_logs += len(alerts["results"])
 
-        for alert in alerts.get("results", []):
-            raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.RAW_ALERTS_ENDPOINT}/{alert['uuid']}"
-            raw_alert = self.execute_query(raw_alert_url)
-            results.append({'alert': alert, 'raw_alert': raw_alert})
+            for alert in alerts.get("results", []):
+                raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.RAW_ALERTS_ENDPOINT}/{alert['uuid']}"
+                raw_alert = self.execute_query(raw_alert_url)
+                results.append({'alert': alert, 'raw_alert': raw_alert})
+                self.update_lock()
 
         return results
 
     def test(self):
         try:
-            logs = self.get_logs(timezone.now()-timedelta(days=1), timezone.now())
+            logs = self.get_logs(timezone.now() - timedelta(hours=2), timezone.now())
             return {
                 "status": True,
                 "data": logs
@@ -127,12 +145,14 @@ class GatewatcherAlertsParser(ApiParser):
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
 
-        self.write_to_file([self.format_log(l) for l in logs])
+        self.write_to_file([self.format_log(log) for log in logs])
 
-        # Writting may take some while, so refresh token in Redis
+        # Writing may take some while, so refresh token in Redis
         self.update_lock()
         # increment by 1ms to avoid duplication of logs
-        self.frontend.last_api_call = to + timedelta(microseconds=1)
-        self.frontend.save()
+        if logs:
+            self.frontend.last_api_call = (datetime.fromisoformat(logs[-1]["alert"]["date"].replace("Z", "+00:00")) +
+                                           timedelta(milliseconds=1))
+            self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
