@@ -141,7 +141,9 @@ def monitor():
                 elif frontend.mode == "log" and frontend.listening_mode == "api":
                     for tmp_node in frontend.get_nodes():
                         if node_selected(tmp_node, frontend):
-                            if node == tmp_node:
+                            if frontend.status[tmp_node.name] in ("ERROR", "STOP"):
+                                status[tmp_node.name] = frontend.status[tmp_node.name]
+                            elif node == tmp_node:
                                 # Let Rsyslog take the responsability to set the status to OPEN
                                 status[tmp_node.name] = {'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status)
                         else:
