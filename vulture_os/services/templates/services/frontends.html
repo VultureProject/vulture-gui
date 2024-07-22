@@ -147,7 +147,7 @@
         '&nbsp;<a class="btn btn-flat btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Delete" href="/services/frontend/delete/' + data + '"><span><i class="fas fa-trash-alt"></i></span></a>';
         if( statuses.indexOf("OPEN") >= 0 ) {
           result += '&nbsp;<button id="pause_'+data+'" type="button" data-toggle="tooltip" data-placement="top" title="Pause" class="btn btn-flat btn-xs btn-primary action pause"><i class="fa fa-pause"></i></button>';
-        } else if( statuses.indexOf("STOP") >= 0 )
+        } else if( statuses.indexOf("STOP") >= 0 || statuses.indexOf("ERROR") >= 0 )
           result += '&nbsp;<button id="start_'+data+'" type="button" class="btn btn-flat btn-xs btn-success action start"><i class="fa fa-play"></i></button>';
         return result;
       }

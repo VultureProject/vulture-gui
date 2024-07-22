@@ -2258,12 +2258,15 @@ class Frontend(models.Model):
         if self.rsyslog_only_conf:
             nodes = self.get_nodes()
             for node in nodes:
+                if self.status[node.name] in ("ERROR", "STOP"):
+                    self.status[node.name] = "WAITING"
+                    self.save()
                 api_res = node.api_request("services.rsyslogd.rsyslog.start_service")
                 if not api_res.get('status'):
-                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "rsyslog",
+                    raise ServiceStartError(f"API request failure on node '{node.name}'", "rsyslog",
                                             traceback=api_res.get('message'))
 
-            return "Start rsyslog service asked on nodes {}".format(",".join([n.name for n in nodes]))
+            return f"Start rsyslog service asked on nodes {','.join([n.name for n in nodes])}"
 
         elif self.filebeat_only_conf:
             nodes = self.get_nodes()
@@ -2271,32 +2274,37 @@ class Frontend(models.Model):
             for node in nodes:
                 api_res = node.api_request("services.filebeat.filebeat.start_service", self.id)
                 if not api_res.get('status'):
-                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "filebeat",
+                    raise ServiceStartError(f"API request failure on node '{node.name}'", "filebeat",
                                             traceback=api_res.get('message'))
 
-            return "Start filebeat service asked on nodes {}".format(",".join([n.name for n in nodes]))
+            return f"Start filebeat service asked on nodes {','.join([n.name for n in nodes])}"
 
         else:
             nodes = self.get_nodes()
             for node in nodes:
                 api_res = node.api_request("services.haproxy.haproxy.host_start_frontend", self.name)
                 if not api_res.get('status'):
-                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "haproxy",
+                    raise ServiceStartError(f"API request failure on node '{node.name}'", "haproxy",
                                             traceback=api_res.get('message'))
 
-            return "Start frontend '{}' asked on nodes {}".format(self.name, ",".join([n.name for n in nodes]))
-
+            return f"Start frontend '{self.name}' asked on nodes {','.join([n.name for n in nodes])}"
 
     def disable(self):
-
         """ Disable frontend in HAProxy, by management socket """
         if not self.enabled:
             return "This frontend is already disabled."
 
         """ Cannot stop Rsyslog / Filebeat only frontend """
         if self.rsyslog_only_conf:
-            raise ServiceError("Cannot hot disable an Rsyslog only frontend.", "rsyslog", "disable frontend",
-                               traceback="Please edit, disable and save the frontend.")
+            if self.listening_mode == "api":
+                nodes = self.get_nodes()
+                for node in nodes:
+                    if self.status[node.name] == "OPEN":
+                        self.status[node.name] = "STOP"
+                        self.save()
+            else:
+                raise ServiceError("Cannot hot disable an Rsyslog only frontend.", "rsyslog", "disable frontend",
+                                   traceback="Please edit, disable and save the frontend.")
         elif self.filebeat_only_conf:
             raise ServiceError("Cannot hot disable a Filebeat only frontend.", "filebeat", "disable frontend",
                                traceback="Please edit, disable and save the frontend.")
@@ -2305,10 +2313,10 @@ class Frontend(models.Model):
             for node in nodes:
                 api_res = node.api_request("services.haproxy.haproxy.host_stop_frontend", self.name)
                 if not api_res.get('status'):
-                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "haproxy",
+                    raise ServiceStartError(f"API request failure on node '{node.name}'", "haproxy",
                                             traceback=api_res.get('message'))
 
-            return "Stop frontend '{}' asked on nodes {}".format(self.name, ",".join([n.name for n in nodes]))
+        return f"Stop frontend '{self.name}' asked on nodes {','.join([n.name for n in nodes])}"
 
     @property
     def rsyslog_only_conf(self):
