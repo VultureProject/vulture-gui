@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.15.7] - 2024-07-22
 ### Changed
 - [API_PARSER] [CROWDSTRIKE] Allow to disable fetching of 'incident' logs
 ### Fixed
