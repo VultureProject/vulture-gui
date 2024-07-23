@@ -545,14 +545,14 @@ class Frontend(models.Model):
         verbose_name=_("Rsyslog queue type")
     )
     queue_size = models.PositiveIntegerField(
-        blank=True, #50000
+        blank=True,
         null=True,
         help_text=_("Size of the queue in nb of message"),
         verbose_name=_("Size of the queue in nb of message"),
         validators=[MinValueValidator(100)]
     )
     dequeue_batch_size = models.PositiveIntegerField(
-        blank=True, #1024
+        blank=True,
         null=True,
         help_text=_("Size of the batch to dequeue"),
         verbose_name=_("Size of the batch to dequeue"),
@@ -565,14 +565,15 @@ class Frontend(models.Model):
         validators=[MinValueValidator(1)]
     )
     new_worker_minimum_messages = models.PositiveIntegerField(
-        blank=True, #queue.size/queue.workerthreads
+        blank=True,
         null=True,
         help_text=_("Number of messages in queue to start a new worker thread"),
         verbose_name=_("Minimum messages to start a new worker"),
         validators=[MinValueValidator(1)]
     )
     shutdown_timeout = models.PositiveIntegerField(
-        blank=True, #1500
+        default=5000,
+        blank=True,
         null=True,
         help_text=_("Time to wait for the queue to finish processing entries (in ms)"),
         verbose_name=_("Queue timeout shutdown (ms)"),
@@ -584,28 +585,29 @@ class Frontend(models.Model):
         verbose_name=_("Enable disk queue on failure")
     )
     high_watermark = models.PositiveIntegerField(
-        blank=True, #90% of queue.size
+        blank=True,
         null=True,
         help_text=_("Write in DA queue after nb messages"),
         verbose_name=_("High watermark target"),
         validators=[MinValueValidator(100)]
     )
     low_watermark = models.PositiveIntegerField(
-        blank=True, #70% of queue.size
+        blank=True,
         null=True,
         help_text=_("Write in DA queue until nb messages"),
         verbose_name=_("Low watermark target"),
         validators=[MinValueValidator(100)]
     )
     max_file_size = models.PositiveIntegerField(
-        blank=True, #16MB
+        default=256,
+        blank=True,
         null=True,
         help_text=_("Set the max value of the queue in MB"),
         verbose_name=_("Max file size of the queue in MB"),
         validators=[MinValueValidator(1)]
     )
     max_disk_space = models.PositiveIntegerField(
-        blank=True, #Undefined
+        blank=True,
         null=True,
         help_text=_("Limit the maximum disk space used by the queue in MB"),
         verbose_name=_("Max disk space used by the queue in MB"),
@@ -2174,9 +2176,9 @@ class Frontend(models.Model):
             options_dict.update({
                 "highWatermark": self.high_watermark,
                 "lowWatermark": self.low_watermark,
-                "spoolDirectory": self.spool_directory,
-                "maxFileSize": f"{self.max_file_size}m",
-                "maxDiskSpace": f"{self.max_disk_space}m",
+                "spoolDirectory": self.spool_directory or "/var/tmp",
+                "maxFileSize": f"{self.max_file_size}m" if self.max_file_size else None,
+                "maxDiskSpace": f"{self.max_disk_space}m" if self.max_disk_space else None,
                 "saveOnShutdown": "on" if self.save_on_shutdown else None,
                 "filename": f"{self.get_ruleset()}_disk-queue",
                 "checkpointInterval": 1024
