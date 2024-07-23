@@ -465,15 +465,15 @@ class FrontendForm(ModelForm):
             'queue_type': Select(choices=RSYSLOG_QUEUE_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
             'queue_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '50000'}),
             'dequeue_batch_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '1024'}),
-            'nb_workers': NumberInput(attrs={'class': 'form-control'}),
+            'nb_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': '8'}),
             'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue.size/queue.workerthreads'}),
-            'shutdown_timeout': NumberInput(attrs={'class': 'form-control', 'placeholder': '1500'}),
+            'shutdown_timeout': NumberInput(attrs={'class': 'form-control', 'placeholder': '5000'}),
             'enable_disk_assist': CheckboxInput(attrs={'class': 'js-switch'}),
             'high_watermark': NumberInput(attrs={'class': 'form-control', 'placeholder': '90% of queue.size'}),
             'low_watermark': NumberInput(attrs={'class': 'form-control', 'placeholder': '70% of queue.size'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '16MB'}),
+            'max_file_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '256MB'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control', 'placeholder': 'Unlimited'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control'}),
+            'spool_directory': TextInput(attrs={'class': 'form-control', 'placeholder': '/var/tmp'}),
             'save_on_shutdown': CheckboxInput(attrs={'class': 'js-switch'}),
             'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
             'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
@@ -934,21 +934,26 @@ class FrontendForm(ModelForm):
 
         """ Rsyslog queue fields verification """
         if cleaned_data.get('dequeue_batch_size'):
-            if cleaned_data['dequeue_batch_size'] > cleaned_data.get('queue_size', 50000):
+            queue_size = cleaned_data.get('queue_size') or 50000
+            if cleaned_data['dequeue_batch_size'] > queue_size:
                 self.add_error("dequeue_batch_size", "This value cannot be over the queue size")
 
         if cleaned_data.get('new_worker_minimum_messages'):
-            if cleaned_data['new_worker_minimum_messages'] > cleaned_data.get('queue_size', 50000):
+            queue_size = cleaned_data.get('queue_size') or 50000
+            if cleaned_data['new_worker_minimum_messages'] > queue_size:
                 self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
 
         if cleaned_data.get('enable_disk_assist') == True:
-            if cleaned_data.get('high_watermark') > cleaned_data.get('queue_size', 50000) \
-            or cleaned_data.get('low_watermark') > cleaned_data.get('queue_size', 50000):
+            queue_size = cleaned_data.get('queue_size') or 50000
+            high_watermark = cleaned_data.get('high_watermark') or queue_size * 0.9
+            low_watermark = cleaned_data.get('low_watermark') or queue_size * 0.7
+
+            if high_watermark > queue_size or low_watermark > queue_size:
                 self.add_error("queue_size", "Queue size is lower than a watermark")
-            if cleaned_data.get('high_watermark', cleaned_data.get('queue_size', 50000) * 0.9) < cleaned_data.get('low_watermark', cleaned_data.get('queue_size', 50000) * 0.7):
+            if high_watermark < low_watermark:
                 self.add_error("high_watermark", "High watermark is lower than the low watermark value")
                 self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            if cleaned_data.get('max_disk_space') and cleaned_data.get('max_file_size', 16) > cleaned_data.get('max_disk_space'):
+            if cleaned_data.get('max_disk_space') and (cleaned_data.get('max_file_size') or 16) > cleaned_data.get('max_disk_space'):
                 self.add_error("max_file_size", "File size is higher than the disk space")
 
         return cleaned_data
