@@ -2175,11 +2175,11 @@ class Frontend(models.Model):
                 "highWatermark": self.high_watermark,
                 "lowWatermark": self.low_watermark,
                 "spoolDirectory": self.spool_directory,
-                "maxFileSize": self.max_file_size,
-                "maxDiskSpace": self.max_disk_space,
+                "maxFileSize": f"{self.max_file_size}m",
+                "maxDiskSpace": f"{self.max_disk_space}m",
                 "saveOnShutdown": "on" if self.save_on_shutdown else None,
                 "filename": f"{self.get_ruleset()}_disk-queue",
-                "checkpointInterval": 128
+                "checkpointInterval": 1024
             })
 
         options_dict = dict(filter(lambda x: x[1], options_dict.items()))
