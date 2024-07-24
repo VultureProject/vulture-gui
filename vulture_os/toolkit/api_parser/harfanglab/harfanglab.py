@@ -185,8 +185,22 @@ class HarfangLabParser(ApiParser):
         return self.__execute_query("GET", threat_url, payload)
 
     def format_log(self, log, log_type):
-        log['url'] = f"{self.harfanglab_host}"
+        log['url'] = self.harfanglab_host
         log['evt_type'] = log_type
+
+        log['is_truncated_powershell'] = False
+        log['is_frombase64string'] = False
+
+        details_powershell = log.get('details_powershell', None)
+        if details_powershell:
+            powershell_command = log.get('PowershellCommand', None)
+
+            if "FromBase64String" in powershell_command:
+                log['is_frombase64string'] = True
+            if len(powershell_command) >= 16384:
+                log['details_powershell']['PowershellCommand'] = powershell_command[:16384]
+                log['is_truncated_powershell'] = True
+
         return json.dumps(log)
 
     def execute(self):
