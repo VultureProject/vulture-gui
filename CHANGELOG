@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Redis settings improperly displayed
 - [NETWORK] [GUI] Prevent missing interfaces in selection when refreshing interfaces on a cluster
 - [GUI] Wrong date formatting in the task list
+- [GUI] [PF] Correctly validate and return errors when changing custom PF rules
 
 
 ## [2.15.7] - 2024-07-22

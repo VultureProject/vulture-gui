@@ -28,9 +28,10 @@ from django.conf import settings
 # Django project imports
 from applications.reputation_ctx.models import DATABASES_PATH, DATABASES_OWNER, DATABASES_PERMS
 from system.cluster.models import Cluster
+from services.exceptions import ServiceTestConfigError
 from services.service import Service
-from system.config.models import write_conf
 from services.pf.models import PFSettings
+from system.config.models import write_conf
 
 # Required exceptions imports
 from services.exceptions import ServiceReloadError, ServiceStatusError
@@ -203,10 +204,41 @@ class PFService(Service):
         return conf_reloaded
 
 
-def test_config(config):
-    return check_output(["/sbin/pfctl", "-n", "-f", "-"],
-                        stderr=PIPE,
+def _get_conf_lines_from_errors(config: list[str], errors: list[str]) -> list[tuple[str, str]]:
+    results = []
+    error_on_line_pattern = re.compile(r"stdin:([0-9]+):")
+    for error_line in errors:
+        match_result = error_on_line_pattern.match(error_line)
+        if match_result:
+            try:
+                config_line_number = int(match_result[1])
+                config_line = config[config_line_number - 1]
+            except:
+                continue
+            results.append((
+                error_line,
+                config_line
+            ))
+
+    return results
+
+
+def test_config(node_logger, config):
+    node_logger.info(f"PF::test_config: testing configuration")
+    node_logger.debug(f"PF::test_config: configuration is {config}")
+    try:
+        check_output(["/sbin/pfctl", "-n", "-f", "-"],
+                        stderr=subprocess.STDOUT,
                         input=config.encode('utf8')).decode('utf8')
+    except CalledProcessError as e:
+        result = e.output.decode()
+        explained_results = _get_conf_lines_from_errors(config.split('\n'), result.split('\n'))
+        if explained_results:
+            result += "\n"
+            for error, config_line in explained_results:
+                result += f"{error} --line is--> '{config_line}'\n"
+        raise ServiceTestConfigError(message=result, service_name="pf")
+
 
 def gen_config(node_logger):
     pf = PFService()
