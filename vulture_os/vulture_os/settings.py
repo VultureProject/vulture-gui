@@ -308,47 +308,47 @@ LOG_SETTINGS = {
     },
     'loggers': {
         'debug': {
-            'handlers': ('debug', 'database', 'console'),
+            'handlers': ('debug', 'console'),
             'level': LOG_LEVEL,
             'propagate': True,
         },
         'auth': {
-            'handlers': ('debug', 'database', 'console'),
+            'handlers': ('debug', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'api': {
-            'handlers': ('api', 'database', 'console'),
+            'handlers': ('api', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'gui': {
-            'handlers': ('gui', 'database', 'console'),
+            'handlers': ('gui', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'services': {
-            'handlers': ('services', 'database', 'console'),
+            'handlers': ('services', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'daemon': {
-            'handlers': ('daemon', 'database', 'console'),
+            'handlers': ('daemon', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'crontab': {
-            'handlers': ('crontab', 'database', 'console'),
+            'handlers': ('crontab', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'api_parser': {
-            'handlers': ('api_parser', 'database', 'console'),
+            'handlers': ('api_parser', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'authentication': {
-            'handlers': ('authentication', 'database', 'console'),
+            'handlers': ('authentication', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
