@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] [PF] Correctly validate and return errors when changing custom PF rules
 
 
+## [2.15.8] - 2024-07-24
+### Fixed
+- [API_PARSER] [HARFANGLAB] Truncate details_powershell.PowershellCommand to 16384 char (as logs can be up to 2M)
+
+
 ## [2.15.7] - 2024-07-22
 ### Changed
 - [API_PARSER] [CROWDSTRIKE] Allow to disable fetching of 'incident' logs
