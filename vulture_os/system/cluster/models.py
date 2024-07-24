@@ -820,17 +820,17 @@ class MessageQueue(models.Model):
                     The status of the request (True for status done, False on error or job failure)
                     the result string of the message (in case of failure, the error details)
         """
-        counter = 0
         try:
             for _ in range(0, tries):
-                message_instance = MessageQueue.objects.get(pk=self.id)
-                if message_instance.status == MessageQueue.MessageQueueStatus.DONE:
-                    return True, message_instance.result
-                if message_instance.status == MessageQueue.MessageQueueStatus.FAILURE:
-                    return False, message_instance.result
+                self.refresh_from_db()
+                if self.status == MessageQueue.MessageQueueStatus.DONE:
+                    return True, self.result
+                if self.status == MessageQueue.MessageQueueStatus.FAILURE:
+                    return False, self.result
                 time.sleep(interval)
 
-            raise APISyncResultTimeOutException(f"MessageQueue:: Timeout on the result of {message_instance.action}. Config is {message_instance.config}")
+            raise APISyncResultTimeOutException(f"MessageQueue:: Timeout on the result of {self.action}. "
+                                                f"Config is {self.config}")
         except Exception as e:
             logger.exception(e)
             return False, ""
