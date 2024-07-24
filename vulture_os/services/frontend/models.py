@@ -1323,6 +1323,27 @@ class Frontend(models.Model):
         help_text=_("Waf Barracuda token"),
         default="",
     )
+    # Lockself attributes
+    lockself_x_ls_token = models.TextField(
+        verbose_name=_("Lockself X-Ls-Token"),
+        help_text=_("Lockself X-Ls-Token"),
+        default="",
+    )
+    lockself_x_auth_token = models.TextField(
+        verbose_name=_("Lockself X-Auth-Token"),
+        help_text=_("Lockself X-Auth-Token"),
+        default="",
+    )
+    lockself_host = models.TextField(
+        verbose_name=_("Lockself Host"),
+        help_text=_("Lockself Host"),
+        default="api.lockself.com",
+    )
+    lockself_organization_id = models.TextField(
+        verbose_name=_("Lockself organization id"),
+        help_text=_("Lockself organization id"),
+        default="",
+    )
 
 
     @staticmethod

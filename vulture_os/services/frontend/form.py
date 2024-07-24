@@ -261,7 +261,8 @@ class FrontendForm(ModelForm):
                            'apex_server_host', 'apex_application_id', 'apex_api_key',
                            'gatewatcher_alerts_host', 'gatewatcher_alerts_api_key',
                            'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
-                           'waf_barracuda_token'
+                           'waf_barracuda_token',
+                           "lockself_x_auth_token", "lockself_x_ls_token", "lockself_host", "lockself_organization_id",
                            ]:
             self.fields[field_name].required = False
 
@@ -367,7 +368,8 @@ class FrontendForm(ModelForm):
                   'apex_server_host', 'apex_application_id', 'apex_api_key',
                   'gatewatcher_alerts_host', 'gatewatcher_alerts_api_key',
                   'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
-                  'waf_barracuda_token'
+                  'waf_barracuda_token',
+                  'lockself_x_auth_token', 'lockself_x_ls_token', 'lockself_host', 'lockself_organization_id',
                 )
 
         widgets = {
@@ -557,6 +559,10 @@ class FrontendForm(ModelForm):
             'cisco_umbrella_client_id': TextInput(attrs={'class': 'form-control'}),
             'cisco_umbrella_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'waf_barracuda_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'lockself_x_auth_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'lockself_x_ls_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'lockself_host': TextInput(attrs={'class': 'form-control'}),
+            'lockself_organization_id': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
