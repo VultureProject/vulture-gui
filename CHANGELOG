@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.15.9] - 2024-07-25
 ### Fixed
 - [API_PARSER] [HARFANGLAB] Hotfix to add a check when powershell_command object is None
 
