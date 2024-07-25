@@ -192,14 +192,14 @@ class HarfangLabParser(ApiParser):
         log['is_frombase64string'] = False
 
         details_powershell = log.get('details_powershell', None)
-        if details_powershell:
-            powershell_command = log.get('PowershellCommand', None)
-
-            if "FromBase64String" in powershell_command:
-                log['is_frombase64string'] = True
-            if len(powershell_command) >= 16384:
-                log['details_powershell']['PowershellCommand'] = powershell_command[:16384]
-                log['is_truncated_powershell'] = True
+        if details_powershell and isinstance(details_powershell, dict):
+            powershell_command = details_powershell.get('PowershellCommand', None)
+            if powershell_command and isinstance(powershell_command, str):
+                if len(powershell_command) >= 16384:
+                    log['details_powershell']['PowershellCommand'] = powershell_command[:16384]
+                    log['is_truncated_powershell'] = True
+                if "FromBase64String" in powershell_command:
+                    log['is_frombase64string'] = True
 
         return json.dumps(log)
 
