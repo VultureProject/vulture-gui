@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.15.9] - 2024-07-25
+### Fixed
+- [API_PARSER] [HARFANGLAB] Hotfix to add a check when powershell_command object is None
+
+
 ## [2.15.8] - 2024-07-24
 ### Fixed
 - [API_PARSER] [HARFANGLAB] Truncate details_powershell.PowershellCommand to 16384 char (as logs can be up to 2M)
