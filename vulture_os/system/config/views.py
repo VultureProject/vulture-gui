@@ -157,7 +157,11 @@ def config_edit(request, api=False, update=False):
             res, mess = config_model.set_logs_ttl()
             if not res:
                 return render_form(save_error=mess)
-        if any(value in form.changed_data for value in ["pf_whitelist", "pf_blacklist"]):
+        if any(value in form.changed_data for value in [
+            "pf_whitelist",
+            "pf_blacklist",
+            "pf_ssh_restrict",
+            "pf_admin_restrict"]):
             Cluster.api_request("services.pf.pf.gen_config")
 
         if api:
