@@ -195,12 +195,13 @@ class SELFService(object):
         if self.workflow.authentication.enable_external:
             repo_id = OpenIDRepository.objects.get(client_id=self.workflow.authentication.oauth_client_id).id
 
-        for workflow in Workflow.objects.filter(authentication__repositories_id__exact=repo_id):
+        for workflow in Workflow.objects.filter(authentication__repositories_id__exact=repo_id, enabled=True):
             # Workflow links needs to go through OpenID redirection if that was the repo used to authenticate
             if self.workflow.authentication.enable_external or backend_subtype == "openid":
+                port = workflow.frontend.listener_set.first().port
                 url = workflow.authentication.get_openid_start_url(
-                    req_scheme="https" if workflow.frontend.listener_set.filter(tls_profiles__gt=0).exists() else "http",
-                    workflow_host=workflow.fqdn,
+                    req_scheme="https" if workflow.frontend.has_tls() else "http",
+                    workflow_host=f"{workflow.fqdn}:{port}" if port not in (443, 80) else workflow.fqdn,
                     workflow_path=workflow.public_dir,
                     repo_id=repo_id)
             else:
