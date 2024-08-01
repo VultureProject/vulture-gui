@@ -138,21 +138,19 @@ class GatewatcherAlertsParser(ApiParser):
 
     def execute(self):
         since = self.frontend.last_api_call or (timezone.now() - timedelta(hours=24))
-        to = min(timezone.now(), since + timedelta(hours=24))
+        to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=24))
 
         logs = self.get_logs(since, to)
-
-        # Downloading may take some while, so refresh token in Redis
         self.update_lock()
 
         self.write_to_file([self.format_log(log) for log in logs])
-
-        # Writing may take some while, so refresh token in Redis
         self.update_lock()
-        # increment by 1ms to avoid duplication of logs
-        if logs:
-            self.frontend.last_api_call = (datetime.fromisoformat(logs[-1]["alert"]["date"].replace("Z", "+00:00")) +
-                                           timedelta(milliseconds=1))
-            self.frontend.save()
+
+
+        if logs: # increment by 1ms to avoid duplication of logs
+            self.frontend.last_api_call = (datetime.fromisoformat(logs[-1]["alert"]["date"].replace("Z", "+00:00")) + timedelta(milliseconds=1))
+        elif len(logs) == 0 and to == since + timedelta(hours=24): # if no logs during last 24h
+            self.frontend.last_api_call += timedelta(hours=23, minutes=59)
+        self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
