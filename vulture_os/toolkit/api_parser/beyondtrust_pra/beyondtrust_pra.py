@@ -150,6 +150,18 @@ class BeyondtrustPRAParser(ApiParser):
                 "error": str(e)
             }
 
+    @staticmethod
+    def format_team_activity_logs(logs):
+        activity_logs = []
+        for log in logs['team_activity_list']['team_activity']:
+            for event in log['events']['event']:
+                event['team'] = {
+                    "name": log['@name'],
+                    "id": log['@id'],
+                }
+                activity_logs.append(event)
+        return activity_logs
+
     def get_logs(self, resource: str, requested_type: str, since: int):
         url = f"{self.beyondtrust_pra_host}/api/{resource}"
 
@@ -163,16 +175,20 @@ class BeyondtrustPRAParser(ApiParser):
 
         logs = xmltodict.parse(res.text)
 
-        # Return only list of events
-        logs_mapping = {
-            "reporting": {
-                "Team": logs.get('team_activity_list', {}).get('team_activity'),
-                "AccessSession": logs.get('session_list', {}).get('session'),
-                "VaultAccountActivity": logs.get('vault_account_activity_list', {}).get('vault_account_activity')
-            }
-        }
+        if error := logs.get('error'):
+            logger.info(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : {error.get('#text')}", extra={'frontend': str(self.frontend)})
+            return []
 
-        return logs_mapping[resource][requested_type]
+        # Return only list of events
+        if resource == 'reporting' and requested_type == "Team":
+            return self.format_team_activity_logs(logs)
+        elif resource == 'reporting' and requested_type == "AccessSession":
+            return logs['session_list']['session']
+        elif resource == 'reporting' and requested_type == "VaultAccountActivity":
+            return logs['vault_account_activity_list']['vault_account_activity']
+        else:
+            logger.info(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : This requested type is not allowed.", extra={'frontend': str(self.frontend)})
+            return []
 
     @staticmethod
     def format_log(log, resource, requested_type):
