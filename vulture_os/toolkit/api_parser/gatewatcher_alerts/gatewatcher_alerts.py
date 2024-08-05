@@ -146,10 +146,9 @@ class GatewatcherAlertsParser(ApiParser):
         self.write_to_file([self.format_log(log) for log in logs])
         self.update_lock()
 
-
         if logs: # increment by 1ms to avoid duplication of logs
             self.frontend.last_api_call = (datetime.fromisoformat(logs[-1]["alert"]["date"].replace("Z", "+00:00")) + timedelta(milliseconds=1))
-        elif len(logs) == 0 and to == since + timedelta(hours=24): # if no logs during last 24h
+        elif to == since + timedelta(hours=24): # if no logs during last 24h
             self.frontend.last_api_call += timedelta(hours=23, minutes=59)
         self.frontend.save()
 
