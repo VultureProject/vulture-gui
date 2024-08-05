@@ -151,16 +151,24 @@ class BeyondtrustPRAParser(ApiParser):
             }
 
     @staticmethod
-    def format_team_activity_logs(logs):
-        activity_logs = []
+    def format_team_logs(logs):
+        team_logs = []
         for log in logs['team_activity_list']['team_activity']:
             for event in log['events']['event']:
                 event['team'] = {
                     "name": log['@name'],
                     "id": log['@id'],
                 }
-                activity_logs.append(event)
-        return activity_logs
+                team_logs.append(event)
+        return team_logs
+
+    @staticmethod
+    def format_access_session_logs(logs):
+        access_session_logs = []
+        for log in logs['session_list']['session']:
+            del log['session_details']  # Avoid too long session log
+            access_session_logs.append(log)
+        return access_session_logs
 
     def get_logs(self, resource: str, requested_type: str, since: int):
         url = f"{self.beyondtrust_pra_host}/api/{resource}"
@@ -181,9 +189,9 @@ class BeyondtrustPRAParser(ApiParser):
 
         # Return only list of events
         if resource == 'reporting' and requested_type == "Team":
-            return self.format_team_activity_logs(logs)
+            return self.format_team_logs(logs)
         elif resource == 'reporting' and requested_type == "AccessSession":
-            return logs['session_list']['session']
+            return self.format_access_session_logs(logs)
         elif resource == 'reporting' and requested_type == "VaultAccountActivity":
             return logs['vault_account_activity_list']['vault_account_activity']
         else:
