@@ -151,9 +151,9 @@ class NozomiProbeParser(ApiParser):
                     self.frontend.last_api_call = timezone.make_aware(datetime.fromtimestamp(logs[-1]['time']/1000))
                 logger.info(f"[{__parser__}]:execute: Setting last_api_call to {self.frontend.last_api_call}",
                             extra={'frontend': str(self.frontend)})
-            elif len(logs) == 0 and to == since + timedelta(hours=24):
+            elif to == since + timedelta(hours=24):
                 self.frontend.last_api_call += timedelta(hours=23, minutes=59)
-                logger.info(f"[{__parser__}]:execute: Setting last_api_call to {self.frontend.last_api_call}",
+                logger.info(f"[{__parser__}]:execute: No log received on time range, next query will be from {self.frontend.last_api_call}",
                             extra={'frontend': str(self.frontend)})
 
         logger.info("NozomiProbe parser ending.", extra={'frontend': str(self.frontend)})
