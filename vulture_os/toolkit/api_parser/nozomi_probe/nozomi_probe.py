@@ -118,7 +118,7 @@ class NozomiProbeParser(ApiParser):
 
     def execute(self):
         since = self.last_api_call or timezone.now()-timedelta(days=30)
-        to = min(timezone.now() - timedelta(minutes=1), since + timedelta(hours=24))
+        to = min(timezone.now() - timedelta(minutes=10), since + timedelta(hours=24))
         cpt = 0
         total = 1
         while cpt < total:
