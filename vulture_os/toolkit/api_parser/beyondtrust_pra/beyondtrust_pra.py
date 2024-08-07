@@ -198,11 +198,19 @@ class BeyondtrustPRAParser(ApiParser):
             logger.info(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : This requested type is not allowed.", extra={'frontend': str(self.frontend)})
             return []
 
-    @staticmethod
-    def format_log(log, resource, requested_type):
+    def remove_hash_from_keys(self, d):
+        if isinstance(d, dict):
+            return {key.replace('#', ''): self.remove_hash_from_keys(value) for key, value in d.items()}
+        elif isinstance(d, list):
+            return [self.remove_hash_from_keys(item) for item in d]
+        else:
+            return d
+
+    def format_log(self, log, resource, requested_type):
         log["resource"] = resource
         log["requested_type"] = requested_type
-        return json.dumps(log)
+        cleaned_log = self.remove_hash_from_keys(log)
+        return json.dumps(cleaned_log)
 
     def execute(self):
 
