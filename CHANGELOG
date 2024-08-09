@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.15.10] - 2024-08-09
+### Fixed
+- [API_PARSER] [NOZOMI_PROBE] Update timestamp when no logs received during last 24h
+- [API_PARSER] [GATEWATCHER_ALERTS] Delayed logs gathering by 5 minutes to avoid alerts being not inserted in API when we're making our request
+
+
 ## [2.15.9] - 2024-07-25
 ### Fixed
 - [API_PARSER] [HARFANGLAB] Hotfix to add a check when powershell_command object is None
