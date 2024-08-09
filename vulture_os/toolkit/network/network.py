@@ -357,7 +357,7 @@ def destroy_virtual_interface(logger, iface_name):
     :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-    from system.cluster.models import Cluster, NetworkAddress
+    from system.cluster.models import Cluster
     node = Cluster.get_current_node()
 
     ret = True
@@ -378,7 +378,7 @@ def create_virtual_interface(logger, iface_name):
     :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-    from system.cluster.models import Cluster, NetworkAddress
+    from system.cluster.models import Cluster
     node = Cluster.get_current_node()
 
     ret = True
@@ -476,7 +476,7 @@ def write_network_config(logger):
         configs.append(static_route)
 
     # Remove all past routing config
-    status, removed = remove_rc_config(f".*route.*")
+    status, removed = remove_rc_config(".*route.*")
     logger.info(f"Node::write_network_config(): removed old routing configurations {removed}")
 
     # Apply configurations

@@ -31,10 +31,9 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Cluster
 from applications.reputation_ctx.models import ReputationContext
 
 if not Cluster.is_node_bootstrapped():

@@ -37,7 +37,7 @@ from applications.logfwd.form import (LogOMFileForm, LogOMRELPForm, LogOMHIREDIS
                                       LogOMElasticSearchForm, LogOMMongoDBForm, LogOMKafkaForm)
 from applications.logfwd.models import LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
 from gui.forms.form_utils import DivErrorList
-from services.frontend.models import Frontend, Listener
+from services.frontend.models import Frontend
 from system.cluster.models import Node
 from toolkit.api.responses import build_response
 

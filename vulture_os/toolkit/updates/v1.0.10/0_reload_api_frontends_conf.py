@@ -31,10 +31,9 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Cluster
 from services.frontend.models import Frontend
 
 if not Cluster.is_node_bootstrapped():
@@ -62,6 +61,6 @@ if __name__ == "__main__":
         node.api_request("services.rsyslogd.rsyslog.restart_service")
         if not api_res.get("status"):
             print("Error while restarting rsyslog: "
-                    "{}.".format(frontend.name, api_res.get("message")))
+                    "{}.".format(api_res.get("message")))
 
         print("Done.")

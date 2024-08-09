@@ -379,9 +379,8 @@ class Node(models.Model):
     @property
     def get_forwarders_enabled(self):
         """ Return all tuples (family, proto, ip, port) for each LogForwarders """
-        from applications.logfwd.models import LogOM, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
+        from applications.logfwd.models import LogOM, LogOMRELP, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
         # !!! REQUIRED BY listener_set !
-        from services.frontend.models import Listener
         output_ips = set()
         """ Retrieve LogForwarders used in enabled Frontends """
         """ First, retrieve LogForwarders that bind to the address of the node """
@@ -496,7 +495,6 @@ class Node(models.Model):
         """ Return all tuples (family, proto, ip, port) for each enabled Backends on this node """
         from applications.backend.models import Backend
         # !!! REQUIRED BY listener_set !
-        from services.frontend.models import Listener
         result = set()
         """ Retrieve Backends used in enabled Frontends """
         addresses = self.addresses()
@@ -1113,7 +1111,7 @@ class NetworkAddress(models.Model):
                     for address_nic in addresses:
                         nodes_config[node.id].append({
                             'variable': f"ifconfig_{address_nic.nic.dev}",
-                            'value': f"up",
+                            'value': "up",
                         })
                     key = f"ifconfig_lagg{self.iface_id}"
                     value = f"up laggproto {self.lagg_proto}"

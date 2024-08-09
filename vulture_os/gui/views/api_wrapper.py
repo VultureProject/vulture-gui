@@ -24,7 +24,7 @@ __email__ = "support@vultureproject.org"
 __doc__ = ''
 
 
-from django.http import JsonResponse, HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden
 from django.utils.module_loading import import_string
 from django.conf import settings
 from django import views
@@ -32,7 +32,6 @@ import logging.config
 
 from gui.decorators.apicall import api_need_key
 
-import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -54,7 +53,7 @@ class ApiWrapperGet(views.View):
 
         try:
             my_object = import_string(objclass)
-        except ImportError as e:
+        except ImportError:
             return JsonResponse({'status': False, 'message': 'ObjectClass does not exist'}, status=404)
         except Exception as e:
             logger.error("API Wrapper::api_wrapper_get: {}".format(e))

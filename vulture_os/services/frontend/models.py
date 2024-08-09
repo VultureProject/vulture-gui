@@ -25,7 +25,6 @@ __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
 from uuid import uuid4
-import datetime
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.template import Context, Template as JinjaTemplate
@@ -40,7 +39,7 @@ from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinBuffering
 from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from system.error_templates.models import ErrorTemplate
-from system.cluster.models import Cluster, NetworkAddress, NetworkInterfaceCard, Node
+from system.cluster.models import Cluster, NetworkAddress, Node
 from applications.backend.models import Backend
 from system.pki.models import TLSProfile, X509Certificate
 from toolkit.network.network import JAIL_ADDRESSES
@@ -2238,7 +2237,7 @@ def ha_int(criterion, key, value):
 
 
 def ha_null(criterion, key, value):
-    return "{criterion} -m found".format(criterion=criterion, value=value), True
+    return "{criterion} -m found".format(criterion=criterion), True
 
 
 def ha_count_args(line):

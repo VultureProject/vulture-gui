@@ -32,8 +32,6 @@ from system.cluster.models import Cluster, Node
 from gui.forms.form_utils import DivErrorList
 from django.utils.translation import gettext_lazy as _
 from toolkit.api.responses import build_response
-from subprocess import CalledProcessError
-from services.pf.pf import test_config as test_pf_config
 
 from django.core.exceptions import ObjectDoesNotExist
 

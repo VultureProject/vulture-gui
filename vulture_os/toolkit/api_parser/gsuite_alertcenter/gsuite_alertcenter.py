@@ -21,18 +21,14 @@ __doc__ = 'Gsuite Alertcenter API Parser'
 __parser__ = 'GSUITE ALERTCENTER'
 
 import json
-import jwt
 import logging
 import requests
-import time
-import uuid
 import httplib2
 import google_auth_httplib2
 
 from datetime import timedelta
 from datetime import datetime
 from django.conf import settings
-from django.utils import dateparse
 from django.utils import timezone
 
 from google.auth.transport.requests import Request

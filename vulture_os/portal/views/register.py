@@ -135,7 +135,7 @@ class STEP1Registration(Registration):
             else:
                 raise UserAlreadyExistsError("REGISTER::search_user: User '{}' already found on repository '{}' "
                                              "with email '{}'".format(user_infos['user'], backend.repo_name, email))
-        except (User.DoesNotExist, UserNotFound) as e:
+        except (User.DoesNotExist, UserNotFound):
             pass
 
         # Verify if an email has already been sent
@@ -283,7 +283,7 @@ def registration(request, token_name, proxy_app_id=None):
         logger.error("REGISTER::init: Unable to connect to Redis server : {}".format(str(e)))
         return HttpResponseServerError()
 
-    except (Workflow.DoesNotExist, ValidationError, InvalidId) as e:
+    except (Workflow.DoesNotExist, ValidationError, InvalidId):
         logger.error("REGISTER::init: Workflow with id '{}' not found".format(proxy_app_id))
         return HttpResponseForbidden()
 

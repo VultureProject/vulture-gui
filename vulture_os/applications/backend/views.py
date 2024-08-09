@@ -24,8 +24,7 @@ __doc__ = 'Listeners View'
 
 # Django system imports
 from django.conf import settings
-from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect,
-                         HttpResponseNotAllowed)
+from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect)
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -33,7 +32,7 @@ from django.utils.translation import gettext_lazy as _
 # Django project imports
 from gui.forms.form_utils import DivErrorList
 from applications.backend.form import BackendForm, ServerForm
-from applications.backend.models import Backend, BACKEND_OWNER, BACKEND_PERMS, Server
+from applications.backend.models import Backend, Server
 from services.darwin.darwin import get_darwin_sockets
 from system.cluster.models import Cluster, Node
 from toolkit.api.responses import build_response
@@ -42,7 +41,7 @@ from toolkit.http.headers import HeaderForm, Header, HttpHealthCheckHeaderForm
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.deletion import ProtectedError
-from services.exceptions import ServiceConfigError, ServiceError, ServiceReloadError
+from services.exceptions import ServiceError, ServiceReloadError
 from system.exceptions import VultureSystemError
 
 # Extern modules imports

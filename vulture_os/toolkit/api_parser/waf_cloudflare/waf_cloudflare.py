@@ -23,14 +23,12 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Waf Cloudflare API Parser'
 __parser__ = 'WAF CLOUDFLARE'
 
-import json
 import logging
 import requests
 
 from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
-import time
 
 from toolkit.api_parser.api_parser import ApiParser
 

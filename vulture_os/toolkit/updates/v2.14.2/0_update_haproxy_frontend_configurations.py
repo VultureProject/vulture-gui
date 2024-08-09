@@ -31,13 +31,10 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
-from authentication.user_portal.models import UserAuthentication
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
-from workflow.models import Workflow
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)

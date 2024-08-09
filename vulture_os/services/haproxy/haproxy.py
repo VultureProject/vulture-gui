@@ -32,22 +32,17 @@ from services.haproxy.models import HAProxySettings
 from services.service import Service
 
 # Local imports
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Cluster
 from system.config.models import write_conf
 from system.exceptions import VultureSystemError
-from toolkit.network.network import get_hostname
 
 # Required exceptions imports
-from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
-                               TemplateSyntaxError, UndefinedError)
-from services.exceptions import ServiceError, ServiceStatusError, ServiceTestConfigError, ServiceJinjaError
-from system.exceptions import VultureSystemConfigError
+from services.exceptions import ServiceError, ServiceStatusError, ServiceTestConfigError
 
 from subprocess import CalledProcessError
 
 # Extern modules imports
 from subprocess import check_output, PIPE
-from jinja2 import Environment, FileSystemLoader
 
 # Logger configuration imports
 import logging

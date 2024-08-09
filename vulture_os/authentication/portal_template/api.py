@@ -25,7 +25,7 @@ __doc__ = 'Frontends API'
 
 # Django system imports
 from authentication.portal_template.models import PortalTemplate, TemplateImage
-from authentication.portal_template.form import PortalTemplateForm, TemplateImageForm
+from authentication.portal_template.form import PortalTemplateForm
 from system.cluster.models import Cluster
 from django.views.decorators.http import require_http_methods
 from django.utils.translation import gettext_lazy as _

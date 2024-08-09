@@ -27,7 +27,6 @@ import base64
 import datetime
 import json
 import logging
-import time
 import requests
 import urllib.parse
 
@@ -57,7 +56,7 @@ def akamai_write(akamai):
                 # Wait max 2 seconds for a log
                 log = akamai.queue_write.get(block=True, timeout=2)
             except:
-                msg = f"Exception in queue_write.get()"
+                msg = "Exception in queue_write.get()"
                 logger.info(f"[{__parser__}]:{get_bulk.__name__}: {msg}", extra={'frontend': str(akamai.frontend)})
                 continue
             try:
@@ -74,7 +73,7 @@ def akamai_write(akamai):
         akamai.write_to_file(get_bulk(10000))
         akamai.update_lock()
 
-    msg = f"Writting worker finished"
+    msg = "Writting worker finished"
     logger.info(f"[{__parser__}]:{akamai_write.__name__}: {msg}", extra={'frontend': str(akamai.frontend)})
 
 

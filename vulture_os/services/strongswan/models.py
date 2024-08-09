@@ -98,7 +98,7 @@ class Strongswan(models.Model):
     tunnels_connecting = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"Ipsec configuration"
+        return "Ipsec configuration"
 
     def to_template(self):
         """ Dictionary used to create configuration file.
@@ -197,5 +197,5 @@ class Strongswan(models.Model):
         for params in (params_ipsec, params_secrets, params_strongswan):
             try:
                 self.node.api_request('system.config.models.write_conf', config=params)
-            except Exception as e:
+            except Exception:
                 raise VultureSystemConfigError("on node '{}'.\nRequest failure.".format(self.node.name))

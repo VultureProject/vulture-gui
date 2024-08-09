@@ -25,7 +25,7 @@ __doc__ = 'OpenID Repository views'
 
 # Django system imports
 from django.conf import settings
-from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 # Django project imports
 from gui.forms.form_utils import DivErrorList

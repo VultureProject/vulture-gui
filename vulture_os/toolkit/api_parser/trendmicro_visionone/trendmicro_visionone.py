@@ -27,9 +27,9 @@ import json
 import logging
 import requests
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.conf import settings
-from django.utils import dateparse, timezone
+from django.utils import timezone
 
 from toolkit.api_parser.api_parser import ApiParser
 

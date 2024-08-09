@@ -36,12 +36,11 @@ from django.views import View
 # Django project imports
 from django.views.decorators.csrf import csrf_exempt
 from authentication.user_portal.models import UserAuthentication
-from system.cluster.models import Cluster
 from services.frontend.models import Frontend
 from applications.backend.models import Backend
 from gui.decorators.apicall import api_need_key
 from workflow.models import Workflow, WorkflowACL, CORS_METHODS
-from workflow.views import COMMAND_LIST, workflow_delete
+from workflow.views import workflow_delete
 
 # Logger configuration imports
 import validators
@@ -435,7 +434,7 @@ def workflow_edit(request, object_id, action=None):
                 'message': _('Workflow saved')
             }, status=201)
 
-        except KeyError as err:
+        except KeyError:
             return JsonResponse({
                 'error': _('Partial data')
             }, status=400)

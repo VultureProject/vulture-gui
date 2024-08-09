@@ -56,7 +56,7 @@ class TasksJob(Thread):
             if not node:
                 node = Cluster.get_current_node()
                 if not node:
-                    logger.error(f"Cluster::tasks: Could not get local Node configuration")
+                    logger.error("Cluster::tasks: Could not get local Node configuration")
                     continue
             try:
                 tasks = node.get_pending_messages(count=1)

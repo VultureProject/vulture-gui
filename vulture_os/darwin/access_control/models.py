@@ -29,7 +29,6 @@ from django.conf import settings
 from djongo import models
 from django.template.loader import render_to_string
 
-from services.haproxy.haproxy import TEST_CONF_PATH
 from services.haproxy.haproxy import test_haproxy_conf
 
 from bson import ObjectId

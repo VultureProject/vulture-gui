@@ -28,7 +28,6 @@ from django.conf import settings
 # Django project imports
 from applications.reputation_ctx.models import ReputationContext
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinFilter
-from django.utils.translation import gettext_lazy as _
 from services.rsyslogd.rsyslog import build_conf as rsyslog_build_conf
 from services.rsyslogd.rsyslog import restart_service as rsyslog_restart_service
 from services.service import Service
@@ -38,16 +37,13 @@ from system.config.models import write_conf, delete_conf as delete_conf_file
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from json import JSONDecodeError, dumps as json_dumps
+from json import JSONDecodeError
 from services.exceptions import ServiceStatusError, ServiceReloadError, ServiceExit
 from system.exceptions import VultureSystemError
 from subprocess import CalledProcessError
 
 # Extern modules imports
-from glob import glob as file_glob
 from json import loads as json_loads
-from os import walk as os_walk
-from re import compile as re_compile
 from subprocess import check_output, PIPE
 
 # Logger configuration imports
@@ -200,7 +196,7 @@ def delete_filter_conf(node_logger, filter_conf_path):
             filter_conf_path
         )
         result += "Configuration file '{}' deleted\n".format(filter_conf_path)
-    except ServiceExit as e: # DO NOT REMOVE IT - Needed to stop Vultured service !
+    except ServiceExit: # DO NOT REMOVE IT - Needed to stop Vultured service !
         raise
     except Exception as e:
         if "No such file or directory" in str(e):
@@ -288,7 +284,7 @@ def update_filter(node_logger, filter_id):
     if reply.get('status') == "KO":
             raise ServiceReloadError("Darwin manager failed to update filter '{}': {}".format(darwin_filter.name, reply.get('errors', '')), "Darwin")
     elif reply.get('status') != "OK":
-        raise ServiceReloadError("Darwin manager returned an unexpected result: {}".format(reply.get('errors', ''), "Darwin"))
+        raise ServiceReloadError("Darwin manager returned an unexpected result: {}".format(reply.get('errors', '')), "Darwin")
     node_logger.info("Darwin filter '{}' hot update successful.".format(darwin_filter.name))
     return "Darwin filter '{}' hot update successful.".format(darwin_filter.name)
 

@@ -26,7 +26,6 @@ from authentication.auth_access_control.form import AuthAccessControlForm
 from authentication.auth_access_control.models import AuthAccessControl, OPERATOR_CHOICES
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponseNotFound
-from django.http import JsonResponse
 from django.shortcuts import render
 from django.conf import settings
 import logging

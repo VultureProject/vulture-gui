@@ -242,7 +242,6 @@ def test_keytab(keytab):
     """ Method used to check keytab content
     :param keytab: String base64 encoded keytab
     """
-    from authentication.kerberos.models import KerberosRepository
     response = {
         'status': None,
         'reason': None,

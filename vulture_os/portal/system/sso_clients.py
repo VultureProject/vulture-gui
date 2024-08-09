@@ -36,7 +36,7 @@ from re                                    import compile, IGNORECASE
 from requests                              import Session
 from requests.adapters                     import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
-from ssl                                   import CERT_REQUIRED, CERT_NONE
+from ssl                                   import CERT_REQUIRED
 
 # Logger configuration imports
 import logging

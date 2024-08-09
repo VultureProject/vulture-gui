@@ -165,7 +165,7 @@ class VadesecureParser(ApiParser):
                     logger.exception(e, extra={'frontend': str(self.frontend)})
                     continue
             except Exception as e:
-                msg = f"Couldn't fetch the details of a log (might be empty?)"
+                msg = "Couldn't fetch the details of a log (might be empty?)"
                 logger.error(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
                 logger.exception(e, extra={'frontend': str(self.frontend)})
 
@@ -252,7 +252,7 @@ class VadesecureParser(ApiParser):
 
         # Execute every 5 minutes
         if self.last_api_call and round((timezone.now() - self.last_api_call).total_seconds()/60) < 5:
-            msg = f"Canceled API call. Last execution time is < 5 minutes."
+            msg = "Canceled API call. Last execution time is < 5 minutes."
             logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
             return
 
@@ -296,7 +296,7 @@ class VadesecureParser(ApiParser):
 
     def test(self):
         self.isTest = True
-        msg = f"init test"
+        msg = "init test"
         logger.info(f"[{__parser__}]:test: {msg}", extra={'frontend': str(self.frontend)})
 
         try:

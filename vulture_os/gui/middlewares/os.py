@@ -26,13 +26,12 @@ __doc__ = 'Middleware for GUI of Vulture OS'
 from django.conf.urls.static import static
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
-from system.cluster.models import Node, Cluster
+from system.cluster.models import Cluster
 
 from django.conf import settings
 from django.urls import reverse
 
 import logging
-import os
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')

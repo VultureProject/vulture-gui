@@ -25,10 +25,8 @@ __parser__ = 'SOPHOS_CLOUD'
 
 import json
 import logging
-import time
-import urllib.parse
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from dateutil.parser import parse
 from django.conf import settings

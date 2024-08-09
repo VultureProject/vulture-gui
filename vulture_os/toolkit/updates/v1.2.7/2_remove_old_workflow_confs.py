@@ -32,7 +32,6 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster
@@ -50,7 +49,7 @@ if __name__ == "__main__":
         try:
             active_workflow_files = [w.get_filename() for w in Workflow.objects.all()]
             # Using hardcoded filepath as script is dependent on current version and path
-            files_to_remove = [file for file in file_glob(f"/usr/local/etc/haproxy.d/workflow_*.cfg") if file not in active_workflow_files]
+            files_to_remove = [file for file in file_glob("/usr/local/etc/haproxy.d/workflow_*.cfg") if file not in active_workflow_files]
 
             for remove_file in files_to_remove:
                 print(f"removing obsolete {remove_file}")

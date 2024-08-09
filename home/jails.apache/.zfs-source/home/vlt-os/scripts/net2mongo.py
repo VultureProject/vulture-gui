@@ -31,10 +31,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
 from django.conf import settings
-from django.db.models import Q
 django.setup()
 
-from system.cluster.models import (Cluster, Node, NetworkInterfaceCard,
+from system.cluster.models import (Cluster, NetworkInterfaceCard,
                                 NetworkAddress, NetworkAddressNIC)
 
 

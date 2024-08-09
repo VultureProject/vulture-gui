@@ -24,8 +24,7 @@ __doc__ = 'ReputationContext dedicated form classes'
 
 # Django system imports
 from django.conf import settings
-from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInput, Textarea, Form, \
-    ChoiceField, CharField
+from django.forms import CheckboxInput, ModelForm, Select, TextInput, Textarea
 
 # Django project imports
 from gui.forms.form_utils import NoValidationField

@@ -24,10 +24,9 @@ __doc__ = 'Global Config dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, Textarea, TextInput, Select, NumberInput
+from django.forms import ModelForm, TextInput
 
 # Django project imports
-from authentication.ldap.models import LDAPRepository
 from gui.forms.form_utils import bootstrap_tooltips
 from system.tenants.models import Tenants
 
@@ -35,7 +34,6 @@ from system.tenants.models import Tenants
 from django.forms import ValidationError
 
 # Extern modules imports
-from ipaddress import ip_address, ip_network
 
 # Logger configuration imports
 import logging

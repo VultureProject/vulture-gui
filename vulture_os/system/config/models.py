@@ -33,7 +33,7 @@ from toolkit.mongodb.mongo_base import MongoBase
 
 # Required exceptions imports
 from services.exceptions import ServiceExit
-from system.exceptions import VultureSystemConfigError, VultureSystemError
+from system.exceptions import VultureSystemConfigError
 from subprocess import CalledProcessError
 
 # Extern modules imports

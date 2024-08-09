@@ -26,7 +26,6 @@ __doc__ = 'Classes used to delete objects'
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotFound, HttpResponseRedirect
-from workflow.models import Workflow
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _

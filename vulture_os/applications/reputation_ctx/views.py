@@ -24,8 +24,7 @@ __doc__ = 'Listeners View'
 
 # Django system imports
 from django.conf import settings
-from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect,
-                         HttpResponseNotAllowed)
+from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect)
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -34,13 +33,13 @@ from django.utils.translation import gettext_lazy as _
 from gui.forms.form_utils import DivErrorList
 from applications.reputation_ctx.form import ReputationContextForm
 from applications.reputation_ctx.models import ReputationContext
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Cluster
 from toolkit.api.responses import build_response
 from toolkit.http.headers import HttpHealthCheckHeaderForm
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from services.exceptions import ServiceConfigError, ServiceError, ServiceReloadError
+from services.exceptions import ServiceError
 from system.exceptions import VultureSystemError
 
 # Extern modules imports

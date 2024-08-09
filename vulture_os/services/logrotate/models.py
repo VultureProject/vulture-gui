@@ -24,12 +24,10 @@ __doc__ = 'Haproxy settings model'
 
 # Django system imports
 from django.conf import settings
-from django.db.models import Q
 from djongo import models
 
 # Django project imports
 from applications.logfwd.models import LogOMFile, LogOMElasticSearch
-from system.cluster.models import Cluster
 
 # Required exceptions imports
 

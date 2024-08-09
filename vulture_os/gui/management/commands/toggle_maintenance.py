@@ -17,13 +17,13 @@ class Command(BaseCommand):
             try:
                 if options["on"]:
                     node.set_state("MAINTENANCE")
-                    self.stdout.write(self.style.SUCCESS(f"The Node is now in MAINTENANCE."))
+                    self.stdout.write(self.style.SUCCESS("The Node is now in MAINTENANCE."))
                 elif options["off"] or node.state == "MAINTENANCE":
                     node.set_state("DOWN")
-                    self.stdout.write(self.style.SUCCESS(f"The Node has been put out of MAINTENANCE."))
+                    self.stdout.write(self.style.SUCCESS("The Node has been put out of MAINTENANCE."))
                 else:
                     node.set_state("MAINTENANCE")
-                    self.stdout.write(self.style.SUCCESS(f"The Node is now in MAINTENANCE."))
+                    self.stdout.write(self.style.SUCCESS("The Node is now in MAINTENANCE."))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"{e}\n\nPlease relaunch this script after solving the issue."))
         else:
