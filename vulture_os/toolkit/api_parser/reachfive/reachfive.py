@@ -27,7 +27,8 @@ import json
 import logging
 import requests
 
-from datetime import datetime
+from datetime import datetime, timedelta
+import time
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -52,38 +53,60 @@ class ReachFiveParser(ApiParser):
         self.reachfive_client_id = data["reachfive_client_id"]
         self.reachfive_client_secret = data["reachfive_client_secret"]
 
+        self.reachfive_access_token = data.get("reachfive_access_token")
+        self.reachfive_expire_at = data.get("reachfive_expire_at")
+
         self.session = None
+
+    def save_access_token(self):
+        try:
+            if self.frontend:
+                self.frontend.reachfive_access_token = self.reachfive_access_token
+                self.frontend.reachfive_expire_at = self.reachfive_expire_at
+                self.frontend.save()
+        except Exception as e:
+            raise ReachFiveAPIError(f"Unable to save access token: {e}")
+
+    @property
+    def auth_token(self):
+        if (not self.reachfive_access_token or not self.reachfive_expire_at) or (self.reachfive_expire_at - timedelta(seconds=10)) < timezone.now():
+            # Retrieve OAuth token (https://developer.reachfive.com/api/management.html#tag/OAuth)
+            oauth2_url = f"https://{self.reachfive_host}/oauth/token"
+            response = requests.post(
+                oauth2_url,
+                json={
+                    'grant_type': "client_credentials",
+                    'client_id': self.reachfive_client_id,
+                    'client_secret': self.reachfive_client_secret,
+                    'scope': "read:user-events"
+                },
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
+            ).json()
+
+            assert (
+                    response.get('access_token') is not None
+            ), f"Cannot retrieve token from API : {response}"
+
+            self.reachfive_access_token = response.get('access_token')
+            self.reachfive_expire_at = timezone.now() + timedelta(seconds=response.get('expires_in'))
+            self.save_access_token()
+        return self.reachfive_access_token
 
     def _connect(self):
         try:
             if self.session is None:
                 self.session = requests.Session()
-                # Retrieve OAuth token (https://developer.reachfive.com/api/management.html#tag/OAuth)
-                oauth2_url = f"https://{self.reachfive_host}/oauth/token"
-                response = requests.post(
-                    oauth2_url,
-                    json={
-                        'grant_type': "client_credentials",
-                        'client_id': self.reachfive_client_id,
-                        'client_secret': self.reachfive_client_secret,
-                        'scope': "read:user-events"
-                    },
-                    proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
-                ).json()
-
-                assert response.get('access_token') is not None, "Cannot retrieve token from API : {}".format(response)
-
-                self.session.headers.update({'Authorization': "Bearer {}".format(response.get('access_token'))})
-
+                self.session.headers = {
+                        'Authorization': f"Bearer {self.auth_token}"
+                }
             return True
-
         except Exception as err:
             raise ReachFiveAPIError(err)
 
     def test(self):
         try:
-            status, logs = self.get_logs(test=True)
+            status, logs = self.get_logs(count=10)
 
             if not status:
                 return {
@@ -103,14 +126,12 @@ class ReachFiveParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, page=1, since=None, test=False):
+    def get_logs(self, page=1, since=None, count=1000):
         self._connect()
-
         url = f"https://{self.reachfive_host}/api/{self.REACHFIVE_API_VERSION}/user-events"
 
-        params = {'sort':"date:asc", 'page': page}
-        if not test:
-            params['count']=1000
+        params = {'sort': "date:asc", 'page': page, 'count': count}
+
         if since:
             params['filter'] = 'date > "{}"'.format(timezone.make_naive(since).isoformat(timespec="milliseconds"))
 
@@ -121,7 +142,7 @@ class ReachFiveParser(ApiParser):
             url,
             params=params,
             proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:
@@ -141,7 +162,9 @@ class ReachFiveParser(ApiParser):
         page = 1
         total = 1
         last_datetime = self.frontend.last_api_call.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
         while cpt < total:
+
             status, tmp_logs = self.get_logs(page=page, since=self.last_api_call)
 
             if not status:
@@ -153,7 +176,7 @@ class ReachFiveParser(ApiParser):
             total = tmp_logs['total']
             logs = tmp_logs['items']
 
-            self.write_to_file([json.dumps(l) for l in tmp_logs['items']])
+            self.write_to_file([json.dumps(l) for l in logs])
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
@@ -174,4 +197,13 @@ class ReachFiveParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 # No need to make_aware, date already contains timezone
                 self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
+
+            if cpt % 10000 == 0:
+                # Sleep 10 sec every 10 000 fetched logs to avoid too many requests
+                time.sleep(10)
+
+            if page == 11:  # Get max 10 000 logs to avoid API error
+                self.last_api_call = self.frontend.last_api_call
+                page = 1
+
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

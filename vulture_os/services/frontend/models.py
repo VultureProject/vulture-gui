@@ -678,6 +678,16 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("ReachFive client secret for authentication")
     )
+    reachfive_access_token = models.TextField(
+        verbose_name=_("ReachFive access token"),
+        help_text=_("ReachFive access token"),
+        default="",
+    )
+    reachfive_expire_at = models.DateTimeField(
+        verbose_name=_("ReachFive access token expire at"),
+        help_text=_("ReachFive access token expire at"),
+        default=timezone.now,
+    )
     # MongoDB attributes
     mongodb_api_user = models.TextField(
         help_text=_("MongoDB API user"),
