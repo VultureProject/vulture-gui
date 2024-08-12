@@ -105,7 +105,7 @@ class CybereasonParser(ApiParser):
         except Exception as err:
             raise CybereasonAPIError(err)
 
-    def execute_query(self, method, url, query=None, header=HEADERS, data=None, sleepretry=10, timeout=10):
+    def execute_query(self, method, url, query=None, header=HEADERS, data=None, sleepretry=15, timeout=10):
         self._connect()
 
         response = None
@@ -128,16 +128,19 @@ class CybereasonParser(ApiParser):
                 msg = f"ReadTimeout, waiting {sleepretry}s before retrying"
                 logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleepretry)
+                self.update_lock()
                 continue
             except requests.exceptions.ConnectionError:
                 msg = f"ConnectionError, waiting {sleepretry}s before retrying"
                 logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleepretry)
+                self.update_lock()
                 continue
             if response.status_code != 200:
                 msg = f"Status Code {response.status_code}, waiting {sleepretry}s before retrying"
                 logger.info(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
                 time.sleep(sleepretry)
+                self.update_lock()
                 continue
             break  # no error we break from the loop
 
@@ -153,7 +156,7 @@ class CybereasonParser(ApiParser):
 
     def test(self):
         try:
-            # Get logs from last 2 days
+            # Get logs from last day
             to = timezone.now()
             since = (to - timedelta(hours=24))
 
@@ -184,7 +187,7 @@ class CybereasonParser(ApiParser):
                     "to": int(to.timestamp()) * 1000
                 },
             "pagination": {
-                "pageSize": 50,
+                "pageSize": 1000,
                 "offset": 0
             },
             "federation": {
@@ -212,15 +215,22 @@ class CybereasonParser(ApiParser):
                 break
         return logs
 
-    def get_malwares(self, since):
+    def get_malwares(self, since, to):
         malware_uri = f"{self.host}/{self.MALWARE_URI}"
 
         query = {
-            'filters': [{
-                'fieldName': 'timestamp',
-                'operator': 'GreaterThan',
-                'values': [int(since.timestamp()) * 1000]
-            }],
+            'filters': [
+                {
+                    'fieldName': 'timestamp',
+                    'operator': 'GreaterThan',
+                    'values': [int(since.timestamp()) * 1000]
+                },
+                {
+                    'fieldName': 'timestamp',
+                    'operator': 'LessOrEqualsTo',
+                    'values': [int(to.timestamp()) * 1000]
+                }
+            ],
             'limit': 1000,
             'offset': 0,
             'search': '',
@@ -246,7 +256,7 @@ class CybereasonParser(ApiParser):
             if kind == "malops":
                 logs = self.get_malops(since, to)
             elif kind == "malwares":
-                logs = self.get_malwares(since)
+                logs = self.get_malwares(since, to)
             else:
                 raise ValueError(f"Unknown kind {kind}")
         except Exception as err:
@@ -517,28 +527,20 @@ class CybereasonParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-        # Get last api call or 30 days ago
-        since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
-        # 24h max per request
-        to = min(timezone.now(), since + timedelta(hours=24))
-
-        # delay the times of 5 minutes, to let the times at the API to have all logs
-        to = to - timedelta(minutes=5)
-
-        msg = f"Parser starting from {since} to {to}"
-        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
         for kind in ["malops", "malwares"]:
-            logs = self.get_logs(kind, since, to)
+            # Get last api call or 30 days ago
+            since = self.last_collected_timestamps.get(kind, self.frontend.last_api_call) or (timezone.now() - timedelta(days=30))
+            # 24h max per request + Don't get the last 5 minutes of logs, as some can appear delayed by the API
+            to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=24))
 
+            msg = f"{kind}'s parser starting from {since} to {to}"
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
+            logs = self.get_logs(kind, since, to)
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
 
-            enriched_logs = [
-                self.format_log(kind, self.add_enrichment(kind, log))
-                for log in logs
-            ]
-
+            enriched_logs = [self.format_log(kind, self.add_enrichment(kind, log)) for log in logs]
             # Enriching may take some while, so refresh token in Redis
             self.update_lock()
 
@@ -546,8 +548,16 @@ class CybereasonParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-        # update last_api_call only if logs are retrieved
-        self.frontend.last_api_call = to
+            if len(logs) >= 10000: # ELS don't supports sending more than 10k results by query -- maybe this never happens due to current implementation of pagination, by security I prefer adding this check
+                msg = f"{kind}: retrieved {len(logs)} lines >= 10k logs, shortening time range to avoid API error"
+                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                to -= (to - since)/2
+                logs = list()
+                continue
+
+            if logs or (to - since) >= timedelta(hours=23, minutes=55): # If logs or no logs during last 24h we want to update the timestamp
+                self.last_collected_timestamps[kind] = to
+                self.frontend.save()
 
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

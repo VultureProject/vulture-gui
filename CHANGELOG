@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [NETWORK] [GUI] Prevent missing interfaces in selection when refreshing interfaces on a cluster
 - [GUI] Wrong date formatting in the task list
 - [GUI] [PF] Correctly validate and return errors when changing custom PF rules
+- [API_PARSER] [CYBEREASON] Various hotfixes causing doublon and/or missing logs
 
 
 ## [2.15.8] - 2024-07-24
