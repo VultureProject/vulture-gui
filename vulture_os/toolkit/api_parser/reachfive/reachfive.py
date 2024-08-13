@@ -69,7 +69,7 @@ class ReachFiveParser(ApiParser):
 
     @property
     def auth_token(self):
-        if (not self.reachfive_access_token or not self.reachfive_expire_at) or (self.reachfive_expire_at - timedelta(seconds=10)) < timezone.now():
+        if (not self.reachfive_access_token or not self.reachfive_expire_at) or (self.reachfive_expire_at - timedelta(minutes=3)) < timezone.now():
             # Retrieve OAuth token (https://developer.reachfive.com/api/management.html#tag/OAuth)
             oauth2_url = f"https://{self.reachfive_host}/oauth/token"
             response = requests.post(
@@ -133,7 +133,7 @@ class ReachFiveParser(ApiParser):
         params = {'sort': "date:asc", 'page': page, 'count': count}
 
         if since:
-            params['filter'] = 'date > "{}"'.format(timezone.make_naive(since).isoformat(timespec="milliseconds"))
+            params['filter'] = f'date > "{since}"'
 
         msg = f"Get user events request params: {params}"
         logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
@@ -161,11 +161,11 @@ class ReachFiveParser(ApiParser):
         cpt = 0
         page = 1
         total = 1
-        last_datetime = self.frontend.last_api_call.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+        since = self.frontend.last_api_call.isoformat(timespec="milliseconds")
 
         while cpt < total:
 
-            status, tmp_logs = self.get_logs(page=page, since=self.last_api_call)
+            status, tmp_logs = self.get_logs(page=page, since=since)
 
             if not status:
                 raise ReachFiveAPIError(tmp_logs)
@@ -184,11 +184,11 @@ class ReachFiveParser(ApiParser):
             cpt += len(logs)
 
             if len(logs) > 0:
+
                 # Get latest date returned from API (logs are often not properly ordered, even with a 'sort'ed query...)
                 assert logs[0]['date'], "logs don't have a 'date' field!"
                 assert logs[0]['date'][-1] == "Z", f"unexpected date format '{logs[0]['date']}', are they UTC?"
-                last_datetime = [last_datetime]
-                last_datetime.extend([x['date'] for x in logs])
+                last_datetime = [x['date'] for x in logs]
                 # ISO8601 timestamps are sortable as strings
                 last_datetime = max(last_datetime)
                 msg = f"most recent log is from {last_datetime}"
@@ -196,14 +196,15 @@ class ReachFiveParser(ApiParser):
 
                 # Replace "Z" by "+00:00" for datetime parsing
                 # No need to make_aware, date already contains timezone
-                self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
+                self.frontend.last_api_call = datetime.fromisoformat(last_datetime)
 
             if cpt % 10000 == 0:
                 # Sleep 10 sec every 10 000 fetched logs to avoid too many requests
                 time.sleep(10)
 
             if page == 11:  # Get max 10 000 logs to avoid API error
-                self.last_api_call = self.frontend.last_api_call
+                since = self.frontend.last_api_call.isoformat(timespec="milliseconds")
                 page = 1
+                cpt = 0
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
