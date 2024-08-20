@@ -1,0 +1,36 @@
+name: Ruff
+
+on:
+  pull_request:
+    paths:
+      - '**.py'
+
+env:
+  PYTHON_VERSION: 3.11
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get all Python changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          # Avoid using single or double quotes for multiline patterns
+          files: |
+            **.py
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+      - name: Ruff Check
+        # You may pin to the exact commit or the version.
+        # uses: jpetrucciani/ruff-check@95ff5ea372c5099efb7a38151f8aef8fee435c47
+        uses: jpetrucciani/ruff-check@0.5.5
+        with:
+          path: ${{ steps.changed-files.outputs.all_changed_files }}
