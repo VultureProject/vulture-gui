@@ -105,19 +105,17 @@ def tenants_edit(request, object_id=None, api=False, update=False):
 
 
     if request.method in ("POST", "PUT", "PATCH") and form.is_valid():
-        name_changed = "name" in form.changed_data
-
         # Update the api key
         tenant = form.save(commit=False)
         tenant.save()
 
         # If name has changed, and if it is used in Global config
-        if name_changed and tenant.config_set.count() > 0:
+        if form.has_changed() and tenant.config_set.count() > 0:
             # Reload pstats configuration of Cluster
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
 
         # If name changed
-        if name_changed:
+        if form.has_changed():
             # Reload Rsyslog conf of each frontends using this tenant
             # This function also restarts Rsyslog at the end
             tenant.reload_frontends_conf()

@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] [PF] Correctly validate and return errors when changing custom PF rules
 - [CLUSTER] [PF] Correctly reload configurations when changing SSH/GUI access rules
 - [FRONTEND] [PF] Correctly add NAT rules for Forwarders on FILE/REDIS/KAFKA-type Frontends
+- [TENANT] [CONF] Ensure related Frontend configurations are reloaded when a Tenant's parameter is changed
 
 
 ## [2.15.10] - 2024-08-09
