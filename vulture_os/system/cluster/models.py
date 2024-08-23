@@ -391,25 +391,31 @@ class Node(models.Model):
         for a in addresses:
             listener_ids.extend([l.id for l in a.listener_set.filter(frontend__enabled=True)])
 
+        query_filter = Q(enabled=True) & (
+            Q(frontend_set__listener__in=listener_ids) |
+            Q(frontend_set__node=self) |
+            Q(frontend_set__node=None)
+            )
+
         logfwds = list()
         """ Retrieve LogForwarder used by the frontend using listeners """
         # Log Forwarder RELP
-        logfwds.extend(list(LogOMRELP.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMRELP.objects.filter(query_filter)))
 
         # Log Forwarder REDIS
-        logfwds.extend(list(LogOMHIREDIS.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMHIREDIS.objects.filter(query_filter)))
 
         # Log Forwarder Syslog
-        logfwds.extend(list(LogOMFWD.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMFWD.objects.filter(query_filter)))
 
         # Log Forwarder ElasticSearch
-        logfwds.extend(list(LogOMElasticSearch.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMElasticSearch.objects.filter(query_filter)))
 
         # Log Forwarder MongoDB
-        logfwds.extend(list(LogOMMongoDB.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMMongoDB.objects.filter(query_filter)))
 
         # Log Forwarder Kafka
-        logfwds.extend(list(LogOMKAFKA.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMKAFKA.objects.filter(query_filter)))
 
         """Second, retrieve Log Forwarders directly associated with the node and not a listener eg. KAFKA and REDIS"""
         # Test self.pk to prevent M2M errors when object isn't saved in DB
