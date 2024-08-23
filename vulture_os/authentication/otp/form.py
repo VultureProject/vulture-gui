@@ -25,15 +25,13 @@ __doc__ = 'OTPRepository dedicated form class'
 # Django system imports
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.forms import CheckboxInput, ModelForm, NumberInput, PasswordInput, Select, TextInput
+from django.forms import ModelForm, NumberInput, Select, TextInput
 # Django project imports
 from authentication.otp.models import OTPRepository, OTP_TYPE, OTP_PHONE_SERVICE, OTP_MAIL_SERVICE
 
 # Extern modules imports
-from re import match as re_match
 
 # Required exceptions imports
-from django.forms import ValidationError
 
 # Logger configuration imports
 import logging

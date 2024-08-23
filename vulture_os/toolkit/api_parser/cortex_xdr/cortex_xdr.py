@@ -171,7 +171,7 @@ class CortexXDRParser(ApiParser):
                     # add 1 (ms) to timestamp to avoid getting last alert again
                     try:
                         setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][KIND_TIME_FIELDS[kind]]+1)/1000, tz=timezone.utc))
-                    except Exception as err:
+                    except Exception:
                         msg = f"Could not locate key '{KIND_TIME_FIELDS[kind]}' from following log: {logs[-1]}"
                         logger.error(f"[{__parser__}]:execute: {msg}",
                                      extra={'frontend': str(self.frontend)})

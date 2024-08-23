@@ -27,7 +27,7 @@ import ast
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (BooleanField, CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
-                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
+                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField)
 from django.utils.translation import gettext_lazy as _
 
 # Django project imports
@@ -41,7 +41,7 @@ from services.frontend.models import (Frontend, FrontendReputationContext, Liste
                                       FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
 
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
-from system.cluster.models import NetworkInterfaceCard, NetworkAddress
+from system.cluster.models import NetworkAddress
 from system.error_templates.models import ErrorTemplate
 from toolkit.api_parser.utils import get_available_api_parser
 from toolkit.network.network import parse_proxy_url

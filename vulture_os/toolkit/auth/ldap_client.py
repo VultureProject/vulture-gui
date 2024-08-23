@@ -292,7 +292,7 @@ class LDAPClient(BaseAuth):
                                                      serverctrls=[page_control])
             try:
                 rtype, rdata, rmsgid, serverctrls = self._get_connection().result3(msgid)
-            except ldap.SIZELIMIT_EXCEEDED as e:
+            except ldap.SIZELIMIT_EXCEEDED:
                 raise LDAPSizeLimitExceeded(len(result), result)
             result.extend(rdata)
             controls = [control for control in serverctrls
@@ -763,7 +763,7 @@ class LDAPClient(BaseAuth):
             response = self.authenticate(username, password)
             response['status'] = True
 
-        except UserNotFound as e:
+        except UserNotFound:
             response['status'] = False
             response['reason'] = "User doesn't exist"
         except ldap.INVALID_CREDENTIALS as e:
@@ -875,7 +875,7 @@ class LDAPClient(BaseAuth):
             try:
                 self._get_connection().modify_s(group_dn, attrs)
             except ldap.TYPE_OR_VALUE_EXISTS:
-                logger.warning(f"LDAP::add_user: user already in group")
+                logger.warning("LDAP::add_user: user already in group")
                 pass
             except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_OBJECT):
                 # Group does not exist. Creating it

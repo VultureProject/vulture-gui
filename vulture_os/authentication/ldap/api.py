@@ -26,7 +26,6 @@ import logging
 from django.views import View
 from django.conf import settings
 from django.http import JsonResponse
-from authentication import ldap
 from gui.decorators.apicall import api_need_key
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -34,7 +33,6 @@ from authentication.ldap.models import LDAPRepository
 from django.utils.translation import gettext_lazy as _
 from authentication.ldap.views import ldap_edit
 from authentication.generic_delete import DeleteLDAPRepository
-from authentication.ldap import tools
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')

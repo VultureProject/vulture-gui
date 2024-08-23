@@ -204,7 +204,7 @@ class X509Certificate(models.Model):
         try:
             pki = X509Certificate.objects.get(is_vulture_ca=False, name=name)
             return {'cert': pki.cert, 'key': pki.key}
-        except Exception as e:
+        except Exception:
             pass
 
         # Call let's encrypt to issue a certificate.

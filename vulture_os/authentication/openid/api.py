@@ -32,7 +32,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import gettext_lazy as _
 from authentication.openid.views import edit as openid_edit
 from authentication.openid.models import OpenIDRepository
-from authentication.generic_delete import DeleteOpenIDRepository
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)

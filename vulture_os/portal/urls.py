@@ -24,7 +24,7 @@ __doc__ = 'Portal URLS'
 
 
 # Django system imports
-from django.urls import path, re_path
+from django.urls import re_path
 
 # Django project imports
 

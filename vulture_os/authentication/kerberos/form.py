@@ -24,15 +24,14 @@ __doc__ = 'KerberosRepository dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.forms import CheckboxInput, ModelForm, NumberInput, PasswordInput, Select, TextInput, FileInput
+from django.forms import ModelForm, TextInput, FileInput
 
 # Django project imports
 from authentication.kerberos.models import KerberosRepository
 from toolkit.auth.kerberos_client import test_keytab
 
 # Extern modules imports
-from base64 import b64encode, b64decode
+from base64 import b64encode
 
 # Required exceptions imports
 from django.forms import ValidationError

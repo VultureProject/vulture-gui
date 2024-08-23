@@ -28,7 +28,7 @@ __doc__ = 'Darwin Policy APIs'
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
-from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden)
+from django.http import (JsonResponse)
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.utils.decorators import method_decorator
@@ -37,9 +37,8 @@ from django.utils.decorators import method_decorator
 from gui.decorators.apicall import api_need_key
 from django.views.decorators.csrf import csrf_exempt
 from darwin.policy.models import DarwinPolicy, DarwinFilter, FilterPolicy, DarwinBuffering, VAST_MODELS_PATH, VAML_MODELS_PATH
-from darwin.policy.views import policy_edit, COMMAND_LIST
+from darwin.policy.views import COMMAND_LIST
 from system.cluster.models import Cluster, Node
-from services.frontend.models import Frontend
 from toolkit.api.responses import build_response
 
 
@@ -47,7 +46,6 @@ from toolkit.api.responses import build_response
 from glob import glob as file_glob
 import json
 from os import path as os_path
-from sys import exc_info
 
 # Logger configuration imports
 import logging

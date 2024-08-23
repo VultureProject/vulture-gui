@@ -32,7 +32,6 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 # Django project imports
-from services.frontend.models import Frontend, Listener
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist

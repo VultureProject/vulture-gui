@@ -30,9 +30,6 @@ from django.conf import settings
 from services.service import Service
 from services.frontend.models import Frontend
 from services.filebeat.models import FilebeatSettings
-from system.cluster.models import Cluster
-from system.config.models import write_conf
-from toolkit.mongodb.mongo_base import MongoBase
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -41,8 +38,6 @@ from subprocess import CalledProcessError
 from system.exceptions import VultureSystemError
 
 # Extern modules imports
-from jinja2 import Environment, FileSystemLoader
-from re import search as re_search
 from subprocess import check_output, PIPE
 
 # Logger configuration imports

@@ -24,7 +24,6 @@ __doc__ = 'OpenID Repository model'
 
 # Django system imports
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from django.utils import timezone
@@ -304,7 +303,7 @@ class OpenIDRepository(BaseRepository):
         elif self.otp_type == "totp":
             return TOTPClient(self)
         else:
-            raise NotImplemented("OTP client type not implemented yet")
+            raise NotImplementedError("OTP client type not implemented yet")
 
     @staticmethod
     def retrieve_config(provider_url, use_proxy=True, verify_certificate=True):

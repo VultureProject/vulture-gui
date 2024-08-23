@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'LogRotate dedicated urls entries'
 
 # Django system imports
-from django.urls import path, re_path
+from django.urls import re_path
 
 # Django project imports
 from services.logrotate import views

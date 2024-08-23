@@ -25,16 +25,14 @@ __doc__ = 'RadiusRepository dedicated form class'
 # Django system imports
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.forms import CheckboxInput, ModelForm, NumberInput, PasswordInput, Select, TextInput
+from django.forms import ModelForm, NumberInput, TextInput
 
 # Django project imports
 from authentication.radius.models import RadiusRepository
 
 # Extern modules imports
-from re import match as re_match
 
 # Required exceptions imports
-from django.forms import ValidationError
 
 # Logger configuration imports
 import logging

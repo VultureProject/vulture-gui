@@ -130,7 +130,7 @@ class DefenderATPParser(ApiParser):
             raise DefenderATPAPIError(msg)
 
         content = response.json()
-        msg = f"Content retrieved"
+        msg = "Content retrieved"
         logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
         return True, content
 

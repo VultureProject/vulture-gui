@@ -28,7 +28,6 @@ from django.contrib.auth import models as auth_models
 from djongo import models
 
 # Django project imports
-from authentication.ldap.models import LDAPRepository
 
 # Required exceptions imports
 

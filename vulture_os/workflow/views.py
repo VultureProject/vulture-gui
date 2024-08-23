@@ -46,7 +46,6 @@ from applications.backend.models import Backend
 
 # Extern modules imports
 from bson import ObjectId
-from copy import deepcopy
 import validators
 import json
 

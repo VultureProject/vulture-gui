@@ -29,13 +29,12 @@ from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Node
 from system.pki.models import TLSProfile
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
-from services.exceptions import (ServiceConfigError, ServiceJinjaError, ServiceStatusError, ServiceStartError,
-                                 ServiceTestConfigError)
+from services.exceptions import (ServiceJinjaError)
 from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
@@ -157,7 +156,7 @@ class Openvpn(models.Model):
         params = ['/usr/local/etc/openvpn/openvpn_client.conf', conf['template_client'], OPENVPN_OWNER, "644"]
         try:
             self.node.api_request('system.config.models.write_conf', config=params)
-        except Exception as e:
+        except Exception:
             raise VultureSystemConfigError("on node '{}'.\nRequest failure.".format(self.node.name))
 
 

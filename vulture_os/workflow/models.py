@@ -50,7 +50,6 @@ from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, Templat
                                TemplateSyntaxError, UndefinedError)
 from services.exceptions import ServiceJinjaError
 from system.exceptions import VultureSystemConfigError
-import json
 
 # Logger configuration imports
 import logging

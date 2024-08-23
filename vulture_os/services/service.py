@@ -135,7 +135,7 @@ class Service:
                 raise ServiceStartError("vlt-os don't have permissions to do so, Check /usr/local/etc/sudoers.",
                                         self.service_name)
             # Si le service est deja demarre, ne pas raiser
-            if not "{} already running?".format(self.service_name) in stderr:
+            if "{} already running?".format(self.service_name) not in stderr:
                 raise ServiceStartError(stderr, self.service_name, traceback=" ")
         logger.info("Service {} started: {}".format(self.service_name, stdout or stderr))
         return stdout or stderr
@@ -192,7 +192,7 @@ class Service:
                 query['node__name'] = node_name
             status = Monitor.objects.filter(**query).order_by('-date').first() \
                             .services.filter(name=service_name2).first().status
-        except Exception as e:
+        except Exception:
             status = "UNKNOWN"
 
         return status, ""
@@ -292,7 +292,7 @@ class Service:
         except ServiceExit:
             raise
         except Exception as e:
-            logger.error("Unable to check if conf has changed for {}: ".format(self.service_name, str(e)))
+            logger.error("Unable to check if conf has changed for {}: {}".format(self.service_name, str(e)))
             #logger.exception(e)
             if "No such file" in str(e):
                 raise ServiceNoConfigError(str(e), self.service_name)

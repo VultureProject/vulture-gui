@@ -93,7 +93,7 @@ class BaseAuth(object):
                     return "pbkdf2_sha"+str(hash)+'$'+str(iter)+'$'+rdm_str+'$'+pwd
 
         else:
-            raise NotImplemented("Password hash algorithm not implemented, "
+            raise NotImplementedError("Password hash algorithm not implemented, "
                                  "algo: {}".format(hash_algo))
 
     def _check_password(self, plain_password, hashed_password):

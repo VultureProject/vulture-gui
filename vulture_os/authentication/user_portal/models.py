@@ -36,27 +36,21 @@ from authentication.base_repository import BaseRepository
 from authentication.otp.models import OTPRepository
 # Do NOT remove those unused imports !!! There are here to trigger internal django fonctionnality
 from authentication.ldap.models import LDAPRepository
-from authentication.kerberos.models import KerberosRepository
-from authentication.openid.models import OpenIDRepository
-from authentication.radius.models import RadiusRepository
 from authentication.user_scope.models import UserScope
 from services.frontend.models import Frontend
 from toolkit.http.utils import build_url, build_url_params
 from toolkit.system.hashes import random_sha256
 from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
-from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
-                          SelectMultiple, TextInput, Textarea)
 from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from system.cluster.models import Cluster
 
 # Extern modules imports
-from bson import ObjectId
 from jinja2 import Environment, FileSystemLoader
 
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
                                TemplateSyntaxError, UndefinedError)
-from services.exceptions import (ServiceJinjaError, ServiceStartError, ServiceTestConfigError, ServiceError)
+from services.exceptions import (ServiceJinjaError)
 from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports

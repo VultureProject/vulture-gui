@@ -27,7 +27,6 @@ __doc__ = 'Django views used to render authentication responses'
 
 # Django system imports
 from django.http                  import HttpResponse, HttpResponseRedirect, HttpResponseServerError
-from django.shortcuts             import render
 from django.template              import RequestContext
 from django.views.decorators.gzip import gzip_page
 

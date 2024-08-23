@@ -34,7 +34,6 @@ from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from system.config.models import write_conf
 
 # Extern modules imports
-import base64
 
 # Required exceptions imports
 
@@ -317,13 +316,13 @@ class PortalTemplate(models.Model):
                         html = "{% autoescape off %}\n" + html + "\n" + "{% endautoescape %}"
 
                     f.write(html.encode("UTF-8"))
-            except Exception as e:
+            except Exception:
                 pass
 
         try:
             with open("/home/vlt-gui/vulture/portal/templates/portal_%s.css" % (str(self.id)), 'w') as f:
                 f.write(self.css.encode("UTF-8"))
-        except Exception as e:
+        except Exception:
             pass
 
         for message in ('html_error_403', 'html_error_404', 'html_error_405', 'html_error_406', 'html_error_500', 'html_error_501', 'html_error_502', 'html_error_503', 'html_error_504'):

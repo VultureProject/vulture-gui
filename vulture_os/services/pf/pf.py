@@ -26,7 +26,6 @@ __doc__ = 'PF service wrapper utils'
 from django.conf import settings
 
 # Django project imports
-from applications.reputation_ctx.models import DATABASES_PATH, DATABASES_OWNER, DATABASES_PERMS
 from system.cluster.models import Cluster
 from services.exceptions import ServiceTestConfigError
 from services.service import Service
@@ -40,7 +39,6 @@ from subprocess import CalledProcessError
 # Extern modules imports
 from hashlib import md5
 from subprocess import check_output, Popen, PIPE
-from os import path as os_path
 import re
 import subprocess
 
@@ -224,7 +222,7 @@ def _get_conf_lines_from_errors(config: list[str], errors: list[str]) -> list[tu
 
 
 def test_config(node_logger, config):
-    node_logger.info(f"PF::test_config: testing configuration")
+    node_logger.info("PF::test_config: testing configuration")
     node_logger.debug(f"PF::test_config: configuration is {config}")
     try:
         check_output(["/sbin/pfctl", "-n", "-f", "-"],

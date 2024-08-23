@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'System Utils Yara Toolkit'
 
 # Django project imports
-from darwin.inspection.models import InspectionPolicy, InspectionRule, PACKET_INSPECTION_TECHNO, DEFAULT_YARA_CATEGORIES
+from darwin.inspection.models import InspectionPolicy, InspectionRule, DEFAULT_YARA_CATEGORIES
 from django.core.exceptions import ObjectDoesNotExist
 from system.exceptions import VultureSystemConfigError
 

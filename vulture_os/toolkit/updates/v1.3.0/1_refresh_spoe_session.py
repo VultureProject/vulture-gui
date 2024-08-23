@@ -31,7 +31,6 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
 from services.frontend.models import Frontend
@@ -52,7 +51,7 @@ if __name__ == "__main__":
                 frontend.reload_conf()
             node.api_request("services.haproxy.haproxy.configure_node")
             print("Reload of session validation configuration asked.")
-        except Exception as e:
+        except Exception:
             print("Failed to reload session validation configuration.")
             print("Please relaunch this script after solving the issue.")
 

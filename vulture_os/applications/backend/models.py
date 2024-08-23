@@ -31,9 +31,9 @@ from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
-from services.haproxy.haproxy import hot_action_frontend, hot_action_backend, test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS, TEST_CONF_PATH
+from services.haproxy.haproxy import hot_action_backend, test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from toolkit.http.headers import Header
-from system.cluster.models import Cluster, NetworkAddress, Node
+from system.cluster.models import Cluster
 from system.pki.models import TLSProfile
 from toolkit.network.network import JAIL_ADDRESSES
 
@@ -43,8 +43,7 @@ from jinja2 import Environment, FileSystemLoader
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
                                TemplateSyntaxError, UndefinedError)
-from services.exceptions import (ServiceConfigError, ServiceJinjaError, ServiceStatusError, ServiceStartError,
-                                 ServiceTestConfigError, ServiceError)
+from services.exceptions import (ServiceJinjaError, ServiceError)
 from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports

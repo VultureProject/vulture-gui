@@ -31,7 +31,6 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
-from services.frontend.models import SENTINEL_ONE_ACCOUNT_TYPE_CHOICES
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')

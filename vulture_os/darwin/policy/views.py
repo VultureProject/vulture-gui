@@ -35,7 +35,6 @@ from django.shortcuts import render
 
 # Required exceptions imports
 from darwin.policy.models import DarwinFilter
-from django.core.exceptions import ObjectDoesNotExist
 
 # Extern modules imports
 from json import dumps as json_dumps

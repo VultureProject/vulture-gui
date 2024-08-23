@@ -27,10 +27,8 @@ __doc__ = 'TOTPProfiles view'
 from django.conf import settings
 
 # Django project imports
-from gui.forms.form_utils import DivErrorList
 
 # Required exceptions imports
-from django.core.exceptions import ObjectDoesNotExist
 
 # Extern modules imports
 

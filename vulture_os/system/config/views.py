@@ -43,7 +43,6 @@ from system.exceptions import VultureSystemConfigError
 # Extern modules imports
 
 # Required exceptions imports
-from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
 import logging
@@ -126,7 +125,7 @@ def config_edit(request, api=False, update=False):
             for node in Node.objects.all():
                 try:
                     node.api_request('system.config.models.write_conf', config=params)
-                except Exception as e:
+                except Exception:
                     raise VultureSystemConfigError("on node '{}'.\nRequest failure.".format(node.name))
 
         """ If customer name has changed, rewrite rsyslog templates """

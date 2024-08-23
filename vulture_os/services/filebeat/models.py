@@ -25,12 +25,11 @@ __doc__ = 'Filebeat settings model'
 # Django system imports
 from django.conf import settings
 from djongo import models
-from django.db.models import Q
 
 # Django project imports
 from services.frontend.models import Frontend
 from system.config.models import Config
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Node
 from toolkit.network.network import get_hostname, JAIL_ADDRESSES
 
 # Required exceptions imports

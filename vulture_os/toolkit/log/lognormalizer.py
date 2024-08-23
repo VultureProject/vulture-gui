@@ -35,7 +35,7 @@ from subprocess import CalledProcessError
 # Extern modules imports
 import io
 from json import loads as json_loads
-from subprocess import check_output, PIPE
+from subprocess import check_output
 
 # Logger configuration imports
 import logging
@@ -56,10 +56,10 @@ def test_lognormalizer(filename, rulebase_content, to_parse):
     try:
         with io.open(test_filename, mode='w', encoding='utf-8') as fd:
             fd.write(str(rulebase_content).replace("\r\n", "\n"))
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         raise ServiceTestConfigError("Directory '{}' does not seem to exist, "
                                      "cannot write file {}".format(TEST_CONF_PATH, test_filename), "liblognorm")
-    except PermissionError as e:
+    except PermissionError:
         raise ServiceTestConfigError("Incorrect permissions on '{}' directory, "
                                      "cannot write file {}".format(test_filename, TEST_CONF_PATH), "liblognorm")
     except Exception as e:

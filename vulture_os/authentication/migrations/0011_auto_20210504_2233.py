@@ -2,7 +2,6 @@
 
 import django
 import authentication.user_scope.models
-import bson.objectid
 from django.db import migrations, models
 import djongo.models.fields
 

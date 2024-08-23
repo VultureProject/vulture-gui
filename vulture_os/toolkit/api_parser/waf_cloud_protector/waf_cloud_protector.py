@@ -248,7 +248,7 @@ class WAFCloudProtectorParser(ApiParser):
                             result[field][under_field_values[0]] = under_field_values[0]
 
             return json_dumps(result)
-        except Exception as e:
+        except Exception:
             msg = f"Failed to parse line: {r}"
             logger.error(f"[{__parser__}]:parse_line: {msg}", extra={'frontend': str(self.frontend)})
             raise WAFCloudProtectorAPIError(msg)

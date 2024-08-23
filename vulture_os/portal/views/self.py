@@ -108,7 +108,7 @@ def self(request, workflow_id=None, portal_id=None, action=None):
 
     # If assertionError : Forbidden
     except AssertionError as e:
-        logger.error("SELF::self: AssertionError while trying to create Authentication : ".format(e))
+        logger.error("SELF::self: AssertionError while trying to create Authentication : {}".format(str(e)))
         return HttpResponseForbidden()
 
     except ObjectDoesNotExist:
