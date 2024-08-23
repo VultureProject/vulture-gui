@@ -44,7 +44,7 @@ import ipaddress
 from iptools.ipv4 import netmask2prefix
 import time
 
-from applications.logfwd.models import LogOMHIREDIS
+from applications.logfwd.models import LogOM, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
 from system.pki.models import X509Certificate
 from services.exceptions import ServiceExit
 
@@ -379,8 +379,6 @@ class Node(models.Model):
     @property
     def get_forwarders_enabled(self):
         """ Return all tuples (family, proto, ip, port) for each LogForwarders """
-        from applications.logfwd.models import LogOM, LogOMRELP, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
-        # !!! REQUIRED BY listener_set !
         output_ips = set()
         """ Retrieve LogForwarders used in enabled Frontends """
         """ First, retrieve LogForwarders that bind to the address of the node """
