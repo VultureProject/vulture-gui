@@ -197,7 +197,7 @@ def hot_action_frontend(frontend_name, action):
     :return:
     """
     error_msg = "Failed to {} frontend '{}'".format(action, frontend_name)
-    if action not in ["enable", "disable"]:
+    if action not in ["enable", "disable", "shutdown"]:
         raise ServiceError(error_msg, "haproxy", "do something not permitted",
                            traceback="Action not allowed. Allowed actions are 'enable' or 'disable'")
 
@@ -215,14 +215,14 @@ def hot_action_frontend(frontend_name, action):
         if "is already enabled" in cmd_res:
             return cmd_res
 
-        logger.info("Error while trying to enable frontend: {}".format(cmd_res))
+        logger.info(f"Error while trying to {action} frontend: {cmd_res}")
 
         if "No such frontend" in cmd_res:
-            raise ServiceError(error_msg, "haproxy", "{} frontend".format(frontend_name),
+            raise ServiceError(error_msg, "haproxy", f"{action} frontend '{frontend_name}' in",
                                traceback="Frontend '{}' not found in configuration. \n"
                                           "Maybe it is disable or file not written on disk.".format(frontend_name))
 
-        raise ServiceError(error_msg, "haproxy", "{} frontend".format(frontend_name), traceback=cmd_res)
+        raise ServiceError(error_msg, "haproxy", f"{action} frontend '{frontend_name}' in", traceback=cmd_res)
 
     except CalledProcessError as e:
         stdout = e.stdout.decode('utf8')
@@ -236,19 +236,19 @@ def hot_action_frontend(frontend_name, action):
                                          "Make sure vlt-os is in vlt-web group and this socket has group vlt-web.".format(MANAGEMENT_SOCKET))
         else:
             logger.error("The haproxy enable command failed with the following results: {}".format(stderr or stdout))
-        raise ServiceError(error_msg, "haproxy", "{} frontend".format(frontend_name), traceback=stderr or stdout)
+        raise ServiceError(error_msg, "haproxy", f"{action} frontend '{frontend_name}' in", traceback=stderr or stdout)
 
 
 def host_start_frontend(node_logger, frontend_name):
     node_logger.debug("Try to enable frontend '{}'".format(frontend_name))
-    res = hot_action_frontend(frontend_name, "enable")
+    res = reload_service(node_logger)
     node_logger.info("Frontend '{}' enabled : {}".format(frontend_name, res))
     return res
 
 
 def host_stop_frontend(node_logger, frontend_name):
     node_logger.debug("Try to disable frontend '{}'".format(frontend_name))
-    res = hot_action_frontend(frontend_name, "disable")
+    res = hot_action_frontend(frontend_name, "shutdown")
     node_logger.info("Frontend '{}' disabled : {}".format(frontend_name, res))
     return res
 
