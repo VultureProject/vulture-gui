@@ -98,7 +98,7 @@ def api_clients_parser():
 
     processes = []
     for frontend in api_clients_parser:
-        if node_selected(current_node, frontend) and frontend.status[current_node.name] == "OPEN":
+        if node_selected(current_node, frontend):
             p = Process(target=execute_parser, name=frontend.name, args=(frontend.to_dict(),))
             p.start()
             processes.append(p)
