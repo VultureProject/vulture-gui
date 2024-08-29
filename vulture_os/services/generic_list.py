@@ -36,6 +36,7 @@ from services.frontend.models import Frontend
 from services.strongswan.models import Strongswan
 from services.openvpn.models import Openvpn
 # Do NOT remove this import => needed by django to see model exists
+from services.filebeat.models import FilebeatSettings
 
 # Extern modules imports
 from json import loads as json_loads
