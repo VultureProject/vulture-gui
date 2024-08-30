@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] [PF] Correctly add NAT rules for Forwarders on FILE/REDIS/KAFKA-type Frontends
 - [TENANT] [CONF] Ensure related Frontend configurations are reloaded when a Tenant's parameter is changed
 - [GUI] [FRONTEND] Remove too strict validation for log_condition field
+- [API_PARSER] [CYBEREASON] Update timestamp when no logs received during last 24h
 
 
 ## [2.15.10] - 2024-08-09

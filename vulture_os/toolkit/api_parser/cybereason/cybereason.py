@@ -23,13 +23,15 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Cybereason API Parser toolkit'
 __parser__ = 'CYBEREASON'
 
+import sys
+
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
 
 import json
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 import requests
 import time
 
@@ -44,7 +46,7 @@ class CybereasonParser(ApiParser):
     LOGIN_URI = "login.html"
     ALERT_URI = "rest/mmng/v2/malops"
     ALERT_MALOP_COMMENT_URI = "rest/crimes/get-comments"
-    ALERT_DETAILS = "/rest/detection/details"
+    ALERT_DETAILS = "rest/detection/details"
     MALWARE_URI = "rest/malware/query"
     SEARCH_URI = "rest/visualsearch/query/simple"
     DESCRIPTION_URI = "rest/translate/features/all"
@@ -93,7 +95,7 @@ class CybereasonParser(ApiParser):
                     login_url,
                     data=auth,
                     proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                 )
                 response.raise_for_status()
                 if "app-login" in response.content.decode('utf-8'):
@@ -109,9 +111,9 @@ class CybereasonParser(ApiParser):
         self._connect()
 
         response = None
-        retry = 3
-        while retry > 0:
-            retry -= 1
+        retry = 0
+        while retry < 3:
+            retry += 1
 
             try:
                 response = self.session.request(
@@ -121,7 +123,7 @@ class CybereasonParser(ApiParser):
                     headers=header,
                     data=data,
                     proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl,
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl,
                     timeout=timeout
                 )
             except requests.exceptions.ReadTimeout:
@@ -212,7 +214,7 @@ class CybereasonParser(ApiParser):
                 break
         return logs
 
-    def get_malwares(self, since):
+    def get_malwares(self, since, to):
         malware_uri = f"{self.host}/{self.MALWARE_URI}"
 
         query = {
@@ -220,6 +222,10 @@ class CybereasonParser(ApiParser):
                 'fieldName': 'timestamp',
                 'operator': 'GreaterThan',
                 'values': [int(since.timestamp()) * 1000]
+            },{
+                'fieldName': 'timestamp',
+                'operator': 'LessOrEqualsTo',
+                'values': [int(to.timestamp()) * 1000]
             }],
             'limit': 1000,
             'offset': 0,
@@ -246,7 +252,7 @@ class CybereasonParser(ApiParser):
             if kind == "malops":
                 logs = self.get_malops(since, to)
             elif kind == "malwares":
-                logs = self.get_malwares(since)
+                logs = self.get_malwares(since, to)
             else:
                 raise ValueError(f"Unknown kind {kind}")
         except Exception as err:
@@ -260,7 +266,6 @@ class CybereasonParser(ApiParser):
         alert['url'] = self.host
 
         if kind == "malops":
-
             suspicions_process, suspicions_network = self.suspicions(alert['id'])
             suspicions = list(suspicions_process.get('data', {}).get('suspicionsMap', {}).keys())
             suspicions.extend(list(suspicions_network.get('data', {}).get('suspicionsMap', {}).keys()))
@@ -517,18 +522,19 @@ class CybereasonParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-        # Get last api call or 30 days ago
-        since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
-        # 24h max per request
-        to = min(timezone.now(), since + timedelta(hours=24))
-
-        # delay the times of 5 minutes, to let the times at the API to have all logs
-        to = to - timedelta(minutes=5)
-
-        msg = f"Parser starting from {since} to {to}"
-        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         for kind in ["malops", "malwares"]:
+            # Get last api call or 30 days ago
+            since = self.frontend.cybereason_timestamp.get(kind) or (timezone.now() - timedelta(days=30))
+            # 24h max per request
+            to = min(timezone.now(), since + timedelta(hours=24))
+
+            # delay the times of 5 minutes, to let the times at the API to have all logs
+            to = to - timedelta(minutes=5)
+
+            msg = f"Parser starting with {kind} from {since} to {to}"
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
             logs = self.get_logs(kind, since, to)
 
             # Downloading may take some while, so refresh token in Redis
@@ -546,8 +552,13 @@ class CybereasonParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-        # update last_api_call only if logs are retrieved
-        self.frontend.last_api_call = to
-
+            if len(logs) > 0:
+                # update last_api_call only if logs are retrieved
+                self.frontend.cybereason_timestamp[kind] = to
+            elif self.frontend.cybereason_timestamp.get(kind, timezone.now()) < timezone.now() - timedelta(hours=24):
+                # If no logs where retrieved during the last 24hours,
+                # move forward 1h to prevent stagnate ad vitam eternam
+                self.frontend.cybereason_timestamp[kind] += timedelta(hours=1)
+                self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
