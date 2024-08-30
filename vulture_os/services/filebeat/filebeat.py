@@ -49,7 +49,7 @@ JINJA_PATH = "/home/vlt-os/vulture_os/services/config/"
 FILEBEAT_PATH = "/usr/local/etc/filebeat"
 INPUTS_PATH = FILEBEAT_PATH + "/filebeat.yml"
 
-FILEBEAT_OWNER = "root:vlt-os"
+FILEBEAT_OWNER = "vlt-os:wheel"
 FILEBEAT_PERMS = "640"
 
 class FilebeatService(Service):
