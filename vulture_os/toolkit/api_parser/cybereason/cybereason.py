@@ -23,15 +23,13 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Cybereason API Parser toolkit'
 __parser__ = 'CYBEREASON'
 
-import sys
-
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
 from django.utils import timezone
 
 import json
 import logging
-from datetime import timedelta, datetime
+from datetime import timedelta
 import requests
 import time
 
@@ -525,7 +523,7 @@ class CybereasonParser(ApiParser):
 
         for kind in ["malops", "malwares"]:
             # Get last api call or 30 days ago
-            since = self.frontend.cybereason_timestamp.get(kind) or (timezone.now() - timedelta(days=30))
+            since = self.last_collected_timestamps.get(f"cybereason_{kind}") or (timezone.now() - timedelta(days=30))
             # 24h max per request
             to = min(timezone.now(), since + timedelta(hours=24))
 
@@ -554,11 +552,11 @@ class CybereasonParser(ApiParser):
 
             if len(logs) > 0:
                 # update last_api_call only if logs are retrieved
-                self.frontend.cybereason_timestamp[kind] = to
-            elif self.frontend.cybereason_timestamp.get(kind, timezone.now()) < timezone.now() - timedelta(hours=24):
+                self.last_collected_timestamps[f"cybereason_{kind}"] = to
+            elif since < timezone.now() - timedelta(hours=24):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
-                self.frontend.cybereason_timestamp[kind] += timedelta(hours=1)
+                self.last_collected_timestamps[f"cybereason_{kind}"] = since + timedelta(hours=1)
                 self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
