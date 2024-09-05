@@ -25,8 +25,7 @@ __doc__ = 'Cluster main models'
 
 from system.config.models import Config
 
-from toolkit.network.network import get_hostname, is_valid_ip4, is_valid_ip6, is_valid_hostname
-from toolkit.network.route import get_route_interface
+from toolkit.network.network import get_hostname
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
@@ -379,7 +378,7 @@ class Node(models.Model):
     @property
     def get_forwarders_enabled(self):
         """ Return all tuples (family, proto, ip, port) for each LogForwarders """
-        output_ips = set()
+        result = set()
         """ Retrieve LogForwarders used in enabled Frontends """
         """ First, retrieve LogForwarders that bind to the address of the node """
         addresses = self.addresses()
@@ -423,70 +422,35 @@ class Node(models.Model):
         for logfwd in logfwds:
             # Log Forwarder RELP
             if hasattr(logfwd, 'logomrelp'):
-                output_ips.add(("tcp", logfwd.target, logfwd.port))  # TCP
+                result.add(("tcp", logfwd.target, logfwd.port))  # TCP
 
             # Log Forwarder REDIS
             elif hasattr(logfwd, 'logomhiredis'):
-                output_ips.add(("tcp", logfwd.target, logfwd.port))  # TCP
+                result.add(("tcp", logfwd.target, logfwd.port))  # TCP
 
             # Log Forwarder Syslog
             elif hasattr(logfwd, 'logomfwd'):
-                output_ips.add((logfwd.protocol, logfwd.target, logfwd.port))  # proto
+                result.add((logfwd.protocol, logfwd.target, logfwd.port))  # proto
 
             # Log Forwarder ElasticSearch
             elif hasattr(logfwd, 'logomelasticsearch'):
                 """ For elasticsearch, we need to parse the servers """
                 for ip, port in re_findall("https?://([^:]+):(\d+)", logfwd.servers):
-                    output_ips.add(("tcp", ip, port))
+                    result.add(("tcp", ip, port))
 
             # Log Forwarder MongoDB
             elif hasattr(logfwd, 'logommongodb'):
                 """ For OMMongoDB - parse uristr """
                 for ip, port in parse_uristr(logfwd.uristr):
-                    output_ips.add(('tcp', ip, port))
+                    result.add(('tcp', ip, port))
 
             # Log Forwarder Kafka
             elif hasattr(logfwd, 'logomkafka'):
                 """ For kafka, we need to parse the brokers """
                 for ip, port in re_findall("([^:\"\']+):(\d+)", logfwd.broker):
-                    output_ips.add(("tcp", ip, port))
+                    result.add(("tcp", ip, port))
 
-        results = []
-        default_logom_nat_ipv4 = self.logom_outgoing_ip if is_valid_ip4(self.logom_outgoing_ip) else None
-        default_logom_nat_ipv6 = self.logom_outgoing_ip if is_valid_ip6(self.logom_outgoing_ip) else None
-
-        for proto, ip, port in output_ips:
-            route_ipv4 = None
-            route_ipv6 = None
-            logger.debug(f"Getting valid routes for ip/hostname {ip}")
-
-            if is_valid_ip4(ip):
-                route_ipv4 = default_logom_nat_ipv4
-                # Get the facultative IPv4 route for IP
-                success, reply = get_route_interface(destination=ip)
-                if success:
-                    route_ipv4 = reply
-
-            if is_valid_ip6(ip):
-                route_ipv6 = default_logom_nat_ipv6
-                # Get the facultative IPv6 route for IP
-                success, reply = get_route_interface(destination=ip, ip6=True)
-                if success:
-                    route_ipv6 = reply
-
-            # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
-            if is_valid_hostname(ip):
-                success, reply = get_route_interface(ip)
-                if success:
-                    route_ipv4 = reply
-                success, reply = get_route_interface(ip, ip6=True)
-                if success:
-                    route_ipv6 = reply
-
-            results.append((proto, ip, port, route_ipv4, route_ipv6))
-            logger.debug({results[-1]})
-
-        return results
+        return list(result)
 
     @property
     def get_backends_enabled(self):

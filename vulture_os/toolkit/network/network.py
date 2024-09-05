@@ -25,7 +25,6 @@ __doc__ = 'System Utils Network Toolkit'
 
 from toolkit.system.rc import get_rc_config, set_rc_config, remove_rc_config
 
-from ipaddress import IPv4Address, IPv6Address, AddressValueError
 from iptools.ipv4 import netmask2prefix
 from ast import literal_eval
 import subprocess
@@ -64,37 +63,6 @@ JAIL_ADDRESSES = {
         'inet6': "fd00::207",
     },
 }
-
-
-def is_valid_ip4(ip: str) -> bool:
-    try:
-        IPv4Address(ip)
-        return True
-    except AddressValueError:
-        return False
-
-def is_valid_ip6(ip: str) -> bool:
-    try:
-        IPv6Address(ip)
-        return True
-    except AddressValueError:
-        return False
-
-def is_valid_ip(ip: str) -> bool:
-    return is_valid_ip4(ip) or is_valid_ip6(ip)
-
-def is_valid_hostname(hostname: str) -> bool:
-    # Solution taken from this SO answer: https://stackoverflow.com/a/33214423
-    if hostname[-1] == ".":
-        hostname = hostname[:-1]
-    if len(hostname) > 253:
-        return False
-    parts = hostname.split(".")
-    # TLD can't be numeric-only
-    if re.match(r"[0-9]+$", parts[-1]):
-        return False
-    allowed = re.compile(r"(?!-)[a-z0-9-]{1,63}(?<!-)$", re.IGNORECASE)
-    return all(allowed.match(part) for part in parts)
 
 
 def get_hostname():
