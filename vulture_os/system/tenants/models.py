@@ -25,6 +25,7 @@ __doc__ = 'Perimeter Configuration main models'
 from django.forms.models import model_to_dict
 from djongo import models
 from applications.reputation_ctx.models import ReputationContext
+from django.utils.translation import gettext_lazy as _
 
 # Extern modules imports
 

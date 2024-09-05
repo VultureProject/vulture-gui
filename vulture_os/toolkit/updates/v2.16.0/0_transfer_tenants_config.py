@@ -31,11 +31,10 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
-from system.cluster.models import Cluster
-from system.tenants.models import Tenants
+from system.cluster.models import Cluster  # noqa: E402
+from system.tenants.models import Tenants  # noqa: E402
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
