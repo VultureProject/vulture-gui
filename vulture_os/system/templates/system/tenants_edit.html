@@ -46,6 +46,39 @@
                           </div>
                         </div>
                       </div>
+                      <div class="row">
+                        <div class="form-group col-md-12">
+                          <label class="col-sm-4 control-label">{{form.additional_config.label}}</label>
+                          <div class="col-sm-5">
+                            <table id="additional_config_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable collapse">
+                              <thead>
+                                <tr><th class='col-md-1' style='visibility:hidden;'></th>
+                                  <th>{% translate "Key" %}</th>
+                                  <th>{% translate "Value" %}</th>
+                                  <th class='col-md-1'>{% translate "Delete" %}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {% for k,v in form.additional_config.initial.items %}
+                                <tr>
+                                  <td style='visibility:hidden;'></td>
+                                  <td><input type="text" name="additional_config_key" value="{{k}}" class="form-control"></td>
+                                  <td><input type="text" name="additional_config_value" value="{{v}}" class="form-control"></td>
+                                  <td style='text-align:center' class='btnDelete'><a><i style='color:grey' class='fas fa-trash-alt'></i></a></td>
+                                </tr>
+                                {% endfor %}
+                              </tbody>
+                            </table>
+                            {{form.additional_config}}
+                            {{form.additional_config.errors|safe}}
+                            <div class="row">
+                              <div class="col-sm-12">
+                                <button class="addlink addplus" id="add_additional_config" type="button">{% translate "Add an attribute" %}</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row -->
                     </div>
                   </div>
                 </div>
@@ -66,5 +99,54 @@
 {% block jquery_code %}
 
   $('.tageditor').tagEditor();
+
+  function refresh_additional_config_table() {
+    /* Function used to delete an object .btnDelete */
+    $('.btnDelete').on('click', function(e) {
+      $(this).parent().remove();
+      refresh_additional_config_table();
+    });
+
+    let numRows = $('#additional_config_table tbody tr').length;
+    if (numRows === 0) {
+      $('#additional_config_table').addClass('collapse');
+    } else {
+      $('#additional_config_table').removeClass('collapse');
+    }
+
+    let input_additional_config = document.getElementById('id_additional_config')
+    if (input_additional_config.attributes['data-original-title']) {
+      $(input_additional_config.previousElementSibling).tooltip({
+        title: input_additional_config.attributes['data-original-title'].value,
+        placement: "bottom"
+      });
+    }
+  }
+  refresh_additional_config_table();
+
+  var additional_config_form_tr = `<tr><td style='visibility:hidden;'></td>
+  <td><input type="text" name="additional_config_key" class="form-control"></td>
+  <td><input type="text" name="additional_config_value" class="form-control"></td>
+  <td style='text-align:center' class='btnDelete'><a><i style='color:grey' class='fas fa-trash-alt'></i></a></td></tr>`;
+
+  /* Add default config form to additional_config_table */
+  $('#add_additional_config').on("click", function(e) {
+    $('#additional_config_table').append(additional_config_form_tr);
+    refresh_additional_config_table();
+  });
+
+  $('#tenant_edit_form').submit(function(event) {
+    let additional_config = new Object();
+
+    $('#additional_config_table tbody tr').each(function(index, tr) {
+      let additional_config_key = tr.children[1].children[0].value;
+      let additional_config_value = tr.children[2].children[0].value;
+
+      if (additional_config_key !== "") {
+        additional_config[additional_config_key] = additional_config_value;
+      }
+    });
+    $('#id_additional_config').val(JSON.stringify(additional_config));
+  });
 
 {% endblock %}

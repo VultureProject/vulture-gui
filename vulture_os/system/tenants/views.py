@@ -22,17 +22,23 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Tenants View'
 
+# Django system imports
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponseForbidden
+from django.shortcuts import render
+from django.urls import reverse
 from django.utils.translation import gettext as _
+
+# Django project imports
 from gui.forms.form_utils import DivErrorList
 from system.tenants.form import TenantsForm
 from system.tenants.models import Tenants
 from system.cluster.models import Cluster
-from django.shortcuts import render
 from toolkit.api.responses import build_response
-from django.urls import reverse
 
+# Required exceptions import
+
+# Extern modules imports
 
 # Logger configuration imports
 import logging
@@ -99,19 +105,17 @@ def tenants_edit(request, object_id=None, api=False, update=False):
 
 
     if request.method in ("POST", "PUT", "PATCH") and form.is_valid():
-        name_changed = "name" in form.changed_data
-
         # Update the api key
         tenant = form.save(commit=False)
         tenant.save()
 
         # If name has changed, and if it is used in Global config
-        if name_changed and tenant.config_set.count() > 0:
+        if form.has_changed() and tenant.config_set.count() > 0:
             # Reload pstats configuration of Cluster
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
 
         # If name changed
-        if name_changed:
+        if form.has_changed():
             # Reload Rsyslog conf of each frontends using this tenant
             # This function also restarts Rsyslog at the end
             tenant.reload_frontends_conf()

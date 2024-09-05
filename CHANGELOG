@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] [REDIS] Support for queues, sets, publish and streams modes for log insertion
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
 - [LOGOM] Add the ability to define the spooling directory for DA queues
+- [TENANTS] New additional_config field
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 - [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] [PF] Correctly validate and return errors when changing custom PF rules
 - [CLUSTER] [PF] Correctly reload configurations when changing SSH/GUI access rules
 - [FRONTEND] [PF] Correctly add NAT rules for Forwarders on FILE/REDIS/KAFKA-type Frontends
+- [TENANT] [CONF] Ensure related Frontend configurations are reloaded when a Tenant's parameter is changed
 
 
 ## [2.15.10] - 2024-08-09
