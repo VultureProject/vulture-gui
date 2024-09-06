@@ -579,8 +579,6 @@ class FrontendForm(ModelForm):
         regex = "{{([^}]+)}}"
         log_condition = self.cleaned_data.get('log_condition', "").replace("\r\n", "\n")
         for line in log_condition.split('\n'):
-            if line.count('{') > 2:
-                raise ValidationError("There cannot be 2 actions on one line.")
             match = re_search(regex, line)
             if match:
                 try:
