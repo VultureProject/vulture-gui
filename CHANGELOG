@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.15.11] - 2024-08-14
 ### Fixed
 - [CLUSTER] [PF] Correctly reload configurations when changing SSH/GUI access rules
 
