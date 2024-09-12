@@ -553,10 +553,14 @@ class CybereasonParser(ApiParser):
             if len(logs) > 0:
                 # update last_api_call only if logs are retrieved
                 self.last_collected_timestamps[f"cybereason_{kind}"] = to
+
+            # If no logs where retrieved during the last 24hours
             elif since < timezone.now() - timedelta(hours=24):
-                # If no logs where retrieved during the last 24hours,
+
+                if since > timezone.now() - timedelta(hours=72):
+                    self.last_collected_timestamps[f"cybereason_{kind}"] = to
+
                 # move forward 1h to prevent stagnate ad vitam eternam
                 self.last_collected_timestamps[f"cybereason_{kind}"] = since + timedelta(hours=1)
-                self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
