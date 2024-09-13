@@ -163,7 +163,7 @@ class ReachFiveParser(ApiParser):
         total = 1
         since = self.frontend.last_api_call.isoformat(timespec="milliseconds")
 
-        while cpt < total:
+        while cpt < total and not self.evt_stop.is_set():
 
             status, tmp_logs = self.get_logs(page=page, since=since)
 
@@ -196,7 +196,7 @@ class ReachFiveParser(ApiParser):
 
                 # Replace "Z" by "+00:00" for datetime parsing
                 # No need to make_aware, date already contains timezone
-                self.frontend.last_api_call = datetime.fromisoformat(last_datetime)
+                self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
 
             if cpt % 10000 == 0:
                 # Sleep 10 sec every 10 000 fetched logs to avoid too many requests
