@@ -29,19 +29,14 @@ import requests
 
 from datetime import datetime
 from django.conf import settings
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from pytz import utc
+
 from toolkit.api_parser.api_parser import ApiParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
-
-
-KIND_TIME_FIELDS = {
-    "incidents": "modification_time",
-    "alerts": "event_timestamp"
-}
 
 
 class CortexXDRAPIError(Exception):
@@ -60,6 +55,21 @@ class CortexXDRParser(ApiParser):
         self.cortex_xdr_incidents_timestamp = data.get("cortex_xdr_incidents_timestamp")
 
         self.session = None
+
+        self.event_kinds = {
+            "alerts": {
+                "url": f"https://api-{self.cortex_xdr_host}/public_api/v2/alerts/get_alerts_multi_events/",
+                "time_field": "event_timestamp",
+                "default_time_field": "detection_timestamp",
+                "filter_by": "server_creation_time"
+            },
+            "incidents": {
+                "url": f"https://api-{self.cortex_xdr_host}/public_api/v1/incidents/get_incidents/",
+                "time_field": "modification_time",
+                "default_time_field": "detection_timestamp",
+                "filter_by": "creation_time"
+            }
+        }
 
     def _connect(self):
         try:
@@ -97,23 +107,21 @@ class CortexXDRParser(ApiParser):
     def get_logs(self, kind, nb_from=0, since=None, test=False):
         self._connect()
 
-        url = f"https://api-{self.cortex_xdr_host}/public_api/v1/{kind}/get_{kind}/"
+        url = self.event_kinds[kind]['url']
 
         params = {'request_data':
                       {
                           'sort': {
-                              'field': "creation_time",
+                              'field': self.event_kinds[kind]['filter_by'],
                               'keyword': "asc"
                           },
                           'search_from': nb_from,
-                          'search_to': nb_from+100
+                          'search_to': 10 if test else nb_from+100
                       }
         }
-        if test:
-            params['request_data']['search_to']=10
         if since:
             params['request_data']['filters'] = [{
-                       "field": "creation_time",
+                       "field": self.event_kinds[kind]['filter_by'],
                        "operator": "gte",
                        "value": int(since.timestamp()*1000)
                    }]
@@ -123,7 +131,7 @@ class CortexXDRParser(ApiParser):
             url,
             json=params,
             proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:
@@ -139,7 +147,7 @@ class CortexXDRParser(ApiParser):
         return True, content
 
     def execute(self):
-        for kind in ["alerts", "incidents"]:
+        for kind in self.event_kinds.keys():
             logger.info(f"[{__parser__}]:execute: Getting {kind}", extra={'frontend': str(self.frontend)})
             cpt = 0
             total = 1
@@ -158,7 +166,12 @@ class CortexXDRParser(ApiParser):
 
                 def format_log(log):
                     log['kind'] = kind
-                    log['timestamp'] = datetime.fromtimestamp((log[KIND_TIME_FIELDS[kind]] or log['detection_timestamp'])/1000, tz=timezone.utc).isoformat()
+
+                    log_timestamp = log.get(self.event_kinds[kind]['time_field'], log.get(self.event_kinds[kind]['default_time_field']))
+                    if isinstance(log_timestamp, list) and len(log_timestamp) > 0:
+                        log_timestamp = log_timestamp[0]
+
+                    log['timestamp'] = datetime.fromtimestamp(log_timestamp/1000, tz=utc).isoformat()
                     return json.dumps(log)
 
                 self.write_to_file([format_log(l) for l in logs])
@@ -170,9 +183,9 @@ class CortexXDRParser(ApiParser):
                     # No need to make_aware, date already contains timezone
                     # add 1 (ms) to timestamp to avoid getting last alert again
                     try:
-                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][KIND_TIME_FIELDS[kind]]+1)/1000, tz=timezone.utc))
-                    except Exception as err:
-                        msg = f"Could not locate key '{KIND_TIME_FIELDS[kind]}' from following log: {logs[-1]}"
+                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][self.event_kinds[kind]['time_field']]+1)/1000, tz=utc))
+                    except Exception:
+                        msg = f"Could not locate key '{self.event_kinds[kind]['time_field']}' from following log: {logs[-1]}"
                         logger.error(f"[{__parser__}]:execute: {msg}",
                                      extra={'frontend': str(self.frontend)})
 
