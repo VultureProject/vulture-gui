@@ -34,6 +34,8 @@ import xmltodict
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.conf import settings
+from pytz import utc
+
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -50,7 +52,7 @@ class BeyondtrustPRAParser(ApiParser):
         'Accept': 'application/json'
     }
 
-    DURATION = 0  # Fetch all logs
+    DURATION = 86400  # Fetch 24h of logs (in seconds)
 
     def __init__(self, data):
         super().__init__(data)
@@ -104,7 +106,7 @@ class BeyondtrustPRAParser(ApiParser):
         except Exception as err:
             raise BeyondtrustPRAAPIError(err)
 
-    def __execute_query(self, url, query=None, timeout=20):
+    def _execute_query(self, url, query=None, timeout=20):
         if self.session is None:
             self._connect()
 
@@ -135,9 +137,9 @@ class BeyondtrustPRAParser(ApiParser):
 
     def test(self):
         # Get the last 12 hours
-        since = int((timezone.now() - timedelta(hours=12)).timestamp())
+        since = timezone.now() - timedelta(hours=12)
         try:
-            logs = self.get_logs("reporting", "Team", since)
+            logs, _ = self.get_logs("reporting", "Team", since)
 
             return {
                 "status": True,
@@ -152,40 +154,72 @@ class BeyondtrustPRAParser(ApiParser):
 
     @staticmethod
     def format_team_logs(logs):
-        team_logs = []
-        for log in logs['team_activity_list']['team_activity']:
-            for event in log['events']['event']:
+        formated_logs = []
+        logs = logs['team_activity_list'].get('team_activity', [])
+        if isinstance(logs, dict):
+            logs = [logs]
+
+        for log in logs:
+            events = log['events']['event']
+            if isinstance(events, dict):
+                events = [events]
+
+            for event in events:
                 event['team'] = {
                     "name": log['@name'],
                     "id": log['@id'],
                 }
-                team_logs.append(event)
-        return team_logs
+                formated_logs.append(event)
+
+        last_datetime = [x['@timestamp'] for x in formated_logs]
+        # ISO8601 timestamps are sortable as strings
+        last_datetime = max(last_datetime, default=None)
+        return formated_logs, last_datetime
 
     @staticmethod
     def format_access_session_logs(logs):
-        access_session_logs = []
-        for log in logs['session_list']['session']:
-            del log['session_details']  # Avoid too long session log
-            access_session_logs.append(log)
-        return access_session_logs
+        formated_logs = []
+        sessions_logs = logs['session_list'].get('session', [])
+        if isinstance(sessions_logs, list):
+            for log in sessions_logs:
+                del log['session_details']  # Avoid too long session log
+                log["@timestamp"] = log["start_time"]["@timestamp"]
+                formated_logs.append(log)
+        elif isinstance(sessions_logs, dict):
+            del sessions_logs['session_details']  # Avoid too long session log
+            sessions_logs["@timestamp"] = sessions_logs["start_time"]["@timestamp"]
+            formated_logs.append(sessions_logs)
+        last_datetime = [x['@timestamp'] for x in formated_logs]
+        # ISO8601 timestamps are sortable as strings
+        last_datetime = max(last_datetime, default=None)
+        return formated_logs, last_datetime
 
-    def get_logs(self, resource: str, requested_type: str, since: int):
+    @staticmethod
+    def format_vault_account_activity_list_logs(logs):
+        formated_logs = logs['vault_account_activity_list'].get('vault_account_activity', [])
+        if isinstance(formated_logs, dict):
+            formated_logs = [formated_logs]
+        last_datetime = [x['@timestamp'] for x in formated_logs]
+        # ISO8601 timestamps are sortable as strings
+        last_datetime = max(last_datetime, default=None)
+        return formated_logs, last_datetime
+
+    def get_logs(self, resource: str, requested_type: str, since: object):
         url = f"{self.beyondtrust_pra_host}/api/{resource}"
 
         parameters = {
-            'start_time': since,
+            'start_time': int(since.timestamp()),
             'duration': self.DURATION,
             'generate_report': requested_type,
         }
 
-        res = self.__execute_query(url, query=parameters)
+        res = self._execute_query(url, query=parameters)
 
         logs = xmltodict.parse(res.text)
 
         if error := logs.get('error'):
             logger.info(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : {error.get('#text')}", extra={'frontend': str(self.frontend)})
-            return []
+            return [], None
 
         # Return only list of events
         if resource == 'reporting' and requested_type == "Team":
@@ -193,10 +227,10 @@ class BeyondtrustPRAParser(ApiParser):
         elif resource == 'reporting' and requested_type == "AccessSession":
             return self.format_access_session_logs(logs)
         elif resource == 'reporting' and requested_type == "VaultAccountActivity":
-            return logs['vault_account_activity_list']['vault_account_activity']
+            return self.format_vault_account_activity_list_logs(logs)
         else:
             logger.info(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : This requested type is not allowed.", extra={'frontend': str(self.frontend)})
-            return []
+            return [], None
 
     def remove_hash_from_keys(self, d):
         if isinstance(d, dict):
@@ -214,18 +248,31 @@ class BeyondtrustPRAParser(ApiParser):
 
     def execute(self):
 
-        since = int((self.frontend.last_api_call or (timezone.now() - timedelta(days=30))).timestamp())
-
         # Get reporting logs
         reporting_types = ["Team", "AccessSession", "VaultAccountActivity"]
 
         for report_type in reporting_types:
-            logs = self.get_logs("reporting", report_type, since)
-            self.write_to_file([self.format_log(log, "reporting", report_type) for log in logs])
-            # Downloading may take some while, so refresh token in Redis
-            self.update_lock()
+            since = self.last_collected_timestamps.get(f"beyondtrust_pra_{report_type}") or (timezone.now() - timedelta(days=30))
 
-        self.frontend.last_api_call = timezone.now()
-        self.frontend.save()
+            msg = f"Parser starting with {report_type} from {since}"
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
+            while since < timezone.now() - timedelta(hours=1) and not self.evt_stop.is_set():
+
+                logs, last_datetime = self.get_logs("reporting", report_type, since)
+
+                if logs:
+                    self.write_to_file([self.format_log(log, "reporting", report_type) for log in logs])
+                    # Downloading may take some while, so refresh token in Redis
+                    self.update_lock()
+                try:
+                    last_datetime = datetime.fromtimestamp(int(last_datetime), tz=utc) + timedelta(seconds=1)
+                    self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = last_datetime
+                except:
+                    # Update timestamp +24 if since < now, otherwise +1
+                    delta = 24 if since < timezone.now() - timedelta(hours=24) else 1
+                    self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = since + timedelta(hours=delta)
+                finally:
+                    since = self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"]
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
