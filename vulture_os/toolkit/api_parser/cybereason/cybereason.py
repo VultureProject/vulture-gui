@@ -520,10 +520,12 @@ class CybereasonParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-
         for kind in ["malops", "malwares"]:
             # Get last api call or 30 days ago
-            since = self.last_collected_timestamps.get(f"cybereason_{kind}") or (timezone.now() - timedelta(days=30))
+            since = self.last_collected_timestamps.get(f"cybereason_{kind}") \
+                or self.frontend.last_api_call \
+                or (timezone.now() - timedelta(days=30))
+
             # 24h max per request
             to = min(timezone.now(), since + timedelta(hours=24))
 
@@ -556,10 +558,8 @@ class CybereasonParser(ApiParser):
 
             # If no logs where retrieved during the last 24hours
             elif since < timezone.now() - timedelta(hours=24):
-
                 if since > timezone.now() - timedelta(hours=72):
                     self.last_collected_timestamps[f"cybereason_{kind}"] = to
-
                 # move forward 1h to prevent stagnate ad vitam eternam
                 self.last_collected_timestamps[f"cybereason_{kind}"] = since + timedelta(hours=1)
 
