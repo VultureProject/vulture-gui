@@ -214,14 +214,11 @@ class SentinelOneParser(ApiParser):
                 })
             log['comments'] = comments
             # Retrieve names of techniques of each tactics
-            techniques = list()
-            for indc in log['indicators']:
-                tech = [x['techniques'] for x in indc['tactics']]
-                if len(tech) > 0:
-                    # always one entry
-                    tech = tech.pop()
-                techniques += [x['name'] for x in tech]
-            log['mitre_techniques'] = list(set(techniques))
+            log['mitre_techniques'] = list(set([technique.get('name', [])
+                                                for indicators in log.get('indicators', [])
+                                                for tactics in indicators.get('tactics', [])
+                                                for technique in tactics.get('techniques', [])]))
+
             log['needs_attention'] = not log['threatInfo']['automaticallyResolved']
             log['threatInfo']['createdAt'] = datetime.fromisoformat(
                 log['threatInfo']['createdAt'].replace("Z", "+00:00")).timestamp()
