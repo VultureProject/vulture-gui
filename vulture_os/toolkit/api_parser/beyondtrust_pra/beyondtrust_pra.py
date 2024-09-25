@@ -34,6 +34,7 @@ import xmltodict
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.conf import settings
+from django.utils.timezone import make_naive
 from pytz import utc
 
 from toolkit.api_parser.api_parser import ApiParser
@@ -66,13 +67,7 @@ class BeyondtrustPRAParser(ApiParser):
             self.beyondtrust_pra_host = f"https://{self.beyondtrust_pra_host}"
         self.beyondtrust_pra_host = self.beyondtrust_pra_host.rstrip("/")
 
-        self.basic_auth = self.__to_b64(f"{self.beyondtrust_pra_client_id}:{self.beyondtrust_pra_secret}")
-
         self.session = None
-
-    @staticmethod
-    def __to_b64(data):
-        return str(base64.b64encode(bytes(data, 'utf-8')), 'utf8')
 
     def save_access_token(self):
         try:
@@ -84,17 +79,20 @@ class BeyondtrustPRAParser(ApiParser):
 
     @property
     def api_token(self):
-        if not self.beyondtrust_pra_api_token or datetime.fromtimestamp(self.beyondtrust_pra_api_token['timestamp']) + timedelta(seconds=3590) < datetime.now():
-            self.beyondtrust_pra_api_token = dict(bearer=self.get_token(), timestamp=datetime.now().timestamp())
+        if not self.beyondtrust_pra_api_token or datetime.fromtimestamp(self.beyondtrust_pra_api_token['timestamp']) < (make_naive(timezone.now())  + timedelta(minutes=5)):
+            token, expires_in = self.get_token()
+            self.beyondtrust_pra_api_token = dict(bearer=token, timestamp=(make_naive(timezone.now()) + timedelta(seconds=expires_in)).timestamp())
             self.save_access_token()
         return self.beyondtrust_pra_api_token['bearer']
 
     def get_token(self):
+        basic = requests.auth.HTTPBasicAuth(self.beyondtrust_pra_client_id, self.beyondtrust_pra_secret)
         res = requests.post(f'{self.beyondtrust_pra_host}/oauth2/token',
                             data={"grant_type": "client_credentials"},
-                            headers={"Authorization": f"Basic {self.basic_auth}"})
+                            auth=basic)
         res.raise_for_status()
-        return res.json()['access_token']
+        res_json = res.json()
+        return res_json['access_token'], res_json['expires_in']
 
     def _connect(self):
         try:
@@ -156,12 +154,12 @@ class BeyondtrustPRAParser(ApiParser):
     def format_team_logs(logs):
         formated_logs = []
         logs = logs['team_activity_list'].get('team_activity', [])
-        if isinstance(logs, dict):
+        if not isinstance(logs, list):
             logs = [logs]
 
         for log in logs:
             events = log['events']['event']
-            if isinstance(events, dict):
+            if not isinstance(events, list):
                 events = [events]
 
             for event in events:
@@ -171,40 +169,29 @@ class BeyondtrustPRAParser(ApiParser):
                 }
                 formated_logs.append(event)
 
-        last_datetime = [x['@timestamp'] for x in formated_logs]
-        # ISO8601 timestamps are sortable as strings
-        last_datetime = max(last_datetime, default=None)
-        return formated_logs, last_datetime
+        return formated_logs
 
     @staticmethod
     def format_access_session_logs(logs):
         formated_logs = []
         sessions_logs = logs['session_list'].get('session', [])
-        if isinstance(sessions_logs, list):
-            for log in sessions_logs:
-                del log['session_details']  # Avoid too long session log
-                log["@timestamp"] = log["start_time"]["@timestamp"]
-                formated_logs.append(log)
-        elif isinstance(sessions_logs, dict):
-            del sessions_logs['session_details']  # Avoid too long session log
-            sessions_logs["@timestamp"] = sessions_logs["start_time"]["@timestamp"]
-            formated_logs.append(sessions_logs)
-        last_datetime = [x['@timestamp'] for x in formated_logs]
-        # ISO8601 timestamps are sortable as strings
-        last_datetime = max(last_datetime, default=None)
-        return formated_logs, last_datetime
+        if not isinstance(sessions_logs, list):
+            sessions_logs = [sessions_logs]
+
+        for log in sessions_logs:
+            del log['session_details']  # Avoid too long session log
+            log["@timestamp"] = log["start_time"]["@timestamp"]
+            formated_logs.append(log)
+        return formated_logs
 
     @staticmethod
     def format_vault_account_activity_list_logs(logs):
         formated_logs = logs['vault_account_activity_list'].get('vault_account_activity', [])
         if isinstance(formated_logs, dict):
             formated_logs = [formated_logs]
-        last_datetime = [x['@timestamp'] for x in formated_logs]
-        # ISO8601 timestamps are sortable as strings
-        last_datetime = max(last_datetime, default=None)
-        return formated_logs, last_datetime
+        return formated_logs
 
-    def get_logs(self, resource: str, requested_type: str, since: object):
+    def get_logs(self, resource: str, requested_type: str, since: datetime):
         url = f"{self.beyondtrust_pra_host}/api/{resource}"
 
         parameters = {
@@ -223,14 +210,20 @@ class BeyondtrustPRAParser(ApiParser):
 
         # Return only list of events
         if resource == 'reporting' and requested_type == "Team":
-            return self.format_team_logs(logs)
+            formated_logs = self.format_team_logs(logs)
         elif resource == 'reporting' and requested_type == "AccessSession":
-            return self.format_access_session_logs(logs)
+            formated_logs = self.format_access_session_logs(logs)
         elif resource == 'reporting' and requested_type == "VaultAccountActivity":
-            return self.format_vault_account_activity_list_logs(logs)
+            formated_logs = self.format_vault_account_activity_list_logs(logs)
         else:
-            logger.info(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : This requested type is not allowed.", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : This requested type is not allowed.", extra={'frontend': str(self.frontend)})
             return [], None
+
+        last_datetime = [x['@timestamp'] for x in formated_logs]
+        # ISO8601 timestamps are sortable as strings
+        last_datetime = max(last_datetime, default=None)
+
+        return formated_logs, last_datetime
 
     def remove_hash_from_keys(self, d):
         if isinstance(d, dict):
@@ -265,10 +258,11 @@ class BeyondtrustPRAParser(ApiParser):
                     self.write_to_file([self.format_log(log, "reporting", report_type) for log in logs])
                     # Downloading may take some while, so refresh token in Redis
                     self.update_lock()
+
                 try:
                     last_datetime = datetime.fromtimestamp(int(last_datetime), tz=utc) + timedelta(seconds=1)
                     self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = last_datetime
-                except:
+                except (TypeError, ValueError):
                     # Update timestamp +24 if since < now, otherwise +1
                     delta = 24 if since < timezone.now() - timedelta(hours=24) else 1
                     self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = since + timedelta(hours=delta)
