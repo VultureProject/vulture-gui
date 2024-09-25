@@ -25,13 +25,14 @@ __parser__ = 'REACHFIVE'
 
 import json
 import logging
+
 import requests
 
 from datetime import datetime, timedelta
-import time
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
 from toolkit.api_parser.api_parser import ApiParser
 
 
@@ -161,7 +162,7 @@ class ReachFiveParser(ApiParser):
         cpt = 0
         page = 1
         total = 1
-        since = self.frontend.last_api_call.isoformat(timespec="milliseconds")
+        since = timezone.make_naive(self.frontend.last_api_call).isoformat(timespec="milliseconds")
 
         while cpt < total and not self.evt_stop.is_set():
 
@@ -200,10 +201,10 @@ class ReachFiveParser(ApiParser):
 
             if cpt % 10000 == 0:
                 # Sleep 10 sec every 10 000 fetched logs to avoid too many requests
-                time.sleep(10)
+                self.evt_stop.wait(10.0)
 
             if page == 11:  # Get max 10 000 logs to avoid API error
-                since = self.frontend.last_api_call.isoformat(timespec="milliseconds")
+                since = timezone.make_naive(self.frontend.last_api_call).isoformat(timespec="milliseconds")
                 page = 1
                 cpt = 0
 
