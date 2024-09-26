@@ -79,9 +79,9 @@ class BeyondtrustPRAParser(ApiParser):
 
     @property
     def api_token(self):
-        if not self.beyondtrust_pra_api_token or datetime.fromtimestamp(self.beyondtrust_pra_api_token['timestamp']) < (make_naive(timezone.now())  + timedelta(minutes=5)):
+        if not self.beyondtrust_pra_api_token or datetime.fromtimestamp(self.beyondtrust_pra_api_token['timestamp'], tz=timezone.utc) < (timezone.now()  + timedelta(minutes=5)):
             token, expires_in = self.get_token()
-            self.beyondtrust_pra_api_token = dict(bearer=token, timestamp=(make_naive(timezone.now()) + timedelta(seconds=expires_in)).timestamp())
+            self.beyondtrust_pra_api_token = dict(bearer=token, timestamp=(timezone.now() + timedelta(seconds=expires_in)).timestamp())
             self.save_access_token()
         return self.beyondtrust_pra_api_token['bearer']
 
