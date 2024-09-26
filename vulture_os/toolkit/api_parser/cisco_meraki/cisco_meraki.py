@@ -48,6 +48,7 @@ class CiscoMerakiParser(ApiParser):
         super().__init__(data)
 
         self.cisco_meraki_apikey = data["cisco_meraki_apikey"]
+        self.cisco_meraki_get_security_logs = data["cisco_meraki_get_security_logs"]
 
         self.session = None
 
@@ -96,8 +97,9 @@ class CiscoMerakiParser(ApiParser):
             # retreive organisation & networks
             data = self.get_organization_networks(orga['id'])
 
-            since = (timezone.now()-timedelta(days=1)).isoformat()
-            data.extend(self.get_organization_appliance_security_events(since, orga['id']))
+            if self.cisco_meraki_get_security_logs:
+                since = (timezone.now()-timedelta(days=1)).isoformat()
+                data.extend(self.get_organization_appliance_security_events(since, orga['id']))
             return {
                 "status": True,
                 "data": data
@@ -174,26 +176,27 @@ class CiscoMerakiParser(ApiParser):
                             self.frontend.cisco_meraki_timestamp[f"{network['id']}_{product_type}"] = tmp_logs['pageEndAt']
 
 
-            logger.info(f"[{__parser__}]:execute: Getting organisation security events", extra={'frontend': str(self.frontend)})
+            if self.cisco_meraki_get_security_logs:
+                logger.info(f"[{__parser__}]:execute: Getting organisation security events", extra={'frontend': str(self.frontend)})
 
-            since = self.frontend.cisco_meraki_timestamp.get("security_events", (timezone.now()-timedelta(days=1)).isoformat())
-            security_events = self.get_organization_appliance_security_events(since, orga['id'])
-            # Parsing 1k lines may take some while, so refresh token in Redis before
-            self.update_lock()
+                since = self.frontend.cisco_meraki_timestamp.get("security_events", (timezone.now()-timedelta(days=1)).isoformat())
+                security_events = self.get_organization_appliance_security_events(since, orga['id'])
+                # Parsing 1k lines may take some while, so refresh token in Redis before
+                self.update_lock()
 
-            def format_security_log(log):
-                log['log_type'] = "security"
-                log['organization_id'] = orga['id']
-                log['organization_name'] = orga['name']
-                log['timestamp'] = log['ts']
-                return json.dumps(log)
+                def format_security_log(log):
+                    log['log_type'] = "security"
+                    log['organization_id'] = orga['id']
+                    log['organization_name'] = orga['name']
+                    log['timestamp'] = log['ts']
+                    return json.dumps(log)
 
-            self.write_to_file([format_security_log(l) for l in security_events])
-            # Writting may take some while, so refresh token in Redis
-            self.update_lock()
+                self.write_to_file([format_security_log(l) for l in security_events])
+                # Writting may take some while, so refresh token in Redis
+                self.update_lock()
 
-            if len(security_events) > 0:
-                # No need to make_aware, date already contains timezone
-                self.frontend.cisco_meraki_timestamp["security_events"] = security_events[-1]['ts']
+                if len(security_events) > 0:
+                    # No need to make_aware, date already contains timezone
+                    self.frontend.cisco_meraki_timestamp["security_events"] = security_events[-1]['ts']
 
         logger.info(f"[{__parser__}]:execute: Parser ending", extra={'frontend': str(self.frontend)})
