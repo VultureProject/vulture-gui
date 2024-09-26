@@ -105,14 +105,13 @@ class BeyondtrustPRAParser(ApiParser):
             raise BeyondtrustPRAAPIError(err)
 
     def _execute_query(self, url, query=None, timeout=20):
-        if self.session is None:
-            self._connect()
-
         msg = f"URL : {url} Query : {str(query)}"
         logger.info(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
 
         retry = 0
-        while retry < 2:
+        while retry < 2 and not self.evt_stop.is_set():
+            if self.session is None:
+                self._connect()
             response = self.session.get(
                 url,
                 params=query,
@@ -120,13 +119,21 @@ class BeyondtrustPRAParser(ApiParser):
                 proxies=self.proxies,
                 verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
             )
-            # handler rate limit exceeding
+            # Handle rate-limiting
             if response.status_code == 429:
                 logger.warning(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...",
                             extra={'frontend': str(self.frontend)})
                 self.evt_stop.wait(10.0)
                 retry += 1
                 continue
+            # Handle token expiration
+            if response.status_code == 401:
+                logger.warning(f"[{__parser__}]:execute: 401 received, will try to re-authenticate...",
+                            extra={'frontend': str(self.frontend)})
+                self.session = None
+                self.beyondtrust_pra_api_token = None
+                self.evt_stop.wait(5.0)
+                retry += 1
             elif response.status_code != 200:
                 raise BeyondtrustPRAAPIError(
                     f"Error at Beyondtrust PRA API Call URL: {url} Code: {response.status_code} Content: {response.content}")
