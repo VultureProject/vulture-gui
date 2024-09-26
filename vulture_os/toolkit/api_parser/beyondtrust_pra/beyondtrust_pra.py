@@ -23,10 +23,8 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Beyondtrust PRA API'
 __parser__ = 'Beyondtrust PRA'
 
-import base64
 import json
 import logging
-import time
 
 import requests
 import xmltodict
@@ -34,8 +32,6 @@ import xmltodict
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.conf import settings
-from django.utils.timezone import make_naive
-from pytz import utc
 
 from toolkit.api_parser.api_parser import ApiParser
 
