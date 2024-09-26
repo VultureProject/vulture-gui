@@ -124,7 +124,7 @@ class BeyondtrustPRAParser(ApiParser):
             if response.status_code == 429:
                 logger.info(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...",
                             extra={'frontend': str(self.frontend)})
-                time.sleep(10)
+                self.evt_stop.wait(10.0)
                 retry += 1
                 continue
             elif response.status_code != 200:
@@ -132,6 +132,9 @@ class BeyondtrustPRAParser(ApiParser):
                     f"Error at Beyondtrust PRA API Call URL: {url} Code: {response.status_code} Content: {response.content}")
             else:
                 return response
+
+        raise BeyondtrustPRAAPIError(
+            f"Error at Beyondtrust PRA API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
     def test(self):
         # Get the last 12 hours
@@ -205,8 +208,10 @@ class BeyondtrustPRAParser(ApiParser):
         logs = xmltodict.parse(res.text)
 
         if error := logs.get('error'):
-            logger.info(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : {error.get('#text')}", extra={'frontend': str(self.frontend)})
-            return [], None
+            if "report information matching your chosen criteria is available." in error.get('#text'):
+                return [], None
+            msg = f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : {error.get('#text')}"
+            raise BeyondtrustPRAAPIError(msg)
 
         # Return only list of events
         if resource == 'reporting' and requested_type == "Team":
@@ -216,12 +221,11 @@ class BeyondtrustPRAParser(ApiParser):
         elif resource == 'reporting' and requested_type == "VaultAccountActivity":
             formated_logs = self.format_vault_account_activity_list_logs(logs)
         else:
-            logger.error(f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : This requested type is not allowed.", extra={'frontend': str(self.frontend)})
-            return [], None
+            msg = f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : This requested type is not allowed."
+            raise BeyondtrustPRAAPIError(msg)
 
-        last_datetime = [x['@timestamp'] for x in formated_logs]
         # ISO8601 timestamps are sortable as strings
-        last_datetime = max(last_datetime, default=None)
+        last_datetime = max((x['@timestamp'] for x in formated_logs), default=None)
 
         return formated_logs, last_datetime
 
