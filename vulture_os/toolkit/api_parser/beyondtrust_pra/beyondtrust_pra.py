@@ -122,7 +122,7 @@ class BeyondtrustPRAParser(ApiParser):
             )
             # handler rate limit exceeding
             if response.status_code == 429:
-                logger.info(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...",
+                logger.warning(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...",
                             extra={'frontend': str(self.frontend)})
                 self.evt_stop.wait(10.0)
                 retry += 1
@@ -190,7 +190,7 @@ class BeyondtrustPRAParser(ApiParser):
     @staticmethod
     def format_vault_account_activity_list_logs(logs):
         formated_logs = logs['vault_account_activity_list'].get('vault_account_activity', [])
-        if isinstance(formated_logs, dict):
+        if not isinstance(formated_logs, list):
             formated_logs = [formated_logs]
         return formated_logs
 
@@ -264,7 +264,7 @@ class BeyondtrustPRAParser(ApiParser):
                     self.update_lock()
 
                 try:
-                    last_datetime = datetime.fromtimestamp(int(last_datetime), tz=utc) + timedelta(seconds=1)
+                    last_datetime = datetime.fromtimestamp(int(last_datetime), tz=timezone.utc) + timedelta(seconds=1)
                     self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = last_datetime
                 except (TypeError, ValueError):
                     # Update timestamp +24 if since < now, otherwise +1
