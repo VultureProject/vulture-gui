@@ -25,14 +25,12 @@ __parser__ = 'REACHFIVE'
 
 import json
 import logging
-
 import requests
 
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from toolkit.api_parser.api_parser import ApiParser
 
 
@@ -88,9 +86,12 @@ class ReachFiveParser(ApiParser):
             assert (
                     response.get('access_token') is not None
             ), f"Cannot retrieve token from API : {response}"
+            assert (
+                    response.get('expires_in') is not None
+            ), f"Missing expiration information for access token : {response}"
 
-            self.reachfive_access_token = response.get('access_token')
-            self.reachfive_expire_at = timezone.now() + timedelta(seconds=response.get('expires_in'))
+            self.reachfive_access_token = response['access_token']
+            self.reachfive_expire_at = timezone.now() + timedelta(seconds=int(response['expires_in']))
             self.save_access_token()
         return self.reachfive_access_token
 
@@ -150,7 +151,7 @@ class ReachFiveParser(ApiParser):
             return False, _('Authentication failed')
 
         if response.status_code != 200:
-            msg = f"Error at ReachFive API Call: {response.content}"
+            msg = f"Error at ReachFive API Call, code: {response.status_code}, content: {response.content}"
             logger.error(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
             raise ReachFiveAPIError(msg)
 
@@ -177,7 +178,7 @@ class ReachFiveParser(ApiParser):
             total = tmp_logs['total']
             logs = tmp_logs['items']
 
-            self.write_to_file([json.dumps(l) for l in logs])
+            self.write_to_file([json.dumps(log) for log in logs])
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
@@ -189,9 +190,8 @@ class ReachFiveParser(ApiParser):
                 # Get latest date returned from API (logs are often not properly ordered, even with a 'sort'ed query...)
                 assert logs[0]['date'], "logs don't have a 'date' field!"
                 assert logs[0]['date'][-1] == "Z", f"unexpected date format '{logs[0]['date']}', are they UTC?"
-                last_datetime = [x['date'] for x in logs]
                 # ISO8601 timestamps are sortable as strings
-                last_datetime = max(last_datetime)
+                last_datetime = max([log['date'] for log in logs])
                 msg = f"most recent log is from {last_datetime}"
                 logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
