@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [BEYONDTRUST_PRA] New API parser BEYONDTRUST_PRA
 ### Fixed
 - [CLUSTER] [PF] Correctly reload configurations when changing SSH/GUI access rules
 - [API_PARSER] [CYBEREASON] Update timestamp when no logs are received during the last 24h

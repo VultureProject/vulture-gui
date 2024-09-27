@@ -1334,7 +1334,25 @@ class Frontend(models.Model):
         help_text=_("Waf Barracuda token"),
         default="",
     )
-
+    # Beyondtrust PRA attributes
+    beyondtrust_pra_client_id = models.TextField(
+        verbose_name=_("Beyondtrust PRA client id"),
+        help_text=_("Beyondtrust PRA client id"),
+        default="",
+    )
+    beyondtrust_pra_secret = models.TextField(
+        verbose_name=_("Beyondtrust PRA secret"),
+        help_text=_("Beyondtrust PRA secret"),
+        default="",
+    )
+    beyondtrust_pra_host = models.TextField(
+        verbose_name=_("Beyondtrust PRA host"),
+        help_text=_("Beyondtrust PRA host"),
+        default="",
+    )
+    beyondtrust_pra_api_token = models.JSONField(
+        default=dict
+    )
 
     @staticmethod
     def str_attrs():

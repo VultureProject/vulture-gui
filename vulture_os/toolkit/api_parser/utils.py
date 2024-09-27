@@ -71,6 +71,7 @@ from toolkit.api_parser.signalsciences_ngwaf.signalsciences_ngwaf import SignalS
 from toolkit.api_parser.gatewatcher_alerts.gatewatcher_alerts import GatewatcherAlertsParser
 from toolkit.api_parser.cisco_umbrella.cisco_umbrella import CiscoUmbrellaParser
 from toolkit.api_parser.waf_barracuda.waf_barracuda import WAFBarracudaParser
+from toolkit.api_parser.beyondtrust_pra.beyondtrust_pra import BeyondtrustPRAParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -123,6 +124,7 @@ PARSER_LIST = {
     "gatewatcher_alerts": GatewatcherAlertsParser,
     "cisco_umbrella": CiscoUmbrellaParser,
     "waf_barracuda": WAFBarracudaParser,
+    "beyondtrust_pra": BeyondtrustPRAParser
 }
 
 class ParserDoesNotExist(Exception):
