@@ -79,6 +79,8 @@ class BeyondtrustPRAParser(ApiParser):
             token, expires_in = self.get_token()
             self.beyondtrust_pra_api_token = dict(bearer=token, timestamp=(timezone.now() + timedelta(seconds=expires_in)).timestamp())
             self.save_access_token()
+            msg = "Collector authenticated, new credentials saved"
+            logger.info(f"[{__parser__}] api_token: {msg}", extra={'frontend': str(self.frontend)})
         return self.beyondtrust_pra_api_token['bearer']
 
     def get_token(self):
@@ -102,7 +104,7 @@ class BeyondtrustPRAParser(ApiParser):
 
     def _execute_query(self, url, query=None, timeout=20):
         msg = f"URL : {url} Query : {str(query)}"
-        logger.info(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
 
         retry = 0
         while retry < 2 and not self.evt_stop.is_set():
@@ -206,6 +208,9 @@ class BeyondtrustPRAParser(ApiParser):
             'generate_report': requested_type,
         }
 
+        msg = f"Getting {self.DURATION} seconds of {requested_type} logs, starting from {since}"
+        logger.info(f"[{__parser__}] get_logs: {msg}", extra={'frontend': str(self.frontend)})
+
         res = self._execute_query(url, query=parameters)
 
         logs = xmltodict.parse(res.text)
@@ -254,7 +259,7 @@ class BeyondtrustPRAParser(ApiParser):
         for report_type in reporting_types:
             since = self.last_collected_timestamps.get(f"beyondtrust_pra_{report_type}") or (timezone.now() - timedelta(days=30))
 
-            msg = f"Parser starting with {report_type} from {since}"
+            msg = f"Parser starting to get {report_type} logs from {since}"
             logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             while since < timezone.now() - timedelta(hours=1) and not self.evt_stop.is_set():
@@ -272,8 +277,15 @@ class BeyondtrustPRAParser(ApiParser):
                 except (TypeError, ValueError):
                     # Update timestamp +24 if since < now, otherwise +1
                     delta = 24 if since < timezone.now() - timedelta(hours=24) else 1
+                    msg = f"No logs, advancing timestamp by {delta} hour(s)"
+                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = since + timedelta(hours=delta)
                 finally:
+                    msg = "Current timestamp for {report_type} is {timestamp}".format(
+                        report_type=report_type,
+                        timestamp=self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"]
+                    )
+                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     since = self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"]
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
