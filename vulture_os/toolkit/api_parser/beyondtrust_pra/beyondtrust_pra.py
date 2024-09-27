@@ -87,7 +87,9 @@ class BeyondtrustPRAParser(ApiParser):
         basic = requests.auth.HTTPBasicAuth(self.beyondtrust_pra_client_id, self.beyondtrust_pra_secret)
         res = requests.post(f'{self.beyondtrust_pra_host}/oauth2/token',
                             data={"grant_type": "client_credentials"},
-                            auth=basic)
+                            auth=basic,
+                            proxies=self.proxies,
+                            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
         res.raise_for_status()
         res_json = res.json()
         return res_json['access_token'], res_json['expires_in']
