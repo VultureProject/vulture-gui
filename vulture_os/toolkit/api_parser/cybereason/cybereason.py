@@ -195,7 +195,6 @@ class CybereasonParser(ApiParser):
             # 24h max per request
 
             to = min(timezone.now(), since + timedelta(hours=24))
-            # to = timezone.now()
 
             # delay the times of 5 minutes, to let the times at the API to have all logs
             to = to - timedelta(minutes=5)
