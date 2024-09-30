@@ -18,7 +18,7 @@ class Malop:
     def __init__(self, instance: object) -> None:
         self.instance = instance
 
-    def get_logs(self, since: object, to: object) -> (list, object, bool):
+    def get_logs(self, since: datetime, to: datetime) -> (list, object, bool):
         url_alert = f'{self.instance.host}/{self.ALERT_URI}'
 
         query = {
@@ -72,7 +72,7 @@ class Malop:
         alert['id'] = alert['guid']
         alert['url'] = self.instance.host
 
-        suspicions_process, suspicions_network = self._suspicions(alert['id'])
+        suspicions_process, suspicions_network = self._suspicions(alert['id'], alert['lastUpdateTime'])
         suspicions = list(suspicions_process.get('data', {}).get('suspicionsMap', {}).keys())
         suspicions.extend(list(suspicions_network.get('data', {}).get('suspicionsMap', {}).keys()))
         alert['suspicion_list'] = suspicions
@@ -81,20 +81,27 @@ class Malop:
             alert['kind'] = 'malops'
             alert['comments'] = self._get_comments(alert['id'])
             alert['process_details'] = suspicions_process.get('data', {}).get('resultIdToElementDataMap', {})
+
+            machine_guids = [
+                machine["guid"]
+                for data in alert.get('process_details', {}).values()
+                for machine in data.get('elementValues', {}).get('ownerMachine', {}).get('elementValues')
+            ]
+
         else:
             alert['kind'] = 'detection-malops'
-            alert['malop_details'] = self._get_malop_detection_details(alert['guid'])
+            start_date = alert['lastUpdateTime'] - 30 * 24 * 60 * 60 * 1000
+            alert['malop_details'] = self._get_malop_detection_details(alert['guid'], start_date)
+
+            machine_guids = [
+                machine["guid"]
+                for machine in alert.get('malop_details', {}).get('machines', [])
+            ]
 
         # Requesting may take some while, so refresh token in Redis
         self.instance.update_lock()
 
-        # Keep only 100 devices
-        devices_names = [machine['displayName'] for machine in alert['machines'][:100]]
-
-        # Requesting may take some while, so refresh token in Redis
-        self.instance.update_lock()
-
-        alert_devices_details = self._get_devices_details(devices_names)
+        alert_devices_details = self._get_sensors(machine_guids)
 
         # Requesting may take some while, so refresh token in Redis
         self.instance.update_lock()
@@ -163,12 +170,59 @@ class Malop:
         log['flattened_domain'] = flattened_domain
         return json.dumps(log)
 
-    def _get_malop_detection_details(self, alert_id: str) -> dict:
+    def _get_malop_detection_details(self, alert_id: str, start_date:int) -> dict:
         query = {
             "malopGuid": alert_id
         }
         url = f"{self.instance.host}/{self.ALERT_DETAILS}"
-        return self.instance.execute_query("POST", url, query)
+        details = self.instance.execute_query("POST", url, query)
+
+        if details.get('fileSuspects', []):
+            suspects = [
+                suspect
+                for suspect in details.get('fileSuspects', [])
+                if suspect.get('lastSeen', start_date) >= start_date
+            ]
+
+            details['fileSuspects'] = suspects
+            details['filePaths'] = list(set(file_.get('correctedPath', '') for file_ in suspects))
+            details['files'] = [
+                file_
+                for file_ in details.get('files', [])
+                if file_.get('guid', '') in [suspect.get('guid', '') for suspect in suspects]
+            ]
+            details['machines'] = [
+                machine
+                for machine in details.get('machines', [])
+                if machine.get('guid', '') in [suspect.get('ownerMachineGuid', '') for suspect in suspects]
+            ]
+
+        if details.get('processSuspects', []):
+            suspects = [
+                suspect
+                for suspect in details.get('processSuspects', [])
+                if suspect.get('lastSeen', start_date) >= start_date
+            ]
+
+            details['processSuspects'] = suspects
+            details['commandLines'] = list(set(process.get('commandLine', '') for process in suspects))
+            details['processes'] = [
+                process
+                for process in details.get('processes', [])
+                if process.get('guid', '') in [suspect.get('guid', '') for suspect in suspects]
+            ]
+            details['machines'] = [
+                machine
+                for machine in details.get('machines', [])
+                if machine.get('displayName', '') in [suspect.get('ownerMachine', '') for suspect in suspects]
+            ]
+            details['users'] = [
+                user
+                for user in details.get('users', [])
+                if user.get('displayName', '') in [suspect.get('calculatedUser', '') for suspect in suspects]
+            ]
+
+        return details
 
     def _get_comments(self, alert_malop_id: str) -> dict:
 
@@ -216,31 +270,33 @@ class Malop:
         ]
         return flattened_process_details
 
-    def _get_devices_details(self, devices_names: list) -> list:
+    def _get_sensors(self, guids: list) -> list:
         sensors_url = f"{self.instance.host}/{self.SENSOR_URI}"
         query = {
+            'limit': 100,
+            'offset': 0,
             'sortDirection': 'ASC',
             'sortingFieldName': 'machineName',
             'filters': [
-                {'fieldName': "machineName", 'operator': "ContainsIgnoreCase", 'values': devices_names},
+                {'fieldName': "guid", 'operator': 'Equals', 'values': guids},
                 {"fieldName": "status", "operator": "NotEquals", "values": ["Archived"]}
             ]
         }
         data = self.instance.execute_query("POST", sensors_url, query)
         return data.get('sensors', [])
 
-    def _suspicions(self, alert_id: str) -> (dict, dict):
+    def _suspicions(self, alert_id: str, last_update_time: int) -> (dict, dict):
 
         if len(self.DESC_TRANSLATION) <= 0:
             url = f"{self.instance.host}/{self.DESCRIPTION_URI}"
             self.DESC_TRANSLATION = self.instance.execute_query("GET", url)
 
-        process_status, suspicions_process = self._suspicions_process(alert_id)
+        process_status, suspicions_process = self._suspicions_process(alert_id, last_update_time)
         network_status, suspicions_network = self._suspicions_network(alert_id)
 
         return (suspicions_process, suspicions_network) if all([process_status, network_status]) else ({}, {})
 
-    def _suspicions_process(self, alert_id: str) -> (bool, dict):
+    def _suspicions_process(self, alert_id: str, last_update_time: int) -> (bool, dict):
         query = {
             "queryPath": [{
                 "requestedType": "MalopProcess",
@@ -251,17 +307,24 @@ class Malop:
                 }
             }, {
                 "requestedType": "Process",
-                "filters": [],
+                "filters": [
+                    # last_update_time - 30 day (30 day in microseconds: 30 * 24 * 60 * 60 * 1000)
+                    {'facetName': 'creationTime', 'filterType': 'GreaterOrEqualsTo', 'values': [last_update_time - 30 * 24 * 60 * 60 * 1000]}
+                ],
                 "isResult": True
             }],
-            "totalResultLimit": 10000,
+            "totalResultLimit": 100,
             "perGroupLimit": 100,
             "perFeatureLimit": 100,
             "templateContext": "SPECIFIC",
             "queryTimeout": 120000,
+            'sortingFacetName': 'creationTime',
+            'sortDirection': 'DESC',
             'customFields': [
+                'creationTime',
                 'commandLine',
-                'ownerMachine.name',
+                'ownerMachine',
+                'user.name',
                 'parentProcess.name',
                 'imageFile.name',
                 'imageFile.sha1String',
