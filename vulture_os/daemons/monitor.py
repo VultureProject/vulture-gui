@@ -139,13 +139,12 @@ def monitor():
                 if not frontend.enabled:
                     status[node.name] = "DISABLED"
                 elif frontend.mode == "log" and frontend.listening_mode == "api":
-                    for tmp_node in frontend.get_nodes():
-                        if node_selected(tmp_node, frontend):
-                            if node == tmp_node:
-                                # Let Rsyslog take the responsability to set the status to OPEN
-                                status[tmp_node.name] = {'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status)
-                        else:
-                            status[tmp_node.name] = "STOP"
+                    # Only change the Frontend's status if the current node has ownership
+                    if node_selected(node, frontend):
+                        # Let Rsyslog take the responsability to set the status when not operational
+                        status[node.name] = "DOWN" if rsyslogd_status.status != "UP" else frontend.status[node.name]
+                    else:
+                        status[node.name] = "STOP"
                 elif frontend.rsyslog_only_conf:
                     status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
                 elif frontend.filebeat_only_conf:
