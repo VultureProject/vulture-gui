@@ -25,7 +25,7 @@ __doc__ = 'Cluster main models'
 
 from system.config.models import Config
 
-from toolkit.network.network import get_hostname, is_valid_ip4, is_valid_ip6, is_valid_hostname
+from toolkit.network.network import get_hostname, is_valid_ip4, is_valid_ip6, is_valid_hostname, is_loopback
 from toolkit.network.route import get_route_interface
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
@@ -463,16 +463,20 @@ class Node(models.Model):
             if is_valid_ip4(ip):
                 route_ipv4 = default_logom_nat_ipv4
                 # Get the facultative IPv4 route for IP
-                success, reply = get_route_interface(destination=ip)
-                if success:
-                    route_ipv4 = reply
+                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
+                if not is_loopback(ip):
+                    success, reply = get_route_interface(destination=ip)
+                    if success:
+                        route_ipv4 = reply
 
             if is_valid_ip6(ip):
                 route_ipv6 = default_logom_nat_ipv6
                 # Get the facultative IPv6 route for IP
-                success, reply = get_route_interface(destination=ip, ip6=True)
-                if success:
-                    route_ipv6 = reply
+                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
+                if not is_loopback(ip):
+                    success, reply = get_route_interface(destination=ip, ip6=True)
+                    if success:
+                        route_ipv6 = reply
 
             # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
             if is_valid_hostname(ip):

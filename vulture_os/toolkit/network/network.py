@@ -25,7 +25,7 @@ __doc__ = 'System Utils Network Toolkit'
 
 from toolkit.system.rc import get_rc_config, set_rc_config, remove_rc_config
 
-from ipaddress import IPv4Address, IPv6Address, AddressValueError
+from ipaddress import IPv4Address, IPv6Address, ip_address, AddressValueError
 from iptools.ipv4 import netmask2prefix
 from ast import literal_eval
 import subprocess
@@ -82,6 +82,12 @@ def is_valid_ip6(ip: str) -> bool:
 
 def is_valid_ip(ip: str) -> bool:
     return is_valid_ip4(ip) or is_valid_ip6(ip)
+
+def is_loopback(ip: str) -> bool:
+    try:
+        return ip_address(ip).is_loopback
+    except ValueError:
+        return False
 
 def is_valid_hostname(hostname: str) -> bool:
     # Solution taken from this SO answer: https://stackoverflow.com/a/33214423
