@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='frontend',
             name='cisco_meraki_timestamp',
-            field=djongo.models.fields.JSONField(default={}),
+            field=djongo.models.fields.JSONField(default=dict),
         ),
     ]
