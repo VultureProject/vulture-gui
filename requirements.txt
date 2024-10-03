@@ -1067,6 +1067,10 @@ werkzeug==3.0.1 \
     --hash=sha256:507e811ecea72b18a404947aded4b3390e1db8f826b494d76550ef45bb3b1dcc \
     --hash=sha256:90a285dc0e42ad56b34e696398b8122ee4c681833fb35b8334a095d82c56da10
     # via robobrowser
+xmltodict==0.13.0 \
+    --hash=sha256:341595a488e3e01a85a9d8911d8912fd922ede5fecc4dce437eb4b6c8d037e56 \
+    --hash=sha256:aa89e8fd76320154a40d19a0df04a4695fb9dc5ba977cbb68ab3e4eb225e7852
+    # via -r requirements.in
 yarl==1.9.4 \
     --hash=sha256:008d3e808d03ef28542372d01057fd09168419cdc8f848efe2804f894ae03e51 \
     --hash=sha256:03caa9507d3d3c83bca08650678e25364e1843b484f19986a527630ca376ecce \
