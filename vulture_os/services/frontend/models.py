@@ -677,6 +677,16 @@ class Frontend(models.Model):
         default="",
         verbose_name=_("ReachFive client secret for authentication")
     )
+    reachfive_access_token = models.TextField(
+        verbose_name=_("ReachFive access token"),
+        help_text=_("ReachFive access token"),
+        default="",
+    )
+    reachfive_expire_at = models.DateTimeField(
+        verbose_name=_("ReachFive access token expire at"),
+        help_text=_("ReachFive access token expire at"),
+        default=timezone.now,
+    )
     # MongoDB attributes
     mongodb_api_user = models.TextField(
         help_text=_("MongoDB API user"),
@@ -1323,7 +1333,25 @@ class Frontend(models.Model):
         help_text=_("Waf Barracuda token"),
         default="",
     )
-
+    # Beyondtrust PRA attributes
+    beyondtrust_pra_client_id = models.TextField(
+        verbose_name=_("Beyondtrust PRA client id"),
+        help_text=_("Beyondtrust PRA client id"),
+        default="",
+    )
+    beyondtrust_pra_secret = models.TextField(
+        verbose_name=_("Beyondtrust PRA secret"),
+        help_text=_("Beyondtrust PRA secret"),
+        default="",
+    )
+    beyondtrust_pra_host = models.TextField(
+        verbose_name=_("Beyondtrust PRA host"),
+        help_text=_("Beyondtrust PRA host"),
+        default="",
+    )
+    beyondtrust_pra_api_token = models.JSONField(
+        default=dict
+    )
 
     @staticmethod
     def str_attrs():

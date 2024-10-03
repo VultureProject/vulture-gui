@@ -261,7 +261,8 @@ class FrontendForm(ModelForm):
                            'apex_server_host', 'apex_application_id', 'apex_api_key',
                            'gatewatcher_alerts_host', 'gatewatcher_alerts_api_key',
                            'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
-                           'waf_barracuda_token'
+                           'waf_barracuda_token',
+                           "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
                            ]:
             self.fields[field_name].required = False
 
@@ -367,8 +368,9 @@ class FrontendForm(ModelForm):
                   'apex_server_host', 'apex_application_id', 'apex_api_key',
                   'gatewatcher_alerts_host', 'gatewatcher_alerts_api_key',
                   'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
-                  'waf_barracuda_token'
-                )
+                  'waf_barracuda_token',
+                  "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
+                  )
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -557,6 +559,9 @@ class FrontendForm(ModelForm):
             'cisco_umbrella_client_id': TextInput(attrs={'class': 'form-control'}),
             'cisco_umbrella_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'waf_barracuda_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'beyondtrust_pra_client_id': TextInput(attrs={'class': 'form-control'}),
+            'beyondtrust_pra_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'beyondtrust_pra_host': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
