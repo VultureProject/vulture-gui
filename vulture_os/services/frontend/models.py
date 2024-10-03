@@ -1042,6 +1042,21 @@ class Frontend(models.Model):
         help_text = _("Netskope API token"),
         default = "",
     )
+    netskope_page_logs = models.BooleanField(
+        verbose_name = _("Retrieve Netskope page logs"),
+        help_text = _("Retrieve Netskope page logs"),
+        default = True,
+    )
+    netskope_network_logs = models.BooleanField(
+        verbose_name = _("Retrieve Netskope network logs"),
+        help_text = _("Retrieve Netskope network logs"),
+        default = True,
+    )
+    netskope_application_logs = models.BooleanField(
+        verbose_name = _("Retrieve Netskope application logs"),
+        help_text = _("Retrieve Netskope application logs"),
+        default = True,
+    )
     # WAF Cloudflare attributes
     waf_cloudflare_apikey = models.TextField(
         verbose_name = _("WAF Cloudflare API token"),
