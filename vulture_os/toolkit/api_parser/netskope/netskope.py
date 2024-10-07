@@ -87,7 +87,7 @@ class NetskopeParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, since, to=timezone.now(), cursor=0, logtype):
+    def get_logs(self, since, to=timezone.now(), cursor=0, logtype="alert"):
         self._connect()
 
         url = f"https://{self.netskope_host}{self.ENDPOINT}{logtype}"
@@ -132,7 +132,7 @@ class NetskopeParser(ApiParser):
         if self.netskope_application_logs:
             logtypes.append("application")
         for logtype in logtypes:
-            since = self.last_collected_timestamps.get(log_type, self.last_api_call) or (timezone.now() - timedelta(hours=24))
+            since = self.last_collected_timestamps.get(logtype, self.last_api_call) or (timezone.now() - timedelta(hours=24))
             self.upper_timestamp = since.timestamp()
             to = min(timezone.now(), since + timedelta(hours=24))
             offset = 0
@@ -152,7 +152,7 @@ class NetskopeParser(ApiParser):
                 offset += len(logs)
 
                 if logtype == "alert":
-                    self.write_to_file([self.parse_alert_log(l) for l in logs])
+                    self.write_to_file([self.parse_alert_log(log) for log in logs])
                 else:
                     self.write_to_file([json.dumps(l) for l in logs])
 
@@ -162,11 +162,11 @@ class NetskopeParser(ApiParser):
             if offset > 0:
                 logger.info(f"[{__parser__}][execute]: Total logs fetched : {offset}",
                             extra={'frontend': str(self.frontend)})
-                self.last_collected_timestamps[log_type] = to
+                self.last_collected_timestamps[logtype] = to
 
             elif self.last_api_call < timezone.now() - timedelta(hours=24):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
-                self.last_collected_timestamps[log_type] = self.last_collected_timestamps[log_type] + timedelta(hours=1)
+                self.last_collected_timestamps[logtype] = self.last_collected_timestamps[logtype] + timedelta(hours=1)
 
             logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
