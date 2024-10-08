@@ -141,6 +141,10 @@ class CiscoUmbrellaParser(ApiParser):
         return self.__execute_query(self.ACTIVITY_URL, payload)
 
     def format_log(self, log):
+        log["related_users"] = []
+        for identity in log["identities"]:
+            if identity["type"]["type"] == "directory_user":
+                log["related_users"].append(identity["label"])
         return json.dumps(log)
 
     def execute(self):
