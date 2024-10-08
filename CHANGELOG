@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [API_PARSER] [CISCO_UMBRELLA] Add the list of users in logs
 
 
 ## [2.16.0] - 2024-09-10
