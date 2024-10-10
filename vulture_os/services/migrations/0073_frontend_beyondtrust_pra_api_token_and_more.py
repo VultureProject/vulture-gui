@@ -4,6 +4,15 @@ from django.db import migrations, models
 import django.utils.timezone
 import djongo.models.fields
 
+def add_default_beyondtrust_pra_api_token(apps, schema_editor):
+    frontend_model = apps.get_model("services", "frontend")
+    db_alias = schema_editor.connection.alias
+    frontends = frontend_model.objects.using(db_alias)
+
+    for frontend in frontends:
+        if not frontend.beyondtrust_pra_api_token:
+            frontend.beyondtrust_pra_api_token = dict()
+            frontend.save()
 
 class Migration(migrations.Migration):
 
@@ -42,4 +51,5 @@ class Migration(migrations.Migration):
             name='reachfive_expire_at',
             field=models.DateTimeField(default=django.utils.timezone.now, help_text='ReachFive access token expire at', verbose_name='ReachFive access token expire at'),
         ),
+        migrations.RunPython(add_default_beyondtrust_pra_api_token, migrations.RunPython.noop),
     ]
