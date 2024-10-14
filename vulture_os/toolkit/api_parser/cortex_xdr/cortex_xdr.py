@@ -23,8 +23,12 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Cortex XDR API Parser'
 __parser__ = 'CORTEX XDR'
 
+import hashlib
 import json
 import logging
+import secrets
+import string
+
 import requests
 
 from datetime import datetime
@@ -53,6 +57,7 @@ class CortexXDRParser(ApiParser):
         self.cortex_xdr_apikey = data["cortex_xdr_apikey"]
         self.cortex_xdr_alerts_timestamp = data.get("cortex_xdr_alerts_timestamp")
         self.cortex_xdr_incidents_timestamp = data.get("cortex_xdr_incidents_timestamp")
+        self.cortex_xdr_advanced_token = data.get("cortex_xdr_advanced_token")
 
         self.session = None
 
@@ -75,9 +80,22 @@ class CortexXDRParser(ApiParser):
         try:
             if self.session is None:
                 self.session = requests.Session()
-                self.session.headers.update({'x-xdr-auth-id': str(self.cortex_xdr_apikey_id)})
-                self.session.headers.update({'Authorization': str(self.cortex_xdr_apikey)})
 
+                if self.cortex_xdr_advanced_token:
+                    nonce = ''.join(
+                        [secrets.choice(string.ascii_letters + string.digits) for _ in range(64)])  # import secrets
+                    timestamp = int(timezone.now().timestamp()) * 1000  # from datetime import datetime, timezone
+
+                    auth_key = f"{self.cortex_xdr_apikey}{nonce}{timestamp}".encode('utf-8')
+                    auth_key = hashlib.sha256(auth_key).hexdigest()  # import hashlib
+
+                    self.session.headers.update({'Authorization': str(auth_key)})
+                    self.session.headers.update({'x-xdr-auth-id': str(self.cortex_xdr_apikey_id)})
+                    self.session.headers.update({'x-xdr-timestamp': str(timestamp)})
+                    self.session.headers.update({'x-xdr-nonce': str(nonce)})
+                else:
+                    self.session.headers.update({'x-xdr-auth-id': str(self.cortex_xdr_apikey_id)})
+                    self.session.headers.update({'Authorization': str(self.cortex_xdr_apikey)})
             return True
 
         except Exception as err:
@@ -127,12 +145,25 @@ class CortexXDRParser(ApiParser):
                    }]
         msg = f"Get user events request params: {params}"
         logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
-        response = self.session.post(
-            url,
-            json=params,
-            proxies=self.proxies,
-            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
-        )
+
+        retry = 1
+        while retry <= 3:
+            self._connect()
+
+            response = self.session.post(
+                url,
+                json=params,
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
+            )
+
+            if response.status_code == 401:
+                logger.info(f"[{__parser__}]:get_logs: Refresh token.", extra={'frontend': str(self.frontend)})
+                self.session = None
+                retry += 1
+                continue
+            else:
+                break
 
         if response.status_code == 401:
             return False, _('Authentication failed')

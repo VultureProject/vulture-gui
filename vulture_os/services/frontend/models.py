@@ -741,6 +741,10 @@ class Frontend(models.Model):
     cortex_xdr_incidents_timestamp = models.DateTimeField(
         default=None
     )
+    cortex_xdr_advanced_token = models.BooleanField(
+        default=False,
+        help_text=_("Enable advanced token"),
+    )
     # CyberReason attributes
     cybereason_host = models.TextField(
         help_text=_("Cybereason host"),
