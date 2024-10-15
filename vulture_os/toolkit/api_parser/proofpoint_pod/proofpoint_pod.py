@@ -128,6 +128,7 @@ class ProofpointPodParser(ApiParser):
             for part in parsed.pop('msgParts', []):
                 parsed['additional']['related']['hash'].add(part.get('md5', ''))
                 parsed['additional']['related']['hash'].add(part.get('sha256', ''))
+
                 for url_obj in part.get('urls', []):
                     url = url_obj.get('url', '')
                     # remove urls that are simply action-links to send a mail
@@ -162,7 +163,6 @@ class ProofpointPodParser(ApiParser):
                     'isDeleted': part.get('isDeleted', False),
                     'isCorrupted': part.get('isCorrupted', False),
                     'isArchive': part.get('isArchive', False),
-                    'metadata': part.get('metadata', {}),
                 })
 
             if results := get_obj_value_or_default(parsed, 'filter.modules.dmarc.alignment.results'):
