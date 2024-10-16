@@ -99,12 +99,14 @@ class CybereasonParser(ApiParser):
                     raise CybereasonAPIError(f"Authentication failed on {login_url} for user {self.username}")
                 logger.info(f"[{__parser__}]:_connect: Successfully logged-in",
                             extra={'frontend': str(self.frontend)})
+
+                self.session.headers.update(self.HEADERS)
             return True
 
         except Exception as err:
             raise CybereasonAPIError(err)
 
-    def execute_query(self, method: str, url: str, query: dict=None, header: dict=HEADERS, data: str=None, sleepretry: int=10, timeout: int=10) -> dict:
+    def execute_query(self, method: str, url: str, query: dict=None, data: str="", sleepretry: int=10, timeout: int=10) -> dict:
         self._connect()
 
         response = None
@@ -116,7 +118,6 @@ class CybereasonParser(ApiParser):
                     method=method,
                     url=url,
                     json=query,
-                    headers=header,
                     data=data,
                     proxies=self.proxies,
                     verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl,
@@ -157,7 +158,7 @@ class CybereasonParser(ApiParser):
             since = (to - timedelta(hours=24))
 
             all_logs = []
-            for log_type, related_class in self.log_types.items():
+            for related_class in self.log_types.values():
                 logs, _, _ = related_class.get_logs(since, to)
                 all_logs.extend(logs)
 
