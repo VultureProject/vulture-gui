@@ -1,8 +1,7 @@
 # from cybereason import CybereasonParser
 import json
 from datetime import datetime, timedelta
-
-from pytz import utc
+from django.utils import timezone
 
 
 class Malop:
@@ -48,7 +47,7 @@ class Malop:
         has_more_logs = True
         last_timestamp = None
         # Get bulk of 1000 max logs
-        while len(logs) < 1000:
+        while len(logs) < 1000 and not self.instance.evt_stop.is_set():
             ret = self.instance.execute_query("POST", url_alert, query, timeout=30)
             received_logs = ret.get('data', {}).get('data', [])
             if 'data' not in ret or not received_logs:
@@ -63,8 +62,8 @@ class Malop:
         if logs:
             # Make sure logs are sorted by timestamps
             # ISO8601 timestamps are sortable as strings
-            last_timestamp = max(x['lastUpdateTime'] for x in logs)
-            last_timestamp = datetime.fromtimestamp(int(last_timestamp) / 1000, tz=utc)
+            last_timestamp = max(log['lastUpdateTime'] for log in logs)
+            last_timestamp = datetime.fromtimestamp(int(last_timestamp) / 1000, tz=timezone.utc)
 
         return logs, last_timestamp, has_more_logs
 
@@ -131,7 +130,7 @@ class Malop:
         alert['machines'] = []
         return alert
 
-    def format_log(self, log: dict) -> json:
+    def format_log(self, log: dict) -> str:
         log['iconBase64'] = ""
 
         flattened_ip = []
@@ -292,7 +291,14 @@ class Malop:
             self.DESC_TRANSLATION = self.instance.execute_query("GET", url)
 
         process_status, suspicions_process = self._suspicions_process(alert_id, last_update_time)
+        if not process_status:
+            msg = f"Could not get process suspicions for alert {alert_id}: {suspicions_process}"
+            logger.warning(f"[{__parser__}]:_suspicions: {msg}", extra={'frontend': str(self.frontend)})
+
         network_status, suspicions_network = self._suspicions_network(alert_id)
+        if not network_status:
+            msg = f"Could not get network suspicions for alert {alert_id}: {suspicions_network}"
+            logger.warning(f"[{__parser__}]:_suspicions: {msg}", extra={'frontend': str(self.frontend)})
 
         return (suspicions_process, suspicions_network) if all([process_status, network_status]) else ({}, {})
 
