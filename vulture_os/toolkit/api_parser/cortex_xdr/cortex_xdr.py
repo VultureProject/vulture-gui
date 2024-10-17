@@ -30,7 +30,7 @@ import requests
 from datetime import datetime
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from pytz import utc
+from django.utils import timezone
 
 from toolkit.api_parser.api_parser import ApiParser
 
@@ -171,7 +171,7 @@ class CortexXDRParser(ApiParser):
                     if isinstance(log_timestamp, list) and len(log_timestamp) > 0:
                         log_timestamp = log_timestamp[0]
 
-                    log['timestamp'] = datetime.fromtimestamp(log_timestamp/1000, tz=utc).isoformat()
+                    log['timestamp'] = datetime.fromtimestamp(log_timestamp/1000, tz=timezone.utc).isoformat()
 
                     # Get first occurence of lists to keep retro-compatibility with actual parser
                     # Actual mapping fields
@@ -184,7 +184,7 @@ class CortexXDRParser(ApiParser):
                             else:
                                 if len(v) > 1:
                                     truncated_lists_fields.add(k)
-                                    logger.error(f"[{__parser__}]:format_log: WARNING: field '{k}' has more than one occurrence. The first is keeped, the others will be ignored.",
+                                    logger.error(f"[{__parser__}]:format_log: WARNING: field '{k}' has more than one occurrence. The first is kept, the others will be ignored.",
                                              extra={'frontend': str(self.frontend)})
                                 log[k] = v[0]
                     log["truncated_lists_fields"] = list(truncated_lists_fields)
@@ -200,7 +200,7 @@ class CortexXDRParser(ApiParser):
                     # No need to make_aware, date already contains timezone
                     # add 1 (ms) to timestamp to avoid getting last alert again
                     try:
-                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][self.event_kinds[kind]['time_field']]+1)/1000, tz=utc))
+                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][self.event_kinds[kind]['time_field']]+1)/1000, tz=timezone.utc))
                     except Exception:
                         msg = f"Could not locate key '{self.event_kinds[kind]['time_field']}' from following log: {logs[-1]}"
                         logger.error(f"[{__parser__}]:execute: {msg}",
