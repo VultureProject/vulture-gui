@@ -263,6 +263,7 @@ class FrontendForm(ModelForm):
                            'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
                            'waf_barracuda_token',
                            "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
+                           "lockself_x_auth_token", "lockself_x_ls_token", "lockself_host", "lockself_organization_id",
                            ]:
             self.fields[field_name].required = False
 
@@ -370,6 +371,7 @@ class FrontendForm(ModelForm):
                   'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
                   'waf_barracuda_token',
                   "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
+                  'lockself_x_auth_token', 'lockself_x_ls_token', 'lockself_host', 'lockself_organization_id',
                   )
 
         widgets = {
@@ -562,6 +564,10 @@ class FrontendForm(ModelForm):
             'beyondtrust_pra_client_id': TextInput(attrs={'class': 'form-control'}),
             'beyondtrust_pra_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'beyondtrust_pra_host': TextInput(attrs={'class': 'form-control'}),
+            'lockself_x_auth_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'lockself_x_ls_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'lockself_host': TextInput(attrs={'class': 'form-control'}),
+            'lockself_organization_id': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
