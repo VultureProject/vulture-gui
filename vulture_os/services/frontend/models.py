@@ -766,6 +766,11 @@ class Frontend(models.Model):
     cisco_meraki_timestamp = models.JSONField(
         default=dict
     )
+    cisco_meraki_get_security_logs = models.BooleanField(
+        default=False,
+        verbose_name=_("Get security logs"),
+        help_text=_("Get security logs"),
+    )
     # Proofpoint TAP attributes
     proofpoint_tap_host = models.TextField(
         help_text=_("ProofPoint TAP host"),
