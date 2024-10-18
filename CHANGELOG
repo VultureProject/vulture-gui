@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [SENTINELONE] Properly get all techniques' names
 ### Added
 - [API_PARSER] [LOCKSELF] New API parser LOCKSELF
+### Changed
+- [API_PARSER] [CORTEX_XDR] Update alerts url endpoint
 
 
 ## [2.15.12] - 2024-10-08
