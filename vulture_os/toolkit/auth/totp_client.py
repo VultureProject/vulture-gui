@@ -88,7 +88,7 @@ class TOTPClient(BaseAuth):
 
     def register_authentication(self, **kwargs):
         auth_backend = kwargs['backend']
-        login = kwargs['login']
+        login = kwargs['login'].lower()
 
         """ This method interract with SSOProfile objects in Mongo """
         """ Try to retrieve the SSOProfile in internal database """
