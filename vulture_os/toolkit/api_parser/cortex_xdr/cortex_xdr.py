@@ -29,19 +29,14 @@ import requests
 
 from datetime import datetime
 from django.conf import settings
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
+
 from toolkit.api_parser.api_parser import ApiParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
-
-
-KIND_TIME_FIELDS = {
-    "incidents": "modification_time",
-    "alerts": "event_timestamp"
-}
 
 
 class CortexXDRAPIError(Exception):
@@ -60,6 +55,21 @@ class CortexXDRParser(ApiParser):
         self.cortex_xdr_incidents_timestamp = data.get("cortex_xdr_incidents_timestamp")
 
         self.session = None
+
+        self.event_kinds = {
+            "alerts": {
+                "url": f"https://api-{self.cortex_xdr_host}/public_api/v2/alerts/get_alerts_multi_events/",
+                "time_field": "event_timestamp",
+                "default_time_field": "detection_timestamp",
+                "filter_by": "server_creation_time"
+            },
+            "incidents": {
+                "url": f"https://api-{self.cortex_xdr_host}/public_api/v1/incidents/get_incidents/",
+                "time_field": "modification_time",
+                "default_time_field": "detection_timestamp",
+                "filter_by": "creation_time"
+            }
+        }
 
     def _connect(self):
         try:
@@ -97,23 +107,21 @@ class CortexXDRParser(ApiParser):
     def get_logs(self, kind, nb_from=0, since=None, test=False):
         self._connect()
 
-        url = f"https://api-{self.cortex_xdr_host}/public_api/v1/{kind}/get_{kind}/"
+        url = self.event_kinds[kind]['url']
 
         params = {'request_data':
                       {
                           'sort': {
-                              'field': "creation_time",
+                              'field': self.event_kinds[kind]['filter_by'],
                               'keyword': "asc"
                           },
                           'search_from': nb_from,
-                          'search_to': nb_from+100
+                          'search_to': 10 if test else nb_from+100
                       }
         }
-        if test:
-            params['request_data']['search_to']=10
         if since:
             params['request_data']['filters'] = [{
-                       "field": "creation_time",
+                       "field": self.event_kinds[kind]['filter_by'],
                        "operator": "gte",
                        "value": int(since.timestamp()*1000)
                    }]
@@ -123,7 +131,7 @@ class CortexXDRParser(ApiParser):
             url,
             json=params,
             proxies=self.proxies,
-            verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
         )
 
         if response.status_code == 401:
@@ -139,7 +147,7 @@ class CortexXDRParser(ApiParser):
         return True, content
 
     def execute(self):
-        for kind in ["alerts", "incidents"]:
+        for kind in self.event_kinds.keys():
             logger.info(f"[{__parser__}]:execute: Getting {kind}", extra={'frontend': str(self.frontend)})
             cpt = 0
             total = 1
@@ -158,10 +166,32 @@ class CortexXDRParser(ApiParser):
 
                 def format_log(log):
                     log['kind'] = kind
-                    log['timestamp'] = datetime.fromtimestamp((log[KIND_TIME_FIELDS[kind]] or log['detection_timestamp'])/1000, tz=timezone.utc).isoformat()
+
+                    log_timestamp = log.get(self.event_kinds[kind]['time_field'], log.get(self.event_kinds[kind]['default_time_field']))
+                    if isinstance(log_timestamp, list) and len(log_timestamp) > 0:
+                        log_timestamp = log_timestamp[0]
+
+                    log['timestamp'] = datetime.fromtimestamp(log_timestamp/1000, tz=timezone.utc).isoformat()
+
+                    # Get first occurence of lists to keep retro-compatibility with actual parser
+                    # Actual mapping fields
+                    tracking_fields = ['agent_version', 'action_remote_ip', 'action_remote_port', 'dns_query_name', 'event_timestamp', 'module_id', 'host_ip', 'agent_os_sub_type', 'action_file_name', 'action_file_path', 'action_file_md5', 'action_file_sha256', 'event_type', 'action_country', 'action_external_hostname', 'action_process_causality_id', 'action_process_image_command_line', 'action_process_image_name', 'action_process_image_sha256', 'action_process_instance_id', 'action_process_signature_status', 'action_process_signature_vendor', 'actor_causality_id', 'actor_process_causality_id', 'agent_host_boot_time', 'agent_is_vdi', 'association_strength', 'bioc_indicator', 'end_match_attempt_ts', 'event_id', 'story_id', 'action_local_port', 'actor_process_command_line', 'actor_process_image_name', 'actor_process_image_path', 'actor_process_instance_id', 'actor_process_os_pid', 'actor_process_image_md5', 'actor_process_image_sha256', 'actor_process_signature_status', 'actor_process_signature_vendor', 'actor_thread_thread_id', 'causality_actor_causality_id', 'causality_actor_process_command_line', 'causality_actor_process_execution_time', 'causality_actor_process_image_md5', 'causality_actor_process_image_name', 'causality_actor_process_image_path', 'causality_actor_process_image_sha256', 'causality_actor_process_signature_status', 'causality_actor_process_signature_vendor', 'action_registry_data', 'action_registry_key_name', 'action_registry_value_name', 'action_local_ip', 'mitre_tactic_id_and_name', 'mitre_technique_id_and_name']
+                    truncated_lists_fields = set()
+                    for k, v in log.items():
+                        if k in tracking_fields and isinstance(v, list):
+                            if len(v) == 0:
+                                log[k] = None
+                            else:
+                                if len(v) > 1:
+                                    truncated_lists_fields.add(k)
+                                    logger.error(f"[{__parser__}]:format_log: WARNING: field '{k}' has more than one occurrence. The first is kept, the others will be ignored.",
+                                             extra={'frontend': str(self.frontend)})
+                                log[k] = v[0]
+                    log["truncated_lists_fields"] = list(truncated_lists_fields)
+
                     return json.dumps(log)
 
-                self.write_to_file([format_log(l) for l in logs])
+                self.write_to_file([format_log(log) for log in logs])
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
 
@@ -170,9 +200,9 @@ class CortexXDRParser(ApiParser):
                     # No need to make_aware, date already contains timezone
                     # add 1 (ms) to timestamp to avoid getting last alert again
                     try:
-                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][KIND_TIME_FIELDS[kind]]+1)/1000, tz=timezone.utc))
-                    except Exception as err:
-                        msg = f"Could not locate key '{KIND_TIME_FIELDS[kind]}' from following log: {logs[-1]}"
+                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][self.event_kinds[kind]['time_field']]+1)/1000, tz=timezone.utc))
+                    except Exception:
+                        msg = f"Could not locate key '{self.event_kinds[kind]['time_field']}' from following log: {logs[-1]}"
                         logger.error(f"[{__parser__}]:execute: {msg}",
                                      extra={'frontend': str(self.frontend)})
 
