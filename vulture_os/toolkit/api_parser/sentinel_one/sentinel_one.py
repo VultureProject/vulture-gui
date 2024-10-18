@@ -257,7 +257,7 @@ class SentinelOneParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: fetched {len(logs)} logs of '{event_kind}'",
                             extra={'frontend': str(self.frontend)})
 
-                self.write_to_file([self.format_log(l, event_kind) for l in logs])
+                self.write_to_file([self.format_log(log, event_kind) for log in logs])
 
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
