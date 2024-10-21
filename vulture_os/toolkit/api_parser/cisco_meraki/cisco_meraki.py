@@ -191,7 +191,7 @@ class CiscoMerakiParser(ApiParser):
                     log['timestamp'] = log['ts']
                     return json.dumps(log)
 
-                self.write_to_file([format_security_log(l) for l in security_events])
+                self.write_to_file([format_security_log(log) for log in security_events])
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
 
