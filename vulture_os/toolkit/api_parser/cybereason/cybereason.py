@@ -106,7 +106,7 @@ class CybereasonParser(ApiParser):
         except Exception as err:
             raise CybereasonAPIError(err)
 
-    def execute_query(self, method: str, url: str, query: dict=None, data: str="", sleepretry: int=10, timeout: int=10) -> dict:
+    def execute_query(self, method: str, url: str, query: dict={}, data: str="", sleepretry: int=10, timeout: int=10, custom_headers: dict={}) -> dict:
         self._connect()
 
         response = None
@@ -121,7 +121,8 @@ class CybereasonParser(ApiParser):
                     data=data,
                     proxies=self.proxies,
                     verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl,
-                    timeout=timeout
+                    timeout=timeout,
+                    headers=custom_headers,
                 )
             except requests.exceptions.ReadTimeout:
                 msg = f"ReadTimeout, waiting {sleepretry}s before retrying"

@@ -230,7 +230,7 @@ class Malop:
         header = {
             'Content-Type': 'text/plain'
         }
-        return self.instance.execute_query(method="POST", url=url_alert_malop_comments, data=alert_malop_id, header=header)
+        return self.instance.execute_query(method="POST", url=url_alert_malop_comments, data=alert_malop_id, custom_headers=header)
 
     @staticmethod
     def _process_details_flattener(process_details: dict) -> list:
