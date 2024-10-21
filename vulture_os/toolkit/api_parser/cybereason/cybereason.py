@@ -150,7 +150,7 @@ class CybereasonParser(ApiParser):
             logger.error(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
             return {}
 
-        return json.loads(response.content)
+        return response.json()
 
     def test(self) -> dict:
         try:
