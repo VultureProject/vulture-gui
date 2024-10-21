@@ -202,7 +202,7 @@ class CybereasonParser(ApiParser):
             to = to - timedelta(minutes=5)
 
             has_more_logs = True
-            while has_more_logs:
+            while has_more_logs and not self.evt_stop.is_set():
 
                 msg = f"Parser starting with {log_type} from {since} to {to}"
                 logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
