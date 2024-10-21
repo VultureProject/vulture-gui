@@ -126,19 +126,25 @@ class CiscoMerakiParser(ApiParser):
     def execute(self):
 
         for orga in self.get_organizations():
+            if self.evt_stop.is_set():
+                break
 
             logger.info(f"[{__parser__}]:execute: Getting organisation {orga['name']}", extra={'frontend': str(self.frontend)})
             for network in self.get_organization_networks(orga['id']):
+                if self.evt_stop.is_set():
+                    break
 
                 logger.info(f"[{__parser__}]:execute: Getting organisation network {network['name']}",
                             extra={'frontend': str(self.frontend)})
                 for product_type in network['productTypes']:
+                    if self.evt_stop.is_set():
+                        break
 
                     logger.info(f"[{__parser__}]:execute: Getting organisation network {network['name']} "
                                 f"product {product_type}",
                                 extra={'frontend': str(self.frontend)})
                     nb_events = 1
-                    while nb_events > 0:
+                    while nb_events > 0 and not self.evt_stop.is_set():
                         status, tmp_logs = self.get_logs(network['id'],
                                                          product_type,
                                                          self.frontend.cisco_meraki_timestamp.get(f"{network['id']}_{product_type}") or \
