@@ -1,8 +1,36 @@
-# from cybereason import CybereasonParser
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture OS.
+
+Vulture OS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture OS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
+"""
+__author__ = "Kevin Guillemot"
+__credits__ = ["Florian Ledoux", "Antoine Lucas", "Julien Pollet", "Nicolas Lançon"]
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture OS"
+__email__ = "contact@vultureproject.org"
+__doc__ = 'Malop subclass: get Malop alerts'
+__parser__ = 'CYBEREASON'
+
 import json
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime
 from django.utils import timezone
 
+from django.conf import settings
+logging.config.dictConfig(settings.LOG_SETTINGS)
+logger = logging.getLogger('api_parser')
 
 class Malop:
 
@@ -15,10 +43,14 @@ class Malop:
     DESC_TRANSLATION = {}
 
     def __init__(self, instance: object) -> None:
-        self.instance = instance
+        self.frontend = getattr(instance, 'frontend')
+        self.host = getattr(instance, 'host')
+        self.evt_stop = getattr(instance, 'evt_stop')
+        self.execute_query = getattr(instance, 'execute_query')
+        self.update_lock = getattr(instance, 'update_lock')
 
-    def get_logs(self, since: datetime, to: datetime) -> (list, object, bool):
-        url_alert = f'{self.instance.host}/{self.ALERT_URI}'
+    def get_logs(self, since: datetime, to: datetime) -> tuple[list, object, bool]:
+        url_alert = f'{self.host}/{self.ALERT_URI}'
 
         query = {
             "search": {},
@@ -47,8 +79,8 @@ class Malop:
         has_more_logs = True
         last_timestamp = None
         # Get bulk of 1000 max logs
-        while len(logs) < 1000 and not self.instance.evt_stop.is_set():
-            ret = self.instance.execute_query("POST", url_alert, query, timeout=30)
+        while len(logs) < 1000 and not self.evt_stop.is_set():
+            ret = self.execute_query("POST", url_alert, query, timeout=30)
             received_logs = ret.get('data', {}).get('data', [])
             if 'data' not in ret or not received_logs:
                 has_more_logs = False
@@ -69,7 +101,7 @@ class Malop:
 
     def add_enrichment(self, alert: dict) -> dict:
         alert['id'] = alert['guid']
-        alert['url'] = self.instance.host
+        alert['url'] = self.host
 
         suspicions_process, suspicions_network = self._suspicions(alert['id'], alert['lastUpdateTime'])
         suspicions = list(suspicions_process.get('data', {}).get('suspicionsMap', {}).keys())
@@ -98,12 +130,12 @@ class Malop:
             ]
 
         # Requesting may take some while, so refresh token in Redis
-        self.instance.update_lock()
+        self.update_lock()
 
         alert_devices_details = self._get_sensors(machine_guids)
 
         # Requesting may take some while, so refresh token in Redis
-        self.instance.update_lock()
+        self.update_lock()
 
         alert['devices'] = []
         for devices in alert_devices_details:
@@ -173,8 +205,8 @@ class Malop:
         query = {
             "malopGuid": alert_id
         }
-        url = f"{self.instance.host}/{self.ALERT_DETAILS}"
-        details = self.instance.execute_query("POST", url, query)
+        url = f"{self.host}/{self.ALERT_DETAILS}"
+        details = self.execute_query("POST", url, query)
 
         if details.get('fileSuspects', []):
             suspects = [
@@ -225,12 +257,12 @@ class Malop:
 
     def _get_comments(self, alert_malop_id: str) -> dict:
 
-        url_alert_malop_comments = f'{self.instance.host}/{self.ALERT_MALOP_COMMENT_URI}'
+        url_alert_malop_comments = f'{self.host}/{self.ALERT_MALOP_COMMENT_URI}'
 
         header = {
             'Content-Type': 'text/plain'
         }
-        return self.instance.execute_query(method="POST", url=url_alert_malop_comments, data=alert_malop_id, custom_headers=header)
+        return self.execute_query(method="POST", url=url_alert_malop_comments, data=alert_malop_id, custom_headers=header)
 
     @staticmethod
     def _process_details_flattener(process_details: dict) -> list:
@@ -270,7 +302,7 @@ class Malop:
         return flattened_process_details
 
     def _get_sensors(self, guids: list) -> list:
-        sensors_url = f"{self.instance.host}/{self.SENSOR_URI}"
+        sensors_url = f"{self.host}/{self.SENSOR_URI}"
         query = {
             'limit': 100,
             'offset': 0,
@@ -281,14 +313,14 @@ class Malop:
                 {"fieldName": "status", "operator": "NotEquals", "values": ["Archived"]}
             ]
         }
-        data = self.instance.execute_query("POST", sensors_url, query)
+        data = self.execute_query("POST", sensors_url, query)
         return data.get('sensors', [])
 
-    def _suspicions(self, alert_id: str, last_update_time: int) -> (dict, dict):
+    def _suspicions(self, alert_id: str, last_update_time: int) -> tuple[dict, dict]:
 
         if len(self.DESC_TRANSLATION) <= 0:
-            url = f"{self.instance.host}/{self.DESCRIPTION_URI}"
-            self.DESC_TRANSLATION = self.instance.execute_query("GET", url)
+            url = f"{self.host}/{self.DESCRIPTION_URI}"
+            self.DESC_TRANSLATION = self.execute_query("GET", url)
 
         process_status, suspicions_process = self._suspicions_process(alert_id, last_update_time)
         if not process_status:
@@ -302,7 +334,7 @@ class Malop:
 
         return (suspicions_process, suspicions_network) if all([process_status, network_status]) else ({}, {})
 
-    def _suspicions_process(self, alert_id: str, last_update_time: int) -> (bool, dict):
+    def _suspicions_process(self, alert_id: str, last_update_time: int) -> tuple[bool, dict]:
         query = {
             "queryPath": [{
                 "requestedType": "MalopProcess",
@@ -341,13 +373,13 @@ class Malop:
             ]
         }
 
-        url = f"{self.instance.host}/{self.SEARCH_URI}"
-        data = self.instance.execute_query("POST", url, query)
+        url = f"{self.host}/{self.SEARCH_URI}"
+        data = self.execute_query("POST", url, query)
         if data.get('status', '') != 'SUCCESS':
             return False, data.get('message', '')
         return True, data
 
-    def _suspicions_network(self, alert_id: str) -> (bool, dict):
+    def _suspicions_network(self, alert_id: str) -> tuple[bool, dict]:
         query = {
             "queryPath": [{
                 "requestedType": "MalopProcess",
@@ -376,8 +408,8 @@ class Malop:
             "queryTimeout": None
         }
 
-        url = f"{self.instance.host}/{self.SEARCH_URI}"
-        data = self.instance.execute_query("POST", url, query)
+        url = f"{self.host}/{self.SEARCH_URI}"
+        data = self.execute_query("POST", url, query)
         if data['status'] != 'SUCCESS':
             return False, data['message']
         return True, data
