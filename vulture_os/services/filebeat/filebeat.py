@@ -38,6 +38,7 @@ from subprocess import CalledProcessError
 from system.exceptions import VultureSystemError
 
 # Extern modules imports
+from re import search as re_search
 from subprocess import check_output, PIPE
 
 # Logger configuration imports
@@ -77,6 +78,28 @@ class FilebeatService(Service):
     def get_conf_path(self, frontend=None):
         return frontend.get_filebeat_filename()
 
+    def status_service(self, *args):
+        """
+        Give status of filebeat service
+        :param args: Optionnal id of filebeat frontend
+        :return: "DOWN"|"UP"|"UNKNOWN", message information about status
+        """
+        # Warning : can raise ServiceError
+        status, infos = self.status(*args)
+        result = dict()
+        for info in infos.strip().split('\n'):
+            if match := re_search("Filebeat (\d+) running \d+", info):
+                status = "UP"
+            elif match := re_search("Filebeat (\d+) stopped", info):
+                status = "DOWN"
+            else:
+                logger.error(f"[{self.service_name.upper()}] Status unknown, STDOUT='{info}'")
+            if match and match.group():
+                result.update({match.group(1): status})
+                logger.debug(f"[{self.service_name.upper()}] Status of service {match.group(1)}: {status}")
+
+        return result
+
 
 def build_conf(node_logger, frontend_id):
     """ Generate conf of filebeat inputs, based on all frontends LOG
@@ -104,36 +127,41 @@ def build_conf(node_logger, frontend_id):
 
 
 def reload_service(node_logger):
+    raise NotImplementedError
+
+
+def stop_service(node_logger, *args):
+    """ Stop Filebeat service """
     # Do not handle exceptions here, they are handled by process_message
     service = FilebeatService()
 
     # Warning : can raise ServiceError
-    result = service.reload()
-    node_logger.info("Filebeat service reloaded : {}".format(result))
+    result = service.stop(*args)
+    node_logger.info(f"Filebeat service stopped : {result}")
 
     return result
 
 
-def restart_service(node_logger):
+def restart_service(node_logger, *args):
     """ Only way (for the moment) to reload config """
     # Do not handle exceptions here, they are handled by process_message
     service = FilebeatService()
 
     # Warning : can raise ServiceError
-    result = service.restart()
-    node_logger.info("Filebeat service restarted : {}".format(result))
+    result = service.restart(*args)
+    node_logger.info(f"Filebeat service restarted : {result}")
 
     return result
 
 
-def start_service(node_logger):
+def start_service(node_logger, *args):
     """ Only way (for the moment) to reload config """
     # Do not handle exceptions here, they are handled by process_message
     service = FilebeatService()
 
     # Warning : can raise ServiceError
-    result = service.start()
-    node_logger.info("Filebeat service started : {}".format(result))
+    result = service.start(*args)
+    node_logger.info(f"Filebeat service started : {result}")
 
     return result
 

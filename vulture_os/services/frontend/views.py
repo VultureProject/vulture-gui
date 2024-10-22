@@ -162,8 +162,8 @@ def frontend_delete(request, object_id, api=False):
 
                 # Delete Filebeat conf and restart if concerned
                 if filebeat_filename:
+                    node.api_request('services.filebeat.filebeat.stop_service', frontend.id)
                     node.api_request('services.filebeat.filebeat.delete_conf', filebeat_filename)
-                    node.api_request('services.filebeat.filebeat.reload_service')
 
                 # Reload darwin buffering if necessary
                 if was_darwin_buffered:
@@ -492,9 +492,9 @@ def frontend_edit(request, object_id=None, api=False):
                         if frontend.mode != "filebeat" \
                         or node not in new_nodes:
                             logger.info(f"Filebeat config '{old_rsyslog_filename}' deletion asked on node {node}.")
+                            # Stop Filebeat service and delete old config file
+                            node.api_request('services.filebeat.filebeat.stop_service', frontend.id)
                             node.api_request('services.filebeat.filebeat.delete_conf', old_filebeat_filename)
-                            # And reload of Filebeat service
-                            node.api_request('services.filebeat.filebeat.reload_service')
 
                     if old_haproxy_filename:
                         if frontend.rsyslog_only_conf \

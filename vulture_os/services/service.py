@@ -126,7 +126,7 @@ class Service:
         return success.decode('utf8'), error.decode('utf8'), proc.returncode
 
     def start(self, *args):
-        stdout, stderr, code = self._exec_cmd('start')
+        stdout, stderr, code = self._exec_cmd('start', "", *args)
 
         """ Haproxy returns stderr even if no failure - but return code = 0 """
         if stderr and code != 0:
@@ -141,11 +141,11 @@ class Service:
         return stdout or stderr
 
     def stop(self, *args):
-        response = self._exec_cmd('stop')
+        response = self._exec_cmd('stop', "", *args)
         return response
 
     def restart(self, *args):
-        stdout, stderr, code = self._exec_cmd('restart')
+        stdout, stderr, code = self._exec_cmd('restart', "", *args)
 
         """ Haproxy returns stderr even if no failure - but return code = 0 """
         if stderr and code != 0:
@@ -163,7 +163,7 @@ class Service:
         return stdout or stderr
 
     def reload(self, *args):
-        stdout, stderr, code = self._exec_cmd('reload')
+        stdout, stderr, code = self._exec_cmd('reload', "", *args)
 
         if ("not running" in stdout) or ("not running" in stderr):
             logger.info("Cannot reload service {} cause it is not running. Starting-it...".format(self.service_name))
@@ -219,6 +219,12 @@ class Service:
                 match = re_search("Security Associations \((\d+) up, (\d+) connecting\)", infos)
                 if match:
                     status = "UP"
+            elif service_name2 == "filebeat":
+                match = re_search("Filebeat \d+ running \d+", infos)
+                if match:
+                    status = "UP"
+                elif re_search("Filebeat \d+ stopped", infos):
+                    status = "DOWN"
             else:
                 logger.error("[{}] Status unknown, STDOUT='{}', STDERR='{}'".format(service_name2.upper(), infos,
                                                                                     errors))

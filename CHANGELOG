@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [SERVICE] [FILEBEAT] Support new rc calls to check services separatly
 
 
 ## [2.16.0] - 2024-09-10
@@ -34,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] [PF] Correctly add NAT rules for Forwarders on FILE/REDIS/KAFKA-type Frontends
 - [TENANT] [CONF] Ensure related Frontend configurations are reloaded when a Tenant's parameter is changed
 - [GUI] [FRONTEND] Remove too strict validation for log_condition field
-- [API_PARSER] [CYBEREASON] Update timestamp when no logs received during last 24h 
+- [API_PARSER] [CYBEREASON] Update timestamp when no logs received during last 24h
 
 
 ## [2.15.12] - 2024-10-08
@@ -100,7 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DEPENDENCIES] Python dependencies upgrade
   - gunicorn 21.2.0 -> 22.0.0
 - [CLUSTER] [CONFIG] Reload all Rsyslog/Filebeat Listeners when updating the Redis cluster password
-### Fixed
+### Fixed
 - [FRONTEND] Missing redis fields in template infos
 - [API_PARSER] [HARFANGLAB] Increase the limit of logs in request and reduce time range of requests
 - [API_PARSER] [CSC_DOMAINMANAGER] Split logs with several records
@@ -658,7 +660,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [HAPROXY] [PORTAL] redirect request to portal whenever authentication validation couldn't be done
 - [IDP] [API] Correct return code 400 when User without TOTP has a request for TOTP reset
-- [SYSTEM] [BLACKLIST/WHITELIST] Reload pf configuration when adding/removing whitelist/blacklist IPs to cluster 
+- [SYSTEM] [BLACKLIST/WHITELIST] Reload pf configuration when adding/removing whitelist/blacklist IPs to cluster
 - [API_PARSER] [CLOUDFLARE] Fix ram explosion + improve resilience by downloading by bulks
 - [API_PARSER] [AKAMAI] Fix HBSD13 SemLock error when loading GUI code
 ### Added
@@ -736,7 +738,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [IDP] [API] Don't fail on token updates with explicit expire_at
 - [API_PARSER] [IMPERVA] Use requests' auth object instead of manually created Authorization header
 - [API_PARSER] [IMPERVA] Typo in logger made the process crash
-- [API_PARSER] [SYMANTEC] Correctly extracting token from downloaded archive 
+- [API_PARSER] [SYMANTEC] Correctly extracting token from downloaded archive
 - [SSO_FORWARD] Missing variable in logger
 - [PORTAL] Various logger levels and message corrections
 ### Removed
