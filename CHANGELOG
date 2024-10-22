@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGOM] Code and logic factorization
 - [LOGOM] Allow to deactivate limitation of the size of DA queues on disk
 - [LOGOM] [ELASTICSEARCH] Limit available certificates to non-CA ones
+- [API_PARSER] [CYBEREASON] Refacto code and avoid API errors by getting bulks of 1000 logs
 ### Fixed
 - [NETWORK] Correctly assign a new/changed IPv6 IP to an existing interface
 - [FRONTEND] JSONField default value
