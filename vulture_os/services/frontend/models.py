@@ -2168,7 +2168,7 @@ class Frontend(models.Model):
             nodes = self.get_nodes()
 
             for node in nodes:
-                api_res = node.api_request("services.filebeat.filebeat.start_service")
+                api_res = node.api_request("services.filebeat.filebeat.start_service", self.id)
                 if not api_res.get('status'):
                     raise ServiceStartError("API request failure on node '{}'".format(node.name), "filebeat",
                                             traceback=api_res.get('message'))

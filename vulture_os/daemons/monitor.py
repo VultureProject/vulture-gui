@@ -101,8 +101,8 @@ def monitor():
             rsyslogd_status = get_service_status(RsyslogService)
             mon.services.add(rsyslogd_status)
         elif service == FilebeatService:
-            filebeat_status = get_service_status(FilebeatService)
-            mon.services.add(filebeat_status)
+            filebeat_status = service().status_service()
+            mon.services.add(get_service_status(FilebeatService))
         else:
             mon.services.add(get_service_status(service))
 
@@ -149,14 +149,14 @@ def monitor():
                 elif frontend.rsyslog_only_conf:
                     status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
                 elif frontend.filebeat_only_conf:
-                    status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(filebeat_status.status, filebeat_status.status)
+                    status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(filebeat_status.get(str(frontend.id)), "STOP")
                 else:
                     status[node.name] = statuses.get("FRONTEND", {}).get(frontend.name, "ERROR")
                 logger.debug(f"Status of frontend '{frontend.name}': {status}")
 
                 for node_name in status.keys():
                     if status[node_name] != frontend.status.get(node_name):
-                        logger.info(f"Status of '{node_name}' changed from {frontend.status.get(node_name)} to {status[node_name]}")
+                        logger.info(f"Status of frontend '{frontend.name}' on node '{node_name}' changed from {frontend.status.get(node_name)} to {status[node_name]}")
                         frontend.status[node_name] = status[node_name]
                         frontend.save()
 
