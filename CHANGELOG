@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGOM] Add the ability to define the spooling directory for DA queues
 - [TENANTS] New additional_config field
 - [NETWORK] Automatically select the best interface for outgoing Backend/LogForwarders using system routes
+- [API_PARSER] [CISCO_MERAKI] Add support for security logs
 ### Changed
 - [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
 - [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOGOM] Allow to deactivate limitation of the size of DA queues on disk
 - [LOGOM] [ELASTICSEARCH] Limit available certificates to non-CA ones
 - [API_PARSER] [CYBEREASON] Refacto code and avoid API errors by getting bulks of 1000 logs
+- [API_PARSER] [CISCO_MERAKI] Improve logging and collector early termination
 ### Fixed
 - [NETWORK] Correctly assign a new/changed IPv6 IP to an existing interface
 - [FRONTEND] JSONField default value
