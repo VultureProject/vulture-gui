@@ -282,6 +282,7 @@ def openvpn_start(request, object_id, api=False):
             status = 500
         else:
             status = 202
+            res.pop('instance')
             if not res.get('message'):
                 res['message'] = _("Starting service. Please wait a moment please...")
 
@@ -318,6 +319,7 @@ def openvpn_restart(request, object_id, api=False):
             status = 500
         else:
             status = 202
+            res.pop('instance')
             if not res.get('message'):
                 res['message'] = _("Restarting service. Please wait a moment please...")
 
@@ -354,6 +356,7 @@ def openvpn_stop(request, object_id, api=False):
             status = 500
         else:
             status = 202
+            res.pop('instance')
             if not res.get('message'):
                 res['message'] = _("Stopping service. Please wait a moment please...")
 
@@ -390,6 +393,7 @@ def openvpn_reload(request, object_id, api=False):
             status = 500
         else:
             status = 202
+            res.pop('instance')
             if not res.get('message'):
                 res['message'] = _("Reloading service. Please wait a moment please...")
 
