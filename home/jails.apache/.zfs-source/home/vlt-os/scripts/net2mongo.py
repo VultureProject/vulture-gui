@@ -78,7 +78,7 @@ def refresh_physical_NICs(node):
             d, created = NetworkInterfaceCard.objects.get_or_create(
                 dev=nic,
                 node=node)
-            if created:
+            if not created:
                 logger.debug("Node::refresh_physical_NICs: NIC {} exists in database".format(d.dev))
             else:
                 logger.info("Node::refresh_physical_NICs: Creating NIC {}".format(nic))
@@ -91,8 +91,7 @@ def parse_ifconfig_key(line, config):
     split = line.split("_")
 
     if len(split) > 3:
-        logger.error(f"Node::parse_ifconfig_key: could not parse line '{line}',"
-                        " problem is on '{tmp}' (too many '_', don't know how to read)")
+        logger.error(f"Node::parse_ifconfig_key: could not parse line '{line}', (too many '_', don't know how to read)")
         return False
 
     if "ipv6" in split:
