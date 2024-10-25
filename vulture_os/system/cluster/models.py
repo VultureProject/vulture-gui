@@ -169,6 +169,8 @@ class Node(models.Model):
             result['is_master_mongo'] = self.is_master_mongo
         if not fields or "mongo_state" in fields:
             result['mongo_state'] = self.mongo_state
+        if not fields or "mongo_version" in fields:
+            result['mongo_version'] = self.mongo_version
         if not fields or "is_standalone" in fields:
             result['is_standalone'] = self.is_standalone
         if not fields or "is_configured" in fields:
@@ -253,8 +255,7 @@ class Node(models.Model):
         :return: True / False, or None in case of a failure
         """
         c = MongoBase()
-        ok = c.connect()
-        if ok:
+        if c.connect(node=f"{self.name}:9091"):
             c.connect_primary()
             config = c.db.admin.command("replSetGetConfig")['config']
             return len(config['members']) == 1
@@ -288,13 +289,23 @@ class Node(models.Model):
         :return: state returned by mongo
         """
         c = MongoBase()
-        ok = c.connect()
-        if ok:
+        if c.connect():
             members = c.repl_state()
             for member in members:
                 if member['name'] == self.name + ':9091':
                     return member.get('stateStr')
         return "UNKNOWN"
+
+    @property
+    def mongo_version(self):
+        """
+        Get version of mongo on the current Node
+        :return: string of version number returned by mongo
+        """
+        c = MongoBase()
+        if c.connect():
+            return c.get_version()
+        return ""
 
     @property
     def is_master_redis(self):

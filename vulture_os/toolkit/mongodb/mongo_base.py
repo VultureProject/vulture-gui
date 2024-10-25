@@ -139,9 +139,14 @@ class MongoBase:
                 self.connect()
 
             db = self.db[database]
-            coll = db[collection]
-
-            coll.update_one(query, newvalue)
+            if collection:
+                coll = db[collection]
+                coll.update_one(query, newvalue)
+            else:
+                for collName in db.list_collection_names():
+                    coll = db[collName]
+                    coll.update_one(query, newvalue)
+                    return True
             return True
         except Exception as e:
             if settings.DEV_MODE:
@@ -167,25 +172,6 @@ class MongoBase:
             logger.critical(e, exc_info=1)
             return False
 
-    def update_one(self, database, query, newvalue):
-        try:
-            if not self.db:
-                self.connect()
-
-            db = self.db[database]
-
-            for collName in db.list_collection_names():
-                coll = db[collName]
-                coll.update_one(query, newvalue)
-                return True
-        except Exception as e:
-            if settings.DEV_MODE:
-                raise
-
-            logger.critical(e, exc_info=1)
-            return False
-
-
     def connect_with_retries(self, retries, node=None, primary=True, timeout=2):
         connection_ok = False
         tries = 1
@@ -195,7 +181,6 @@ class MongoBase:
             tries += 1
 
         return connection_ok
-
 
     def connect(self, node=None, primary=True, timeout_ms=5000):
         try:
@@ -232,6 +217,15 @@ class MongoBase:
         if self.db is None:
             self.connect()
         return self.connect(self.get_primary())
+
+    def get_version(self):
+        try:
+            if self.db is None:
+                self.connect()
+            return self.db.server_info()['version']
+        except Exception as e:
+            logger.error(f"get_version: {str(e)}")
+            return None
 
     def repl_state(self):
         try:
@@ -292,16 +286,22 @@ class MongoBase:
         self.connect_primary()
         config = self.db.admin.command("replSetGetConfig")['config']
         config['version'] = config['version'] + 1
-        i = len(config['members'])
-        config['members'].append({"_id": i, "host": node})
+        ids = list(members.get("_id") for members in config['members'])
+        id = 0
+        while id in ids:
+            id+=1
+        config['members'].append({"_id": id, "host": node})
 
         try:
             res = self.db.admin.command("replSetReconfig", config)
+        except OperationFailure as e:
+            logger.error(f"MongoBase::repl_add: Error during mongoDB replSetReconfig: {e}")
+            return False, f"{e.details.get('codeName')} : {e.details.get('errmsg')}"
         except Exception as e:
-            logger.error("MongoBase::repl_add: Error during mongoDB replSetReconfig: {}".format(str(e)))
+            logger.error(f"MongoBase::repl_add: Error during mongoDB replSetReconfig: {e}")
             return False, str(e)
 
-        return True, res
+        return True, f"Status code : {res.get('ok')}"
 
     def repl_remove(self, node):
         """

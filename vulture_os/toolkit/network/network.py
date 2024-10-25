@@ -572,7 +572,7 @@ def make_hostname_resolvable(logger, hostname_ip):
     if not errors:
         return True
     else:
-        logger.error("Failed to call script {} : {}".format(script, errors))
+        logger.error(f"Failed to call script {script} : {errors}")
         return False
 
 
