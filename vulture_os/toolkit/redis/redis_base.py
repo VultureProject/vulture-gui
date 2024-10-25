@@ -288,3 +288,16 @@ def set_password(logger, passwords=("","")):
         logger.error("Unable to set Redis password in Sentinel")
         raise RedisError("Unable to set Redis password in Sentinel")
     return result
+
+
+def sentinel_reset(logger):
+    """
+    Reset sentinel known sentinels and replicas
+    :return: True if Sentinel command succeded
+    """
+    sentinel = RedisBase(get_management_ip(), 26379)
+    result = sentinel.sentinel_reset()
+    if not result:
+        logger.error("Unable to reset Sentinel monitor")
+        raise RedisError("Unable to reset Sentinel monitor")
+    return result
