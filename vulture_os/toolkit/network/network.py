@@ -576,6 +576,27 @@ def make_hostname_resolvable(logger, hostname_ip):
         return False
 
 
+def delete_hostname(logger, hostname):
+    """Remove hostname/IP from /etc/hosts
+    
+    :param logger:        API logger (to be called by an API request)
+    :param hostname:      String containing the remote hostname to delete
+    :return:
+    """
+    if not is_valid_hostname(hostname):
+        return False
+
+    script = "/home/vlt-os/scripts/add_to_hosts.py"
+    proc = subprocess.Popen(['/usr/local/bin/sudo', script, hostname, "0.0.0.0", "delete"],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res, errors = proc.communicate()
+    if not errors:
+        return True
+    else:
+        logger.error(f"Failed to call script {script} : {errors}")
+        return False
+
+
 def refresh_nic(logger):
     """
     Used by API calls to update mongodb with new system NIC / addresses

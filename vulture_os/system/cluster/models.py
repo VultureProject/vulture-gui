@@ -255,7 +255,7 @@ class Node(models.Model):
         :return: True / False, or None in case of a failure
         """
         c = MongoBase()
-        if c.connect(node=f"{self.name}:9091"):
+        if c.connect():
             c.connect_primary()
             config = c.db.admin.command("replSetGetConfig")['config']
             return len(config['members']) == 1

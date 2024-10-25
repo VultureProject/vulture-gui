@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [FILEBEAT] Separate building configurations and restarting service
 - [GUI] Improve AJAX requests management
+- [CLUSTER] Improve node import routine
+- [CLUSTER] Improve node deletion from the gui
 
 
 ## [2.25.0] - 2025-04-30

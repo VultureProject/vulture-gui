@@ -32,6 +32,8 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 # Django project imports
+from applications.backend.models import Backend
+from services.frontend.models import Listener, Frontend
 from system.cluster.models import Cluster, Node
 from system.pki.models import TLSProfile
 from system.users.models import User
@@ -40,6 +42,9 @@ from toolkit.redis.redis_base import RedisBase
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
+from redis import AuthenticationError, ResponseError
+
+# Extern modules imports
 
 # Logger configuration imports
 import logging
@@ -72,6 +77,7 @@ class DeleteView(View):
             'delete_url': self.delete_url,
             'redirect_url': self.redirect_url,
             'obj_inst': obj_inst,
+            'obj_name': obj_inst._meta.verbose_name,
             'used_by': used_by
         })
 
@@ -97,7 +103,7 @@ class DeleteTLSProfile(DeleteView):
     obj = TLSProfile
     redirect_url = "/system/tls_profile/"
     delete_url = "/system/tls_profile/delete/"
-    
+
     def used_by(self, object):
         """ Retrieve all listerners and servers that use the current TLSProfile
         Return a set of strings, printed in template as "Used by this object:"
@@ -120,26 +126,76 @@ class DeleteNode(DeleteView):
         if confirm == 'yes':
             try:
                 obj_inst = self.obj.objects.get(pk=object_id)
+                node_name = obj_inst.name
             except ObjectDoesNotExist:
                 return HttpResponseForbidden("Injection detected")
 
             """ Before Deleting the node we need to remove it from mongoDB """
             c = MongoBase()
-            c.connect()
             c.connect_primary()
-            c.repl_remove(obj_inst.name + ":9091")
+            c.repl_remove(node_name + ":9091")
 
             """ Before Deleting the node we need to remove it from Redis """
-            c = RedisBase(obj_inst.management_ip, password=Cluster.get_global_config().redis_password)
-            c.replica_of('NO', 'ONE')
+            c = RedisBase(obj_inst.management_ip, 26379)
+            try:
+                c.sentinel_remove()
+            except ResponseError as e:
+                logger.error(e)
 
-            # Fixme: Cleanup Sentinel ?
+            c = RedisBase(obj_inst.management_ip, password=Cluster.get_global_config().redis_password)
+            try:
+                c.replica_of('NO', 'ONE')
+                obj_inst.api_request("toolkit.redis.redis_base.set_password", ("", Cluster.get_global_config().redis_password), internal=True)
+            except AuthenticationError:
+                c = RedisBase(obj_inst.management_ip)
+                c.replica_of('NO', 'ONE')
 
             """ Let's rock """
             obj_inst.delete()
 
+            """ Remove Statuses of node from Frontends and Backends """
+            #TODO Rework statuses to be real relational objects and ease their removal/update in code
+            for frontend in Frontend.objects.all().only('status'):
+                frontend.status.pop(node_name, None)
+                frontend.save(update_fields=['status'])
+            for backend in Backend.objects.all().only('status'):
+                backend.status.pop(node_name, None)
+                backend.save(update_fields=['status'])
+
+            """ Reload every configurations """
+            Cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.haproxy.haproxy.configure_node")
+            Cluster.api_request("services.rsyslogd.rsyslog.build_conf")
+            Cluster.api_request("toolkit.redis.redis_base.renew_sentinel_configuration")
+            Cluster.api_request("toolkit.network.network.delete_hostname", node_name)
+
         return HttpResponseRedirect(self.redirect_url)
 
+    def used_by(self, object):
+        """ Retrieve all related objects that reference the current Node
+        Return a set of strings, printed in template as "Used by this object:"
+        """
+        used_by = set(object.frontend_set.all())
+        used_by = used_by.union(set(f"Listener '{l}' in {l.frontend}" for l in Listener.objects.filter(network_address__in=object.addresses())))
+
+        try:
+            node_cert = object.get_certificate()
+            used_by.add(f"X509 Certificate '{node_cert.name}'")
+            used_by = used_by.union(set(node_cert.certificate_of.all()))
+            used_by = used_by.union(set(node_cert.logomelasticsearch_set.all()))
+            used_by = used_by.union(set(node_cert.logommongodb_set.all()))
+            used_by = used_by.union(set(node_cert.logomrelp_set.all()))
+            used_by = used_by.union(set(f"API Custom certificate of {f}" for f in node_cert.certificate_used_by_api_parser.all()))
+            used_by = used_by.union(set(f"SSO Forward Client certificate of '{p}'" for p in node_cert.userauthentication_set.all()))
+
+            tls_profiles = node_cert.certificate_of.all()
+            for p in tls_profiles:
+                used_by = used_by.union(set(f"TLS Profile of '{l}' in {l.frontend}" for l in p.listener_set.all()))
+                used_by = used_by.union(set(f"TLS Profile of '{s}' in {s.backend}" for s in p.server_set.all()))
+        except ObjectDoesNotExist:
+            pass
+
+        return sorted(str(obj) for obj in used_by)
 
 class DeleteUser(DeleteView):
     """ Class dedicated to delete an User object with its id """

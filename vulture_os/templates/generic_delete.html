@@ -52,7 +52,7 @@
                             {% endif %}
                       {% else %}
                       {% translate "Cannot delete " %}{{ obj_inst }} <br/>
-                      {% translate "This object is currently used by " %}
+                      {% translate "This " %}{{ obj_name|default:"object" }}{% translate " is currently used by " %}
                         <ul>
                           {% for used in used_by %}
                             <li><b>{{used}}<b></li>
