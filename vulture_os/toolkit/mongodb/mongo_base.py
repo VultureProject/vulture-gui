@@ -320,18 +320,20 @@ class MongoBase:
             return True, "Replicaset destroyed"
 
         config['version'] = config['version'] + 1
-        i = 0
-        for member in config['members']:
+        for i, member in enumerate(config['members']):
             if node == member.get('host'):
                 del config['members'][i]
-            i = i + 1
 
         try:
             res = self.db.admin.command("replSetReconfig", config)
-            return True, res
+        except OperationFailure as e:
+            logger.error(f"MongoBase::repl_add: Error during mongoDB replSetReconfig: {e}")
+            return False, f"{e.details.get('codeName')} : {e.details.get('errmsg')}"
         except Exception as e:
-            logger.error("replRemove: Error during mongoDB replSetReconfig: {}".format(str(e)))
+            logger.error(f"MongoBase::repl_add: Error during mongoDB replSetReconfig: {e}")
             return False, str(e)
+
+        return True, f"Status code : {res.get('ok')}"
 
     def repl_rename(self, old_name, new_name):
         """
