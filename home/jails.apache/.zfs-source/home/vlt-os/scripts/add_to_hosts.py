@@ -79,7 +79,7 @@ if nb_args >= 3:
 
     print("Host successfully {}".format(what))
 
-    subprocess.run(["/usr/sbin/service", "dnsmasq", "restart"])
+    subprocess.run(["/usr/sbin/service", "dnsmasq", "restart"], stderr=subprocess.STDOUT)
 
     sys.exit(0)
 else:

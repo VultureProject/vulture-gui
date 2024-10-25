@@ -124,6 +124,36 @@ class RedisBase:
             return False
         return self.redis.sentinel_monitor('mymaster', node or self.node, 6379, 2)
 
+    def sentinel_failover(self):
+        """
+        Force a new election inside the replicaset.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        if not self.get_role() == "sentinel":
+            return False
+        return self.redis.sentinel_failover('mymaster')
+
+    def sentinel_remove(self):
+        """
+        Configure sentinel to remove monitoring on local redis node.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        if not self.get_role() == "sentinel":
+            return False
+        return self.redis.sentinel_remove('mymaster')
+
+    def sentinel_reset(self):
+        """
+        Forget a replica from configuration.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        if not self.get_role() == "sentinel":
+            return False
+        return self.redis.sentinel_reset('mymaster')
+
     def sentinel_set_announce_ip(self):
         """
         Set sentinel announce_ip through RedisBase class.
