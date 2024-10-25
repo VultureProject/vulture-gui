@@ -127,7 +127,7 @@
             buffer = buffer + '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" id="remove" title="{% translate "Remove from replicaset" %}"><i class="fa fa-unlink"></i></a>';
         }
         else if (!row.is_master_mongo && row.is_standalone && row.addresses) {
-            buffer = buffer + '<a class="btn btn-flat btn-xs btn-danger" id="join" title="{% translate "Add to replicaset" %}"><i class="fa fa-link"></i></a>';
+            buffer = buffer + '&nbsp;&nbsp;<a class="btn btn-flat btn-xs btn-danger" id="join" title="{% translate "Add to replicaset" %}"><i class="fa fa-link"></i></a>';
         }
         return buffer;
       }

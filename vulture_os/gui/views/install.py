@@ -234,6 +234,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
     """
 
     """ We are coming from the CLI interface """
+    cluster_infos = {}
     try:
         logger.info("[+] Getting distant cluster information")
         response = requests.get(
@@ -260,6 +261,19 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
 
     except Exception as e:
         logger.error("Error at API Request Cluster Info: {} Invalid API KEY ?".format(e), exc_info=1)
+        return False
+
+    mongo = MongoBase()
+    try:
+        logger.info("[+] Checking MongoDB compatibility")
+        """ Check mongo version compatibility """
+        if mongo.get_version() != cluster_infos['data'][master_hostname]['mongo_version']:
+            raise Exception(f"Error: MongoDB versions are incompatible {mongo.get_version()} vs {cluster_infos['data'][master_hostname]['mongo_version']}")
+
+        logger.info("[-] OK!")
+
+    except Exception as e:
+        logger.error(f"Error at services compatibility: {e}", exc_info=1)
         return False
 
     try:
@@ -354,7 +368,6 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         => We need to destroy replicaset & restart mongoDB
     """
     logger.info("[+] replDestroy: Restarting Mongodb with new certificates")
-    mongo = MongoBase()
     mongo.repl_destroy()
     logger.info("[+] Ok!")
 
