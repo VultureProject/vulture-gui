@@ -31,7 +31,6 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
-from services.frontend.models import SENTINEL_ONE_ACCOUNT_TYPE_CHOICES
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -214,14 +213,11 @@ class SentinelOneParser(ApiParser):
                 })
             log['comments'] = comments
             # Retrieve names of techniques of each tactics
-            techniques = list()
-            for indc in log['indicators']:
-                tech = [x['techniques'] for x in indc['tactics']]
-                if len(tech) > 0:
-                    # always one entry
-                    tech = tech.pop()
-                techniques += [x['name'] for x in tech]
-            log['mitre_techniques'] = list(set(techniques))
+            log['mitre_techniques'] = list(set([technique.get('name', [])
+                                                for indicators in log.get('indicators', [])
+                                                for tactics in indicators.get('tactics', [])
+                                                for technique in tactics.get('techniques', [])]))
+
             log['needs_attention'] = not log['threatInfo']['automaticallyResolved']
             log['threatInfo']['createdAt'] = datetime.fromisoformat(
                 log['threatInfo']['createdAt'].replace("Z", "+00:00")).timestamp()
@@ -261,7 +257,7 @@ class SentinelOneParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: fetched {len(logs)} logs of '{event_kind}'",
                             extra={'frontend': str(self.frontend)})
 
-                self.write_to_file([self.format_log(l, event_kind) for l in logs])
+                self.write_to_file([self.format_log(log, event_kind) for log in logs])
 
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()

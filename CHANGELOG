@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.15.13] - 2024-10-18
+### Fixed
+- [PORTAL] [TOTP] Use lowercase login when assigning a TOTP profile to a username
+- [API_PARSER] [SENTINELONE] Properly get all techniques' names
+### Added
+- [API_PARSER] [LOCKSELF] New API parser LOCKSELF
+### Changed
+- [API_PARSER] [CORTEX_XDR] Update alerts url endpoint
+### Removed
+- [API_PARSER] [PROOFPOINT_POD] Useless 'metadata' field
+
+
 ## [2.15.12] - 2024-10-08
 ### Fixed
 - [API_PARSER] [BEYONDTRUST_PRA] Add missing migration step to set default token value
