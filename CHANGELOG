@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TENANT] [CONF] Ensure related Frontend configurations are reloaded when a Tenant's parameter is changed
 - [GUI] [FRONTEND] Remove too strict validation for log_condition field
 - [API_PARSER] [CYBEREASON] Update timestamp when no logs received during last 24h 
+- [AUTHENTICATION] [LDAP] Limit username query to exact matches when authenticating
 
 
 ## [2.15.13] - 2024-10-18
