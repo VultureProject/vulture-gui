@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CYBEREASON] Update timestamp when no logs received during last 24h 
 - [AUTHENTICATION] [LDAP] Limit username query to exact matches when authenticating
 - [AUTHENTICATION] [LDAP] Use real username returned by LDAP authentication in user infos (including for TOTP profile)
+- [FRONTEND] [PF] Generate forwarders' PF rules only when assigned to at least one Frontend or Node
 
 
 ## [2.15.13] - 2024-10-18

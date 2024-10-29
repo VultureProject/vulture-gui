@@ -388,10 +388,12 @@ class Node(models.Model):
         for a in addresses:
             listener_ids.extend([l.id for l in a.listener_set.filter(frontend__enabled=True)])
 
-        query_filter = Q(enabled=True) & (
-            Q(frontend_set__listener__in=listener_ids) |
-            Q(frontend_set__node=self) |
-            Q(frontend_set__node=None)
+        query_filter = Q(enabled=True) &\
+            Q(frontend_set__isnull=False) &\
+            (
+                Q(frontend_set__listener__in=listener_ids) |
+                Q(frontend_set__node=self) |
+                Q(frontend_set__node=None)
             )
 
         logfwds = list()
@@ -414,10 +416,10 @@ class Node(models.Model):
         # Log Forwarder Kafka
         logfwds.extend(list(LogOMKAFKA.objects.filter(query_filter)))
 
-        """Second, retrieve Log Forwarders directly associated with the node and not a listener eg. KAFKA and REDIS"""
+        """Second, retrieve Log Forwarders directly associated with the node as pstats forwarder(s)"""
         # Test self.pk to prevent M2M errors when object isn't saved in DB
         if self.pk:
-            logfwds.extend([LogOM().select_log_om(log_fwd) for log_fwds in self.frontend_set.values_list('log_forwarders', flat=True) for log_fwd in log_fwds])
+            logfwds.extend([LogOM().select_log_om(log_fwd) for log_fwd in self.pstats_forwarders.filter(enabled=True)])
 
         """Add the protocol, destination ip and port of the log forwarder to the result"""
         for logfwd in logfwds:
