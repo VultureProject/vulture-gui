@@ -140,6 +140,8 @@ class Authentication(object):
             try:
                 authentication_results = self.authenticate_on_backend(backend)
                 self.backend_id = str(backend.id)
+                # Update username with value gotten from authentication results, if it exists
+                self.credentials[0] = authentication_results.get('name', self.credentials[0])
                 logger.info("AUTH::authenticate: User '{}' successfully authenticated on backend '{}'"
                             .format(self.credentials[0], backend))
                 return authentication_results
