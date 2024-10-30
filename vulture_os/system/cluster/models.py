@@ -490,7 +490,6 @@ class Node(models.Model):
                     route_ipv6 = reply
 
             results.append((proto, ip, port, route_ipv4, route_ipv6))
-            logger.debug({results[-1]})
 
         return results
 
@@ -499,7 +498,7 @@ class Node(models.Model):
         """ Return all tuples (family, proto, ip, port) for each enabled Backends on this node """
         from applications.backend.models import Backend
         # !!! REQUIRED BY listener_set !
-        result = set()
+        output_ips = set()
         """ Retrieve Backends used in enabled Frontends """
         addresses = self.addresses()
         """ For each address, retrieve the associated listeners having frontend enabled """
@@ -511,12 +510,49 @@ class Node(models.Model):
                 listener_addr[a] = [l.id for l in a.listener_set.filter(frontend__enabled=True)]
 
         """ Loop on each NetworkAddress to retrieve Backends associated with (enabled) Frontends """
-        for network_address, listener_ids in listener_addr.items():
+        for listener_ids in listener_addr.values():
             for backend in Backend.objects.filter(enabled=True, frontend__listener__in=listener_ids):
                 for server in backend.server_set.filter(mode="net"):
-                    result.add((network_address.family, "tcp", server.target, server.port))  # TCP
+                    output_ips.add(("tcp", server.target, server.port))
 
-        return result
+        results = []
+        default_logom_nat_ipv4 = self.backends_outgoing_ip if is_valid_ip4(self.backends_outgoing_ip) else None
+        default_logom_nat_ipv6 = self.backends_outgoing_ip if is_valid_ip6(self.backends_outgoing_ip) else None
+        for proto, ip, port in output_ips:
+            route_ipv4 = None
+            route_ipv6 = None
+            logger.debug(f"Getting valid routes for ip/hostname {ip}")
+
+            if is_valid_ip4(ip):
+                route_ipv4 = default_logom_nat_ipv4
+                # Get the facultative IPv4 route for IP
+                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
+                if not is_loopback(ip):
+                    success, reply = get_route_interface(destination=ip)
+                    if success:
+                        route_ipv4 = reply
+
+            if is_valid_ip6(ip):
+                route_ipv6 = default_logom_nat_ipv6
+                # Get the facultative IPv6 route for IP
+                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
+                if not is_loopback(ip):
+                    success, reply = get_route_interface(destination=ip, ip6=True)
+                    if success:
+                        route_ipv6 = reply
+
+            # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
+            if is_valid_hostname(ip):
+                success, reply = get_route_interface(ip)
+                if success:
+                    route_ipv4 = reply
+                success, reply = get_route_interface(ip, ip6=True)
+                if success:
+                    route_ipv6 = reply
+
+            results.append((proto, ip, port, route_ipv4, route_ipv6))
+
+        return results
 
     def get_pending_messages(self, count=None):
         try:
