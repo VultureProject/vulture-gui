@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-## [2.16.0] - 2024-09-10
+## [2.16.0] - 2024-11-04
 ### Added
 - [LOG_FORWARDER] [REDIS] Support for queues, sets, publish and streams modes for log insertion
 - [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
@@ -36,7 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] [PF] Correctly add NAT rules for Forwarders on FILE/REDIS/KAFKA-type Frontends
 - [TENANT] [CONF] Ensure related Frontend configurations are reloaded when a Tenant's parameter is changed
 - [GUI] [FRONTEND] Remove too strict validation for log_condition field
-- [API_PARSER] [CYBEREASON] Update timestamp when no logs received during last 24h 
 - [AUTHENTICATION] [LDAP] Limit username query to exact matches when authenticating
 - [AUTHENTICATION] [LDAP] Use real username returned by LDAP authentication in user infos (including for TOTP profile)
 - [FRONTEND] [PF] Generate forwarders' PF rules only when assigned to at least one Frontend or Node
