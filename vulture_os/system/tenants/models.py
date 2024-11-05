@@ -22,13 +22,12 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Perimeter Configuration main models'
 
-from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
 from applications.reputation_ctx.models import ReputationContext
+from django.utils.translation import gettext_lazy as _
 
 # Extern modules imports
-from base64 import b64encode
 
 # Logger configuration imports
 import logging
@@ -41,6 +40,12 @@ class Tenants(models.Model):
     """
     name = models.TextField(default="ACME_Corporation", unique=True)
     chameleon_apikey = models.TextField(default="", blank=True)
+    additional_config = models.JSONField(
+        default= dict,
+        blank=True,
+        help_text=_("Add a more flexible configuration for the tenant"),
+        verbose_name=_("Custom tenant configuration")
+    )
 
     """ Use DjongoManager to use mongo_find() & Co """
     objects = models.DjongoManager()

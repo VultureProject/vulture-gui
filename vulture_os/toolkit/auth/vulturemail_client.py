@@ -54,7 +54,7 @@ class VultureMailClient(BaseAuth):
         self.key_length = settings.key_length
 
     def authenticate(self, user_id, key):
-        raise NotImplemented('Simple compare does not require a function')
+        raise NotImplementedError('Simple compare does not require a function')
 
     def register_authentication(self, sender, recipient):
         chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'

@@ -35,7 +35,6 @@ from requests_oauthlib import OAuth2Session
 from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -78,7 +77,7 @@ class DefenderParser(ApiParser):
                     self.oauthSession.fetch_token(token_url=self.token_endpoint, client_id=self.client_id,
                                     client_secret=self.client_secret, resource=self.DEFENDER_RESOURCE)
                     self.session_expire = self.oauthSession.token['expires_on']
-                except KeyError as e:
+                except KeyError:
                     logger.critical(f"{[__parser__]}:_connect: Missing 'expires_on' key in token", extra={'frontend': str(self.frontend)})
                     raise DefenderAPIError("DEFENDER API: Missing key in generated Oauth2 token")
                 except OAuth2Error as e:

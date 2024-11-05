@@ -24,7 +24,6 @@ __doc__ = 'OpenIDRepository dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.core.validators import RegexValidator
 from django.forms import CheckboxInput, Form, ModelForm, Select, TextInput, Textarea
 from django.forms import URLField, BooleanField
 # Django project imports
@@ -33,11 +32,9 @@ from authentication.user_scope.models import UserScope
 
 # Extern modules imports
 from cryptography import x509
-from re import match as re_match
 import json
 
 # Required exceptions imports
-from django.forms import ValidationError
 
 # Logger configuration imports
 import logging

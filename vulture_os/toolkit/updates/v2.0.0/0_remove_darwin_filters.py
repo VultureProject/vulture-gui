@@ -31,11 +31,10 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster
-from darwin.policy.models import DarwinFilter, DarwinPolicy, FilterPolicy
+from darwin.policy.models import DarwinFilter, FilterPolicy
 
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)

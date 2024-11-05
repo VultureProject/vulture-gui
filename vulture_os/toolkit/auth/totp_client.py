@@ -24,14 +24,13 @@ __doc__ = 'PyOTP wrapper (for TOTP authentication)'
 
 
 # Django system imports
-from django.conf import settings
 
 # Django project imports
 from authentication.totp_profiles.models import TOTPProfile
 from toolkit.auth.base_auth import BaseAuth
 
 # Required exceptions imports
-from toolkit.auth.exceptions  import AuthenticationError, OTPError, RegisterAuthenticationError
+from toolkit.auth.exceptions  import AuthenticationError
 
 # Extern modules imports
 from pyotp import random_base32 as pyotp_random_base32, TOTP

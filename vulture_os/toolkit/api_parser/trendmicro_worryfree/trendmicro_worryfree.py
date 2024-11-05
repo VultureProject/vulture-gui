@@ -35,7 +35,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from toolkit.api_parser.api_parser import ApiParser
-from urllib.parse import urlencode, unquote
+from urllib.parse import urlencode
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')

@@ -31,7 +31,6 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster
@@ -51,7 +50,7 @@ if __name__ == "__main__":
             try:
                 forwarder = LogOMHIREDIS.objects.get(name="Internal_Dashboard")
             except LogOMHIREDIS.DoesNotExist:
-                print(f"log forwarder doesn't exist, skipping")
+                print("log forwarder doesn't exist, skipping")
                 sys.exit(0)
 
             for frontend in forwarder.frontend_set.all():

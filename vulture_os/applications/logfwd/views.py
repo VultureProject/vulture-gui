@@ -37,7 +37,7 @@ from applications.logfwd.form import (LogOMFileForm, LogOMRELPForm, LogOMHIREDIS
                                       LogOMElasticSearchForm, LogOMMongoDBForm, LogOMKafkaForm)
 from applications.logfwd.models import LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
 from gui.forms.form_utils import DivErrorList
-from services.frontend.models import Frontend, Listener
+from services.frontend.models import Frontend
 from system.cluster.models import Node
 from toolkit.api.responses import build_response
 
@@ -159,7 +159,7 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                     ) & (
                         Q(log_forwarders=log_om.id) | Q(log_forwarders_parse_failure=log_om.id)
                     )).distinct()
-                for frontend  in frontends:
+                for frontend in frontends:
                     # If the name of the log forwarder is changed, update it in the log_condition of the frontend
                     if log_om_old_name:
                         frontend.log_condition = frontend.log_condition.replace(f"{{{{{log_om_old_name}}}}}", f"{{{{{log_om.name}}}}}")

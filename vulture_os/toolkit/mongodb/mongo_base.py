@@ -158,7 +158,7 @@ class MongoBase:
             db = self.db[database]
             coll = db[collection]
 
-            coll.update(query, newvalue, multi=True)
+            coll.update_many(query, newvalue)
             return True
         except Exception as e:
             if settings.DEV_MODE:
@@ -206,8 +206,8 @@ class MongoBase:
 
             args = {'host': host,
                     'ssl': True,
-                    'ssl_certfile': "/var/db/pki/node.pem",
-                    'ssl_ca_certs': "/var/db/pki/ca.pem",
+                    'tlsCertificateKeyFile': "/var/db/pki/node.pem",
+                    'tlsCAFile': "/var/db/pki/ca.pem",
                     'read_preference': ReadPreference.PRIMARY_PREFERRED,
                     "serverSelectionTimeoutMS": timeout_ms}
             if primary:
@@ -229,6 +229,8 @@ class MongoBase:
             return False
 
     def connect_primary(self):
+        if self.db is None:
+            self.connect()
         return self.connect(self.get_primary())
 
     def repl_state(self):

@@ -22,7 +22,6 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'IDP Tools'
 
-from authentication.user_portal.models import UserAuthentication
 
 
 MAPPING_ATTRIBUTES = {

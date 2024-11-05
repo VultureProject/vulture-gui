@@ -206,7 +206,7 @@ class VadesecureO365Parser(ApiParser):
                 except KeyError:
                     logger.error(f"[{__parser__}]:execute: Could not get 'date' key from last log", extra={'frontend': str(self.frontend)})
                     logger.debug(f"[{__parser__}]:execute: log line is '{logs[-1]}'", extra={'frontend': str(self.frontend)})
-                    raise VadesecureO365APIError(f"Could not get date from log")
+                    raise VadesecureO365APIError("Could not get date from log")
 
                 # Writting may take a while, so refresh token in Redis
                 self.update_lock()

@@ -31,7 +31,6 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster
@@ -57,6 +56,6 @@ if __name__ == "__main__":
         if restart_rsyslog:
             api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
             if not api_res.get("status"):
-                print(f"Error while restarting rsyslog: "
+                print("Error while restarting rsyslog: "
                         "{}.".format(api_res.get("message")))
         print("2_rsyslog_update_conf done.")

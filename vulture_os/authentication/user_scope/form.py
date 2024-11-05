@@ -24,9 +24,7 @@ __doc__ = 'UserScope dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.core.validators import URLValidator
-from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
-                          SelectMultiple, TextInput, Textarea)
+from django.forms import (ModelForm, TextInput)
 from django.utils.translation import gettext_lazy as _
 
 # Django project imports

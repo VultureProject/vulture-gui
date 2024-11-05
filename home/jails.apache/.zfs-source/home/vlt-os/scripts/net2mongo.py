@@ -31,10 +31,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
 from django.conf import settings
-from django.db.models import Q
 django.setup()
 
-from system.cluster.models import (Cluster, Node, NetworkInterfaceCard,
+from system.cluster.models import (Cluster, NetworkInterfaceCard,
                                 NetworkAddress, NetworkAddressNIC)
 
 
@@ -61,7 +60,7 @@ PATTERN_FIB = re.compile("fib ([0-9])")
 def refresh_physical_NICs(node):
     """ Get physical NICs """
     # Remove all 'unused' interfaces (may be reimported with the next for loop)
-    deletion_list = NetworkInterfaceCard.objects.filter(networkaddressnic=None, networkaddress=None)
+    deletion_list = NetworkInterfaceCard.objects.filter(networkaddressnic=None, networkaddress=None, node=node)
     for to_delete in deletion_list:
         iface_name_match = re.search(PATTERN_IFACE_NAME, to_delete.dev)
         if iface_name_match:

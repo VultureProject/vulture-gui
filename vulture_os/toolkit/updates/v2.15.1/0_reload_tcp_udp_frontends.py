@@ -31,7 +31,6 @@ sys.path.append('/home/vlt-os/vulture_os')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
-from django.conf import settings
 django.setup()
 
 from system.cluster.models import Cluster
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     else:
         try:
             if Frontend.objects.filter(mode='log', listening_mode='tcp,udp').exists():
-                print(f"Node contains TCP+UDP log collection, reloading rsyslog input configuration...")
+                print("Node contains TCP+UDP log collection, reloading rsyslog input configuration...")
                 node.api_request('services.rsyslogd.rsyslog.build_conf')
                 node.api_request('services.rsyslogd.rsyslog.restart_service')
         except Exception as e:

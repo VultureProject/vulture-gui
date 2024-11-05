@@ -24,17 +24,14 @@ __doc__ = 'Haproxy dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, SelectMultiple
+from django.forms import ModelForm
 
 # Django project imports
 from services.haproxy.models import HAProxySettings
-from services.service import Service
 
 # Required exceptions imports
-from bson.errors import InvalidId
 
 # Extern modules imports
-from bson import ObjectId
 
 # Logger configuration imports
 import logging

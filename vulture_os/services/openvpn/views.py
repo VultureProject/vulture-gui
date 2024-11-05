@@ -25,8 +25,7 @@ __doc__ = 'Openvpn View'
 
 # Django system imports
 from django.conf import settings
-from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect,
-                         HttpResponseNotAllowed)
+from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect)
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -38,12 +37,10 @@ from gui.forms.form_utils import DivErrorList
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from services.exceptions import ServiceConfigError, ServiceError, ServiceRestartError
+from services.exceptions import ServiceError, ServiceRestartError
 from system.exceptions import VultureSystemError
 
 # Extern modules imports
-from json import loads as json_loads
-from re import findall as re_findall
 from sys import exc_info
 from traceback import format_exception
 

@@ -24,8 +24,7 @@ __doc__ = 'Parsers View'
 
 # Django system imports
 from django.conf import settings
-from django.http import (JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect,
-                         HttpResponseNotAllowed)
+from django.http import (JsonResponse, HttpResponseForbidden, HttpResponseRedirect)
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -38,7 +37,7 @@ from toolkit.api.responses import build_response
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from services.exceptions import ServiceConfigError, ServiceError, ServiceReloadError
+from services.exceptions import ServiceError
 from system.exceptions import VultureSystemError
 
 # Extern modules imports

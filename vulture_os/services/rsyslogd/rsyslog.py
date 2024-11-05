@@ -31,7 +31,6 @@ from services.frontend.models import Frontend
 from services.rsyslogd.models import RsyslogSettings
 from system.cluster.models import Cluster
 from system.config.models import write_conf
-from toolkit.mongodb.mongo_base import MongoBase
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist

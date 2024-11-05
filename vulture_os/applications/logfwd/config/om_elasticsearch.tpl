@@ -1,3 +1,9 @@
+    {%- if data_stream_mode %}
+    if $.generated_uuid == "" then {
+        set $.generated_uuid = $uuid;
+    }
+    {%- endif %}
+
     action(type="omelasticsearch"
             name="{{output_name}}"
             server={{ servers }}
@@ -42,19 +48,26 @@
         {%- if enable_disk_assist %}
             queue.highWatermark="{{high_watermark}}"
             queue.lowWatermark="{{low_watermark}}"
-            queue.spoolDirectory="/var/tmp"
+            queue.spoolDirectory="{{spool_directory}}"
             queue.filename="{{output_name}}_disk-queue"
             queue.maxFileSize="{{max_file_size}}m"
             queue.maxDiskSpace="{{max_disk_space}}m"
-            queue.checkpointInterval="128"
+            queue.checkpointInterval="1024"
             queue.saveOnShutdown="on"
         {%- endif -%} {# if enable_disk_assist #}
     {%- endif -%} {# if enable_retry #}
-        {%- if data_stream_mode %}
+    {%- if data_stream_mode %}
             searchType=""
             bulkid="bulkid-template"
             dynbulkid="on"
             writeoperation="create"
-        {%- endif -%} {# if data_stream_mode #}
+        {%- if retry_on_els_failures %}
+            retryfailures="on"
+            retryruleset="{{output_name}}_retry"
+        {%- else -%} {# if retry_on_els_failures #}
             errorFile="/var/log/internal/{{output_name}}_error.log"
+        {%- endif -%}
+    {%- else -%} {# if data_stream_mode #}
+            errorFile="/var/log/internal/{{output_name}}_error.log"
+    {%- endif -%}
             )

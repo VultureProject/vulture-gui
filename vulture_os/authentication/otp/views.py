@@ -25,7 +25,7 @@ __doc__ = 'OTP Repository views'
 
 # Django system imports
 from django.conf import settings
-from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from django.http.response import HttpResponseNotFound
 from django.utils.translation import gettext as _
 from django.shortcuts import render

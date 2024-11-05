@@ -25,7 +25,8 @@ __doc__ = 'Cluster main models'
 
 from system.config.models import Config
 
-from toolkit.network.network import get_hostname
+from toolkit.network.network import get_hostname, is_valid_ip4, is_valid_ip6, is_valid_hostname, is_loopback
+from toolkit.network.route import get_route_interface
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.mongodb.mongo_base import parse_uristr
@@ -43,7 +44,7 @@ import ipaddress
 from iptools.ipv4 import netmask2prefix
 import time
 
-from applications.logfwd.models import LogOMHIREDIS
+from applications.logfwd.models import LogOM, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
 from system.pki.models import X509Certificate
 from services.exceptions import ServiceExit
 
@@ -378,10 +379,7 @@ class Node(models.Model):
     @property
     def get_forwarders_enabled(self):
         """ Return all tuples (family, proto, ip, port) for each LogForwarders """
-        from applications.logfwd.models import LogOM, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
-        # !!! REQUIRED BY listener_set !
-        from services.frontend.models import Listener
-        result = set()
+        output_ips = set()
         """ Retrieve LogForwarders used in enabled Frontends """
         """ First, retrieve LogForwarders that bind to the address of the node """
         addresses = self.addresses()
@@ -390,72 +388,117 @@ class Node(models.Model):
         for a in addresses:
             listener_ids.extend([l.id for l in a.listener_set.filter(frontend__enabled=True)])
 
+        query_filter = Q(enabled=True) &\
+            Q(frontend_set__isnull=False) &\
+            (
+                Q(frontend_set__listener__in=listener_ids) |
+                Q(frontend_set__node=self) |
+                Q(frontend_set__node=None)
+            )
+
         logfwds = list()
         """ Retrieve LogForwarder used by the frontend using listeners """
         # Log Forwarder RELP
-        logfwds.extend(list(LogOMRELP.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMRELP.objects.filter(query_filter)))
 
         # Log Forwarder REDIS
-        logfwds.extend(list(LogOMHIREDIS.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMHIREDIS.objects.filter(query_filter)))
 
         # Log Forwarder Syslog
-        logfwds.extend(list(LogOMFWD.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMFWD.objects.filter(query_filter)))
 
         # Log Forwarder ElasticSearch
-        logfwds.extend(list(LogOMElasticSearch.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMElasticSearch.objects.filter(query_filter)))
 
         # Log Forwarder MongoDB
-        logfwds.extend(list(LogOMMongoDB.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMMongoDB.objects.filter(query_filter)))
 
         # Log Forwarder Kafka
-        logfwds.extend(list(LogOMKAFKA.objects.filter(enabled=True, frontend_set__listener__in=listener_ids)))
+        logfwds.extend(list(LogOMKAFKA.objects.filter(query_filter)))
 
-        """Second, retrieve Log Forwarders directly associated with the node and not a listener eg. KAFKA and REDIS"""
+        """Second, retrieve Log Forwarders directly associated with the node as pstats forwarder(s)"""
         # Test self.pk to prevent M2M errors when object isn't saved in DB
         if self.pk:
-            logfwds.extend([LogOM().select_log_om(log_fwd) for log_fwds in self.frontend_set.values_list('log_forwarders', flat=True) for log_fwd in log_fwds])
+            logfwds.extend([LogOM().select_log_om(log_fwd) for log_fwd in self.pstats_forwarders.filter(enabled=True)])
 
         """Add the protocol, destination ip and port of the log forwarder to the result"""
         for logfwd in logfwds:
             # Log Forwarder RELP
             if hasattr(logfwd, 'logomrelp'):
-                result.add(("tcp", logfwd.target, logfwd.port))  # TCP
+                output_ips.add(("tcp", logfwd.target, logfwd.port))  # TCP
 
             # Log Forwarder REDIS
             elif hasattr(logfwd, 'logomhiredis'):
-                result.add(("tcp", logfwd.target, logfwd.port))  # TCP
+                output_ips.add(("tcp", logfwd.target, logfwd.port))  # TCP
 
             # Log Forwarder Syslog
             elif hasattr(logfwd, 'logomfwd'):
-                result.add((logfwd.protocol, logfwd.target, logfwd.port))  # proto
+                output_ips.add((logfwd.protocol, logfwd.target, logfwd.port))  # proto
 
             # Log Forwarder ElasticSearch
             elif hasattr(logfwd, 'logomelasticsearch'):
                 """ For elasticsearch, we need to parse the servers """
                 for ip, port in re_findall("https?://([^:]+):(\d+)", logfwd.servers):
-                    result.add(("tcp", ip, port))
+                    output_ips.add(("tcp", ip, port))
 
             # Log Forwarder MongoDB
             elif hasattr(logfwd, 'logommongodb'):
                 """ For OMMongoDB - parse uristr """
                 for ip, port in parse_uristr(logfwd.uristr):
-                    result.add(('tcp', ip, port))
+                    output_ips.add(('tcp', ip, port))
 
             # Log Forwarder Kafka
             elif hasattr(logfwd, 'logomkafka'):
                 """ For kafka, we need to parse the brokers """
                 for ip, port in re_findall("([^:\"\']+):(\d+)", logfwd.broker):
-                    result.add(("tcp", ip, port))
+                    output_ips.add(("tcp", ip, port))
 
-        return list(result)
+        results = []
+        default_logom_nat_ipv4 = self.logom_outgoing_ip if is_valid_ip4(self.logom_outgoing_ip) else None
+        default_logom_nat_ipv6 = self.logom_outgoing_ip if is_valid_ip6(self.logom_outgoing_ip) else None
+
+        for proto, ip, port in output_ips:
+            route_ipv4 = None
+            route_ipv6 = None
+            logger.debug(f"Getting valid routes for ip/hostname {ip}")
+
+            if is_valid_ip4(ip):
+                route_ipv4 = default_logom_nat_ipv4
+                # Get the facultative IPv4 route for IP
+                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
+                if not is_loopback(ip):
+                    success, reply = get_route_interface(destination=ip)
+                    if success:
+                        route_ipv4 = reply
+
+            if is_valid_ip6(ip):
+                route_ipv6 = default_logom_nat_ipv6
+                # Get the facultative IPv6 route for IP
+                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
+                if not is_loopback(ip):
+                    success, reply = get_route_interface(destination=ip, ip6=True)
+                    if success:
+                        route_ipv6 = reply
+
+            # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
+            if is_valid_hostname(ip):
+                success, reply = get_route_interface(ip)
+                if success:
+                    route_ipv4 = reply
+                success, reply = get_route_interface(ip, ip6=True)
+                if success:
+                    route_ipv6 = reply
+
+            results.append((proto, ip, port, route_ipv4, route_ipv6))
+
+        return results
 
     @property
     def get_backends_enabled(self):
         """ Return all tuples (family, proto, ip, port) for each enabled Backends on this node """
         from applications.backend.models import Backend
         # !!! REQUIRED BY listener_set !
-        from services.frontend.models import Listener
-        result = set()
+        output_ips = set()
         """ Retrieve Backends used in enabled Frontends """
         addresses = self.addresses()
         """ For each address, retrieve the associated listeners having frontend enabled """
@@ -467,12 +510,49 @@ class Node(models.Model):
                 listener_addr[a] = [l.id for l in a.listener_set.filter(frontend__enabled=True)]
 
         """ Loop on each NetworkAddress to retrieve Backends associated with (enabled) Frontends """
-        for network_address, listener_ids in listener_addr.items():
+        for listener_ids in listener_addr.values():
             for backend in Backend.objects.filter(enabled=True, frontend__listener__in=listener_ids):
                 for server in backend.server_set.filter(mode="net"):
-                    result.add((network_address.family, "tcp", server.target, server.port))  # TCP
+                    output_ips.add(("tcp", server.target, server.port))
 
-        return result
+        results = []
+        default_logom_nat_ipv4 = self.backends_outgoing_ip if is_valid_ip4(self.backends_outgoing_ip) else None
+        default_logom_nat_ipv6 = self.backends_outgoing_ip if is_valid_ip6(self.backends_outgoing_ip) else None
+        for proto, ip, port in output_ips:
+            route_ipv4 = None
+            route_ipv6 = None
+            logger.debug(f"Getting valid routes for ip/hostname {ip}")
+
+            if is_valid_ip4(ip):
+                route_ipv4 = default_logom_nat_ipv4
+                # Get the facultative IPv4 route for IP
+                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
+                if not is_loopback(ip):
+                    success, reply = get_route_interface(destination=ip)
+                    if success:
+                        route_ipv4 = reply
+
+            if is_valid_ip6(ip):
+                route_ipv6 = default_logom_nat_ipv6
+                # Get the facultative IPv6 route for IP
+                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
+                if not is_loopback(ip):
+                    success, reply = get_route_interface(destination=ip, ip6=True)
+                    if success:
+                        route_ipv6 = reply
+
+            # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
+            if is_valid_hostname(ip):
+                success, reply = get_route_interface(ip)
+                if success:
+                    route_ipv4 = reply
+                success, reply = get_route_interface(ip, ip6=True)
+                if success:
+                    route_ipv6 = reply
+
+            results.append((proto, ip, port, route_ipv4, route_ipv6))
+
+        return results
 
     def get_pending_messages(self, count=None):
         try:
@@ -784,17 +864,17 @@ class MessageQueue(models.Model):
                     The status of the request (True for status done, False on error or job failure)
                     the result string of the message (in case of failure, the error details)
         """
-        counter = 0
         try:
             for _ in range(0, tries):
-                message_instance = MessageQueue.objects.get(pk=self.id)
-                if message_instance.status == MessageQueue.MessageQueueStatus.DONE:
-                    return True, message_instance.result
-                if message_instance.status == MessageQueue.MessageQueueStatus.FAILURE:
-                    return False, message_instance.result
+                self.refresh_from_db()
+                if self.status == MessageQueue.MessageQueueStatus.DONE:
+                    return True, self.result
+                if self.status == MessageQueue.MessageQueueStatus.FAILURE:
+                    return False, self.result
                 time.sleep(interval)
 
-            raise APISyncResultTimeOutException(f"MessageQueue:: Timeout on the result of {message_instance.action}. Config is {message_instance.config}")
+            raise APISyncResultTimeOutException(f"MessageQueue:: Timeout on the result of {self.action}. "
+                                                f"Config is {self.config}")
         except Exception as e:
             logger.exception(e)
             return False, ""
@@ -1071,7 +1151,7 @@ class NetworkAddress(models.Model):
                     for address_nic in addresses:
                         nodes_config[node.id].append({
                             'variable': f"ifconfig_{address_nic.nic.dev}",
-                            'value': f"up",
+                            'value': "up",
                         })
                     key = f"ifconfig_lagg{self.iface_id}"
                     value = f"up laggproto {self.lagg_proto}"

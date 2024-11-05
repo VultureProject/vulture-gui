@@ -16,7 +16,6 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
 
 import os
-from pymongo import ReadPreference
 from toolkit.network.network import get_hostname
 from toolkit.system.secret_key import set_key
 
@@ -78,7 +77,7 @@ CRONJOBS = [
     ("8 22 * * *", "gui.crontab.pki.update_crl"),  # Every day at 22:08
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
     ("0 23 * * *", "gui.crontab.feed.security_update"),  # Every day at 23:00
-    ("0 2 * * wed,sat", "gui.crontab.feed.update_reputation_ctx"),  # Every wednesday and saturday at 02:00
+    ("0 6 * * wed,sat", "gui.crontab.feed.update_reputation_ctx"),  # Every wednesday and saturday at 06:00
     ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
 ]
 
@@ -309,47 +308,47 @@ LOG_SETTINGS = {
     },
     'loggers': {
         'debug': {
-            'handlers': ('debug', 'database', 'console'),
+            'handlers': ('debug', 'console'),
             'level': LOG_LEVEL,
             'propagate': True,
         },
         'auth': {
-            'handlers': ('debug', 'database', 'console'),
+            'handlers': ('debug', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'api': {
-            'handlers': ('api', 'database', 'console'),
+            'handlers': ('api', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'gui': {
-            'handlers': ('gui', 'database', 'console'),
+            'handlers': ('gui', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'services': {
-            'handlers': ('services', 'database', 'console'),
+            'handlers': ('services', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'daemon': {
-            'handlers': ('daemon', 'database', 'console'),
+            'handlers': ('daemon', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'crontab': {
-            'handlers': ('crontab', 'database', 'console'),
+            'handlers': ('crontab', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'api_parser': {
-            'handlers': ('api_parser', 'database', 'console'),
+            'handlers': ('api_parser', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },
         'authentication': {
-            'handlers': ('authentication', 'database', 'console'),
+            'handlers': ('authentication', 'console'),
             'level': LOG_LEVEL,
             'propagate': True
         },

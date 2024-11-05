@@ -32,7 +32,6 @@ from datetime import timedelta
 
 import requests
 from django.conf import settings
-from django.http.response import JsonResponse
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
@@ -90,7 +89,7 @@ class CrowdstrikeParser(ApiParser):
                 proxies=self.proxies,
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectionError:
             self.session = None
             logger.error(f'[{__parser__}][login]: Connection failed (ConnectionError)', exc_info=True, extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')

@@ -192,10 +192,10 @@ class ApiParser:
             self.frontend.save()
 
     def test(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def fetch_data(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def execute(self):
-        raise NotImplemented()
+        raise NotImplementedError()

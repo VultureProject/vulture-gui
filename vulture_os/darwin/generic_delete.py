@@ -27,7 +27,7 @@ __doc__ = 'Classes used to delete objects'
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models.deletion import ProtectedError
-from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
@@ -36,13 +36,11 @@ from django.views.generic import View
 # Django project imports
 from darwin.access_control.models import AccessControl
 from darwin.policy.models import DarwinPolicy
-from services.frontend.models import BlacklistWhitelist, Frontend
+from services.frontend.models import Frontend
 from system.cluster.models import Cluster
-from workflow.models import Workflow
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from services.exceptions import ServiceError
 
 from bson import ObjectId
 
@@ -130,7 +128,7 @@ class DeleteDarwinPolicy(DeleteView):
 
                 Cluster.api_request("services.darwin.darwin.reload_conf")
 
-            except ProtectedError as e:
+            except ProtectedError:
                 error = "Policy is still used. Cannot remove"
 
         return HttpResponseRedirect(self.redirect_url)

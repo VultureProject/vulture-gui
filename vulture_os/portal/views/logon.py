@@ -32,8 +32,6 @@ path.append("/home/vlt-os/vulture_os/portal")
 from django.conf                     import settings
 from django.http                     import (HttpResponseRedirect, HttpResponseServerError, HttpResponseForbidden,
                                              JsonResponse, HttpResponse)
-from django.utils import timezone
-from django.db.models import Q
 
 # Django project imports
 from system.cluster.models           import Cluster
@@ -83,10 +81,10 @@ def validate_portal_cookie(portal_cookie):
     if not portal_cookie:
         return None
     if not validate_digest(portal_cookie):
-        logger.warning(f"validate_portal_cookie:: presented session cookie's value is not valid")
+        logger.warning("validate_portal_cookie:: presented session cookie's value is not valid")
         return None
     if not REDISBase().exists(portal_cookie):
-        logger.info(f"validate_portal_cookie:: session cookie does not exist in Redis")
+        logger.info("validate_portal_cookie:: session cookie does not exist in Redis")
         return None
 
     return portal_cookie
@@ -442,10 +440,10 @@ def openid_token(request, portal_id):
             refresh_token = request.POST.get('refresh_token')
             refresh = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
 
-            assert refresh.exists(), f"Unknown refresh token."
+            assert refresh.exists(), "Unknown refresh token."
 
             logger.debug(f"Expected idp: {refresh['portal_id']} Actual idp: portal_{portal_id}")
-            assert (refresh['portal_id'] == f"portal_{portal_id}"), f"Invalid IDP."
+            assert (refresh['portal_id'] == f"portal_{portal_id}"), "Invalid IDP."
 
 
             if refresh['overridden_by'] != None:
@@ -467,7 +465,7 @@ def openid_token(request, portal_id):
                     logger.warn(f"PORTAL::openid_token: deleting refresh_token {refresh_token}")
                     refresh.delete()
 
-                return JsonResponse({'error':"invalid_request", "error_description": f"Unknown refresh token."},
+                return JsonResponse({'error':"invalid_request", "error_description": "Unknown refresh token."},
                                     status=400)
 
             # This is where we reissue an access_token by providing a correct refresh_token
@@ -569,13 +567,13 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
         ## JWT ##
         try:
             jwt_unverified = jwt.decode(jwt=token, options={"verify_signature": False, "verify_exp": True, "require": ["exp", "iss"]})
-        except jwt.exceptions.ExpiredSignatureError as e:
-            logger.debug(f"PORTAL::openid_userinfo: Token is expired")
-        except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError) as e:
-            logger.debug(f"PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
+        except jwt.exceptions.ExpiredSignatureError:
+            logger.debug("PORTAL::openid_userinfo: Token is expired")
+        except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidTokenError):
+            logger.debug("PORTAL::openid_userinfo: Token doesn't seem to be a JWT")
         else:
             if jwt_unverified:
-                logger.debug(f"PORTAL::openid_userinfo: Token is a valid JWT")
+                logger.debug("PORTAL::openid_userinfo: Token is a valid JWT")
                 jwt_iss = jwt_unverified["iss"]
                 for connector in OpenIDRepository.objects.filter(enable_jwt=True, provider_url=jwt_iss):
                     try:
@@ -588,7 +586,7 @@ def openid_userinfo(request, portal_id=None, workflow_id=None):
                     except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.InvalidIssuerError, jwt.exceptions.InvalidAlgorithmError) as e:
                         logger.debug(f"PORTAL::openid_userinfo: Failed to verify JWT : {e}")
                     else:
-                        logger.info(f"PORTAL::openid_userinfo: JWT verified")
+                        logger.info("PORTAL::openid_userinfo: JWT verified")
                         ret = jwt_verified['scope']
                         ret.update({'exp': jwt_verified['exp'], 'iat': jwt_verified['iat']})
                         break
@@ -648,14 +646,14 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
             return HttpResponseRedirect("")
 
         # If redis_session.keys['application_id'] does not exists : FORBIDDEN
-        except (Workflow.DoesNotExist, ValidationError, InvalidId) as e:
+        except (Workflow.DoesNotExist, ValidationError, InvalidId):
             logger.error("PORTAL::log_in: Application with id '{}' not found"
                          .format(authentication.redis_session.keys.get('application_id')))
             return HttpResponseForbidden()
 
         # If assertionError : Ask credentials by portal
         except AssertionError as e:
-            logger.error("PORTAL::log_in: AssertionError while trying to create Authentication : ".format(e))
+            logger.error("PORTAL::log_in: AssertionError while trying to create Authentication : {}".format(str(e)))
             return authentication.ask_credentials_response(public_token=token_name, request=request)
 
 
@@ -956,7 +954,7 @@ def log_in(request, workflow_id=None):
             redis_portal_session.set_redirect_url(workflow.id, redirect_url)
             # force write in redis to set expiration on session key
             if not redis_portal_session.exists() or workflow.authentication.enable_timeout_restart:
-                logger.info(f"refreshing session token expiration by rewriting infos")
+                logger.info("refreshing session token expiration by rewriting infos")
                 redis_portal_session.write_in_redis(workflow.authentication.auth_timeout)
         else:
             # reset potentially existing redirect url to avoid wrong redirection

@@ -18,7 +18,7 @@ var aoColumns_process = [
     mData: "date_add",
     mRender: function(data, type, row){
       try{
-        return moment(data).format('DD/MM/YYYY HH:mm:SS')
+        return moment(data).format('DD/MM/YYYY HH:mm:ss')
       } catch(err){
         return data;
       }
@@ -32,7 +32,7 @@ var aoColumns_process = [
     mData: "modified",
     mRender: function(data, type, row){
       try{
-        return moment(data).format('DD/MM/YYYY HH:mm:SS')
+        return moment(data).format('DD/MM/YYYY HH:mm:ss')
       } catch(err){
         return data;
       }

@@ -38,8 +38,6 @@ from system.pki.form import TLSProfileForm, X509ExternalCertificateForm, X509Int
 from system.pki.models import CIPHER_SUITES, PROTOCOLS_HANDLER, TLSProfile, X509Certificate
 from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
-from services.frontend.models import Listener
-from applications.backend.models import Server
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist

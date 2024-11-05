@@ -117,7 +117,7 @@ def cluster_add(request):
                 'message': 'Error during repl_add. Check logs'
             })    
     except APISyncResultTimeOutException as e:
-        logger.error(f"Did not get a result for the action in time")
+        logger.error("Did not get a result for the action in time")
         logger.exception(e)
         return JsonResponse({
             'status': False,

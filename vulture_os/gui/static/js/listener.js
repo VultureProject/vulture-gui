@@ -289,6 +289,7 @@ $(function() {
       $('.filebeat-mode.redis-mode').show();
     }
 
+    $('#id_redis_mode').trigger('change')
     refresh_redis_local_use();
   }
 
@@ -438,8 +439,10 @@ $(function() {
   $('#id_redis_mode').on('change', function(event) {
     if ($(this).val() === "queue") {
       $('.redis-queue-mode').show();
+      $('.redis-stream-mode').hide();
     }
     else if ($(this).val() === "stream") {
+      $('.redis-queue-mode').hide();
       $('.redis-stream-mode').show();
     }
     else {

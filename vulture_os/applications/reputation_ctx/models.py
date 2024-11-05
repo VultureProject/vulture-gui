@@ -24,18 +24,16 @@ __doc__ = 'Frontends & Listeners model classes'
 
 # Django system imports
 from django.conf import settings
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
 from toolkit.network.network import get_proxy
-from toolkit.log.maxminddb import test_mmdb_database, open_mmdb_database
+from toolkit.log.maxminddb import open_mmdb_database
 
 # Extern modules imports
 from gzip import decompress as gzip_decompress
-from io import BytesIO
 import requests
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 from re import compile as re_compile
@@ -284,7 +282,7 @@ class ReputationContext(models.Model):
         if self.db_type in ("ipv4", "ipv6", "GeoIP"):
             try:
                 return open_mmdb_database(content)
-            except Exception as e:
+            except Exception:
                 logger.error("Downloaded content is not a valid MMDB database")
                 raise VultureSystemError("Downloaded content is not a valid MMDB database",
                                          "download '{}'".format(self.url))
@@ -318,14 +316,14 @@ class ReputationContext(models.Model):
         try:
             from system.cluster.models import Cluster
             Cluster.api_request('system.config.models.write_conf', config=params)
-        except Exception as e:  # e used by VultureSystemConfigError
+        except Exception:  # e used by VultureSystemConfigError
             raise VultureSystemConfigError("on cluster.\n"
                                            "Request failure to write conf of Reputation context '{}'".format(self.name))
 
     def get_nodes(self):
         """ Return the list of nodes used by frontends using the current object """
         # for listener in Listener.objects.filter()
-        from system.cluster.models import NetworkAddress, Node
+        from system.cluster.models import Node
         return Node.objects.filter(networkinterfacecard__frontend__reputation_ctxs=self.id)
 
     def reload_frontend_conf(self):
@@ -333,7 +331,7 @@ class ReputationContext(models.Model):
         :return     The list of concerned nodes  
         """
         from services.frontend.models import Listener
-        from system.cluster.models import Cluster, NetworkAddress, Node
+        from system.cluster.models import Node
         res = []
         updated_nodes = set()
         # Loop on Nodes

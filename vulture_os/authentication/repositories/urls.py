@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'BASE Repository URLS'
 
 # Django system imports
-from django.urls import path, re_path
+from django.urls import path
 
 # Django project imports
 from authentication.repositories import api

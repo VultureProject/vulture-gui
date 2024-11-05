@@ -25,6 +25,7 @@ __doc__ = 'System Utils Network Toolkit'
 
 from toolkit.system.rc import get_rc_config, set_rc_config, remove_rc_config
 
+from ipaddress import IPv4Address, IPv6Address, ip_address, AddressValueError
 from iptools.ipv4 import netmask2prefix
 from ast import literal_eval
 import subprocess
@@ -63,6 +64,43 @@ JAIL_ADDRESSES = {
         'inet6': "fd00::207",
     },
 }
+
+
+def is_valid_ip4(ip: str) -> bool:
+    try:
+        IPv4Address(ip)
+        return True
+    except AddressValueError:
+        return False
+
+def is_valid_ip6(ip: str) -> bool:
+    try:
+        IPv6Address(ip)
+        return True
+    except AddressValueError:
+        return False
+
+def is_valid_ip(ip: str) -> bool:
+    return is_valid_ip4(ip) or is_valid_ip6(ip)
+
+def is_loopback(ip: str) -> bool:
+    try:
+        return ip_address(ip).is_loopback
+    except ValueError:
+        return False
+
+def is_valid_hostname(hostname: str) -> bool:
+    # Solution taken from this SO answer: https://stackoverflow.com/a/33214423
+    if hostname[-1] == ".":
+        hostname = hostname[:-1]
+    if len(hostname) > 253:
+        return False
+    parts = hostname.split(".")
+    # TLD can't be numeric-only
+    if re.match(r"[0-9]+$", parts[-1]):
+        return False
+    allowed = re.compile(r"(?!-)[a-z0-9-]{1,63}(?<!-)$", re.IGNORECASE)
+    return all(allowed.match(part) for part in parts)
 
 
 def get_hostname():
@@ -264,6 +302,7 @@ def address_cleanup(logger):
             ip, prefix = addr.split("/")
             if ":" in ip:
                 family = "inet6"
+                ip = ip.split('%')[0]
             else:
                 family = "inet"
 
@@ -324,7 +363,7 @@ def destroy_virtual_interface(logger, iface_name):
     :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-    from system.cluster.models import Cluster, NetworkAddress
+    from system.cluster.models import Cluster
     node = Cluster.get_current_node()
 
     ret = True
@@ -345,7 +384,7 @@ def create_virtual_interface(logger, iface_name):
     :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-    from system.cluster.models import Cluster, NetworkAddress
+    from system.cluster.models import Cluster
     node = Cluster.get_current_node()
 
     ret = True
@@ -443,7 +482,7 @@ def write_network_config(logger):
         configs.append(static_route)
 
     # Remove all past routing config
-    status, removed = remove_rc_config(f".*route.*")
+    status, removed = remove_rc_config(".*route.*")
     logger.info(f"Node::write_network_config(): removed old routing configurations {removed}")
 
     # Apply configurations

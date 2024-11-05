@@ -175,5 +175,5 @@ class OTPRepository(BaseRepository):
         elif self.otp_type == "totp":
             return TOTPClient(self)
         else:
-            raise NotImplemented("OTP client type not implemented yet")
+            raise NotImplementedError("OTP client type not implemented yet")
 

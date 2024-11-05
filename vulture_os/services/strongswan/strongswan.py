@@ -29,7 +29,7 @@ from django.conf import settings
 from services.service import Service
 
 # Required exceptions import
-from services.exceptions import ServiceError, ServiceStatusError
+from services.exceptions import ServiceStatusError
 
 # Extern modules imports
 from re import search as re_search

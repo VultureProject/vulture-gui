@@ -24,17 +24,14 @@ __doc__ = 'Rsyslog dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, SelectMultiple
+from django.forms import ModelForm, TextInput
 
 # Django project imports
 from services.rsyslogd.models import RsyslogSettings
-from services.service import Service
 
 # Required exceptions imports
-from bson.errors import InvalidId
 
 # Extern modules imports
-from bson import ObjectId
 
 # Logger configuration imports
 import logging

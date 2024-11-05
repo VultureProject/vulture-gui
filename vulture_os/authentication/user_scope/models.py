@@ -29,8 +29,8 @@ from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
-from django.forms import (CheckboxInput, ModelForm, ModelChoiceField, ModelMultipleChoiceField, NumberInput, Select,
-                          SelectMultiple, TextInput, Textarea)
+from django.forms import (ModelForm, Select,
+                          TextInput)
 
 # Extern modules imports
 from bson import ObjectId
@@ -110,7 +110,7 @@ class RepoAttribute(models.Model):
     )
 
     def __str__(self):
-        return "IF {} {} {} THEN SET {} {} {}({})".format(self.condition_var_kind, self.condition_var_name,
+        return "IF {} {} {} {} THEN SET {} {} {}({})".format(self.condition_var_kind, self.condition_var_name,
                                                         self.condition_criterion, self.condition_match,
                                                         self.action_var_name, self.assignator,
                                                         self.action_var_kind, self.action_var)

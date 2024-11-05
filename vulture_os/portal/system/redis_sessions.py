@@ -150,7 +150,7 @@ class REDISAppSession(REDISSession):
 
         try:
             assert( self.keys['authenticated'] )
-        except (AssertionError, KeyError, TypeError) as e:
+        except (AssertionError, KeyError, TypeError):
             """ Delete bad cookie Session """
             self.handler.delete(str(app_cookie))
 
@@ -755,7 +755,7 @@ class REDISBase(object):
     def exists(self, key):
         try:
             v = self.r.exists(key)
-        except RedisResponseError as e:
+        except RedisResponseError:
             return None
         except Exception as e:
             self.logger.exception(e)
@@ -767,7 +767,7 @@ class REDISBase(object):
     def get(self, key):
         try:
             v = self.r.get(key)
-        except RedisResponseError as e:
+        except RedisResponseError:
             return None
         except Exception as e:
             self.logger.exception(e)
@@ -837,7 +837,7 @@ class REDISBase(object):
     def ttl(self, key):
         try:
             v = self.r.ttl(key)
-        except RedisResponseError as e:
+        except RedisResponseError:
             return None
         except Exception as e:
             self.logger.exception(e)

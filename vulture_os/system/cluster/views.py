@@ -27,12 +27,11 @@ from django.http import (HttpResponseForbidden, HttpResponseRedirect, JsonRespon
 from system.cluster.form import NodeForm
 from toolkit.mongodb.mongo_base import MongoBase
 from django.shortcuts import render
+from services.pf.pf import PFService
 from system.cluster.models import Cluster, Node
 from gui.forms.form_utils import DivErrorList
 from django.utils.translation import gettext_lazy as _
 from toolkit.api.responses import build_response
-from subprocess import CalledProcessError
-from services.pf.pf import test_config as test_pf_config
 
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -163,13 +162,16 @@ def cluster_edit(request, object_id, api=False, update=False):
             pf_custom_nat_config_changed or \
             pf_custom_rdr_config_changed or \
             pf_custom_config_changed:
-            try:
-                test_pf_config(node.pf_custom_param_config+"\n"+
-                               node.pf_custom_nat_config + "\n" +
-                               node.pf_custom_rdr_config + "\n" +
-                               node.pf_custom_config + "\n")
-            except CalledProcessError:
-                return render_form(save_error="Invalid PF configuration")
+
+            updated_conf = PFService().get_conf(node=node)
+
+            status, results = Cluster.await_api_request(
+                node=node,
+                action="services.pf.pf.test_config",
+                config=(updated_conf),
+                internal=True)
+            if not status:
+                return render_form(save_error=f"Invalid PF configuration: {str(results)}")
         node.save()
 
         if ip_changed or gateway_changed or gateway_ipv6_changed or static_route_changed:

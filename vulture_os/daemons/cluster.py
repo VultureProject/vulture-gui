@@ -25,7 +25,6 @@ __doc__ = 'Cluster daemon'
 
 import os
 import sys
-import time
 
 # Django setup part
 sys.path.append('/home/vlt-os/vulture_os')
@@ -91,7 +90,7 @@ if __name__ == '__main__':
                     job = jobdef['function'](jobdef['frequency'], name=jobname)
                     job.start()
                     RUNNING_JOBS[jobname] = job
-                except Exception as e:
+                except Exception:
                     logger.error(f"Vultured:: Failed restarting job {jobname}!")
                     continue
 

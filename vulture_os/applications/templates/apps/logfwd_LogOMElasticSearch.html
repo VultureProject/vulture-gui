@@ -108,6 +108,17 @@
                   </div>
                 </div>
               </div>
+              <div class="row datastream-mode">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.retry_on_els_failures.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.retry_on_els_failures}}
+                      {{form.retry_on_els_failures.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
@@ -308,6 +319,17 @@
                         </div>
                       </div>
                     </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.spool_directory.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.spool_directory}}
+                            {{form.spool_directory.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div> <!-- /.tab-disk -->
                 </div> <!-- /.tab-queue -->
               </div> <!-- /.advanced_options -->
@@ -349,18 +371,16 @@
       });
     });
 
-    /* Show fields depending on chosen mode */
-    $('#id_mode').on('change', function(event) {
-      var value = $(this).val();
-      $('.http-mode').hide();
-      $('.tcp-mode').hide();
-      $('.'+value+'-mode').show();
-    });
-    $('#id_mode').trigger('change');
-
-    $("#id_fqdns").tagEditor({
-      delimiter: ' '
-    });
+    $('#id_data_stream_mode').on('change', function(event) {
+      if ($(this).is(':checked')) {
+        $('.datastream-mode').show();
+      } else {
+        $('.datastream-mode').hide();
+        if($('#id_retry_on_els_failures').is(':checked') ) {
+          $('#id_retry_on_els_failures').click();
+        }
+      }
+    }).trigger('change');
 
     $('#id_enable_retry').on('change', function(e){
       if ($(this).is(':checked')) {

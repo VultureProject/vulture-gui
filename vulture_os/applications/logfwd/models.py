@@ -24,7 +24,7 @@ __doc__ = 'Log forwarder model classes'
 
 # Django system imports
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.template import Context, Template
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
@@ -74,6 +74,13 @@ ROTATION_PERIOD_CHOICES = (
     ('yearly', "Every year")
 )
 
+OMHIREDIS_MODE_CHOICES = (
+    ('queue', "Queue/list mode, using lpush/rpush"),
+    ('set', "Set/keys mode, using set/setex"),
+    ('publish', "Channel mode, using publish"),
+    ('stream', "Stream mode, using xadd"),
+)
+
 CONF_PATH = "/usr/local/etc/rsyslog.d/10-applications.conf"
 JINJA_PATH = "/home/vlt-os/vulture_os/applications/logfwd/config/"
 
@@ -82,6 +89,7 @@ class LogOM (models.Model):
     name = models.TextField(unique=True, blank=False, null=False,
                             default="Log Output Module", help_text=_("Name of the Log Output Module"))
     internal = models.BooleanField(default=False, help_text=_("Is this LogForwarder internal"))
+    enabled = models.BooleanField(default=True)
     queue_size = models.PositiveIntegerField(
         default=10000,
         help_text=_("Size of the queue in nb of message"),
@@ -134,32 +142,41 @@ class LogOM (models.Model):
     )
     high_watermark = models.PositiveIntegerField(
         default=8000,
-        null=True,
+        null=False,
         help_text=_("Target of the high watermark"),
         verbose_name=_("High watermark target"),
         validators=[MinValueValidator(100)]
     )
     low_watermark = models.PositiveIntegerField(
         default=6000,
-        null=True,
+        null=False,
         help_text=_("Set the value of the low watermark"),
         verbose_name=_("Low watermark target"),
         validators=[MinValueValidator(100)]
         )
     max_file_size = models.IntegerField(
         default=256,
-        null=True,
+        null=False,
         help_text=_("Set the value of the queue in MB"),
         verbose_name=_("Max file size of the queue in MB"),
         validators=[MinValueValidator(1)]
     )
     max_disk_space = models.IntegerField(
-        default=1024,
-        null=True,
+        default=0,
+        null=False,
         help_text=_("Limit the maximum disk space used by the queue in MB"),
-        verbose_name=_("Max disk space used by the queue in MB"),
-        validators=[MinValueValidator(1)]
+        verbose_name=_("Max disk space used by the queue in MB (set to zero to disable)"),
+        validators=[MinValueValidator(0)]
     )
+    spool_directory = models.TextField(
+        default="/var/tmp",
+        null=False,
+        help_text=_("Defines an existing folder to store queue files into"),
+        verbose_name=_("Existing folder to store queue files to"),
+        validators=[RegexValidator(
+                regex=r"^/.*$",
+                message="Value should be a valid fullpath, beginning with a '/'"
+        )])
     send_as_raw = models.BooleanField(
         default=False,
         help_text=_("Send logs without any modification"),
@@ -167,10 +184,10 @@ class LogOM (models.Model):
     )
 
     def __unicode__(self):
-        return "{} ({})".format(self.name, self.__class__.__name__)
+        return f"{self.name} ({self.__class__.__name__})"
 
     def __str__(self):
-        return "{}".format(self.name)
+        return f"{self.name}"
 
     @staticmethod
     def str_attrs():
@@ -203,7 +220,7 @@ class LogOM (models.Model):
             log_om = obj.objects.filter(name=name).only(*attrs).first()
             if log_om:
                 return log_om
-        raise ObjectDoesNotExist("Log Forwarder named '{}' not found.".format(name))
+        raise ObjectDoesNotExist(f"Log Forwarder named '{name}' not found.")
 
     @classmethod
     def generate_conf(cls, log_om, rsyslog_template_name, **kwargs):
@@ -212,6 +229,9 @@ class LogOM (models.Model):
         conf = log_om.to_template(**kwargs, ruleset=rsyslog_template_name)
         conf['out_template'] = rsyslog_template_name
         return template.render(conf)
+
+    def generate_pre_conf(self, rsyslog_template_name, **kwargs):
+        return ""
 
     def template_id(self):
         return hashlib.sha256(self.name.encode('utf-8')).hexdigest()
@@ -239,7 +259,7 @@ class LogOM (models.Model):
         elif hasattr(self, "logom_ptr") and type(self.logom_ptr) != LogOM:
             subclass_obj = self.logom_ptr
         else:
-            raise Exception("Cannot find type of LogOM named '{}' !".format(self.name))
+            raise Exception(f"Cannot find type of LogOM named '{self.name}' !")
         # Prevent infinite loop if subclass method does not exists
         if subclass_obj.get_rsyslog_template.__doc__ == LogOM.get_rsyslog_template.__doc__:
             return ""
@@ -255,7 +275,7 @@ class LogOM (models.Model):
         """  returns the attributes of the class """
         return {
             'id': str(self.id),
-            'output_name': "{}_{}".format(self.name, kwargs.get('frontend', "")),
+            'output_name': f"{self.name}_{kwargs.get('frontend', '')}",
             'name': self.name,
             'template_id': self.template_id(),
             'send_as_raw': self.send_as_raw,
@@ -271,6 +291,7 @@ class LogOM (models.Model):
             'low_watermark': self.low_watermark,
             'max_file_size': self.max_file_size,
             'max_disk_space': self.max_disk_space,
+            'spool_directory': self.spool_directory,
         }
 
 
@@ -278,7 +299,6 @@ class LogOMFile(LogOM):
     file = models.TextField(null=False)
     flush_interval = models.IntegerField(default=1, null=False)
     async_writing = models.BooleanField(default=True)
-    enabled = models.BooleanField(default=True)
     retention_time = models.PositiveIntegerField(default=30, validators=[MinValueValidator(1)])
     rotation_period = models.TextField(default=ROTATION_PERIOD_CHOICES[0][0], choices=ROTATION_PERIOD_CHOICES)
 
@@ -303,6 +323,7 @@ class LogOMFile(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'File',
             'output': self.file
@@ -343,8 +364,8 @@ class LogOMFile(LogOM):
 
     def render_file_template(self, ruleset):
         tpl = Template(self.file)
-        return "template(name=\"{}\" type=\"string\" string=\"{}\") \n" \
-               .format(self.template_id(ruleset=ruleset), tpl.render(Context({'ruleset': ruleset})))
+        return f"""template(name=\"{self.template_id(ruleset=ruleset)}\" type=\"string\"
+                    string=\"{tpl.render(Context({'ruleset': ruleset}))}\")\n"""
 
     def get_rsyslog_template(self):
         res = ""
@@ -362,7 +383,6 @@ class LogOMFile(LogOM):
 class LogOMRELP(LogOM):
     target = models.TextField(null=False, default="1.2.3.4")
     port = models.IntegerField(null=False, default=514)
-    enabled = models.BooleanField(default=True)
     tls_enabled = models.BooleanField(
         default=True,
         help_text=_("If set to on, the RELP connection will be encrypted by TLS.")
@@ -390,6 +410,7 @@ class LogOMRELP(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'RELP',
             'output': self.target + ':' + str(self.port)
@@ -419,10 +440,45 @@ class LogOMRELP(LogOM):
 class LogOMHIREDIS(LogOM):
     target = models.TextField(null=False, default="1.2.3.4")
     port = models.IntegerField(null=False, default=6379)
+    mode = models.TextField(
+        default=OMHIREDIS_MODE_CHOICES[0][0],
+        choices=OMHIREDIS_MODE_CHOICES,
+        help_text=_("Specify how Rsyslog insert logs in Redis"),
+        verbose_name=_("Redis insertion mode"),
+    )
     key = models.TextField(null=False, default="MyKey")
     dynamic_key = models.BooleanField(default=False)
     pwd = models.TextField(blank=True, default=None)
-    enabled = models.BooleanField(default=True)
+    use_rpush = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=_("Use RPUSH instead of LPUSH in list mode"),
+        verbose_name=_("Use RPUSH"),
+    )
+    expire_key = models.PositiveIntegerField(
+        default=0,
+        blank=True,
+        help_text=_("Use SETEX instead of SET in key mode with an expiration in seconds"),
+        verbose_name=_("Expiration of the key (s)"),
+    )
+    stream_outfield = models.TextField(
+        default="msg",
+        validators=[
+            RegexValidator(
+                regex=r"^\S+$",
+                message="Value shouldn't have any spaces"
+            )
+        ],
+        blank=True,
+        help_text=_("Set the name of the index field to use when inserting log, in stream mode"),
+        verbose_name=_("Index name of the log"),
+    )
+    stream_capacitylimit = models.PositiveIntegerField(
+        default=0,
+        blank=True,
+        help_text=_("Set a stream capacity limit, if set to more than 0 (zero), oldest values in the stream will be evicted to stay under the max value"),
+        verbose_name=_("Maximum stream size"),
+    )
 
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)
@@ -440,6 +496,7 @@ class LogOMHIREDIS(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'Redis',
             'output': f"{self.target}:{self.port} ({'dynamic ' if self.dynamic_key else ''}key = {self.key})"
@@ -457,11 +514,15 @@ class LogOMHIREDIS(LogOM):
         template.update({
             'target': self.target,
             'port': self.port,
+            'mode': self.mode,
             'key': key,
             'dynamic_key': self.dynamic_key,
             'pwd': self.pwd,
+            'use_rpush': self.use_rpush,
+            'expire_key': self.expire_key,
+            'stream_outfield': self.stream_outfield,
+            'stream_capacitylimit': self.stream_capacitylimit,
             'type': 'Redis',
-            'mode': "queue",
             'output': f"{self.target}:{self.port} (key = {self.key})"
         })
         return template
@@ -482,7 +543,6 @@ class LogOMFWD(LogOM):
         help_text=_("Port on which to send logs to <target>.")
     )
     protocol = models.TextField(null=False, choices=OMFWD_PROTOCOL, default="tcp")
-    enabled = models.BooleanField(default=True)
     zip_level = models.PositiveIntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(9)],
@@ -503,6 +563,7 @@ class LogOMFWD(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'Syslog',
             'output': self.target + ':' + str(self.port) + ' ({})'.format(self.protocol)
@@ -532,7 +593,6 @@ class LogOMFWD(LogOM):
 
 
 class LogOMElasticSearch(LogOM):
-    enabled = models.BooleanField(default=True)
     servers = models.TextField(null=False, default='["https://els-1:9200", "https://els-2:9200"]')
     es8_compatibility = models.BooleanField(
         default=False,
@@ -544,6 +604,11 @@ class LogOMElasticSearch(LogOM):
         help_text=_("Enable Elasticsearch datastreams support"),
         verbose_name=_("Enable Elasticsearch datastreams support")
     )
+    retry_on_els_failures = models.BooleanField(
+        default=False,
+        help_text=_("Let Rsyslog's Elasticsearch module handle and retry insertion failure"),
+        verbose_name=_("Handle failures and retries on ELS insertion")
+    )
     index_pattern = models.TextField(unique=True, null=False, default='mylog-%$!timestamp:1:10%')
     uid = models.TextField(null=True, blank=True, default=None)
     pwd = models.TextField(null=True, blank=True, default=None)
@@ -552,7 +617,8 @@ class LogOMElasticSearch(LogOM):
         on_delete=models.CASCADE,
         help_text=_("X509Certificate object to use."),
         default=None,
-        null=True
+        null=True,
+        blank=True
     )
 
     def to_dict(self, fields=None):
@@ -571,6 +637,7 @@ class LogOMElasticSearch(LogOM):
             'id': str(self.id),
             'name': self.name,
             'internal': self.internal,
+            'enabled': self.enabled,
             'type': 'Elasticsearch',
             'output': self.servers + ' (index = {})'.format(self.index_pattern)
         }
@@ -579,6 +646,22 @@ class LogOMElasticSearch(LogOM):
     def template(self):
         return 'om_elasticsearch.tpl'
 
+    @property
+    def pre_template(self):
+        return 'om_elasticsearch_pre.tpl'
+
+    def generate_pre_conf(self, rsyslog_template_name, **kwargs):
+        jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
+        try:
+            template = jinja2_env.get_template(self.pre_template)
+            conf = self.to_template(**kwargs)
+            conf['out_template'] = rsyslog_template_name
+            rendered = template.render(conf)
+        except Exception as e:
+            logger.exception(e)
+            rendered = ""
+        return rendered
+
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
         template = super().to_template(**kwargs)
@@ -586,6 +669,7 @@ class LogOMElasticSearch(LogOM):
             'servers': self.servers,
             'es8_compatibility': self.es8_compatibility,
             'data_stream_mode': self.data_stream_mode,
+            'retry_on_els_failures': self.retry_on_els_failures,
             'index_pattern': self.index_pattern,
             'uid': self.uid,
             'pwd': self.pwd,
@@ -624,7 +708,6 @@ class LogOMMongoDB(LogOM):
     db = models.TextField(unique=True, null=False, default='MyDatabase')
     collection = models.TextField(unique=True, null=False, default='MyLogs')
     uristr = models.TextField(null=False, default='mongodb://1.2.3.4:9091/?replicaset=Vulture&ssl=true')
-    enabled = models.BooleanField(default=True)
     x509_certificate = models.ForeignKey(
         X509Certificate,
         on_delete=models.CASCADE,
@@ -644,6 +727,7 @@ class LogOMMongoDB(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'MongoDB',
             'output': self.uristr + ' (db = {})'.format(self.db)
@@ -687,7 +771,7 @@ class LogOMMongoDB(LogOM):
 
             kwargs.update({
                 'ssl': True,
-                "ssl_certfile": self.x509_certificate.get_base_filename() + ".pem"
+                "tlsCertificateKeyFile": self.x509_certificate.get_base_filename() + ".pem"
             })
 
         return pymongo.MongoClient(**kwargs)
@@ -700,7 +784,6 @@ class LogOMMongoDB(LogOM):
 
 class LogOMKAFKA(LogOM):
     broker = models.TextField(blank=True, default='["1.2.3.4:9092"]')
-    enabled = models.BooleanField(default=True)
     topic = models.TextField()
     key = models.TextField(blank=True)
     dynaKey = models.BooleanField(default=False)
@@ -726,6 +809,7 @@ class LogOMKAFKA(LogOM):
         return {
             'id': str(self.id),
             'internal': self.internal,
+            'enabled': self.enabled,
             'name': self.name,
             'type': 'Kafka',
             'output': self.broker + ' (topic = {})'.format(self.topic)

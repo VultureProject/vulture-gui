@@ -24,13 +24,11 @@ __doc__ = 'Backends & Servers dedicated form classes'
 
 # Django system imports
 from django.conf import settings
-from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInput, Textarea, Form, \
-    ChoiceField, CharField, HiddenInput, ValidationError
-from django.utils.translation import gettext as _
+from django.forms import CheckboxInput, ModelForm, NumberInput, Select, TextInput, Textarea, HiddenInput
 
 # Django project imports
 from gui.forms.form_utils import NoValidationField
-from applications.backend.models import (Backend, Server, LOG_LEVEL_CHOICES, MODE_CHOICES, BALANCING_CHOICES, HEALTH_CHECK_TCP_EXPECT_CHOICES,
+from applications.backend.models import (Backend, Server, MODE_CHOICES, BALANCING_CHOICES, HEALTH_CHECK_TCP_EXPECT_CHOICES,
                                          HEALTH_CHECK_EXPECT_CHOICES, HEALTH_CHECK_METHOD_CHOICES, HEALTH_CHECK_VERSION_CHOICES)
 from system.pki.models import TLSProfile
 

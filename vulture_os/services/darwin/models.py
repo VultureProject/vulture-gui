@@ -24,11 +24,10 @@ __doc__ = 'Darwin daemon settings model'
 
 # Django system imports
 from django.conf import settings
-from django.db.models import Q
 from djongo import models
 
 # Django project imports
-from darwin.policy.models import DarwinPolicy, FilterPolicy
+from darwin.policy.models import FilterPolicy
 
 # Required exceptions imports
 

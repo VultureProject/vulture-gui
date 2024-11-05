@@ -27,7 +27,7 @@ import ast
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (BooleanField, CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
-                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, PasswordInput)
+                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField)
 from django.utils.translation import gettext_lazy as _
 
 # Django project imports
@@ -41,7 +41,7 @@ from services.frontend.models import (Frontend, FrontendReputationContext, Liste
                                       FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
 
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
-from system.cluster.models import NetworkInterfaceCard, NetworkAddress
+from system.cluster.models import NetworkAddress
 from system.error_templates.models import ErrorTemplate
 from toolkit.api_parser.utils import get_available_api_parser
 from toolkit.network.network import parse_proxy_url
@@ -225,7 +225,7 @@ class FrontendForm(ModelForm):
                            "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                            "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                            "cybereason_host", "cybereason_username", "cybereason_password",
-                           "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
+                           "cisco_meraki_apikey", "cisco_meraki_get_security_logs", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
                            "carbon_black_host", 'carbon_black_orgkey', 'carbon_black_apikey',
                            "netskope_host", 'netskope_apikey',
                            'rapid7_idr_host', 'rapid7_idr_apikey',
@@ -333,7 +333,7 @@ class FrontendForm(ModelForm):
                   "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
                   "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey",
                   "cybereason_host", "cybereason_username", "cybereason_password",
-                  "cisco_meraki_apikey", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
+                  "cisco_meraki_apikey", "cisco_meraki_get_security_logs", 'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
                   "proofpoint_tap_secret",
                   "sentinel_one_host", "sentinel_one_apikey", "sentinel_one_account_type",
                   "netskope_host", "netskope_apikey",
@@ -465,6 +465,7 @@ class FrontendForm(ModelForm):
             'cybereason_username': TextInput(attrs={'class': 'form-control'}),
             'cybereason_password': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'cisco_meraki_apikey': TextInput(attrs={'class': 'form-control'}),
+            'cisco_meraki_get_security_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'proofpoint_tap_host': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_tap_endpoint': Select(attrs={'class': 'form-control select2'}),
             'proofpoint_tap_principal': TextInput(attrs={'class': 'form-control'}),
@@ -590,8 +591,6 @@ class FrontendForm(ModelForm):
         regex = "{{([^}]+)}}"
         log_condition = self.cleaned_data.get('log_condition', "").replace("\r\n", "\n")
         for line in log_condition.split('\n'):
-            if line.count('{') > 2:
-                raise ValidationError("There cannot be 2 actions on one line.")
             match = re_search(regex, line)
             if match:
                 try:

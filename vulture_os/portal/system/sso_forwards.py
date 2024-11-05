@@ -42,12 +42,9 @@ from .exceptions                      import CredentialsMissingError
 
 # Extern modules imports
 from base64                           import b64encode
-from bs4                              import BeautifulSoup
 from bson                             import ObjectId
 from json                             import loads as json_loads
 from re                               import search as re_search
-from robobrowser.forms                import Form
-from robobrowser.forms.fields         import BaseField
 from ssl                              import SSLContext, CERT_REQUIRED, CERT_NONE
 
 # Logger configuration imports
@@ -278,7 +275,7 @@ class SSOForwardPOST(SSOForward):
                         control_names[control_id] = control_name
                     control_ids[control_name]     = str(control_id)
                     control_values[control_name]  = control_value
-            except IndexError as e:
+            except IndexError:
                 logger.error(f"SSOForwardPOST::retrieve_credentials: Cannot retrieve a form on url '{url}'")
                 raise
             except Exception as e:

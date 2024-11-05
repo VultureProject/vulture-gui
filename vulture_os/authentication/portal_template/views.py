@@ -27,7 +27,6 @@ import base64
 # Django system imports
 from django.conf import settings
 from django.shortcuts import render
-from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponseNotFound, HttpResponseRedirect
 

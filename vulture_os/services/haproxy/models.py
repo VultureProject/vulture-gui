@@ -49,7 +49,6 @@ class HAProxySettings(models.Model):
         """
         """ First, use to_mongo() internal django function """
         from workflow.models import Workflow
-        from authentication.user_portal.models import UserAuthentication
 
         endpoints = list()
 

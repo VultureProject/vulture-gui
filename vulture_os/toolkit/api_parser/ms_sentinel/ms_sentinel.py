@@ -25,7 +25,6 @@ __parser__ = 'MICROSOFT SENTINEL'
 
 # Django system imports
 from django.conf import settings
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # Django project imports
@@ -34,7 +33,7 @@ from toolkit.api_parser.api_parser import ApiParser
 # Extern modules imports
 import json
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Logger import & configuration
 import logging

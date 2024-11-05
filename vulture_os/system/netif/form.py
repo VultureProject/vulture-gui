@@ -24,9 +24,8 @@ __doc__ = 'Haproxy dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, SelectMultiple, Select, NumberInput, ModelMultipleChoiceField, ValidationError, ModelChoiceField, BooleanField, CheckboxInput, IntegerField
+from django.forms import ModelForm, TextInput, SelectMultiple, Select, NumberInput, ModelMultipleChoiceField, ValidationError
 from system.cluster.models import NetworkInterfaceCard, NetworkAddress, NetworkAddressNIC, NET_ADDR_TYPES, LAGG_PROTO_TYPES
-from django.db.models import Q
 
 # External libraries
 from iptools.ipv4 import netmask2prefix

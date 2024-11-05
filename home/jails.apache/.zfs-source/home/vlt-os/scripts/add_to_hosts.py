@@ -41,7 +41,7 @@ if nb_args >= 3:
         # Testing IP Address validity
         try:
             ipaddress.ip_address(ip)
-        except Exception as e:
+        except Exception:
             print("INCORRECT IP", file=sys.stderr)
             sys.exit(2)
 

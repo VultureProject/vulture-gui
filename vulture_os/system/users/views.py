@@ -24,7 +24,6 @@ __doc__ = 'Users View'
 
 from django.http import JsonResponse, HttpResponseRedirect
 from system.users.models import User
-from gui.forms.form_utils import DivErrorList
 from system.users.form import UserForm, ChangeUserForm, UserLDAPForm, ChangeUserLDAPForm
 from django.shortcuts import render
 from django.urls import reverse

@@ -34,13 +34,12 @@ from django.contrib.auth.hashers import make_password
 from django.core.validators import validate_email
 
 # Django project imports
-from system.cluster.models import Cluster
 from system.users.models import User
-from portal.system.redis_sessions import REDISBase, REDISAppSession, REDISPortalSession
+from portal.system.redis_sessions import REDISBase, REDISPortalSession
 from portal.views.logon import authenticate, validate_portal_cookie
 from portal.views.responses import self_message_response, self_ask_passwords, self_message_main, set_portal_cookie
 from authentication.base_repository import BaseRepository
-from toolkit.portal.registration import perform_email_registration, perform_email_reset
+from toolkit.portal.registration import perform_email_reset
 from toolkit.system.hashes import random_sha256
 from authentication.portal_template.models import (RESET_PASSWORD_NAME, INPUT_PASSWORD_OLD, INPUT_PASSWORD_1,
                                                INPUT_PASSWORD_2, INPUT_EMAIL)
@@ -52,13 +51,8 @@ from portal.system.exceptions import RedirectionNeededError, PasswordMatchError,
 from toolkit.auth.exceptions import AuthenticationError, AuthenticationFailed, UserNotFound
 
 # Extern modules imports
-from ast import literal_eval
-from bson import ObjectId
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from jinja2 import Environment, FileSystemLoader
 from re import match as re_match
-from smtplib import SMTP, SMTPException
+from smtplib import SMTPException
 
 # Logger configuration imports
 import logging

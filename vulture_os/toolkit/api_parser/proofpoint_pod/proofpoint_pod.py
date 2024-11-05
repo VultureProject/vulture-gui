@@ -278,7 +278,7 @@ class ProofpointPodParser(ApiParser):
                     # no new log received during timeout, flush current buffer
                     logger.debug(f"[{__parser__}]:execute: no logs received for some time, flushing buffer", extra={'frontend': str(self.frontend)})
                     self._flush_buffer()
-        except (ProofpointPodAPIError, ProofpointPodParseError) as e:
+        except (ProofpointPodAPIError, ProofpointPodParseError):
             raise
         except websocket._exceptions.WebSocketConnectionClosedException:
             logger.info(f"[{__parser__}]:execute: Connection was closed, finalizing...", extra={'frontend': str(self.frontend)})

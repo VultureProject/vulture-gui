@@ -36,7 +36,7 @@ from applications.logfwd.models import LogOM
 from darwin.policy.models import DarwinBuffering, DarwinPolicy
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
-from services.frontend.models import Frontend, FrontendReputationContext, Listener, FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, FILEBEAT_MODULE_CONFIG
+from services.frontend.models import Frontend, FrontendReputationContext, Listener, FILEBEAT_MODULE_CONFIG
 from system.cluster.models import Cluster, Node
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS

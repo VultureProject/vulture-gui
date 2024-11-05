@@ -34,19 +34,14 @@ from django.conf import settings
 django.setup()
 from django.utils.crypto import get_random_string
 
-from system.cluster.models import Cluster
-from django.conf import settings
 from django.utils.timezone import now as timezone_now
 from gui.models.rss import RSS
 from toolkit.network.network import get_hostname, get_proxy
 from applications.reputation_ctx.models import ReputationContext
 from services.rsyslogd.rsyslog import restart_service as restart_rsyslog_service
-from system.tenants.models import Tenants
 from system.exceptions import VultureSystemError
 
 import subprocess
-import requests
-from base64 import b64encode
 from random import randint
 from time import sleep
 

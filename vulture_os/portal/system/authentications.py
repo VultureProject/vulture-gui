@@ -30,13 +30,12 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 
 # Django project imports
 # FIXME from gui.models.repository_settings  import KerberosRepository, LDAPRepository
-from portal.system.redis_sessions import (REDISBase, REDISAppSession, REDISPortalSession, REDISOauth2Session,
+from portal.system.redis_sessions import (REDISBase, REDISPortalSession, REDISOauth2Session,
                                           REDISRefreshSession, RedisOpenIDSession)
 from portal.views.responses import (split_domain, basic_authentication_response, kerberos_authentication_response,
                                     post_authentication_response, otp_authentication_response,
                                     learning_authentication_response, error_response)
 from system.users.models import User
-from workflow.models import Workflow
 from authentication.base_repository import BaseRepository
 from authentication.portal_template.models import INPUT_OTP_KEY, INPUT_OTP_RESEND
 
@@ -48,7 +47,6 @@ from toolkit.auth.exceptions import AuthenticationError, RegisterAuthenticationE
 
 # Extern modules imports
 from base64 import b64encode, urlsafe_b64decode
-from bson import ObjectId
 from captcha.image import ImageCaptcha
 from smtplib import SMTPException
 from uuid import uuid4
@@ -142,6 +140,8 @@ class Authentication(object):
             try:
                 authentication_results = self.authenticate_on_backend(backend)
                 self.backend_id = str(backend.id)
+                # Update username with value gotten from authentication results, if it exists
+                self.credentials[0] = authentication_results.get('name', self.credentials[0])
                 logger.info("AUTH::authenticate: User '{}' successfully authenticated on backend '{}'"
                             .format(self.credentials[0], backend))
                 return authentication_results

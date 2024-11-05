@@ -30,7 +30,6 @@ from gui.models.monitor import Monitor
 from system.cluster.models import Node
 from django.http import JsonResponse
 from django.conf import settings
-import requests
 import logging
 
 logging.config.dictConfig(settings.LOG_SETTINGS)

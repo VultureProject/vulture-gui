@@ -29,7 +29,7 @@ from django.db.models import Q
 
 # Django project imports
 from applications.logfwd.models import LogOM
-from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
+from applications.reputation_ctx.models import DATABASES_PATH
 from services.frontend.models import Frontend, Listener
 from system.cluster.models import Cluster
 from system.config.models import Config

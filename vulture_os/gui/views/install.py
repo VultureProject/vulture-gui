@@ -169,7 +169,7 @@ def cluster_create(admin_user=None, admin_password=None):
     try:
         redis = RedisBase(get_management_ip(), 6379)
         redis.redis.ping()
-    except AuthenticationError as e:
+    except AuthenticationError:
         redis = RedisBase(get_management_ip(), 6379, password=system_config.redis_password)
     finally:
         redis.set_password(system_config.redis_password)
@@ -180,7 +180,7 @@ def cluster_create(admin_user=None, admin_password=None):
         # It may fail if Sentinel is already configured
         sentinel.sentinel_monitor()
     except ResponseError:
-        logger.info(f"Install::Sentinel monitor: Monitoring cluster already configured")
+        logger.info("Install::Sentinel monitor: Monitoring cluster already configured")
     sentinel.sentinel_set_announce_ip()
     sentinel.sentinel_set_cluster_password(system_config.redis_password)
 

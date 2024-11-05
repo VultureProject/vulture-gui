@@ -122,7 +122,7 @@ class BlackberryCylanceParser(ApiParser):
             self.session.headers.update({"Authorization": f"Bearer {ret['access_token']}"})
         except Exception as e:
             logger.exception(e, extra={'frontend': str(self.frontend)})
-            raise BlackberryCylanceAPIError(f"Error while getting access token from service's response")
+            raise BlackberryCylanceAPIError("Error while getting access token from service's response")
 
         logger.info(f"[{__parser__}]:_connect: Successfuly got a new token, ready to request", extra={'frontend': str(self.frontend)})
 
@@ -190,7 +190,7 @@ class BlackberryCylanceParser(ApiParser):
             except Exception as e:
                 logger.error(f"[{__parser__}]:_fetch_threat_devices: could not extract number of pages and devices from response: {e}", extra={'frontend': str(self.frontend)})
                 logger.debug(f"[{__parser__}]:_fetch_threat_devices: ret is {ret}", extra={'frontend': str(self.frontend)})
-                raise BlackberryCylanceAPIError(f"Could not extract info while getting devices affected by a threat")
+                raise BlackberryCylanceAPIError("Could not extract info while getting devices affected by a threat")
 
         return devices
 
@@ -215,7 +215,7 @@ class BlackberryCylanceParser(ApiParser):
         except Exception as e:
             logger.error(f"[{__parser__}]:_fetch_threats: could not extract number of pages and threats from response: {e}", extra={'frontend': str(self.frontend)})
             logger.debug(f"[{__parser__}]:_fetch_threats: ret is {ret}", extra={'frontend': str(self.frontend)})
-            raise BlackberryCylanceAPIError(f"Could not extract threats from response")
+            raise BlackberryCylanceAPIError("Could not extract threats from response")
 
         return number_of_pages, threats
 

@@ -25,22 +25,15 @@ __doc__ = 'LogRotate service wrapper utils'
 
 # Django system imports
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
 
 # Django project imports
 from services.logrotate.models import LogRotateSettings
 from services.service import Service
 
 # Local imports
-from system.cluster.models import Cluster
-from system.config.models import write_conf
-from system.exceptions import VultureSystemError
 # Required exceptions imports
-from services.exceptions import ServiceError, ServiceStatusError, ServiceTestConfigError
-from subprocess import CalledProcessError
 
 # Extern modules imports
-from subprocess import check_output, PIPE
 
 # Logger configuration imports
 import logging

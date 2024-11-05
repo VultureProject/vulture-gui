@@ -8,6 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.16.0] - 2024-11-04
+### Added
+- [LOG_FORWARDER] [REDIS] Support for queues, sets, publish and streams modes for log insertion
+- [LOGOMELASTICSEARCH] Handle log insertion errors returned by elasticsearch
+- [LOGOM] Add the ability to define the spooling directory for DA queues
+- [TENANTS] New additional_config field
+- [NETWORK] Automatically select the best interface for outgoing Backend/LogForwarders using system routes
+- [API_PARSER] [CISCO_MERAKI] Add support for security logs
+### Changed
+- [DEPENDENCIES] Upgrade djongo and code for pymongo>=4
+- [FRONTEND] [GUI] Improve binding information for Filebeat, Redis and Kafka listeners
+- [CRON] Update Reputation Context DBs at 6:00am instead of 2:00am
+- [LOGOM] Increment checkpoint interval for DA queues, to increase performances
+- [LOGOM] Code and logic factorization
+- [LOGOM] Allow to deactivate limitation of the size of DA queues on disk
+- [LOGOM] [ELASTICSEARCH] Limit available certificates to non-CA ones
+- [API_PARSER] [CISCO_MERAKI] Improve logging and collector early termination
+### Fixed
+- [NETWORK] Correctly assign a new/changed IPv6 IP to an existing interface
+- [FRONTEND] JSONField default value
+- [FRONTEND] Redis settings improperly displayed
+- [NETWORK] [GUI] Prevent missing interfaces in selection when refreshing interfaces on a cluster
+- [GUI] Wrong date formatting in the task list
+- [GUI] [PF] Correctly validate and return errors when changing custom PF rules
+- [CLUSTER] [PF] Correctly reload configurations when changing SSH/GUI access rules
+- [FRONTEND] [PF] Correctly add NAT rules for Forwarders on FILE/REDIS/KAFKA-type Frontends
+- [TENANT] [CONF] Ensure related Frontend configurations are reloaded when a Tenant's parameter is changed
+- [GUI] [FRONTEND] Remove too strict validation for log_condition field
+- [AUTHENTICATION] [LDAP] Limit username query to exact matches when authenticating
+- [AUTHENTICATION] [LDAP] Use real username returned by LDAP authentication in user infos (including for TOTP profile)
+- [FRONTEND] [PF] Generate forwarders' PF rules only when assigned to at least one Frontend or Node
+
+
 ## [2.15.13] - 2024-10-18
 ### Fixed
 - [PORTAL] [TOTP] Use lowercase login when assigning a TOTP profile to a username

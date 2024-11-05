@@ -27,7 +27,6 @@ import datetime
 import gzip
 import logging
 import requests
-import time
 import zipfile
 import re
 
@@ -165,7 +164,7 @@ class SymantecParser(ApiParser):
 
                     tmp_file.seek(0)
                     if not len(tmp_file.read()):
-                        msg = f"No logs found"
+                        msg = "No logs found"
                         logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                         self.frontend.last_api_call = timezone.now()
                         self.finish()

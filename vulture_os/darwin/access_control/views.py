@@ -23,7 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Access Control views'
 
 
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import JsonResponse
 from django.http.response import HttpResponseNotFound
 from django.utils.crypto import get_random_string
 from toolkit.mongodb.mongo_base import MongoBase
@@ -35,7 +35,6 @@ from darwin.access_control.form import AccessControlForm, AccessControlRuleForm
 from darwin.access_control.models import AccessControl
 from services.exceptions import ServiceTestConfigError
 from applications.backend.models import Backend
-from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 from workflow.models import Workflow
 from bson import ObjectId

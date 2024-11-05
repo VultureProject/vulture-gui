@@ -31,10 +31,8 @@ from services.service import Service
 from subprocess import Popen, PIPE
 
 # Required exceptions import
-from services.exceptions import ServiceError, ServiceStatusError
 
 # Extern modules imports
-from re import search as re_search
 
 # Logger configuration imports
 import logging

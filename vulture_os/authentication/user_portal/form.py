@@ -34,11 +34,8 @@ from authentication.portal_template.models import PortalTemplate
 from authentication.base_repository import BaseRepository
 from authentication.ldap.models import LDAPRepository
 from authentication.otp.models import OTPRepository
-from authentication.openid.models import OpenIDRepository
-from authentication.user_portal.models import (AUTH_TYPE_CHOICES, SSO_TYPE_CHOICES, SSO_BASIC_MODE_CHOICES,
-                                               SSO_CONTENT_TYPE_CHOICES, UserAuthentication)
+from authentication.user_portal.models import (AUTH_TYPE_CHOICES, SSO_TYPE_CHOICES, SSO_CONTENT_TYPE_CHOICES, UserAuthentication)
 from authentication.user_scope.models import UserScope
-from gui.forms.form_utils import NoValidationField
 from system.pki.models import PROTOCOL_CHOICES as TLS_PROTOCOL_CHOICES, X509Certificate
 from services.frontend.models import Frontend
 
