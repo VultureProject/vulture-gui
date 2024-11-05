@@ -135,7 +135,7 @@ def _create_user(ldap_repository, user_dn, username, userPassword, attrs, group_
 
 def search_users(ldap_repo, search, by_dn=False):
     client = ldap_repo.get_client()
-    tmp_users = client.search_user(f"{search}*", attr_list=["+","*"])
+    tmp_users = client.search_users(f"{search}*", attr_list=["+","*"])
     data = []
 
     for dn, attrs in tmp_users:
@@ -187,7 +187,7 @@ def get_users_in_group(ldap_repository, group_name):
 
 def find_user_email(ldap_repository, username):
     # No need to construct the scope, search_user does-it automatically...
-    user = ldap_repository.get_client().search_user(username, attr_list=[ldap_repository.user_email_attr])
+    user = ldap_repository.get_client().search_users(username, attr_list=[ldap_repository.user_email_attr])
     if not user:
         raise UserDoesntExistError(dn=username)
     dn = user[0][0]

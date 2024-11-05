@@ -347,10 +347,10 @@ class LDAPClient(BaseAuth):
         self.unbind_connection()
         return dn, attrs
 
-    def search_user(self, username, attr_list=None):
-        """ Method used to search for a user inside LDAP repository
+    def search_users(self, username, attr_list=None):
+        """ Method used to search for user(s) inside LDAP repository
 
-        :param username: String with username
+        :param username: String with username (with potential filters to get multiple usernames)
         :return: An list with results if query match, None otherwise
         """
         # input sanitation
@@ -364,11 +364,24 @@ class LDAPClient(BaseAuth):
         self.scope = self.user_scope
         return self._search(dn, query_filter, username, attr_list=attr_list)
 
+    def get_user(self, username, attr_list=None):
+        """ Method used to get a specific user inside LDAP repository
+
+        :param username: String with exact username to search for
+        :return: An list with results if query match, None otherwise
+        """
+        username = escape_filter_chars(username)
+        result = self.search_users(username, attr_list)
+        if result and len(result) > 0:
+            return result[0]
+        else:
+            return None
+
     def enumerate_users(self):
         lst=list()
         lst.append(self.user_dn)
         lst.append(self.base_dn)
-        res = self.search_user("*")
+        res = self.search_users("*")
         if res:
             for result in res:
                 lst.append(result[0])
@@ -414,10 +427,10 @@ class LDAPClient(BaseAuth):
         :param email: String with username
         :return: The first user matching query if at least one is found, None otherwise
         """
-        found_users = self.search_user(username)
-        if not found_users:
+        found_user = self.get_user(username)
+        if not found_user:
             raise UserNotFound(f"User not found in database for username '{username}'")
-        return self._format_user_results(found_users[0][0], found_users[0][1])
+        return self._format_user_results(found_user[0], found_user[1])
 
 
     def update_password(self, username, old_password, cleartext_password, **kwargs):
@@ -431,9 +444,9 @@ class LDAPClient(BaseAuth):
         logger.info("Updating password for username {}".format(username))
 
         """ First search for user """
-        found = self.search_user(username)
+        found = self.get_user(username)
         if found:
-            cn = found[0][0]
+            cn = found[0]
             self._bind_connection(self.user, self.password)
             try:
                 old_password=None
@@ -499,12 +512,12 @@ class LDAPClient(BaseAuth):
 
         """ Search "memberOf style" groups inside the given user entry """
         self.attributes_list.append(user_groups_attr)
-        user_info = self.search_user(username)
+        user_info = self.get_user(username)
         self.attributes_list.remove(user_groups_attr)
 
         if user_info:
-            userdn=user_info[0][0]
-            group_list = user_info[0][1].get(user_groups_attr)
+            userdn=user_info[0]
+            group_list = user_info[1].get(user_groups_attr)
             #This can return None
             if not group_list:
                 group_list=list()
@@ -638,10 +651,10 @@ class LDAPClient(BaseAuth):
         if len(password) == 0:
             raise AuthenticationError("Empty password is not allowed")
         # Looking for user DN, if found we can try a bind
-        found = self.search_user(username, attr_list=["+", "*"])
+        found = self.get_user(username, attr_list=["+", "*"])
 
-        if found is not None and len(found) > 0:
-            dn = found[0][0]
+        if found:
+            dn = found[0]
             logger.debug("User {} was found in LDAP, its DN is: {}"
                         .format(username.encode('utf-8'), dn))
             self._bind_connection(dn, password)
@@ -653,7 +666,7 @@ class LDAPClient(BaseAuth):
                 if return_status is True:
                     return True
 
-                result = self._format_user_results(dn, found[0][1])
+                result = self._format_user_results(dn, found[1])
                 return result
         else:
             logger.error("Unable to find username {} in LDAP repository"
