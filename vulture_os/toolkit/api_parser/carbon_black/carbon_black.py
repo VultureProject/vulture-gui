@@ -30,6 +30,7 @@ import requests
 
 from datetime import datetime, timedelta
 from django.conf import settings
+from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 
 
@@ -42,7 +43,7 @@ class CarbonBlackAPIError(Exception):
 
 
 class CarbonBlackParser(ApiParser):
-    ALERTS = "{}/appservices/v6/orgs/{}/alerts/_search"
+    ALERTS = "{}/api/alerts/v7/orgs/{}/alerts/_search"
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -102,7 +103,8 @@ class CarbonBlackParser(ApiParser):
 
     def test(self):
         try:
-            logs = self.get_logs(since=(datetime.utcnow()-timedelta(days=10)).isoformat()+"Z")
+            logs = self.get_logs(since=(timezone.now() - timedelta(days=10)),
+                                 to=timezone.now().strftime("%Y-%m-%dT%H:%M:%S.000Z"))
 
             return {
                 "status": True,
@@ -116,7 +118,7 @@ class CarbonBlackParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, cursor=0, since=None):
+    def get_logs(self, cursor=1, since=None, to=None):
         alert_url = self.ALERTS.format(self.carbon_black_host, self.carbon_black_orgkey)
 
         # Format timestamp for query, API wants a Z at the end
@@ -128,13 +130,17 @@ class CarbonBlackParser(ApiParser):
 
         query = {
             'criteria': {
-                'category': ['THREAT'],
-                'group_results': True,
-                'last_update_time': {
+                'backend_update_timestamp': {
                     'start': since,
-                    'end': datetime.now().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+                    'end': to
                 }
             },
+            "sort": [
+                {
+                    "field": "backend_update_timestamp",
+                    "order": "ASC"
+                }
+            ],
             'rows': 9999,
             'start': cursor
         }
@@ -147,32 +153,37 @@ class CarbonBlackParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
+        since = self.last_api_call or (timezone.now() - timedelta(hours=24))
+        to = min(timezone.now(), since + timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
-        since = self.last_api_call or (datetime.utcnow() - timedelta(hours=24))
-
-        available = 0
-        found = 0
-        while available <= found:
-
-            response = self.get_logs(available, since)
+        cursor = 1
+        while True:
+            response = self.get_logs(cursor, since, to)
 
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
 
             logs = response['results']
-            found = int(response['num_found'])
+            found = len(logs)
+            available = int(response.get('num_available', "0"))
             # available key is not present if response = {'results': [], 'num_found': 0}
-            available = int(response.get('num_available', "0")) + 1
 
-            self.write_to_file([self.format_log(l) for l in logs])
+            if found == 0:
+                self.frontend.last_api_call = datetime.fromisoformat(to.replace("Z", "+00:00"))
+                break
+
+            self.write_to_file([self.format_log(log) for log in logs])
 
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-            if len(logs) > 0:
-                # API returns alerts sorted, first is newer
-                # Replace "Z" by "+00:00" for datetime parsing
-                self.frontend.last_api_call = datetime.fromisoformat(logs[0]['last_update_time'].replace("Z", "+00:00"))+timedelta(milliseconds=1)
+            # API returns alerts sorted, first is newer
+            # Replace "Z" by "+00:00" for datetime parsing
+            self.frontend.last_api_call = datetime.fromisoformat(
+                logs[-1]['backend_update_timestamp'].replace("Z", "+00:00")) + timedelta(milliseconds=1)
+            cursor += found
+
+            if cursor > available:
+                break
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
-
