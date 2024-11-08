@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.16.1] - 2024-11-08
+### Fixed
+- [NETWORK] Don't use link-local IPv6 addresses when NATing on IPv6-enabled interfaces
+
+
 ## [2.16.0] - 2024-11-04
 ### Added
 - [LOG_FORWARDER] [REDIS] Support for queues, sets, publish and streams modes for log insertion
