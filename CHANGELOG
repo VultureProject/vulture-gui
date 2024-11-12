@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
-
+### Fixed
+- [NETWORK] Set dynamic resolution for interfaces specified in NATs
 
 ## [2.16.1] - 2024-11-08
 ### Fixed
