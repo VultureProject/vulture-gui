@@ -469,7 +469,7 @@ class Node(models.Model):
                 if not is_loopback(ip):
                     success, reply = get_route_interface(destination=ip)
                     if success:
-                        route_ipv4 = reply
+                        route_ipv4 = f"({reply})"
 
             if is_valid_ip6(ip):
                 route_ipv6 = default_logom_nat_ipv6
@@ -479,17 +479,17 @@ class Node(models.Model):
                     success, reply = get_route_interface(destination=ip, ip6=True)
                     if success:
                         # Restrict NAT to global IPv6 (disable round-robin using link-local address)
-                        route_ipv6 = f"{reply}:0"
+                        route_ipv6 = f"({reply}:0)"
 
             # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
             if is_valid_hostname(ip):
                 success, reply = get_route_interface(ip)
                 if success:
-                    route_ipv4 = reply
+                    route_ipv4 = f"({reply})"
                 success, reply = get_route_interface(ip, ip6=True)
                 if success:
                     # Restrict NAT to global IPv6 (disable round-robin using link-local address)
-                    route_ipv6 = f"{reply}:0"
+                    route_ipv6 = f"({reply}:0)"
 
             results.append((proto, ip, port, route_ipv4, route_ipv6))
 
@@ -532,7 +532,7 @@ class Node(models.Model):
                 if not is_loopback(ip):
                     success, reply = get_route_interface(destination=ip)
                     if success:
-                        route_ipv4 = reply
+                        route_ipv4 = f"({reply})"
 
             if is_valid_ip6(ip):
                 route_ipv6 = default_logom_nat_ipv6
@@ -542,17 +542,17 @@ class Node(models.Model):
                     success, reply = get_route_interface(destination=ip, ip6=True)
                     if success:
                         # Restrict NAT to global IPv6 (disable round-robin using link-local address)
-                        route_ipv6 = f"{reply}:0"
+                        route_ipv6 = f"({reply}:0)"
 
             # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
             if is_valid_hostname(ip):
                 success, reply = get_route_interface(ip)
                 if success:
-                    route_ipv4 = reply
+                    route_ipv4 = f"({reply})"
                 success, reply = get_route_interface(ip, ip6=True)
                 if success:
                     # Restrict NAT to global IPv6 (disable round-robin using link-local address)
-                    route_ipv6 = f"{reply}:0"
+                    route_ipv6 = f"({reply}:0)"
 
             results.append((proto, ip, port, route_ipv4, route_ipv6))
 
