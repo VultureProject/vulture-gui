@@ -142,8 +142,8 @@ class CiscoUmbrellaParser(ApiParser):
 
     def format_log(self, log):
         log["related_users"] = []
-        for identity in log["identities"]:
-            if identity["type"]["type"] == "directory_user":
+        for identity in log.get("identities", []):
+            if identity.get("type", {}).get("type") == "directory_user" and "label" in identity:
                 log["related_users"].append(identity["label"])
         return json.dumps(log)
 
@@ -167,7 +167,7 @@ class CiscoUmbrellaParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: got {logs_count} lines", extra={'frontend': str(self.frontend)})
                 index += logs_count
                 logger.info(f"[{__parser__}]:execute: retrieved {index} lines", extra={'frontend': str(self.frontend)})
-                self.write_to_file([self.format_log(l) for l in logs])
+                self.write_to_file([self.format_log(log) for log in logs])
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
             # When there are more than 15000 logs, last_api_call is the timestamp of the last log
