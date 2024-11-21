@@ -67,6 +67,7 @@ class CiscoUmbrellaParser(ApiParser):
         self.session = None
 
     def _get_token(self):
+        logger.info(f"[{__parser__}]: Getting a new authentication token...", extra={'frontend': str(self.frontend)})
         auth = HTTPBasicAuth(self.cisco_umbrella_client_id, self.cisco_umbrella_secret_key)
         client = BackendApplicationClient(client_id=self.cisco_umbrella_client_id)
         oauth = OAuth2Session(client=client)
@@ -75,7 +76,7 @@ class CiscoUmbrellaParser(ApiParser):
             auth=auth,
             proxies=self.proxies)
         self.cisco_umbrella_access_token = token["access_token"]
-        self.cisco_umbrella_expires_at = datetime.fromtimestamp(token["expires_at"]/1000, tz=timezone.now().astimezone().tzinfo)
+        self.cisco_umbrella_expires_at = datetime.fromtimestamp(token["expires_at"], tz=timezone.utc)
 
     def _connect(self):
         try:
