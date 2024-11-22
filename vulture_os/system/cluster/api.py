@@ -463,15 +463,16 @@ class NodeAPIv1(View):
 
     @api_need_key('cluster_api_key')
     def patch(self, request, object_id):
-        allowed_fields = ('pf_limit_states', 'pf_limit_frags', 'pf_limit_src',
+        allowed_fields = ('management_ip', 'internet_ip', 'backends_outgoing_ip', 'logom_outgoing_ip',
+                          'gateway', 'gateway_ipv6', 'static_routes', 'pf_limit_states', 'pf_limit_frags', 'pf_limit_src',
                           'pf_custom_param_config', 'pf_custom_nat_config', 'pf_custom_rdr_config', 'pf_custom_config',
-                          'gateway', 'gateway_ipv6', 'static_routes', 'management_ip', 'pstats_forwarders')
+                          'pstats_forwarders')
 
         try:
             for key in request.JSON.keys():
                 if key not in allowed_fields:
                     return JsonResponse({'error': _("Attribute not allowed : '{}'."
-                                                    "Allowed attributes are {}".format(key, allowed_fields))})
+                                                    "Allowed attributes are {}".format(key, allowed_fields))}, status=400)
             return cluster_edit(request, object_id, api=True, update=True)
 
         except Exception as e:
