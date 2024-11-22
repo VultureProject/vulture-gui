@@ -49,11 +49,10 @@ class NodeForm(ModelForm):
     class Meta:
         model = Node
 
-        fields = ['name', 'management_ip',
-                  'pf_custom_config', 'pf_custom_nat_config', 'pf_custom_rdr_config', 'pf_custom_param_config',
-                  'pf_limit_states', 'pf_limit_frags', 'pf_limit_src',
-                  'static_routes', 'gateway', 'gateway_ipv6', 'internet_ip', 'scanner_ip', 'pstats_forwarders',
-                  'backends_outgoing_ip', 'logom_outgoing_ip']
+        fields = ['name', 'management_ip', 'internet_ip', 'backends_outgoing_ip', 'logom_outgoing_ip',
+                  'gateway', 'gateway_ipv6', 'static_routes', 'pf_limit_states', 'pf_limit_frags', 'pf_limit_src',
+                  'pf_custom_param_config', 'pf_custom_nat_config', 'pf_custom_rdr_config', 'pf_custom_config',
+                  'scanner_ip', 'pstats_forwarders']
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
@@ -77,7 +76,8 @@ class NodeForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Set non required fields
-        self.fields["pstats_forwarders"].required = False
+        for field_name in ['backends_outgoing_ip', 'logom_outgoing_ip', 'pstats_forwarders']:
+            self.fields[field_name].required = False
         # Protect hostname change, has it will entirely break the cluster: hostname has to be changed via the "admin.sh" system menu
         self.fields['name'].widget.attrs['readonly'] = True
 

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [CISCO_UMBRELLA-MANAGED-ORG] New collector
+### Fixed
+- [SYSTEM] [NODE] Uniformize editable fields on API and GUI
 
 
 ## [2.18.0] - 2024-12-18
