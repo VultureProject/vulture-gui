@@ -111,17 +111,17 @@ class CortexXDRParser(ApiParser):
 
     def test(self):
         try:
-            status, logs = self.get_logs("incidents", test=True)
+            logs = self.get_logs("incidents", test=True)
 
-            if not status:
+            if not logs:
                 return {
                     "status": False,
-                    "error": logs
+                    "error": _("Could not get any logs")
                 }
 
             return {
                 "status": True,
-                "data": _('Success')
+                "data": logs
             }
         except Exception as e:
             logger.exception(f"[{__parser__}]:test: {e}", extra={'frontend': str(self.frontend)})
@@ -172,7 +172,7 @@ class CortexXDRParser(ApiParser):
             else:
                 break
 
-        if response:
+        if response is not None:
             if response.status_code == 401:
                 raise CortexXDRAPIError( _('Authentication failed'))
 
