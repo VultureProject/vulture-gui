@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [API_PARSER] [CORTEX_XDR] Improve logging and code quality
 - [API_PARSER] [CISCO_UMBRELLA] Add the list of users in logs
+### Fixed
+- [MONITOR] Avoid wrong node state during monitoring operations
 
 
 ## [2.16.2] - 2024-11-13

@@ -236,8 +236,9 @@ def monitor():
             dfilter.save()
 
     """ Update Node state and heartbeat """
+    node.refresh_from_db()
     node.heartbeat = timezone.now()
-    node.save()
+    node.save(update_fields=["heartbeat"])
     logger.info(f"Node state: {node.state} {node.heartbeat}")
 
     # Delete old monitoring
