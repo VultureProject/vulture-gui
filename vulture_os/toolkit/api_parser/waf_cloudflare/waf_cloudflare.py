@@ -67,8 +67,6 @@ class WAFCloudflareParser(ApiParser):
             self.session.headers.update(self.HEADERS)
             self.session.headers.update({"Authorization": f"Bearer {self.waf_cloudflare_apikey}"})
 
-
-
     def get_logs(self, logs_from=None, logs_to=None, test=False):
         self.__connect()
 
@@ -79,7 +77,13 @@ class WAFCloudflareParser(ApiParser):
         if logs_to:
             query.update({'end': logs_to.strftime('%Y-%m-%dT%H:%M:%SZ')})
 
-        query.update({"fields":"BotScore,BotScoreSrc,BotTags,CacheCacheStatus,CacheResponseBytes,CacheResponseStatus,CacheTieredFill,ClientASN,ClientCountry,ClientDeviceType,ClientIP,ClientIPClass,ClientMTLSAuthCertFingerprint,ClientMTLSAuthStatus,ClientRequestBytes,ClientRequestHost,ClientRequestMethod,ClientRequestPath,ClientRequestProtocol,ClientRequestReferer,ClientRequestScheme,ClientRequestSource,ClientRequestURI,ClientRequestUserAgent,ClientSSLCipher,ClientSSLProtocol,ClientSrcPort,ClientTCPRTTMs,ClientSrcPort,ClientXRequestedWith,Cookies,EdgeCFConnectingO2O,EdgeColoCode,EdgeColoID,EdgeEndTimestamp,EdgePathingOp,EdgePathingSrc,EdgePathingStatus,EdgeRateLimitAction,EdgeRateLimitID,EdgeRequestHost,EdgeResponseBodyBytes,EdgeResponseBytes,EdgeResponseCompressionRatio,EdgeResponseContentType,EdgeResponseStatus,EdgeServerIP,EdgeStartTimestamp,EdgeTimeToFirstByteMs,FirewallMatchesActions,FirewallMatchesRuleIDs,FirewallMatchesSources,OriginIP,JA3Hash,OriginDNSResponseTimeMs,OriginRequestHeaderSendDurationMs,OriginIP,OriginResponseBytes,OriginResponseDurationMs,OriginResponseHTTPExpires,OriginResponseHTTPLastModified,OriginResponseHeaderReceiveDurationMs,OriginResponseStatus,OriginResponseTime,OriginSSLProtocol,OriginTCPHandshakeDurationMs,OriginTLSHandshakeDurationMs,ParentRayID,RayID,RequestHeaders,ResponseHeaders,SecurityLevel,UpperTierColoID,SmartRouteColoID,WAFAction,WAFFlags,WAFMatchedVar,WAFRuleID,WAFProfile,WAFRuleMessage,WorkerCPUTime,WorkerStatus,WorkerSubrequest,WorkerSubrequestCount,ZoneID,ZoneName"})
+        r = self.session.get(f"https://api.cloudflare.com/client/v4/zones/{self.waf_cloudflare_zoneid}/logs/received/fields")
+        if r.status_code != 200:
+            logger.error(f"{[__parser__]}:get_logs: Status code = {r.status_code}, Error = {r.text}",
+                         extra={'frontend': str(self.frontend)})
+            r.raise_for_status()
+
+        query['fields'] = r.json().keys()
 
         logger.debug(f"{[__parser__]}:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
 
@@ -89,7 +93,7 @@ class WAFCloudflareParser(ApiParser):
             if r.status_code != 200:
                 logger.error(f"{[__parser__]}:get_logs: Status code = {r.status_code}, Error = {r.text}",
                              extra={'frontend': str(self.frontend)})
-                return
+                r.raise_for_status()
             for line in r.iter_lines():
                 if not line:
                     continue
