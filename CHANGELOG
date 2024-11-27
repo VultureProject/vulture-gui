@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [MONITOR] Avoid wrong node state during monitoring operations
 - [API_PARSER] [WAF_CLOUDFLARE] Work with dynamic fields on query
+- [API_PARSER] [CROWDSTRIKE] Correctly return an error when test failed on GUI
+- [API_PARSER] [CROWDSTRIKE] Don't consider log range to be collected on error
 - [APPLICATIONS] [SERVERS] Correct inability to create 2 servers with the same target:port couple
 ### Changed
 - [API_PARSER] [CYBEREASON] Refacto code and avoid API errors by getting bulks of 1000 logs

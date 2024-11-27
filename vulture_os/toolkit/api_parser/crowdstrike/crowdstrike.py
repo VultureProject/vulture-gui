@@ -67,6 +67,8 @@ class CrowdstrikeParser(ApiParser):
         self.product = 'crowdstrike'
         self.session = None
 
+        self.request_incidents = data.get('crowdstrike_request_incidents', False)
+
         if not self.api_host.startswith('https://'):
             self.api_host = f"https://{self.api_host}"
 
@@ -214,7 +216,7 @@ class CrowdstrikeParser(ApiParser):
             for alert in alerts:
                 finalRawAlerts += [alert]
 
-        if self.frontend.crowdstrike_request_incidents:
+        if self.request_incidents:
             # then retrieve the incident raw ids
             alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
             payload = {
@@ -236,16 +238,14 @@ class CrowdstrikeParser(ApiParser):
         return finalRawAlerts
 
     def get_logs(self, kind, since, to):
-        msg = f"Querying {kind} from {since}"
+        msg = f"Querying {kind} from {since}, to {to}"
         logger.info(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
 
         try:
             return self.getAlerts(since, to)
         except Exception as e:
-            msg = f"Error querying {kind} logs"
-            logger.error(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
             logger.exception(f"[{__parser__}][get_logs]: {e}", extra={'frontend': str(self.frontend)})
-            return []
+            raise Exception(f"Error querying {kind} logs")
 
     def format_log(self, log):
         log['kind'] = self.kind
@@ -283,7 +283,7 @@ class CrowdstrikeParser(ApiParser):
             # move forward 1h to prevent stagnate ad vitam eternam
             self.frontend.last_api_call += timedelta(hours=1)
 
-        self.write_to_file([self.format_log(l) for l in tmp_logs])
+        self.write_to_file([self.format_log(log) for log in tmp_logs])
 
         # Writting may take some while, so refresh token in Redis
         self.update_lock()
@@ -311,5 +311,3 @@ class CrowdstrikeParser(ApiParser):
                 "status": False,
                 "error": str(e)
             }
-
-
