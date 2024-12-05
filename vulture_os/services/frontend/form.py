@@ -264,6 +264,8 @@ class FrontendForm(ModelForm):
                            'waf_barracuda_token',
                            "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
                            "lockself_x_auth_token", "lockself_x_ls_token", "lockself_host", "lockself_organization_id",
+                           "cisco_umbrella_managed_org_api_key", "cisco_umbrella_managed_org_secret_key", "cisco_umbrella_managed_org_customers_id",
+                           "cisco_umbrella_managed_org_dns", "cisco_umbrella_managed_org_proxy"
                            ]:
             self.fields[field_name].required = False
 
@@ -372,6 +374,8 @@ class FrontendForm(ModelForm):
                   'waf_barracuda_token',
                   "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
                   'lockself_x_auth_token', 'lockself_x_ls_token', 'lockself_host', 'lockself_organization_id',
+                  'cisco_umbrella_managed_org_api_key', 'cisco_umbrella_managed_org_secret_key', 'cisco_umbrella_managed_org_customers_id',
+                  'cisco_umbrella_managed_org_dns', 'cisco_umbrella_managed_org_proxy'
                   )
 
         widgets = {
@@ -570,6 +574,11 @@ class FrontendForm(ModelForm):
             'lockself_x_ls_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'lockself_host': TextInput(attrs={'class': 'form-control'}),
             'lockself_organization_id': TextInput(attrs={'class': 'form-control'}),
+            'cisco_umbrella_managed_org_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'cisco_umbrella_managed_org_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'cisco_umbrella_managed_org_customers_id': TextInput(attrs={'class': 'form-control'}),
+            'cisco_umbrella_managed_org_dns': CheckboxInput(attrs={'class': 'js-switch'}),
+            'cisco_umbrella_managed_org_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
         }
 
     def clean_name(self):
