@@ -1382,6 +1382,41 @@ class Frontend(models.Model):
         help_text=_("Lockself organization id"),
         default="",
     )
+    # Cisco-Umbrella Managed Organization
+    cisco_umbrella_managed_org_api_key = models.TextField(
+        verbose_name=_("Cisco Umbrella API Key"),
+        help_text=_("Cisco Umbrella API Key"),
+        default="",
+    )
+    cisco_umbrella_managed_org_secret_key = models.TextField(
+        verbose_name=_("Cisco Umbrella secret"),
+        help_text=_("Cisco Umbrella secret"),
+        default="",
+    )
+    cisco_umbrella_managed_org_customers_id = models.JSONField(
+        default=[],
+        verbose_name=_("Cisco Umbrella customer ids"),
+        help_text=_("Cisco Umbrella customer ids"),
+    )
+    cisco_umbrella_managed_org_get_dns = models.BooleanField(
+        default=True,
+        verbose_name=_("Get dns logs"),
+        help_text=_("Get dns logs"),
+    )
+    cisco_umbrella_managed_org_get_proxy = models.BooleanField(
+        default=True,
+        verbose_name=_("Get proxy logs"),
+        help_text=_("Get proxy logs"),
+    )
+    cisco_umbrella_managed_org_parent_access_token = models.TextField(
+        default=""
+    )
+    cisco_umbrella_managed_org_parent_expires_at = models.DateTimeField(
+        default=timezone.now
+    )
+    cisco_umbrella_managed_org_customers_tokens = models.JSONField(
+        default=dict
+    )
 
 
     @staticmethod

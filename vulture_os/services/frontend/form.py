@@ -264,6 +264,8 @@ class FrontendForm(ModelForm):
                            'waf_barracuda_token',
                            "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
                            "lockself_x_auth_token", "lockself_x_ls_token", "lockself_host", "lockself_organization_id",
+                           "cisco_umbrella_managed_org_api_key", "cisco_umbrella_managed_org_secret_key", "cisco_umbrella_managed_org_customers_id",
+                           "cisco_umbrella_managed_org_get_dns", "cisco_umbrella_managed_org_get_proxy"
                            ]:
             self.fields[field_name].required = False
 
@@ -295,6 +297,7 @@ class FrontendForm(ModelForm):
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
         self.initial['kafka_brokers'] = ",".join(self.initial.get('kafka_brokers', []) or self.fields['kafka_brokers'].initial)
         self.initial['kafka_options'] = ",".join(self.initial.get('kafka_options', []) or self.fields['kafka_options'].initial)
+        self.initial['cisco_umbrella_managed_org_customers_id'] = ",".join(self.initial.get('cisco_umbrella_managed_org_customers_id', []) or self.fields['cisco_umbrella_managed_org_customers_id'].initial)
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
@@ -372,6 +375,8 @@ class FrontendForm(ModelForm):
                   'waf_barracuda_token',
                   "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
                   'lockself_x_auth_token', 'lockself_x_ls_token', 'lockself_host', 'lockself_organization_id',
+                  'cisco_umbrella_managed_org_api_key', 'cisco_umbrella_managed_org_secret_key', 'cisco_umbrella_managed_org_customers_id',
+                  'cisco_umbrella_managed_org_get_dns', 'cisco_umbrella_managed_org_get_proxy'
                   )
 
         widgets = {
@@ -570,6 +575,11 @@ class FrontendForm(ModelForm):
             'lockself_x_ls_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'lockself_host': TextInput(attrs={'class': 'form-control'}),
             'lockself_organization_id': TextInput(attrs={'class': 'form-control'}),
+            'cisco_umbrella_managed_org_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'cisco_umbrella_managed_org_secret_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'cisco_umbrella_managed_org_customers_id': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+            'cisco_umbrella_managed_org_get_dns': CheckboxInput(attrs={'class': 'js-switch'}),
+            'cisco_umbrella_managed_org_get_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
         }
 
     def clean_name(self):
@@ -689,6 +699,14 @@ class FrontendForm(ModelForm):
         if data and data < 10:
             self.add_error('redis_batch_size', "Redis dequeue size should be greater than 10")
         return data
+    
+    def clean_cisco_umbrella_managed_org_customers_id(self):
+        data = self.cleaned_data.get('cisco_umbrella_managed_org_customers_id')
+        if not data:
+            return []
+        if "[" in data and "]" in data:
+            return ast.literal_eval(data)
+        return data.split(',')
 
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
