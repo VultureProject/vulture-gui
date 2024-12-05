@@ -27,6 +27,7 @@ __doc__ = 'Job for OS Monitoring'
 from django.conf import settings
 from django.utils import timezone
 
+
 # Django project imports
 from applications.backend.models import Backend
 from darwin.policy.models import FilterPolicy
@@ -51,6 +52,7 @@ from services.exceptions import ServiceError
 from django.core.exceptions import ObjectDoesNotExist
 
 # Extern modules imports
+from celery import shared_task
 from datetime import timedelta
 from threading import Thread, Event
 
@@ -59,7 +61,7 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('daemon')
 
-
+@shared_task
 def monitor():
 
     node = Cluster.get_current_node()

@@ -151,6 +151,11 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# Celery settings
+CELERY_BROKER_URL = "redis://127.0.0.3:6379"
+CELERY_RESULT_BACKEND = "redis://127.0.0.3:6379"
+CELERY_TIMEZONE = "UTC"
+
 REDISIP = '127.0.0.1'
 REDISPORT = '6379'
 
