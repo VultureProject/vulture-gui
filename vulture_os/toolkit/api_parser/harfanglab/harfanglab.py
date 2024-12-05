@@ -83,9 +83,9 @@ class HarfangLabParser(ApiParser):
                     f'{self.harfanglab_host}/{self.VERSION}',
                     timeout=10,
                     proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                 )
-                assert response.status_code == 200
+                assert response.status_code == 200, f"Error on _connect(): Get status {response.status_code} with result: {response.text}"
 
             return True
 
@@ -104,7 +104,7 @@ class HarfangLabParser(ApiParser):
                 headers=self.HEADERS,
                 timeout=timeout,
                 proxies=self.proxies,
-                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
             )
         elif method == "POST":
             response = self.session.post(url,
@@ -112,7 +112,7 @@ class HarfangLabParser(ApiParser):
                 headers=self.HEADERS,
                 timeout=timeout,
                 proxies=self.proxies,
-                verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
             )
         else:
             raise HarfangLabAPIError(f"Error at HarfangLab request, unknown method : {method}")
@@ -159,6 +159,7 @@ class HarfangLabParser(ApiParser):
         }
         logger.debug(f"[{__parser__}]:get_alerts: HarfangLab query parameters : {payload}",
                      extra={'frontend': str(self.frontend)})
+
         return self.__execute_query("GET", alert_url, payload)
 
     def get_threats(self, since, to, index=0):
