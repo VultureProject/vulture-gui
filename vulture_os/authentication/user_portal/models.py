@@ -35,6 +35,9 @@ from authentication.portal_template.models import PortalTemplate
 from authentication.base_repository import BaseRepository
 from authentication.otp.models import OTPRepository
 # Do NOT remove those unused imports !!! There are here to trigger internal django fonctionnality
+from authentication.kerberos.models import KerberosRepository  # noqa: F401
+from authentication.openid.models import OpenIDRepository  # noqa: F401
+from authentication.radius.models import RadiusRepository  # noqa: F401
 from authentication.ldap.models import LDAPRepository
 from authentication.user_scope.models import UserScope
 from services.frontend.models import Frontend

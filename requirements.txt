@@ -334,7 +334,7 @@ django-jsoneditor==0.2.4 \
     --hash=sha256:1d3dfca28f047feefa6ebc6f9541179eb815fb459b006faf3fb8d0fb2197d2df \
     --hash=sha256:d7a639a7251e376126b5be64ea588c925c7a40d45e0e212f66ef475d2f0f90bb
     # via djongo
-djongo @ https://github.com/VultureProject/djongo/archive/refs/tags/v1.3.6.post5.zip \
+djongo @ https://github.com/VultureProject/djongo/archive/refs/heads/v1.3.6.post5.zip \
     --hash=sha256:4426d83cb9343dfdea4736d1296a6f4adea76f9b7308c360c67984744c899571
     # via -r requirements.in
 dnspython==2.6.1 \
