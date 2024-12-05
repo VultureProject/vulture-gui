@@ -66,11 +66,13 @@ class WAFCloudflareParser(ApiParser):
             self.session.headers.update({"Authorization": f"Bearer {self.waf_cloudflare_apikey}"})
 
     def _get_allowed_fields(self):
-        r = self.session.get(
+        reply = self.session.get(
             f"https://api.cloudflare.com/client/v4/zones/{self.waf_cloudflare_zoneid}/logs/received/fields")
-        if r.status_code != 200:
-            raise WAFCloudflareAPIError(f"{[__parser__]}:get_logs: Status code = {r.status_code}, Error = {r.text}")
-        return r.json().keys()
+        if reply.status_code != 200:
+            logger.error(f"[{__parser__}]:_get_allowed_fields: Status code = {reply.status_code}, Error = {reply.text}",
+                        extra={'frontend': str(self.frontend)})
+            raise WAFCloudflareAPIError(f"[{__parser__}]: Could not get the list of allowed fields")
+        return reply.json().keys()
 
     def get_logs(self, logs_from=None, logs_to=None):
         self.__connect()
@@ -82,31 +84,39 @@ class WAFCloudflareParser(ApiParser):
         if logs_to:
             query['end'] = logs_to.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        print(f"get logs with query {query}")
-
         query['fields'] = self._get_allowed_fields()
 
-        logger.debug(f"{[__parser__]}:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
+        logger.debug(f"[{__parser__}]:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
 
         cpt = 0
         bulk = []
-        with self.session.get(url, params=query, proxies=self.proxies, stream=True,
-                              verify=self.api_parser_verify_ssl) as r:
-            if r.status_code != 200:
-                raise WAFCloudflareAPIError(f"{[__parser__]}:get_logs: Status code = {r.status_code}, Error = {r.text}")
-            for line in r.iter_lines():
+        with self.session.get(
+            url,
+            params=query,
+            proxies=self.proxies,
+            stream=True,
+            verify=self.api_parser_verify_ssl) as reply:
+            if reply.status_code != 200:
+                logger.error(f"[{__parser__}]:get_logs: Status code = {reply.status_code}, Error = {reply.text}",
+                        extra={'frontend': str(self.frontend)})
+                raise WAFCloudflareAPIError(f"[{__parser__}]: Error while fetching logs, API returned a {reply.status_code}")
+            for line in reply.iter_lines():
                 if not line:
                     continue
                 try:
                     bulk.append(line.decode('utf8'))
-                except:
+                except UnicodeDecodeError:
+                    logger.warning(f"[{__parser__}]:get_logs: Error while trying to decode a log line",
+                            extra={'frontend': str(self.frontend)})
+                    logger.debug(f"[{__parser__}]:get_logs: {line}",
+                            extra={'frontend': str(self.frontend)})
                     pass
                 cpt += 1
                 if len(bulk) == 10000:
                     yield bulk
                     bulk = []
 
-        logger.info(f"{[__parser__]}:get_logs: got {cpt} new lines", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: got {cpt} new lines", extra={'frontend': str(self.frontend)})
         yield bulk
 
     def execute(self):
@@ -135,9 +145,9 @@ class WAFCloudflareParser(ApiParser):
             # from is inclusive, to is exclusive
             self.frontend.last_api_call = to
         except Exception as e:
-            logger.exception(f"{[__parser__]}:execute: {str(e)}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:execute: {str(e)}", extra={'frontend': str(self.frontend)})
 
-        logger.info(f"{[__parser__]}:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
         current_time = timezone.now()
@@ -150,7 +160,7 @@ class WAFCloudflareParser(ApiParser):
                 "data": logs
             }
         except Exception as e:
-            logger.exception(f"{[__parser__]}:test: {str(e)}", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}]:test: {str(e)}", extra={'frontend': str(self.frontend)})
             return {
                 "status": False,
                 "error": str(e)
