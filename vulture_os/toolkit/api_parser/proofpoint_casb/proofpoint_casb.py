@@ -129,6 +129,13 @@ class ProofpointCASBParser(ApiParser):
 
 
     def execute(self):
+        # Launch this crontab every 5 minutes ; to prevent exceed max 1000 queries per days on v1
+        ## 2 queries each 5 minutes => 2*12*24 = 576 queries per day (if not over 50 events each time)
+        if timezone.now().minute%5 != 0:
+            logger.info(f"[{__parser__}]:execute: Waiting for next 5 minutes modulus ; Quitting.",
+                        extra={'frontend': str(self.frontend)})
+            return
+
         # Retrieve last_api_call, make timezone naive
         since = self.last_api_call if self.last_api_call else (timezone.now() - timedelta(hours=24))
 
@@ -138,6 +145,7 @@ class ProofpointCASBParser(ApiParser):
         # Download logs starting from last_api_call
         logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}", extra={'frontend': str(self.frontend)})
 
+        total = 0
         nb_logs = 0
         page = 0
         while(nb_logs == 50 or page == 0):
@@ -150,6 +158,7 @@ class ProofpointCASBParser(ApiParser):
                 # Get logs from API response
                 logs = response['alerts']
                 nb_logs = len(logs)
+                total += nb_logs
 
                 # Send logs to Rsyslog
                 self.write_to_file([json.dumps(l) for l in logs])
@@ -171,6 +180,11 @@ class ProofpointCASBParser(ApiParser):
             except Exception as err:
                 logger.critical(f"[{__parser__}]:parse_log: unknown error during parser execution -> {err}", extra={'frontend': str(self.frontend)})
                 raise ProofPointCASBAPIError(err)
+
+        if total == 0 and since < timezone.now() - timedelta(hours=24):
+            # If no logs where retrieved during the last 24hours,
+            # move forward 1h to prevent stagnate ad vitam eternam:
+            self.last_api_call = since + timedelta(hours=1)
 
         self.frontend.last_api_call = self.last_api_call
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
