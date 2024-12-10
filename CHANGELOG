@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [COMMANDS] New command to update reputation context feeds
 ### Fixed
 - [MONITOR] Avoid wrong node state during monitoring operations
 - [API_PARSER] [WAF_CLOUDFLARE] Work with dynamic fields on query

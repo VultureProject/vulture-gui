@@ -128,15 +128,11 @@ def security_update(node_logger=None):
     return True
 
 
-def update_reputation_ctx(node_logger=None):
+def update_reputation_ctx_now(node_logger=None):
     """
     Update the Reputation Context databases on the machine
     :return: True if the operation executed correctly, False otherwise
     """
-    logger.info("Crontab::update_reputation_ctx: Starting task")
-    delay = randint(1, 3600)
-    logger.info(f"Crontab::update_reputation_ctx: Waiting for {delay}s before downloading DBs")
-    sleep(delay)
     # On ALL nodes, write databases on disk
     # All internal reputation contexts are retrieved and created if needed
     # We can now download and write all reputation contexts
@@ -189,3 +185,12 @@ def update_reputation_ctx(node_logger=None):
     restart_rsyslog_service(logger)
     logger.info("Crontab::update_reputation_ctx: Task ended.")
     return True
+
+
+def update_reputation_ctx(node_logger=None):
+    logger.info("Crontab::update_reputation_ctx: Starting task")
+    delay = randint(1, 1800)
+    logger.info(f"Crontab::update_reputation_ctx: Waiting for {delay}s before downloading DBs")
+    sleep(delay)
+
+    return update_reputation_ctx(node_logger)
