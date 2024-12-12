@@ -3,7 +3,7 @@
 from django.db import migrations
 from toolkit.mongodb.mongo_base import MongoBase
 
-def remove_server_target_port_unicity_constraint2():
+def remove_server_target_port_unicity_constraint2(apps, schema_editor):
     m = MongoBase()
     m.connect_primary()
     # If the node is not yet installed, no need to drop collections
