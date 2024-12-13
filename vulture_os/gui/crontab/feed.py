@@ -193,4 +193,4 @@ def update_reputation_ctx(node_logger=None):
     logger.info(f"Crontab::update_reputation_ctx: Waiting for {delay}s before downloading DBs")
     sleep(delay)
 
-    return update_reputation_ctx(node_logger)
+    return update_reputation_ctx_now(node_logger)
