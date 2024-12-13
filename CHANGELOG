@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [SYSTEM] [PATHS] Variabilize all system paths and allow to configure them from settings
 - [SYSTEM] [SETTINGS] Allow to configure project with django-environ
+- [TESTS] [SYSTEM] Implement Network test cases
+- [TESTS] [WORKFLOW] Implement Workflow test cases
+### Removed
+- [TESTS] Remove old 'testing' folder
 ### Changed
 - [SYSTEM] [SETTINGS] Use Hostname value from Django settings
 ### Fixed
