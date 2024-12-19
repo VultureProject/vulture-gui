@@ -239,7 +239,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                 index = 0
                 logs_count = self.LIMIT_MAX
                 while logs_count == self.LIMIT_MAX and index <= self.OFFSET_MAX:
-                    logs = self.get_logs(since, to, customer_id, log_type)
+                    logs = self.get_logs(since, to, customer_id, log_type, index)
                     # Downloading may take some while, so refresh token in Redis
                     self.update_lock()
                     logs_count = len(logs)
