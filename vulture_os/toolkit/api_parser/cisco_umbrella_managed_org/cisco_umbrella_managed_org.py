@@ -157,7 +157,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
             for customer_id in customer_ids:
                 self._get_customer_token(customer_id)
                 for log_type in log_types:
-                    data = self.get_logs(timezone.now()-timedelta(hours=1), timezone.now(), customer_id, log_type)
+                    data = self.get_logs(timezone.now()-timedelta(hours=1), timezone.now(), customer_id, log_type, limit=10)
                     result.extend(data)
 
             return {
@@ -186,10 +186,10 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
 
         return response.json()
 
-    def get_logs(self, since, to, customer_id, log_type, index=0):
+    def get_logs(self, since, to, customer_id, log_type, index=0, limit=None):
         payload = {
             'offset': index,
-            'limit': self.LIMIT_MAX,
+            'limit': limit or self.LIMIT_MAX,
             'from': int(since.timestamp() * 1000),
             'to': int(to.timestamp() * 1000),
         }
