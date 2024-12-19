@@ -130,6 +130,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
         self.cisco_umbrella_managed_org_customers_tokens[customer_id]["expires_at"] = timezone.now() + timedelta(seconds=int(token["expires_in"]))
 
     def test(self):
+        result = []
         try:
             log_types = []
             if self.cisco_umbrella_managed_org_get_dns:
@@ -145,11 +146,14 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
             customer_ids_available = self._get_customers_id()
             logger.info(f"[{__parser__}]:test: Available customers ids are {customer_ids_available}", extra={'frontend': str(self.frontend)})
             if self.cisco_umbrella_managed_org_customers_id:
-                customer_ids = set(self.cisco_umbrella_managed_org_customers_id.split(",")).intersection(set(customer_ids_available))
+                selected_customer_ids = self.cisco_umbrella_managed_org_customers_id.split(",")
+                customer_ids = set(selected_customer_ids).intersection(set(customer_ids_available))
+                if difference := set(selected_customer_ids).difference(customer_ids_available):
+                    result.append(f"WARNING: The following customer IDs are currently not available on the account: {list(difference)}")
+                    result.append(f"Available customer IDs: {customer_ids_available}")
             else:
                 customer_ids = customer_ids_available
-            result = []
-            logger.info(f"[{__parser__}]:test: Customers ids are {customer_ids}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:test: Selected Customers ids are {list(customer_ids)}", extra={'frontend': str(self.frontend)})
             for customer_id in customer_ids:
                 self._get_customer_token(customer_id)
                 for log_type in log_types:
