@@ -786,6 +786,12 @@ class FrontendForm(ModelForm):
                     self.add_error('api_parser_custom_proxy', "Wrong proxy format")
                 cleaned_data['api_parser_custom_proxy'] = custom_proxy
 
+            if cleaned_data.get("api_parser_type") == "cisco_umbrella_managed_org":
+                logger.warning("hello")
+                if not (cleaned_data.get("cisco_umbrella_managed_org_get_dns", False) or cleaned_data.get("cisco_umbrella_managed_org_get_proxy", False)):
+                        self.add_error("cisco_umbrella_managed_org_get_dns", "At least one type should be enabled")
+                        self.add_error("cisco_umbrella_managed_org_get_proxy", "At least one type should be enabled")
+
         if mode == "log" and cleaned_data.get('listening_mode') == "kafka":
             if not cleaned_data.get('kafka_brokers'):
                 self.add_error('kafka_brokers', "This field is required.")

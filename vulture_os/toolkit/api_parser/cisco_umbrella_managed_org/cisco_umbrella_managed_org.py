@@ -136,6 +136,12 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                 log_types.append("dns")
             if self.cisco_umbrella_managed_org_get_proxy:
                 log_types.append("proxy")
+
+            if not log_types:
+                return {
+                    "status": False,
+                    "error": "no log type activated"
+                }
             customer_ids_available = self._get_customers_id()
             logger.info(f"[{__parser__}]:test: Available customers ids are {customer_ids_available}", extra={'frontend': str(self.frontend)})
             if self.cisco_umbrella_managed_org_customers_id:
