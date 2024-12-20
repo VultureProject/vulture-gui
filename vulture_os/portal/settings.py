@@ -2,11 +2,21 @@
 Django settings for vulture project.
 """
 
-import os
+from os import path as os_path
 from toolkit.network.network import get_hostname
 from toolkit.system.secret_key import set_key
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+BASE_DIR = os_path.dirname(os_path.dirname(os_path.abspath(__file__)))
+SETTINGS_DIR = os_path.abspath(os_path.dirname(__file__))
+
+# Project folders
+ROOT_PATH = "/"
+DBS_PATH = os_path.join(ROOT_PATH, "var/db")
+TMP_PATH = os_path.join(ROOT_PATH, "var/tmp")
+LOGS_PATH = os_path.join(ROOT_PATH, "var/log")
+SOCKETS_PATH = os_path.join(ROOT_PATH, "var/sockets")
+HOMES_PATH = os_path.join(ROOT_PATH, "home")
+LOCALETC_PATH = os_path.join(ROOT_PATH, "usr/local/etc")
 
 HOSTNAME = get_hostname()
 
@@ -68,7 +78,7 @@ MIDDLEWARE_CLASSES = (
 )
 
 TEMPLATE_DIRS = (
-    '/home/vlt-gui/vulture/portal/templates',
+    os_path.join(HOMES_PATH, 'vlt-gui/vulture/portal/templates'),
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -109,8 +119,8 @@ DATABASES = {
             'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
             'SSL': True,
-            'tlsCertificateKeyFile': '/var/db/pki/node.pem',
-            'tlsCAFile': '/var/db/pki/ca.pem',
+            'tlsCertificateKeyFile': os_path.join(DBS_PATH, 'pki/node.pem'),
+            'tlsCAFile': os_path.join(DBS_PATH, 'pki/ca.pem'),
             'READPREFERENCE': "primaryPreferred"
         },
     }
@@ -124,7 +134,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-CACERT_DIR = '/var/db/mongodb/'
+CACERT_DIR = os_path.join(DBS_PATH, 'mongodb/')
 MONGODBPORT = 9091
 MONGODBARBPORT = 9092
 REDISIP = '127.0.0.1'
@@ -172,7 +182,7 @@ LOG_SETTINGS = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/portal/portal_authentication.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/portal/portal_authentication.log'),
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
@@ -181,7 +191,7 @@ LOG_SETTINGS = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/portal/redis_events.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/portal/redis_events.log'),
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
@@ -190,14 +200,14 @@ LOG_SETTINGS = {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/portal/authentication.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/portal/authentication.log'),
             'mode': 'a'
         },
         'debug': {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/portal/debug.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/portal/debug.log'),
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
@@ -247,7 +257,7 @@ LOG_SETTINGS_FALLBACK = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': 'INFO',
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/portal/portal_authentication.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/portal/portal_authentication.log'),
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
@@ -256,7 +266,7 @@ LOG_SETTINGS_FALLBACK = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': 'DEBUG',
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/portal/redis_events.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/portal/redis_events.log'),
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
@@ -265,7 +275,7 @@ LOG_SETTINGS_FALLBACK = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': 'INFO',
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/portal/debug.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/portal/debug.log'),
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,

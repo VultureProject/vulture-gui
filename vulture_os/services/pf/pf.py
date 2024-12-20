@@ -48,7 +48,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 
-PF_PATH = "/usr/local/etc"
+PF_PATH = settings.LOCALETC_PATH
 PF_PERMS = "640"
 PF_OWNERS = "root:vlt-os"
 

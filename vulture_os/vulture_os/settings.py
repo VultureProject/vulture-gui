@@ -15,13 +15,22 @@ You should have received a copy of the GNU General Public License
 along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
 
-import os
+from os import path as os_path
 from toolkit.network.network import get_hostname
 from toolkit.system.secret_key import set_key
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SETTINGS_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os_path.dirname(os_path.dirname(os_path.abspath(__file__)))
+SETTINGS_DIR = os_path.abspath(os_path.dirname(__file__))\
+
+# Project folders
+ROOT_PATH = "/"
+DBS_PATH = os_path.join(ROOT_PATH, "var/db")
+TMP_PATH = os_path.join(ROOT_PATH, "var/tmp")
+LOGS_PATH = os_path.join(ROOT_PATH, "var/log")
+SOCKETS_PATH = os_path.join(ROOT_PATH, "var/sockets")
+HOMES_PATH = os_path.join(ROOT_PATH, "home")
+LOCALETC_PATH = os_path.join(ROOT_PATH, "usr/local/etc")
 
 HOSTNAME = get_hostname()
 
@@ -86,7 +95,7 @@ CRONJOBS = [
 CRONTAB_COMMAND_PREFIX = "LANG=en_US.UTF-8"
 
 # Extend cronjobs with custom cronjobs
-if os.path.exists(os.path.dirname(os.path.abspath(__file__)) + "/custom_cronjobs.py"):
+if os_path.exists(os_path.dirname(os_path.abspath(__file__)) + "/custom_cronjobs.py"):
     try:
         from vulture_os.custom_cronjobs import CUSTOM_CRONJOBS
         CRONJOBS.extend(CUSTOM_CRONJOBS)
@@ -144,8 +153,8 @@ DATABASES = {
             'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
             'SSL': True,
-            'tlsCertificateKeyFile': '/var/db/pki/node.pem',
-            'tlsCAFile': '/var/db/pki/ca.pem',
+            'tlsCertificateKeyFile': os_path.join(DBS_PATH, 'pki/node.pem'),
+            'tlsCAFile': os_path.join(DBS_PATH, 'pki/ca.pem'),
             'READPREFERENCE': "primaryPreferred"
         },
     }
@@ -195,7 +204,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 MEDIA_PATH = 'gui/static/img/'
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_ROOT = os_path.join(BASE_DIR, "static")
 STATIC_URL = 'static/'
 
 LOG_SETTINGS = {
@@ -236,7 +245,7 @@ LOG_SETTINGS = {
         'debug': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/vulture/os/debug.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/debug.log'),
             'formatter': 'verbose',
             'mode': 'a',
             'maxBytes': 10485760,
@@ -250,21 +259,21 @@ LOG_SETTINGS = {
         'api': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/var/log/vulture/os/api.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/api.log'),
             'formatter': 'verbose',
             'mode': 'a'
         },
         'gui': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/var/log/vulture/os/gui.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/gui.log'),
             'formatter': 'verbose',
             'mode': 'a'
         },
         'services': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/var/log/vulture/os/services.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/services.log'),
             'formatter': 'verbose',
             'mode': 'a'
         },
@@ -272,35 +281,35 @@ LOG_SETTINGS = {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/os/cluster.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/cluster.log'),
             'mode': 'a'
         },
         'crontab': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/os/crontab.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/crontab.log'),
             'mode': 'a'
         },
         'api_parser': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'api_parser',
-            'filename': '/var/log/vulture/os/api_parser.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/api_parser.log'),
             'mode': 'a'
         },
         'authentication': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/os/authentication.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/authentication.log'),
             'mode': 'a'
         },
         'system': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/os/system.log',
+            'filename': os_path.join(LOGS_PATH, 'vulture/os/system.log'),
             'mode': 'a'
         }
     },

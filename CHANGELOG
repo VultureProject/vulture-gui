@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [SYSTEM] [PATHS] Variabilize all system paths and allow to configure them from settings
 
 
 ## [2.21.0] - 2025-02-06
