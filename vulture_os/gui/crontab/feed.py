@@ -36,7 +36,7 @@ from django.utils.crypto import get_random_string
 
 from django.utils.timezone import now as timezone_now
 from gui.models.rss import RSS
-from toolkit.network.network import get_hostname, get_proxy
+from toolkit.network.network import get_proxy
 from applications.reputation_ctx.models import ReputationContext
 from services.rsyslogd.rsyslog import restart_service as restart_rsyslog_service
 from system.exceptions import VultureSystemError
@@ -109,13 +109,13 @@ def security_update(node_logger=None):
             logger.info("Crontab::security_update: No vulnerability found.")
         elif "is vulnerable" in res:
             logger.info("Crontab::security_update: Security problem found : {}".format(res))
-            security_alert("Security problem found on node {}".format(get_hostname()), "danger", res)
+            security_alert("Security problem found on node {}".format(settings.HOSTNAME), "danger", res)
     except subprocess.CalledProcessError as e:
         if e.stdout.decode("utf-8").startswith("0 problem"):
             logger.info("Crontab::security_update: No vulnerability found.")
         elif "is vulnerable" in e.stdout.decode("utf-8"):
             logger.info("Crontab::security_update: Security problem found : {}".format(e.stdout.decode('utf-8')))
-            security_alert("Security problem found on node {}".format(get_hostname()), "danger",
+            security_alert("Security problem found on node {}".format(settings.HOSTNAME), "danger",
                            e.stdout.decode("utf-8"))
         else:
             logger.error("Crontab::security_update: Failed to retrieve vulnerabilities : "

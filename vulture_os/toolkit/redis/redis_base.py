@@ -25,7 +25,9 @@ __doc__ = 'System Utils Redis Toolkit'
 
 from ast import literal_eval
 from redis import Redis, RedisError
-from toolkit.network.network import get_hostname, get_management_ip
+from toolkit.network.network import get_management_ip
+
+from django.conf import settings
 
 import logging
 logger = logging.getLogger('debug')
@@ -66,7 +68,7 @@ class RedisBase:
                 if node:
                     return node
                 else:
-                    return get_hostname()
+                    return settings.HOSTNAME
             elif redis_info.get('role') == 'slave':
                 return redis_info.get('master_host')
         except Exception as e:
