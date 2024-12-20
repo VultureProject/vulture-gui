@@ -31,7 +31,7 @@ from django.utils.crypto import get_random_string
 from system.cluster.models import Cluster, Node
 from system.pki.models import X509Certificate, TLSProfile
 from system.users.models import User
-from toolkit.network.network import get_hostname, get_management_ip
+from toolkit.network.network import get_management_ip
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.system.secret_key import set_key
@@ -69,7 +69,7 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Create the local node """
     RC_NETWORK_CONF = "network"
     node, new_node = Node.objects.get_or_create(
-        name=get_hostname(),
+        name=settings.HOSTNAME,
         management_ip=get_management_ip()
     )
 
@@ -186,7 +186,7 @@ def cluster_create(admin_user=None, admin_password=None):
 
     """ Update uri of internal Log Forwarder """
     logfwd = LogOMMongoDB.objects.get()
-    logfwd.uristr = "mongodb://{}:9091/?replicaset=Vulture&ssl=true".format(get_hostname())
+    logfwd.uristr = "mongodb://{}:9091/?replicaset=Vulture&ssl=true".format(settings.HOSTNAME)
     logfwd.x509_certificate = node_cert
     logfwd.save()
 
@@ -307,7 +307,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             infos = requests.post(
                 "https://{}:8000/api/system/pki/get_cert/".format(master_ip),
                 headers={'Cluster-api-key': secret_key},
-                data={'node_name': get_hostname()},
+                data={'node_name': settings.HOSTNAME},
                 verify=False
             ).json()
 
@@ -361,7 +361,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         infos = requests.post(
             "https://{}:8000/api/system/cluster/add/".format(master_ip),
             headers={'Cluster-api-key': secret_key},
-            data={'ip': get_management_ip(), 'name': get_hostname()},
+            data={'ip': get_management_ip(), 'name': settings.HOSTNAME},
             verify=False
         )
 

@@ -29,7 +29,6 @@ from django.forms import (ModelForm, TextInput, Textarea, HiddenInput, ModelChoi
 
 # Django project imports
 from system.cluster.models import Node, NetworkAddress
-from toolkit.network.network import get_hostname
 
 # Logger configuration imports
 import logging
@@ -39,7 +38,7 @@ logger = logging.getLogger('system')
 
 class NodeForm(ModelForm):
     scanner_ip = ModelChoiceField(
-        queryset=NetworkAddress.objects.filter(nic__node__name=get_hostname(),
+        queryset=NetworkAddress.objects.filter(nic__node__name=settings.HOSTNAME,
                                                carp_vhid=0).only(*NetworkAddress.str_attrs()),
         widget=Select(attrs={'class': 'form-control select2'}),
         required=False,

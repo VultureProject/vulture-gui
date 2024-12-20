@@ -24,7 +24,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Database handler for logging'
 
 from toolkit.mongodb.mongo_base import MongoBase
-from toolkit.network.network import get_hostname
+from django.conf import settings
 from django.utils import timezone
 import logging
 
@@ -65,7 +65,7 @@ class DatabaseHandler(logging.StreamHandler):
                 'filename': record.filename,
                 'message': record.msg,
                 'source': record.name,
-                'node': get_hostname()
+                'node': settings.HOSTNAME,
             })
 
         except Exception:
