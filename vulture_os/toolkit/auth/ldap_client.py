@@ -42,6 +42,7 @@ from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, Us
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('authentication')
 
 CERT_PATH = path_join(settings.DBS_PATH, "pki")

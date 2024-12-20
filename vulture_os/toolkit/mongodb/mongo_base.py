@@ -30,6 +30,7 @@ from re import search as re_search
 import subprocess
 import logging
 
+logging.config.dictConfig(settings.LOG_SETTINGS)
 # No database logging to prevent infinite loop
 logger = logging.getLogger('system')
 

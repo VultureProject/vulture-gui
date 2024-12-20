@@ -31,11 +31,12 @@ from system.exceptions import VultureSystemConfigError
 import subprocess
 from toolkit.network.network import get_proxy
 import requests
-import logging
 import os
 import re
 import zipfile
 
+import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('system')
 
 
