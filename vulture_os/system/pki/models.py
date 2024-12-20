@@ -33,6 +33,7 @@ import urllib.request
 import datetime
 
 from cryptography import x509
+from os.path import join as path_join
 from system.exceptions import VultureSystemConfigError
 from toolkit.system.x509 import mk_signed_cert, get_cert_PEM, get_key_PEM
 
@@ -140,7 +141,8 @@ VERIFY_CHOICES = (
     ('required', 'Required')
 )
 
-CERT_PATH = "/var/db/pki"
+CERT_PATH = path_join(settings.DBS_PATH, "pki")
+ACME_PATH = path_join(settings.DBS_PATH, "acme")
 CERT_OWNER = "vlt-os:haproxy"
 CERT_PERMS = "640"
 
@@ -212,7 +214,7 @@ class X509Certificate(models.Model):
 
         try:
             proc = subprocess.Popen(['/usr/local/sbin/acme.sh', '--issue', '-d', cn, '--webroot',
-                                     '/var/db/acme/'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                     ACME_PATH], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             success, error = proc.communicate()
             if error:
                 logger.error("X509Certificate::gen_letsencrypt(): {}".format(error.decode('utf-8')))
@@ -223,9 +225,9 @@ class X509Certificate(models.Model):
             return False
 
         # Read certificate, private key and chain file
-        with open("/var/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)) as pem_cert:
-            with open("/var/db/acme/.acme.sh/{}/{}.key".format(cn, cn)) as pem_key:
-                with open("/var/db/acme/.acme.sh/{}/fullchain.cer".format(cn)) as pem_chain:
+        with open(path_join(ACME_PATH, ".acme.sh/{}/{}.cer".format(cn, cn))) as pem_cert:
+            with open(path_join(ACME_PATH, ".acme.sh/{}/{}.key".format(cn, cn))) as pem_key:
+                with open(path_join(ACME_PATH, ".acme.sh/{}/fullchain.cer".format(cn))) as pem_chain:
 
                     try:
                         tmp_crt = x509.load_pem_x509_certificate(pem_cert.encode())
@@ -617,7 +619,7 @@ class TLSProfile(models.Model):
 
     @property
     def client_ca_cert_filename(self):
-        return "/var/db/pki/client_{}.crt".format(self.id)
+        return path_join(CERT_PATH, "client_{}.crt".format(self.id))
 
     def save_conf(self):
         # self.x509_certificate.save_conf()

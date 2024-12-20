@@ -44,6 +44,7 @@ from subprocess import CalledProcessError
 
 # Extern modules imports
 from json import loads as json_loads
+from os.path import join as path_join
 from subprocess import check_output, PIPE
 
 # Logger configuration imports
@@ -52,10 +53,10 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 
-DARWIN_PATH = "/home/darwin/conf"
+DARWIN_PATH = path_join(settings.HOMES_PATH, "darwin/conf")
 DARWIN_PERMS = "640"
 DARWIN_OWNERS = "darwin:vlt-conf"
-MANAGEMENT_SOCKET = "/var/sockets/darwin/darwin.sock"
+MANAGEMENT_SOCKET = path_join(settings.SOCKETS_PATH, "darwin/darwin.sock")
 
 
 class DarwinService(Service):

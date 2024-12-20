@@ -34,6 +34,7 @@ from services.service import Service
 # Required exceptions imports
 
 # Extern modules imports
+from os.path import join as path_join
 
 # Logger configuration imports
 import logging
@@ -41,11 +42,11 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 
-LOGROTATE_PATH = "/usr/local/etc/logrotate.d"
+LOGROTATE_PATH = path_join(settings.LOCALETC_PATH, "logrotate.d")
 LOGROTATE_OWNER = "root:vlt-os"
 LOGROTATE_PERMS = "640"
 
-JINJA_PATH = "/home/vlt-os/vulture_os/services/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "services/config/")
 JINJA_TEMPLATE = "logrotate.conf"
 
 

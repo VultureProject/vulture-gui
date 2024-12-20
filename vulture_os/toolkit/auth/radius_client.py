@@ -30,6 +30,7 @@ from django.conf import settings
 from toolkit.auth.base_auth import BaseAuth
 
 # Extern modules imports
+from os.path import join as path_join
 from pyrad.client import Client
 from pyrad.client import Timeout
 from pyrad.dictionary import Dictionary
@@ -44,7 +45,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('authentication')
 
 
-DICTIONARY_PATH = "/usr/local/etc/radiusclient/dictionary"
+DICTIONARY_PATH = path_join(settings.LOCALETC_PATH, "radiusclient/dictionary")
 
 
 class RadiusClient(BaseAuth):

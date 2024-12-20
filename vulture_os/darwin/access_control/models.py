@@ -34,6 +34,7 @@ from services.haproxy.haproxy import test_haproxy_conf
 from bson import ObjectId
 from hashlib import sha1
 import logging
+from os.path import join as path_join
 import json
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -114,7 +115,7 @@ OPERATOR_CHOICES = [
 ]
 
 # Jinja template for backends rendering
-JINJA_PATH = "/home/vlt-os/vulture_os/darwin/access_control/config"
+JINJA_PATH = path_join(settings.BASE_DIR, "darwin/access_control/config")
 JINJA_TEST_TEMPLATE = "haproxy_test.conf"
 
 

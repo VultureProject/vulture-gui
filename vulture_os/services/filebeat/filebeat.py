@@ -38,6 +38,7 @@ from subprocess import CalledProcessError
 from system.exceptions import VultureSystemError
 
 # Extern modules imports
+from os.path import join as path_join
 from subprocess import check_output, PIPE
 
 # Logger configuration imports
@@ -45,9 +46,9 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
-JINJA_PATH = "/home/vlt-os/vulture_os/services/config/"
-FILEBEAT_PATH = "/usr/local/etc/filebeat"
-INPUTS_PATH = FILEBEAT_PATH + "/filebeat.yml"
+JINJA_PATH = path_join(settings.BASE_DIR, "services/config/")
+FILEBEAT_PATH = path_join(settings.LOCALETC_PATH, "filebeat")
+INPUTS_PATH = path_join(FILEBEAT_PATH, "filebeat.yml")
 
 FILEBEAT_OWNER = "root:vlt-os"
 FILEBEAT_PERMS = "640"

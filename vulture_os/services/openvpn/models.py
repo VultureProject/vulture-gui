@@ -34,6 +34,7 @@ from system.pki.models import TLSProfile
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 from services.exceptions import (ServiceJinjaError)
 from system.exceptions import VultureSystemConfigError
 
@@ -56,10 +57,10 @@ KEYEXCHANGE = (
 
 
 # Jinja template for frontends rendering
-JINJA_PATH = "/home/vlt-os/vulture_os/services/openvpn/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "services/openvpn/config/")
 JINJA_TEMPLATE_OPENVPN = "client.conf"
 
-CONF_PATH = "/usr/local/etc/openvpn"
+CONF_PATH = path_join(settings.LOCALETC_PATH, "openvpn")
 
 OPENVPN_OWNER = "root:vlt-conf"
 
@@ -153,7 +154,7 @@ class Openvpn(models.Model):
         """ Write configuration on disk
         """
         conf = self.generate_conf()
-        params = ['/usr/local/etc/openvpn/openvpn_client.conf', conf['template_client'], OPENVPN_OWNER, "644"]
+        params = [path_join(CONF_PATH, 'openvpn_client.conf'), conf['template_client'], OPENVPN_OWNER, "644"]
         try:
             self.node.api_request('system.config.models.write_conf', config=params)
         except Exception:

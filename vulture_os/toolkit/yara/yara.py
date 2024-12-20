@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'System Utils Yara Toolkit'
 
 # Django project imports
+from django.conf import settings
 from darwin.inspection.models import InspectionPolicy, InspectionRule, DEFAULT_YARA_CATEGORIES
 from django.core.exceptions import ObjectDoesNotExist
 from system.exceptions import VultureSystemConfigError
@@ -54,17 +55,17 @@ def fetch_yara_rules(logger):
 
     logger.info("Yara::fetch_yara_rules:: extracting them...")
     try:
-        with open("/var/tmp/yara_rules.zip", "wb") as f:
+        with open(os.path.join(settings.TMP_PATH, "yara_rules.zip", "wb")) as f:
             f.write(doc.content)
-        with zipfile.ZipFile("/var/tmp/yara_rules.zip") as z:
-            z.extractall("/var/tmp/yara_rules/")
+        with zipfile.ZipFile(os.path.join(settings.TMP_PATH, "yara_rules.zip")) as z:
+            z.extractall(os.path.join(settings.TMP_PATH, "yara_rules/"))
     except Exception as e:
         logger.error("Yara::fetch_yara_rules:: {}".format(e), exc_info=1)
         raise
 
     rule_regex = re.compile(r'^\s*rule .*$')
 
-    for (baseRoot, baseDirs, baseFiles) in os.walk("/var/tmp/yara_rules/rules-master/"):
+    for (baseRoot, baseDirs, baseFiles) in os.walk(os.path.join(settings.TMP_PATH, "yara_rules/rules-master/")):
         for baseDir in baseDirs:
             for (root, dirs, files) in os.walk(os.path.join(baseRoot, baseDir)):
                 for filename in files:

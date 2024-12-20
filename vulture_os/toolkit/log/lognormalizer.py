@@ -43,7 +43,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api')
 
 
-TEST_CONF_PATH = "/tmp"
+TEST_CONF_PATH = settings.TMP_PATH
 
 
 def test_lognormalizer(filename, rulebase_content, to_parse):

@@ -48,6 +48,7 @@ from system.tenants.models import Tenants
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 from re import search as re_search
 from requests import post
 import glob
@@ -118,7 +119,7 @@ SENTINEL_ONE_ACCOUNT_TYPE_CHOICES = (
 )
 
 # Filebeat module list
-FILEBEAT_MODULE_PATH = "/usr/local/etc/filebeat/modules.d"
+FILEBEAT_MODULE_PATH = path_join(settings.LOCALETC_PATH, "filebeat/modules.d")
 FILEBEAT_MODULE_LIST = [('_custom', 'Custom Filebeat config')]
 FILEBEAT_MODULE_CONFIG = {'_custom': '# Be sure to select the appropriate "Filebeat listening mode"\n\
 # Use the following variables when needed: \n\n\
@@ -151,14 +152,14 @@ FILEBEAT_LISTENING_MODE = (
 
 
 # Jinja template for frontends rendering
-JINJA_PATH = "/home/vlt-os/vulture_os/services/frontend/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "services/frontend/config/")
 JINJA_TEMPLATE = "haproxy_frontend.conf"
 
 FRONTEND_OWNER = HAPROXY_OWNER
 FRONTEND_PERMS = HAPROXY_PERMS
 
-UNIX_SOCKET_PATH = "/var/sockets/rsyslog"
-LOG_API_PATH = "/var/log/api_parser"
+UNIX_SOCKET_PATH = path_join(settings.SOCKETS_PATH, "rsyslog")
+LOG_API_PATH = path_join(settings.LOGS_PATH, "api_parser")
 
 class Frontend(models.Model):
     """ Model used to generate fontends configuration of HAProxy """
