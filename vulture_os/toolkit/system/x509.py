@@ -175,7 +175,7 @@ def mk_cert_builder(serial: int) -> x509.CertificateBuilder:
     return builder
 
 
-def mk_ca_cert_files(CN: str, C: str, ST: str, L: str, O: str, OU: str) -> tuple([x509.Certificate, rsa.RSAPrivateKey]):
+def mk_ca_cert_files(CN: str, C: str, ST: str, L: str, O: str, OU: str) -> tuple[bytes, bytes]:
     """Write CA cacert files (cert + key).
 
     :param CN: Common Name field
@@ -188,11 +188,6 @@ def mk_ca_cert_files(CN: str, C: str, ST: str, L: str, O: str, OU: str) -> tuple
     ca_cert, private_key = mk_ca_cert(CN=CN, C=C, ST=ST, L=L, O=O, OU=OU)
     ca_cert_pem = get_cert_PEM(ca_cert)
     private_key_pem = get_key_PEM(private_key)
-
-    with open("/var/db/pki/ca.pem", "wb") as cert_file:
-        cert_file.write(ca_cert_pem)
-    with open("/var/db/pki/ca.key", "wb") as key_file:
-        key_file.write(private_key_pem)
 
     return ca_cert_pem, private_key_pem
 
@@ -247,14 +242,5 @@ def mk_signed_cert_files(CN: str, C: str, ST: str, L: str, O: str, OU: str, seri
 
     cert_pem = get_cert_PEM(cert)
     key_pem = get_key_PEM(private_key)
-    node_pem = cert_pem + key_pem
 
-    with open("/var/db/pki/node.pem", "wb") as node_file:
-        node_file.write(node_pem)
-    with open("/var/db/pki/node.cert", "wb") as cert_file:
-        cert_file.write(cert_pem)
-    with open("/var/db/pki/node.key", "wb") as key_file:
-        key_file.write(key_pem)
-
-    return cert, private_key
-
+    return cert_pem, key_pem
