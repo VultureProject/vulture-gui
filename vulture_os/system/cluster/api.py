@@ -51,6 +51,7 @@ from workflow.models import Workflow
 import time
 
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('system')
 
 

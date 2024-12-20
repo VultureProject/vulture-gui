@@ -24,6 +24,7 @@ __doc__ = 'PyOTP wrapper (for TOTP authentication)'
 
 
 # Django system imports
+from django.conf import settings
 
 # Django project imports
 from authentication.totp_profiles.models import TOTPProfile
@@ -37,6 +38,7 @@ from pyotp import random_base32 as pyotp_random_base32, TOTP
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('portal_authentication')
 
 
