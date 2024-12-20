@@ -25,7 +25,6 @@ __doc__ = 'System Utils Database Toolkit'
 
 from pymongo import MongoClient, ReadPreference
 from pymongo.errors import OperationFailure, AutoReconnect
-from toolkit.network.network import get_hostname
 from django.conf import settings
 from re import search as re_search
 import subprocess
@@ -54,11 +53,11 @@ class MongoBase:
 
     @staticmethod
     def get_local_node():
-        return '{}:9091'.format(get_hostname())
+        return '{}:9091'.format(settings.HOSTNAME)
 
     @staticmethod
     def get_local_uri():
-        return 'mongodb://{}:9091'.format(get_hostname())
+        return 'mongodb://{}:9091'.format(settings.HOSTNAME)
 
     @staticmethod
     def get_replicaset_uri():
@@ -248,7 +247,7 @@ class MongoBase:
         """
         config = {
             '_id': 'Vulture', 'members': [
-                {'_id': 0, 'host': "{}:9091".format(get_hostname())}
+                {'_id': 0, 'host': "{}:9091".format(settings.HOSTNAME)}
             ]
         }
         try:

@@ -8,6 +8,8 @@ from toolkit.system.secret_key import set_key
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+HOSTNAME = get_hostname()
+
 # Retrieving Django SECRET_KEY
 try:
     from vulture_os.secret_key import SECRET_KEY
@@ -102,7 +104,7 @@ DATABASES = {
         'ENGINE': 'djongo',
         'NAME': 'vulture',
         "CLIENT": {
-            'host': get_hostname(),
+            'host': HOSTNAME,
             'port': 9091,
             'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',

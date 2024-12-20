@@ -33,7 +33,6 @@ from darwin.darwin import Darwin
 from services.service import Service
 from system.cluster.models import Cluster
 from system.system import System
-from toolkit.network.network import get_hostname
 from workflow.workflow import Workflows
 
 import logging
@@ -65,7 +64,7 @@ def admin_media(request):
         'VERSION': settings.VERSION,
         'CURRENT_NODE': node_name,
         'DEV_MODE': settings.DEV_MODE,
-        'TITLE': get_hostname(),
+        'TITLE': settings.HOSTNAME,
         'COLLAPSE': request.session.get('collapse')
     }
 

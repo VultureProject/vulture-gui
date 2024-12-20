@@ -30,7 +30,7 @@ from djongo import models
 from services.frontend.models import Frontend
 from system.config.models import Config
 from system.cluster.models import Node
-from toolkit.network.network import get_hostname, JAIL_ADDRESSES
+from toolkit.network.network import JAIL_ADDRESSES
 
 # Required exceptions imports
 
@@ -52,7 +52,7 @@ class FilebeatSettings(models.Model):
         return {
             'frontends': Frontend.objects.filter(enabled=True, mode="filebeat"),
             'tenants_name': Config.objects.get().internal_tenants.name,
-            'nodes': Node.objects.exclude(name=get_hostname()),
+            'nodes': Node.objects.exclude(name=settings.HOSTNAME),
             'jail_addresses': JAIL_ADDRESSES,
         }
 

@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.21.0] - 2025-02-06
 ### Changed
 - [API_PARSER] [NETSKOPE] Add the possiblity to retrieve 3 new kinds of logs
+- [SYSTEM] [SETTINGS] Use Hostname value from Django settings
 ### Fixed
 - [API_PARSER] [NETSKOPE] Remove duplicated logs
 - [API_PARSER] [CATONETWORKS] Fix invalid HTML
