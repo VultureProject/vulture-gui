@@ -198,19 +198,19 @@ class MongoBase:
 
     def connect(self, node=None, primary=True, timeout_ms=5000):
         try:
-            if node:
-                host = 'mongodb://{}'.format(node)
-            else:
-                host = self.get_replicaset_uri()
+            args = settings.DATABASES['default']['CLIENT']
+            args['serverSelectionTimeoutMS'] = timeout_ms
 
-            args = {'host': host,
-                    'ssl': True,
-                    'tlsCertificateKeyFile': "/var/db/pki/node.pem",
-                    'tlsCAFile': "/var/db/pki/ca.pem",
-                    'read_preference': ReadPreference.PRIMARY_PREFERRED,
-                    "serverSelectionTimeoutMS": timeout_ms}
+            if node:
+                args['host'] = f'mongodb://{node}'
+            else:
+                args['host'] = self.get_replicaset_uri()
+
             if primary:
-                args['replicaset'] = "Vulture"
+                args['read_preference'] = ReadPreference.PRIMARY
+            else:
+                args['read_preference'] = ReadPreference.PRIMARY_PREFERRED
+
             self.db = MongoClient(**args)
             # Execute a request to test connection (pymongo doesn't try connecting until a command is executed on client)
             self.db.admin.command('ping')
