@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [NETSKOPE] Add the possiblity to retrieve 3 new kinds of logs
 - [SYSTEM] [SETTINGS] Use Hostname value from Django settings
 ### Fixed
+- [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb
 - [API_PARSER] [NETSKOPE] Remove duplicated logs
 - [API_PARSER] [CATONETWORKS] Fix invalid HTML
 - [API_PARSER] [WAF_CLOUDFLARE] Correctly set and use the `fields` list
