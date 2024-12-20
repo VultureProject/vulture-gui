@@ -42,6 +42,7 @@ from system.cluster.models import Cluster, Node
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 
 # Required exceptions imports
 from portal.system.exceptions import ACLError
@@ -56,7 +57,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 # Jinja template for backends rendering
-JINJA_PATH = "/home/vlt-os/vulture_os/workflow/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "workflow/config/")
 JINJA_TEMPLATE = "haproxy_portal.conf"
 
 WORKFLOW_OWNER = HAPROXY_OWNER

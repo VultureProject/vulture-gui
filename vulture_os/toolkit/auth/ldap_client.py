@@ -26,6 +26,7 @@ __doc__ = 'LDAP authentication client wrapper'
 
 # Django project imports
 from toolkit.auth.base_auth import BaseAuth
+from django.conf import settings
 
 # Extern modules imports
 import copy
@@ -33,6 +34,7 @@ import ldap
 import ldap.modlist as modlist
 from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
+from os.path import join as path_join
 
 
 # Required exceptions imports
@@ -42,6 +44,7 @@ from toolkit.auth.exceptions import AuthenticationError, ChangePasswordError, Us
 import logging
 logger = logging.getLogger('authentication')
 
+CERT_PATH = path_join(settings.DBS_PATH, "pki")
 
 class LDAPClient(BaseAuth):
 
@@ -134,14 +137,14 @@ class LDAPClient(BaseAuth):
         self.start_tls = False
         if settings.encryption_scheme == 'start-tls':
             self.start_tls = True
-            self._connection_settings[ldap.OPT_X_TLS_CACERTDIR] = '/var/db/pki'
+            self._connection_settings[ldap.OPT_X_TLS_CACERTDIR] = CERT_PATH
             self._connection_settings[ldap.OPT_X_TLS_REQUIRE_CERT] = ldap.OPT_X_TLS_NEVER
             self._connection_settings[ldap.OPT_X_TLS_NEWCTX] = 0
             self._connection_settings[ldap.OPT_DEBUG_LEVEL] = 255
 
         elif settings.encryption_scheme == 'ldaps':
             proto = 'ldaps'
-            self._connection_settings[ldap.OPT_X_TLS_CACERTDIR] = '/var/db/pki'
+            self._connection_settings[ldap.OPT_X_TLS_CACERTDIR] = CERT_PATH
             self._connection_settings[ldap.OPT_X_TLS_REQUIRE_CERT] = ldap.OPT_X_TLS_NEVER
             self._connection_settings[ldap.OPT_X_TLS_NEWCTX] = 0
             self._connection_settings[ldap.OPT_DEBUG_LEVEL] = 255

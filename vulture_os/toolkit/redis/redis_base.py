@@ -24,6 +24,7 @@ __doc__ = 'System Utils Redis Toolkit'
 
 
 from ast import literal_eval
+from os.path import join as path_join
 from redis import Redis, RedisError
 from toolkit.network.network import get_management_ip
 
@@ -39,7 +40,7 @@ class RedisBase:
         self.node = node
         self.port = port
         self.password = password
-        self.db = '/var/sockets/redis/redis.sock'
+        self.db = path_join(settings.SOCKETS_PATH, 'redis/redis.sock')
         self._redis_client = None
 
     @property

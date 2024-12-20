@@ -49,6 +49,7 @@ from system.cluster.models import Cluster
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
@@ -61,7 +62,7 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
-JINJA_PATH = "/home/vlt-os/vulture_os/authentication/user_portal/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "authentication/user_portal/config/")
 JINJA_TEMPLATE = "haproxy_portal.conf"
 
 

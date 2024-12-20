@@ -34,6 +34,7 @@ from toolkit.log.maxminddb import open_mmdb_database
 
 # Extern modules imports
 from gzip import decompress as gzip_decompress
+from os.path import join as path_join
 import requests
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 from re import compile as re_compile
@@ -75,7 +76,7 @@ AUTH_TYPE_CLASSES = {
     'digest': HTTPDigestAuth
 }
 
-DATABASES_PATH = "/var/db/darwin"
+DATABASES_PATH = path_join(settings.DBS_PATH, "darwin")
 DATABASES_OWNER = "vlt-os:vlt-conf"
 DATABASES_PERMS = "644"
 

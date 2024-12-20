@@ -22,6 +22,7 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Global Configuration main models'
 
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import model_to_dict
 from djongo import models
@@ -115,9 +116,9 @@ def write_conf(logger, args):
     else:
         file_path, file_content, owner, perm = args
 
-    # Write temporary file info /tmp dir,
-    #  because everybody can write onto
-    temp_dir = "/var/tmp/"
+    # Write temporary file info tmp dir,
+    # because everybody can write onto
+    temp_dir = settings.TMP_PATH.rstrip('/') + '/'
     """ Create a temporary named file in {prefix} path """
     tmpfile = mktemp(prefix=temp_dir)
     logger.debug("Config::write_conf: Writing into {}".format(tmpfile))

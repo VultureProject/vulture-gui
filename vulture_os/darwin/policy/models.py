@@ -44,24 +44,24 @@ import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
-JINJA_PATH = "/home/vlt-os/vulture_os/darwin/log_viewer/config/"
+JINJA_PATH = os_path.join(settings.BASE_DIR, "darwin/log_viewer/config/")
 
 
-SOCKETS_PATH = "/var/sockets/darwin"
-FILTERS_PATH = "/home/darwin/filters"
-CONF_PATH = "/home/darwin/conf"
-DATA_PATH = "/var/db/darwin"
+SOCKETS_PATH = os_path.join(settings.SOCKETS_PATH, "darwin")
+FILTERS_PATH = os_path.join(settings.HOMES_PATH, "darwin/filters")
+CONF_PATH = os_path.join(settings.HOMES_PATH, "darwin/conf")
+DATA_PATH = os_path.join(settings.DBS_PATH, "darwin")
 TEMPLATE_OWNER = "darwin:vlt-web"
 TEMPLATE_PERMS = "644"
 
-REDIS_SOCKET_PATH = "/var/sockets/redis/redis.sock"
+REDIS_SOCKET_PATH = os_path.join(settings.SOCKETS_PATH, "redis/redis.sock")
 ALERTS_REDIS_LIST_NAME = "darwin_alerts"
 ALERTS_REDIS_CHANNEL_NAME = "darwin.alerts"
-ALERTS_LOG_FILEPATH = "/var/log/darwin/alerts.log"
+ALERTS_LOG_FILEPATH = os_path.join(settings.LOGS_PATH,"darwin/alerts.log")
 
-DGA_MODELS_PATH = CONF_PATH + '/fdgad/'
-VAST_MODELS_PATH = CONF_PATH + '/fvast/'
-VAML_MODELS_PATH = CONF_PATH + '/fvaml/'
+DGA_MODELS_PATH = os_path.join(CONF_PATH, 'fdgad/')
+VAST_MODELS_PATH = os_path.join(CONF_PATH, 'fvast/')
+VAML_MODELS_PATH = os_path.join(CONF_PATH, 'fvaml/')
 
 DARWIN_LOGLEVEL_CHOICES = (
     ('CRITICAL', 'Critical'),

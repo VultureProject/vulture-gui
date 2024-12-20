@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CROWDSTRIKE] Fix infinite loop when we encounters more than 100 logs (default limit) in one request
 - [API_PARSER] [PROOFPOINT_TRAP] Handle and avoid request timeouts by progressively reducing queries range
 - [SERVICES] [FRONTEND] Only show node field for specific modes
+### Added
+- [SYSTEM] [PATHS] Variabilize all system paths and allow to configure them from settings
 
 
 ## [2.22.0] - 2025-02-25
