@@ -251,11 +251,6 @@ LOG_SETTINGS = {
             'maxBytes': 10485760,
             'backupCount': 5,
         },
-        'database': {
-            'level': LOG_LEVEL,
-            'class': 'toolkit.log.log_utils.DatabaseHandler',
-            'type_logs': 'vulture',
-        },
         'api': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',

@@ -173,11 +173,6 @@ LOG_SETTINGS = {
             'level': LOG_LEVEL,
             'filters': ['require_debug_true']
         },
-        'database': {
-            'level': LOG_LEVEL,
-            'class': 'toolkit.log.log_utils.DatabaseHandler',
-            'type_logs': 'vulture',
-        },
         'file_portal_authentication': {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
@@ -219,22 +214,22 @@ LOG_SETTINGS = {
     },
     'loggers': {
         'portal_authentication': {
-            'handlers': ['file_portal_authentication', 'database', 'console'],
+            'handlers': ['file_portal_authentication', 'console'],
             'propagate': True,
             'level': LOG_LEVEL,
         },
         'redis_events': {
-            'handlers': ['file_redis_events', 'database', 'console'],
+            'handlers': ['file_redis_events', 'console'],
             'propagate': True,
             'level': LOG_LEVEL,
         },
         'authentication': {
-            'handlers': ('authentication', 'database', 'console'),
+            'handlers': ('authentication', 'console'),
             'propagate': True,
             'level': LOG_LEVEL,
         },
         'debug': {
-            'handlers': ['debug', 'database', 'console'],
+            'handlers': ['debug', 'console'],
             'propagate': True,
             'level': LOG_LEVEL,
         },
