@@ -66,10 +66,14 @@ if __name__ == "__main__":
             pki["organizational_unit"]
         )
 
+    with open("/var/db/pki/ca.pem", "wb") as cert_file:
+        cert_file.write(cacert_pem)
+    with open("/var/db/pki/ca.key", "wb") as key_file:
+        key_file.write(cakey_pem)
+
     """ Build node certificate (overwrite if it exist) """
     hostname = subprocess.check_output(['hostname']).strip().decode('utf-8')
-    # TODO give ca_cert and ca_key
-    _, _ = mk_signed_cert_files(
+    cert_pem, key_pem = mk_signed_cert_files(
         hostname,
         pki["country"],
         pki["state"],
@@ -80,6 +84,15 @@ if __name__ == "__main__":
         cacert_pem,
         cakey_pem
     )
+
+    node_pem = cert_pem + key_pem
+
+    with open("/var/db/pki/node.pem", "wb") as node_file:
+        node_file.write(node_pem)
+    with open("/var/db/pki/node.cert", "wb") as cert_file:
+        cert_file.write(cert_pem)
+    with open("/var/db/pki/node.key", "wb") as key_file:
+        key_file.write(key_pem)
 
     """ Generate Diffie hellman configuration """
     os.system("openssl dhparam -out /var/db/pki/dh2048.pem 2048")
