@@ -24,6 +24,7 @@ __doc__ = 'Override Django User model'
 
 
 # Django system imports
+from django.conf import settings
 from django.contrib.auth import models as auth_models
 from djongo import models
 
@@ -35,6 +36,7 @@ from djongo import models
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 

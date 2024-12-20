@@ -22,7 +22,6 @@ __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'System Utils Network Toolkit'
 
-
 from toolkit.system.rc import get_rc_config, set_rc_config, remove_rc_config
 
 from ipaddress import IPv4Address, IPv6Address, ip_address, AddressValueError

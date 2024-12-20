@@ -45,6 +45,7 @@ from subprocess import check_output, PIPE
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 

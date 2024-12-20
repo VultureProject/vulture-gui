@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Response API toolkit functions'
 
 # Django system imports
+from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 
@@ -34,6 +35,7 @@ from django.urls import reverse
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('authentication')
 
 

@@ -31,6 +31,7 @@ from toolkit.network.network import get_management_ip
 from django.conf import settings
 
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('debug')
 
 

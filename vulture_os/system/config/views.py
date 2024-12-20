@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Config View'
 
 # Django system imports
+from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
@@ -46,6 +47,7 @@ from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 

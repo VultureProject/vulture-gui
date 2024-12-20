@@ -33,8 +33,9 @@ from gui.decorators.apicall import api_need_key
 from system.pki.views import tls_profile_edit, pki_edit, pki_delete
 from django.views.generic.base import View
 from django.conf import settings
-import logging
 
+import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('system')
 
 
