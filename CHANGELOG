@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SERVICES] [FRONTEND] Only show node field for specific modes
 ### Added
 - [SYSTEM] [PATHS] Variabilize all system paths and allow to configure them from settings
+- [SYSTEM] [SETTINGS] Allow to configure project with django-environ
+### Changed
+- [SYSTEM] [SETTINGS] Use Hostname value from Django settings
+### Fixed
+- [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb
 
 
 ## [2.22.0] - 2025-02-25
@@ -31,9 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.21.0] - 2025-02-06
 ### Changed
 - [API_PARSER] [NETSKOPE] Add the possiblity to retrieve 3 new kinds of logs
-- [SYSTEM] [SETTINGS] Use Hostname value from Django settings
 ### Fixed
-- [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb
 - [API_PARSER] [NETSKOPE] Remove duplicated logs
 - [API_PARSER] [CATONETWORKS] Fix invalid HTML
 - [API_PARSER] [WAF_CLOUDFLARE] Correctly set and use the `fields` list

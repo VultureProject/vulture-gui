@@ -2,6 +2,7 @@
 Django settings for vulture project.
 """
 
+import environ
 from os import path as os_path
 from toolkit.network.network import get_hostname
 from toolkit.system.secret_key import set_key
@@ -9,16 +10,26 @@ from toolkit.system.secret_key import set_key
 BASE_DIR = os_path.dirname(os_path.dirname(os_path.abspath(__file__)))
 SETTINGS_DIR = os_path.abspath(os_path.dirname(__file__))
 
-# Project folders
-ROOT_PATH = "/"
-DBS_PATH = os_path.join(ROOT_PATH, "var/db")
-TMP_PATH = os_path.join(ROOT_PATH, "var/tmp")
-LOGS_PATH = os_path.join(ROOT_PATH, "var/log")
-SOCKETS_PATH = os_path.join(ROOT_PATH, "var/sockets")
-HOMES_PATH = os_path.join(ROOT_PATH, "home")
-LOCALETC_PATH = os_path.join(ROOT_PATH, "usr/local/etc")
+env = environ.Env()
+env.prefix = 'VULTURE_'
+environ.Env.read_env(os_path.join(SETTINGS_DIR, '.env'))
 
-HOSTNAME = get_hostname()
+# Project folders
+SYSTEM_ROOT_PATH = env.str("SYSTEM_ROOT_PATH", "/")
+DBS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("DBS_PATH", "var/db"))
+TMP_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("TMP_PATH", "var/tmp"))
+LOGS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("LOGS_PATH", "var/log"))
+SOCKETS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("SOCKETS_PATH", "var/sockets"))
+HOMES_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("HOMES_PATH", "home"))
+LOCALETC_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("LOCALETC_PATH", "usr/local/etc"))
+
+# Logging
+PORTAL_AUTHENTICATION_LOGS_PATH = os_path.join(LOGS_PATH, env.str("PORTAL_AUTHENTICATION_LOGS_PATH", 'vulture/portal/portal_authentication.log'))
+REDIS_EVENTS_LOGS_PATH = os_path.join(LOGS_PATH, env.str("REDIS_EVENTS_LOGS_PATH", 'vulture/portal/redis_events.log'))
+AUTHENTICATION_LOGS_PATH = os_path.join(LOGS_PATH, env.str("AUTHENTICATION_LOGS_PATH", 'vulture/portal/authentication.log'))
+DEBUG_LOGS_PATH = os_path.join(LOGS_PATH, env.str("DEBUG_LOGS_PATH", 'vulture/portal/debug.log'))
+
+HOSTNAME = env.str("HOSTNAME", get_hostname())
 
 # Retrieving Django SECRET_KEY
 try:
@@ -34,9 +45,9 @@ try:
 except ImportError:
     pass
 
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = env.str("LOG_LEVEL", "INFO")
 
-DEBUG = False
+DEBUG = env.bool("DEBUG", False)
 TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = ["*"]
@@ -114,13 +125,13 @@ DATABASES = {
         'ENGINE': 'djongo',
         'NAME': 'vulture',
         "CLIENT": {
-            'host': HOSTNAME,
-            'port': 9091,
+            'host': env.str('MONGODB_HOST', HOSTNAME),
+            'port': env.int('MONGODB_PORT', 9091),
             'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
-            'SSL': True,
-            'tlsCertificateKeyFile': os_path.join(DBS_PATH, 'pki/node.pem'),
-            'tlsCAFile': os_path.join(DBS_PATH, 'pki/ca.pem'),
+            'SSL': env.bool('MONGODB_SSL', True),
+            'tlsCertificateKeyFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CERT_FILE', 'pki/node.pem')),
+            'tlsCAFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CA_FILE', 'pki/ca.pem')),
             'READPREFERENCE': "primaryPreferred"
         },
     }
@@ -137,8 +148,8 @@ STATIC_URL = 'static/'
 CACERT_DIR = os_path.join(DBS_PATH, 'mongodb/')
 MONGODBPORT = 9091
 MONGODBARBPORT = 9092
-REDISIP = '127.0.0.1'
-REDISPORT = '6379'
+REDISIP = env.str('REDIS_HOST', '127.0.0.1')
+REDISPORT = env.int('REDIS_PORT', 6379)
 OS = "FreeBSD"
 
 LOG_SETTINGS = {
@@ -177,7 +188,7 @@ LOG_SETTINGS = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': os_path.join(LOGS_PATH, 'vulture/portal/portal_authentication.log'),
+            'filename': PORTAL_AUTHENTICATION_LOGS_PATH,
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
@@ -186,7 +197,7 @@ LOG_SETTINGS = {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': os_path.join(LOGS_PATH, 'vulture/portal/redis_events.log'),
+            'filename': REDIS_EVENTS_LOGS_PATH,
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
@@ -195,14 +206,14 @@ LOG_SETTINGS = {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': os_path.join(LOGS_PATH, 'vulture/portal/authentication.log'),
+            'filename': AUTHENTICATION_LOGS_PATH,
             'mode': 'a'
         },
         'debug': {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': os_path.join(LOGS_PATH, 'vulture/portal/debug.log'),
+            'filename': DEBUG_LOGS_PATH,
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
