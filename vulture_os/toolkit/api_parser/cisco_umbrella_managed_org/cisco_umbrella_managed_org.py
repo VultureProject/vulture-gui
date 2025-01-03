@@ -257,10 +257,10 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                     timestamp = logs[-1]['timestamp']/1000
                     self.last_collected_timestamps[timestamp_field_name] = datetime.fromtimestamp(timestamp, tz=timezone.utc)
                 elif index > 0:
-                    # All logs have been recovered, the parser can be stopped  
-                    self.last_collected_timestamps[timestamp_field_name] = to  
+                    # All logs have been recovered, the parser can be stopped
+                    self.last_collected_timestamps[timestamp_field_name] = to
                     break
-                elif since < timezone.now() - timedelta(hours=24):  
+                elif since < timezone.now() - timedelta(hours=24):
                     self.last_collected_timestamps[timestamp_field_name] = since + timedelta(hours=1)
                 self.frontend.save()
 
