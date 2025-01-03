@@ -230,7 +230,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
             customer_ids = set(customer_ids_available)
 
         for customer_id in customer_ids:
-            if not self.cisco_umbrella_managed_org_customers_tokens.get(customer_id) or not self.cisco_umbrella_managed_org_customers_tokens[customer_id].get("expires_at") or not self.cisco_umbrella_managed_org_customers_tokens[customer_id].get("access_token") or (self.cisco_umbrella_managed_org_customers_tokens[customer_id]["expires_at"] - timedelta(seconds=10) > timezone.now()):
+            if not self.cisco_umbrella_managed_org_customers_tokens.get(customer_id) or not self.cisco_umbrella_managed_org_customers_tokens[customer_id].get("expires_at") or not self.cisco_umbrella_managed_org_customers_tokens[customer_id].get("access_token") or (self.cisco_umbrella_managed_org_customers_tokens[customer_id]["expires_at"] - timedelta(seconds=10) < timezone.now()):
                 self._get_customer_token(customer_id)
                 self.frontend.cisco_umbrella_managed_org_customers_tokens[customer_id] = deepcopy(self.cisco_umbrella_managed_org_customers_tokens[customer_id])
                 self.frontend.save()
