@@ -68,6 +68,9 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
         self.cisco_umbrella_managed_org_parent_expires_at = data.get("cisco_umbrella_managed_org_parent_expires_at", None)
 
         self.cisco_umbrella_managed_org_customers_tokens = data.get("cisco_umbrella_managed_org_customers_tokens", {})
+        for customer_data in self.cisco_umbrella_managed_org_customers_tokens.values():
+            if "expires_at" in customer_data and not customer_data['expires_at'].tzinfo:
+                customer_data['expires_at'] = timezone.make_aware(customer_data['expires_at'])
 
         self.session = None
 
