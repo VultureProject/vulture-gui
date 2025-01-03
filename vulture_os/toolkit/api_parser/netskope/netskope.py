@@ -55,9 +55,9 @@ class NetskopeParser(ApiParser):
 
         self.netskope_host = data["netskope_host"]
         self.netskope_apikey = data["netskope_apikey"]
-        self.netskope_page_logs = data["netskope_page_logs"]
-        self.netskope_network_logs = data["netskope_network_logs"]
-        self.netskope_application_logs = data["netskope_application_logs"]
+        self.netskope_get_page_logs = data["netskope_get_page_logs"]
+        self.netskope_get_network_logs = data["netskope_get_network_logs"]
+        self.netskope_get_application_logs = data["netskope_get_application_logs"]
 
         self.session = None
 
@@ -74,7 +74,16 @@ class NetskopeParser(ApiParser):
 
     def test(self):
         try:
-            logs = self.get_logs(timezone.now()-timedelta(days=10))
+            logs = []
+            logtypes = ["alert"]
+            if self.netskope_get_page_logs:
+                logtypes.append("page")
+            if self.netskope_get_network_logs:
+                logtypes.append("network")
+            if self.netskope_get_application_logs:
+                logtypes.append("application")
+            for logtype in logtypes:
+                logs.extend(self.get_logs(timezone.now()-timedelta(days=10), logtype=logtype).get("result"))
 
             return {
                 "status": True,
@@ -125,17 +134,18 @@ class NetskopeParser(ApiParser):
 
     def execute(self):
         logtypes = ["alert"]
-        if self.netskope_page_logs:
+        if self.netskope_get_page_logs:
             logtypes.append("page")
-        if self.netskope_network_logs:
+        if self.netskope_get_network_logs:
             logtypes.append("network")
-        if self.netskope_application_logs:
+        if self.netskope_get_application_logs:
             logtypes.append("application")
         for logtype in logtypes:
             since = self.last_collected_timestamps.get(logtype, self.last_api_call) or (timezone.now() - timedelta(hours=24))
             self.upper_timestamp = since.timestamp()
             to = min(timezone.now(), since + timedelta(hours=24))
             offset = 0
+            logs = []
 
             while offset%self.BULK_SIZE == 0:
 
@@ -144,20 +154,24 @@ class NetskopeParser(ApiParser):
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
 
-                logs = response['result']
-                if len(logs) == 0:
+                new_logs = response['result']
+                if len(new_logs) == 0:
                     logger.info(f"[{__parser__}][execute]: No more log to fetch. End of the parsing",
                                 extra={'frontend': str(self.frontend)})
                     break
-                offset += len(logs)
+                # Remove duplicated logs
+                log_ids = [log.get("_event_id", "") for log in logs]
+                for new_log in new_logs:
+                    if new_log.get("_event_id", "") not in log_ids:
+                        logs.append(new_log)
+                offset += len(new_logs)
 
-                if logtype == "alert":
-                    self.write_to_file([self.parse_alert_log(log) for log in logs])
-                else:
-                    self.write_to_file([json.dumps(l) for l in logs])
-
-                # Writting may take some while, so refresh token in Redis
-                self.update_lock()
+            if logtype == "alert":
+                self.write_to_file([self.parse_alert_log(log) for log in logs])
+            else:
+                self.write_to_file([json.dumps(log) for log in logs])
+            # Writting may take some while, so refresh token in Redis
+            self.update_lock()
 
             if offset > 0:
                 logger.info(f"[{__parser__}][execute]: Total logs fetched : {offset}",

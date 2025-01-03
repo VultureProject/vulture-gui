@@ -1042,17 +1042,17 @@ class Frontend(models.Model):
         help_text = _("Netskope API token"),
         default = "",
     )
-    netskope_page_logs = models.BooleanField(
+    netskope_get_page_logs = models.BooleanField(
         verbose_name = _("Retrieve Netskope page logs"),
         help_text = _("Retrieve Netskope page logs"),
         default = True,
     )
-    netskope_network_logs = models.BooleanField(
+    netskope_get_network_logs = models.BooleanField(
         verbose_name = _("Retrieve Netskope network logs"),
         help_text = _("Retrieve Netskope network logs"),
         default = True,
     )
-    netskope_application_logs = models.BooleanField(
+    netskope_get_application_logs = models.BooleanField(
         verbose_name = _("Retrieve Netskope application logs"),
         help_text = _("Retrieve Netskope application logs"),
         default = True,
