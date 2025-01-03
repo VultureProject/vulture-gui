@@ -30,6 +30,7 @@ from ast import literal_eval
 import subprocess
 import logging
 import os
+import platform
 import re
 
 from django.core.validators import URLValidator
@@ -105,8 +106,11 @@ def get_hostname():
 
     :return: A String, the hostname of the local node.
     """
-    with open("/etc/host-hostname", "r") as f:
-        return f.read().strip()
+    if os.path.exists("/etc/host-hostname"):
+        with open("/etc/host-hostname", "r") as f:
+            return f.read().strip()
+    else:
+        return platform.node()
 
 
 def get_management_ip():
