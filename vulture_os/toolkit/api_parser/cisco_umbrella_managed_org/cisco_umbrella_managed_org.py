@@ -72,65 +72,106 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
             if "expires_at" in customer_data and not customer_data['expires_at'].tzinfo:
                 customer_data['expires_at'] = timezone.make_aware(customer_data['expires_at'])
 
-        self.session = None
-
-    def _get_parent_token(self):
-        logger.info(f"[{__parser__}]: Getting a new authentication token...", extra={'frontend': str(self.frontend)})
+    def _execute_query(self, url, query={}, additional_headers={}, auth=None, timeout=30):
+        '''
+        raw request doesn't handle the pagination natively
+        '''
+        logger.debug(f"[{__parser__}]: _execute_query: Fetching {url} with parameters {query}", extra={'frontend': str(self.frontend)})
         response = requests.get(
-            url=self.TOKEN_URL,
-            auth=(self.cisco_umbrella_managed_org_api_key, self.cisco_umbrella_managed_org_secret_key),
-            proxies=self.proxies,
-            timeout=10,
-            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
-        )
-        if response.status_code != requests.codes.ok:
-            logger.error(f"[{__parser__}]: _get_parent_token: Error {response.status_code} while trying to get token: {response.content}", extra={'frontend': str(self.frontend)})
-            raise CiscoUmbrellaManagedOrgAPIError("Failed to get a new parent access token")
-        token = response.json()
-        self.cisco_umbrella_managed_org_parent_access_token = token["access_token"]
-        self.cisco_umbrella_managed_org_parent_expires_at = timezone.now() + timedelta(seconds=int(token["expires_in"]))
-
-    def _connect(self, access_token):
-        self.session = requests.Session()
-        headers = self.HEADERS
-        headers.update({'Authorization': f"Bearer {access_token}"})
-        self.session.headers.update(headers)
-
-    def _get_customers_id(self, timeout=10):
-        if not self.cisco_umbrella_managed_org_parent_access_token or not self.cisco_umbrella_managed_org_parent_expires_at or (self.cisco_umbrella_managed_org_parent_expires_at - timedelta(seconds=10) < timezone.now()):
-            self._get_parent_token()
-        self._connect(self.cisco_umbrella_managed_org_parent_access_token)
-        logger.info(f"[{__parser__}]: Getting the list of organisation id", extra={'frontend': str(self.frontend)})
-
-        response = self.session.get(self.ORGANIZATIONS_URL,
+            url=url,
+            params=query,
+            auth=auth,
+            headers={**self.HEADERS, **additional_headers},
             timeout=timeout,
             proxies=self.proxies,
             verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
         )
-        if response.status_code != requests.codes.ok:
-            raise CiscoUmbrellaManagedOrgAPIError(f"Error at Cisco-Umbrella API Call URL: {self.ORGANIZATIONS_URL} Code: {response.status_code} Content: {response.content}")
-        return [str(customer.get("customerId")) for customer in response.json()]
+        response.raise_for_status()
 
-    def _get_customer_token(self, customer_id):
+        return response.json()
+
+    def _update_parent_token(self):
+        logger.info(f"[{__parser__}]: Getting a new authentication token...", extra={'frontend': str(self.frontend)})
+        try:
+            token = self._execute_query(
+                url=self.TOKEN_URL,
+                auth=(self.cisco_umbrella_managed_org_api_key, self.cisco_umbrella_managed_org_secret_key),
+                timeout=10,
+            )
+        except requests.HTTPError as e:
+            error_code = ""
+            error_str = str(e)
+            if e.response:
+                error_code = str(e.response.status_code)
+                error_str = e.response.content
+
+            logger.error(f"[{__parser__}]: _update_parent_token: Error{error_code} while trying to get token: {error_str}", extra={'frontend': str(self.frontend)})
+            raise CiscoUmbrellaManagedOrgAPIError("Failed to get a new parent access token")
+
+        self.cisco_umbrella_managed_org_parent_access_token = token["access_token"]
+        self.cisco_umbrella_managed_org_parent_expires_at = timezone.now() + timedelta(seconds=int(token["expires_in"]))
+        if self.frontend:
+            self.frontend.cisco_umbrella_managed_org_parent_access_token = self.cisco_umbrella_managed_org_parent_access_token
+            self.frontend.cisco_umbrella_managed_org_parent_expires_at = self.cisco_umbrella_managed_org_parent_expires_at
+            self.frontend.save()
+
+    def _get_customers_id(self, timeout=10):
+
+        if not self.cisco_umbrella_managed_org_parent_access_token or not self.cisco_umbrella_managed_org_parent_expires_at or (self.cisco_umbrella_managed_org_parent_expires_at - timedelta(seconds=10) < timezone.now()):
+            logger.info(f"[{__parser__}]: Updating main access token...", extra={'frontend': str(self.frontend)})
+            self._update_parent_token()
+
+        logger.info(f"[{__parser__}]: Getting the list of organisation id", extra={'frontend': str(self.frontend)})
+
+        try:
+            response = self._execute_query(
+                url=self.ORGANIZATIONS_URL,
+                timeout=timeout,
+                additional_headers={
+                    'Authorization': f"Bearer {self.cisco_umbrella_managed_org_parent_access_token}"
+                },
+            )
+        except requests.HTTPError as e:
+            error_code = ""
+            error_str = str(e)
+            if e.response:
+                error_code = str(e.response.status_code)
+                error_str = e.response.content
+
+            logger.error(f"[{__parser__}]: _get_customers_id: Error{error_code} while trying to get IDs: {error_str}", extra={'frontend': str(self.frontend)})
+            raise CiscoUmbrellaManagedOrgAPIError("Failed to get customers' IDs")
+        return [str(customer.get("customerId")) for customer in response]
+
+    def _update_customer_token(self, customer_id):
         logger.info(f"[{__parser__}]: Getting a new authentication token for customer {customer_id}", extra={'frontend': str(self.frontend)})
-        headers = {
-            'X-Umbrella-OrgID': str(customer_id),
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-        response = requests.get(
-            url=self.TOKEN_URL,
-            auth=(self.cisco_umbrella_managed_org_api_key, self.cisco_umbrella_managed_org_secret_key),
-            headers=headers,
-            proxies=self.proxies,
-            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
-        )
-        if response.status_code != requests.codes.ok:
-            logger.error(f"[{__parser__}]: _get_customer_token: Error {response.status_code} while trying to get customer {customer_id}'s token: {response.content}", extra={'frontend': str(self.frontend)})
+
+        try:
+            token = self._execute_query(
+                url=self.TOKEN_URL,
+                timeout=10,
+                auth=(self.cisco_umbrella_managed_org_api_key, self.cisco_umbrella_managed_org_secret_key),
+                additional_headers={
+                    'X-Umbrella-OrgID': str(customer_id),
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+            )
+        except requests.HTTPError as e:
+            error_code = ""
+            error_str = str(e)
+            if e.response:
+                error_code = str(e.response.status_code)
+                error_str = e.response.content
+
+            logger.error(f"[{__parser__}]: _update_customer_token: Error{error_code} while trying to get customer {customer_id}'s token: {error_str}", extra={'frontend': str(self.frontend)})
             raise CiscoUmbrellaManagedOrgAPIError(f"Failed to get customer {customer_id}'s token")
-        token = response.json()
+
         self.cisco_umbrella_managed_org_customers_tokens[customer_id] = {}
         self.cisco_umbrella_managed_org_customers_tokens[customer_id]["access_token"] = token["access_token"]
         self.cisco_umbrella_managed_org_customers_tokens[customer_id]["expires_at"] = timezone.now() + timedelta(seconds=int(token["expires_in"]))
+
+        if self.frontend:
+            self.frontend.cisco_umbrella_managed_org_customers_tokens[customer_id] = deepcopy(self.cisco_umbrella_managed_org_customers_tokens[customer_id])
+            self.frontend.save()
 
     def test(self):
         result = []
@@ -158,7 +199,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                 customer_ids = customer_ids_available
             logger.info(f"[{__parser__}]:test: Selected Customers ids are {list(customer_ids)}", extra={'frontend': str(self.frontend)})
             for customer_id in customer_ids:
-                self._get_customer_token(customer_id)
+                self._update_customer_token(customer_id)
                 for log_type in log_types:
                     data = self.get_logs(timezone.now()-timedelta(hours=1), timezone.now(), customer_id, log_type, limit=10)
                     result.extend(data)
@@ -174,21 +215,6 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                 "error": str(e)
             }
 
-    def __execute_query(self, url, query, timeout=30):
-        '''
-        raw request doesn't handle the pagination natively
-        '''
-        response = self.session.get(url,
-            params=query,
-            timeout=timeout,
-            proxies=self.proxies,
-            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
-        )
-        if response.status_code != requests.codes.ok:
-            raise CiscoUmbrellaManagedOrgAPIError(f"Error at Cisco-Umbrella managed org API Call URL: {url} Code: {response.status_code} Content: {response.content}")
-
-        return response.json()
-
     def get_logs(self, since, to, customer_id, log_type, index=0, limit=None):
         payload = {
             'offset': index,
@@ -196,13 +222,15 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
             'from': int(since.timestamp() * 1000),
             'to': int(to.timestamp() * 1000),
         }
-        url = self.BASE_URL + log_type
-        self.session = requests.Session()
-        self.session.headers.update({'X-Umbrella-OrgID': str(customer_id)})
-        self.session.headers.update({'Authorization': f"Bearer {self.cisco_umbrella_managed_org_customers_tokens[customer_id]['access_token']}"})
-        logger.info(f"[{__parser__}]:get_logs: Cisco-Umbrella query parameters : {payload}, log type : {log_type}",
+        logger.info(f"[{__parser__}]:get_logs: Cisco-Umbrella querying customer ID {customer_id} with parameters: {payload}, log type: {log_type}, index: {index}",
                      extra={'frontend': str(self.frontend)})
-        return self.__execute_query(url, payload)['data']
+        return self._execute_query(
+            self.BASE_URL + log_type,
+            payload,
+            additional_headers={
+                'X-Umbrella-OrgID': str(customer_id),
+                'Authorization': f"Bearer {self.cisco_umbrella_managed_org_customers_tokens[customer_id]['access_token']}",
+            })['data']
 
     def format_log(self, log):
         log["related_users"] = []
@@ -220,9 +248,6 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
 
         customer_ids_available = self._get_customers_id()
         logger.info(f"[{__parser__}]:execute: Available customers ids are {customer_ids_available}", extra={'frontend': str(self.frontend)})
-        self.frontend.cisco_umbrella_managed_org_parent_access_token = self.cisco_umbrella_managed_org_parent_access_token
-        self.frontend.cisco_umbrella_managed_org_parent_expires_at = self.cisco_umbrella_managed_org_parent_expires_at
-        self.frontend.save()
 
         if self.cisco_umbrella_managed_org_customers_id:
             customer_ids = set(self.cisco_umbrella_managed_org_customers_id).intersection(set(customer_ids_available))
@@ -231,9 +256,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
 
         for customer_id in customer_ids:
             if not self.cisco_umbrella_managed_org_customers_tokens.get(customer_id) or not self.cisco_umbrella_managed_org_customers_tokens[customer_id].get("expires_at") or not self.cisco_umbrella_managed_org_customers_tokens[customer_id].get("access_token") or (self.cisco_umbrella_managed_org_customers_tokens[customer_id]["expires_at"] - timedelta(seconds=10) < timezone.now()):
-                self._get_customer_token(customer_id)
-                self.frontend.cisco_umbrella_managed_org_customers_tokens[customer_id] = deepcopy(self.cisco_umbrella_managed_org_customers_tokens[customer_id])
-                self.frontend.save()
+                self._update_customer_token(customer_id)
             for log_type in log_types:
                 timestamp_field_name = f"app{customer_id}_{log_type}"
                 since = self.last_collected_timestamps.get(timestamp_field_name) or (timezone.now() - timedelta(days=1))
