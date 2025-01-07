@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [CISCO_UMBRELLA-MANAGED-ORG] New collector
+### Changed
+- [API_PARSER] [HARFANGLAB] truncate 'rule_content' and 'process_sigma_rule_content' fields if they have more than 16384 characters
 ### Fixed
 - [SYSTEM] [NODE] Uniformize editable fields on API and GUI
 - [HTML] [NODE] Show better field errors while editing Node parameters

@@ -83,9 +83,9 @@ class HarfangLabParser(ApiParser):
                     f'{self.harfanglab_host}/{self.VERSION}',
                     timeout=10,
                     proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                 )
-                assert response.status_code == 200
+                assert response.status_code == 200, "Error connecting to HarfangLab API"
 
             return True
 
@@ -97,6 +97,7 @@ class HarfangLabParser(ApiParser):
         raw request doesn't handle the pagination natively
         '''
         self._connect()
+
 
         if method == "GET":
             response = self.session.get(url,
@@ -190,6 +191,8 @@ class HarfangLabParser(ApiParser):
 
         log['is_truncated_powershell'] = False
         log['is_frombase64string'] = False
+        log['is_truncated_rule_content'] = False
+        log['is_truncated_process_sigma_rule_content'] = False
 
         details_powershell = log.get('details_powershell', None)
         if details_powershell and isinstance(details_powershell, dict):
@@ -200,6 +203,16 @@ class HarfangLabParser(ApiParser):
                     log['is_truncated_powershell'] = True
                 if "FromBase64String" in powershell_command:
                     log['is_frombase64string'] = True
+
+        if details_rule_content := log.get('rule_content', None):
+            if len(details_rule_content) >= 16384:
+                log['rule_content'] = details_rule_content[:16384]
+                log['is_truncated_rule_content'] = True
+
+        if details_process_sigma_rule_content := log.get('process', {}).get('sigma_rule_content', None):
+            if len(details_process_sigma_rule_content) >= 16384:
+                log['process']['sigma_rule_content'] = details_process_sigma_rule_content[:16384]
+                log['is_truncated_process_sigma_rule_content'] = True
 
         return json.dumps(log)
 
