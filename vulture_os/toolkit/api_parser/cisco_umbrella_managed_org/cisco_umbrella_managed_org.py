@@ -113,7 +113,10 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
         if self.frontend:
             self.frontend.cisco_umbrella_managed_org_parent_access_token = self.cisco_umbrella_managed_org_parent_access_token
             self.frontend.cisco_umbrella_managed_org_parent_expires_at = self.cisco_umbrella_managed_org_parent_expires_at
-            self.frontend.save()
+            self.frontend.save(update_fields=[
+                'cisco_umbrella_managed_org_parent_access_token',
+                'cisco_umbrella_managed_org_parent_expires_at'
+            ])
 
     def _get_customers_id(self, timeout=10):
 
@@ -171,7 +174,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
 
         if self.frontend:
             self.frontend.cisco_umbrella_managed_org_customers_tokens[customer_id] = deepcopy(self.cisco_umbrella_managed_org_customers_tokens[customer_id])
-            self.frontend.save()
+            self.frontend.save(update_fields=['cisco_umbrella_managed_org_customers_tokens'])
 
     def test(self):
         result = []
@@ -259,7 +262,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                 self._update_customer_token(customer_id)
             for log_type in log_types:
                 timestamp_field_name = f"app{customer_id}_{log_type}"
-                since = self.last_collected_timestamps.get(timestamp_field_name) or (timezone.now() - timedelta(days=1))
+                since = self.last_collected_timestamps.get(timestamp_field_name) or (timezone.now() - timedelta(hours=1))
                 to = min(timezone.now(), since + timedelta(hours=24))
                 logger.info(f"[{__parser__}]:execute: getting {log_type} logs from {since} to {to}, for organization {customer_id}", extra={'frontend': str(self.frontend)})
                 index = 0
@@ -280,11 +283,10 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                     timestamp = logs[-1]['timestamp']/1000
                     self.last_collected_timestamps[timestamp_field_name] = datetime.fromtimestamp(timestamp, tz=timezone.utc)
                 elif index > 0:
-                    # All logs have been recovered, the parser can be stopped
+                    # All logs have been recovered
                     self.last_collected_timestamps[timestamp_field_name] = to
-                    break
                 elif since < timezone.now() - timedelta(hours=24):
                     self.last_collected_timestamps[timestamp_field_name] = since + timedelta(hours=1)
-                self.frontend.save()
+                logger.debug(f"[{__parser__}]:execute: New current timestamp is {self.last_collected_timestamps[timestamp_field_name]} (customer {customer_id}, type {log_type})", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
