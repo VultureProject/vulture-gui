@@ -2043,6 +2043,43 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-12 api_clients_row" id="api_cisco_umbrella_managed_org_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_api_key.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cisco_umbrella_managed_org_api_key }}
+                            {{ form.cisco_umbrella_managed_org_api_key.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_secret_key.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cisco_umbrella_managed_org_secret_key }}
+                            {{ form.cisco_umbrella_managed_org_secret_key.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_customers_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cisco_umbrella_managed_org_customers_id }}
+                            {{ form.cisco_umbrella_managed_org_customers_id.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_get_dns.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cisco_umbrella_managed_org_get_dns }}
+                            {{ form.cisco_umbrella_managed_org_get_dns.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.cisco_umbrella_managed_org_get_proxy.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.cisco_umbrella_managed_org_get_proxy }}
+                            {{ form.cisco_umbrella_managed_org_get_proxy.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
