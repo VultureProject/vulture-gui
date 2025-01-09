@@ -465,26 +465,25 @@ class Node(models.Model):
             if is_valid_ip4(ip):
                 route_ipv4 = default_logom_nat_ipv4
                 # Get the facultative IPv4 route for IP
-                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
-                if not is_loopback(ip):
-                    success, reply = get_route_interface(destination=ip)
-                    if success:
-                        route_ipv4 = f"({reply})"
+                success, reply = get_route_interface(destination=ip)
+                # Don't use loopback interfaces, IPs may not be assigned yet
+                if success and not is_loopback(reply):
+                    route_ipv4 = f"({reply})"
 
             if is_valid_ip6(ip):
                 route_ipv6 = default_logom_nat_ipv6
                 # Get the facultative IPv6 route for IP
-                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
-                if not is_loopback(ip):
-                    success, reply = get_route_interface(destination=ip, ip6=True)
-                    if success:
-                        # Restrict NAT to global IPv6 (disable round-robin using link-local address)
-                        route_ipv6 = f"({reply}:0)"
+                success, reply = get_route_interface(destination=ip, ip6=True)
+                # Don't use loopback interfaces, IPs may not be assigned yet
+                if success and not is_loopback(reply):
+                    # Restrict NAT to global IPv6 (disable round-robin using link-local address)
+                    route_ipv6 = f"({reply}:0)"
 
             # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
             if is_valid_hostname(ip):
                 success, reply = get_route_interface(ip)
-                if success:
+                # Don't use loopback interfaces, IPs may not be assigned yet
+                if success and not is_loopback(reply):
                     route_ipv4 = f"({reply})"
                 success, reply = get_route_interface(ip, ip6=True)
                 if success:
@@ -528,29 +527,29 @@ class Node(models.Model):
             if is_valid_ip4(ip):
                 route_ipv4 = default_logom_nat_ipv4
                 # Get the facultative IPv4 route for IP
-                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
-                if not is_loopback(ip):
-                    success, reply = get_route_interface(destination=ip)
-                    if success:
-                        route_ipv4 = f"({reply})"
+                success, reply = get_route_interface(destination=ip)
+                # Don't use loopback interfaces, IPs may not be assigned yet
+                if success and not is_loopback(reply):
+                    route_ipv4 = f"({reply})"
 
             if is_valid_ip6(ip):
                 route_ipv6 = default_logom_nat_ipv6
                 # Get the facultative IPv6 route for IP
-                # Except for loopback addresses (cannot use loopback interfaces as their IP is defined late during boot)
-                if not is_loopback(ip):
-                    success, reply = get_route_interface(destination=ip, ip6=True)
-                    if success:
-                        # Restrict NAT to global IPv6 (disable round-robin using link-local address)
-                        route_ipv6 = f"({reply}:0)"
+                success, reply = get_route_interface(destination=ip, ip6=True)
+                # Don't use loopback interfaces, IPs may not be assigned yet
+                if success and not is_loopback(reply):
+                    # Restrict NAT to global IPv6 (disable round-robin using link-local address)
+                    route_ipv6 = f"({reply}:0)"
 
             # Only add hostname explicit routes, as it needs to be resolved to be present in PF configuration
             if is_valid_hostname(ip):
                 success, reply = get_route_interface(ip)
-                if success:
+                # Don't use loopback interfaces, IPs may not be assigned yet
+                if success and not is_loopback(reply):
                     route_ipv4 = f"({reply})"
                 success, reply = get_route_interface(ip, ip6=True)
-                if success:
+                # Don't use loopback interfaces, IPs may not be assigned yet
+                if success and not is_loopback(reply):
                     # Restrict NAT to global IPv6 (disable round-robin using link-local address)
                     route_ipv6 = f"({reply}:0)"
 
