@@ -30,7 +30,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.translation import gettext_lazy as _
 from gui.decorators.apicall import api_need_key
-from system.pki.views import tls_profile_edit
+from system.pki.views import tls_profile_edit, pki_edit, pki_delete
 from django.views.generic.base import View
 from django.conf import settings
 import logging
@@ -81,9 +81,9 @@ def pki_issue_cert(request):
 @method_decorator(csrf_exempt, name="dispatch")
 class PKIView(View):
     @api_need_key("cluster_api_key")
-    def get(self, request):
+    def get(self, request, object_id=None):
         try:
-            object_id = request.GET.get('object_id')
+            object_id = request.GET.get('object_id', object_id)
             name = request.GET.get('name')
             fields = request.GET.getlist('fields') or None
             if object_id:
@@ -92,7 +92,7 @@ class PKIView(View):
                 ret = X509Certificate.objects.get(name=name).to_dict(fields=fields)
             else:
                 ret = [p.to_dict(fields=fields) for p in X509Certificate.objects.all()]
-            
+
             return JsonResponse({
                 "data": ret
             })
@@ -101,15 +101,66 @@ class PKIView(View):
             return JsonResponse({
                 "error": _("Object does not exist")
             }, status=404)
-        
+
         except Exception as e:
             logger.critical(e, exc_info=1)
             error = _("An error has occurred")
             if settings.DEV_MODE:
                 error = str(e)
-            
+
             return JsonResponse({
                 "error": error
+            }, status=500)
+
+    @api_need_key('cluster_api_key')
+    def put(self, request, object_id):
+        try:
+            return pki_edit(request, object_id, api=True)
+        except X509Certificate.DoesNotExist:
+            return JsonResponse({
+                "error": _("Object does not exist")
+            }, status=404)
+
+        except Exception as err:
+            logger.critical(err, exc_info=1)
+            error = _("An error has occurred")
+            if settings.DEV_MODE:
+                error = str(err)
+
+            return JsonResponse({
+                "error": error
+            }, status=500)
+
+    @api_need_key('cluster_api_key')
+    def post(self, request):
+        try:
+            return pki_edit(request, api=True)
+
+        except Exception as err:
+            logger.critical(err, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(err)
+
+            return JsonResponse({
+                "error": error
+            }, status=500)
+
+    @api_need_key("cluster_api_key")
+    def delete(self, request, object_id):
+        try:
+            return pki_delete(request, object_id, api=True)
+
+        except Exception as e:
+            logger.critical(e, exc_info=1)
+            error = _("An error has occurred")
+
+            if settings.DEV_MODE:
+                error = str(e)
+
+            return JsonResponse({
+                'error': error
             }, status=500)
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -126,7 +177,7 @@ class TLSProfileApiView(View):
                 ret = TLSProfile.objects.get(name=name).to_dict(fields=fields)
             else:
                 ret = [p.to_dict(fields=fields) for p in TLSProfile.objects.all()]
-            
+
             return JsonResponse({
                 "data": ret
             })
@@ -135,17 +186,17 @@ class TLSProfileApiView(View):
             return JsonResponse({
                 "error": _("Object does not exist")
             }, status=404)
-        
+
         except Exception as e:
             logger.critical(e, exc_info=1)
             error = _("An error has occurred")
             if settings.DEV_MODE:
                 error = str(e)
-            
+
             return JsonResponse({
                 "error": error
             }, status=500)
-        
+
     @api_need_key('cluster_api_key')
     def put(self, request, object_id):
         try:
@@ -154,13 +205,13 @@ class TLSProfileApiView(View):
             return JsonResponse({
                 "error": _("Object does not exist")
             }, status=404)
-        
+
         except Exception as err:
             logger.critical(err, exc_info=1)
             error = _("An error has occurred")
             if settings.DEV_MODE:
                 error = str(err)
-            
+
             return JsonResponse({
                 "error": error
             }, status=500)
@@ -176,11 +227,11 @@ class TLSProfileApiView(View):
 
             if settings.DEV_MODE:
                 error = str(err)
-            
+
             return JsonResponse({
                 "error": error
             }, status=500)
-     
+
     @api_need_key("cluster_api_key")
     def delete(self, request, object_id):
         try:
