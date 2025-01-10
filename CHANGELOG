@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CISCO_UMBRELLA-MANAGED-ORG] New collector
 ### Fixed
 - [SYSTEM] [NODE] Uniformize editable fields on API and GUI
+- [HTML] [NODE] Show better field errors while editing Node parameters
 
 
 ## [2.18.0] - 2024-12-18

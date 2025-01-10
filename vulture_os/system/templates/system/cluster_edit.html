@@ -35,7 +35,14 @@
                 </div>
               {% endif %}
               {# Print form errors correctly #}
-              {{ form.errors|safe }}
+              {% if form.non_field_errors %}
+              <div class="alert alert-danger alert-dismissible">
+                <h4><i class="icon fa fa-ban"></i> {% translate "Form errors" %} </h4>
+                <div class="tab-content no-padding">
+                  {{ form.non_field_errors|safe }}
+                </div>
+              </div>
+              {% endif %}
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "Main settings" %}</a></li>
@@ -51,7 +58,7 @@
                           <label class="col-sm-4 control-label">{% translate "Hostname" %}</label>
                           <div class="col-sm-5">
                           {{form.name}}
-                          {{form.name.errors}}
+                          {{form.name.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -62,7 +69,7 @@
                           <label class="col-sm-4 control-label">{{form.pstats_forwarders.label}}</label>
                           <div class="col-sm-5">
                             {{form.pstats_forwarders}}
-                            {{form.pstats_forwarders.errors}}
+                            {{form.pstats_forwarders.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -75,7 +82,7 @@
                           <label class="col-sm-4 control-label">{% translate "Internet IP Address" %}</label>
                           <div class="col-sm-5">
                           {{form.internet_ip}}
-                          {{form.internet_ip.errors}}
+                          {{form.internet_ip.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -86,7 +93,7 @@
                           <label class="col-sm-4 control-label">{% translate "InterCluster IP Address" %}</label>
                           <div class="col-sm-5">
                           {{form.management_ip}}
-                          {{form.management_ip.errors}}
+                          {{form.management_ip.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -97,7 +104,7 @@
                           <label class="col-sm-4 control-label">{% translate "Backends outgoing IP Address masquerading" %}</label>
                           <div class="col-sm-5">
                           {{form.backends_outgoing_ip}}
-                          {{form.backends_outgoing_ip.errors}}
+                          {{form.backends_outgoing_ip.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -108,7 +115,7 @@
                           <label class="col-sm-4 control-label">{% translate "Log forwarders IP Address masquerading" %}</label>
                           <div class="col-sm-5">
                           {{form.logom_outgoing_ip}}
-                          {{form.logom_outgoing_ip.errors}}
+                          {{form.logom_outgoing_ip.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -119,7 +126,7 @@
                           <label class="col-sm-4 control-label">{% translate "Default router" %}</label>
                           <div class="col-sm-5">
                           {{form.gateway}}
-                          {{form.gateway.errors}}
+                          {{form.gateway.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -130,7 +137,7 @@
                           <label class="col-sm-4 control-label">{% translate "Default IPV6 router" %}</label>
                           <div class="col-sm-5">
                           {{form.gateway_ipv6}}
-                          {{form.gateway_ipv6.errors}}
+                          {{form.gateway_ipv6.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -141,7 +148,7 @@
                           <label class="col-sm-4 control-label">{% translate "Static network routes" %}</label>
                           <div class="col-sm-5">
                           {{form.static_routes}}
-                          {{form.static_routes.errors}}
+                          {{form.static_routes.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -165,7 +172,7 @@
                           <label class="col-sm-4 control-label">{% translate "Max. entries for PF state table" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_limit_states}}
-                          {{form.pf_limit_states.errors}}
+                          {{form.pf_limit_states.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -176,7 +183,7 @@
                           <label class="col-sm-4 control-label">{% translate "Max. entries for PF packet reassembly" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_limit_frags}}
-                          {{form.pf_limit_frags.errors}}
+                          {{form.pf_limit_frags.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -187,7 +194,7 @@
                           <label class="col-sm-4 control-label">{% translate "Max. entries for PF source tracking" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_limit_src}}
-                          {{form.pf_limit_src.errors}}
+                          {{form.pf_limit_src.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -205,7 +212,7 @@
                           <label class="col-sm-4 control-label">{% translate "Custom PF initial parameters configuration" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_custom_param_config}}
-                          {{form.pf_custom_param_config.errors}}
+                          {{form.pf_custom_param_config.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -216,7 +223,7 @@
                           <label class="col-sm-4 control-label">{% translate "Custom PF NAT Configuration" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_custom_nat_config}}
-                          {{form.pf_custom_nat_config.errors}}
+                          {{form.pf_custom_nat_config.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -227,7 +234,7 @@
                           <label class="col-sm-4 control-label">{% translate "Custom PF RDR Configuration" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_custom_rdr_config}}
-                          {{form.pf_custom_rdr_config.errors}}
+                          {{form.pf_custom_rdr_config.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -238,7 +245,7 @@
                           <label class="col-sm-4 control-label">{% translate "Custom PF Configuration" %}</label>
                           <div class="col-sm-5">
                           {{form.pf_custom_config}}
-                          {{form.pf_custom_config.errors}}
+                          {{form.pf_custom_config.errors|safe}}
                           </div>
                         </div>
                       </div>
