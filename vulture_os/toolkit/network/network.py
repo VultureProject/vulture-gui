@@ -83,11 +83,8 @@ def is_valid_ip6(ip: str) -> bool:
 def is_valid_ip(ip: str) -> bool:
     return is_valid_ip4(ip) or is_valid_ip6(ip)
 
-def is_loopback(ip: str) -> bool:
-    try:
-        return ip_address(ip).is_loopback
-    except ValueError:
-        return False
+def is_loopback(name: str) -> bool:
+    return name.startswith("lo")
 
 def is_valid_hostname(hostname: str) -> bool:
     # Solution taken from this SO answer: https://stackoverflow.com/a/33214423
