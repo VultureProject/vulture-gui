@@ -25,6 +25,7 @@ __parser__ = 'Beyondtrust PRA'
 
 import json
 import logging
+from copy import deepcopy
 
 import requests
 import xmltodict
@@ -147,7 +148,7 @@ class BeyondtrustPRAParser(ApiParser):
         # Get the last 12 hours
         since = timezone.now() - timedelta(hours=12)
         try:
-            logs, _ = self.get_logs("reporting", "Team", since)
+            logs, _ = self.get_logs("reporting", "AccessSession", since)
 
             return {
                 "status": True,
@@ -181,17 +182,41 @@ class BeyondtrustPRAParser(ApiParser):
 
         return formated_logs
 
-    @staticmethod
-    def format_access_session_logs(logs):
+    def format_event_value(self, event):
+        child_session_details = deepcopy(event)
+
+        if 'data' in event:
+            data = {}
+            event_value = event['data']['value']
+            logger.debug(event_value, extra={'frontend': str(self.frontend)})
+
+            if isinstance(event_value, list):
+                for elem in event_value:
+                    data[elem['@name']] = elem['@value']
+            elif isinstance(event_value, dict):
+                data[event_value['@name']] = event_value['@value']
+            child_session_details['data'] = data
+
+        return child_session_details
+
+    def format_access_session_logs(self, logs):
         formated_logs = []
         sessions_logs = logs['session_list'].get('session', [])
         if not isinstance(sessions_logs, list):
             sessions_logs = [sessions_logs]
 
         for log in sessions_logs:
-            del log['session_details']  # Avoid too long session log
             log["@timestamp"] = log["start_time"]["@timestamp"]
-            formated_logs.append(log)
+
+            if not log.get('session_details', {}).get('event'):
+                formated_logs.append(log)
+                continue
+
+            for event in log['session_details']['event']:
+                child_log = deepcopy(log)
+                child_log['session_details'] = self.format_event_value(event)
+                formated_logs.append(child_log)
+
         return formated_logs
 
     @staticmethod
