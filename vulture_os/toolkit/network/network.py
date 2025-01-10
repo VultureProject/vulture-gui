@@ -363,9 +363,6 @@ def destroy_virtual_interface(logger, iface_name):
     :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-    from system.cluster.models import Cluster
-    node = Cluster.get_current_node()
-
     ret = True
 
     logger.info(f"Node::destroy_virtual_interface: destroying interface {iface_name}")
@@ -378,15 +375,12 @@ def destroy_virtual_interface(logger, iface_name):
 
 
 def create_virtual_interface(logger, iface_name):
-    """ create an interface
+    """ Create an interface
 
     :param logger: A logger handler
     :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-    from system.cluster.models import Cluster
-    node = Cluster.get_current_node()
-
     ret = True
 
     logger.info(f"Node::create_virtual_interface: creating interface {iface_name}")
@@ -396,6 +390,16 @@ def create_virtual_interface(logger, iface_name):
         ret = False
 
     return ret
+
+
+def recreate_virtual_interface(logger, iface_name):
+    """ Recreate an interface
+
+    :param logger: A logger handler
+    :param iface_name: a string representing the exact name of the interface (as seen by the system)
+    :return: True / False
+    """
+    return destroy_virtual_interface(logger, iface_name) and create_virtual_interface(logger, iface_name)
 
 
 def write_management_ips(logger):
