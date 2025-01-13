@@ -112,20 +112,30 @@ def pki_revoke(request, object_id):
     return HttpResponseRedirect('/system/pki/')
 
 
-def pki_edit(request, object_id=None):
+def pki_edit(request, object_id=None, api=False):
 
     x509_model = None
     if object_id:
         try:
             x509_model = X509Certificate.objects.get(pk=object_id)
         except ObjectDoesNotExist:
+            if api:
+                return JsonResponse({'error': _("Object does not exist.")}, status=404)
             return HttpResponseNotFound(_("Object not found"))
 
     """ Default form is External Certificate """
-    form = X509ExternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
+    if api:
+        # Don't allow setting internal or letsencrypt certs through APIs
+        request.JSON['type'] = "external"
+        request.JSON["is_external"] = True
+        cert_type = request.JSON.get("type")
+        form = X509ExternalCertificateForm(request.JSON or None, instance=x509_model, error_class=DivErrorList)
+    else:
+        cert_type = request.POST.get("type")
+        form = X509ExternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
 
     """ Internal Vulture Certificate """
-    if request.method == "POST" and request.POST.get('type') in ("internal", "letsencrypt"):
+    if request.method in ("POST", "PUT") and cert_type in ("internal", "letsencrypt"):
         form = X509InternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
         if form.is_valid():
             cn = form.cleaned_data.get('cn')
@@ -140,7 +150,7 @@ def pki_edit(request, object_id=None):
         else:
             form = X509InternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
 
-    elif request.method == "POST" and form.is_valid() and request.POST.get("type") == "external":
+    elif request.method in ("POST", "PUT") and form.is_valid() and cert_type == "external":
 
         """ External certificate """
         pki = form.save(commit=False)
@@ -151,13 +161,18 @@ def pki_edit(request, object_id=None):
         """ Reload HAProxy on certificate change """
         if X509Certificate.objects.filter(certificate_of__listener__isnull=False, id=pki.id).exists() or X509Certificate.objects.filter(certificate_of__server__isnull=False, id=pki.id).exists():
             Cluster.api_request("services.haproxy.haproxy.reload_service")
-            return HttpResponseRedirect('/system/pki/')
 
+        if api:
+            return build_response(pki.pk, "api.system.pki", [])
         return HttpResponseRedirect('/system/pki/')
+
+    if api:
+        logger.error("PKI api form error : {}".format(form.errors.get_json_data()))
+        return JsonResponse(form.errors.get_json_data(), status=400)
 
     return render(request, 'system/pki_edit.html', {
         'form': form,
-        'is_external': request.POST.get('type') == 'external'
+        'is_external': cert_type == 'external'
     })
 
 
@@ -194,14 +209,19 @@ def pki_delete(request, object_id, api=False):
             if api:
                 return JsonResponse({'status': False,
                                      'error': error}, status=500)
-    if api:
-        return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
 
     if tls_profiles := cert.certificate_of.all():
         for profile in tls_profiles:
             used_by = set(listener.frontend for listener in profile.listener_set.all()).union(set(server.backend for server in profile.server_set.all()))
     else:
         used_by = []
+
+    if api:
+        if used_by:
+            error = f"Object is currently used by {used_by}, cannot be deleted"
+            logger.error(f"Error trying to delete X509Certificate '{cert.name}': {error}")
+            return JsonResponse({'status': False, 'error': error, 'protected': True}, status=409)
+        return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
 
     # If GET request or POST request and API/Delete failure
     return render(request, 'generic_delete.html', {
