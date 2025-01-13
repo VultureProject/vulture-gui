@@ -126,8 +126,8 @@ class SentinelOneSingularityMobileParser(ApiParser):
             }
 
     def execute(self):
-        since = self.last_api_call or (datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(hours=24))
-        to = datetime.datetime.now(tz=datetime.timezone.utc)
+        since = self.last_api_call or (timezone.now() - datetime.timedelta(hours=24))
+        to = timezone.now()
         logger.debug(f'since: {since}\n to: {to}\n', extra={'frontend': str(self.frontend)})
 
         while since < to:
@@ -147,7 +147,7 @@ class SentinelOneSingularityMobileParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-            last_time = datetime.datetime.fromtimestamp(logs[-1]['timestamp'] // 1000, tz=datetime.timezone.utc)
+            last_time = datetime.datetime.fromtimestamp(logs[-1]['timestamp'] // 1000, tz=timezone.now().astimezone().tzinfo)
             since = last_time + datetime.timedelta(milliseconds=1)
             self.frontend.last_api_call = since
 
