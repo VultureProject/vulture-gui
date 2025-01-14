@@ -1252,6 +1252,13 @@ class Frontend(models.Model):
         help_text=_("Sentinel One Singularity Mobile API client secret"),
         default="",
     )
+    sentinel_one_singularity_mobile_access_token = models.TextField(
+        verbose_name = _("API current cached token"),
+        default = "",
+    )
+    sentinel_one_singularity_mobile_access_token_expiry = models.DateTimeField(
+        default=timezone.now
+    )
     # CSC DomainManager attributes
     csc_domainmanager_apikey = models.TextField(
         verbose_name = ("CSC DomainManager API Key"),

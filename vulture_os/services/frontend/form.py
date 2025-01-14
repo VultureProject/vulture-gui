@@ -521,7 +521,7 @@ class FrontendForm(ModelForm):
             'ms_sentinel_workspace': TextInput(attrs={'class': 'form-control'}),
             'sentinel_one_singularity_mobile_host': TextInput(attrs={'class': 'form-control'}),
             'sentinel_one_singularity_mobile_client_id': TextInput(attrs={'class': 'form-control'}),
-            'sentinel_one_singularity_mobile_client_secret': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_singularity_mobile_client_secret': TextInput(attrs={'type': "password", 'class': 'form-control'}),
             'proofpoint_pod_uri': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_pod_cluster_id': TextInput(attrs={'class': 'form-control'}),
             'proofpoint_pod_token': TextInput(attrs={'type': "password", 'class': 'form-control'}),
