@@ -174,8 +174,7 @@ class SentinelOneSingularityMobileParser(ApiParser):
             self.update_lock()
 
             if found > 0:
-                last_time = datetime.fromtimestamp(logs[-1]['timestamp'] // 1000,
-                                                            tz=timezone.now().astimezone().tzinfo)
+                last_time = datetime.fromtimestamp(logs[-1]['timestamp'] // 1000, tz=timezone.utc)
                 since = last_time + timedelta(milliseconds=1)
                 self.frontend.last_api_call = since
             elif self.last_api_call < timezone.now() - timedelta(hours=24):
