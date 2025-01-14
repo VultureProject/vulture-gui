@@ -177,13 +177,14 @@ class SentinelOneSingularityMobileParser(ApiParser):
                 last_time = datetime.fromtimestamp(logs[-1]['timestamp'] // 1000, tz=timezone.utc)
                 since = last_time + timedelta(milliseconds=1)
                 self.frontend.last_api_call = since
-            elif self.last_api_call < timezone.now() - timedelta(hours=24):
+            elif self.last_api_call < (timezone.now() - timedelta(hours=24)):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
                 self.frontend.last_api_call += timedelta(hours=1)
                 logger.info(f"[{__parser__}]:execute: No recent alert found and last_api_call too old - "
                             f"setting it to {self.frontend.last_api_call}",
                             extra={'frontend': str(self.frontend)})
+                break
             else:
                 since = to
                 self.frontend.last_api_call = since
