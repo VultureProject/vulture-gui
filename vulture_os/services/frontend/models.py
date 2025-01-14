@@ -1236,6 +1236,29 @@ class Frontend(models.Model):
         help_text=_("Sentinel One Mobile API integration key"),
         default="",
     )
+    # Sentinel One Mobile attributes
+    sentinel_one_singularity_mobile_host = models.TextField(
+        verbose_name=_("Sentinel One Singularity Mobile API hostname"),
+        help_text=_("Sentinel One Singularity Mobile API hostname"),
+        default="xxx.mobile.sentinelone.net",
+    )
+    sentinel_one_singularity_mobile_client_id = models.TextField(
+        verbose_name=_("Sentinel One Singularity Mobile API client ID"),
+        help_text=_("Sentinel One Singularity Mobile API client ID"),
+        default="",
+    )
+    sentinel_one_singularity_mobile_client_secret = models.TextField(
+        verbose_name=_("Sentinel One Singularity Mobile API client secret"),
+        help_text=_("Sentinel One Singularity Mobile API client secret"),
+        default="",
+    )
+    sentinel_one_singularity_mobile_access_token = models.TextField(
+        verbose_name = _("API current cached token"),
+        default = "",
+    )
+    sentinel_one_singularity_mobile_access_token_expiry = models.DateTimeField(
+        default=timezone.now
+    )
     # CSC DomainManager attributes
     csc_domainmanager_apikey = models.TextField(
         verbose_name = ("CSC DomainManager API Key"),

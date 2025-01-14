@@ -74,6 +74,7 @@ from toolkit.api_parser.waf_barracuda.waf_barracuda import WAFBarracudaParser
 from toolkit.api_parser.beyondtrust_pra.beyondtrust_pra import BeyondtrustPRAParser
 from toolkit.api_parser.lockself.lockself import LockselfParser
 from toolkit.api_parser.cisco_umbrella_managed_org.cisco_umbrella_managed_org import CiscoUmbrellaManagedOrgParser
+from toolkit.api_parser.sentinel_one_singularity_mobile.sentinel_one_singularity_mobile import SentinelOneSingularityMobileParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -129,6 +130,7 @@ PARSER_LIST = {
     "beyondtrust_pra": BeyondtrustPRAParser,
     "lockself": LockselfParser,
     "cisco_umbrella_managed_org": CiscoUmbrellaManagedOrgParser,
+    "sentinel_one_singularity_mobile": SentinelOneSingularityMobileParser,
 }
 
 class ParserDoesNotExist(Exception):

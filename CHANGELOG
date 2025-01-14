@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [CISCO_UMBRELLA-MANAGED-ORG] New collector
+- [API_PARSER] [SENTINEL ONE SINGULARITY MOBILE] New collector
 - [SYSTEM] [PKI] Add POST, PUT and DELETE requests for APIs
 ### Changed
 - [API_PARSER] [HARFANGLAB] truncate 'rule_content' and 'process_sigma_rule_content' fields if they have more than 16384 characters
