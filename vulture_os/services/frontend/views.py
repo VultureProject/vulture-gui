@@ -141,6 +141,8 @@ def frontend_delete(request, object_id, api=False):
         # that is, if the frontend is associated with a policy with at least one filter with buffering configured
         was_darwin_buffered = DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists()
 
+        used_by = set(frontend.userauthentication_set.all()).union(set(frontend.workflow_set.all()))
+
         try:
             # If POST request and no error: delete frontend
             frontend.delete()
@@ -182,7 +184,7 @@ def frontend_delete(request, object_id, api=False):
         except ProtectedError as e:
             logger.error("Error trying to delete Frontend '{}': Object is currently used :".format(frontend.name))
             logger.exception(e)
-            error = "Object is currently used by a Workflow, cannot be deleted"
+            error = f"Object is currently used by {used_by}, cannot be deleted"
 
             if api:
                 return JsonResponse({
@@ -207,6 +209,7 @@ def frontend_delete(request, object_id, api=False):
     return render(request, 'generic_delete.html', {
         'obj_inst': frontend,
         'related_objs': listeners,
+        'used_by': used_by,
         'error': error,
         'redirect_url': '/services/frontend/',
         'menu_name': 'Services -> Listeners -> Delete'
