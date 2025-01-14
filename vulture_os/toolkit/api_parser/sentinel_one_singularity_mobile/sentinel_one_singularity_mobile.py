@@ -185,9 +185,10 @@ class SentinelOneSingularityMobileParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: No recent alert found and last_api_call too old - "
                             f"setting it to {self.frontend.last_api_call}",
                             extra={'frontend': str(self.frontend)})
-            logger.debug(f'[{__parser__}]:execute: frontend last_api_call: {self.frontend.last_api_call}', extra={'frontend': str(self.frontend)})
+            else:
+                since = to
+                self.frontend.last_api_call = since
 
-            if found < self.SIZE:
-                break
+            logger.debug(f'[{__parser__}]:execute: frontend last_api_call: {self.frontend.last_api_call}', extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
