@@ -15,10 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [API_PARSER] [HARFANGLAB] truncate 'rule_content' and 'process_sigma_rule_content' fields if they have more than 16384 characters
 - [API_PARSER] [API_BEYONDTRUST_PRA] Add fields
+- [API_PARSER] [NETSKOPE] Add the possiblity to retrieve 3 new kinds of logs
 ### Fixed
 - [SYSTEM] [NODE] Uniformize editable fields on API and GUI
 - [HTML] [NODE] Show better field errors while editing Node parameters
 - [NETWORK] Avoid defining NATing routes using loopback interfaces
+- [API_PARSER] [NETSKOPE] Remove duplicated logs
 
 
 ## [2.18.0] - 2024-12-18

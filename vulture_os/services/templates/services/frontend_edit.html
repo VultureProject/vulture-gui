@@ -1421,6 +1421,27 @@
                             {{ form.netskope_apikey.errors|safe }}
                           </div>
                         </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.netskope_get_page_logs.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.netskope_get_page_logs }}
+                            {{ form.netskope_get_page_logs.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.netskope_get_network_logs.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.netskope_get_network_logs }}
+                            {{ form.netskope_get_network_logs.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.netskope_get_application_logs.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.netskope_get_application_logs }}
+                            {{ form.netskope_get_application_logs.errors|safe }}
+                          </div>
+                        </div>
                       </div>
                       <div class="col-md-12 api_clients_row" id="api_defender_row">
                         <div class="form-group">
