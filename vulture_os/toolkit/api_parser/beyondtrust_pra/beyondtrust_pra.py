@@ -148,7 +148,7 @@ class BeyondtrustPRAParser(ApiParser):
         # Get the last 12 hours
         since = timezone.now() - timedelta(hours=12)
         try:
-            logs, _ = self.get_logs("reporting", "AccessSession", since)
+            logs, _ = self.get_logs("reporting", "Team", since)
 
             return {
                 "status": True,
