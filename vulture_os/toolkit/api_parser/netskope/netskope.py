@@ -159,10 +159,11 @@ class NetskopeParser(ApiParser):
                     break
                 # Remove duplicated logs
                 for new_log in new_logs:
-                    if new_log.get("_event_id", "") not in log_ids:
+                    if "_event_id" not in new_log:
                         logs.append(new_log)
-                        if new_log.get("_event_id", "") != "":
-                            log_ids.add(new_log["_event_id"])
+                    elif new_log["_event_id"] not in log_ids:
+                        log_ids.add(new_log["_event_id"])
+                        logs.append(new_log)
                 offset += len(new_logs)
 
             if logtype == "alert":
