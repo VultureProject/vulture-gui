@@ -127,8 +127,6 @@ class NetskopeParser(ApiParser):
         return result
 
     def parse_alert_log(self, log):
-        if log['timestamp'] > self.upper_timestamp:
-            self.upper_timestamp = log['timestamp']
         log['alert_type'] = log['alert_type'].lower()
         return json.dumps(log)
 
@@ -142,7 +140,6 @@ class NetskopeParser(ApiParser):
             logtypes.append("application")
         for logtype in logtypes:
             since = self.last_collected_timestamps.get(logtype, self.last_api_call) or (timezone.now() - timedelta(hours=24))
-            self.upper_timestamp = since.timestamp()
             to = min(timezone.now(), since + timedelta(hours=24))
             offset = 0
             logs = []
@@ -161,10 +158,11 @@ class NetskopeParser(ApiParser):
                                 extra={'frontend': str(self.frontend)})
                     break
                 # Remove duplicated logs
-                log_ids = log_ids.union(set([log.get("_event_id", "") for log in logs]))
                 for new_log in new_logs:
                     if new_log.get("_event_id", "") not in log_ids:
                         logs.append(new_log)
+                        if new_log.get("_event_id", "") != "":
+                            log_ids.add(new_log["_event_id"])
                 offset += len(new_logs)
 
             if logtype == "alert":
