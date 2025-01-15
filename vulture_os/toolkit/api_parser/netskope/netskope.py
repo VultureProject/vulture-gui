@@ -146,6 +146,7 @@ class NetskopeParser(ApiParser):
             to = min(timezone.now(), since + timedelta(hours=24))
             offset = 0
             logs = []
+            log_ids = set()
 
             while offset%self.BULK_SIZE == 0:
 
@@ -160,7 +161,7 @@ class NetskopeParser(ApiParser):
                                 extra={'frontend': str(self.frontend)})
                     break
                 # Remove duplicated logs
-                log_ids = [log.get("_event_id", "") for log in logs]
+                log_ids = log_ids.union(set([log.get("_event_id", "") for log in logs]))
                 for new_log in new_logs:
                     if new_log.get("_event_id", "") not in log_ids:
                         logs.append(new_log)
