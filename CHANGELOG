@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.19.0] - 2025-01-16
 ### Added
 - [API_PARSER] [CISCO_UMBRELLA-MANAGED-ORG] New collector
 - [API_PARSER] [SENTINEL ONE SINGULARITY MOBILE] New collector
