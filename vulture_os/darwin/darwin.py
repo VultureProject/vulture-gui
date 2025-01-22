@@ -56,7 +56,6 @@ class Darwin:
                     'link': 'policy',
                     'text': _('Darwin Engine'),
                     'url': '/darwin/policy/',
-                    'state': DarwinService().last_status()[0]
                 }
             ]
         }

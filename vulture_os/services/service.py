@@ -93,17 +93,14 @@ class Service:
                 'link': 'frontend',
                 'text': 'Listeners',
                 'url': '/services/frontend/',
-                'state': self.last_status(service_name='haproxy')[0]
             }, {
                 'link': 'strongswan',
                 'text': 'IPSEC Client',
                 'url': '/services/strongswan/',
-                'state': self.last_status(service_name='strongswan')[0]
             }, {
                 'link': 'openvpn',
                 'text': 'VPNSSL Client',
                 'url': '/services/openvpn/',
-                'state': self.last_status(service_name='openvpn')[0]
             }
             ]
         }
