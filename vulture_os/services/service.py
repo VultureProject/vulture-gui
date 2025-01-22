@@ -68,10 +68,10 @@ JAIL_SERVICES = {
 class Service:
     """ Base class for all service classes """
 
-    def __init__(self):
+    def __init__(self, service_name=""):
         super().__init__()
         self.model = None
-        self.service_name = ""
+        self.service_name = service_name
         self.owners = "root:wheel"
         self.perms = "640"
         self.jinja_template = {
@@ -110,23 +110,20 @@ class Service:
 
         return MENU
 
-    def _exec_cmd(self, cmd, service_name="", *args):
-        if not service_name:
-            service_name = self.service_name
-
-        jail_name = JAIL_SERVICES.get(service_name)
+    def _exec_cmd(self, cmd, *args):
+        jail_name = JAIL_SERVICES.get(self.service_name)
 
         if jail_name:
-            command = ['/usr/local/bin/sudo', '/usr/sbin/jexec', jail_name, '/usr/sbin/service', service_name, cmd, *args]
+            command = ['/usr/local/bin/sudo', '/usr/sbin/jexec', jail_name, '/usr/sbin/service', self.service_name, cmd, *args]
         else:
-            command = ['/usr/local/bin/sudo', '/usr/sbin/service', service_name, cmd, *args]
+            command = ['/usr/local/bin/sudo', '/usr/sbin/service', self.service_name, cmd, *args]
 
         proc = Popen(command, stdout=PIPE, stderr=PIPE)
         success, error = proc.communicate()
         return success.decode('utf8'), error.decode('utf8'), proc.returncode
 
     def start(self, *args):
-        stdout, stderr, code = self._exec_cmd('start', "", *args)
+        stdout, stderr, code = self._exec_cmd('start', *args)
 
         """ Haproxy returns stderr even if no failure - but return code = 0 """
         if stderr and code != 0:
@@ -134,18 +131,18 @@ class Service:
             if "sudo: no tty present and no askpass program specified" in stderr:
                 raise ServiceStartError("vlt-os don't have permissions to do so, Check /usr/local/etc/sudoers.",
                                         self.service_name)
-            # Si le service est deja demarre, ne pas raiser
+            # If the service is already running, do not raise
             if "{} already running?".format(self.service_name) not in stderr:
                 raise ServiceStartError(stderr, self.service_name, traceback=" ")
         logger.info("Service {} started: {}".format(self.service_name, stdout or stderr))
         return stdout or stderr
 
     def stop(self, *args):
-        response = self._exec_cmd('stop', "", *args)
+        response = self._exec_cmd('stop', *args)
         return response
 
     def restart(self, *args):
-        stdout, stderr, code = self._exec_cmd('restart', "", *args)
+        stdout, stderr, code = self._exec_cmd('restart', *args)
 
         """ Haproxy returns stderr even if no failure - but return code = 0 """
         if stderr and code != 0:
@@ -163,7 +160,7 @@ class Service:
         return stdout or stderr
 
     def reload(self, *args):
-        stdout, stderr, code = self._exec_cmd('reload', "", *args)
+        stdout, stderr, code = self._exec_cmd('reload', *args)
 
         if ("not running" in stdout) or ("not running" in stderr):
             logger.info("Cannot reload service {} cause it is not running. Starting-it...".format(self.service_name))
@@ -177,56 +174,50 @@ class Service:
             raise ServiceReloadError(stderr, self.service_name, traceback=" ")
         return stdout or stderr
 
-    def last_status(self, service_name="", node_name=""):
+    def last_status(self, node_name=""):
         """ Give last status of service by using Monitor object """
-        service_name2 = service_name or self.service_name
-
         # Status is not realtime: We read service's status from mongodb
         # Status has been set by the vultured daemon from the HOST
         # If there is no status for the last minute: Then status is UNKNOWN
         time_threshold = timezone.now() - datetime.timedelta(minutes=1)
         try:
-            # 'services__name': service_name2,
             query = {'date__gt': time_threshold}
             if node_name:
                 query['node__name'] = node_name
-            status = Monitor.objects.filter(**query).order_by('-date').first() \
-                            .services.filter(name=service_name2).first().status
+            status = Monitor.objects.filter(**query).order_by('-date').first()\
+                            .services.filter(name=self.service_name).first().status
         except Exception:
             status = "UNKNOWN"
 
         return status, ""
 
-    def status(self, service_name=""):
+    def status(self, *args):
         """
         Give status of service, and more if needed
-        :param service_name: Service name to use if different than self.service_name 
         :return: "DOWN"|"UP"|"UNKNOWN"|"ERROR", message information about status
         """
-        service_name2 = service_name or self.service_name
-
         # Executing service service_name status as vlt-os sudo
-        infos, errors, code = self._exec_cmd('onestatus', service_name2)
+        infos, errors, code = self._exec_cmd('onestatus', *args)
 
         status = "UNKNOWN"
         if infos:  # STDOUT -> service (not) running
-            logger.debug("[{}] Status of service: {}".format(service_name2.upper(), infos.split('\n')[0]))
-            m = re_search('{} is (not )?running'.format(service_name2), infos)
+            logger.debug("[{}] Status of service: {}".format(self.service_name.upper(), infos.split('\n')[0]))
+            m = re_search('{} is (not )?running'.format(self.service_name), infos)
             if m:
                 status = "UP" if not m.group(1) else "DOWN"
-                logger.debug("[{}] Status successfully retrieved : {}".format(service_name2.upper(), status))
-            elif service_name2 == "strongswan":
+                logger.debug("[{}] Status successfully retrieved : {}".format(self.service_name.upper(), status))
+            elif self.service_name == "strongswan":
                 match = re_search("Security Associations \((\d+) up, (\d+) connecting\)", infos)
                 if match:
                     status = "UP"
-            elif service_name2 == "filebeat":
+            elif self.service_name == "filebeat":
                 match = re_search("Filebeat \d+ running \d+", infos)
                 if match:
                     status = "UP"
                 elif re_search("Filebeat \d+ stopped", infos):
                     status = "DOWN"
             else:
-                logger.error("[{}] Status unknown, STDOUT='{}', STDERR='{}'".format(service_name2.upper(), infos,
+                logger.error("[{}] Status unknown, STDOUT='{}', STDERR='{}'".format(self.service_name.upper(), infos,
                                                                                     errors))
         elif errors:  # STDERR
             """ Something were wrong during service call"""
@@ -234,34 +225,32 @@ class Service:
             # Entry missing in /usr/local/etc/sudoers.d/vulture_sudoers
             if "sudo: no tty present and no askpass program specified" in errors:
                 infos = "User vlt-os don't have permissions to do \"service {} status\". " \
-                        "Check sudoers file.".format(service_name2.upper())
+                        "Check sudoers file.".format(self.service_name.upper())
             elif "does not exist in /etc/rc.d or the local startup" in errors:
                 infos = "It seems that the service {} is not installed (or script not executable)".format(
-                    service_name2)
-            elif service_name2 == "strongswan" and code == 1:
+                    self.service_name)
+            elif self.service_name == "strongswan" and code == 1:
                 status = "DOWN"
             else:
                 infos = "{}".format(str(errors))
 
             if infos:
-                logger.error("[{}] - Error getting status: '{}'".format(service_name2.upper(), str(infos)))
+                logger.error("[{}] - Error getting status: '{}'".format(self.service_name.upper(), str(infos)))
 
         else:  # If no stdout nor sterr
             """ Service status is unknown"""
-            logger.error("[{}] Status unknown, STDOUT and STDERR are empty.".format(service_name2.upper(), ))
-        logger.debug("[{}] Status of service: {}".format(service_name2.upper(), status))
+            logger.error("[{}] Status unknown, STDOUT and STDERR are empty.".format(self.service_name.upper(), ))
+        logger.debug("[{}] Status of service: {}".format(self.service_name.upper(), status))
         return status, infos
 
-    def set_rc_conf(self, yes_or_no, service_name=""):
+    def set_rc_conf(self, yes_or_no):
         """
         Set service_enable="YES" or "NO"
          in /RC_CONF_DIR/service
         :param  yes_or_no:  True if "YES", False if "NO"
-        :param  service_name:  Service name to use if different than self.service_name
         """
-        service_name2 = service_name or self.service_name
-        filename = "{}/{}".format(RC_CONF_DIR, service_name2)
-        write_conf(logger, [filename, "{}_enable=\"{}\"".format(service_name2, "YES" if yes_or_no else "NO"),
+        filename = "{}/{}".format(RC_CONF_DIR, self.service_name)
+        write_conf(logger, [filename, "{}_enable=\"{}\"".format(self.service_name, "YES" if yes_or_no else "NO"),
                             RC_CONF_OWNERS, RC_CONF_PERMS])
         return "{} successfully written.".format(filename)
 
