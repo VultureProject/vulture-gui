@@ -76,6 +76,7 @@ from toolkit.api_parser.lockself.lockself import LockselfParser
 from toolkit.api_parser.cisco_umbrella_managed_org.cisco_umbrella_managed_org import CiscoUmbrellaManagedOrgParser
 from toolkit.api_parser.sentinel_one_singularity_mobile.sentinel_one_singularity_mobile import SentinelOneSingularityMobileParser
 from toolkit.api_parser.catonetworks.catonetworks import CatonetworksParser
+from toolkit.api_parser.infoblox_threat_defense.infoblox_threat_defense import InfobloxThreatDefenseParser
 
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -133,6 +134,7 @@ PARSER_LIST = {
     "cisco_umbrella_managed_org": CiscoUmbrellaManagedOrgParser,
     "sentinel_one_singularity_mobile": SentinelOneSingularityMobileParser,
     "catonetworks": CatonetworksParser,
+    "infoblox_threat_defense": InfobloxThreatDefenseParser,
 }
 
 class ParserDoesNotExist(Exception):
