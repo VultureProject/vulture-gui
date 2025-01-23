@@ -101,18 +101,18 @@ def monitor():
             rsyslogd_status = get_service_status(RsyslogService)
             mon.services.add(rsyslogd_status)
         elif service == FilebeatService:
-            filebeat_status = service().status_service()
-            mon.services.add(get_service_status(FilebeatService))
+            filebeat_status = get_service_status(FilebeatService)
+            mon.services.add(filebeat_status)
         else:
             mon.services.add(get_service_status(service))
 
     """ Get status of Redis, Mongod and Sshd """
     # Instantiate mother class to get status easily
-    service = Service()
     for service_name in ("redis", "mongod", "sshd"):
+        service = Service(service_name)
         service_status = ServiceStatus.objects.filter(name=service_name).first() \
                          or ServiceStatus(name=service_name)
-        service_status.status = service.status(service_name)[0]
+        service_status.status = service.status()[0]
         mon.services.add(service_status)
 
     mon.save()
@@ -149,7 +149,9 @@ def monitor():
                 elif frontend.rsyslog_only_conf:
                     status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
                 elif frontend.filebeat_only_conf:
-                    status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(filebeat_status.get(str(frontend.id)), "STOP")
+                    filebeat_service = FilebeatService()
+                    filebeat_process_status = filebeat_service.status(frontend.pk)
+                    status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(filebeat_process_status[0], "STOP")
                 else:
                     status[node.name] = statuses.get("FRONTEND", {}).get(frontend.name, "ERROR")
                 logger.debug(f"Status of frontend '{frontend.name}': {status}")

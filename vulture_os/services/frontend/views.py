@@ -129,6 +129,9 @@ def frontend_delete(request, object_id, api=False):
         # Save frontend filename before delete-it
         frontend_filename = frontend.get_base_filename()
 
+        # Save Frontend id before deleting it
+        frontend_id = frontend.pk
+
         # Save rsyslog frontend conf filename
         # Whatever the type, delete the file because its name is its id
         rsyslog_filename = frontend.get_rsyslog_base_filename()  # if frontend.mode != "tcp" else ""
@@ -162,7 +165,7 @@ def frontend_delete(request, object_id, api=False):
 
                 # Delete Filebeat conf and restart if concerned
                 if filebeat_filename:
-                    node.api_request('services.filebeat.filebeat.stop_service', frontend.id)
+                    node.api_request('services.filebeat.filebeat.stop_service', frontend_id)
                     node.api_request('services.filebeat.filebeat.delete_conf', filebeat_filename)
 
                 # Reload darwin buffering if necessary
