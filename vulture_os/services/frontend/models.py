@@ -1467,6 +1467,31 @@ class Frontend(models.Model):
         help_text=_("Infoblox Threat Defense Token"),
         default="",
     )
+    # Beyondtrust Reportings attributes
+    beyondtrust_reportings_client_id = models.TextField(
+        verbose_name=_("Beyondtrust Reportings client id"),
+        help_text=_("Beyondtrust Reportings client id"),
+        default="",
+    )
+    beyondtrust_reportings_secret = models.TextField(
+        verbose_name=_("Beyondtrust Reportings secret"),
+        help_text=_("Beyondtrust Reportings secret"),
+        default="",
+    )
+    beyondtrust_reportings_host = models.TextField(
+        verbose_name=_("Beyondtrust Reportings host"),
+        help_text=_("Beyondtrust Reportings host"),
+        default="",
+    )
+    beyondtrust_reportings_api_token = models.JSONField(
+        default=dict
+    )
+    beyondtrust_reportings_get_support_session_logs = models.BooleanField(
+        verbose_name=_("Retrieve Beyondtrust Reportings SupportSession logs"),
+        help_text=_("Retrieve Beyondtrust Reportings SupportSession logs"),
+        default=False,
+    )
+
 
     @staticmethod
     def str_attrs():
