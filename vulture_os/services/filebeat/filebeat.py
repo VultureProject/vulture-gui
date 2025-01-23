@@ -38,7 +38,6 @@ from subprocess import CalledProcessError
 from system.exceptions import VultureSystemError
 
 # Extern modules imports
-from re import search as re_search
 from subprocess import check_output, PIPE
 
 # Logger configuration imports
@@ -73,32 +72,8 @@ class FilebeatService(Service):
     def __str__(self):
         return "Filebeat Service"
 
-    # Status inherited from Service class
-
     def get_conf_path(self, frontend=None):
         return frontend.get_filebeat_filename()
-
-    def status_service(self, *args):
-        """
-        Give status of filebeat service
-        :param args: Optionnal id of filebeat frontend
-        :return: "DOWN"|"UP"|"UNKNOWN", message information about status
-        """
-        # Warning : can raise ServiceError
-        status, infos = self.status(*args)
-        result = dict()
-        for info in infos.strip().split('\n'):
-            if match := re_search("Filebeat (\d+) running \d+", info):
-                status = "UP"
-            elif match := re_search("Filebeat (\d+) stopped", info):
-                status = "DOWN"
-            else:
-                logger.error(f"[{self.service_name.upper()}] Status unknown, STDOUT='{info}'")
-            if match and match.group():
-                result.update({match.group(1): status})
-                logger.debug(f"[{self.service_name.upper()}] Status of service {match.group(1)}: {status}")
-
-        return result
 
 
 def build_conf(node_logger, frontend_id):

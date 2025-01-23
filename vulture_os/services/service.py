@@ -115,6 +115,7 @@ class Service:
         else:
             command = ['/usr/local/bin/sudo', '/usr/sbin/service', self.service_name, cmd, *args]
 
+        logger.debug(f"running command '{' '.join(command)}'")
         proc = Popen(command, stdout=PIPE, stderr=PIPE)
         success, error = proc.communicate()
         return success.decode('utf8'), error.decode('utf8'), proc.returncode
