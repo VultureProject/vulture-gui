@@ -84,31 +84,25 @@ class InfobloxThreatDefenseParser(ApiParser):
 
         return response.json()
 
-    def get_logs(self, since, to):
+    def get_logs(self, since, to, offset=0):
         self._connect()
         url = f"{self.infoblox_threat_defense_host}/api/dnsdata/v2/dns_event"
 
-        logs = []
         params = {
             "t0": int(since.timestamp()),
             "t1": int(to.timestamp()),
-            "_offset": 0,
+            "_offset": offset,
             "_limit": 5000
         }
-        while True:
-            response = self.execute_query(url, params=params)
+        response = self.execute_query(url, params=params)
 
-            if response["status_code"] == "200" and response["result"]:
-                logs.extend(response["result"])
-                params["_offset"] += len(response["result"])
-            elif response["status_code"] != "200":
-                error = f"Error at Infoblox_Threat_Defense API Call: API returns a {response.get('status_code')} status code in its JSON content"
-                logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
-                raise InfobloxThreatDefenseAPIError(error)
-            else:
-                break
+        if response["status_code"] == "200" and response["result"]:
+            return response["result"]
+        elif response["status_code"] != "200":
+            error = f"Error at Infoblox_Threat_Defense API Call: API returns a {response.get('status_code')} status code in its JSON content"
+            logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
+            raise InfobloxThreatDefenseAPIError(error)
 
-        return logs
 
     def test(self):
         try:
@@ -134,15 +128,23 @@ class InfobloxThreatDefenseParser(ApiParser):
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        logs = self.get_logs(since, to)
+        offset = 0
+        while not self.evt_stop.is_set():
 
-        # Downloading may take some while, so refresh token in Redis
-        self.update_lock()
+            logs = self.get_logs(since, to, offset)
 
-        self.write_to_file([self.format_log(l, since, to) for l in logs])
+            if not logs:
+                break
 
-        # Writting may take some while, so refresh token in Redis
-        self.update_lock()
+            offset += len(logs)
+
+            # Downloading may take some while, so refresh token in Redis
+            self.update_lock()
+
+            self.write_to_file([self.format_log(l, since, to) for l in logs])
+
+            # Writting may take some while, so refresh token in Redis
+            self.update_lock()
 
         # increment by 1s to avoid duplication of logs
         self.frontend.last_api_call = to + timedelta(seconds=1)
