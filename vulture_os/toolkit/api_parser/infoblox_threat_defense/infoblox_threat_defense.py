@@ -23,11 +23,10 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'INFOBLOX THREAT DEFENSE API'
 __parser__ = 'INFOBLOX_THREAT_DEFENSE'
 
-import json
+from json import dumps as json_dumps
 import logging
 
-import dateutil
-import requests
+from requests import Session as requests_session
 
 from datetime import timedelta
 from django.utils import timezone
@@ -59,7 +58,7 @@ class InfobloxThreatDefenseParser(ApiParser):
     def _connect(self):
         try:
             if self.session is None:
-                self.session = requests.Session()
+                self.session = requests_session()
 
                 self.session.headers.update(self.HEADERS)
                 self.session.headers.update({"AUTHORIZATION": f"TOKEN {self.infoblox_threat_defense_token}"})
@@ -118,8 +117,8 @@ class InfobloxThreatDefenseParser(ApiParser):
                 "error": str(e)
             }
 
-    def format_log(self, log, since, to):
-        return json.dumps(log)
+    def format_log(self, log):
+        return json_dumps(log)
 
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(days=30))
@@ -138,10 +137,7 @@ class InfobloxThreatDefenseParser(ApiParser):
 
             offset += len(logs)
 
-            # Downloading may take some while, so refresh token in Redis
-            self.update_lock()
-
-            self.write_to_file([self.format_log(l, since, to) for l in logs])
+            self.write_to_file([self.format_log(l) for l in logs])
 
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
