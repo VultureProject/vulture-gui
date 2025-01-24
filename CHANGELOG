@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.17.0] - 2024-11-25
 ### Added
 - [API_PARSER] [CORTEX_XDR] Add advanced token feature
+- [FRONTEND] Pause a collector manually or on error
+- [FRONTEND] Hot-disable a collector manually
 ### Changed
 - [API_PARSER] [CORTEX_XDR] Improve logging and code quality
 - [API_PARSER] [CISCO_UMBRELLA] Add the list of users in logs
