@@ -23,11 +23,11 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Beyondtrust Reportings API'
 __parser__ = 'Beyondtrust Reportings'
 
-import json
+from json import dumps as json_dumps
 import logging
 
 import requests
-import xmltodict
+from xmltodict import parse as xmltodict_parse
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -99,6 +99,9 @@ class BeyondtrustReportingsParser(ApiParser):
                             verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
         res.raise_for_status()
         res_json = res.json()
+        if any(k not in res_json.keys() for k in ('access_token', 'expires_in')):
+            raise BeyondtrustReportingsAPIError(f"Error on get_token(): response does not contain access_token or expires_in keys")
+
         return res_json['access_token'], res_json['expires_in']
 
     def _connect(self):
@@ -111,7 +114,7 @@ class BeyondtrustReportingsParser(ApiParser):
         except Exception as err:
             raise BeyondtrustReportingsAPIError(f"Error on _connect(): {err}")
 
-    def _execute_query(self, url, query=None, timeout=20):
+    def _execute_query(self, url, query={}, timeout=20):
         msg = f"URL : {url} Query : {str(query)}"
         logger.debug(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
 
@@ -134,17 +137,15 @@ class BeyondtrustReportingsParser(ApiParser):
                 retry += 1
                 continue
             # Handle token expiration
-            if response.status_code == 401:
+            elif response.status_code == 401:
                 logger.warning(f"[{__parser__}]:execute: 401 received, will try to re-authenticate...",
                             extra={'frontend': str(self.frontend)})
                 self.session = None
                 self.beyondtrust_reportings_api_token = None
                 self.evt_stop.wait(5.0)
                 retry += 1
-            elif response.status_code != 200:
-                raise BeyondtrustReportingsAPIError(
-                    f"Error at Beyondtrust PRA API Call URL: {url} Code: {response.status_code} Content: {response.content}")
-            else:
+                continue
+            elif response.status_code == 200:
                 return response
 
         raise BeyondtrustReportingsAPIError(
@@ -239,7 +240,7 @@ class BeyondtrustReportingsParser(ApiParser):
 
         res = self._execute_query(url, query=parameters)
 
-        logs = xmltodict.parse(res.text)
+        logs = xmltodict_parse(res.text)
 
         if error := logs.get('error'):
             # if "report information matching your chosen criteria is available." in error.get('#text'):
@@ -278,7 +279,7 @@ class BeyondtrustReportingsParser(ApiParser):
         log["resource"] = resource
         log["requested_type"] = requested_type
         cleaned_log = self.remove_hash_from_keys(log)
-        return json.dumps(cleaned_log)
+        return json_dumps(cleaned_log)
 
     def execute(self):
 
