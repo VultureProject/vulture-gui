@@ -20,8 +20,8 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Beyondtrust PRA API'
-__parser__ = 'Beyondtrust PRA'
+__doc__ = 'Beyondtrust Reportings API'
+__parser__ = 'Beyondtrust Reportings'
 
 import json
 import logging
@@ -58,7 +58,13 @@ class BeyondtrustReportingsParser(ApiParser):
         self.beyondtrust_reportings_secret = data["beyondtrust_reportings_secret"]
         self.beyondtrust_reportings_host = data["beyondtrust_reportings_host"]
         self.beyondtrust_reportings_api_token = data.get("beyondtrust_reportings_api_token", {})
-        self.beyondtrust_reportings_get_support_session_logs = data.get("beyondtrust_reportings_get_support_session_logs", False)
+
+        self.allowed_reporting_types = {
+            "Team": data.get("beyondtrust_reportings_get_team_logs", False),
+            "AccessSession": data.get("beyondtrust_reportings_get_access_session_logs", False),
+            "VaultAccountActivity": data.get("beyondtrust_reportings_get_vault_account_activity_logs", False),
+            "SupportSession": data.get("beyondtrust_reportings_get_support_session_logs", False),
+        }
 
         if not self.beyondtrust_reportings_host.startswith('https://') and not self.beyondtrust_reportings_host.startswith('http://'):
             self.beyondtrust_reportings_host = f"https://{self.beyondtrust_reportings_host}"
@@ -147,19 +153,24 @@ class BeyondtrustReportingsParser(ApiParser):
     def test(self):
         # Get the last 12 hours
         since = timezone.now() - timedelta(hours=12)
-        try:
-            logs, _ = self.get_logs("reporting", "SupportSession", since)
+        err = ""
+        for requested_type in self.allowed_reporting_types.keys():
+            try:
+                logs, _ = self.get_logs("reporting", requested_type, since)
 
-            return {
-                "status": True,
-                "data": logs
-            }
-        except Exception as e:
-            logger.exception(f"{[__parser__]}:test: {str(e)}", extra={'frontend': str(self.frontend)})
-            return {
-                "status": False,
-                "error": str(e)
-            }
+                return {
+                    "status": True,
+                    "data": logs
+                }
+            except Exception as e:
+                err = e
+                continue
+
+        logger.exception(f"{[__parser__]}:test: {str(err)}", extra={'frontend': str(self.frontend)})
+        return {
+            "status": False,
+            "error": str(err)
+        }
 
     @staticmethod
     def format_team_logs(logs):
@@ -232,7 +243,7 @@ class BeyondtrustReportingsParser(ApiParser):
 
         if error := logs.get('error'):
             # if "report information matching your chosen criteria is available." in error.get('#text'):
-            if any(x in error.get('#text') for x in ["Aucune information de rapport de session correspondant à vos critères n’est disponible.", "report information matching your chosen criteria is available."]):
+            if any(x in error.get('#text') for x in ["correspondant à vos critères n’est disponible.", "matching your chosen criteria is available."]):
                 return [], None
             msg = f"[{__parser__}]:get_logs: Error while getting '{requested_type}' logs : {error.get('#text')}"
             raise BeyondtrustReportingsAPIError(msg)
@@ -272,10 +283,11 @@ class BeyondtrustReportingsParser(ApiParser):
     def execute(self):
 
         # Get reporting logs
-        reporting_types = ["Team", "AccessSession", "VaultAccountActivity"]
+        reporting_types = [r_type for r_type, value in self.allowed_reporting_types.items() if value]
 
-        if self.beyondtrust_reportings_get_support_session_logs:
-            reporting_types.append("SupportSession")
+        if not reporting_types:
+            msg = f"[{__parser__}]:execute: Reporting types list cannot be empty."
+            raise BeyondtrustReportingsAPIError(msg)
 
         for report_type in reporting_types:
             since = self.last_collected_timestamps.get(f"beyondtrust_reportings_{report_type}") or (timezone.now() - timedelta(days=30))

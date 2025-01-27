@@ -269,7 +269,8 @@ class FrontendForm(ModelForm):
                            "cisco_umbrella_managed_org_get_dns", "cisco_umbrella_managed_org_get_proxy",
                            "catonetworks_account_id", "catonetworks_api_key",
                            "infoblox_threat_defense_host", "infoblox_threat_defense_token",
-                           "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host", "beyondtrust_reportings_get_support_session_logs",
+                           "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host",
+                           "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs", "beyondtrust_reportings_get_vault_account_activity_logs", "beyondtrust_reportings_get_support_session_logs",
                            ]:
             self.fields[field_name].required = False
 
@@ -385,7 +386,10 @@ class FrontendForm(ModelForm):
                   'cisco_umbrella_managed_org_get_dns', 'cisco_umbrella_managed_org_get_proxy',
                   'catonetworks_api_key', 'catonetworks_account_id',
                   "infoblox_threat_defense_host", "infoblox_threat_defense_token",
-                  "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host", "beyondtrust_reportings_get_support_session_logs",
+                  "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host",
+                  "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs",
+                  "beyondtrust_reportings_get_vault_account_activity_logs",
+                  "beyondtrust_reportings_get_support_session_logs",
                   )
 
         widgets = {
@@ -599,6 +603,9 @@ class FrontendForm(ModelForm):
             'beyondtrust_reportings_client_id': TextInput(attrs={'class': 'form-control'}),
             'beyondtrust_reportings_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'beyondtrust_reportings_host': TextInput(attrs={'class': 'form-control'}),
+            'beyondtrust_reportings_get_team_logs': CheckboxInput(attrs={'class': 'js-switch'}),
+            'beyondtrust_reportings_get_access_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
+            'beyondtrust_reportings_get_vault_account_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_support_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
         }
 
