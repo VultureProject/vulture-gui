@@ -1799,6 +1799,13 @@
                             {{ form.proofpoint_trap_apikey.errors|safe }}
                           </div>
                         </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.proofpoint_trap_timeout.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.proofpoint_trap_timeout }}
+                            {{ form.proofpoint_trap_timeout.errors|safe }}
+                          </div>
+                        </div>
                       </div>
                       <div class="col-md-12 api_clients_row" id="api_waf_cloud_protector_row">
                         <div class="form-group">

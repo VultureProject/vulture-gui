@@ -1172,6 +1172,11 @@ class Frontend(models.Model):
         help_text = _("ProofPoint TRAP API key"),
         default = "",
     )
+    proofpoint_trap_timeout = models.PositiveIntegerField(
+        default=20,
+        help_text=_("ProofPoint TRAP API timeout"),
+        verbose_name=_("ProofPoint TRAP API timeout")
+    )
     # WAF Cloud Protector attributes
     waf_cloud_protector_host = models.TextField(
         verbose_name = _("WAF CloudProtector host"),
