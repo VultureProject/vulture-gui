@@ -56,7 +56,7 @@ class ProofpointTRAPParser(ApiParser):
             self.proofpoint_trap_host = "https://" + self.proofpoint_trap_host
 
         self.proofpoint_trap_apikey = data["proofpoint_trap_apikey"]
-        self.proofpoint_trap_timeout = int(data.get("proofpoint_trap_timeout", 20))
+        self.proofpoint_trap_timeout = int(data["proofpoint_trap_timeout"])
 
         self.session = None
 
@@ -76,6 +76,9 @@ class ProofpointTRAPParser(ApiParser):
             raise ProofpointTRAPAPIError(err)
 
     def __execute_query(self, url, query=None):
+        if self.evt_stop.is_set():
+            return
+        self.update_lock()
 
         self._connect()
 
@@ -208,6 +211,8 @@ class ProofpointTRAPParser(ApiParser):
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.get_logs(since, to)
+        if response is None:
+            return
 
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
