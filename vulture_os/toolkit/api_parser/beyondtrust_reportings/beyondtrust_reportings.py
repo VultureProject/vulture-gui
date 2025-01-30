@@ -297,7 +297,7 @@ class BeyondtrustReportingsParser(ApiParser):
             while since < timezone.now() - timedelta(hours=1) and not self.evt_stop.is_set():
 
                 logs, last_datetime = self.get_logs("reporting", report_type, since)
-
+                logs, last_datetime = self.get_logs("reporting", report_type, since, tries=2)
                 if logs:
                     self.write_to_file([self.format_log(log, "reporting", report_type) for log in logs])
                     # Downloading may take some while, so refresh token in Redis
