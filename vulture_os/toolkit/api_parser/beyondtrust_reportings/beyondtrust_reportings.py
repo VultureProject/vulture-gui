@@ -74,7 +74,6 @@ class BeyondtrustReportingsParser(ApiParser):
         try:
             if self.frontend:
                 self.frontend.beyondtrust_reportings_api_token = self.beyondtrust_reportings_api_token
-                self.frontend.save()
         except Exception as e:
             raise BeyondtrustReportingsAPIError(f"Unable to save access token: {e}")
 
