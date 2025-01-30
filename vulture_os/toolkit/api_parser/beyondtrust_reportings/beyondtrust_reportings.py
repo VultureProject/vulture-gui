@@ -112,11 +112,11 @@ class BeyondtrustReportingsParser(ApiParser):
             raise BeyondtrustReportingsAPIError(f"Error on _connect(): {err}")
 
     def _execute_query(self, url, query={}, timeout=20):
+    def _execute_query(self, url, query={}, timeout=20, tries=1):
         msg = f"URL : {url} Query : {str(query)}"
         logger.debug(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
 
-        retry = 0
-        while retry < 2 and not self.evt_stop.is_set():
+        while tries > 0 and not self.evt_stop.is_set():
             if self.session is None:
                 self._connect()
             response = self.session.get(
@@ -130,8 +130,9 @@ class BeyondtrustReportingsParser(ApiParser):
             if response.status_code == 429:
                 logger.warning(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...",
                             extra={'frontend': str(self.frontend)})
-                self.evt_stop.wait(10.0)
-                retry += 1
+                tries -= 1
+                if tries > 0:
+                    self.evt_stop.wait(10.0)
                 continue
             # Handle token expiration
             elif response.status_code == 401:
@@ -139,14 +140,14 @@ class BeyondtrustReportingsParser(ApiParser):
                             extra={'frontend': str(self.frontend)})
                 self.session = None
                 self.beyondtrust_reportings_api_token = None
-                self.evt_stop.wait(5.0)
-                retry += 1
+                tries -= 1
+                if tries > 0:
+                    self.evt_stop.wait(5.0)
                 continue
             elif response.status_code == 200:
                 return response
 
-        raise BeyondtrustReportingsAPIError(
-            f"Error at Beyondtrust PRA API Call URL: {url} Code: {response.status_code} Content: {response.content}")
+        raise BeyondtrustReportingsAPIError("Maximum number of tries reached")
 
     def test(self):
         # Get the last 12 hours
