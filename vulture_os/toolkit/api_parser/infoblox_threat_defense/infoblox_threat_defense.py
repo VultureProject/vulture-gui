@@ -145,6 +145,9 @@ class InfobloxThreatDefenseParser(ApiParser):
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-        # increment by 1s to avoid duplication of logs
-        self.frontend.last_api_call = to + timedelta(seconds=1)
+        if not self.evt_stop.is_set():
+            # update the last_api_call only in case of normal execution to avoid loss of logs
+            # increment by 1s to avoid duplication of logs
+            self.frontend.last_api_call = to + timedelta(seconds=1)
+
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
