@@ -224,7 +224,7 @@ class BeyondtrustReportingsParser(ApiParser):
             log["@timestamp"] = log["start_time"]["@timestamp"]
         return formated_logs
 
-    def get_logs(self, resource: str, requested_type: str, since: datetime):
+    def get_logs(self, resource: str, requested_type: str, since: datetime, tries: int = 1):
         url = f"{self.beyondtrust_reportings_host}/api/{resource}"
 
         parameters = {
