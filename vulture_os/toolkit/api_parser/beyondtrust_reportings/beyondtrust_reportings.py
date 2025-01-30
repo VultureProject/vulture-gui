@@ -256,7 +256,7 @@ class BeyondtrustReportingsParser(ApiParser):
         logger.info(f"[{__parser__}] get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         res = self._execute_query(url, query=parameters)
-
+        res = self._execute_query(url, query=parameters, tries=tries)
         logs = xmltodict_parse(res.text)
 
         if error := logs.get('error'):
