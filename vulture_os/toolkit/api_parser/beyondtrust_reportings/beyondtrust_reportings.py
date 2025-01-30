@@ -97,7 +97,7 @@ class BeyondtrustReportingsParser(ApiParser):
         res.raise_for_status()
         res_json = res.json()
         if any(k not in res_json.keys() for k in ('access_token', 'expires_in')):
-            raise BeyondtrustReportingsAPIError(f"Error on get_token(): response does not contain access_token or expires_in keys")
+            raise BeyondtrustReportingsAPIError("Error while getting a new access token: response does not contain access_token or expires_in keys")
 
         return res_json['access_token'], res_json['expires_in']
 
