@@ -309,14 +309,14 @@ class BeyondtrustReportingsParser(ApiParser):
                     # Update timestamp +24 if since < now, otherwise +1
                     delta = 24 if since < timezone.now() - timedelta(hours=24) else 1
                     msg = f"No logs, advancing timestamp by {delta} hour(s)"
-                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     self.last_collected_timestamps[f"beyondtrust_reportings_{report_type}"] = since + timedelta(hours=delta)
                 finally:
-                    msg = "Current timestamp for {report_type} is {timestamp}".format(
+                    msg = "New timestamp for {report_type} is {timestamp}".format(
                         report_type=report_type,
                         timestamp=self.last_collected_timestamps[f"beyondtrust_reportings_{report_type}"]
                     )
-                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     since = self.last_collected_timestamps[f"beyondtrust_reportings_{report_type}"]
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
