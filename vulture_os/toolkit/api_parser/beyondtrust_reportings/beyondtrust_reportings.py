@@ -27,6 +27,7 @@ from json import dumps as json_dumps
 import logging
 
 import requests
+from requests.exceptions import JSONDecodeError
 from xmltodict import parse as xmltodict_parse
 
 from datetime import datetime, timedelta
@@ -95,11 +96,15 @@ class BeyondtrustReportingsParser(ApiParser):
                             proxies=self.proxies,
                             verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
         res.raise_for_status()
-        res_json = res.json()
-        if any(k not in res_json.keys() for k in ('access_token', 'expires_in')):
-            raise BeyondtrustReportingsAPIError("Error while getting a new access token: response does not contain access_token or expires_in keys")
+        try:
+            res_json = res.json()
+        except JSONDecodeError as err:
+            raise BeyondtrustReportingsAPIError(f"Error on getting token: {err}")
+        else:
+            if any(k not in res_json.keys() for k in ('access_token', 'expires_in')):
+                raise BeyondtrustReportingsAPIError("Error while getting a new access token: response does not contain access_token or expires_in keys")
 
-        return res_json['access_token'], res_json['expires_in']
+            return res_json['access_token'], res_json['expires_in']
 
     def _connect(self):
         try:
@@ -111,7 +116,6 @@ class BeyondtrustReportingsParser(ApiParser):
         except Exception as err:
             raise BeyondtrustReportingsAPIError(f"Error on _connect(): {err}")
 
-    def _execute_query(self, url, query={}, timeout=20):
     def _execute_query(self, url, query={}, timeout=20, tries=1):
         msg = f"URL : {url} Query : {str(query)}"
         logger.debug(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
@@ -171,58 +175,73 @@ class BeyondtrustReportingsParser(ApiParser):
             "error": str(err)
         }
 
-    @staticmethod
-    def format_team_logs(logs):
+    def format_team_logs(self, logs):
         formated_logs = []
-        logs = logs['team_activity_list'].get('team_activity', [])
-        if not isinstance(logs, list):
-            logs = [logs]
+        try:
+            logs = logs['team_activity_list'].get('team_activity', [])
+            if not isinstance(logs, list):
+                logs = [logs]
 
-        for log in logs:
-            events = log['events']['event']
-            if not isinstance(events, list):
-                events = [events]
+            for log in logs:
+                events = log['events']['event']
+                if not isinstance(events, list):
+                    events = [events]
 
-            for event in events:
-                event['team'] = {
-                    "name": log['@name'],
-                    "id": log['@id'],
-                }
-                formated_logs.append(event)
+                for event in events:
+                    event['team'] = {
+                        "name": log['@name'],
+                        "id": log['@id'],
+                    }
+                    formated_logs.append(event)
+        except KeyError as e:
+            logger.info(f"[{__parser__}] An error occurred while formating Team logs: {e}",
+                        extra={'frontend': str(self.frontend)})
 
         return formated_logs
 
-    @staticmethod
-    def format_access_session_logs(logs):
+    def format_access_session_logs(self, logs):
         formated_logs = []
-        sessions_logs = logs['session_list'].get('session', [])
-        if not isinstance(sessions_logs, list):
-            sessions_logs = [sessions_logs]
+        try:
+            sessions_logs = logs['session_list'].get('session', [])
+            if not isinstance(sessions_logs, list):
+                sessions_logs = [sessions_logs]
 
-        for log in sessions_logs:
-            del log['session_details']  # Avoid too long session log
-            log["@timestamp"] = log["start_time"]["@timestamp"]
-            formated_logs.append(log)
+            for log in sessions_logs:
+                del log['session_details']  # Avoid too long session log
+                log["@timestamp"] = log["start_time"]["@timestamp"]
+                formated_logs.append(log)
+        except KeyError as e:
+            logger.info(f"[{__parser__}] An error occurred while formating AccessSession logs: {e}",
+                        extra={'frontend': str(self.frontend)})
+
         return formated_logs
 
-    @staticmethod
-    def format_vault_account_activity_list_logs(logs):
-        formated_logs = logs['vault_account_activity_list'].get('vault_account_activity', [])
-        if not isinstance(formated_logs, list):
-            formated_logs = [formated_logs]
-        return formated_logs
+    def format_vault_account_activity_list_logs(self, logs):
+        try:
+            formated_logs = logs['vault_account_activity_list'].get('vault_account_activity', [])
+            if not isinstance(formated_logs, list):
+                formated_logs = [formated_logs]
+        except KeyError as e:
+            logger.info(f"[{__parser__}] An error occurred while formating AccountActivityList logs: {e}",
+                        extra={'frontend': str(self.frontend)})
+        else:
+            return formated_logs
 
-    @staticmethod
-    def format_support_session_logs(logs):
-        formated_logs = logs.get('session_list', {}).get('session', [])
+    def format_support_session_logs(self, logs):
+        try:
+            formated_logs = logs.get('session_list', {}).get('session', [])
 
-        if isinstance(formated_logs, dict):
-            formated_logs = [formated_logs]
+            if isinstance(formated_logs, dict):
+                formated_logs = [formated_logs]
 
-        for log in formated_logs:
-            del log['session_details']  # Avoid too long session log
-            log["@timestamp"] = log["start_time"]["@timestamp"]
-        return formated_logs
+            for log in formated_logs:
+                del log['session_details']  # Avoid too long session log
+                log["@timestamp"] = log["start_time"]["@timestamp"]
+        except KeyError as e:
+            logger.info(f"[{__parser__}] An error occurred while formating AccountActivityList logs: {e}",
+                        extra={'frontend': str(self.frontend)})
+        else:
+            return formated_logs
 
     def get_logs(self, resource: str, requested_type: str, since: datetime, tries: int = 1):
         url = f"{self.beyondtrust_reportings_host}/api/{resource}"
