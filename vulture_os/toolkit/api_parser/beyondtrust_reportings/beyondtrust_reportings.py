@@ -66,9 +66,7 @@ class BeyondtrustReportingsParser(ApiParser):
             "SupportSession": data.get("beyondtrust_reportings_get_support_session_logs", False),
         }
 
-        if not self.beyondtrust_reportings_host.startswith('https://') and not self.beyondtrust_reportings_host.startswith('http://'):
-            self.beyondtrust_reportings_host = f"https://{self.beyondtrust_reportings_host}"
-        self.beyondtrust_reportings_host = self.beyondtrust_reportings_host.rstrip("/")
+        self.beyondtrust_reportings_host = "https://" + self.beyondtrust_reportings_host.split("://")[-1].rstrip("/")
 
         self.session = None
 
