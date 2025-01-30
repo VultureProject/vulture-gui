@@ -55,46 +55,27 @@ class CatonetworksParser(ApiParser):
         self.event_subfilter_string = ""
 
     def execute_query(self, query):
-        retry_count = 0
         data = {'query':query}
         headers = { 'x-api-key': self.catonetworks_api_key,'Content-Type':'application/json'}
-        while retry_count < 5:                
-            try:
-                response = requests.post(
-                    url=self.URL,
-                    data=json.dumps(data).encode("ascii"),
-                    headers=headers,
-                    proxies=self.proxies,
-                    verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl,
-                    timeout=30
-                )
-            except requests.exceptions.ConnectionError as e:
-                logger.warning(f"[{__parser__}]:execute_query: {e}", extra={'frontend': str(self.frontend)})
-                self.evt_stop.wait(20)
-                self.update_lock()
-                retry_count += 1
-                continue
-            except requests.exceptions.ReadTimeout as e:
-                logger.warning(f"[{__parser__}]:execute_query: {e}", extra={'frontend': str(self.frontend)})
-                self.evt_stop.wait(20)
-                self.update_lock()
-                retry_count += 1
-                continue
-            response.raise_for_status()
-            result = response.json()
-            if "errors" in result:
-                logger.error(f"[{__parser__}]:execute_query: Error while getting logs. reason : {response.content}", extra={'frontend': str(self.frontend)})
-                raise CatonetworksAPIError(f"Error while getting logs. reason : {result['errors']}")
-            return result
-        logger.error(f"[{__parser__}]:execute_query: FATAL ERROR retry count exceeded", extra={'frontend': str(self.frontend)})
-        raise CatonetworksAPIError("FATAL ERROR retry count exceeded")
+        response = requests.post(
+            url=self.URL,
+            data=json.dumps(data).encode("ascii"),
+            headers=headers,
+            proxies=self.proxies,
+            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl,
+            timeout=30
+        )
+        response.raise_for_status()
+        result = response.json()
 
-    def get_logs(self):
+        return result
+
+    def get_logs(self, retries=1):
         query = '''{
             eventsFeed(
                 accountIDs: [''' + self.catonetworks_account_id + ''']
                 marker: "''' + self.marker + '''"
-                filters: [''' + self.event_filter_string + "," + self.event_subfilter_string + ''']
+                filters: [''' + self.event_filter_string + ',' + self.event_subfilter_string + ''']
             ) {
                 marker
                 fetchedCount
@@ -108,13 +89,37 @@ class CatonetworksParser(ApiParser):
                 }
             }
         }'''
-        result = self.execute_query(query)
-        self.marker = result["data"]["eventsFeed"]["marker"]
-        return result["data"]["eventsFeed"]["accounts"][0]["records"]
+
+        while retries > 0 and not self.evt_stop.is_set():
+            try:
+                result = self.execute_query(query)
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
+                retries -= 1
+                logger.warning(f"[{__parser__}]:execute_query: {error}", extra={'frontend': str(self.frontend)})
+                if retries > 0:
+                    logger.warning(f"[{__parser__}]:execute_query: waiting 20 seconds ({retries} tries remaining)", extra={'frontend': str(self.frontend)})
+                    self.update_lock()
+                    self.evt_stop.wait(20)
+                continue
+            except (requests.exceptions.JSONDecodeError, requests.exceptions.HTTPError) as error:
+                logger.error(f"[{__parser__}]:execute_query: {error}", extra={'frontend': str(self.frontend)})
+                raise CatonetworksAPIError(f"Error while getting logs. reason: {error}")
+
+            if "errors" in result:
+                logger.error(f"[{__parser__}]:execute_query: Error while getting logs. reason : {result['errors']}", extra={'frontend': str(self.frontend)})
+                raise CatonetworksAPIError(f"Error while getting logs. reason : {result['errors']}")
+
+            self.marker = result["data"]["eventsFeed"]["marker"]
+            fetchedCount = int(result["data"]["eventsFeed"]["fetchedCount"])
+            records = result["data"]["eventsFeed"]["accounts"][0]["records"]
+            return fetchedCount, records
+
+        logger.error(f"[{__parser__}]:execute_query: FATAL ERROR retry count exceeded", extra={'frontend': str(self.frontend)})
+        raise CatonetworksAPIError("FATAL ERROR retry count exceeded")
 
     def test(self):
         try:
-            logs = self.get_logs()
+            _, logs = self.get_logs()
             return {
                 "status": True,
                 "data": logs
@@ -134,7 +139,7 @@ class CatonetworksParser(ApiParser):
 
         while fetched_count == self.MAX_LOGS and not self.evt_stop.is_set():
             try:
-                logs = self.get_logs()
+                fetched_count, logs = self.get_logs(retries=5)
             except Exception as e:
                 logger.exception(f"[{__parser__}][get_logs]: {e}", extra={'frontend': str(self.frontend)})
                 raise CatonetworksAPIError(e)
@@ -142,10 +147,8 @@ class CatonetworksParser(ApiParser):
             self.update_lock()
             if self.marker != "":
                 self.frontend.catonetworks_marker = self.marker
-                self.frontend.save(update_fields=["catonetworks_marker"])
             self.write_to_file([self.format_log(log) for log in logs])
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
-            fetched_count = len(logs)
 
         logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
