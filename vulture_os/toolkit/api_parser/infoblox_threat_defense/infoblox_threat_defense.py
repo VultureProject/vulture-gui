@@ -27,6 +27,7 @@ from json import dumps as json_dumps
 import logging
 
 from requests import Session as requests_session
+from requests.exceptions import JSONDecodeError
 
 from datetime import timedelta
 from django.utils import timezone
@@ -48,9 +49,7 @@ class InfobloxThreatDefenseParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        self.infoblox_threat_defense_host = data["infoblox_threat_defense_host"].rstrip("/")
-        if not self.infoblox_threat_defense_host.startswith('https://'):
-            self.infoblox_threat_defense_host = f"https://{self.infoblox_threat_defense_host}"
+        self.infoblox_threat_defense_host = "https://" + data["infoblox_threat_defense_host"].rstrip("/").split("://")[-1]
 
         self.infoblox_threat_defense_token = data["infoblox_threat_defense_token"]
         self.session = None
@@ -68,6 +67,7 @@ class InfobloxThreatDefenseParser(ApiParser):
             raise InfobloxThreatDefenseAPIError(err)
 
     def execute_query(self, url, params={}, timeout=20):
+        self._connect()
 
         response = self.session.get(
             url,
@@ -81,10 +81,12 @@ class InfobloxThreatDefenseParser(ApiParser):
             logger.error(f"[{__parser__}]:execute_query: {error}", extra={'frontend': str(self.frontend)})
             raise InfobloxThreatDefenseAPIError(error)
 
-        return response.json()
+        try:
+            return response.json()
+        except JSONDecodeError as err:
+            raise InfobloxThreatDefenseAPIError(f"Error on execute query: {err}") from err
 
     def get_logs(self, since, to, offset=0):
-        self._connect()
         url = f"{self.infoblox_threat_defense_host}/api/dnsdata/v2/dns_event"
 
         params = {
