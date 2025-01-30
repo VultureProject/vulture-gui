@@ -84,7 +84,8 @@ class InfobloxThreatDefenseParser(ApiParser):
         try:
             return response.json()
         except JSONDecodeError as err:
-            raise InfobloxThreatDefenseAPIError(f"Error on execute query: {err}") from err
+            logger.error(f"[{__parser__}]:execute_query: Reply is not a valid JSON: {err}", extra={'frontend': str(self.frontend)})
+            raise InfobloxThreatDefenseAPIError(f"Reply is not a valid JSON")
 
     def get_logs(self, since, to, offset=0):
         url = f"{self.infoblox_threat_defense_host}/api/dnsdata/v2/dns_event"
