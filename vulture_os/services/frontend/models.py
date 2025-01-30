@@ -1441,6 +1441,22 @@ class Frontend(models.Model):
         default=dict
     )
 
+    # Catonetworks attributes
+    catonetworks_api_key = models.TextField(
+        verbose_name=_("Catonetworks API Key"),
+        help_text=_("Catonetworks API Key"),
+        default="",
+    )
+    catonetworks_account_id = models.TextField(
+        verbose_name=_("Catonetworks account id"),
+        help_text=_("Catonetworks account id"),
+        default="",
+    )
+    catonetworks_marker = models.TextField(
+        verbose_name=_("Catonetworks marker"),
+        help_text=_("Catonetworks marker"),
+        default="",
+    )
 
     @staticmethod
     def str_attrs():

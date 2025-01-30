@@ -2100,6 +2100,19 @@
                           <div class="col-sm-5">
                             {{ form.cisco_umbrella_managed_org_get_proxy }}
                             {{ form.cisco_umbrella_managed_org_get_proxy.errors|safe }}
+                      <div class="col-md-12 api_clients_row" id="api_catonetworks_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.catonetworks_api_key.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.catonetworks_api_key }}
+                            {{ form.catonetworks_api_key.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.catonetworks_account_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.catonetworks_account_id }}
+                            {{ form.catonetworks_account_id.errors|safe }}
                           </div>
                         </div>
                       </div>

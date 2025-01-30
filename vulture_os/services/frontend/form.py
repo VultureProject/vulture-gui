@@ -267,6 +267,7 @@ class FrontendForm(ModelForm):
                            "lockself_x_auth_token", "lockself_x_ls_token", "lockself_host", "lockself_organization_id",
                            "cisco_umbrella_managed_org_api_key", "cisco_umbrella_managed_org_secret_key", "cisco_umbrella_managed_org_customers_id",
                            "cisco_umbrella_managed_org_get_dns", "cisco_umbrella_managed_org_get_proxy"
+                           "catonetworks_account_id", "catonetworks_api_key",
                            ]:
             self.fields[field_name].required = False
 
@@ -380,6 +381,7 @@ class FrontendForm(ModelForm):
                   'lockself_x_auth_token', 'lockself_x_ls_token', 'lockself_host', 'lockself_organization_id',
                   'cisco_umbrella_managed_org_api_key', 'cisco_umbrella_managed_org_secret_key', 'cisco_umbrella_managed_org_customers_id',
                   'cisco_umbrella_managed_org_get_dns', 'cisco_umbrella_managed_org_get_proxy'
+                  'catonetworks_api_key', 'catonetworks_account_id'
                   )
 
         widgets = {
@@ -586,6 +588,8 @@ class FrontendForm(ModelForm):
             'cisco_umbrella_managed_org_customers_id': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'cisco_umbrella_managed_org_get_dns': CheckboxInput(attrs={'class': 'js-switch'}),
             'cisco_umbrella_managed_org_get_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
+            'catonetworks_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'catonetworks_account_id': TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean_name(self):
