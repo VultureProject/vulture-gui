@@ -1440,7 +1440,6 @@ class Frontend(models.Model):
     cisco_umbrella_managed_org_customers_tokens = models.JSONField(
         default=dict
     )
-
     # Catonetworks attributes
     catonetworks_api_key = models.TextField(
         verbose_name=_("Catonetworks API Key"),
@@ -1455,6 +1454,17 @@ class Frontend(models.Model):
     catonetworks_marker = models.TextField(
         verbose_name=_("Catonetworks marker"),
         help_text=_("Catonetworks marker"),
+        default="",
+    )
+    # Infoblox Threat Defense attributes
+    infoblox_threat_defense_host = models.TextField(
+        verbose_name=_("Infoblox Threat Defense Host"),
+        help_text=_("Infoblox Threat Defense Host"),
+        default="https://XXX.infoblox.com",
+    )
+    infoblox_threat_defense_token = models.TextField(
+        verbose_name=_("Infoblox Threat Defense Token"),
+        help_text=_("Infoblox Threat Defense Token"),
         default="",
     )
 
