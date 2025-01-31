@@ -194,7 +194,7 @@ class BeyondtrustReportingsParser(ApiParser):
                     }
                     formated_logs.append(event)
         except KeyError as e:
-            logger.info(f"[{__parser__}] An error occurred while formating Team logs: {e}",
+            logger.error(f"[{__parser__}] An error occurred while formating Team logs: {e}",
                         extra={'frontend': str(self.frontend)})
 
         return formated_logs
@@ -211,7 +211,7 @@ class BeyondtrustReportingsParser(ApiParser):
                 log["@timestamp"] = log["start_time"]["@timestamp"]
                 formated_logs.append(log)
         except KeyError as e:
-            logger.info(f"[{__parser__}] An error occurred while formating AccessSession logs: {e}",
+            logger.error(f"[{__parser__}] An error occurred while formating AccessSession logs: {e}",
                         extra={'frontend': str(self.frontend)})
 
         return formated_logs
@@ -222,7 +222,7 @@ class BeyondtrustReportingsParser(ApiParser):
             if not isinstance(formated_logs, list):
                 formated_logs = [formated_logs]
         except KeyError as e:
-            logger.info(f"[{__parser__}] An error occurred while formating AccountActivityList logs: {e}",
+            logger.error(f"[{__parser__}] An error occurred while formating AccountActivityList logs: {e}",
                         extra={'frontend': str(self.frontend)})
         else:
             return formated_logs
@@ -238,7 +238,7 @@ class BeyondtrustReportingsParser(ApiParser):
                 del log['session_details']  # Avoid too long session log
                 log["@timestamp"] = log["start_time"]["@timestamp"]
         except KeyError as e:
-            logger.info(f"[{__parser__}] An error occurred while formating AccountActivityList logs: {e}",
+            logger.error(f"[{__parser__}] An error occurred while formating AccountActivityList logs: {e}",
                         extra={'frontend': str(self.frontend)})
         else:
             return formated_logs
@@ -255,7 +255,6 @@ class BeyondtrustReportingsParser(ApiParser):
         msg = f"Getting {self.DURATION} seconds of {requested_type} logs, starting from {since}"
         logger.info(f"[{__parser__}] get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
-        res = self._execute_query(url, query=parameters)
         res = self._execute_query(url, query=parameters, tries=tries)
         logs = xmltodict_parse(res.text)
 
