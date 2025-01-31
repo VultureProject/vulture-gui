@@ -313,7 +313,7 @@ class BeyondtrustReportingsParser(ApiParser):
             msg = f"Parser starting to get {report_type} logs from {since}"
             logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-            while since < timezone.now() and not self.evt_stop.is_set():
+            while not self.evt_stop.is_set():
 
                 logs, last_datetime = self.get_logs("reporting", report_type, since, tries=2)
                 if logs:
@@ -337,5 +337,8 @@ class BeyondtrustReportingsParser(ApiParser):
                     )
                     logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     since = self.last_collected_timestamps[f"beyondtrust_reportings_{report_type}"]
+
+                if not logs:
+                    break
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
