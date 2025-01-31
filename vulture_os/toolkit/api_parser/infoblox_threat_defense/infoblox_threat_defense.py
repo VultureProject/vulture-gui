@@ -98,12 +98,17 @@ class InfobloxThreatDefenseParser(ApiParser):
         }
         response = self.execute_query(url, params=params)
 
-        if response["status_code"] == "200" and response["result"]:
-            return response["result"]
+        # Fail if response is missing either a 'status_code' or a 'result' key
+        if any(map(lambda x: x not in response, ['status_code', 'result'])):
+            error = "Error at Infoblox_Threat_Defense API Call: missing 'status_code' and/or 'result' in reply"
+            logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
+            raise InfobloxThreatDefenseAPIError(error)
         elif response["status_code"] != "200":
             error = f"Error at Infoblox_Threat_Defense API Call: API returns a {response.get('status_code')} status code in its JSON content"
             logger.error(f"[{__parser__}]:get_logs: {error}", extra={'frontend': str(self.frontend)})
             raise InfobloxThreatDefenseAPIError(error)
+        else:
+            return response["result"]
 
 
     def test(self):
