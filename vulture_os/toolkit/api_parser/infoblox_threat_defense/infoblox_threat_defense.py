@@ -145,7 +145,7 @@ class InfobloxThreatDefenseParser(ApiParser):
 
             offset += len(logs)
 
-            self.write_to_file([self.format_log(l) for l in logs])
+            self.write_to_file([self.format_log(log) for log in logs])
 
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
