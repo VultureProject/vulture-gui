@@ -266,7 +266,7 @@ class FrontendForm(ModelForm):
                            "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
                            "lockself_x_auth_token", "lockself_x_ls_token", "lockself_host", "lockself_organization_id",
                            "cisco_umbrella_managed_org_api_key", "cisco_umbrella_managed_org_secret_key", "cisco_umbrella_managed_org_customers_id",
-                           "cisco_umbrella_managed_org_get_dns", "cisco_umbrella_managed_org_get_proxy"
+                           "cisco_umbrella_managed_org_get_dns", "cisco_umbrella_managed_org_get_proxy",
                            "catonetworks_account_id", "catonetworks_api_key",
                            ]:
             self.fields[field_name].required = False
@@ -380,7 +380,7 @@ class FrontendForm(ModelForm):
                   "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
                   'lockself_x_auth_token', 'lockself_x_ls_token', 'lockself_host', 'lockself_organization_id',
                   'cisco_umbrella_managed_org_api_key', 'cisco_umbrella_managed_org_secret_key', 'cisco_umbrella_managed_org_customers_id',
-                  'cisco_umbrella_managed_org_get_dns', 'cisco_umbrella_managed_org_get_proxy'
+                  'cisco_umbrella_managed_org_get_dns', 'cisco_umbrella_managed_org_get_proxy',
                   'catonetworks_api_key', 'catonetworks_account_id'
                   )
 
