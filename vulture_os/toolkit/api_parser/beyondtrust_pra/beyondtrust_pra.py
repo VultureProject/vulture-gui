@@ -23,6 +23,8 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Beyondtrust PRA API'
 __parser__ = 'Beyondtrust PRA'
 
+# WARNING : THIS COLLECTOR IS DEPRECATED. PLEASE DO NOT UPDATE IT AND USE BEYONDTRUST_REPORTINGS INSTEAD
+
 import json
 import logging
 from copy import deepcopy

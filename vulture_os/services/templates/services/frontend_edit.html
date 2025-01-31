@@ -2132,6 +2132,57 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-12 api_clients_row" id="api_beyondtrust_reportings_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_client_id.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.beyondtrust_reportings_client_id }}
+                            {{ form.beyondtrust_reportings_client_id.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_secret.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.beyondtrust_reportings_secret }}
+                            {{ form.beyondtrust_reportings_secret.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.beyondtrust_reportings_host }}
+                            {{ form.beyondtrust_reportings_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_team_logs.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.beyondtrust_reportings_get_team_logs }}
+                            {{ form.beyondtrust_reportings_get_team_logs.errors|safe }}
+                          </div>
+                        </div>
+                          <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_access_session_logs.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.beyondtrust_reportings_get_access_session_logs }}
+                            {{ form.beyondtrust_reportings_get_access_session_logs.errors|safe }}
+                          </div>
+                        </div>
+                          <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_vault_account_activity_logs.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.beyondtrust_reportings_get_vault_account_activity_logs }}
+                            {{ form.beyondtrust_reportings_get_vault_account_activity_logs.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.beyondtrust_reportings_get_support_session_logs.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.beyondtrust_reportings_get_support_session_logs }}
+                            {{ form.beyondtrust_reportings_get_support_session_logs.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">
