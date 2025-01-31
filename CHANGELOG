@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [API_PARSER] [CATONETWORKS] New collector
 - [API_PARSER] [INFOBLOX_THREAT_DEFENSE] New collector
+- [API_PARSER] [BEYONDTRUST_REPORTINGS] New collector
 
 ## [2.19.0] - 2025-01-16
 ### Added
