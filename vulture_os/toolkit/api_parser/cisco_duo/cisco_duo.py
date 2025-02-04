@@ -167,7 +167,7 @@ class CiscoDuoParser(ApiParser):
         query['sort'] = "ts:asc"
 
         return self.__execute_query(hostname, path, query)
-    
+
     def format_log(self, log):
         return json.dumps(log)
 
@@ -175,35 +175,22 @@ class CiscoDuoParser(ApiParser):
 
         for endpoint in self.ENDPOINTS:
             try:
-                ## GET LOGS ##
-
                 since = (self.frontend.last_api_call or (timezone.now() - timedelta(days=7)))
                 to = min(timezone.now(), since + timedelta(hours=24))
 
-                logs = self.get_logs(since=since, to=to, endpoint=endpoint)
+                # the reason we are not doing any iteration in get_logs to get more than 1k logs is because the API excplicitely says that we must call it only 1 time/min (cf : https://duo.com/docs/adminapi#logs)
+                response : dict = self.get_logs(since=since, to=to, endpoint=endpoint)
 
-                if logs and logs['metadata']:
-                    ## UPDATE LAST API CALL IF LOGS ALWAYS PRESENT IN RANGE ##
-
-                    if logs['metadata']['total_objects'] >= self.LIMIT and logs['metadata']['next_offset']:
-                        offset = int(logs['metadata']['next_offset'][0]) + 1
-                        new_to = datetime.fromtimestamp(offset/1000, tz=timezone.now().astimezone().tzinfo)
-                        logger.info(f"[{__parser__}]:Logs always present in range since: {since} to : {to}, update last_api_call in {new_to}", extra={'frontend': str(self.frontend)})
-                        to = new_to
-
+                if response.get("metadata", None):
+                    self.write_to_file([self.format_log(log) for log in response['authlogs']]) # /!\ only authentication logs handled
                     self.update_lock()
 
-                    ## WRITE TO FILE ##
+                    if response['metadata'].get('next_offset', None):
+                        self.frontend.last_api_call = datetime.fromtimestamp(int(response["metadata"]["next_offset"][0])/1000, tz=timezone.now().astimezone().tzinfo) # save this in case of failure
+                        logger.info(f"[{__parser__}]:Updated last_api_call {since, to, endpoint}", extra={'frontend': str(self.frontend)})
 
-                    self.write_to_file([self.format_log(log) for log in logs['authlogs']])
-                    self.update_lock()
-
-                self.frontend.last_api_call = to
-                self.frontend.save()
-                
             except Exception as e:
-                msg = f"Failed to endpoint {endpoint}: {e}"
-                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+                msg = f"Failed to get endpoint {endpoint}\n{e}"
+                logger.exception(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
