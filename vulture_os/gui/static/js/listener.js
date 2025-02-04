@@ -15,7 +15,8 @@ function get_api_parser_data(type_){
     api_parser_type: $('#id_api_parser_type').val(),
     api_parser_use_proxy: $('#id_api_parser_use_proxy').is(':checked'),
     api_parser_custom_proxy: $('#id_api_parser_custom_proxy').val(),
-    api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked')
+    api_parser_verify_ssl: $('#id_api_parser_verify_ssl').is(':checked'),
+    api_parser_request_timeout: $('#id_api_parser_request_timeout').val()
   };
 
   if ($('#id_api_parser_verify_ssl').is(':checked') && !api_parser_blacklist.includes($('#id_api_parser_type').val())) {

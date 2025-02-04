@@ -533,6 +533,17 @@
                           </div>
                         </div>
                       </div> <!-- /.row log-mode -->
+                      <div class="row log-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{ form.api_parser_request_timeout.label }}</label>
+                            <div class="col-sm-5">
+                              {{ form.api_parser_request_timeout }}
+                              {{ form.api_parser_request_timeout.errors|safe }}
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /.row log-mode -->
                     </div> <!-- /advanced_options -->
                   </div> <!-- /.tab-pane tab_general -->
                   <div class="tab-pane" id="tab_network">
@@ -1797,13 +1808,6 @@
                           <div class="col-sm-5">
                             {{ form.proofpoint_trap_apikey }}
                             {{ form.proofpoint_trap_apikey.errors|safe }}
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="col-sm-3 control-label">{{ form.proofpoint_trap_timeout.label }}</label>
-                          <div class="col-sm-5">
-                            {{ form.proofpoint_trap_timeout }}
-                            {{ form.proofpoint_trap_timeout.errors|safe }}
                           </div>
                         </div>
                       </div>

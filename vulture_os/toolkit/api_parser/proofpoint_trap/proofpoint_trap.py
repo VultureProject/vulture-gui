@@ -56,7 +56,7 @@ class ProofpointTRAPParser(ApiParser):
             self.proofpoint_trap_host = "https://" + self.proofpoint_trap_host
 
         self.proofpoint_trap_apikey = data["proofpoint_trap_apikey"]
-        self.proofpoint_trap_timeout = int(data["proofpoint_trap_timeout"])
+        self.proofpoint_trap_timeout = int(data["api_parser_request_timeout"])
 
         self.session = None
 

@@ -561,6 +561,11 @@ class Frontend(models.Model):
         verbose_name=_("Custom certificate"),
         help_text=_("Custom certificate to use.")
     )
+    api_parser_request_timeout = models.PositiveIntegerField(
+        default=20,
+        help_text=_("API parser request timeout"),
+        verbose_name=_("API parser request timeout")
+    )
     last_api_call = models.DateTimeField(
         default=timezone.now
     )
@@ -1171,11 +1176,6 @@ class Frontend(models.Model):
         verbose_name = _("ProofPoint TRAP API key"),
         help_text = _("ProofPoint TRAP API key"),
         default = "",
-    )
-    proofpoint_trap_timeout = models.PositiveIntegerField(
-        default=20,
-        help_text=_("ProofPoint TRAP API timeout"),
-        verbose_name=_("ProofPoint TRAP API timeout")
     )
     # WAF Cloud Protector attributes
     waf_cloud_protector_host = models.TextField(
