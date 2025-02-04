@@ -75,7 +75,9 @@ from toolkit.api_parser.beyondtrust_pra.beyondtrust_pra import BeyondtrustPRAPar
 from toolkit.api_parser.lockself.lockself import LockselfParser
 from toolkit.api_parser.cisco_umbrella_managed_org.cisco_umbrella_managed_org import CiscoUmbrellaManagedOrgParser
 from toolkit.api_parser.sentinel_one_singularity_mobile.sentinel_one_singularity_mobile import SentinelOneSingularityMobileParser
-
+from toolkit.api_parser.catonetworks.catonetworks import CatonetworksParser
+from toolkit.api_parser.infoblox_threat_defense.infoblox_threat_defense import InfobloxThreatDefenseParser
+from toolkit.api_parser.beyondtrust_reportings.beyondtrust_reportings import BeyondtrustReportingsParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -131,6 +133,9 @@ PARSER_LIST = {
     "lockself": LockselfParser,
     "cisco_umbrella_managed_org": CiscoUmbrellaManagedOrgParser,
     "sentinel_one_singularity_mobile": SentinelOneSingularityMobileParser,
+    "catonetworks": CatonetworksParser,
+    "infoblox_threat_defense": InfobloxThreatDefenseParser,
+    "beyondtrust_reportings": BeyondtrustReportingsParser,
 }
 
 class ParserDoesNotExist(Exception):

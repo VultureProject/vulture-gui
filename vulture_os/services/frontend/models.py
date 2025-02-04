@@ -1455,6 +1455,72 @@ class Frontend(models.Model):
     cisco_umbrella_managed_org_customers_tokens = models.JSONField(
         default=dict
     )
+    # Catonetworks attributes
+    catonetworks_api_key = models.TextField(
+        verbose_name=_("Catonetworks API Key"),
+        help_text=_("Catonetworks API Key"),
+        default="",
+    )
+    catonetworks_account_id = models.TextField(
+        verbose_name=_("Catonetworks account id"),
+        help_text=_("Catonetworks account id"),
+        default="",
+    )
+    catonetworks_marker = models.TextField(
+        verbose_name=_("Catonetworks marker"),
+        help_text=_("Catonetworks marker"),
+        default="",
+    )
+    # Infoblox Threat Defense attributes
+    infoblox_threat_defense_host = models.TextField(
+        verbose_name=_("Infoblox Threat Defense Host"),
+        help_text=_("Infoblox Threat Defense Host"),
+        default="https://XXX.infoblox.com",
+    )
+    infoblox_threat_defense_token = models.TextField(
+        verbose_name=_("Infoblox Threat Defense Token"),
+        help_text=_("Infoblox Threat Defense Token"),
+        default="",
+    )
+    # Beyondtrust Reportings attributes
+    beyondtrust_reportings_client_id = models.TextField(
+        verbose_name=_("Beyondtrust Reportings client id"),
+        help_text=_("Beyondtrust Reportings client id"),
+        default="ex: 18xxxxxxxxxxxaf3e86b2xxxxxx77b4fc29eff",
+    )
+    beyondtrust_reportings_secret = models.TextField(
+        verbose_name=_("Beyondtrust Reportings secret"),
+        help_text=_("Beyondtrust Reportings secret"),
+        default="ex: Oxxxxxxxxxxqep8xxxxxxx22Y8S98GPcHkgNMK",
+    )
+    beyondtrust_reportings_host = models.TextField(
+        verbose_name=_("Beyondtrust Reportings host"),
+        help_text=_("Beyondtrust Reportings host"),
+        default="ex: https://xxx.xxx.com",
+    )
+    beyondtrust_reportings_api_token = models.JSONField(
+        default=dict
+    )
+    beyondtrust_reportings_get_team_logs = models.BooleanField(
+        verbose_name=_("Retrieve Beyondtrust Reportings Team logs"),
+        help_text=_("Retrieve Beyondtrust Reportings Team logs"),
+        default=False,
+    )
+    beyondtrust_reportings_get_access_session_logs = models.BooleanField(
+        verbose_name=_("Retrieve Beyondtrust Reportings AccessSession logs"),
+        help_text=_("Retrieve Beyondtrust Reportings AccessSession logs"),
+        default=False,
+    )
+    beyondtrust_reportings_get_vault_account_activity_logs = models.BooleanField(
+        verbose_name=_("Retrieve Beyondtrust Reportings VaultAccountActivity logs"),
+        help_text=_("Retrieve Beyondtrust Reportings VaultAccountActivity logs"),
+        default=False,
+    )
+    beyondtrust_reportings_get_support_session_logs = models.BooleanField(
+        verbose_name=_("Retrieve Beyondtrust Reportings SupportSession logs"),
+        help_text=_("Retrieve Beyondtrust Reportings SupportSession logs"),
+        default=False,
+    )
 
 
     @staticmethod
