@@ -24,6 +24,8 @@ __doc__ = 'Waf Cloudflare API Parser'
 __parser__ = 'WAF CLOUDFLARE'
 
 import logging
+from json import JSONDecodeError
+
 import requests
 
 from datetime import timedelta
@@ -72,7 +74,14 @@ class WAFCloudflareParser(ApiParser):
             logger.error(f"[{__parser__}]:_get_allowed_fields: Status code = {reply.status_code}, Error = {reply.text}",
                         extra={'frontend': str(self.frontend)})
             raise WAFCloudflareAPIError(f"[{__parser__}]: Could not get the list of allowed fields")
-        return reply.json().keys()
+        try:
+            return reply.json().keys()
+        except JSONDecodeError as e:
+            logger.error(f"[{__parser__}]:_get_allowed_fields: An error occurred when parsing the JSON response",
+                         extra={'frontend': str(self.frontend)})
+            raise WAFCloudflareAPIError(
+                f"[{__parser__}]: Could not get the list of allowed fields"
+            ) from e
 
     def get_logs(self, logs_from=None, logs_to=None):
         self.__connect()
@@ -84,7 +93,7 @@ class WAFCloudflareParser(ApiParser):
         if logs_to:
             query['end'] = logs_to.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        query['fields'] = self._get_allowed_fields()
+        query['fields'] = ",".join(self._get_allowed_fields())
 
         logger.debug(f"[{__parser__}]:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
 
