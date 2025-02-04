@@ -2413,7 +2413,7 @@ class Listener(models.Model):
         """ Generate directive configuration of "server" HAProxy
          :return     String - HAProxy server configuration parameter
          """
-        return "{}:{}".format(JAIL_ADDRESSES['rsyslog'][self.network_address.family], self.rsyslog_port)
+        return f"{JAIL_ADDRESSES['rsyslog'][self.network_address.family]}:{self.rsyslog_port} check port {self.rsyslog_port} fastinter 1000ms fall 3 rise 3 on-marked-down shutdown-sessions"
 
     def save(self, *args, **kwargs):
         if self.rsyslog_port == 10000:
