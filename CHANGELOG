@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [NETSKOPE] Remove duplicated logs
 - [API_PARSER] [CATONETWORKS] Fix invalid HTML
 - [API_PARSER] [WAF_CLOUDFLARE] Correctly set and use the `fields` list
+- [API_PARSER] [CISCO_DUO] Avoid updating last timestamp when unecessary and add a 2-minute delay to collect
 
 
 ## [2.20.0] - 2025-02-04
