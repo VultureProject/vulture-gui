@@ -57,7 +57,7 @@ class CiscoDuoParser(ApiParser):
 
     def __init__(self, data):
         super().__init__(data)
-        
+
         self.cisco_duo_host = data["cisco_duo_host"]
         self.cisco_duo_ikey = data["cisco_duo_ikey"]
         self.cisco_duo_skey = data["cisco_duo_skey"]
@@ -138,7 +138,7 @@ class CiscoDuoParser(ApiParser):
 
         current_time = timezone.now()
         try:
-            logs = self.get_logs(since=(current_time - timedelta(hours=24)), to=current_time, endpoint="authentication")
+            logs = self.get_logs(since=(current_time - timedelta(hours=24)), to=current_time, endpoint=self.ENDPOINTS[0])
 
             return {
                 "status": True,
@@ -177,20 +177,21 @@ class CiscoDuoParser(ApiParser):
                 # delay log gathering for two minutes as API will return empty result otherwise in that range
                 since = self.frontend.last_api_call
                 to = min(timezone.now() - timedelta(minutes=2), since + timedelta(hours=24))
-                if since >= to: since -= timedelta(minutes=2) # Ensure mintime<maxtime (for the first execution)
+                if since >= to:
+                    # Ensure mintime<maxtime (for the first execution)
+                    since -= timedelta(minutes=2)
 
                 # the reason we are not doing any iteration/pagnination in get_logs or here is because we can't get more than 1k logs and the API explicitly says that we must call it only 1 time/min (cf : https://duo.com/docs/adminapi#logs)
-                response : dict = self.get_logs(since=since, to=to, endpoint=endpoint)
+                logs = self.get_logs(since=since, to=to, endpoint=endpoint)
 
-                if response.get("metadata"):
-                    self.write_to_file([self.format_log(log) for log in response['authlogs']])
+                if "authlogs" in logs:
+                    self.write_to_file([self.format_log(log) for log in logs['authlogs']])
                     self.update_lock()
-                    if next_offset := response['metadata'].get('next_offset'):
+                    if next_offset := logs.get('metadata', {}).get('next_offset'):
                         self.frontend.last_api_call = datetime.fromtimestamp(int(next_offset[0])/1000, tz=timezone.utc) # save this in case of failure
                         logger.info(f"[{__parser__}]:Updated last_api_call {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
-                logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
-
             except Exception as e:
-                msg = f"Failed to get endpoint {endpoint}\n{e}"
+                msg = f"Failed to get endpoint {endpoint}: {e}"
                 logger.exception(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
