@@ -57,7 +57,7 @@ class CiscoDuoParser(ApiParser):
 
     def __init__(self, data):
         super().__init__(data)
-        
+
         self.cisco_duo_host = data["cisco_duo_host"]
         self.cisco_duo_ikey = data["cisco_duo_ikey"]
         self.cisco_duo_skey = data["cisco_duo_skey"]
@@ -98,13 +98,14 @@ class CiscoDuoParser(ApiParser):
 
         # Get json response
         if response.status_code == 200:
-            logger.info(f"[{__parser__}]:execute: API Request Successfull", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute_query: API Request Successfull", extra={'frontend': str(self.frontend)})
             return response.json()['response']
-
-        # Error
-        if response.status_code != 200:
-            raise CiscoDuoAPIError(
-                f"Error at Cisco Duo API Call URL: {url} Code: {response.status_code} Content: {response.content}")
+        # Errors
+        elif response.status_code == 429:
+            msg = "execute_query: API Request failed, we've hit the rate-limiting (code 429) -- this is 'intended' and had effects on log collection only on very high volumetry"
+            logger.error(f"[{__parser__}]:{msg}", extra={'frontend': str(self.frontend)})
+            raise CiscoDuoAPIError(msg)
+        raise CiscoDuoAPIError(f"Error at Cisco Duo API Call URL: {url} Code: {response.status_code} Content: {response.content}")
 
     def make_headers(self, hostname, path, query=""):
 
@@ -137,7 +138,7 @@ class CiscoDuoParser(ApiParser):
 
         current_time = timezone.now()
         try:
-            logs = self.get_logs(since=(current_time - timedelta(hours=24)), to=current_time, endpoint="authentication")
+            logs = self.get_logs(since=(current_time - timedelta(hours=24)), to=current_time, endpoint=self.ENDPOINTS[0])
 
             return {
                 "status": True,
@@ -151,7 +152,6 @@ class CiscoDuoParser(ApiParser):
             }
 
     def get_logs(self, since=None, to=None, endpoint=None):
-
         path = self.PATH + endpoint
         hostname = self.cisco_duo_host
 
@@ -167,43 +167,31 @@ class CiscoDuoParser(ApiParser):
         query['sort'] = "ts:asc"
 
         return self.__execute_query(hostname, path, query)
-    
+
     def format_log(self, log):
         return json.dumps(log)
 
     def execute(self):
-
         for endpoint in self.ENDPOINTS:
             try:
-                ## GET LOGS ##
+                # delay log gathering for two minutes as API will return empty result otherwise in that range
+                since = self.frontend.last_api_call
+                to = min(timezone.now() - timedelta(minutes=2), since + timedelta(hours=24))
+                if since >= to:
+                    # Ensure mintime<maxtime (for the first execution)
+                    since -= timedelta(minutes=2)
 
-                since = (self.frontend.last_api_call or (timezone.now() - timedelta(days=7)))
-                to = min(timezone.now(), since + timedelta(hours=24))
-
+                # the reason we are not doing any iteration/pagnination in get_logs or here is because we can't get more than 1k logs and the API explicitly says that we must call it only 1 time/min (cf : https://duo.com/docs/adminapi#logs)
                 logs = self.get_logs(since=since, to=to, endpoint=endpoint)
 
-                if logs and logs['metadata']:
-                    ## UPDATE LAST API CALL IF LOGS ALWAYS PRESENT IN RANGE ##
-
-                    if logs['metadata']['total_objects'] >= self.LIMIT and logs['metadata']['next_offset']:
-                        offset = int(logs['metadata']['next_offset'][0]) + 1
-                        new_to = datetime.fromtimestamp(offset/1000, tz=timezone.now().astimezone().tzinfo)
-                        logger.info(f"[{__parser__}]:Logs always present in range since: {since} to : {to}, update last_api_call in {new_to}", extra={'frontend': str(self.frontend)})
-                        to = new_to
-
-                    self.update_lock()
-
-                    ## WRITE TO FILE ##
-
+                if "authlogs" in logs:
                     self.write_to_file([self.format_log(log) for log in logs['authlogs']])
                     self.update_lock()
+                    if next_offset := logs.get('metadata', {}).get('next_offset'):
+                        self.frontend.last_api_call = datetime.fromtimestamp(int(next_offset[0])/1000, tz=timezone.utc) # save this in case of failure
+                        logger.info(f"[{__parser__}]:Updated last_api_call {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
-                self.frontend.last_api_call = to
-                self.frontend.save()
-                
             except Exception as e:
-                msg = f"Failed to endpoint {endpoint}: {e}"
-                logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
-
+                msg = f"Failed to get endpoint {endpoint}: {e}"
+                logger.exception(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
