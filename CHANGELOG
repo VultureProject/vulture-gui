@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [NETSKOPE] Add the possiblity to retrieve 3 new kinds of logs
 ### Fixed
 - [API_PARSER] [NETSKOPE] Remove duplicated logs
+- [API_PARSER] [CATONETWORKS] Fix invalid HTML
 
 
 ## [2.20.0] - 2025-02-04
