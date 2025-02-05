@@ -6,8 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
-### Removed
-- [API_PARSER] [CORTEX_XDR] Remove fields used for backward compatibility
 ### Changed
 - [API_PARSER] [NETSKOPE] Add the possiblity to retrieve 3 new kinds of logs
 ### Fixed

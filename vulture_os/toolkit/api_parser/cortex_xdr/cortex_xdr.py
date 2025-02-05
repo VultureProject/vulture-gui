@@ -194,6 +194,22 @@ class CortexXDRParser(ApiParser):
 
         log['timestamp'] = datetime.fromtimestamp(log_timestamp/1000, tz=timezone.utc).isoformat()
 
+        # Get first occurence of lists to keep retro-compatibility with actual parser
+        # Actual mapping fields
+        tracking_fields = ['agent_version', 'action_remote_ip', 'action_remote_port', 'dns_query_name', 'event_timestamp', 'module_id', 'host_ip', 'agent_os_sub_type', 'action_file_name', 'action_file_path', 'action_file_md5', 'action_file_sha256', 'event_type', 'action_country', 'action_external_hostname', 'action_process_causality_id', 'action_process_image_command_line', 'action_process_image_name', 'action_process_image_sha256', 'action_process_instance_id', 'action_process_signature_status', 'action_process_signature_vendor', 'actor_causality_id', 'actor_process_causality_id', 'agent_host_boot_time', 'agent_is_vdi', 'association_strength', 'bioc_indicator', 'end_match_attempt_ts', 'event_id', 'story_id', 'action_local_port', 'actor_process_command_line', 'actor_process_image_name', 'actor_process_image_path', 'actor_process_instance_id', 'actor_process_os_pid', 'actor_process_image_md5', 'actor_process_image_sha256', 'actor_process_signature_status', 'actor_process_signature_vendor', 'actor_thread_thread_id', 'causality_actor_causality_id', 'causality_actor_process_command_line', 'causality_actor_process_execution_time', 'causality_actor_process_image_md5', 'causality_actor_process_image_name', 'causality_actor_process_image_path', 'causality_actor_process_image_sha256', 'causality_actor_process_signature_status', 'causality_actor_process_signature_vendor', 'action_registry_data', 'action_registry_key_name', 'action_registry_value_name', 'action_local_ip', 'mitre_tactic_id_and_name', 'mitre_technique_id_and_name']
+        truncated_lists_fields = set()
+        for k, v in log.items():
+            if k in tracking_fields and isinstance(v, list):
+                if len(v) == 0:
+                    log[k] = None
+                else:
+                    if len(v) > 1:
+                        truncated_lists_fields.add(k)
+                        logger.info(f"[{__parser__}]:format_log: field '{k}' has more than one occurrence. The first is kept, the others will be ignored.",
+                                    extra={'frontend': str(self.frontend)})
+                    log[k] = v[0]
+        log["truncated_lists_fields"] = list(truncated_lists_fields)
+
         return json.dumps(log)
 
 
