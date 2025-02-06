@@ -296,7 +296,8 @@ $(function() {
   /* Show rsyslog only fields, or hide them */
   function show_custom_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an UDP mode only => HAProxy is useless */
-    if( (mode === "log" && (listening_mode === "udp" || listening_mode === "file" || listening_mode === "api" || listening_mode === "kafka" || listening_mode === "redis")) || (mode === "filebeat" && (filebeat_listening_mode === "udp" || filebeat_listening_mode === "file" || filebeat_listening_mode === "api")) ) {
+    if( (mode === "log" && ["udp", "file", "api", "kafka", "redis"].includes(listening_mode)) ||
+        (mode === "filebeat" && ["udp", "file", "api"].includes(filebeat_listening_mode)) ) {
       $('.haproxy-conf').hide();
     } else {
       $('.haproxy-conf').show();
@@ -307,7 +308,7 @@ $(function() {
   /* Show fields, or hide them, depending on chosen listening mode */
   function show_listening_mode(mode, listening_mode, filebeat_listening_mode) {
     /* If listening mode is TCP, show according options */
-    if (mode === "log" && (listening_mode === "tcp" || listening_mode === "tcp,udp" || listening_mode === "relp")) {
+    if (mode === "log" && ["tcp", "tcp,udp", "relp"].includes(listening_mode)) {
       $('.listening-tcp').show();
     } else {
       $('.listening-tcp').hide();
