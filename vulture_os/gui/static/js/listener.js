@@ -275,6 +275,7 @@ $(function() {
       $('.kafka-mode').hide();
       // ALWAYS put show at last
       $('.redis-mode').show();
+      $('#id_redis_mode').trigger('change');
     } else {
       $('.file-mode').hide();
       $('.api-mode').hide();
@@ -289,7 +290,6 @@ $(function() {
       $('.filebeat-mode.redis-mode').show();
     }
 
-    $('#id_redis_mode').trigger('change')
     refresh_redis_local_use();
   }
 
