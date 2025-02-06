@@ -527,6 +527,11 @@ class Frontend(models.Model):
         verbose_name=_("Reclaim pending messages (ms)")
     )
     """ Performance settings """
+    healthcheck_service = models.BooleanField(
+        default=False,
+        help_text=_("Don't accept sessions if service is not ready"),
+        verbose_name=_("Healthckeck service")
+    )
     nb_workers = models.PositiveIntegerField(
         default=8,
         help_text=_("Maximum number of workers for rsyslog ruleset"),
@@ -1848,6 +1853,7 @@ class Frontend(models.Model):
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
             'nb_workers': self.nb_workers,
+            'healthcheck_service': self.healthcheck_service,
             'mmdb_cache_size': self.mmdb_cache_size,
             'redis_batch_size': self.redis_batch_size,
             'redis_server': self.redis_server,
@@ -2449,7 +2455,10 @@ class Listener(models.Model):
         """ Generate directive configuration of "server" HAProxy
          :return     String - HAProxy server configuration parameter
          """
-        return "{}:{}".format(JAIL_ADDRESSES['rsyslog'][self.network_address.family], self.rsyslog_port)
+        result = f"{JAIL_ADDRESSES['rsyslog'][self.network_address.family]}:{self.rsyslog_port}"
+        if self.frontend.healthcheck_service:
+            result += f" check port {self.rsyslog_port} inter 5s fastinter 1s downinter 1s fall 2 rise 2 observe layer4 on-marked-down shutdown-sessions"
+        return result
 
     def save(self, *args, **kwargs):
         if self.rsyslog_port == 10000:
