@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [API_PARSER] [PERCEPTION_POINT_XRAY] New collector
 - [API_PARSER] [EXTRAHOP] New collector
+- [FRONTEND] [RSYSLOG] New health check option
 ### Changed
 - [DEPENDENCIES]
   - cryptography 43.0.1 -> 44.0.2
