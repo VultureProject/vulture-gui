@@ -105,7 +105,8 @@ CIPHER_SUITES = {
             'ECDHE-RSA-AES128-SHA256:'
             'ECDHE-RSA-AES256-SHA:'
             'ECDHE-RSA-AES128-SHA:'
-            'DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA',
+            'DHE-RSA-AES256-SHA:'
+            'DHE-RSA-AES128-SHA',
     'legacy': 'TLS_AES_256_GCM_SHA384:'
             'TLS_CHACHA20_POLY1305_SHA256:'
             'TLS_AES_128_GCM_SHA256:'
@@ -319,8 +320,8 @@ class X509Certificate(models.Model):
             'subject': cert.subject.rfc4514_string(),
             'issuer': cert.issuer.rfc4514_string(),
             'status': self.status,
-            'validfrom': str(cert.not_valid_before.strftime("%c UTC")),
-            'validuntil': str(cert.not_valid_after.strftime("%c UTC")),
+            'validfrom': str(cert.not_valid_before_utc.strftime("%c UTC")),
+            'validuntil': str(cert.not_valid_after_utc.strftime("%c UTC")),
             'is_vulture_ca': self.is_vulture_ca,
             'is_ca': self.is_ca,
             'is_external': self.is_external,
@@ -473,7 +474,6 @@ class X509Certificate(models.Model):
             return self.get_base_filename() + ".crt"
         else:
             return self.get_base_filename() + ".chain"
-
 
     def save_conf(self):
         """ Write cert as all formats currently supported
