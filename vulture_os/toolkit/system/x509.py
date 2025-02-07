@@ -124,7 +124,7 @@ def mk_ca_cert(CN: str, C: str, ST: str, L: str, O: str, OU: str) -> tuple([x509
     builder = builder.issuer_name(csr.subject)
     builder = builder.public_key(private_key.public_key())
     # TODO this seems wrong, serial should be randomly generated
-    builder = builder.serial_number(1)
+    builder = builder.serial_number(x509.random_serial_number())
     builder = builder.add_extension(
         x509.BasicConstraints(ca=True, path_length=None),
         critical=False
@@ -146,15 +146,15 @@ def mk_cert_builder(serial: int) -> x509.CertificateBuilder:
 
     builder = builder.add_extension(
         x509.KeyUsage(
-        digital_signature=True,
-        key_encipherment=True,
-        content_commitment=False,
-        data_encipherment=False,
-        key_agreement=False,
-        key_cert_sign=False,
-        crl_sign=False,
-        encipher_only=False,
-        decipher_only=False,
+            digital_signature=True,
+            key_encipherment=True,
+            content_commitment=False,
+            data_encipherment=False,
+            key_agreement=False,
+            key_cert_sign=False,
+            crl_sign=False,
+            encipher_only=False,
+            decipher_only=False,
         ),
         critical=False
     )
@@ -217,6 +217,11 @@ def mk_signed_cert(CN: str, C: str, ST: str, L: str, O: str, OU: str, serial: st
         csr.subject
     ).public_key(
         csr.public_key()
+    ).add_extension(
+        x509.SubjectAlternativeName(
+            [x509.DNSName(str(CN))]
+        ),
+        critical=False
     ).issuer_name(
         ca_cert_obj.issuer
     ).sign(ca_key_obj, hashes.SHA256())
