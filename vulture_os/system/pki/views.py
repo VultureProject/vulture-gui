@@ -138,13 +138,13 @@ def pki_edit(request, object_id=None, api=False):
     if request.method in ("POST", "PUT") and cert_type in ("internal", "letsencrypt"):
         form = X509InternalCertificateForm(request.POST or None, instance=x509_model, error_class=DivErrorList)
         if form.is_valid():
-            cn = form.cleaned_data.get('cn')
-            name = form.cleaned_data.get('name')
+            cn = form.cleaned_data['cn']
+            name = form.cleaned_data['name']
 
             if form.cleaned_data.get("type") == "letsencrypt":
                 X509Certificate().gen_letsencrypt(cn, name)
             elif form.cleaned_data.get("type") == "internal":
-                X509Certificate().gen_cert(cn, name)
+                X509Certificate(name=name, cn=cn).gen_cert()
 
             return HttpResponseRedirect('/system/pki/')
         else:

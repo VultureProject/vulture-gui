@@ -108,8 +108,8 @@ def monitor():
 
     """ Get status of Redis, Mongod and Sshd """
     # Instantiate mother class to get status easily
-    service = Service()
     for service_name in ("redis", "mongod", "sshd"):
+        service = Service(service_name)
         service_status = ServiceStatus.objects.filter(name=service_name).first() \
                          or ServiceStatus(name=service_name)
         service_status.status = service.status(service_name)[0]

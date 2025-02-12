@@ -57,9 +57,8 @@ class PFService(Service):
     """ PF service class wrapper """
 
     def __init__(self):
-        super().__init__()
+        super().__init__("pf")
         self.model = PFSettings
-        self.service_name = "pf"
         self.friendly_name = "Packet Filter"
 
         self.config_file = "pf.conf"
