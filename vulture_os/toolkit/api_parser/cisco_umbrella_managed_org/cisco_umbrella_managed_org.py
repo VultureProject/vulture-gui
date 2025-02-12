@@ -282,11 +282,11 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                 if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX + self.LIMIT_MAX:
                     timestamp = logs[-1]['timestamp']/1000
                     self.last_collected_timestamps[timestamp_field_name] = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-                elif index > 0:
+                elif index == 0 and since < timezone.now() - timedelta(hours=24):
+                    self.last_collected_timestamps[timestamp_field_name] = since + timedelta(hours=1)
+                else:
                     # All logs have been recovered
                     self.last_collected_timestamps[timestamp_field_name] = to
-                elif since < timezone.now() - timedelta(hours=24):
-                    self.last_collected_timestamps[timestamp_field_name] = since + timedelta(hours=1)
                 logger.debug(f"[{__parser__}]:execute: New current timestamp is {self.last_collected_timestamps[timestamp_field_name]} (customer {customer_id}, type {log_type})", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
