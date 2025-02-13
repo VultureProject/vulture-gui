@@ -103,8 +103,7 @@ class CarbonBlackParser(ApiParser):
 
     def test(self):
         try:
-            logs = self.get_logs(since=(timezone.now() - timedelta(days=10)),
-                                 to=timezone.now().strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+            logs = self.get_logs(since=(timezone.now() - timedelta(days=10)), to=timezone.now())
 
             return {
                 "status": True,
@@ -118,7 +117,7 @@ class CarbonBlackParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, cursor=1, since=None, to=None):
+    def get_logs(self, since, to, cursor=1):
         alert_url = self.ALERTS.format(self.carbon_black_host, self.carbon_black_orgkey)
 
         # Format timestamp for query, API wants a Z at the end
@@ -127,6 +126,11 @@ class CarbonBlackParser(ApiParser):
         since = since.replace("+00:00", "Z")
         if since[-1] != "Z":
             since += "Z"
+        if isinstance(to, datetime):
+            to = to.isoformat()
+        to = to.replace("+00:00", "Z")
+        if to[-1] != "Z":
+            to += "Z"
 
         query = {
             'criteria': {
@@ -154,22 +158,31 @@ class CarbonBlackParser(ApiParser):
 
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(hours=24))
-        to = min(timezone.now(), since + timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        to = min(timezone.now(), since + timedelta(hours=24))
 
         cursor = 1
         while True:
-            response = self.get_logs(cursor, since, to)
+            logger.info(f"[{__parser__}]:execute: Getting logs from {since} to {to} (cursor is {cursor})", extra={'frontend': str(self.frontend)})
+            response = self.get_logs(since=since, to=to, cursor=cursor)
 
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
 
+            # num_available key is not present if response = {'results': [], 'num_found': 0}
+            available = int(response.get('num_available', "0"))
+            # The API cannot give more than 10k logs, so the query range should be shortened if this case happens
+            # See https://developer.carbonblack.com/reference/carbon-black-cloud/platform/latest/alerts-api/#pagination
+            if available > 10000:
+                logger.warning(f"[{__parser__}]:execute: Search returned more than 10k logs, need to decrease the query range...", extra={'frontend': str(self.frontend)})
+                to = (to - since)/2 + since
+                continue
+
             logs = response['results']
             found = len(logs)
-            available = int(response.get('num_available', "0"))
-            # available key is not present if response = {'results': [], 'num_found': 0}
+            logger.info(f"[{__parser__}]:execute: Got {found} logs, total to get: {available}", extra={'frontend': str(self.frontend)})
 
             if found == 0:
-                self.frontend.last_api_call = datetime.fromisoformat(to.replace("Z", "+00:00"))
+                self.frontend.last_api_call = to
                 break
 
             self.write_to_file([self.format_log(log) for log in logs])
