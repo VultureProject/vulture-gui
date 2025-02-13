@@ -38,10 +38,10 @@ from system.exceptions import VultureSystemError
 
 # Required exceptions imports
 from services.exceptions import ServiceError, ServiceStatusError, ServiceTestConfigError
-
 from subprocess import CalledProcessError
 
 # Extern modules imports
+from os.path import join as path_join
 from subprocess import check_output, PIPE
 
 # Logger configuration imports
@@ -50,14 +50,14 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 
-HAPROXY_PATH = "/usr/local/etc/haproxy.d"
-TEST_CONF_PATH = "/var/tmp/haproxy"
+HAPROXY_PATH = path_join(settings.LOCALETC_PATH, "haproxy.d")
+TEST_CONF_PATH = path_join(settings.TMP_PATH, "haproxy")
 
 HAPROXY_OWNER = "vlt-os:vlt-web"
 HAPROXY_PERMS = "644"
-MANAGEMENT_SOCKET = "/var/sockets/haproxy/haproxy.sock"
+MANAGEMENT_SOCKET = path_join(settings.SOCKETS_PATH, "haproxy/haproxy.sock")
 
-JINJA_PATH = "/home/vlt-os/vulture_os/services/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "services/config/")
 JINJA_TEMPLATE = "haproxy_internals.cfg"
 
 

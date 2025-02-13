@@ -23,10 +23,11 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'SMTP Utils Network Toolkit'
 
 
+from django.conf import settings
 from smtplib import SMTP
 
 import logging
-
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('system')
 
 

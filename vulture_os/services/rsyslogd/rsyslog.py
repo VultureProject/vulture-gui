@@ -40,6 +40,7 @@ from system.exceptions import VultureSystemError
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 from re import search as re_search
 from subprocess import check_output, PIPE
 
@@ -49,9 +50,9 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 
-JINJA_PATH = "/home/vlt-os/vulture_os/services/rsyslogd/config/"
-RSYSLOG_PATH = "/usr/local/etc/rsyslog.d"
-INPUTS_PATH = RSYSLOG_PATH + "/00-system.conf"
+JINJA_PATH = path_join(settings.BASE_DIR, "services/rsyslogd/config/")
+RSYSLOG_PATH = path_join(settings.LOCALETC_PATH, "rsyslog.d")
+INPUTS_PATH = path_join(RSYSLOG_PATH, "00-system.conf")
 
 RSYSLOG_PERMS = "640"
 RSYSLOG_OWNER = "vlt-os:wheel"

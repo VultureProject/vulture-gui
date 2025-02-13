@@ -39,10 +39,10 @@ from authentication.user_portal.models import UserAuthentication
 from services.frontend.models import Frontend
 from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PERMS, HAPROXY_PATH
 from system.cluster.models import Cluster, Node
-from toolkit.network.network import get_hostname
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 
 # Required exceptions imports
 from portal.system.exceptions import ACLError
@@ -57,7 +57,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 # Jinja template for backends rendering
-JINJA_PATH = "/home/vlt-os/vulture_os/workflow/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "workflow/config/")
 JINJA_TEMPLATE = "haproxy_portal.conf"
 
 WORKFLOW_OWNER = HAPROXY_OWNER
@@ -326,7 +326,7 @@ class Workflow(models.Model):
             jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
             template = jinja2_env.get_template(JINJA_TEMPLATE)
             return template.render({'conf': self.to_template(),
-                                    'nodes': Node.objects.exclude(name=get_hostname()),
+                                    'nodes': Node.objects.exclude(name=settings.HOSTNAME),
                                     'global_config': Cluster.get_global_config().to_dict(fields=['public_token', 'portal_cookie_name'])})
         # In ALL exceptions, associate an error message
         # The exception instantiation MUST be IN except statement, to retrieve traceback in __init__

@@ -1,9 +1,0 @@
-### HOW TO SET A DIFFERENT LOG LEVEL FOR A SPECIFIC TEST OF YOUR MODULE
-
-
-This is a bit of a trick, but it shows that with some reflection you can do whatever you want. ;)
-
-1 - Set the 'self.log_level' at the beginning of your function.
-2 - Use the tearDown function to reset the 'self.log_level' to the value you want for the rest of your testing module.
-
-That's it ! XD

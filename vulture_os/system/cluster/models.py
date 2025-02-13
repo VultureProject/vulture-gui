@@ -25,7 +25,7 @@ __doc__ = 'Cluster main models'
 
 from system.config.models import Config
 
-from toolkit.network.network import get_hostname, is_valid_ip4, is_valid_ip6, is_valid_hostname, is_loopback
+from toolkit.network.network import is_valid_ip4, is_valid_ip6, is_valid_hostname, is_loopback
 from toolkit.network.route import get_route_interface
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
@@ -651,7 +651,7 @@ class Cluster(models.Model):
     @staticmethod
     def get_current_node():
         try:
-            hostname = get_hostname()
+            hostname = settings.HOSTNAME
             return Node.objects.get(name=hostname)
         except Node.DoesNotExist:
             logger.error("Cluster:get_current_node: Current node not found. Are we a pending replica ?")

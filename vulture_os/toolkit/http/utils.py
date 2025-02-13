@@ -25,9 +25,11 @@ __doc__ = 'System HTTP Utils Toolkit'
 # Django system imports
 
 # Django project imports
+from django.conf import settings
 
 # Extern modules imports
 import json
+from os.path import join as path_join
 import re
 import ssl
 from urllib.parse import urlencode
@@ -47,6 +49,8 @@ from toolkit.http.exceptions import FetchFormError
 
 
 vulture_custom_agent = 'Vulture/4 (FreeBSD; Vulture OS)'
+
+CERT_PATH = path_join(settings.DBS_PATH, "pki")
 
 
 class SSLAdapter(HTTPAdapter):
@@ -192,7 +196,7 @@ def ssoPOST(logger, uri, req, data, cookie_data, app, cookie_from_fetch, ssl_con
         # requests version 2.18.1 needed for the following line
         session.mount("https://", SSLAdapter(ssl_context.protocol))
 
-        verify_certificate = "/var/db/pki/" if ssl_context.verify_mode == ssl.CERT_REQUIRED else False
+        verify_certificate = CERT_PATH if ssl_context.verify_mode == ssl.CERT_REQUIRED else False
         client_side_cert = app.ssl_client_certificate if app.ssl_client_certificate else None
 
     if content_type == "json":

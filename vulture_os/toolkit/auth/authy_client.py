@@ -26,6 +26,7 @@ __doc__ = 'AuthyApiClient wrapper'
 # Django system imports
 
 # Django project imports
+from django.conf import settings
 from toolkit.auth.base_auth import BaseAuth
 
 # Required exceptions imports
@@ -37,6 +38,7 @@ from authy.api import AuthyApiClient
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('authentication')
 
 
