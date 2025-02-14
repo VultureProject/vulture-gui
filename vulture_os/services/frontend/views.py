@@ -543,15 +543,15 @@ def frontend_edit(request, object_id=None, api=False):
             logger.debug("Frontend '{}' (id={}) saved in MongoDB.".format(frontend.name, frontend.id))
 
             """ And all the listeners early created """
-            for l in listener_objs:
-                l.frontend = frontend
-                logger.debug("Saving listener {}".format(str(l)))
-                l.save()
+            for listener in listener_objs:
+                listener.frontend = frontend
+                logger.debug("Saving listener {}".format(str(listener)))
+                listener.save()
 
             """ Delete listeners deleted in form """
-            for l in frontend.listener_set.exclude(pk__in=[l.id for l in listener_objs]):
-                l.delete()
-                logger.info("Deleting listener {}".format(l))
+            for listener in frontend.listener_set.exclude(pk__in=[listener.id for listener in listener_objs]):
+                listener.delete()
+                logger.info("Deleting listener {}".format(listener))
 
             """ If mode is HTTP """
             if frontend.mode == "http":

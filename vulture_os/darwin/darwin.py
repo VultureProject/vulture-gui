@@ -26,7 +26,6 @@ __doc__ = 'Darwin main models'
 from django.utils.translation import gettext as _
 from django.conf import settings
 
-from services.darwin.darwin import DarwinService
 
 import logging
 import logging.config
