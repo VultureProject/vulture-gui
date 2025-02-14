@@ -42,7 +42,6 @@ from services.openvpn.models import Openvpn
 from services.pf.pf import PFService
 from services.rsyslogd.rsyslog import RsyslogService
 from services.filebeat.filebeat import FilebeatService
-from services.darwin.darwin import DarwinService
 from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 

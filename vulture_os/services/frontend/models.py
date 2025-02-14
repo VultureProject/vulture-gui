@@ -1557,10 +1557,10 @@ class Frontend(models.Model):
             # Test self.pk to prevent M2M errors when object isn't saved in DB
             if self.pk:
                 for listener in self.listener_set.all():
-                    l = listener.to_template()
+                    template = listener.to_template()
                     # Remove frontend to prevent infinite loop
-                    del l['frontend']
-                    result['listeners'].append(l)
+                    del template['frontend']
+                    result['listeners'].append(template)
         if not fields or "backend" in fields:
             result['backend'] = [b.to_dict() for b in self.backend.all()] if self.pk else []
         if not fields or "darwin_policies" in fields:
@@ -1601,7 +1601,7 @@ class Frontend(models.Model):
                                     for log_fwd in self.log_forwarders.all().only('id')]
 
         if not fields or "api_parser_custom_certificate" in fields:
-            if result['api_parser_custom_certificate'] == None:
+            if result['api_parser_custom_certificate'] is None:
                 result['api_parser_custom_certificate'] = {}
 
         return result
@@ -1623,9 +1623,9 @@ class Frontend(models.Model):
             listeners_list = ["Kafka:"] + self.kafka_brokers
         else:
             # Test self.pk to prevent M2M errors when object isn't saved in DB
-            listeners_list = [str(l) for l in self.listener_set.all().only(*Listener.str_attrs())] if self.pk else []
+            listeners_list = [str(listener) for listener in self.listener_set.all().only(*Listener.str_attrs())] if self.pk else []
 
-        log_forwarders = [str(l) for l in self.log_forwarders.all()]
+        log_forwarders = [str(listener) for listener in self.log_forwarders.all()]
 
         mode = "UNKNOWN"
         for m in MODE_CHOICES:
@@ -2354,7 +2354,7 @@ class Listener(models.Model):
         if self.rsyslog_port == 10000:
             try:
                 self.rsyslog_port = Listener.objects.latest('rsyslog_port').rsyslog_port + 1
-            except:
+            except Listener.DoesNotExist:
                 # Let port 1000 if no listener defined yet
                 pass
         super().save(*args, **kwargs)
