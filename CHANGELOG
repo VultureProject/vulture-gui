@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CISCO_UMBRELLA_MANAGED_ORG] Avoid errors and crashes when no logs are available for some customer IDs
 - [API_PARSER] [CARBON_BLACK] Avoid API limits of 10k logs
 - [SERVICE] [FILEBEAT] Ensure config files are correctly deleted on Listener deletion
+- [SERVICES] Improve how service statuses are reported
 ### Changed
 - [API_PARSER] [CARBON_BLACK] Use v7 of APIs
 
