@@ -87,7 +87,7 @@ def monitor():
     )
     mon.services_id = set()
 
-    for service in [HaproxyService, DarwinService, PFService,
+    for service in [HaproxyService, PFService,
                     StrongswanService, OpenvpnService, RsyslogService, FilebeatService]:
 
         # Get some statuses outside for reusing variable later
