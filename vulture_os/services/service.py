@@ -110,12 +110,19 @@ class Service:
     def _exec_cmd(self, cmd, *args):
         jail_name = JAIL_SERVICES.get(self.service_name)
 
-        if jail_name:
-            command = ['/usr/local/bin/sudo', '/usr/sbin/jexec', jail_name, '/usr/sbin/service', self.service_name, cmd, *args]
-        else:
-            command = ['/usr/local/bin/sudo', '/usr/sbin/service', self.service_name, cmd, *args]
+        filtered_args = []
+        for arg in args:
+            if not isinstance(arg, str):
+                filtered_args.append(str(arg))
+            else:
+                filtered_args.append(arg)
 
-        logger.debug(f"running command '{' '.join(command)}'")
+        if jail_name:
+            command = ['/usr/local/bin/sudo', '/usr/sbin/jexec', jail_name, '/usr/sbin/service', self.service_name, cmd, *filtered_args]
+        else:
+            command = ['/usr/local/bin/sudo', '/usr/sbin/service', self.service_name, cmd, *filtered_args]
+
+        logger.debug(f"executing command '{' '.join(command)}'")
         proc = Popen(command, stdout=PIPE, stderr=PIPE)
         success, error = proc.communicate()
         return success.decode('utf8'), error.decode('utf8'), proc.returncode
