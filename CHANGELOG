@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [SERVICE] [FILEBEAT] Support new rc calls to check services separatly
+### Removed
+- [API_PARSER] [CORTEX_XDR] Remove fields used for backward compatibility
 ### Fixed
 - [API_PARSER] [CISCO_UMBRELLA_MANAGED_ORG] Avoid errors and crashes when no logs are available for some customer IDs
 - [API_PARSER] [CARBON_BLACK] Avoid API limits of 10k logs
