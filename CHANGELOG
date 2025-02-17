@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CARBON_BLACK] Avoid API limits of 10k logs
 - [SERVICE] [FILEBEAT] Ensure config files are correctly deleted on Listener deletion
 - [SERVICES] Improve how service statuses are reported
+- [ACLs] [APIs] Correct URL path to change ACLs through APIs
 ### Changed
 - [API_PARSER] [CARBON_BLACK] Use v7 of APIs
 
