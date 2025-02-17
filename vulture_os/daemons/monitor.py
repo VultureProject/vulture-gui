@@ -72,13 +72,11 @@ def monitor():
         """ Get a service_class (eg HaproxyService)
         :return  a dict {'name':service_name, 'status': status} """
         service_inst = service_class()
-        service_status, _ = ServiceStatus.objects.update_or_create(
-            name=service_inst.service_name,
-            defaults={
-                'status': service_inst.status()[0],
-                'friendly_name': service_inst.friendly_name,
-            }
-        )
+        service_status = ServiceStatus.objects.filter(name=service_inst.service_name).first() \
+                         or ServiceStatus(name=service_inst.service_name)
+        service_status.status = service_inst.status()[0]
+        service_status.friendly_name = service_inst.friendly_name
+        service_status.save()
         return service_status
 
     """ Initialize date and Monitor object """
@@ -122,10 +120,10 @@ def monitor():
     frontends = Frontend.objects.all().only('name', 'status', 'enabled', 'mode', 'listening_mode')
     backends = Backend.objects.all().only('name', 'status', 'enabled')
     if frontends.count() > 0 or backends.count() > 0:
-        haproxy_statuses = {}
+        statuses = {}
         try:
             # Return a dict { frontend_name: frontend_status, backend_name: backend_status, ... }
-            haproxy_statuses = get_stats()
+            statuses = get_stats()
 
         except ServiceError as e:
             logger.error(str(e))
@@ -136,58 +134,40 @@ def monitor():
         """ FRONTENDS """
         for frontend in frontends:
             if node in frontend.get_nodes():
-                partial_statuses = list()
-                status = "UNKNOWN"
+                status = {}
                 if not frontend.enabled:
-                    partial_statuses.append("DISABLED")
-                    # status[node.name] = "DISABLED"
-                # special case of Collectors, running on a specific node
-                if frontend.mode == "log" and frontend.listening_mode == "api":
+                    status[node.name] = "DISABLED"
+                elif frontend.mode == "log" and frontend.listening_mode == "api":
                     for tmp_node in frontend.get_nodes():
                         if node_selected(tmp_node, frontend):
                             if node == tmp_node:
                                 # Let Rsyslog take the responsability to set the status to OPEN
-                                partial_statuses.append({'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status))
+                                status[tmp_node.name] = {'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status)
                         else:
-                            # Set the status to STOP if the node is not currently holding the collector
-                            partial_statuses.append("STOP")
-                if frontend.has_rsyslog_conf:
-                    partial_statuses.append({'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status))
-                if frontend.has_filebeat_conf:
+                            status[tmp_node.name] = "STOP"
+                elif frontend.rsyslog_only_conf:
+                    status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(rsyslogd_status.status, rsyslogd_status.status)
+                elif frontend.filebeat_only_conf:
                     filebeat_service = FilebeatService()
                     filebeat_process_status = filebeat_service.status(frontend.pk)
-                    partial_statuses.append({'UP': "OPEN", 'DOWN': "ERROR"}.get(filebeat_process_status[0], "STOP"))
-                if frontend.has_haproxy_conf:
-                    partial_statuses.append(haproxy_statuses.get("FRONTEND", {}).get(frontend.name, "ERROR"))
-                logger.debug(f"Statuses of frontend '{frontend.name}': {partial_statuses}")
+                    status[node.name] = {'UP': "OPEN", 'DOWN': "STOP"}.get(filebeat_process_status[0], "STOP")
+                else:
+                    status[node.name] = statuses.get("FRONTEND", {}).get(frontend.name, "ERROR")
+                logger.debug(f"Status of frontend '{frontend.name}': {status}")
 
-                # Set final status depending on partial statuses
-                # Order of conditions is important
-                if "DISABLED" in partial_statuses:
-                    status = "DISABLED"
-                elif "STOP" in partial_statuses:
-                    status = "STOP"
-                elif "UNKNOWN" in partial_statuses:
-                    status = "UNKNOWN"
-                elif "ERROR" in partial_statuses:
-                    status = "ERROR"
-                elif "OPEN" in partial_statuses:
-                    status = "OPEN"
-
-                frontend.refresh_from_db()
-                if frontend.status.get(node.name) != status:
-                    logger.info(f"Status of frontend '{frontend.name}' on node '{node.name}' changed from {frontend.status.get(node.name)} to {status}")
-                    frontend.status[node.name] = status
-                    frontend.save(update_fields=['status'])
+                for node_name in status.keys():
+                    if status[node_name] != frontend.status.get(node_name):
+                        logger.info(f"Status of frontend '{frontend.name}' on node '{node_name}' changed from {frontend.status.get(node_name)} to {status[node_name]}")
+                        frontend.status[node_name] = status[node_name]
+                        frontend.save()
 
             elif not (frontend.mode == "log" and frontend.listening_mode == "api") and frontend.status.get(node.name):
-                frontend.refresh_from_db()
                 frontend.status.pop(node.name, None)
-                frontend.save(update_fields=['status'])
+                frontend.save()
 
         """ BACKENDS """
         for backend in backends:
-            status = "DISABLED" if not backend.enabled else haproxy_statuses.get("BACKEND", {}).get(backend.name, "ERROR")
+            status = "DISABLED" if not backend.enabled else statuses.get("BACKEND", {}).get(backend.name, "ERROR")
             logger.debug("Status of backend '{}': {}".format(backend.name, status))
             if backend.status.get(node.name) != status:
                 backend.status[node.name] = status
