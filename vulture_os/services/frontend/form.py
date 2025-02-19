@@ -271,6 +271,7 @@ class FrontendForm(ModelForm):
                            "infoblox_threat_defense_host", "infoblox_threat_defense_token",
                            "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host",
                            "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs", "beyondtrust_reportings_get_vault_account_activity_logs", "beyondtrust_reportings_get_support_session_logs",
+                           "varonis_host", "varonis_api_key",
                            ]:
             self.fields[field_name].required = False
 
@@ -390,6 +391,7 @@ class FrontendForm(ModelForm):
                   "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs",
                   "beyondtrust_reportings_get_vault_account_activity_logs",
                   "beyondtrust_reportings_get_support_session_logs",
+                  "varonis_host", "varonis_api_key",
                   )
 
         widgets = {
@@ -610,7 +612,8 @@ class FrontendForm(ModelForm):
             'beyondtrust_reportings_get_access_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_vault_account_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_support_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-        }
+            'varonis_host': TextInput(attrs={'class': 'form-control'}),
+            'varonis_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),        }
 
     def clean_name(self):
         """ HAProxy does not support space in frontend/listen name directive, replace them by _ """
