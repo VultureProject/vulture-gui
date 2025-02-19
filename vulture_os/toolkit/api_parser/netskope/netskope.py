@@ -139,7 +139,7 @@ class NetskopeParser(ApiParser):
         if self.netskope_get_application_logs:
             logtypes.append("application")
         for logtype in logtypes:
-            since = self.last_collected_timestamps.get(logtype, self.last_api_call) or (timezone.now() - timedelta(hours=24))
+            since = self.last_collected_timestamps.get(logtype) or (timezone.now() - timedelta(hours=24))
             to = min(timezone.now(), since + timedelta(hours=24))
             offset = 0
             logs = []
@@ -178,7 +178,7 @@ class NetskopeParser(ApiParser):
                             extra={'frontend': str(self.frontend)})
                 self.last_collected_timestamps[logtype] = to
 
-            elif self.last_api_call < timezone.now() - timedelta(hours=24):
+            elif since < timezone.now() - timedelta(hours=24):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
                 self.last_collected_timestamps[logtype] = self.last_collected_timestamps[logtype] + timedelta(hours=1)
