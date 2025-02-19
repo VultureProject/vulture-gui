@@ -1521,6 +1521,17 @@ class Frontend(models.Model):
         help_text=_("Retrieve Beyondtrust Reportings SupportSession logs"),
         default=False,
     )
+    # Varonis attributes
+    varonis_host = models.TextField(
+        verbose_name=_("Varonis Host"),
+        help_text=_("Varonis Host"),
+        default="",
+    )
+    varonis_api_key = models.TextField(
+        verbose_name=_("Varonis API Key"),
+        help_text=_("Varonis API Key"),
+        default="",
+    )
 
 
     @staticmethod

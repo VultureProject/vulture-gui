@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] Add loggers before the requests to make easier the debugging
+- [API_PARSER] [VARONIS] New collector
 ### Changed
 - [API_PARSER] [CISCO_MERAKI] Change common logger to warn instead of error
 - [API_PARSER] [CORTEX_XDR] Use the 'local_insert_ts' field as time field for alerts
@@ -39,7 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ACLs] [APIs] Correct URL path to change ACLs through APIs
 ### Changed
 - [API_PARSER] [CARBON_BLACK] Use v7 of APIs
-
 
 ## [2.21.0] - 2025-02-06
 ### Changed
