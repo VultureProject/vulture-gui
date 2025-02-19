@@ -56,6 +56,7 @@ class ProofpointTRAPParser(ApiParser):
             self.proofpoint_trap_host = "https://" + self.proofpoint_trap_host
 
         self.proofpoint_trap_apikey = data["proofpoint_trap_apikey"]
+        self.proofpoint_trap_timeout = int(data["api_parser_request_timeout"])
 
         self.session = None
 
@@ -74,7 +75,10 @@ class ProofpointTRAPParser(ApiParser):
         except Exception as err:
             raise ProofpointTRAPAPIError(err)
 
-    def __execute_query(self, url, query=None, timeout=20):
+    def __execute_query(self, url, query=None):
+        if self.evt_stop.is_set():
+            return
+        self.update_lock()
 
         self._connect()
 
@@ -84,7 +88,7 @@ class ProofpointTRAPParser(ApiParser):
         response = self.session.get(
             url,
             params=query,
-            timeout=timeout,
+            timeout=self.proofpoint_trap_timeout,
             proxies=self.proxies,
             verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
         )
@@ -94,7 +98,7 @@ class ProofpointTRAPParser(ApiParser):
             logger.info(f"[{__parser__}]:execute: API Rate limit exceeded, waiting 10 seconds...",
                         extra={'frontend': str(self.frontend)})
             time.sleep(10)
-            return self.__execute_query(url, query, timeout)
+            return self.__execute_query(url, query)
         elif response.status_code != 200:
             raise ProofpointTRAPAPIError(
                 f"Error at Proofpoint TRAP API Call URL: {url} Code: {response.status_code} Content: {response.content}")
@@ -207,6 +211,8 @@ class ProofpointTRAPParser(ApiParser):
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.get_logs(since, to)
+        if response is None:
+            return
 
         # Downloading may take some while, so refresh token in Redis
         self.update_lock()
