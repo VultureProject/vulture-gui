@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [API_PARSER] [NETSKOPE] Correctly update the last_collected_timestamp, even when no logs are received
 
 
 ## [2.22.0] - 2025-02-25
