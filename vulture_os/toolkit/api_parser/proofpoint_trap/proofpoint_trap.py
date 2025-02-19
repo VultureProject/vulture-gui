@@ -58,6 +58,7 @@ class ProofpointTRAPParser(ApiParser):
         self.proofpoint_trap_apikey = data["proofpoint_trap_apikey"]
 
         self.session = None
+        self.step_list = [1,5,10,15,30,60,120,240]
 
     def _connect(self):
         try:
@@ -105,7 +106,9 @@ class ProofpointTRAPParser(ApiParser):
 
         current_time = timezone.now()
         try:
-            logs = self.get_logs(since=(current_time - timedelta(hours=12)), to=current_time)
+            since = (current_time - timedelta(minutes=self.step_list[-1]))
+            to = current_time
+            logs = self.get_logs(since=since, to=to)
 
             return {
                 "status": True,
@@ -118,25 +121,17 @@ class ProofpointTRAPParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, since=None, to=None):
+    def get_logs(self, since, to):
         alert_url = self.proofpoint_trap_host + "/api/incidents"
 
         # Format timestamp for query
-        if isinstance(since, datetime):
-            since = since.isoformat()
-            since = since[:-13] + "Z"
-        # Format timestamp for query
-        if isinstance(to, datetime):
-            to = to.isoformat()
-            to = to[:-13] + "Z"
+        since_formatted = since.isoformat()[:19] + 'Z'
+        to_formatted = to.isoformat()[:19] + 'Z'
 
-        query = {}
-
-        # logs with 'since' or 'to' values are included in return
-        if since:
-            query['created_after'] = since
-        if to:
-            query['created_before'] = to
+        query = {
+            'created_after': since_formatted,  # >= created_at
+            'created_before': to_formatted,  # < created_at
+        }
 
         return self.__execute_query(alert_url, query)
 
@@ -194,35 +189,50 @@ class ProofpointTRAPParser(ApiParser):
         return json.dumps(alert_log)
 
     def execute(self):
-
+        step_index = len(self.step_list) - 1
         since = self.frontend.last_api_call or (timezone.now() - timedelta(days=30))
+        to = min(timezone.now(), since + timedelta(minutes=self.step_list[step_index]))
+        max_to = timezone.now()
 
-        # fetch at most 24h of logs to avoid the process running for too long
-        to = min(timezone.now(), since + timedelta(hours=24))
 
-        # delay the times of 15 minutes, to get the "updated" event
-        to = to - timedelta(minutes=15)
+        logger.info(f"[{__parser__}]:get_logs: since: {since} ({type(since)}), to: {to} ({type(to)})",
+                    extra={'frontend': str(self.frontend)})
 
-        msg = f"Parser starting from {since} to {to}"
-        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+        while to < max_to:
+            msg = f"Parser starting from {since} to {to}"
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
-        response = self.get_logs(since, to)
+            try:
+                response = self.get_logs(since, to)
 
-        # Downloading may take some while, so refresh token in Redis
-        self.update_lock()
+                if step_index < len(self.step_list) - 1:
+                    step_index += 1
+            except requests.exceptions.ReadTimeout:
+                if step_index > 0:
+                    step_index -= 1
+                to = min(timezone.now(), since + timedelta(minutes=self.step_list[step_index]))
+                logger.warning(f"[{__parser__}]:get_logs: Timeout: down step {self.step_list[step_index]} minutes",
+                            extra={'frontend': str(self.frontend)})
+                continue
 
-        logger.info(f"[{__parser__}]: GET LOG OK", extra={'frontend': str(self.frontend)})
+            # Downloading may take some while, so refresh token in Redis
+            self.update_lock()
 
-        for incident_log in response:
-            formated_incident_log = self.format_incidents_logs(incident_log)
-            alert_logs = formated_incident_log['events']
+            logger.info(f"[{__parser__}]: GET LOG OK", extra={'frontend': str(self.frontend)})
 
-            self.write_to_file([self.format_alerts_logs(log) for log in alert_logs])
+            alert_logs = []
+            for incident_log in sorted(response, key=lambda e: e['id']):
+                formated_incident_log = self.format_incidents_logs(incident_log)
+                alert_logs.extend(formated_incident_log['events'])
+
+            self.write_to_file([self.format_alerts_logs(log) for log in sorted(alert_logs, key=lambda e: e['id'])])
 
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
-        # update last_api_call only if logs are retrieved
-        self.frontend.last_api_call = to + timedelta(seconds=1)
+            # update last_api_call only if logs are retrieved
+            since = to
+            to = min(max_to, since + timedelta(minutes=self.step_list[step_index]))
+            self.frontend.last_api_call = since
 
-        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
