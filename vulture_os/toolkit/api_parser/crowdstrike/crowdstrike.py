@@ -56,6 +56,7 @@ class CrowdstrikeParser(ApiParser):
         'accept': 'application/json'
     }
 
+
     def __init__(self, data):
         super().__init__(data)
 
@@ -72,7 +73,6 @@ class CrowdstrikeParser(ApiParser):
         if not self.api_host.startswith('https://'):
             self.api_host = f"https://{self.api_host}"
 
-        self.login()
 
     def login(self):
         logger.info(f"[{__parser__}][login]: Login in...", extra={'frontend': str(self.frontend)})
@@ -81,12 +81,14 @@ class CrowdstrikeParser(ApiParser):
         self.session = requests.session()
         self.session.headers.update(self.HEADERS)
 
-        payload = {'client_id': self.client_id,
-                   'client_secret': self.client_secret}
         try:
+            # Rate limiting seems to be 10/minute over the auth_url endpoint
             response = self.session.post(
                 auth_url,
-                data=payload,
+                data={
+                    'client_id': self.client_id,
+                    'client_secret': self.client_secret
+                },
                 timeout=10,
                 proxies=self.proxies,
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
@@ -113,6 +115,7 @@ class CrowdstrikeParser(ApiParser):
         del self.session.headers['Accept-Encoding']
 
         return True, self.session
+
 
     def __execute_query(self, method, url, query, timeout=10):
         retry = 3
@@ -149,6 +152,7 @@ class CrowdstrikeParser(ApiParser):
             return {}
         return response.json()
 
+
     def unionDict(self, dictBase, dictToAdd):
         finalDict = {}
         for k, v in dictBase.items():
@@ -161,35 +165,35 @@ class CrowdstrikeParser(ApiParser):
         return finalDict
 
     def execute_query(self, method, url, query={}, timeout=10):
-        # can set a custom limit of entry we want to retrieve
+        # can set a custom limit of entry we want to retrieve -
+        # by default to -1 ensuring line 178 to not break on first page
+        # by default the result per page is 100 for this API
         customLimit = int(query.get('limit', -1))
 
         jsonResp = self.__execute_query(method, url, query, timeout=timeout)
         totalToRetrieve = jsonResp.get('meta', {}).get('pagination', {}).get('total', 0)
 
         while(totalToRetrieve > 0 and totalToRetrieve != len(jsonResp.get('resources', []))):
-            # we retrieved enough data
-            if(customLimit > 0 and customLimit <= len(jsonResp['resources'])):
-                break
-            query['offset'] = int(jsonResp['meta']['pagination']['offset'])
+            # if we've retrieved enough data -> break
+            if(customLimit > 0 and customLimit <= len(jsonResp['resources'])): break
+
+            query['offset'] = len(jsonResp.get('resources', []))
             jsonAdditionalResp = self.__execute_query(
                 method, url, query, timeout=timeout)
             jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
-            #jsonResp += [jsonAdditionalResp]
         return jsonResp
+
 
     def getSummary(self):
         nbSensor = self.getSensorsTotal()
-        version, updated = self.getApplianceVersion()
+        version, updated = 0, 0 # This is the appliance version
         return nbSensor, version, updated
-
-    def getApplianceVersion(self):
-        return 0, 0
 
     def getSensorsTotal(self):
         device_url = f"{self.api_host}/{self.DEVICE_URI}"
         ret = self.execute_query('GET', device_url, {'limit': 1})
         return int(ret['meta']['pagination']['total'])
+
 
     def getAlerts(self, since, to):
         '''
@@ -198,7 +202,7 @@ class CrowdstrikeParser(ApiParser):
         logger.debug(f"[{__parser__}][getAlerts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
 
         finalRawAlerts = []
-        # first retrieve the detection raw ids
+        # first retrieve the detections raw ids
         alert_url = f"{self.api_host}/{self.DETECTION_URI}"
         payload = {
             "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
@@ -206,32 +210,32 @@ class CrowdstrikeParser(ApiParser):
         }
         ret = self.execute_query("GET", alert_url, payload)
         ids = ret['resources']
-        if(len(ids) > 0):
-            # retrieve the content of detection selected
-            alert_url = f"{self.api_host}/{self.DETECTION_DETAILS_URI}"
-            payload = {"ids": ids}
-            ret = self.execute_query("POST", alert_url, payload)
 
+        # then retrieve the content of selected detections ids
+        if(len(ids) > 0):
+            ret = self.execute_query(method="POST",
+                                     url=f"{self.api_host}/{self.DETECTION_DETAILS_URI}",
+                                     query={"ids": ids})
             alerts = ret['resources']
             for alert in alerts:
                 finalRawAlerts += [alert]
 
+        # finally, if "request incidents" checkbox is set in GUI,
+        # retrieve also the incident raw ids
         if self.request_incidents:
-            # then retrieve the incident raw ids
             alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
             payload = {
                 "filter": f"start:>'{since}'+start:<='{to}'",
                 "sort": "end|desc"
             }
-
             ret = self.execute_query("GET", alert_url, payload)
             ids = ret['resources']
 
             if(len(ids) > 0):
-                # retrieve the content of selected incidents
-                alert_url = f"{self.api_host}/{self.INCIDENT_DETAILS_URI}"
-                payload = {"ids": ids}
-                ret = self.execute_query("POST", alert_url, payload)
+                # then retrieve the content of selected incidents ids
+                ret = self.execute_query(method="POST",
+                                         url=f"{self.api_host}/{self.INCIDENT_DETAILS_URI}",
+                                         query={"ids": ids})
                 alerts = ret['resources']
                 for alert in alerts:
                     finalRawAlerts += [alert]
@@ -253,45 +257,10 @@ class CrowdstrikeParser(ApiParser):
         log['url'] = self.api_host
         return json.dumps(log)
 
-    def execute(self):
-        # Retrieve version of cybereason console
-        _, self.observer_version, _ = self.getSummary()
-
-        self.kind = "details"
-        # Default timestamp is 24 hours ago
-        since = self.last_api_call or (timezone.now() - datetime.timedelta(days=7))
-        # Get a batch of 24h at most, to avoid running the parser for too long
-        # delay the query time of 2 minutes, to avoid missing events
-        to = min(timezone.now()-timedelta(minutes=2), since + timedelta(hours=24))
-        to = to.strftime("%Y-%m-%dT%H:%M:%SZ")
-        since = since.strftime("%Y-%m-%dT%H:%M:%SZ")
-        tmp_logs = self.get_logs(self.kind, since=since, to=to)
-
-        # Downloading may take some while, so refresh token in Redis
-        self.update_lock()
-
-        total = len(tmp_logs)
-
-        if total > 0:
-            logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
-
-            # Logs sorted by timestamp descending, so first is newer
-            self.frontend.last_api_call = to
-
-        elif self.last_api_call < timezone.now()-timedelta(hours=24):
-            # If no logs where retrieved during the last 24hours,
-            # move forward 1h to prevent stagnate ad vitam eternam
-            self.frontend.last_api_call += timedelta(hours=1)
-
-        self.write_to_file([self.format_log(log) for log in tmp_logs])
-
-        # Writting may take some while, so refresh token in Redis
-        self.update_lock()
-
-        logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
         try:
+            self.login() # establish a session to console
             logger.debug(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
 
             query_time = (timezone.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -311,3 +280,35 @@ class CrowdstrikeParser(ApiParser):
                 "status": False,
                 "error": str(e)
             }
+
+
+    def execute(self):
+        self.login() # establish a session to console
+        _, self.observer_version, _ = self.getSummary() # Retrieve version of crowdstrike console
+        self.kind = "details"
+
+        # Default timestamp is 24 hours ago
+        since = self.last_api_call or (timezone.now() - datetime.timedelta(days=7))
+        # Get a batch of 24h at most, to avoid running queries for too long
+        # also delay the query time of 3 minutes, to avoid missing events
+        to = min(timezone.now()-timedelta(minutes=3), since + timedelta(hours=24))
+        to = to.strftime("%Y-%m-%dT%H:%M:%SZ")
+        since = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        tmp_logs = self.get_logs(self.kind, since=since, to=to)
+        self.update_lock()
+
+        total = len(tmp_logs)
+        if total > 0:
+            logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
+            self.frontend.last_api_call = to # Logs sorted by timestamp descending, so first is newer
+
+        # If no logs where retrieved during the last 24hours,
+        # move forward 1h to prevent stagnate ad vitam eternam
+        elif self.last_api_call < timezone.now()-timedelta(hours=24):
+            self.frontend.last_api_call += timedelta(hours=1)
+
+        self.write_to_file([self.format_log(log) for log in tmp_logs])
+        self.update_lock()
+
+        logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
