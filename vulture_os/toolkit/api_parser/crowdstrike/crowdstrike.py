@@ -164,15 +164,17 @@ class CrowdstrikeParser(ApiParser):
         # The result per page is 100 by default for this API (when not using limit as it is the case here).
         customLimit = int(query.get('limit', -1))
 
+        # Get first page of logs
         jsonResp = self.__execute_query(method, url, query, timeout=timeout)
         totalToRetrieve = jsonResp.get('meta', {}).get('pagination', {}).get('total', 0)
-
+        # Continue to paginate if more than customLimit number of logs in totalToRetrieve
         while(totalToRetrieve > 0 and totalToRetrieve != len(jsonResp.get('resources', []))):
             # if we've retrieved enough data -> break
             if(customLimit > 0 and customLimit <= len(jsonResp['resources'])): break
 
             query['offset'] = len(jsonResp.get('resources', []))
             jsonAdditionalResp = self.__execute_query(method, url, query, timeout=timeout)
+            self.update_lock()
 
             jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
         return jsonResp
@@ -187,18 +189,17 @@ class CrowdstrikeParser(ApiParser):
             "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
             "sort": "last_behavior|desc"
         }
-        ret = self.execute_query("GET",
-                                 f"{self.api_host}/{self.DETECTION_URI}",
-                                 payload)
+        ret = self.execute_query(method="GET",
+                                 url=f"{self.api_host}/{self.DETECTION_URI}",
+                                 query=payload)
         ids = ret['resources']
         # then retrieve the content of selected detections ids
         if(len(ids) > 0):
             ret = self.execute_query(method="POST",
                                      url=f"{self.api_host}/{self.DETECTION_DETAILS_URI}",
                                      query={"ids": ids})
-            alerts = ret['resources']
-            for alert in alerts:
-                detections += [alert]
+            ret = ret['resources']
+            for alert in ret: detections += [alert]
         return detections
 
     def get_incidents(self, since, to):
@@ -210,32 +211,33 @@ class CrowdstrikeParser(ApiParser):
             "filter": f"start:>'{since}'+start:<='{to}'",
             "sort": "end|desc"
         }
-        ret = self.execute_query("GET",
-                                 f"{self.api_host}/{self.INCIDENT_URI}",
-                                 payload)
+        ret = self.execute_query(method="GET",
+                                 url=f"{self.api_host}/{self.INCIDENT_URI}",
+                                 query=payload)
         ids = ret['resources']
         # then retrieve the content of selected incidents ids
         if(len(ids) > 0):
             ret = self.execute_query(method="POST",
-                                        url=f"{self.api_host}/{self.INCIDENT_DETAILS_URI}",
-                                        query={"ids": ids})
-            alerts = ret['resources']
-            for alert in alerts:
-                incidents += [alert]
+                                     url=f"{self.api_host}/{self.INCIDENT_DETAILS_URI}",
+                                     query={"ids": ids})
+            ret = ret['resources']
+            for alert in ret: incidents += [alert]
         return incidents
 
     def get_logs(self, since, to):
         logs = []
 
         kinds = ["detections"]
-        if self.request_incidents:
-            kinds.append("incidents")
+        if self.request_incidents: kinds.append("incidents")
+
         for kind in kinds:
             try:
                 msg = f"Querying {kind} from {since}, to {to}"
                 logger.info(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
+
+                # get new logs
                 get_func_type = getattr(self, f"get_{kind}")
-                logs.extend(get_func_type(since, to))
+                logs.extend(get_func_type(since, to)) 
 
             except Exception as e:
                 logger.exception(f"[{__parser__}][get_logs]: {e}", extra={'frontend': str(self.frontend)})
@@ -283,7 +285,6 @@ class CrowdstrikeParser(ApiParser):
         since = since.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         logs = self.get_logs(since=since, to=to)
-        self.update_lock()
 
         total = len(logs)
         if total > 0:
