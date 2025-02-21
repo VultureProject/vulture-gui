@@ -74,15 +74,14 @@ class CrowdstrikeParser(ApiParser):
 
     def login(self):
         logger.info(f"[{__parser__}][login]: Login in...", extra={'frontend': str(self.frontend)})
-        auth_url = f"{self.api_host}/{self.AUTH_URI}"
 
         self.session = requests.session()
         self.session.headers.update(self.HEADERS)
 
         try:
-            # Rate limiting seems to be 10/minute over the auth_url endpoint
+            # Rate limiting seems to be 10/minute for the authentication endpoint
             response = self.session.post(
-                auth_url,
+                url=f"{self.api_host}/{self.AUTH_URI}",
                 data={
                     'client_id': self.client_id,
                     'client_secret': self.client_secret
@@ -97,7 +96,7 @@ class CrowdstrikeParser(ApiParser):
             return False, ('Connection failed')
         except requests.exceptions.ReadTimeout:
             self.session = None
-            logger.error(f'[{__parser__}][login]: Connection failed {self.client_id} (ReadTimeout)', extra={'frontend': str(self.frontend)})
+            logger.error(f'[{__parser__}][login]: Connection failed (ReadTimeout)', extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
 
         response.raise_for_status()
@@ -143,9 +142,8 @@ class CrowdstrikeParser(ApiParser):
             break  # no error we break from the loop
 
         if response.status_code not in [200, 201]:
-            logger.error(
-                f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}", extra={'frontend': str(self.frontend)}
-            )
+            logger.error(f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}",
+                         extra={'frontend': str(self.frontend)})
             return {}
         return response.json()
 
@@ -193,7 +191,6 @@ class CrowdstrikeParser(ApiParser):
                                  f"{self.api_host}/{self.DETECTION_URI}",
                                  payload)
         ids = ret['resources']
-
         # then retrieve the content of selected detections ids
         if(len(ids) > 0):
             ret = self.execute_query(method="POST",
@@ -217,9 +214,8 @@ class CrowdstrikeParser(ApiParser):
                                  f"{self.api_host}/{self.INCIDENT_URI}",
                                  payload)
         ids = ret['resources']
-
+        # then retrieve the content of selected incidents ids
         if(len(ids) > 0):
-            # then retrieve the content of selected incidents ids
             ret = self.execute_query(method="POST",
                                         url=f"{self.api_host}/{self.INCIDENT_DETAILS_URI}",
                                         query={"ids": ids})
@@ -229,23 +225,22 @@ class CrowdstrikeParser(ApiParser):
         return incidents
 
     def get_logs(self, since, to):
-        try:
-            kind = "detections"
-            msg = f"Querying {kind} from {since}, to {to}"
-            logger.info(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
-            detections = self.get_detections(since, to)
+        logs = []
 
-            kind = "incidents"
-            msg = f"Querying {kind} from {since}, to {to}"
-            logger.info(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
-            if self.request_incidents:
-                incidents  = self.get_incidents(since, to)
+        kinds = ["detections"]
+        if self.request_incidents:
+            kinds.append("incidents")
+        for kind in kinds:
+            try:
+                msg = f"Querying {kind} from {since}, to {to}"
+                logger.info(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
+                get_func_type = getattr(self, f"get_{kind}")
+                logs.extend(get_func_type(since, to))
 
-        except Exception as e:
-            logger.exception(f"[{__parser__}][get_logs]: {e}", extra={'frontend': str(self.frontend)})
-            raise Exception(f"Error querying {kind} logs")
-
-        return detections + incidents
+            except Exception as e:
+                logger.exception(f"[{__parser__}][get_logs]: {e}", extra={'frontend': str(self.frontend)})
+                raise Exception(f"Error querying {kind} logs")
+        return logs
 
     def format_log(self, log):
         log['url'] = self.api_host # This static field is mandatory for parser
@@ -255,9 +250,9 @@ class CrowdstrikeParser(ApiParser):
     def test(self):
         try:
             self.login() # establish a session to console
-            logger.debug(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
 
-            since = (timezone.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            since = (timezone.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
             to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
             logs = self.get_logs(since, to)
