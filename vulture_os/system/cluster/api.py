@@ -41,6 +41,7 @@ from system.cluster.models import Node, MessageQueue, APISyncResultTimeOutExcept
 from system.cluster.views import COMMAND_LIST, cluster_edit
 from system.cluster.models import Cluster
 from system.pki.models import X509Certificate
+from toolkit.network.network import is_valid_ip, is_valid_hostname
 from toolkit.mongodb.mongo_base import MongoBase
 from services.frontend.models import Frontend
 from workflow.models import Workflow
@@ -64,8 +65,7 @@ def cluster_add(request):
 
     current_node = Cluster.get_current_node()
 
-    # FIXME: improve security check (valid IPv4 / IPv6 and valid name)
-    if not new_node_name or not new_node_ip:
+    if not (new_node_name and new_node_ip and is_valid_hostname(new_node_name) and is_valid_ip(new_node_ip)):
         return JsonResponse({
             'status': False,
             'message': 'Invalid call'
@@ -126,13 +126,13 @@ def cluster_add(request):
 
     """ Add NEW MongoDB node into the REPLICASET, as a pending member """
     mongo = MongoBase()
-    response = None
+    status, message = None, None
     if mongo.connect_with_retries(retries=10, timeout=2):
         cpt = 0
-        while not response:
+        while not message:
             try:
                 logger.debug("Adding {} to replicaset".format(new_node_name))
-                response = mongo.repl_add(new_node_name + ':9091')
+                status, message = mongo.repl_add(new_node_name + ':9091')
             except Exception as e:
                 logger.error("Cannot connect to replica for the moment : {}".format(e))
                 cpt += 1
@@ -147,7 +147,7 @@ def cluster_add(request):
     else:
         logger.error("Could not connect to the MongoDB replicaset")
 
-    if response:
+    if status:
         Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (new_node_name, new_node_ip))
         Cluster.api_request("services.pf.pf.gen_config")
         new_node.api_request('toolkit.network.network.refresh_nic')
@@ -202,7 +202,7 @@ def cluster_add(request):
         new_node.api_request("services.logrotate.logrotate.reload_conf")
 
         logger.debug("API call to update PF")
-        Cluster.api_request ("services.pf.pf.gen_config")
+        Cluster.api_request("services.pf.pf.gen_config")
 
         return JsonResponse({
             'status': True,

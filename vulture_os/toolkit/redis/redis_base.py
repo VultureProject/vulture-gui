@@ -120,6 +120,36 @@ class RedisBase:
             return False
         return self.redis.sentinel_monitor('mymaster', node or self.node, 6379, 2)
 
+    def sentinel_failover(self):
+        """
+        Force a new election inside the replicaset.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        if not self.get_role() == "sentinel":
+            return False
+        return self.redis.sentinel_reset('mymaster')
+
+    def sentinel_remove(self):
+        """
+        Configure sentinel to remove monitoring on local redis node.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        if not self.get_role() == "sentinel":
+            return False
+        return self.redis.sentinel_remove('mymaster')
+
+    def sentinel_reset(self):
+        """
+        Forget a replica from configuration.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        if not self.get_role() == "sentinel":
+            return False
+        return self.redis.sentinel_reset('mymaster')
+
     def sentinel_set_announce_ip(self):
         """
         Set sentinel announce_ip through RedisBase class.
@@ -253,4 +283,17 @@ def set_password(logger, passwords=("","")):
     if not result:
         logger.error("Unable to set Redis password in Sentinel")
         raise RedisError("Unable to set Redis password in Sentinel")
+    return result
+
+
+def sentinel_reset(logger):
+    """
+    Reset sentinel known sentinels and replicas
+    :return: True if Sentinel command succeded
+    """
+    sentinel = RedisBase(get_management_ip(), 26379)
+    result = sentinel.sentinel_reset()
+    if not result:
+        logger.error("Unable to reset Sentinel monitor")
+        raise RedisError("Unable to reset Sentinel monitor")
     return result

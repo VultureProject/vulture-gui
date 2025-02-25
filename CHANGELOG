@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [SCRIPT] [WIPE] New script to reset a bootstrapped node
+- [CLUSTER] Improve node import routine
+- [CLUSTER] Improve node deletion from the gui
 
 
 ## [2.22.0] - 2025-02-25
