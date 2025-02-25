@@ -34,6 +34,7 @@ from services.haproxy.haproxy import HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
 from system.config.models import write_conf
 
 # Extern modules imports
+from os.path import join as path_join
 
 # Required exceptions imports
 
@@ -308,7 +309,7 @@ class PortalTemplate(models.Model):
                 continue
 
             try:
-                with open("/usr/local/etc/haproxy.d/templates/portal_%s_%s.conf" % (str(self.id), tpl),
+                with open(path_join(settings.LOCALETC_PATH, "haproxy.d/templates/portal_%s_%s.conf" % (str(self.id), tpl)),
                           'w') as f:
                     html = getattr(self, tpl)
                     if tpl not in ["email_subject", "email_body", "email_register_subject", "email_register_body"]:

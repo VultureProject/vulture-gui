@@ -32,6 +32,7 @@ from djongo import models
 # Django project imports
 from authentication.base_repository import BaseRepository
 from authentication.user_scope.models import UserScope
+from os.path import join as path_join
 from system.exceptions import VultureSystemConfigError
 from system.pki.models import CERT_OWNER, CERT_PERMS
 from toolkit.auth.authy_client import AuthyClient
@@ -253,7 +254,7 @@ class OpenIDRepository(BaseRepository):
         }
 
     def get_jwt_key_filename(self):
-        return f"/var/db/pki/openid-{self.pk}.pub"
+        return path_join(settings.DBS_PATH, "pki/openid-{self.pk}.pub")
 
     @staticmethod
     def jwt_validate_with_certificate(jwt_signature_type):

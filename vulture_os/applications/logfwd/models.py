@@ -35,6 +35,7 @@ from system.pki.models import X509Certificate
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 import pymongo
 import hashlib
 
@@ -81,8 +82,7 @@ OMHIREDIS_MODE_CHOICES = (
     ('stream', "Stream mode, using xadd"),
 )
 
-CONF_PATH = "/usr/local/etc/rsyslog.d/10-applications.conf"
-JINJA_PATH = "/home/vlt-os/vulture_os/applications/logfwd/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "applications/logfwd/config/")
 
 
 class LogOM (models.Model):

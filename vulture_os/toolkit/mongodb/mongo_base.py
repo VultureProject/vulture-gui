@@ -25,12 +25,12 @@ __doc__ = 'System Utils Database Toolkit'
 
 from pymongo import MongoClient, ReadPreference
 from pymongo.errors import OperationFailure, AutoReconnect
-from toolkit.network.network import get_hostname
 from django.conf import settings
 from re import search as re_search
 import subprocess
 import logging
 
+logging.config.dictConfig(settings.LOG_SETTINGS)
 # No database logging to prevent infinite loop
 logger = logging.getLogger('system')
 
@@ -54,11 +54,11 @@ class MongoBase:
 
     @staticmethod
     def get_local_node():
-        return '{}:9091'.format(get_hostname())
+        return '{}:9091'.format(settings.HOSTNAME)
 
     @staticmethod
     def get_local_uri():
-        return 'mongodb://{}:9091'.format(get_hostname())
+        return 'mongodb://{}:9091'.format(settings.HOSTNAME)
 
     @staticmethod
     def get_replicaset_uri():
@@ -199,19 +199,19 @@ class MongoBase:
 
     def connect(self, node=None, primary=True, timeout_ms=5000):
         try:
-            if node:
-                host = 'mongodb://{}'.format(node)
-            else:
-                host = self.get_replicaset_uri()
+            args = settings.DATABASES['default']['CLIENT']
+            args['serverSelectionTimeoutMS'] = timeout_ms
 
-            args = {'host': host,
-                    'ssl': True,
-                    'tlsCertificateKeyFile': "/var/db/pki/node.pem",
-                    'tlsCAFile': "/var/db/pki/ca.pem",
-                    'read_preference': ReadPreference.PRIMARY_PREFERRED,
-                    "serverSelectionTimeoutMS": timeout_ms}
+            if node:
+                args['host'] = f'mongodb://{node}'
+            else:
+                args['host'] = self.get_replicaset_uri()
+
             if primary:
-                args['replicaset'] = "Vulture"
+                args['read_preference'] = ReadPreference.PRIMARY
+            else:
+                args['read_preference'] = ReadPreference.PRIMARY_PREFERRED
+
             self.db = MongoClient(**args)
             # Execute a request to test connection (pymongo doesn't try connecting until a command is executed on client)
             self.db.admin.command('ping')
@@ -248,7 +248,7 @@ class MongoBase:
         """
         config = {
             '_id': 'Vulture', 'members': [
-                {'_id': 0, 'host': "{}:9091".format(get_hostname())}
+                {'_id': 0, 'host': "{}:9091".format(settings.HOSTNAME)}
             ]
         }
         try:

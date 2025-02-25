@@ -28,10 +28,11 @@ from darwin.policy.models import DarwinPolicy
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.utils.crypto import get_random_string
+from os.path import join as path_join
 from system.cluster.models import Cluster, Node
 from system.pki.models import X509Certificate, TLSProfile
 from system.users.models import User
-from toolkit.network.network import get_hostname, get_management_ip
+from toolkit.network.network import get_management_ip
 from toolkit.mongodb.mongo_base import MongoBase
 from toolkit.redis.redis_base import RedisBase
 from toolkit.system.secret_key import set_key
@@ -69,7 +70,7 @@ def cluster_create(admin_user=None, admin_password=None):
     """ Create the local node """
     RC_NETWORK_CONF = "network"
     node, new_node = Node.objects.get_or_create(
-        name=get_hostname(),
+        name=settings.HOSTNAME,
         management_ip=get_management_ip()
     )
 
@@ -91,16 +92,16 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request('toolkit.network.network.write_management_ips')
 
     """ Obtain Certificates and store it into mongoDB """
-    with open("/var/db/pki/ca.pem") as f:
+    with open(path_join(settings.DBS_PATH, "pki/ca.pem")) as f:
         ca_cert = f.read()
 
-    with open("/var/db/pki/ca.key") as f:
+    with open(path_join(settings.DBS_PATH, "pki/ca.key")) as f:
         ca_key = f.read()
 
-    with open("/var/db/pki/node.cert") as f:
+    with open(path_join(settings.DBS_PATH, "pki/node.cert")) as f:
         cert = f.read()
 
-    with open("/var/db/pki/node.key") as f:
+    with open(path_join(settings.DBS_PATH, "pki/node.key")) as f:
         key = f.read()
 
     internal_ca = X509Certificate(
@@ -186,7 +187,7 @@ def cluster_create(admin_user=None, admin_password=None):
 
     """ Update uri of internal Log Forwarder """
     logfwd = LogOMMongoDB.objects.get()
-    logfwd.uristr = "mongodb://{}:9091/?replicaset=Vulture&ssl=true".format(get_hostname())
+    logfwd.uristr = "mongodb://{}:9091/?replicaset=Vulture&ssl=true".format(settings.HOSTNAME)
     logfwd.x509_certificate = node_cert
     logfwd.save()
 
@@ -307,7 +308,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
             infos = requests.post(
                 "https://{}:8000/api/system/pki/get_cert/".format(master_ip),
                 headers={'Cluster-api-key': secret_key},
-                data={'node_name': get_hostname()},
+                data={'node_name': settings.HOSTNAME},
                 verify=False
             ).json()
 
@@ -325,19 +326,19 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         logger.error("Unable to retrieve Node certificate and key, check secret key")
         return False
 
-    with open("/var/tmp/ca.pem", "w") as f:
+    with open(path_join(settings.TMP_PATH, "ca.pem", "w")) as f:
         f.write(ca_cert)
 
-    with open("/var/tmp/ca.key", "w") as f:
+    with open(path_join(settings.TMP_PATH, "ca.key", "w")) as f:
         f.write(ca_key)
 
-    with open("/var/tmp/node.cert", "w") as f:
+    with open(path_join(settings.TMP_PATH, "node.cert", "w")) as f:
         f.write(cert)
 
-    with open("/var/tmp/node.key", "w") as f:
+    with open(path_join(settings.TMP_PATH, "node.key", "w")) as f:
         f.write(key)
 
-    with open("/var/tmp/node.pem", "w") as f:
+    with open(path_join(settings.TMP_PATH, "node.pem", "w")) as f:
         f.write(bundle)
 
     """ At this point we should have valid certificates:
@@ -361,7 +362,7 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         infos = requests.post(
             "https://{}:8000/api/system/cluster/add/".format(master_ip),
             headers={'Cluster-api-key': secret_key},
-            data={'ip': get_management_ip(), 'name': get_hostname()},
+            data={'ip': get_management_ip(), 'name': settings.HOSTNAME},
             verify=False
         )
 

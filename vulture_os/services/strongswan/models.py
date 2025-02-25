@@ -32,6 +32,7 @@ from system.cluster.models import Node
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 from services.exceptions import ServiceJinjaError
 from system.exceptions import VultureSystemConfigError
 
@@ -61,12 +62,12 @@ AUTHBY = (
 )
 
 # Jinja template for frontends rendering
-JINJA_PATH = "/home/vlt-os/vulture_os/services/strongswan/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "services/strongswan/config/")
 JINJA_TEMPLATE_IPSEC = "ipsec.conf"
 JINJA_TEMPLATE_SECRETS = "ipsec.secrets"
 JINJA_TEMPLATE_STRONGSWAN = "strongswan.conf"
 
-CONF_PATH = "/usr/local/etc/"
+CONF_PATH = settings.LOCALETC_PATH
 
 STRONGSWAN_OWNER = "root:wheel"
 
@@ -190,9 +191,9 @@ class Strongswan(models.Model):
 
         conf = self.generate_conf()
 
-        params_ipsec = ['/usr/local/etc/ipsec.conf', conf['template_ipsec'], STRONGSWAN_OWNER, "644"]
-        params_secrets = ['/usr/local/etc/ipsec.secrets', conf['template_secrets'], STRONGSWAN_OWNER, "600"]
-        params_strongswan = ['/usr/local/etc/strongswan.conf', conf['template_strongswan'], STRONGSWAN_OWNER, "644"]
+        params_ipsec = [path_join(CONF_PATH, 'ipsec.conf'), conf['template_ipsec'], STRONGSWAN_OWNER, "644"]
+        params_secrets = [path_join(CONF_PATH, 'ipsec.secrets'), conf['template_secrets'], STRONGSWAN_OWNER, "600"]
+        params_strongswan = [path_join(CONF_PATH, 'strongswan.conf'), conf['template_strongswan'], STRONGSWAN_OWNER, "644"]
 
         for params in (params_ipsec, params_secrets, params_strongswan):
             try:

@@ -24,6 +24,7 @@ __doc__ = 'AuthyApiClient wrapper'
 
 
 # Django system imports
+from django.conf import settings
 
 # Django project imports
 from system.cluster.models import Cluster
@@ -38,6 +39,7 @@ from django.utils.crypto import get_random_string
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('authentication')
 
 

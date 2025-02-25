@@ -39,6 +39,7 @@ from toolkit.network.network import JAIL_ADDRESSES
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
+from os.path import join as path_join
 
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
@@ -118,13 +119,13 @@ BALANCING_CHOICES = (
 )
 
 # Jinja template for backends rendering
-JINJA_PATH = "/home/vlt-os/vulture_os/applications/backend/config/"
+JINJA_PATH = path_join(settings.BASE_DIR, "applications/backend/config/")
 JINJA_TEMPLATE = "haproxy_backend.conf"
 
 BACKEND_OWNER = HAPROXY_OWNER
 BACKEND_PERMS = HAPROXY_PERMS
 
-UNIX_SOCKET_PATH = "/var/sockets/rsyslog"
+UNIX_SOCKET_PATH = path_join(settings.SOCKETS_PATH, "rsyslog")
 
 
 class Backend(models.Model):

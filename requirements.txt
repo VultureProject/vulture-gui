@@ -344,6 +344,10 @@ django==4.2.18 \
 django-crontab==0.7.1 \
     --hash=sha256:1201810a212460aaaa48eb6a766738740daf42c1a4f6aafecfb1525036929236
     # via -r requirements.in
+django-environ==0.11.2 \
+    --hash=sha256:0ff95ab4344bfeff693836aa978e6840abef2e2f1145adff7735892711590c05 \
+    --hash=sha256:f32a87aa0899894c27d4e1776fa6b477e8164ed7f6b3e410a62a6d72caaf64be
+    # via -r requirements.in
 django-jsoneditor==0.2.4 \
     --hash=sha256:1d3dfca28f047feefa6ebc6f9541179eb815fb459b006faf3fb8d0fb2197d2df \
     --hash=sha256:d7a639a7251e376126b5be64ea588c925c7a40d45e0e212f66ef475d2f0f90bb
