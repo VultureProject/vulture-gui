@@ -211,6 +211,8 @@ class ProofpointTRAPParser(ApiParser):
 
         # delay the times of 15 minutes, to get the "updated" event
         to = to - timedelta(minutes=15)
+        if since > to:
+            since = to - timedelta(minutes=1)
 
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
