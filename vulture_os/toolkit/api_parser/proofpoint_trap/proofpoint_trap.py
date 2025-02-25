@@ -137,7 +137,7 @@ class ProofpointTRAPParser(ApiParser):
                 return self.__execute_query(alert_url, query), to
             except requests.exceptions.ReadTimeout:
                 to = to - (to-since)/2
-                assert (to-since) > timedelta(seconds=1), "Reduced range is too small, cannot continue"
+                assert (to-since) > timedelta(minutes=1), "Reduced range is too small, cannot continue"
                 logger.warning(f"[{__parser__}]:get_logs: Read Timeout: decreasing time range: {since} -> {to}",
                             extra={'frontend': str(self.frontend)})
                 self.update_lock()
