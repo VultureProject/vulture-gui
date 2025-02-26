@@ -143,10 +143,9 @@ class CrowdstrikeParser(ApiParser):
             break  # no error we break from the loop
 
         if response.status_code not in [200, 201]:
-            logger.error(
-                f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}", extra={'frontend': str(self.frontend)}
-            )
-            return {}
+            msg = f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}"
+            logger.error(msg, extra={'frontend': str(self.frontend)})
+            raise Exception(msg)
         return response.json()
 
     def unionDict(self, dictBase, dictToAdd):
