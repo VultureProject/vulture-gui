@@ -96,7 +96,7 @@ class CrowdstrikeParser(ApiParser):
             return False, ('Connection failed')
         except requests.exceptions.ReadTimeout:
             self.session = None
-            logger.error(f'[{__parser__}][login]: Connection failed (ReadTimeout)', extra={'frontend': str(self.frontend)})
+            logger.error(f'[{__parser__}][login]: Connection failed {self.client_id} (ReadTimeout)', extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
 
         response.raise_for_status()
@@ -231,8 +231,6 @@ class CrowdstrikeParser(ApiParser):
             try:
                 msg = f"Querying {kind} from {since}, to {to}"
                 logger.info(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
-
-                # get new logs
                 get_func_type = getattr(self, f"get_{kind}")
                 logs.extend(get_func_type(since, to)) 
 
