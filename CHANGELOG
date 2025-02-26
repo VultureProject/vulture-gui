@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [API_PARSER] [NETSKOPE] Correctly update the last_collected_timestamp, even when no logs are received
 - [API_PARSER] [CYBEREASON] Avoid None evaluation of log objects in format_log for malops
+- [API_PARSER] [CROWDSTRIKE] Fix infinite loop when we encounters more than 100 logs (default limit) in one request
 
 
 ## [2.22.0] - 2025-02-25
@@ -31,7 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CATONETWORKS] Fix invalid HTML
 - [API_PARSER] [WAF_CLOUDFLARE] Correctly set and use the `fields` list
 - [API_PARSER] [CISCO_DUO] Avoid updating last timestamp when unecessary and add a 2-minute delay to collect
-- [API_PARSER] [CROWDSTRIKE] Fix infinite loop when we encounters more than 100 logs (default limit) in one request
 
 
 ## [2.20.0] - 2025-02-04
