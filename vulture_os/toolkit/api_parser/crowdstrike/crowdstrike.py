@@ -45,7 +45,7 @@ class CrowdstrikeAPIError(Exception):
 
 class CrowdstrikeParser(ApiParser):
     AUTH_URI = "oauth2/token"
-    DEVICE_URI = "devices/queries/devices/v1"
+    # DEVICE_URI = "devices/queries/devices/v1"
     DETECTION_URI = "detects/queries/detects/v1"
     DETECTION_DETAILS_URI = "detects/entities/summaries/GET/v1"
     INCIDENT_URI = "incidents/queries/incidents/v1"
