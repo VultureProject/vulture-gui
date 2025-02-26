@@ -169,22 +169,20 @@ class Malop:
         flattened_hostname = []
         flattened_domain = []
 
-        if devices := log.get('devices'):
-            for device in devices:
-                if device['ip'] not in flattened_ip:
-                    flattened_ip.append(device['ip'])
-                if device['nat']['ip'] not in flattened_ip:
-                    flattened_ip.append(device['nat']['ip'])
-                if device['hostname'] not in flattened_hostname:
-                    flattened_hostname.append(device['hostname'])
-                if device['domain'] not in flattened_domain:
-                    flattened_domain.append(device['domain'])
+        for device in log.get('devices', []):
+            if device['ip'] not in flattened_ip:
+                flattened_ip.append(device['ip'])
+            if device['nat']['ip'] not in flattened_ip:
+                flattened_ip.append(device['nat']['ip'])
+            if device['hostname'] not in flattened_hostname:
+                flattened_hostname.append(device['hostname'])
+            if device['domain'] not in flattened_domain:
+                flattened_domain.append(device['domain'])
 
-        if users := log.get('users'):
-            for user in users:
-                domain = user.get('displayName', "").split('\\')[0]
-                if domain and (domain not in flattened_domain):
-                    flattened_domain.append(domain)
+        for user in log.get('users', []):
+            domain = user.get('displayName', "").split('\\')[0]
+            if domain and (domain not in flattened_domain):
+                flattened_domain.append(domain)
 
         if process_details := log.get('process_details'):
             log['formated_process_details'] = self._process_details_flattener(process_details)
