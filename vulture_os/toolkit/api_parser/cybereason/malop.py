@@ -169,7 +169,7 @@ class Malop:
         flattened_hostname = []
         flattened_domain = []
 
-        for device in log['devices']:
+        for device in log.get('devices', []):
             if device['ip'] not in flattened_ip:
                 flattened_ip.append(device['ip'])
             if device['nat']['ip'] not in flattened_ip:
@@ -179,9 +179,9 @@ class Malop:
             if device['domain'] not in flattened_domain:
                 flattened_domain.append(device['domain'])
 
-        for user in log['users']:
-            domain = (user['displayName']).split('\\')[0]
-            if domain not in flattened_domain:
+        for user in log.get('users', []):
+            domain = user.get('displayName', "").split('\\')[0]
+            if domain and (domain not in flattened_domain):
                 flattened_domain.append(domain)
 
         if process_details := log.get('process_details'):
