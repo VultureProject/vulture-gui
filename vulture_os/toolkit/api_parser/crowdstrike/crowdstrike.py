@@ -160,23 +160,22 @@ class CrowdstrikeParser(ApiParser):
         return finalDict
 
     def execute_query(self, method, url, query={}, timeout=10):
-        # Setting a custom limit to -1 by default ensuring line 178 to not break on first page collection.
-        # The result per page is 100 by default for this API (when not using limit as it is the case here).
-        customLimit = int(query.get('limit', -1))
+        # query['limit'] = 100
 
         # Get first page of logs
-        jsonResp = self.__execute_query(method, url, query, timeout=timeout)
+        jsonResp = self.__execute_query(method, url, query, timeout=timeout) 
         totalToRetrieve = jsonResp.get('meta', {}).get('pagination', {}).get('total', 0)
-        # Continue to paginate if more than customLimit number of logs in totalToRetrieve
-        while(totalToRetrieve > 0 and totalToRetrieve != len(jsonResp.get('resources', []))):
-            # if we've retrieved enough data -> break
-            if(customLimit > 0 and customLimit <= len(jsonResp['resources'])): break
 
-            query['offset'] = len(jsonResp.get('resources', []))
-            jsonAdditionalResp = self.__execute_query(method, url, query, timeout=timeout)
-            self.update_lock()
+        if totalToRetrieve > 0:
+            # Continue to paginate while totalToRetrieve is different than the length of all logs gathered from successive paginations
+            # The default page size is 100 (when "limit" parameter is not passed to query, like the case here)
+            while(totalToRetrieve != len(jsonResp.get('resources', []))):
+                query['offset'] = len(jsonResp.get('resources', []))
 
-            jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
+                jsonAdditionalResp = self.__execute_query(method, url, query, timeout=timeout)
+                self.update_lock()
+
+                jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
         return jsonResp
 
 
@@ -185,13 +184,12 @@ class CrowdstrikeParser(ApiParser):
 
         detections = []
         # first retrieve the detections raw ids
-        payload = {
-            "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
-            "sort": "last_behavior|desc"
-        }
         ret = self.execute_query(method="GET",
                                  url=f"{self.api_host}/{self.DETECTION_URI}",
-                                 query=payload)
+                                 query={
+                                    "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
+                                    "sort": "last_behavior|desc"
+                                 })
         ids = ret['resources']
         # then retrieve the content of selected detections ids
         if(len(ids) > 0):
@@ -207,13 +205,12 @@ class CrowdstrikeParser(ApiParser):
 
         incidents = []
         # first retrieve the incidents raw ids
-        payload = {
-            "filter": f"start:>'{since}'+start:<='{to}'",
-            "sort": "end|desc"
-        }
         ret = self.execute_query(method="GET",
                                  url=f"{self.api_host}/{self.INCIDENT_URI}",
-                                 query=payload)
+                                 query={
+                                    "filter": f"start:>'{since}'+start:<='{to}'",
+                                    "sort": "end|desc"
+                                 })
         ids = ret['resources']
         # then retrieve the content of selected incidents ids
         if(len(ids) > 0):
@@ -285,15 +282,13 @@ class CrowdstrikeParser(ApiParser):
         since = since.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         logs = self.get_logs(since=since, to=to)
-
         total = len(logs)
         if total > 0:
             logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
             self.frontend.last_api_call = to # Logs sorted by timestamp descending, so first is newer
-
-        # If no logs where retrieved during the last 24hours,
-        # move forward 1h to prevent stagnate ad vitam eternam
         elif self.last_api_call < timezone.now()-timedelta(hours=24):
+            # If no logs where retrieved during the last 24hours,
+            # move forward 1h to prevent stagnate ad vitam eternam
             self.frontend.last_api_call += timedelta(hours=1)
 
         self.write_to_file([self.format_log(log) for log in logs])
