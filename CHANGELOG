@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CYBEREASON] Avoid None evaluation of log objects in format_log for malops
 - [API_PARSER] [CROWDSTRIKE] Fix infinite loop when we encounters more than 100 logs (default limit) in one request
 - [API_PARSER] [PROOFPOINT_TRAP] Handle and avoid request timeouts by progressively reducing queries range
+- [SERVICES] [FRONTEND] Only show node field for specific modes
 
 
 ## [2.22.0] - 2025-02-25
