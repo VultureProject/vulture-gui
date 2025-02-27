@@ -216,10 +216,9 @@ class Service:
                 if match:
                     status = "UP"
             elif self.service_name == "filebeat":
-                match = re_search("Filebeat \d+ running \d+", infos)
-                if match:
+                if code == 0:
                     status = "UP"
-                elif re_search("Filebeat \d+ stopped", infos):
+                else:
                     status = "DOWN"
             else:
                 logger.error("[{}] Status unknown, STDOUT='{}', STDERR='{}'".format(self.service_name.upper(), infos,
