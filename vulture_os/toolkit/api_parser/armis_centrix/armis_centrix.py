@@ -24,14 +24,12 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Armis Centrix API Parser toolkit'
 __parser__ = 'ArmisCentrix'
 
-import datetime
-import json
 import logging
-import time
-from datetime import timedelta
-
-import requests
+from datetime import timedelta, datetime
+from requests import exceptions, session
 from urllib.parse import quote
+from json import dumps
+
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
@@ -45,11 +43,11 @@ class ArmisCentrixAPIError(Exception):
 
 
 class ArmisCentrixParser(ApiParser):
-    # the last slash is mandatory for endpoints
+    # last slash is mandatory for endpoints
     AUTH_URL   = "/api/v1/access_token/" 
     SEARCH_URL = "/api/v1/search/"
 
-    LIMIT = 1000 # The maximum limit is 9999 (ELK)
+    LIMIT = 1000 # maximum limit is 9999 (ELK)
 
 
     def __init__(self, data):
@@ -81,21 +79,16 @@ class ArmisCentrixParser(ApiParser):
 
             msg = f"{len(logs)} logs retrieved"
             logger.info(f"[{__parser__}][test] :: {msg}", extra={'frontend': str(self.frontend)})
-            return {
-                "status": True,
-                "data": logs
-            }
+            return {"status": True, "data": logs}
+
         except Exception as e:
             logger.exception(f"[{__parser__}][test] :: {e}", extra={'frontend': str(self.frontend)})
-            return {
-                "status": False,
-                "error": str(e)
-            }
+            return {"status": False, "error": str(e)}
 
 
     def login(self, test: bool = False) -> None:
         if not self.session:
-            self.session = requests.session()
+            self.session = session()
             self.session.headers = {
                 "Accept": "application/json",
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -112,9 +105,9 @@ class ArmisCentrixParser(ApiParser):
 
             token = resp.get("data", {}).get("access_token", "")
             token_expire_at = resp.get("data", {}).get("expiration_utc", "")
-            token_expire_at = datetime.datetime.strptime(token_expire_at, "%Y-%m-%dT%H:%M:%S.%f%z")
+            token_expire_at = datetime.strptime(token_expire_at, "%Y-%m-%dT%H:%M:%S.%f%z")
             assert token, f"Cannot retrieve token from API data['access_token'] = Null"
-            assert token_expire_at and isinstance(token_expire_at, datetime.datetime), f"Cannot retrieve token_expire_at from API data['expiration_utc'] = Null or invalid datetime"
+            assert token_expire_at and isinstance(token_expire_at, datetime), f"Cannot retrieve token_expire_at from API data['expiration_utc'] = Null or invalid datetime"
             if not test:
                 self.frontend.armis_centrix_token = token
                 self.frontend.armis_centrix_token_expire_at = token_expire_at.timestamp()
@@ -144,14 +137,14 @@ class ArmisCentrixParser(ApiParser):
                 elif(method == "POST"):
                     response = self.session.post(
                         url,
-                        data=json.dumps(query),
+                        data=dumps(query),
                         headers={'Content-Type': 'application/json'},
                         timeout=timeout,
                         proxies=self.proxies,
                         verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                     )
-            except requests.exceptions.ReadTimeout:
-                time.sleep(timeout)
+            except exceptions.ReadTimeout:
+                self.evt_stop.wait(10.0)
                 msg = f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (retries left: {retry}/3)"
                 logger.info(msg, extra={'frontend': str(self.frontend)})
                 continue
@@ -170,7 +163,7 @@ class ArmisCentrixParser(ApiParser):
             raise Exception(e)
 
 
-    def get_logs(self, kind: str, since: datetime.datetime, to: datetime.datetime, test: bool = False) -> int|list:
+    def get_logs(self, kind: str, since: datetime, to: datetime, test: bool = False) -> int|list:
         logs = []
 
         try:
@@ -187,7 +180,7 @@ class ArmisCentrixParser(ApiParser):
                 "includeSample": "false",
                 "includeTotal": "false"
             }
-            # Get the first page of logs
+            # get the first page of logs
             resp = self.execute_query(
                 url=url,
                 method="GET",
@@ -201,7 +194,7 @@ class ArmisCentrixParser(ApiParser):
             self.write_to_file([self.format_log(log) for log in logs if log != ""]) # write the first n log's page
             logger.debug(f"[{__parser__}][get_logs] :: Successfully gathered first {kind} page ({len(logs)}/{totalToRetrieve} logs) - {url}/{params}", extra={'frontend': str(self.frontend)})
 
-            # Paginate if necessary to get remaining pages
+            # paginate if necessary to get remaining pages
             params["from"] = len(logs) # initialize offset
             while params["from"] < totalToRetrieve:
                 new_page = self.execute_query(
@@ -223,11 +216,11 @@ class ArmisCentrixParser(ApiParser):
 
     def format_log(self, log: dict) -> str:
         try:
-            return json.dumps(log)
+            return dumps(log)
         except Exception as e:
             msg = f"Failed to json encode log {log.get('alertId') or log.get('activityUUID')} - {e}"
             logger.error(f"[{__parser__}][format_log] :: {msg}")
-            return "" # This empty value is deleted before writing lines to rsyslog (she serves to not stop the execution of the collector prematurely)
+            return "" # this empty value is deleted before writing lines to rsyslog (she serves to not stop the execution of the collector prematurely)
 
 
     def execute(self):
@@ -237,9 +230,9 @@ class ArmisCentrixParser(ApiParser):
         if self.armis_get_activity_logs: kinds.append("activities")
 
         for kind in kinds:
-            # The API have the capability to get back in time from the last 100 days at maximum
-            since = self.last_collected_timestamps.get(f"armis_centrix_{kind}") or (timezone.now() - timedelta(days=100))
-            # Collect at max 24h of range to avoid API taking too long to awnser
+            # API have the capability to get back in time from the last 100 days at maximum
+            since = self.last_collected_timestamps.get(f"armis_centrix_{kind}") or (timezone.now() - timedelta(days=30))
+            # collect at max 24h of range to avoid API taking too long to awnser and delay by 3minutes to avoid missing alerts due to ELK insertion time
             to    = min(timezone.now() - timedelta(minutes=3), since + timedelta(hours=24))
 
             logger.info(f"[{__parser__}][execute] :: Querying {kind} from {since} to {to}", extra={'frontend': str(self.frontend)})
@@ -249,8 +242,8 @@ class ArmisCentrixParser(ApiParser):
                 logger.info(f"[{__parser__}][execute] :: Successfully gets {logs_len} {kind} logs, updating last_collected_timestamps['armis_centrix_{kind}'] -> {to}", extra={'frontend': str(self.frontend)})
                 self.last_collected_timestamps[f"armis_centrix_{kind}"] = to
             elif since < timezone.now() - timedelta(hours=24):
-                # If no logs retrieved and the last_collected_timestamp is older than 24h
-                # Move one hour forward to prevent stagnating ad vitam eternam
+                # if no logs retrieved and the last_collected_timestamp is older than 24h
+                # move one hour forward to prevent stagnating ad vitam eternam
                 self.last_collected_timestamps[f"armis_centrix_{kind}"] = since + timedelta(hours=1)
 
         logger.info(f"[{__parser__}][execute] :: Parsing done.", extra={'frontend': str(self.frontend)})
