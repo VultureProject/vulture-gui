@@ -43,7 +43,7 @@ class NetskopeAPIError(Exception):
 
 class NetskopeParser(ApiParser):
     ENDPOINT = "/api/v2/events/data/"
-    BULK_SIZE = 1000
+    BULK_SIZE = 5000
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -83,7 +83,7 @@ class NetskopeParser(ApiParser):
             if self.netskope_get_application_logs:
                 logtypes.append("application")
             for logtype in logtypes:
-                logs.extend(self.get_logs(timezone.now()-timedelta(days=10), logtype=logtype).get("result"))
+                logs.extend(self.get_logs(timezone.now()-timedelta(days=10), logtype=logtype, limit=3).get("result"))
 
             return {
                 "status": True,
@@ -96,7 +96,7 @@ class NetskopeParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, since, to=timezone.now(), cursor=0, logtype="alert"):
+    def get_logs(self, since, to=timezone.now(), cursor=0, logtype="alert", limit=None):
         self._connect()
 
         url = f"https://{self.netskope_host}{self.ENDPOINT}{logtype}"
@@ -107,11 +107,13 @@ class NetskopeParser(ApiParser):
         if isinstance(to, datetime):
             to = int(to.timestamp())
         query = {
-            'starttime': since,
-            'endtime': to,
-            'limit': self.BULK_SIZE,
+            'starttime': since,  # >= timestamp
+            'endtime': to,  # <= timestamp
+            'limit': limit or self.BULK_SIZE,
             'offset': cursor
         }
+        logger.info(f"[{__parser__}]:get_logs: URL: {url} , params: {query}",
+                    extra={'frontend': str(self.frontend)})
         response = self.session.get(
             url,
             params=query,
@@ -140,7 +142,9 @@ class NetskopeParser(ApiParser):
             logtypes.append("application")
         for logtype in logtypes:
             since = self.last_collected_timestamps.get(logtype) or (timezone.now() - timedelta(hours=24))
-            to = min(timezone.now(), since + timedelta(hours=24))
+            to = min(timezone.now(), since + timedelta(minutes=10))
+            # do not exceed 10 minutes of recovery, beyond that the data is inconsistent
+
             offset = 0
             logs = []
             log_ids = set()
@@ -174,13 +178,13 @@ class NetskopeParser(ApiParser):
             self.update_lock()
 
             if offset > 0:
-                logger.info(f"[{__parser__}][execute]: Total logs fetched : {offset}",
+                logger.info(f"[{__parser__}][execute]: Total logs fetched : {offset} on {logtype}",
                             extra={'frontend': str(self.frontend)})
-                self.last_collected_timestamps[logtype] = to
+                self.last_collected_timestamps[logtype] = to + timedelta(seconds=1)
 
-            elif since < timezone.now() - timedelta(hours=24):
-                # If no logs where retrieved during the last 24hours,
-                # move forward 1h to prevent stagnate ad vitam eternam
-                self.last_collected_timestamps[logtype] = since + timedelta(hours=1)
+            elif since < timezone.now() - timedelta(hours=1):
+                # If no logs where retrieved during the last 1hours,
+                # move forward 10min to prevent stagnate ad vitam eternam
+                self.last_collected_timestamps[logtype] = since + timedelta(minutes=10)
 
-            logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
