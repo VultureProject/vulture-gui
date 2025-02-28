@@ -112,6 +112,8 @@ class NetskopeParser(ApiParser):
             'limit': self.BULK_SIZE,
             'offset': cursor
         }
+        logger.info(
+            f"[{__parser__}]:get logs: GET: url: {url}, query: {query}", extra={'frontend': str(self.frontend)})
         response = self.session.get(
             url,
             params=query,
@@ -142,34 +144,39 @@ class NetskopeParser(ApiParser):
             since = self.last_collected_timestamps.get(logtype) or (timezone.now() - timedelta(hours=24))
             to = min(timezone.now(), since + timedelta(hours=24))
             offset = 0
-            logs = []
             log_ids = set()
 
             while offset%self.BULK_SIZE == 0:
-
                 response = self.get_logs(since, to, offset, logtype)
 
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
 
-                new_logs = response['result']
-                if len(new_logs) == 0:
+                logs = response['result']
+
+                if len(logs) == 0:
                     logger.info(f"[{__parser__}][execute]: No more log to fetch. End of the parsing",
                                 extra={'frontend': str(self.frontend)})
                     break
-                # Remove duplicated logs
-                for new_log in new_logs:
-                    if "_event_id" not in new_log:
-                        logs.append(new_log)
-                    elif new_log["_event_id"] not in log_ids:
-                        log_ids.add(new_log["_event_id"])
-                        logs.append(new_log)
-                offset += len(new_logs)
 
-            if logtype == "alert":
-                self.write_to_file([self.parse_alert_log(log) for log in logs])
-            else:
-                self.write_to_file([json.dumps(log) for log in logs])
+                offset += len(logs)
+                # Remove duplicated logs
+                i = 0
+                while i < len(logs):
+                    log = logs[i]
+                    if "_event_id" in log:
+                        if log["_event_id"] in log_ids:
+                            logs.pop(i)
+                            continue
+                        log_ids.add(log["_event_id"])
+
+                    if logtype == "alert":
+                        logs[i] = self.parse_alert_log(log)
+                    else:
+                        logs[i] = json.dumps(log)
+                    i += 1
+
+                self.write_to_file(logs)
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
