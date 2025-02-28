@@ -112,6 +112,7 @@ class NetskopeParser(ApiParser):
             'limit': self.BULK_SIZE,
             'offset': cursor
         }
+        logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {query}", extra={'frontend': str(self.frontend)})
         response = self.session.get(
             url,
             params=query,
@@ -140,7 +141,7 @@ class NetskopeParser(ApiParser):
             logtypes.append("application")
         for logtype in logtypes:
             since = self.last_collected_timestamps.get(logtype) or (timezone.now() - timedelta(hours=24))
-            to = min(timezone.now(), since + timedelta(hours=24))
+            to = min(timezone.now(), since + timedelta(hours=1))
             offset = 0
             logs = []
             log_ids = set()
@@ -157,19 +158,30 @@ class NetskopeParser(ApiParser):
                     logger.info(f"[{__parser__}][execute]: No more log to fetch. End of the parsing",
                                 extra={'frontend': str(self.frontend)})
                     break
-                # Remove duplicated logs
-                for new_log in new_logs:
-                    if "_event_id" not in new_log:
-                        logs.append(new_log)
-                    elif new_log["_event_id"] not in log_ids:
-                        log_ids.add(new_log["_event_id"])
-                        logs.append(new_log)
                 offset += len(new_logs)
+                # Remove duplicated logs
+                i = 0
+                while i < len(new_logs):
+                    log = new_logs[i]
+                    if "_event_id" in log:
+                        if log["_event_id"] in log_ids:
+                            new_logs.pop(i)
+                            continue
+
+                        log_ids.add(log["_event_id"])
+
+                    if logtype == "alert":
+                        new_logs[i] = self.parse_alert_log(log)
+                    else:
+                        new_logs[i] = json.dumps(log)
+                    i += 1
+
+                logs.extend(new_logs)
 
             if logtype == "alert":
-                self.write_to_file([self.parse_alert_log(log) for log in logs])
+                self.write_to_file(logs)
             else:
-                self.write_to_file([json.dumps(log) for log in logs])
+                self.write_to_file(logs)
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
