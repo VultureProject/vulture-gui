@@ -75,7 +75,8 @@ class ArmisCentrixParser(ApiParser):
 
             logs = []
             logs += self.get_logs("alerts", since, to, test=True)
-            if self.armis_get_activity_logs: logs += self.get_logs("activities", since, to, test=True)
+            if self.armis_get_activity_logs:
+                logs += self.get_logs("activities", since, to, test=True)
 
             msg = f"{len(logs)} logs retrieved"
             logger.info(f"[{__parser__}][test] :: {msg}", extra={'frontend': str(self.frontend)})
@@ -106,13 +107,13 @@ class ArmisCentrixParser(ApiParser):
             token = resp.get("data", {}).get("access_token", "")
             token_expire_at = resp.get("data", {}).get("expiration_utc", "")
             token_expire_at = datetime.strptime(token_expire_at, "%Y-%m-%dT%H:%M:%S.%f%z")
-            assert token, f"Cannot retrieve token from API data['access_token'] = Null"
-            assert token_expire_at and isinstance(token_expire_at, datetime), f"Cannot retrieve token_expire_at from API data['expiration_utc'] = Null or invalid datetime"
+            assert token, "Cannot retrieve token from API data['access_token'] = Null"
+            assert token_expire_at and isinstance(token_expire_at, datetime), "Cannot retrieve token_expire_at from API data['expiration_utc'] = Null or invalid datetime"
+
             if not test:
                 self.frontend.armis_centrix_token = token
                 self.frontend.armis_centrix_token_expire_at = token_expire_at.timestamp()
             self.session.headers.update({"Authorization": token})
-
             logger.info(f"[{__parser__}][login] :: Successfully regenerate token", extra={'frontend': str(self.frontend)})
 
         else: # use the non-expired access token
@@ -145,8 +146,7 @@ class ArmisCentrixParser(ApiParser):
                     )
             except exceptions.ReadTimeout:
                 self.evt_stop.wait(10.0)
-                msg = f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (retries left: {retry}/3)"
-                logger.info(msg, extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (retries left: {retry}/3)", extra={'frontend': str(self.frontend)})
                 continue
             if response.status_code == 401 and response.get("message", "") == "Expired access token.": # maybe a bit too much, this handle the case where token had expired "silently" for an unknown reason
                 logger.info(f"[{__parser__}][execute_query] :: Resets expired access token {self.armis_token} - expired_at ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
@@ -189,7 +189,8 @@ class ArmisCentrixParser(ApiParser):
             logs = resp["data"]["results"]
             totalToRetrieve = resp["data"]["total"]
 
-            if test: return logs  # in case of test function exection we want to return the logs as is without paginating
+            if test:
+                return logs  # in case of test function exection we want to return the logs as is without paginating
 
             self.write_to_file([self.format_log(log) for log in logs if log != ""]) # write the first n log's page
             logger.debug(f"[{__parser__}][get_logs] :: Successfully gathered first {kind} page ({len(logs)}/{totalToRetrieve} logs) - {url}/{params}", extra={'frontend': str(self.frontend)})
@@ -227,7 +228,8 @@ class ArmisCentrixParser(ApiParser):
         self.login()
 
         kinds = ["alerts"]
-        if self.armis_get_activity_logs: kinds.append("activities")
+        if self.armis_get_activity_logs:
+            kinds.append("activities")
 
         for kind in kinds:
             # API have the capability to get back in time from the last 100 days at maximum
