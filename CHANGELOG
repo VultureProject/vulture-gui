@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb
 - [API_PARSER] [BEYONDTRUST_REPORTINGS] 'since' going up infinitely in some cases
+- [SYSTEM] [NETSKOPE] Reduce time ranges to 10 minutes max to avoid overflow in queries
 
 
 ## [2.22.1] - 2025-03-03
