@@ -79,6 +79,7 @@ from toolkit.api_parser.catonetworks.catonetworks import CatonetworksParser
 from toolkit.api_parser.infoblox_threat_defense.infoblox_threat_defense import InfobloxThreatDefenseParser
 from toolkit.api_parser.beyondtrust_reportings.beyondtrust_reportings import BeyondtrustReportingsParser
 from toolkit.api_parser.varonis.varonis import VaronisParser
+from toolkit.api_parser.armis_centrix.armis_centrix import ArmisCentrixParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -138,6 +139,7 @@ PARSER_LIST = {
     "infoblox_threat_defense": InfobloxThreatDefenseParser,
     "beyondtrust_reportings": BeyondtrustReportingsParser,
     "varonis": VaronisParser,
+    "armis_centrix": ArmisCentrixParser,
 }
 
 class ParserDoesNotExist(Exception):
