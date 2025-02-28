@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Base authentication, mother of authentication wrappers'
 
 # Django system imports
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils.crypto import constant_time_compare, pbkdf2, get_random_string
 
@@ -36,6 +37,7 @@ import hashlib
 
 # Logger configuration imports
 import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('authentication')
 
 

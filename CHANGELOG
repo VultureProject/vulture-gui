@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [API_PARSER] [NETSKOPE] Correctly update the last_collected_timestamp, even when no logs are received
 - [API_PARSER] [CYBEREASON] Avoid None evaluation of log objects in format_log for malops
+- [API_PARSER] [CROWDSTRIKE] Fix infinite loop when we encounters more than 100 logs (default limit) in one request
+- [API_PARSER] [PROOFPOINT_TRAP] Handle and avoid request timeouts by progressively reducing queries range
+- [SERVICES] [FRONTEND] Only show node field for specific modes
+### Added
+- [SYSTEM] [PATHS] Variabilize all system paths and allow to configure them from settings
+- [SYSTEM] [SETTINGS] Allow to configure project with django-environ
+- [TESTS] [SYSTEM] Implement Network test cases
+- [TESTS] [WORKFLOW] Implement Workflow test cases
+### Removed
+- [TESTS] Remove old 'testing' folder
+### Changed
+- [SYSTEM] [SETTINGS] Use Hostname value from Django settings
+### Fixed
+- [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb
 
 
 ## [2.22.0] - 2025-02-25

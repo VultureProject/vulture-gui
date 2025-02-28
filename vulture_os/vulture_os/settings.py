@@ -15,13 +15,40 @@ You should have received a copy of the GNU General Public License
 along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 """
 
-import os
+import environ
+from os import path as os_path
 from toolkit.network.network import get_hostname
 from toolkit.system.secret_key import set_key
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SETTINGS_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os_path.dirname(os_path.dirname(os_path.abspath(__file__)))
+SETTINGS_DIR = os_path.abspath(os_path.dirname(__file__))
+
+env = environ.Env()
+env.prefix = 'VULTURE_'
+environ.Env.read_env(os_path.join(SETTINGS_DIR, '.env'))
+
+# Project folders
+SYSTEM_ROOT_PATH = env.str("SYSTEM_ROOT_PATH", "/")
+DBS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("DBS_PATH", "var/db"))
+TMP_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("TMP_PATH", "var/tmp"))
+LOGS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("LOGS_PATH", "var/log"))
+SOCKETS_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("SOCKETS_PATH", "var/sockets"))
+HOMES_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("HOMES_PATH", "home"))
+LOCALETC_PATH = os_path.join(SYSTEM_ROOT_PATH, env.str("LOCALETC_PATH", "usr/local/etc"))
+
+# Logging
+DEBUG_LOGS_PATH = os_path.join(LOGS_PATH, env.str("DEBUG_LOGS_PATH", "vulture/os/debug.log"))
+API_LOGS_PATH = os_path.join(LOGS_PATH, env.str("API_LOGS_PATH", "vulture/os/api.log"))
+GUI_LOGS_PATH = os_path.join(LOGS_PATH, env.str("GUI_LOGS_PATH", "vulture/os/gui.log"))
+SERVICES_LOGS_PATH = os_path.join(LOGS_PATH, env.str("SERVICES_LOGS_PATH", "vulture/os/services.log"))
+DAEMON_LOGS_PATH = os_path.join(LOGS_PATH, env.str("DAEMON_LOGS_PATH", "vulture/os/cluster.log"))
+CRONTAB_LOGS_PATH = os_path.join(LOGS_PATH, env.str("CRONTAB_LOGS_PATH", "vulture/os/crontab.log"))
+API_PARSER_LOGS_PATH = os_path.join(LOGS_PATH, env.str("API_PARSER_LOGS_PATH", "vulture/os/api_parser.log"))
+AUTHENTICATION_LOGS_PATH = os_path.join(LOGS_PATH, env.str("AUTHENTICATION_LOGS_PATH", "vulture/os/authentication.log"))
+SYSTEM_LOGS_PATH = os_path.join(LOGS_PATH, env.str("SYSTEM_LOGS_PATH", "vulture/os/system.log"))
+
+HOSTNAME = env.str("HOSTNAME", get_hostname())
 
 # Retrieving Django SECRET_KEY
 try:
@@ -37,11 +64,10 @@ try:
 except ImportError:
     pass
 
-LOG_LEVEL = "INFO"
+LOG_LEVEL = env.str("LOG_LEVEL", "INFO")
 
-DEBUG = False
-DEV_MODE = False
-TEMPLATE_DEBUG = DEBUG
+DEBUG = env.bool("DEBUG", False)
+DEV_MODE = env.bool("DEV_MODE", False)
 
 ALLOWED_HOSTS = ["*"]
 
@@ -84,7 +110,7 @@ CRONJOBS = [
 CRONTAB_COMMAND_PREFIX = "LANG=en_US.UTF-8"
 
 # Extend cronjobs with custom cronjobs
-if os.path.exists(os.path.dirname(os.path.abspath(__file__)) + "/custom_cronjobs.py"):
+if os_path.exists(os_path.dirname(os_path.abspath(__file__)) + "/custom_cronjobs.py"):
     try:
         from vulture_os.custom_cronjobs import CUSTOM_CRONJOBS
         CRONJOBS.extend(CUSTOM_CRONJOBS)
@@ -137,13 +163,14 @@ DATABASES = {
         'ENGINE': 'djongo',
         'NAME': 'vulture',
         "CLIENT": {
-            'host': get_hostname(),
-            'port': 9091,
+            'host': env.str('MONGODB_HOST', HOSTNAME),
+            'port': env.int('MONGODB_PORT', 9091),
             'serverSelectionTimeoutMS': 5000,
             'REPLICASET': 'Vulture',
-            'SSL': True,
-            'tlsCertificateKeyFile': '/var/db/pki/node.pem',
-            'tlsCAFile': '/var/db/pki/ca.pem',
+            'SSL': env.bool('MONGODB_SSL', True),
+            'tlsCertificateKeyFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CERT_FILE', 'pki/node.pem')),
+            'tlsCAFile': None if not env.bool('MONGODB_SSL', True) else os_path.join(DBS_PATH, env.str('MONGODB_CA_FILE', 'pki/ca.pem')),
+            'tlsAllowInvalidHostnames': True,
             'READPREFERENCE': "primaryPreferred"
         },
     }
@@ -151,8 +178,8 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-REDISIP = '127.0.0.1'
-REDISPORT = '6379'
+REDISIP = env.str('REDIS_HOST', '127.0.0.1')
+REDISPORT = env.int('REDIS_PORT', 6379)
 
 LOGIN_URL = "/login/"
 
@@ -193,7 +220,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 MEDIA_PATH = 'gui/static/img/'
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_ROOT = os_path.join(BASE_DIR, "static")
 STATIC_URL = 'static/'
 
 LOG_SETTINGS = {
@@ -234,35 +261,30 @@ LOG_SETTINGS = {
         'debug': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/vulture/os/debug.log',
+            'filename': DEBUG_LOGS_PATH,
             'formatter': 'verbose',
             'mode': 'a',
             'maxBytes': 10485760,
             'backupCount': 5,
         },
-        'database': {
-            'level': LOG_LEVEL,
-            'class': 'toolkit.log.log_utils.DatabaseHandler',
-            'type_logs': 'vulture',
-        },
         'api': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/var/log/vulture/os/api.log',
+            'filename': API_LOGS_PATH,
             'formatter': 'verbose',
             'mode': 'a'
         },
         'gui': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/var/log/vulture/os/gui.log',
+            'filename': GUI_LOGS_PATH,
             'formatter': 'verbose',
             'mode': 'a'
         },
         'services': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/var/log/vulture/os/services.log',
+            'filename': SERVICES_LOGS_PATH,
             'formatter': 'verbose',
             'mode': 'a'
         },
@@ -270,35 +292,35 @@ LOG_SETTINGS = {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/os/cluster.log',
+            'filename': DAEMON_LOGS_PATH,
             'mode': 'a'
         },
         'crontab': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/os/crontab.log',
+            'filename': CRONTAB_LOGS_PATH,
             'mode': 'a'
         },
         'api_parser': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'api_parser',
-            'filename': '/var/log/vulture/os/api_parser.log',
+            'filename': API_PARSER_LOGS_PATH,
             'mode': 'a'
         },
         'authentication': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/os/authentication.log',
+            'filename': AUTHENTICATION_LOGS_PATH,
             'mode': 'a'
         },
         'system': {
             'class': 'logging.handlers.WatchedFileHandler',
             'level': LOG_LEVEL,
             'formatter': 'verbose',
-            'filename': '/var/log/vulture/os/system.log',
+            'filename': SYSTEM_LOGS_PATH,
             'mode': 'a'
         }
     },

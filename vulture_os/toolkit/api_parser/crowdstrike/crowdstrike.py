@@ -143,10 +143,9 @@ class CrowdstrikeParser(ApiParser):
             break  # no error we break from the loop
 
         if response.status_code not in [200, 201]:
-            logger.error(
-                f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}", extra={'frontend': str(self.frontend)}
-            )
-            return {}
+            msg = f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}"
+            logger.error(msg, extra={'frontend': str(self.frontend)})
+            raise Exception(msg)
         return response.json()
 
     def unionDict(self, dictBase, dictToAdd):
@@ -171,9 +170,9 @@ class CrowdstrikeParser(ApiParser):
             # we retrieved enough data
             if(customLimit > 0 and customLimit <= len(jsonResp['resources'])):
                 break
-            query['offset'] = int(jsonResp['meta']['pagination']['offset'])
-            jsonAdditionalResp = self.__execute_query(
-                method, url, query, timeout=timeout)
+            query['offset'] = len(jsonResp['resources'])
+            jsonAdditionalResp = self.__execute_query(method, url, query, timeout=timeout)
+            self.update_lock()
             jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
             #jsonResp += [jsonAdditionalResp]
         return jsonResp
@@ -294,7 +293,7 @@ class CrowdstrikeParser(ApiParser):
         try:
             logger.debug(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
 
-            query_time = (timezone.now() - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            query_time = (timezone.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
             to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
             logs = self.get_logs("details", query_time, to)

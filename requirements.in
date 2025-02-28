@@ -4,6 +4,7 @@ pymongo
 jinja2
 iptools
 django-crontab
+django-environ
 requests
 pyOpenSSL
 redis~=4.5

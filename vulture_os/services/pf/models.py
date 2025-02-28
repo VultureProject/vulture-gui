@@ -30,7 +30,7 @@ from djongo import models
 # Django project imports
 from applications.reputation_ctx.models import DATABASES_PATH
 from system.cluster.models import Cluster, Node
-from toolkit.network.network import get_hostname, JAIL_ADDRESSES
+from toolkit.network.network import JAIL_ADDRESSES
 from toolkit.network.network import get_sanitized_proxy
 
 # Required exceptions imports
@@ -54,7 +54,7 @@ class PFSettings(models.Model):
         :return     Dictionnary of configuration parameters
         """
         return {
-            'nodes': Node.objects.exclude(name=get_hostname()),
+            'nodes': Node.objects.exclude(name=settings.HOSTNAME),
             'global_config': Cluster.get_global_config(),
             'jail_addresses': JAIL_ADDRESSES,
             'databases_path': DATABASES_PATH,

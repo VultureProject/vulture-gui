@@ -28,6 +28,9 @@ from cryptography import x509
 import subprocess
 import os.path
 
+from django.conf import settings
+
+CONF_PATH = os.path.join(settings.DBS_PATH, "acme")
 
 def update_crl():
     """
@@ -44,7 +47,7 @@ def acme_update():
     """
     :return: Run acme.sh to automatically renew Let's encrypt certificates
     """
-    subprocess.check_output(["/usr/local/sbin/acme.sh", "--cron", "--home", "/var/db/acme/.acme.sh"])
+    subprocess.check_output(["/usr/local/sbin/acme.sh", "--cron", "--home", os.path.join(CONF_PATH, ".acme.sh")])
 
     """ Now update certificate database"""
     need_restart = False
@@ -53,8 +56,8 @@ def acme_update():
         subject = crypto_cert.subject
         common_name_obj = subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0]
         cn = common_name_obj.value
-        if os.path.isfile("/var/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)):
-            with open("/var/db/acme/.acme.sh/{}/{}.cer".format(cn, cn)) as file_cert:
+        if os.path.isfile(os.path.join(CONF_PATH, ".acme.sh/{}/{}.cer".format(cn, cn))):
+            with open(os.path.join(CONF_PATH, ".acme.sh/{}/{}.cer".format(cn, cn))) as file_cert:
                 pem_cert = file_cert.read()
                 cert.cert = pem_cert
                 cert.save()

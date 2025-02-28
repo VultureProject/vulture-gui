@@ -32,6 +32,7 @@ from toolkit.http.utils import dict_to_multipart
 
 # Extern modules imports
 from json                                  import dumps as json_dumps
+from os.path                               import join as path_join
 from re                                    import compile, IGNORECASE
 from requests                              import Session
 from requests.adapters                     import HTTPAdapter
@@ -47,7 +48,7 @@ logger = logging.getLogger('portal_authentication')
 # Global variables
 vulture_custom_agent = 'Vulture/3 (FreeBSD; Vulture OS)'
 
-
+PKI_PATH = path_join(settings.DBS_PATH, "pki")
 
 
 class SSLAdapter(HTTPAdapter):
@@ -90,7 +91,7 @@ class SSOClient(object):
         if ssl_context:
             # Only compatible with request-2.18.1 !!!
             self.session.mount("https://", SSLAdapter(ssl_context=ssl_context))
-            self.verify_certificate = "/var/db/pki/" if ssl_context.verify_mode == CERT_REQUIRED else verify_certificate
+            self.verify_certificate = PKI_PATH if ssl_context.verify_mode == CERT_REQUIRED else verify_certificate
             self.client_side_cert = client_certificate
             logger.debug("SSOClient::_init_: SSL/TLS context successfully created")
 
