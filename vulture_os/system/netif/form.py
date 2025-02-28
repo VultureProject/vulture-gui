@@ -84,10 +84,10 @@ class NetIfForm(ModelForm):
                 if NetworkAddressNIC.objects.filter(nic=nic).exclude(network_address__type=cleaned_data['type'], network_address__iface_id=cleaned_data.get('iface_id')).exists():
                     self.add_error('nic', "An interface selected is already configured, this is incompatible with LAGG interfaces. Please remove configuration on interface then create LAGG interface or remove this interface.")
                     break
-        else:
-            if "ip" not in cleaned_data:
+        elif cleaned_data['type'] != "dynamic":
+            if not cleaned_data.get('ip'):
                 self.add_error('ip', "This field is required")
-            if "prefix_or_netmask" not in cleaned_data:
+            if not cleaned_data.get('prefix_or_netmask'):
                 self.add_error('prefix_or_netmask', "This field is required")
 
         if cleaned_data['type'] in ['vlan', 'lagg', 'alias'] and cleaned_data['iface_id'] == -1:

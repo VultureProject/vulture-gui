@@ -66,7 +66,8 @@ STATE_CHOICES = (
 )
 
 NET_ADDR_TYPES = (
-    ('system', 'System'),
+    ('system', 'Static'),
+    ('dynamic', 'Dynamic'),
     ('alias', 'Alias'),
     ('vlan', 'Vlan'),
     ('lagg', 'Link Aggregation'),
@@ -1154,6 +1155,11 @@ class NetworkAddress(models.Model):
                 elif self.type == 'alias':
                     key = f"ifconfig_{addresses[0].nic.dev}_alias{self.iface_id}"
                     value = f"{self.family} {self.ip_cidr}"
+                elif self.type == 'dynamic':
+                    key = f"ifconfig_{addresses[0].nic.dev}"
+                    if self.family == 'inet6':
+                        key += "_ipv6"
+                    value = "dhcp"
                 elif self.type == 'system':
                     key = f"ifconfig_{addresses[0].nic.dev}"
                     if self.family == 'inet6':

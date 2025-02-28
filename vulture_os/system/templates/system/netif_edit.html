@@ -57,21 +57,21 @@
                         <div class="form-group" id="container_carp"></div>
                       </div>
 
-                      <div class="form-group">
+                      <div class="form-group static_mode">
                         <label class="col-sm-4 control-label">{% translate "IP Address" %}</label>
                         <div class="col-sm-5">
                           {{form.ip}}
                           {{form.ip.errors}}
                         </div>
                       </div>
-                      <div class="form-group">
+                      <div class="form-group static_mode">
                         <label class="col-sm-4 control-label">{% translate "Netmask / Prefix" %}</label>
                         <div class="col-sm-5">
                           {{form.prefix_or_netmask}}
                           {{form.prefix_or_netmask.errors}}
                         </div>
                       </div>
-                      <div class="form-group">
+                      <div class="form-group static_mode">
                         <label class="col-sm-4 control-label">{% translate "Network fib" %}</label>
                         <div class="col-sm-5">
                           {{form.fib}}
@@ -156,7 +156,7 @@
       var interface_names = [];
       $("#id_nic option:selected").each(function(){
         $(this).prop('disabled', false);
-      
+
         ids.push($(this).val());
         node_names.push($(this).text().split(' - ')[1]);
         interface_names.push($(this).text().split(' - ')[0]);
@@ -190,14 +190,21 @@
 
     $('#id_type').on('change', function(e){
       var current_type = $('#id_type').val();
-      $('.vlan_parameters').hide();
-      $('.lagg_parameters').hide();
-      
+
+      if(current_type === "dynamic") {
+        $('.static_mode').hide();
+      } else {
+        $('.static_mode').show();
+      }
       if(current_type === "vlan") {
         $('.vlan_parameters').show();
+      } else {
+        $('.vlan_parameters').hide();
       }
       if(current_type === "lagg") {
         $('.lagg_parameters').show();
+      } else {
+        $('.lagg_parameters').hide();
       }
 
     }).trigger('change')
