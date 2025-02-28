@@ -271,6 +271,7 @@ class FrontendForm(ModelForm):
                            "infoblox_threat_defense_host", "infoblox_threat_defense_token",
                            "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host",
                            "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs", "beyondtrust_reportings_get_vault_account_activity_logs", "beyondtrust_reportings_get_support_session_logs",
+                           "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs"
                            ]:
             self.fields[field_name].required = False
 
@@ -390,6 +391,7 @@ class FrontendForm(ModelForm):
                   "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs",
                   "beyondtrust_reportings_get_vault_account_activity_logs",
                   "beyondtrust_reportings_get_support_session_logs",
+                  "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs"
                   )
 
         widgets = {
@@ -610,6 +612,9 @@ class FrontendForm(ModelForm):
             'beyondtrust_reportings_get_access_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_vault_account_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_support_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
+            'armis_centrix_host': TextInput(attrs={'class': 'form-control'}),
+            'armis_centrix_secretkey': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'armis_centrix_get_activity_logs': CheckboxInput(attrs={'class': 'js-switch'})
         }
 
     def clean_name(self):
