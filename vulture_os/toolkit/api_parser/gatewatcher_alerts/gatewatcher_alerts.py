@@ -69,7 +69,7 @@ class GatewatcherAlertsParser(ApiParser):
             raise GatewatcherAlertsAPIError(err)
 
     def execute_query(self, url, params=None, timeout=20):
-
+        logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {params}", extra={'frontend': str(self.frontend)})
         response = self.session.get(
             url,
             params=params,
@@ -103,7 +103,7 @@ class GatewatcherAlertsParser(ApiParser):
         page = 1
         while nb_logs < count:
             query['page'] = page
-            logger.debug(f"{[__parser__]}:get_logs: params for request are '{query}'",
+            logger.info(f"{[__parser__]}:get_logs: params for request are '{query}'",
                          extra={'frontend': str(self.frontend)})
             page += 1
             alerts = self.execute_query(alert_url, params=query)

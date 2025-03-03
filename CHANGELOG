@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] Add loggers before the requests to make easier the debugging
 ### Fixed
 - [API_PARSER] [BEYONDTRUST_REPORTINGS] 'since' going up infinitely in some cases
 - [SYSTEM] [NETSKOPE] Reduce time ranges to 10 minutes max to avoid overflow in queries

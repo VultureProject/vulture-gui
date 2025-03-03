@@ -98,7 +98,7 @@ class NozomiProbeParser(ApiParser):
         url = f"https://{self.nozomi_probe_host}/{self.ALERT_ENDPOINT}"
         param = quote_plus(f"| sort record_created_at asc | where record_created_at > {since} "
                            f"| where record_created_at <= {to}")
-        logger.debug(f"[{__parser__}]:get_logs: Get user events request params: {param}",
+        logger.info(f"[{__parser__}]:get_logs: Get user events request params: {param}",
                      extra={'frontend': str(self.frontend)})
         response = self.session.get(
             f"{url}%20{param}",

@@ -266,6 +266,7 @@ class ProofpointPodParser(ApiParser):
 
         try:
             while time.monotonic() < start_time + stop_after and not self.evt_stop.is_set():
+                logger.debug(f"[{__parser__}]:execute_query: sinceTime: {self.frontend.last_api_call.isoformat()}", extra={'frontend': str(self.frontend)})
                 msg = self._websocket_fetch(sinceTime=self.frontend.last_api_call.isoformat())
                 if msg:
                     timestamp, msg = self.parse_log(msg)
@@ -292,7 +293,7 @@ class ProofpointPodParser(ApiParser):
             self._flush_buffer()
 
         self.frontend.last_api_call = self.last_timestamp
-        logger.debug(f"[{__parser__}]:execute: Updated frontend timestamp is {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: Updated frontend timestamp is {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
         self.finish()

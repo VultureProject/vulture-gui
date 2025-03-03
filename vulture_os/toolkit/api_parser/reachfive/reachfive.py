@@ -71,6 +71,8 @@ class ReachFiveParser(ApiParser):
         if (not self.reachfive_access_token or not self.reachfive_expire_at) or (self.reachfive_expire_at - timedelta(minutes=3)) < timezone.now():
             # Retrieve OAuth token (https://developer.reachfive.com/api/management.html#tag/OAuth)
             oauth2_url = f"https://{self.reachfive_host}/oauth/token"
+            logger.info(f"[{__parser__}]:get_logs: URL: {oauth2_url} , client_id: {self.reachfive_client_id}",
+                     extra={'frontend': str(self.frontend)})
             response = requests.post(
                 oauth2_url,
                 json={
@@ -138,7 +140,7 @@ class ReachFiveParser(ApiParser):
             params['filter'] = f'date > "{since}"'
 
         msg = f"Get user events request params: {params}"
-        logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
@@ -198,6 +200,7 @@ class ReachFiveParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 # No need to make_aware, date already contains timezone
                 self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
+                logger.info(f"[{__parser__}]:execute: Update last_api_call to {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
             if cpt % 10000 == 0:
                 # Sleep 10 sec every 10 000 fetched logs to avoid too many requests

@@ -163,6 +163,7 @@ class VectraParser(ApiParser):
         logger.info(f"[{__parser__}]:__execute_query: Request API : {msg}", extra={'frontend': str(self.frontend)})
 
         for _ in range(2):
+            logger.debug(f"[{__parser__}]:__execute_query: URL: {url} , params: {query}", extra={'frontend': str(self.frontend)})
             response = self.session.get(
                 url,
                 params=query,

@@ -93,6 +93,8 @@ class ProofpointCASBParser(ApiParser):
         if isinstance(to, datetime):
             to = int(to.timestamp() * 1000)
 
+        logger.info(f"[{__parser__}]:get_logs: URL: {self.HOST_URL}{self.ALERTS_URL} , page: {page}, from: {since}, to: {to}",
+                     extra={'frontend': str(self.frontend)})
         res = self.session.post(
             f"{self.HOST_URL}{self.ALERTS_URL}",
             json={

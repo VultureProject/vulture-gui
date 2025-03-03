@@ -148,7 +148,7 @@ class VadesecureParser(ApiParser):
         for log in logs:
             msgId = log["messageId"]
             msg = f"Fetching details of log with messageId: {msgId}"
-            logger.debug(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
             try:
                 payload = {
                     "date": log["date"],
@@ -173,7 +173,7 @@ class VadesecureParser(ApiParser):
 
     def fetch_endpoint(self, endpoint, to, since, payload):
         msg = f"parser starting from {since} to {to}."
-        logger.debug(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
         alert_url = f"{self.vadesecure_host}/{self.VERSION}/{endpoint}"
         index = 0
         total = 1
@@ -215,7 +215,7 @@ class VadesecureParser(ApiParser):
             # Turn to the next page
             index += 1
             msg = f"retrieved page n°{index}/{total}"
-            logger.debug(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
 
             if endpoint == self.GETREPORT and not self.isTest:
                 # We need to call getdetail for each logs
