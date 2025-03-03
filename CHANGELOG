@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.22.1] - 2025-03-03
 ### Fixed
 - [API_PARSER] [NETSKOPE] Correctly update the last_collected_timestamp, even when no logs are received
 - [API_PARSER] [CYBEREASON] Avoid None evaluation of log objects in format_log for malops
