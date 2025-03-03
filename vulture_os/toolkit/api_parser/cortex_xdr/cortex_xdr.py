@@ -150,12 +150,12 @@ class CortexXDRParser(ApiParser):
                        "value": int(since.timestamp()*1000)
                    }]
         msg = f"Get user events request params: {params}"
-        logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         retry = 1
         while retry <= 3 and not self.evt_stop.is_set():
             self._connect()
-
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , json: {params}", extra={'frontend': str(self.frontend)})
             response = self.session.post(
                 url,
                 json=params,

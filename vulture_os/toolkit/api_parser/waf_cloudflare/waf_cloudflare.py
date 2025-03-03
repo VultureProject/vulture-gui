@@ -99,6 +99,7 @@ class WAFCloudflareParser(ApiParser):
 
         cpt = 0
         bulk = []
+        logger.info(f"[{__parser__}]:get_logs: URL: {url} , params: {query}", extra={'frontend': str(self.frontend)})
         with self.session.get(
             url,
             params=query,

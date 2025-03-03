@@ -76,7 +76,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
         '''
         raw request doesn't handle the pagination natively
         '''
-        logger.debug(f"[{__parser__}]: _execute_query: Fetching {url} with parameters {query}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]: _execute_query: Fetching {url} with parameters {query}", extra={'frontend': str(self.frontend)})
         response = requests.get(
             url=url,
             params=query,
@@ -287,6 +287,6 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                 else:
                     # All logs have been recovered
                     self.last_collected_timestamps[timestamp_field_name] = to
-                logger.debug(f"[{__parser__}]:execute: New current timestamp is {self.last_collected_timestamps[timestamp_field_name]} (customer {customer_id}, type {log_type})", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}]:execute: New current timestamp is {self.last_collected_timestamps[timestamp_field_name]} (customer {customer_id}, type {log_type})", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

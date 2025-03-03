@@ -213,6 +213,7 @@ class AkamaiParser(ApiParser):
         self.offset = None
         result = []
 
+        logger.info(f"[{__parser__}]:get_logs: URL: {url} , params: {params}", extra={'frontend': str(self.frontend)})
         with self.session.get(url, params=params, proxies=self.proxies,
             verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl, stream=True
         ) as r:

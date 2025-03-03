@@ -112,7 +112,7 @@ class DefenderATPParser(ApiParser):
         if since:
             params['$filter'] = 'lastUpdateTime gt {}'.format(since.isoformat().replace('+00:00', "Z"))
         msg = f"Get user events request params: {params}"
-        logger.debug(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,

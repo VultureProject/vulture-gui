@@ -78,7 +78,7 @@ class SentinelOneMobileParser(ApiParser):
 
         while retry > 0:
             retry -= 1
-
+            logger.info(f"[{__parser__}]:get_logs: URL: {url} , method: {method} params: {query}", extra={'frontend': str(self.frontend)})
             try:
                 response = self.session.request(
                     method=method,
@@ -199,6 +199,6 @@ class SentinelOneMobileParser(ApiParser):
                         f"setting it to {self.frontend.last_api_call}",
                         extra={'frontend': str(self.frontend)})
 
-        logger.debug(f"[{__parser__}]:execute: update last_api_call to {self.frontend.last_api_call}",
+        logger.info(f"[{__parser__}]:execute: update last_api_call to {self.frontend.last_api_call}",
                     extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done", extra={'frontend': str(self.frontend)})

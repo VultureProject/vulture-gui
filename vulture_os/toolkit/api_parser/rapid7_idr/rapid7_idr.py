@@ -81,7 +81,8 @@ class Rapid7IDRParser(ApiParser):
     def __execute_query(self, url, query={}, timeout=10):
 
         self._connect()
-
+        logger.info(f"[{__parser__}]:get_logs: URL: {url} , params: {query}",
+                     extra={'frontend': str(self.frontend)})
         response = self.session.get(
             url,
             params=query,
@@ -218,4 +219,5 @@ class Rapid7IDRParser(ApiParser):
 
         # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
         self.frontend.last_api_call = to + timedelta(microseconds=1000)
+        logger.info(f"[{__parser__}]:execute: last_api_call updated to {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

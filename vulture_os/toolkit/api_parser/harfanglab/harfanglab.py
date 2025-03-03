@@ -100,6 +100,7 @@ class HarfangLabParser(ApiParser):
 
 
         if method == "GET":
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method : GET , params: {query}", extra={'frontend': str(self.frontend)})
             response = self.session.get(url,
                 params=query,
                 headers=self.HEADERS,
@@ -108,6 +109,7 @@ class HarfangLabParser(ApiParser):
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         elif method == "POST":
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method : POST , data: {json.dumps(query)}", extra={'frontend': str(self.frontend)})
             response = self.session.post(url,
                 data=json.dumps(query),
                 headers=self.HEADERS,
@@ -158,7 +160,7 @@ class HarfangLabParser(ApiParser):
             'ordering': 'alert_time',
             'status': 'new,investigating,probable_false_positive'
         }
-        logger.debug(f"[{__parser__}]:get_alerts: HarfangLab query parameters : {payload}",
+        logger.info(f"[{__parser__}]:get_alerts: HarfangLab query parameters : {payload}",
                      extra={'frontend': str(self.frontend)})
         return self.__execute_query("GET", alert_url, payload)
 
@@ -273,6 +275,7 @@ class HarfangLabParser(ApiParser):
                 self.update_lock()
 
                 self.last_collected_timestamps[log_type] = to
+                logger.info(f"[{__parser__}]:execute: last_collected timestamp of type {log_type} is updated to {to}", extra={'frontend': str(self.frontend)})
 
             except Exception as e:
                 logger.error(f"[{__parser__}]:execute: Parsing error for type \"{log_type}\": {e}", extra={'frontend': str(self.frontend)})

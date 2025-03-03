@@ -77,7 +77,7 @@ class SafenetParser(ApiParser):
     def __execute_query(self, url, query=None, timeout=10):
 
         self._connect()
-
+        logger.info(f"[{__parser__}]:get_logs: URL: {url} , params: {query}", extra={'frontend': str(self.frontend)})
         response = self.session.get(
             url,
             params=query,

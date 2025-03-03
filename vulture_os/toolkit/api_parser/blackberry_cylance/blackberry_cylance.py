@@ -99,6 +99,7 @@ class BlackberryCylanceParser(ApiParser):
         self.session.headers.update(self.HEADERS)
 
         try:
+            logger.info(f"[{__parser__}]:connect: URL: {auth_url}", extra={'frontend': str(self.frontend)})
             response = self.session.post(
                 auth_url,
                 json=payload,
@@ -134,8 +135,8 @@ class BlackberryCylanceParser(ApiParser):
         if not self.session:
             self._connect()
 
-        logger.debug(f"[{__parser__}]:_execute_query: sending request to {url}", extra={'frontend': str(self.frontend)})
-        logger.debug(f"[{__parser__}]:_execute_query: query is {query}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:_execute_query: sending request to {url}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:_execute_query: query is {query}", extra={'frontend': str(self.frontend)})
 
         if method == "GET":
             try:
@@ -292,7 +293,7 @@ class BlackberryCylanceParser(ApiParser):
         end_time = timezone.now()
         start_time = end_time - timedelta(days=30)
 
-        logger.debug(f"[{__parser__}]:test: start_time: {start_time}, end_time: {end_time}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:test: start_time: {start_time}, end_time: {end_time}", extra={'frontend': str(self.frontend)})
 
         try:
             # Only get 10 logs in first page

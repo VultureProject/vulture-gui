@@ -112,6 +112,7 @@ class ApexParser(ApiParser):
 
     def execute_query(self, url, timeout=60):
 
+        logger.info(f"[{__parser__}]:execute_query: URL: {url}", extra={'frontend': str(self.frontend)})
         response = self.session.get(
             url,
             proxies=self.proxies,

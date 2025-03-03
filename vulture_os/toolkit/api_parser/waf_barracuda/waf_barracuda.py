@@ -66,7 +66,7 @@ class WAFBarracudaParser(ApiParser):
 
     def __execute_query(self, url, query={}, timeout=15):
         self.__connect()
-        logger.debug(f"{[__parser__]}:__execute_query: querying '{url}' with parameters '{query}'", extra={'frontend': str(self.frontend)})
+        logger.info(f"{[__parser__]}:__execute_query: querying '{url}' with parameters '{query}'", extra={'frontend': str(self.frontend)})
         response = self.session.get(url,
             params=query,
             headers=self.HEADERS,
@@ -105,7 +105,7 @@ class WAFBarracudaParser(ApiParser):
             "sortingDirection": "asc"
         }
 
-        logger.debug(f"{[__parser__]}:get_logs: params for {log_type} logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
+        logger.info(f"{[__parser__]}:get_logs: params for {log_type} logs request of application {app_id} are {query}", extra={'frontend': str(self.frontend)})
         data = self.__execute_query(url, query=query)
         logger.debug(f"{[__parser__]}:get_logs: got {len(data['results'])} {log_type} logs from application {app_id}", extra={'frontend': str(self.frontend)})
 

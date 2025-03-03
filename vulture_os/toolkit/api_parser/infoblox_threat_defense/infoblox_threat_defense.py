@@ -68,7 +68,7 @@ class InfobloxThreatDefenseParser(ApiParser):
 
     def execute_query(self, url, params={}, timeout=20):
         self._connect()
-
+        logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {params}", extra={'frontend': str(self.frontend)})
         response = self.session.get(
             url,
             params=params,

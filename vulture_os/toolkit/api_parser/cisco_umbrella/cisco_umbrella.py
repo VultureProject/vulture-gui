@@ -100,6 +100,7 @@ class CiscoUmbrellaParser(ApiParser):
         '''
         self._connect()
 
+        logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {query}", extra={'frontend': str(self.frontend)})
         response = self.session.get(url,
             params=query,
             headers=self.HEADERS,
@@ -137,7 +138,7 @@ class CiscoUmbrellaParser(ApiParser):
             'from': int(since.timestamp() * 1000),
             'to': int(to.timestamp() * 1000),
         }
-        logger.debug(f"[{__parser__}]:get_alerts: Cisco-Umbrella query parameters : {payload}",
+        logger.info(f"[{__parser__}]:get_alerts: Cisco-Umbrella query parameters : {payload}",
                      extra={'frontend': str(self.frontend)})
         return self.__execute_query(self.ACTIVITY_URL, payload)
 

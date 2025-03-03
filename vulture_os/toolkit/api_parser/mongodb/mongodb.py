@@ -110,7 +110,7 @@ class MongoDBParser(ApiParser):
 
             # First, retrieve hostnames clusters with group_id
             url = self.base_url+"/groups/{}/clusters"
-
+            logger.info(f"[{__parser__}]:execute_query: URL: {url}", extra={'frontend': str(self.frontend)})
             response = self.session.get(
                 url,
                 proxies=self.proxies,
@@ -128,6 +128,7 @@ class MongoDBParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
                 url = self.base_url+"/groups/{}/logs/mongos.gz"
+                logger.info(f"[{__parser__}]:execute_query: URL: {url}", extra={'frontend': str(self.frontend)})
                 response = self.session.get(
                     url,
                     proxies=self.proxies,

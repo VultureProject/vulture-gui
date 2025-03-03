@@ -118,6 +118,7 @@ class CrowdstrikeParser(ApiParser):
         retry = 3
         while(retry > 0):
             retry -= 1
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method: {method}, params: {query}", extra={'frontend': str(self.frontend)})
             try:
                 if(method == "GET"):
                     response = self.session.get(
@@ -194,7 +195,7 @@ class CrowdstrikeParser(ApiParser):
         '''
         we retrieve raw incidents and detections
         '''
-        logger.debug(f"[{__parser__}][getAlerts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}][getAlerts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
 
         finalRawAlerts = []
         # first retrieve the detection raw ids

@@ -217,7 +217,7 @@ class MSSentinelParser(ApiParser):
             'api-version': self.API_VERSION
         }
 
-        logger.debug(f"[{__parser__}]:get_incident_comments: Get incident's comments request params: {params}",
+        logger.info(f"[{__parser__}]:get_incident_comments: Get incident's comments request params: {params}",
                      extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
@@ -342,7 +342,7 @@ class MSSentinelParser(ApiParser):
                 # Writting & downloading may take some while, so refresh token in Redis
                 self.update_lock()
 
-            logger.debug(f"[{__parser__}]:execute: Setting last_api_call to {new_last_api_call}",
+            logger.info(f"[{__parser__}]:execute: Setting last_api_call to {new_last_api_call}",
                          extra={'frontend': str(self.frontend)})
 
             self.frontend.last_api_call = new_last_api_call

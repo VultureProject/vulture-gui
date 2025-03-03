@@ -91,6 +91,8 @@ class ProofpointTAPParser(ApiParser):
         params['format'] = 'json'
 
         try:
+            logger.info(f"[{__parser__}]:get_logs: URL: {url} , params: {params}",
+                     extra={'frontend': str(self.frontend)})
             response = requests.get(
                 url,
                 auth=(self.proofpoint_tap_principal, self.proofpoint_tap_secret),
@@ -219,7 +221,7 @@ class ProofpointTAPParser(ApiParser):
                     toTime = min(currentTime, fromTime + timedelta(hours=1))
                     try:
                         msg = f"getting logs from {fromTime} to {toTime}"
-                        logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                         status, contents = self._get_logs(endpoint=self.proofpoint_tap_endpoint, params={"interval": "{}/{}".format(fromTime.isoformat().replace("+00:00", "Z"),toTime.isoformat().replace("+00:00", "Z"))})
                     except ProofpointTAPAPITooFarError:
                         # script didn't launch in a long time, so last_api_call as too far back
@@ -258,7 +260,7 @@ class ProofpointTAPParser(ApiParser):
             logger.exception(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
         self.frontend.last_api_call = fromTime
         msg = f"last_api_call updated to {self.frontend.last_api_call}"
-        logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         if error != "":
             msg = f"errors while recovering logs:\n{error}"

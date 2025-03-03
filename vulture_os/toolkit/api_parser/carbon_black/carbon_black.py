@@ -76,6 +76,7 @@ class CarbonBlackParser(ApiParser):
         self._connect()
 
         if method == "GET":
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method: GET", extra={'frontend': str(self.frontend)})
             response = self.session.get(
                 url,
                 params=query,
@@ -85,6 +86,7 @@ class CarbonBlackParser(ApiParser):
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
         elif method == "POST":
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method: POST, json: {query}", extra={'frontend': str(self.frontend)})
             response = self.session.post(
                 url,
                 json=query,

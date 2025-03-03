@@ -120,7 +120,7 @@ class SentinelOneSingularityMobileParser(ApiParser):
             "sort": "timestamp,asc",
             "module": "ZIPS"
         }
-        logger.debug(f"{[__parser__]}:get_logs: url: {url}, params: {params}", extra={'frontend': str(self.frontend)})
+        logger.info(f"{[__parser__]}:get_logs: url: {url}, params: {params}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(url,
             params=params,
@@ -189,6 +189,6 @@ class SentinelOneSingularityMobileParser(ApiParser):
                 since = to
                 self.frontend.last_api_call = since
 
-            logger.debug(f'[{__parser__}]:execute: frontend last_api_call: {self.frontend.last_api_call}', extra={'frontend': str(self.frontend)})
+            logger.info(f'[{__parser__}]:execute: frontend last_api_call: {self.frontend.last_api_call}', extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

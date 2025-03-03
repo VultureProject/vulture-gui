@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- [API_PARSER] Add loggers before the requests to make easier the debugging
 - [API_PARSER] [NETSKOPE] Correctly update the last_collected_timestamp, even when no logs are received
 - [API_PARSER] [CYBEREASON] Avoid None evaluation of log objects in format_log for malops
 - [API_PARSER] [CROWDSTRIKE] Fix infinite loop when we encounters more than 100 logs (default limit) in one request
