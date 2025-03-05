@@ -76,7 +76,7 @@ class ArmisCentrixParser(ApiParser):
             logs = []
             logs += self.get_logs("alerts", since, to, test=True)
             if self.armis_get_activity_logs:
-                logs += self.get_logs("activities", since, to, test=True)
+                logs += self.get_logs("activity", since, to, test=True)
 
             msg = f"{len(logs)} logs retrieved"
             logger.info(f"[{__parser__}][test] :: {msg}", extra={'frontend': str(self.frontend)})
@@ -148,11 +148,19 @@ class ArmisCentrixParser(ApiParser):
                 self.evt_stop.wait(10.0)
                 logger.info(f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (retries left: {retry}/3)", extra={'frontend': str(self.frontend)})
                 continue
-            if response.status_code == 401 and response.get("message", "") == "Expired access token.": # maybe a bit too much, this handle the case where token had expired "silently" for an unknown reason
-                logger.info(f"[{__parser__}][execute_query] :: Resets expired access token {self.armis_token} - expired_at ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
-                self.armis_token = "" # resets expired token
-                self.login()
-                continue
+            if response.status_code == 401:
+                resp = response.json()
+                # maybe a bit too much, this handle the case where token had expired or is invalid "silently" for an unknown reason
+                if resp.get("message", "") == "Expired access token.": 
+                    logger.info(f"[{__parser__}][execute_query] :: Resets expired access token {self.armis_token} - expired_at ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
+                    self.armis_token = "" # resets expired token
+                    self.login()
+                    continue
+                elif resp.get("message", "") == "Invalid access token.":
+                    logger.info(f"[{__parser__}][execute_query] :: Resets invalid access token {self.armis_token} - expiration ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
+                    self.armis_token = "" # resets expired token
+                    self.login()
+                    continue
             break  # no error we can break
 
         response.raise_for_status()
@@ -172,9 +180,9 @@ class ArmisCentrixParser(ApiParser):
 
             url = f"{self.armis_host}{self.SEARCH_URL}"
             if kind == "alerts":
-                url += "?aql=" + quote(f'in:alerts after:{since} before:{to}')
-            elif kind == "activities":
-                url += "?aql=" + quote(f'in:activity after:{since} before:{to}')
+                url += "?aql=" + quote(f'in:alerts after:{since} before:{to} orderBy:(time asc)')
+            elif kind == "activity":
+                url += "?aql=" + quote(f'in:activity after:{since} before:{to} orderBy:(time asc)')
             params = {
                 "length": self.LIMIT, # page size
                 "includeSample": "false",
@@ -229,12 +237,12 @@ class ArmisCentrixParser(ApiParser):
 
         kinds = ["alerts"]
         if self.armis_get_activity_logs:
-            kinds.append("activities")
+            kinds.append("activity")
 
         for kind in kinds:
             # API have the capability to get back in time from the last 100 days at maximum
             since = self.last_collected_timestamps.get(f"armis_centrix_{kind}") or (timezone.now() - timedelta(days=30))
-            # collect at max 24h of range to avoid API taking too long to awnser and delay by 3minutes to avoid missing alerts due to ELK insertion time
+            # collect at max 24h of range to avoid API taking too long to awnser and delay by 3 minutes to avoid missing alerts due to ELK insertion time
             to    = min(timezone.now() - timedelta(minutes=3), since + timedelta(hours=24))
 
             logger.info(f"[{__parser__}][execute] :: Querying {kind} from {since} to {to}", extra={'frontend': str(self.frontend)})
