@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [API_PARSER] [BEYONDTRUST_REPORTINGS] 'since' going up infinitely in some cases
 
 
 ## [2.22.1] - 2025-03-03
