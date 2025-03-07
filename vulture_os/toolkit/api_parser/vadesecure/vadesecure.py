@@ -116,7 +116,7 @@ class VadesecureParser(ApiParser):
         """
         raw request dosent handle the pagination natively
         """
-
+        logger.info(f"[{__parser__}]:__execute_query: URL: {url} , method : {method}, params : {query}", extra={'frontend': str(self.frontend)})
         if method == "POST":
             response = self.session.post(
                 url,
@@ -148,7 +148,6 @@ class VadesecureParser(ApiParser):
         for log in logs:
             msgId = log["messageId"]
             msg = f"Fetching details of log with messageId: {msgId}"
-            logger.info(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
             try:
                 payload = {
                     "date": log["date"],
@@ -173,7 +172,6 @@ class VadesecureParser(ApiParser):
 
     def fetch_endpoint(self, endpoint, to, since, payload):
         msg = f"parser starting from {since} to {to}."
-        logger.info(f"[{__parser__}]:fetch_endpoint: {msg}", extra={'frontend': str(self.frontend)})
         alert_url = f"{self.vadesecure_host}/{self.VERSION}/{endpoint}"
         index = 0
         total = 1

@@ -167,7 +167,6 @@ class TrendmicroWorryfreeParser(ApiParser):
             query = {}
         request_body = query
         uri = self.LOG_EXISTENCE_URI
-        logger.info(f"[{__parser__}]:__execute_query: URL: {uri} , params: {query}", extra={'frontend': str(self.frontend)})
         res_status, res_data = self._run("POST", self.LOG_EXISTENCE_URI, json.dumps(request_body))
 
         result = {}

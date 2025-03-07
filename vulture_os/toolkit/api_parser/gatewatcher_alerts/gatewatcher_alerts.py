@@ -103,8 +103,6 @@ class GatewatcherAlertsParser(ApiParser):
         page = 1
         while nb_logs < count:
             query['page'] = page
-            logger.info(f"{[__parser__]}:get_logs: params for request are '{query}'",
-                         extra={'frontend': str(self.frontend)})
             page += 1
             alerts = self.execute_query(alert_url, params=query)
             count = int(alerts["count"])

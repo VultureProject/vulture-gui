@@ -160,8 +160,6 @@ class HarfangLabParser(ApiParser):
             'ordering': 'alert_time',
             'status': 'new,investigating,probable_false_positive'
         }
-        logger.info(f"[{__parser__}]:get_alerts: HarfangLab query parameters : {payload}",
-                     extra={'frontend': str(self.frontend)})
         return self.__execute_query("GET", alert_url, payload)
 
     def get_threats(self, since, to, index=0):

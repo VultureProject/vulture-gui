@@ -113,7 +113,7 @@ class CybereasonParser(ApiParser):
         retry = 0
         while retry < 3:
             retry += 1
-            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method: {method}, json: {query}, data: {data}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method: {method}, json: {query}, data: {data} (try {retry})", extra={'frontend': str(self.frontend)})
             try:
                 response = self.session.request(
                     method=method,
