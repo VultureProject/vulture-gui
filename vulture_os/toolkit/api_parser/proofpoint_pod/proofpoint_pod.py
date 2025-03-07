@@ -263,10 +263,9 @@ class ProofpointPodParser(ApiParser):
             logger.info(f"[{__parser__}]:execute: last call was more than an hour ago, parser will run for (max) 1 hour to catch up with current time", extra={'frontend': str(self.frontend)})
             stop_after = 3600
 
-
         try:
+            logger.info(f"[{__parser__}]:execute_query: sinceTime: {self.frontend.last_api_call.isoformat()}", extra={'frontend': str(self.frontend)})
             while time.monotonic() < start_time + stop_after and not self.evt_stop.is_set():
-                logger.debug(f"[{__parser__}]:execute_query: sinceTime: {self.frontend.last_api_call.isoformat()}", extra={'frontend': str(self.frontend)})
                 msg = self._websocket_fetch(sinceTime=self.frontend.last_api_call.isoformat())
                 if msg:
                     timestamp, msg = self.parse_log(msg)

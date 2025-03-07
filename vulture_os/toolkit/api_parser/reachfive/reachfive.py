@@ -71,7 +71,7 @@ class ReachFiveParser(ApiParser):
         if (not self.reachfive_access_token or not self.reachfive_expire_at) or (self.reachfive_expire_at - timedelta(minutes=3)) < timezone.now():
             # Retrieve OAuth token (https://developer.reachfive.com/api/management.html#tag/OAuth)
             oauth2_url = f"https://{self.reachfive_host}/oauth/token"
-            logger.info(f"[{__parser__}]:get_logs: URL: {oauth2_url} , client_id: {self.reachfive_client_id}",
+            logger.info(f"[{__parser__}]:auth_token: Getting a new Token...",
                      extra={'frontend': str(self.frontend)})
             response = requests.post(
                 oauth2_url,
@@ -139,8 +139,7 @@ class ReachFiveParser(ApiParser):
         if since:
             params['filter'] = f'date > "{since}"'
 
-        msg = f"Get user events request params: {params}"
-        logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: querying {url}, with params {params}", extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
             url,
