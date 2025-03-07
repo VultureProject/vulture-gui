@@ -135,8 +135,7 @@ class BlackberryCylanceParser(ApiParser):
         if not self.session:
             self._connect()
 
-        logger.info(f"[{__parser__}]:_execute_query: sending request to {url}", extra={'frontend': str(self.frontend)})
-        logger.info(f"[{__parser__}]:_execute_query: query is {query}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:_execute_query: sending request to {url}, with parameters {query}", extra={'frontend': str(self.frontend)})
 
         if method == "GET":
             try:
