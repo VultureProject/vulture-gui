@@ -292,6 +292,9 @@ class VaronisParser(ApiParser):
             to = min(timezone.now(), since + timedelta(hours=24))
             # delay the times of 5 minutes
             to = to - timedelta(minutes=5)
+            if since >= to:
+            # Ensure since < to (for the first execution)
+                    since -= timedelta(minutes=5)
 
             logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={"frontend": str(self.frontend)})
             logs = self.get_logs(since, to)
