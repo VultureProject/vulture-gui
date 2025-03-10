@@ -53,7 +53,7 @@ class VaronisParser(ApiParser):
 
     def __init__(self, data):
         super().__init__(data)
-        self.varonis_host = data["varonis_host"]
+        self.varonis_host = data["varonis_host"].rstrip("/")
         self.varonis_api_key = data["varonis_api_key"]
 
         self.session = None
@@ -81,7 +81,11 @@ class VaronisParser(ApiParser):
             logger.error(f"[{__parser__}]: Error with API authentication : {res.status_code}, {res.text}", extra={"frontend": str(self.frontend)})
             raise VaronisAPIError(f"Authentication error : {res.status_code}, {res.text}")
 
-        content = res.json()
+        try:
+            content = res.json()
+        except:
+            logger.error(f"[{__parser__}]:The response of token request is not in JSON format")
+            raise VaronisAPIError("The response of token request is not in JSON format")
         self.access_token = content["access_token"]
 
     def _connect(self):
@@ -148,7 +152,11 @@ class VaronisParser(ApiParser):
         if res.status_code != 201:
             logger.error(f"[{__parser__}] Error while retrieving alerts {res.status_code}, {res.text}", extra={"frontend": str(self.frontend)})
             raise  VaronisAPIError(res.text)
-        content = res.json()
+        try:
+            content = res.json()
+        except:
+            logger.error(f"[{__parser__}]:The response of token request is not in JSON format")
+            raise VaronisAPIError("The response of token request is not in JSON format")
         (e_rows, e_terminate) = (content[0]["location"], content[1]["location"])
 
         if not e_rows:
