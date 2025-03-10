@@ -119,7 +119,7 @@ class MSSentinelParser(ApiParser):
             'api-version': self.API_VERSION
         }
 
-        logger.info(f"[{__parser__}]:get_incident_entities: Get entities request params: {params}",
+        logger.info(f"[{__parser__}]:get_incident_entities: Get entities request params: {params} , URL : {url}",
                      extra={'frontend': str(self.frontend)})
 
         response = self.session.post(
@@ -151,7 +151,7 @@ class MSSentinelParser(ApiParser):
         if test:
             params['top'] = 10
 
-        logger.info(f"[{__parser__}]:get_incidents: Get incidents request params: {params}",
+        logger.info(f"[{__parser__}]:get_incidents: Get incidents request params: {params}, URL : {url}",
                      extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
@@ -182,7 +182,7 @@ class MSSentinelParser(ApiParser):
             'api-version': self.API_VERSION
         }
 
-        logger.info(f"[{__parser__}]:get_incident_alerts: Get incident's alerts request params: {params}",
+        logger.info(f"[{__parser__}]:get_incident_alerts: Get incident's alerts request params: {params} , URL : {url}",
                      extra={'frontend': str(self.frontend)})
 
         response = self.session.post(

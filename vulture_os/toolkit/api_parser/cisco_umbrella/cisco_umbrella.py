@@ -138,8 +138,6 @@ class CiscoUmbrellaParser(ApiParser):
             'from': int(since.timestamp() * 1000),
             'to': int(to.timestamp() * 1000),
         }
-        logger.info(f"[{__parser__}]:get_alerts: Cisco-Umbrella query parameters : {payload}",
-                     extra={'frontend': str(self.frontend)})
         return self.__execute_query(self.ACTIVITY_URL, payload)
 
     def format_log(self, log):
