@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] Add loggers before the requests to make easier the debugging
 ### Changed
 - [API_PARSER] [CISCO_MERAKI] Change common logger to warn instead of error
+- [API_PARSER] [CORTEX_XDR] Use the 'local_insert_ts' field as time field for alerts
+- [API_PARSER] [CORTEX_XDR] Bound requests with a 'to' parameter
 ### Fixed
 - [API_PARSER] [CISCO_MERAKI] Fix bug when 'get_security_logs' is False
 - [API_PARSER] [BEYONDTRUST_REPORTINGS] 'since' going up infinitely in some cases
 - [SYSTEM] [NETSKOPE] Reduce time ranges to 10 minutes max to avoid overflow in queries
+- [API_PARSER] [CORTEX_XDR] Avoid missing logs when fetching pages by changing the 'since' filter
+- [API_PARSER] [CORTEX_XDR] Avoid missing first log of each next page in queries
+- [API_PARSER] [CORTEX_XDR] Avoid getting multiple times the same event during consecutive runs
 
 
 ## [2.22.1] - 2025-03-03
