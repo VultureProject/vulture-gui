@@ -128,10 +128,9 @@ def parse_ifconfig_key(line, config):
 def parse_ifconfig_values(line, config):
     parse_success = False
 
-    if line.upper() in ['DHCP', 'SYNCDHCP']:
+    if line.upper() in ['DHCP', 'SYNCDHCP', 'INET6 ACCEPT_RTADV']:
         logger.debug("parse_ifconfig_values: interface is configured for DHCP")
-        config['dhcp'] = True
-        config['type'] = "system"
+        config['type'] = "dynamic"
         return True
 
     if config.get('ipv6'):
@@ -575,7 +574,7 @@ def write_network_config(logger):
         address = address_nic.network_address
         nic = address_nic.nic
 
-        if address.type in ['vlan', 'lagg']:
+        if address.type in ['dynamic', 'vlan', 'lagg']:
             main_iface = address.main_iface
             status, error = set_rc_config(variable="cloned_interfaces",
                                           value=main_iface,
@@ -649,7 +648,7 @@ def write_network_config(logger):
 def remove_netif_configs(logger, rc_confs):
     if isinstance(rc_confs, str):
         rc_confs = literal_eval(rc_confs)
-    
+
     from system.cluster.models import Cluster
     node = Cluster.get_current_node()
 
@@ -692,6 +691,80 @@ def restart_routing(logger):
         return False
     logger.info("restart_routing(): OK")
     return True
+
+
+def service_dhclient(logger, args):
+    """
+    Restart dhclient on a specific interface
+
+    :param logger: A logger handler
+    :param args: tuple of
+        - command to pass to dhclient
+        - netif_id is the related Network Address we are working on
+    :return: True / False
+    """
+
+    from system.cluster.models import (Cluster, NetworkInterfaceCard,
+                                       NetworkAddressNIC)
+    node = Cluster.objects.get().get_current_node()
+
+    if isinstance(args, str):
+        cmd, netif_id = literal_eval(args)
+    else:
+        cmd, netif_id = args
+
+    ret = True
+    for nic in NetworkInterfaceCard.objects.filter(node=node):
+        for address_nic in NetworkAddressNIC.objects.filter(nic=nic, network_address_id=netif_id):
+            dev = address_nic.nic.dev
+            try:
+                command = ['/usr/local/bin/sudo', '/usr/sbin/service', 'dhclient', cmd, dev]
+
+                logger.debug(f"Node::restart_dhclient(): running {command}")
+                proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                stdout, error = proc.communicate()
+                if error:
+                    logger.error(f"Node::restart_dhclient(): Error on '{dev}': {str(error)}")
+                    ret = False
+                    continue
+                else:
+                    logger.info(f"Node::restart_dhclient(): {dev}: {str(stdout)}")
+                    continue
+
+            except Exception as e:
+                logger.error(f"Node::restart_dhclient(): {str(e)}")
+                ret = False
+                continue
+
+    return ret
+
+
+def get_dhcp_addr(logger, netif_id):
+    """
+    Get dhcp address lease
+
+    :param logger: A logger handler
+    :param netif_id: The _id of the related Network Address we are working on
+    :return: True / False
+    """
+    from system.cluster.models import (Cluster, NetworkAddressNIC)
+    try:
+        proc = subprocess.Popen([
+            '/usr/local/bin/sudo',
+            '/home/vlt-os/scripts/get_dhcp_address.sh',
+            NetworkAddressNIC.objects.get(network_address_id=netif_id, nic__node=Cluster.get_current_node()).nic.dev],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        success, error = proc.communicate()
+        if error:
+            logger.error(f"Node::get_dhcp_addr: {str(error)}")
+        else:
+            tmp = success.rstrip().decode('utf-8')
+            ip, prefix_or_netmask, gw = tmp.split(",")
+        return ip, prefix_or_netmask, gw
+
+    except Exception as e:
+        logger.error(f"Node::get_dhcp_addr: {str(e)}")
 
 
 def make_hostname_resolvable(logger, hostname_ip):
