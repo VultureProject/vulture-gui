@@ -27,7 +27,7 @@ __parser__ = "VARONIS"
 import json
 import logging
 import requests
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.utils import timezone
 from django.conf import settings
@@ -278,9 +278,11 @@ class VaronisParser(ApiParser):
 
     def get_logs(self, since, to):
         alerts = self.get_alerts(since, to)
-        alert_ids = [alert.get("Alert.ID") for alert in alerts]
-        events = self.retrieve_events_from_alerts(alert_ids)
-        alerts.extend(events)
+        if alerts:
+            self.last_api_call = datetime.strptime(alerts[-1]["Alert.TimeUTC"], "%Y-%m-%dT%H:%M:%S")
+            alert_ids = [alert.get("Alert.ID") for alert in alerts]
+            events = self.retrieve_events_from_alerts(alert_ids)
+            alerts.extend(events)
         return alerts
 
     def format_log(self, log):
@@ -290,11 +292,6 @@ class VaronisParser(ApiParser):
         try:
             since = self.frontend.last_api_call or (timezone.now() - timedelta(days=1))
             to = min(timezone.now(), since + timedelta(hours=24))
-            # delay the times of 5 minutes
-            to = to - timedelta(minutes=5)
-            if since >= to:
-            # Ensure since < to (for the first execution)
-                    since -= timedelta(minutes=5)
 
             logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={"frontend": str(self.frontend)})
             logs = self.get_logs(since, to)
@@ -302,8 +299,10 @@ class VaronisParser(ApiParser):
             self.write_to_file([self.format_log(log) for log in logs])
             self.update_lock()
             # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
-            self.frontend.last_api_call = to + timedelta(milliseconds=1)
-            self.frontend.save()
+            if len(logs) > 0:
+                logger.info(f"[{__parser__}]:execute: last_api_call is set to {self.last_api_call}", extra={"frontend": str(self.frontend)})
+                self.frontend.last_api_call = self.last_api_call + timedelta(milliseconds=1)
+                self.frontend.save()
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {e}", extra={"frontend": str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={"frontend": str(self.frontend)})
