@@ -57,7 +57,7 @@ class CatonetworksParser(ApiParser):
     def execute_query(self, query):
         data = {'query':query}
         headers = { 'x-api-key': self.catonetworks_api_key,'Content-Type':'application/json'}
-        logger.info(f"[{__parser__}]:execute_query: URL: {self.URL}, data: {json.dumps(data).encode('ascii'),}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:execute_query: URL: {self.URL}, data: {data}", extra={'frontend': str(self.frontend)})
         response = requests.post(
             url=self.URL,
             data=json.dumps(data).encode("ascii"),
