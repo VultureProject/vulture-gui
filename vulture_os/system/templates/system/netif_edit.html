@@ -30,14 +30,21 @@
                         <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
                         <div class="col-sm-5">
                           {{form.name}}
-                          {{form.name.errors}}
+                          {{form.name.errors|safe}}
                         </div>
                       </div>
                       <div class="form-group">
                         <label class="col-sm-4 control-label">{{form.type.label}}</label>
                         <div class="col-sm-5">
                           {{form.type}}
-                          {{form.type.errors}}
+                          {{form.type.errors|safe}}
+                        </div>
+                      </div>
+                      <div class="form-group dhcp_mode">
+                        <label class="col-sm-4 control-label">{{form.ip_version.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.ip_version}}
+                          {{form.ip_version.errors|safe}}
                         </div>
                       </div>
                       {{form.iface_id.as_hidden}}
@@ -45,14 +52,14 @@
                         <label class="col-sm-4 control-label">{% translate "Network Interface Card(s)" %}</label>
                         <div class="col-sm-5">
                           {{form.nic}}
-                          {{form.nic.errors}}
+                          {{form.nic.errors|safe}}
                         </div>
                       </div>
                       <div class="form-group" id="carp_info">
                         <label class="col-sm-4 control-label">{% translate "CARP vhid" %}</label>
                         <div class="col-sm-5">
                           {{form.carp_vhid}}
-                          {{form.carp_vhid.errors}}
+                          {{form.carp_vhid.errors|safe}}
                         </div>
                         <div class="form-group" id="container_carp"></div>
                       </div>
@@ -61,21 +68,21 @@
                         <label class="col-sm-4 control-label">{% translate "IP Address" %}</label>
                         <div class="col-sm-5">
                           {{form.ip}}
-                          {{form.ip.errors}}
+                          {{form.ip.errors|safe}}
                         </div>
                       </div>
                       <div class="form-group static_mode">
                         <label class="col-sm-4 control-label">{% translate "Netmask / Prefix" %}</label>
                         <div class="col-sm-5">
                           {{form.prefix_or_netmask}}
-                          {{form.prefix_or_netmask.errors}}
+                          {{form.prefix_or_netmask.errors|safe}}
                         </div>
                       </div>
                       <div class="form-group static_mode">
                         <label class="col-sm-4 control-label">{% translate "Network fib" %}</label>
                         <div class="col-sm-5">
                           {{form.fib}}
-                          {{form.fib.errors}}
+                          {{form.fib.errors|safe}}
                         </div>
                       </div>
                       <div class="form-group vlan_parameters">
@@ -83,7 +90,7 @@
                           <label class="col-sm-4 control-label">{% translate "Vlan ID" %}</label>
                           <div class="col-sm-5">
                             {{form.vlan}}
-                            {{form.vlan.errors}}
+                            {{form.vlan.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -92,7 +99,7 @@
                           <label class="col-sm-4 control-label">{% translate "LAGG protocol" %}</label>
                           <div class="col-sm-5">
                             {{form.lagg_proto}}
-                            {{form.lagg_proto.errors}}
+                            {{form.lagg_proto.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -206,7 +213,9 @@
 
       if(current_type === "dynamic") {
         $('.static_mode').hide();
+        $('.dhcp_mode').show();
       } else {
+        $('.dhcp_mode').hide();
         $('.static_mode').show();
       }
       if(current_type === "vlan") {

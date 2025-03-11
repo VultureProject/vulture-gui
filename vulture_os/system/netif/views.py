@@ -69,7 +69,15 @@ def netif_edit(request, object_id=None, api=False):
         form = NetIfForm(request.POST or None, instance=netif_model)
 
     if request.method in ("POST", "PUT") and form.is_valid():
+        old_type = netif_model.type if netif_model else None
+
         netif = form.save(commit=False)
+        if netif.type == ("system", "dynamic"):
+            netaddrs = NetworkAddress.objects.filter(type=netif.type).exclude(id=netif.pk)
+            if True in list(netaddr.version == netif.version for netaddr in netaddrs):
+                form.add_error('nic', """An interface selected is already configured for this family version,
+                                this is incompatible with static interfaces. Please edit preexisting interface.""")
+                return render(request, 'system/netif_edit.html', {'form': form})
         netif.save()
 
         """ CARP settings are defined by default, even if they are not used """
@@ -151,8 +159,12 @@ def netif_edit(request, object_id=None, api=False):
                 )
             logger.info("{} NetworkInterfaceCard {}".format("Created" if created else "Updated", NIC))
         else:
+            if old_type == "dynamic" and old_type != netif.type:
+                Cluster.api_request('toolkit.network.network.service_dhclient', ("stop", netif.id))
             """ Call ifconfig to setup network IP address right now """
             Cluster.api_request('toolkit.network.network.ifconfig_call', netif.id)
+            if netif.type == "dynamic":
+                Cluster.api_request('toolkit.network.network.service_dhclient', ("restart", netif.id))
             """ Garbage collector to delete obsolete running ifconfig and configuration """
             Cluster.api_request('toolkit.network.network.address_cleanup')
 

@@ -25,7 +25,8 @@ __doc__ = 'Haproxy dedicated form class'
 # Django system imports
 from django.conf import settings
 from django.forms import ModelForm, TextInput, SelectMultiple, Select, NumberInput, ModelMultipleChoiceField, ValidationError
-from system.cluster.models import NetworkInterfaceCard, NetworkAddress, NetworkAddressNIC, NET_ADDR_TYPES, LAGG_PROTO_TYPES
+from system.cluster.models import (NetworkInterfaceCard, NetworkAddress, NetworkAddressNIC,
+                                   NET_ADDR_TYPES, NET_ADDR_VERSIONS, LAGG_PROTO_TYPES)
 
 # External libraries
 from iptools.ipv4 import netmask2prefix
@@ -52,17 +53,18 @@ class NetIfForm(ModelForm):
 
         self.fields['iface_id'].disabled = True
 
-        for field_name in ["fib", "vlan", 'carp_vhid', 'iface_id']:
+        for field_name in ['ip_version', 'fib', 'vlan', 'carp_vhid', 'iface_id']:
             self.fields[field_name].required = False
 
 
     class Meta:
         model = NetworkAddress
-        fields = ('name', 'type', 'nic', 'ip', 'prefix_or_netmask', 'carp_vhid', 'fib', 'iface_id', 'vlan', 'lagg_proto')
+        fields = ('name', 'type', 'ip_version', 'nic', 'ip', 'prefix_or_netmask', 'carp_vhid', 'fib', 'iface_id', 'vlan', 'lagg_proto')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
             'type': Select(choices=NET_ADDR_TYPES, attrs={'class': 'form-control select2'}),
+            'ip_version': Select(choices=NET_ADDR_VERSIONS, attrs={'class': 'form-control select2'}),
             'ip': TextInput(attrs={'class': 'form-control'}),
             'carp_vhid': NumberInput(attrs={'class': 'form-control'}),
             'prefix_or_netmask': TextInput(attrs={'class': 'form-control'}),
@@ -75,8 +77,12 @@ class NetIfForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()
 
+        if cleaned_data.get('type') in ("system", "dynamic"):
+            incompatible_types = {"system": "dynamic", "dynamic": "system"}
+            if NetworkAddressNIC.objects.filter(nic=cleaned_data.get('nic').first().pk, network_address__type=incompatible_types[cleaned_data['type']]).exclude(network_address__ip=cleaned_data['ip']).exists():
+                self.add_error('type', f"A {incompatible_types[cleaned_data['type']]} interface is already configured, this is not supported")
 
-        if cleaned_data['type'] == "lagg":
+        if cleaned_data.get('type') == "lagg":
             if not cleaned_data.get('lagg_proto'):
                 self.add_error('lagg_proto', "The protocol must be specified for a LAGG interface")
             nics = cleaned_data.get('nic')
@@ -84,13 +90,19 @@ class NetIfForm(ModelForm):
                 if NetworkAddressNIC.objects.filter(nic=nic).exclude(network_address__type=cleaned_data['type'], network_address__iface_id=cleaned_data.get('iface_id')).exists():
                     self.add_error('nic', "An interface selected is already configured, this is incompatible with LAGG interfaces. Please remove configuration on interface then create LAGG interface or remove this interface.")
                     break
-        elif cleaned_data['type'] != "dynamic":
+        elif cleaned_data.get('type') == "dynamic":
+            if not cleaned_data.get('ip_version'):
+                self.add_error('ip_version', "This field is required for dynamic interfaces.")
+            cleaned_data['ip'] = ""
+            cleaned_data['prefix_or_netmask'] = ""
+            cleaned_data['fib'] = 0
+        else:
             if not cleaned_data.get('ip'):
                 self.add_error('ip', "This field is required")
             if not cleaned_data.get('prefix_or_netmask'):
                 self.add_error('prefix_or_netmask', "This field is required")
 
-        if cleaned_data['type'] in ['vlan', 'lagg', 'alias'] and cleaned_data['iface_id'] == -1:
+        if cleaned_data.get('type') in ['vlan', 'lagg', 'alias'] and cleaned_data['iface_id'] == -1:
             cleaned_data['iface_id'] = 0
             while NetworkAddress.objects.only('type', 'iface_id').filter(type=cleaned_data['type'], iface_id=cleaned_data['iface_id']).exists():
                 cleaned_data['iface_id']+=1
@@ -119,7 +131,7 @@ class NetIfForm(ModelForm):
                 raise ValidationError("vlan must be 0 or an integer corresponding to VLAN ID")
         else:
             value = 0
-        
+
         return value
 
     def clean_fib(self):

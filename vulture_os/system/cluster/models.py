@@ -73,6 +73,11 @@ NET_ADDR_TYPES = (
     ('lagg', 'Link Aggregation'),
 )
 
+NET_ADDR_VERSIONS = (
+    (4, 'IPv4'),
+    (6, 'IPv6'),
+)
+
 LAGG_PROTO_TYPES = (
     ('failover', 'Failover'),
     ('lacp', 'LACP'),
@@ -228,7 +233,7 @@ class Node(models.Model):
         addresses = list()
         for nic in NetworkInterfaceCard.objects.filter(node=self):
             for address in NetworkAddress.objects.filter(nic=nic):
-                data = str(address.ip) + " on " + str(nic.dev)
+                data = str(address.ip_cidr) + " on " + str(nic.dev)
                 if address.is_carp:
                     data = " (CARP vhid = {})".format(address.carp_vhid)
 
@@ -385,7 +390,7 @@ class Node(models.Model):
             elif listener.frontend.mode == "filebeat" and listener.frontend.filebeat_listening_mode == "udp":
                 proto = listener.frontend.filebeat_listening_mode
             """ Return (ip, port, interface.family) """
-            listeners_enabled.append((listener.whitelist_ips, listener.network_address.ip, listener.port, listener.rsyslog_port,
+            listeners_enabled.append((listener.whitelist_ips, listener.network_address.pf_interface, listener.port, listener.rsyslog_port,
                                       proto, listener.network_address.family, listener.max_src, listener.max_rate))
         return listeners_enabled
 
@@ -967,6 +972,11 @@ class NetworkAddress(models.Model):
         choices=NET_ADDR_TYPES,
         verbose_name=_("Interface type"),
     )
+    ip_version = models.PositiveSmallIntegerField(
+        default=4,
+        choices=NET_ADDR_VERSIONS,
+        verbose_name=_("IP Version"),
+    )
     nic = models.ManyToManyField(
         NetworkInterfaceCard,
         through='NetworkAddressNIC'
@@ -1014,13 +1024,19 @@ class NetworkAddress(models.Model):
             nic = address_nic.nic
             nic_list.append(str(nic))
 
+        # out = Cluster.await_api_request("toolkit.network.network.get_dhcp_addr", self.pk, Cluster.get_current_node())
+        if self.type == "dynamic":
+            # ip, prefix_or_netmask, gw = literal_eval(out[1])
+            ip, prefix_or_netmask = (self.ip_cidr, None)
+
         conf = {
             'id': str(self.id),
             'name': self.name,
             'type': self.type,
+            'ip_version': self.ip_version,
             'nic': ', '.join(nic_list),
-            'ip': self.ip,
-            'prefix_or_netmask': self.prefix_or_netmask,
+            'ip': self.ip or ip,
+            'prefix_or_netmask': self.prefix_or_netmask or prefix_or_netmask,
             'carp_vhid': self.carp_vhid,
             'vlan': self.vlan,
             'fib': self.fib,
@@ -1042,6 +1058,9 @@ class NetworkAddress(models.Model):
 
         :return: 4 or 6
         """
+        if self.type == "dynamic":
+            return self.ip_version
+
         if not self.ip:
             return ''
 
@@ -1056,6 +1075,8 @@ class NetworkAddress(models.Model):
 
         :return: String with ip/cidr notation
         """
+        if self.type == "dynamic":
+            return "dhcp"
 
         if not self.ip:
             return ''
@@ -1075,6 +1096,9 @@ class NetworkAddress(models.Model):
         """
         :return: inet or inet6, depending of the IP address
         """
+        if self.type == "dynamic":
+            return "inet" if self.ip_version == 4 else "inet6"
+
         if not self.ip:
             return ''
 
@@ -1098,6 +1122,19 @@ class NetworkAddress(models.Model):
             return f"{self.nic.first().dev}_alias{str(self.iface_id)}"
         else:
             return self.nic.first().dev
+
+    @property
+    def pf_interface(self):
+        """
+        :return: A string used in pf config generation
+        """
+        if self.type == "dynamic":
+            # out = Cluster.await_api_request("toolkit.network.network.get_dhcp_addr", self.pk, Cluster.get_current_node())
+            # ip, _, _ = literal_eval(out[1])
+            # family = "inet6" if ":" in ip else "inet"
+            return f"({self.main_iface}{':1' if self.ip_version == 6 else ''})"
+        else:
+            return self.ip
 
 
     def rc_config(self, node_id=None):
@@ -1156,10 +1193,19 @@ class NetworkAddress(models.Model):
                     key = f"ifconfig_{addresses[0].nic.dev}_alias{self.iface_id}"
                     value = f"{self.family} {self.ip_cidr}"
                 elif self.type == 'dynamic':
+                    # Add dynamic interface to the list of cloned interfaces
+                    nodes_config[node.id].append({
+                        'variable': "cloned_interfaces",
+                        'value': addresses[0].nic.dev,
+                        'filename': "network",
+                        'operation': "+="
+                    })
                     key = f"ifconfig_{addresses[0].nic.dev}"
                     if self.family == 'inet6':
                         key += "_ipv6"
-                    value = "dhcp"
+                        value = f"{self.family} accept_rtadv"
+                    else:
+                        value = self.ip_cidr
                 elif self.type == 'system':
                     key = f"ifconfig_{addresses[0].nic.dev}"
                     if self.family == 'inet6':
@@ -1177,11 +1223,7 @@ class NetworkAddress(models.Model):
 
 
     def __str__(self):
-        return "'{}' : {}/{}".format(
-            self.name,
-            self.ip,
-            self.prefix_or_netmask
-        )
+        return f"'{self.name}' : {self.ip_cidr}"
 
     @staticmethod
     def str_attrs():
