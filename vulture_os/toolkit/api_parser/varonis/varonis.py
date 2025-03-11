@@ -301,7 +301,7 @@ class VaronisParser(ApiParser):
             # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             if len(logs) > 0:
                 logger.info(f"[{__parser__}]:execute: last_api_call is set to {self.last_api_call}", extra={"frontend": str(self.frontend)})
-                self.frontend.last_api_call = self.last_api_call + timedelta(milliseconds=1)
+                self.frontend.last_api_call = self.last_api_call + timedelta(seconds=1)
                 self.frontend.save()
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {e}", extra={"frontend": str(self.frontend)})
