@@ -120,7 +120,7 @@ class BeyondtrustReportingsParser(ApiParser):
         while tries > 0 and not self.evt_stop.is_set():
             if self.session is None:
                 self._connect()
-            logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {query}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {query}, tries : {tries}", extra={'frontend': str(self.frontend)})
             response = self.session.get(
                 url,
                 params=query,
