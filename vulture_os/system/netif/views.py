@@ -165,8 +165,9 @@ def netif_edit(request, object_id=None, api=False):
             Cluster.api_request('toolkit.network.network.ifconfig_call', netif.id)
             if netif.type == "dynamic":
                 Cluster.api_request('toolkit.network.network.service_dhclient', ("restart", netif.id))
-            """ Garbage collector to delete obsolete running ifconfig and configuration """
-            Cluster.api_request('toolkit.network.network.address_cleanup')
+            else:
+                """ Garbage collector to delete obsolete running ifconfig and configuration """
+                Cluster.api_request('toolkit.network.network.address_cleanup')
 
         """ Update PF configurations """
         Cluster.api_request("services.pf.pf.gen_config")
