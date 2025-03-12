@@ -206,7 +206,6 @@ class VaronisParser(ApiParser):
 
         query = {
             "entityName": "Alert",
-            "timeZone": "Europe/Paris",
             "filter": {
                 "filterOperator": 0,
                 "filters": [
@@ -271,8 +270,7 @@ class VaronisParser(ApiParser):
                         "values": [ { "Event.Alert.ID": alert_id, "displayValue": alert_id } ]
                     },
                 ]
-            },
-            "timeZone": "Europe/Paris"
+            }
         }
 
         (e_terminate, content) = self.varonis_api_search(rows, query)
