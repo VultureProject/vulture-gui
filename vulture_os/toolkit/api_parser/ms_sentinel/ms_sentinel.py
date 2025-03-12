@@ -217,7 +217,7 @@ class MSSentinelParser(ApiParser):
             'api-version': self.API_VERSION
         }
 
-        logger.info(f"[{__parser__}]:get_incident_comments: Get incident's comments request params: {params}",
+        logger.info(f"[{__parser__}]:get_incident_comments: URL : {url} request parameters: {params}",
                      extra={'frontend': str(self.frontend)})
 
         response = self.session.get(
