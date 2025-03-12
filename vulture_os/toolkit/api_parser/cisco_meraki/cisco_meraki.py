@@ -113,8 +113,8 @@ class CiscoMerakiParser(ApiParser):
 
     def get_logs(self, network_id, product_type, since):
         self._connect()
-        logger.debug(f"[{__parser__}]:get_logs: Get user events request params: startingAfter={since}",
-                     extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: Get user events for network ID {network_id}, product type {product_type}, starting after {since}",
+            extra={'frontend': str(self.frontend)})
         try:
             response = self.session.networks.getNetworkEvents(network_id, productType=product_type,
                                                               startingAfter=since, perPage=1000)

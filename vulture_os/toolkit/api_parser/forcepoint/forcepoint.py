@@ -98,6 +98,7 @@ class ForcepointParser(ApiParser):
             }
 
     def get_logs(self, url, allow_redirects=False):
+        logger.info(f"[{__parser__}]:get_logs: URL: {url}", extra={'frontend': str(self.frontend)})
         try:
             response = requests.get(
                 url,

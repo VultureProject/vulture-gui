@@ -108,13 +108,11 @@ class BeyondtrustPRAParser(ApiParser):
             raise BeyondtrustPRAAPIError(err)
 
     def _execute_query(self, url, query=None, timeout=20):
-        msg = f"URL : {url} Query : {str(query)}"
-        logger.debug(f"[{__parser__}] Request API : {msg}", extra={'frontend': str(self.frontend)})
-
         retry = 0
         while retry < 2 and not self.evt_stop.is_set():
             if self.session is None:
                 self._connect()
+            logger.info(f"[{__parser__}]:execute_query: URL: {url}, params: {query}, (try {retry+1})", extra={'frontend': str(self.frontend)})
             response = self.session.get(
                 url,
                 params=query,
@@ -314,7 +312,7 @@ class BeyondtrustPRAParser(ApiParser):
                         report_type=report_type,
                         timestamp=self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"]
                     )
-                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     since = self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"]
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
