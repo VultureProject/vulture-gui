@@ -576,7 +576,10 @@ def service_dhclient(logger, args):
         for address_nic in NetworkAddressNIC.objects.filter(nic=nic, network_address_id=netif_id):
             dev = address_nic.nic.dev
             try:
-                command = ['/usr/local/bin/sudo', '/usr/sbin/service', 'dhclient', cmd, dev]
+                if address_nic.network_address.ip_version == 6:
+                    command = ['/usr/local/bin/sudo', '/sbin/rtsol', dev]
+                else:
+                    command = ['/usr/local/bin/sudo', '/usr/sbin/service', 'dhclient', cmd, dev]
 
                 logger.debug(f"Node::restart_dhclient(): running {command}")
                 proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
