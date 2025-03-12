@@ -172,7 +172,7 @@ class VaronisParser(ApiParser):
         (e_rows, e_terminate) = (content[0]["location"], content[1]["location"])
 
         if not e_rows:
-            raise VaronisAPIError("Search has not being created")
+            raise VaronisAPIError("Search has not been created")
 
         return (e_rows, e_terminate)
 
@@ -181,12 +181,16 @@ class VaronisParser(ApiParser):
 
         # Sometimes we hit this instruction with a status_code == 304 (Content Not Modified),
         # I don't have any insights or hints to understand what's happening but we should consider to retry a request whenever we received a 304 status code
-        while res.status_code == 304:
+        while res.status_code == 304 and not self.evt_stop.is_set():
             res = self._execute_query("GET", f"/app/dataquery/api/search/{rows}?from=0&to=999")
         if res.status_code != 200:
             logger.error(f"[{__parser__}] Error while retrieving rows from search, {res.status_code}, {res.text}", extra={"frontend": str(self.frontend)})
             raise VaronisAPIError("Error while retrieving rows from search")
-        return res.json()
+        try:
+            return res.json()
+        except json.JSONDecodeError:
+            logger.error(f"[{__parser__}]:The response of the search is not in JSON format")
+            raise VaronisAPIError("The response of the search is not in JSON format")
 
     def varonis_api_search_terminate(self, terminate):
         res = self._execute_query("POST", f"/app/dataquery/api/search/{terminate}")
@@ -312,11 +316,11 @@ class VaronisParser(ApiParser):
             self.update_lock()
             self.write_to_file([self.format_log(log) for log in alerts])
             self.update_lock()
-            # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
+            # increment by 1s to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             if alerts:
-                logger.info(f"[{__parser__}]:execute: last_api_call is set to {self.last_api_call}", extra={"frontend": str(self.frontend)})
                 self.frontend.last_api_call = self.last_api_call + timedelta(seconds=1)
                 self.frontend.save()
+                logger.info(f"[{__parser__}]:execute: new last_api_call is to {self.last_api_call}", extra={"frontend": str(self.frontend)})
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {e}", extra={"frontend": str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={"frontend": str(self.frontend)})
