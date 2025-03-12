@@ -32,6 +32,7 @@ from system.cluster.models import Cluster, Node
 from gui.forms.form_utils import DivErrorList
 from django.utils.translation import gettext_lazy as _
 from toolkit.api.responses import build_response
+from toolkit.network.network import is_valid_ip4, is_valid_ip6
 
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -179,7 +180,8 @@ def cluster_edit(request, object_id, api=False, update=False):
             node.api_request('toolkit.network.network.restart_routing')
 
         if ip_changed:
-            Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (node.name, node.management_ip))
+            if is_valid_ip4(node.management_ip) or is_valid_ip6(node.management_ip):
+                Cluster.api_request("toolkit.network.network.make_hostname_resolvable", (node.name, node.management_ip))
             node.api_request('toolkit.network.network.write_management_ips')
 
         if pstats_forwarders_changed:
@@ -189,7 +191,7 @@ def cluster_edit(request, object_id, api=False, update=False):
         # Update Cluster's pf configurations if needed
         if ip_changed or pstats_forwarders_changed or pf_custom_param_config_changed or pf_custom_nat_config_changed or \
            pf_custom_rdr_config_changed or pf_custom_config_changed:
-            Cluster.api_request ("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
 
         if api:
             return build_response(node.id, "system.node.api", COMMAND_LIST)

@@ -179,7 +179,7 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                 node.api_request("services.rsyslogd.rsyslog.restart_service")
 
             """ Reload cluster PF configuration """
-            Cluster.api_request ("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
 
             if api:
                 return build_response(log_om.id, "applications.logfwd.api", COMMAND_LIST)
@@ -230,7 +230,7 @@ def logfwd_delete(request, fw_type, object_id, api=False):
             log_om.delete()
 
             # Reload cluster PF configuration
-            Cluster.api_request ("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
 
             if api:
                 return JsonResponse({

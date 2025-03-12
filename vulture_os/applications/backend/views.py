@@ -127,7 +127,7 @@ def backend_delete(request, object_id, api=False):
             Cluster.api_request('services.haproxy.haproxy.reload_service')
 
             # Reload cluster PF configuration
-            Cluster.api_request ("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
 
             if api:
                 return JsonResponse({
