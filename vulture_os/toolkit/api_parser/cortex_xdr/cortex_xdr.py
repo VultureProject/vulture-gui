@@ -31,7 +31,7 @@ import string
 
 import requests
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -71,7 +71,7 @@ class CortexXDRParser(ApiParser):
         self.event_kinds = {
             "alerts": {
                 "url": f"https://api-{self.cortex_xdr_host}/public_api/v2/alerts/get_alerts_multi_events/",
-                "time_field": "event_timestamp",
+                "time_field": "local_insert_ts",
                 "default_time_field": "detection_timestamp",
                 "filter_by": "server_creation_time"
             },
@@ -130,7 +130,9 @@ class CortexXDRParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_logs(self, kind, nb_from=0, since=None, test=False):
+    def get_logs(self, kind, nb_from=0, since=None, to=None, test=False):
+        self._connect()
+
         url = self.event_kinds[kind]['url']
 
         params = {'request_data':
@@ -140,18 +142,26 @@ class CortexXDRParser(ApiParser):
                               'keyword': "asc"
                           },
                           'search_from': nb_from,
-                          'search_to': 10 if test else nb_from+100
+                          'search_to': 10 if test else nb_from+100,
+                          'filters': []
                       }
         }
         if since:
-            params['request_data']['filters'] = [{
+            params['request_data']['filters'].append({
                        "field": self.event_kinds[kind]['filter_by'],
                        "operator": "gte",
                        "value": int(since.timestamp()*1000)
-                   }]
+                   })
+        if to:
+            params['request_data']['filters'].append({
+                "field": self.event_kinds[kind]['filter_by'],
+                "operator": "lte",
+                "value": int(to.timestamp() * 1000)
+            })
+
+        response = None
         retry = 1
         while retry <= 3 and not self.evt_stop.is_set():
-            self._connect()
             logger.info(f"[{__parser__}]:execute_query: URL: {url}, parameters: {params}, (try {retry})", extra={'frontend': str(self.frontend)})
             response = self.session.post(
                 url,
@@ -213,10 +223,20 @@ class CortexXDRParser(ApiParser):
     def execute(self):
         for kind in self.event_kinds.keys():
             logger.info(f"[{__parser__}]:execute: Getting {kind}", extra={'frontend': str(self.frontend)})
+            # Prevent requesting too newer alerts, sometimes case_id is empty and added later
+            # Delay of 2 minutes seems acceptable
+            since = getattr(self, f"cortex_xdr_{kind}_timestamp") or timezone.now()-timedelta(hours=1)
+            # Query maximum 24 hours at a time to prevent too large periods
+            to = min(timezone.now()-timedelta(minutes=2), since+timedelta(hours=24))
+            if since > to:
+                logger.info(f"[{__parser__}]:execute: Last timestamp too recent, waiting next execution.",
+                            extra={'frontend': str(self.frontend)})
+                continue
+
             cpt = 0
             total = 1
             while cpt < total and not self.evt_stop.is_set():
-                reply_obj = self.get_logs(kind, nb_from=cpt, since=getattr(self, f"cortex_xdr_{kind}_timestamp"))
+                reply_obj = self.get_logs(kind, nb_from=cpt, since=since, to=to)
 
                 if reply_obj:
                     reply = reply_obj.get('reply', {})
@@ -225,7 +245,7 @@ class CortexXDRParser(ApiParser):
                     self.update_lock()
 
                     total = int(reply['total_count'])
-                    cpt += int(reply['result_count']) + 1
+                    cpt += int(reply['result_count'])
                     logs = reply[kind]
 
                     self.write_to_file([self.format_log(log, kind) for log in logs])
