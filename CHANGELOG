@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [API_PARSER] [CISCO_MERAKI] Fix bug when 'get_security_logs' is False
 - [API_PARSER] [BEYONDTRUST_REPORTINGS] 'since' going up infinitely in some cases
+- [API_PARSER] [BEYONDTRUST_REPORTINGS] Ensure at least on type of logs is fetched in parameters
 - [API_PARSER] [NETSKOPE] Reduce time ranges to 10 minutes max to avoid overflow in queries
 - [API_PARSER] [CORTEX_XDR] Avoid missing logs when fetching pages by changing the 'since' filter
 - [API_PARSER] [CORTEX_XDR] Avoid missing first log of each next page in queries
