@@ -613,7 +613,8 @@ class FrontendForm(ModelForm):
             'beyondtrust_reportings_get_vault_account_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_support_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'varonis_host': TextInput(attrs={'class': 'form-control'}),
-            'varonis_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),        }
+            'varonis_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            }
 
     def clean_name(self):
         """ HAProxy does not support space in frontend/listen name directive, replace them by _ """

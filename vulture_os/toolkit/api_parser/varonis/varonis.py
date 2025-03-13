@@ -83,11 +83,10 @@ class VaronisParser(ApiParser):
 
         try:
             content = res.json()
+            self.access_token = content["access_token"]
         except json.JSONDecodeError:
             logger.error(f"[{__parser__}]:The response of token request is not in JSON format")
             raise VaronisAPIError("The response of token request is not in JSON format")
-        try:
-            self.access_token = content["access_token"]
         except KeyError:
             logger.error(f"[{__parser__}]:No access_token present in the reply")
             raise VaronisAPIError("Could not get a new Access Token")
@@ -127,7 +126,7 @@ class VaronisParser(ApiParser):
 
         url = self.varonis_host + endpoint
         logger.info(f"[{__parser__}]:Request to {url}, method={method}, params={params}", extra={"frontend": str(self.frontend)})
-        if method == "GET":        
+        if method == "GET":
             res = self.session.get(
                 url,
                 headers=self.HEADERS,
@@ -136,12 +135,12 @@ class VaronisParser(ApiParser):
                 timeout=30)
         elif method == "POST":
             res = self.session.post(
-            url,
-            data=params,
-            headers=self.HEADERS,
-            proxies=self.proxies,
-            verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl,
-            timeout=30)
+                url,
+                data=params,
+                headers=self.HEADERS,
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl,
+                timeout=30)
         else:
             raise VaronisAPIError(f"Error at Varonis request, unknown method : {method}")
         return res
@@ -308,17 +307,16 @@ class VaronisParser(ApiParser):
 
             logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={"frontend": str(self.frontend)})
             (alerts, events) = self.get_logs(since, to)
-            if alerts:
-                self.last_api_call = datetime.strptime(alerts[-1]["Alert.TimeUTC"], "%Y-%m-%dT%H:%M:%S").astimezone(timezone.utc)
             alerts.extend(events)
             self.update_lock()
             self.write_to_file([self.format_log(log) for log in alerts])
             self.update_lock()
             # increment by 1s to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             if alerts:
+                self.last_api_call = datetime.strptime(alerts[-1]["Alert.TimeUTC"], "%Y-%m-%dT%H:%M:%S").astimezone(timezone.utc)
                 self.frontend.last_api_call = self.last_api_call + timedelta(seconds=1)
                 self.frontend.save()
-                logger.info(f"[{__parser__}]:execute: new last_api_call is to {self.last_api_call}", extra={"frontend": str(self.frontend)})
+                logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {e}", extra={"frontend": str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={"frontend": str(self.frontend)})
