@@ -78,6 +78,7 @@ from toolkit.api_parser.sentinel_one_singularity_mobile.sentinel_one_singularity
 from toolkit.api_parser.catonetworks.catonetworks import CatonetworksParser
 from toolkit.api_parser.infoblox_threat_defense.infoblox_threat_defense import InfobloxThreatDefenseParser
 from toolkit.api_parser.beyondtrust_reportings.beyondtrust_reportings import BeyondtrustReportingsParser
+from toolkit.api_parser.perception_point_x_ray.perception_point_x_ray import PerceptionPointXRayParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -136,6 +137,7 @@ PARSER_LIST = {
     "catonetworks": CatonetworksParser,
     "infoblox_threat_defense": InfobloxThreatDefenseParser,
     "beyondtrust_reportings": BeyondtrustReportingsParser,
+    "perception_point_x_ray": PerceptionPointXRayParser
 }
 
 class ParserDoesNotExist(Exception):
