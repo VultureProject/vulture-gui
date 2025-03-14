@@ -111,9 +111,10 @@ class VaronisParser(ApiParser):
             since = timezone.now() - timedelta(hours=24)
             to = timezone.now()
             (alerts, events) = self.get_logs(since, to)
+            alerts.extend(events)
             return {
                 "status": True,
-                "data": alerts.extend(events)
+                "data": alerts
             }
         except Exception as e:
             logger.error(f"[{__parser__}]:test: {e}", extra={"frontend": str(self.frontend)})
@@ -180,8 +181,11 @@ class VaronisParser(ApiParser):
 
         # Sometimes we hit this instruction with a status_code == 304 (Content Not Modified),
         # I don't have any insights or hints to understand what's happening but we should consider to retry a request whenever we received a 304 status code
-        while res.status_code == 304 and not self.evt_stop.is_set():
+        retry = 0
+        while res.status_code == 304 and not self.evt_stop.is_set() and retry < 5:
             res = self._execute_query("GET", f"/app/dataquery/api/search/{rows}?from=0&to=999")
+            self.evt_stop.wait(1.0)
+            retry += 1
         if res.status_code != 200:
             logger.error(f"[{__parser__}] Error while retrieving rows from search, {res.status_code}, {res.text}", extra={"frontend": str(self.frontend)})
             raise VaronisAPIError("Error while retrieving rows from search")
@@ -194,6 +198,42 @@ class VaronisParser(ApiParser):
     def varonis_api_search_terminate(self, terminate):
         res = self._execute_query("POST", f"/app/dataquery/api/search/{terminate}")
         return res.status_code == 200
+
+    def camel_to_snake(self, value):
+        result = value[0].lower()
+        for i in range(len(value) - 2):
+            if value[i+1].islower() and value[i+2].isupper():
+                result += (value[i+1].lower() + "_")
+            # Case when there are at least 3 uppercases at the beginning of the value
+            elif i < len(value) - 3 and value[i+1].isupper() and value[i+2].isupper() and value[i+3].islower():
+                result += (value[i+1].lower() + "_")
+            else:
+                result += value[i+1].lower()
+        result += value[-1].lower()
+        return result
+
+    def content_to_dict(self, content):
+        logs = []
+        for row in content["rows"]:
+            log = {}
+            for i in range(len(row)):
+                if row[i]:
+                    path = content["columns"][i].split(".")
+                    len_path = len(path)
+
+                    depth_dict = log
+                    for key_depth,key in enumerate(path):
+                        key = self.camel_to_snake(key)
+                        if key not in depth_dict.keys():
+                            if key_depth == len_path - 1:
+                                # At the end of the path, we set the value
+                                depth_dict[key] = row[i]
+                            else:
+                                # We set the next key of the path
+                                depth_dict[key] = {}
+                        depth_dict = depth_dict[key]
+            logs.append(log)
+        return logs
 
     def get_alerts(self, since, to):
         rows = {
@@ -235,10 +275,7 @@ class VaronisParser(ApiParser):
 
         (e_terminate, content) = self.varonis_api_search(rows, query)
 
-        alerts = []
-        for r in content.get("rows"):
-            alert = {content["columns"][i]: r[i] for i in range(len(r))}
-            alerts.append(alert)
+        alerts = self.content_to_dict(content)
 
         # Destroying the search
         self.varonis_api_search_terminate(e_terminate)
@@ -273,13 +310,11 @@ class VaronisParser(ApiParser):
         }
 
         (e_terminate, content) = self.varonis_api_search(rows, query)
-        events = []
-        for r in content["rows"]:
-            event = {content["columns"][i]: r[i] for i in range(len(r))}
-            events.append(event)
 
         # Destroying the search
         self.varonis_api_search_terminate(e_terminate)
+
+        events = self.content_to_dict(content)
 
         return events
 
@@ -291,9 +326,10 @@ class VaronisParser(ApiParser):
 
     def get_logs(self, since, to):
         alerts = self.get_alerts(since, to)
+        logger.info(f"{alerts}", extra={"frontend": str(self.frontend)})
         events = []
         if alerts:
-            alert_ids = [alert.get("Alert.ID") for alert in alerts]
+            alert_ids = [alert["alert"]["id"] for alert in alerts]
             events = self.retrieve_events_from_alerts(alert_ids)
         return (alerts, events)
 
@@ -307,13 +343,14 @@ class VaronisParser(ApiParser):
 
             logger.info(f"[{__parser__}]:execute: getting logs from {since} to {to}", extra={"frontend": str(self.frontend)})
             (alerts, events) = self.get_logs(since, to)
-            alerts.extend(events)
             self.update_lock()
             self.write_to_file([self.format_log(log) for log in alerts])
             self.update_lock()
+            self.write_to_file([self.format_log(log) for log in events])
+            self.update_lock()
             # increment by 1s to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             if alerts:
-                self.last_api_call = datetime.strptime(alerts[-1]["Alert.TimeUTC"], "%Y-%m-%dT%H:%M:%S").astimezone(timezone.utc)
+                self.last_api_call = datetime.strptime(alerts[-1]["alert"]["time_utc"], "%Y-%m-%dT%H:%M:%S").astimezone(timezone.utc)
                 self.frontend.last_api_call = self.last_api_call + timedelta(seconds=1)
                 self.frontend.save()
                 logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
