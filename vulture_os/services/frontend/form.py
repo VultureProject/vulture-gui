@@ -271,6 +271,7 @@ class FrontendForm(ModelForm):
                            "infoblox_threat_defense_host", "infoblox_threat_defense_token",
                            "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host",
                            "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs", "beyondtrust_reportings_get_vault_account_activity_logs", "beyondtrust_reportings_get_support_session_logs",
+                           "perception_point_x_ray_host", "perception_point_x_ray_token"
                            ]:
             self.fields[field_name].required = False
 
@@ -390,6 +391,7 @@ class FrontendForm(ModelForm):
                   "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs",
                   "beyondtrust_reportings_get_vault_account_activity_logs",
                   "beyondtrust_reportings_get_support_session_logs",
+                  "perception_point_x_ray_host", "perception_point_x_ray_token"
                   )
 
         widgets = {
@@ -610,6 +612,8 @@ class FrontendForm(ModelForm):
             'beyondtrust_reportings_get_access_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_vault_account_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_support_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
+            'perception_point_x_ray_host': TextInput(attrs={'class': 'form-control'}),
+            'perception_point_x_ray_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         }
 
     def clean_name(self):
