@@ -1575,6 +1575,16 @@ class Frontend(models.Model):
         help_text=_("Armis Centrix token expiration date stored in epoch from UTC format"),
         default=timezone.now
     )
+    perception_point_x_ray_host = models.TextField(
+        verbose_name=_("Perception Point X Ray host"),
+        help_text=_("Perception Point X Ray host"),
+        default="ex: https://xxx.xxx.com",
+    )
+    perception_point_x_ray_token = models.TextField(
+        verbose_name=_("Perception Point X Ray API Key"),
+        help_text=_("Perception Point X Ray API Key"),
+        default="",
+    )
 
 
     @staticmethod
