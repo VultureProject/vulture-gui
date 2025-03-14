@@ -27,7 +27,7 @@ __parser__ = "VARONIS"
 import json
 import logging
 import requests
-from datetime import timedelta, datetime, timezone
+from datetime import timedelta, datetime
 
 from django.utils import timezone
 from django.conf import settings
@@ -352,6 +352,11 @@ class VaronisParser(ApiParser):
             if alerts:
                 self.last_api_call = datetime.strptime(alerts[-1]["alert"]["time_utc"], "%Y-%m-%dT%H:%M:%S").astimezone(timezone.utc)
                 self.frontend.last_api_call = self.last_api_call + timedelta(seconds=1)
+                self.frontend.save()
+                logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
+            # Unblock when there are no alert during 1 day
+            elif to - since >= timedelta(days=1):
+                self.frontend.last_api_call = since + timedelta(days=1)
                 self.frontend.save()
                 logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
         except Exception as e:
