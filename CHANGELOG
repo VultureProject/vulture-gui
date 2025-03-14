@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.22.2] - 2025-03-17
 ### Added
 - [API_PARSER] Add loggers before the requests to make easier the debugging
 - [API_PARSER] [VARONIS] New collector
