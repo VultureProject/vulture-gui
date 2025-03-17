@@ -95,6 +95,7 @@ class CscDomainManagerParser(ApiParser):
 
             url = "https://apis.cscglobal.com/dbs/api/v2/events"
 
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {params}", extra={'frontend': str(self.frontend)})
             r = self.session.get(
                 url,
                 params=params,

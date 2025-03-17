@@ -271,6 +271,7 @@ class FrontendForm(ModelForm):
                            "infoblox_threat_defense_host", "infoblox_threat_defense_token",
                            "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host",
                            "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs", "beyondtrust_reportings_get_vault_account_activity_logs", "beyondtrust_reportings_get_support_session_logs",
+                           "varonis_host", "varonis_api_key",
                            ]:
             self.fields[field_name].required = False
 
@@ -390,6 +391,7 @@ class FrontendForm(ModelForm):
                   "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs",
                   "beyondtrust_reportings_get_vault_account_activity_logs",
                   "beyondtrust_reportings_get_support_session_logs",
+                  "varonis_host", "varonis_api_key",
                   )
 
         widgets = {
@@ -610,7 +612,9 @@ class FrontendForm(ModelForm):
             'beyondtrust_reportings_get_access_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_vault_account_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'beyondtrust_reportings_get_support_session_logs': CheckboxInput(attrs={'class': 'js-switch'}),
-        }
+            'varonis_host': TextInput(attrs={'class': 'form-control'}),
+            'varonis_api_key': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            }
 
     def clean_name(self):
         """ HAProxy does not support space in frontend/listen name directive, replace them by _ """
@@ -729,7 +733,7 @@ class FrontendForm(ModelForm):
         if data and data < 10:
             self.add_error('redis_batch_size', "Redis dequeue size should be greater than 10")
         return data
-    
+
     def clean_cisco_umbrella_managed_org_customers_id(self):
         data = self.cleaned_data.get('cisco_umbrella_managed_org_customers_id')
         if not data:
@@ -816,11 +820,25 @@ class FrontendForm(ModelForm):
                     self.add_error('api_parser_custom_proxy', "Wrong proxy format")
                 cleaned_data['api_parser_custom_proxy'] = custom_proxy
 
+            # Cisco Umbrella Managed Org specific validations
             if cleaned_data.get("api_parser_type") == "cisco_umbrella_managed_org":
                 logger.warning("hello")
                 if not (cleaned_data.get("cisco_umbrella_managed_org_get_dns", False) or cleaned_data.get("cisco_umbrella_managed_org_get_proxy", False)):
                         self.add_error("cisco_umbrella_managed_org_get_dns", "At least one type should be enabled")
                         self.add_error("cisco_umbrella_managed_org_get_proxy", "At least one type should be enabled")
+
+            # Beyondtrust Reportings specific validations
+            if cleaned_data.get("api_parser_type") == "beyondtrust_reportings":
+                options = list()
+                options.append(cleaned_data.get("beyondtrust_reportings_get_team_logs", False))
+                options.append(cleaned_data.get("beyondtrust_reportings_get_access_session_logs", False))
+                options.append(cleaned_data.get("beyondtrust_reportings_get_vault_account_activity_logs", False))
+                options.append(cleaned_data.get("beyondtrust_reportings_get_support_session_logs", False))
+                if not any(options):
+                    self.add_error("beyondtrust_reportings_get_team_logs", "At least one of these fields is required.")
+                    self.add_error("beyondtrust_reportings_get_access_session_logs", "At least one of these fields is required.")
+                    self.add_error("beyondtrust_reportings_get_vault_account_activity_logs", "At least one of these fields is required.")
+                    self.add_error("beyondtrust_reportings_get_support_session_logs", "At least one of these fields is required.")
 
         if mode == "log" and cleaned_data.get('listening_mode') == "kafka":
             if not cleaned_data.get('kafka_brokers'):

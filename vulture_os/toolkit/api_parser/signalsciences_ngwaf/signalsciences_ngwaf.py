@@ -82,7 +82,7 @@ class SignalSciencesNgwafParser(ApiParser):
     def __execute_query(self, url, query=None, timeout=10):
         try:
             self._connect()
-
+            logger.info(f"[{__parser__}]:__execute_query: URL: {url} , params: {query}", extra={'frontend': str(self.frontend)})
             response = self.session.get(
                 url,
                 params=query,

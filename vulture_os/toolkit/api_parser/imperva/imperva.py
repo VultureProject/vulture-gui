@@ -112,6 +112,7 @@ class ImpervaParser(ApiParser):
         return uncompressed_and_decrypted_file_content
 
     def __execute_query(self, url):
+        logger.info(f"[{__parser__}]:execute_query: URL: {url}", extra={'frontend': str(self.frontend)})
         return requests.get(
             url,
             proxies=self.proxies,

@@ -74,6 +74,7 @@ class Office365Parser(ApiParser):
     def __connect(self):
         url = f"{self.office365_login_uri}/{self.office365_tenant_id}/oauth2/token"
 
+        logger.info(f"[{__parser__}]:connect: Requesting a new token", extra={'frontend': str(self.frontend)})
         response = requests.post(
             url,
             data={

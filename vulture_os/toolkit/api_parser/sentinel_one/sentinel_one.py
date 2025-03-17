@@ -107,7 +107,7 @@ class SentinelOneParser(ApiParser):
     def __execute_query(self, method, url, query, timeout=10):
 
         self._connect()
-        logger.debug(f"[{__parser__}]:__execute_query: url: '{url}', query: '{query}', method: '{method}'",
+        logger.info(f"[{__parser__}]:__execute_query: url: '{url}', query: '{query}', method: '{method}'",
                      extra={'frontend': str(self.frontend)})
 
         if method == "GET":

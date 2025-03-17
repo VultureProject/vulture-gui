@@ -129,7 +129,7 @@ class VadesecureO365Parser(ApiParser):
         headers = self.HEADERS
         headers.update({"Authorization": f"Bearer {self._get_access_token()}"})
 
-        logger.debug(f"[{__parser__}]:__execute_query: sending request to {url}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:__execute_query: sending request to {url}, method : {method}, query : {query}", extra={'frontend': str(self.frontend)})
 
         if method == "POST":
             response = requests.post(

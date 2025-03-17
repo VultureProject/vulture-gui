@@ -48,7 +48,7 @@ class CiscoMerakiParser(ApiParser):
         super().__init__(data)
 
         self.cisco_meraki_apikey = data["cisco_meraki_apikey"]
-        self.cisco_meraki_get_security_logs = data["cisco_meraki_get_security_logs"]
+        self.cisco_meraki_get_security_logs = bool(data.get("cisco_meraki_get_security_logs"))
 
         self.session = None
 
@@ -113,8 +113,8 @@ class CiscoMerakiParser(ApiParser):
 
     def get_logs(self, network_id, product_type, since):
         self._connect()
-        logger.debug(f"[{__parser__}]:get_logs: Get user events request params: startingAfter={since}",
-                     extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:get_logs: Get user events for network ID {network_id}, product type {product_type}, starting after {since}",
+            extra={'frontend': str(self.frontend)})
         try:
             response = self.session.networks.getNetworkEvents(network_id, productType=product_type,
                                                               startingAfter=since, perPage=1000)
@@ -153,7 +153,17 @@ class CiscoMerakiParser(ApiParser):
                                                          since)
 
                         if not status:
-                            logger.error(f"[{__parser__}]:execute: "
+                            # API bug handling
+                            ## Sometimes, "productType" cannot be "xxxxx", & must be set to one of [xxxx]
+                            ## Yet, productTypes is returned by the API itself
+                            if "must be set to one of" in str(tmp_logs):
+                                logger.warning(f"[{__parser__}]:execute: "
+                                         f"Orga {orga['name']}: "
+                                         f"Network {network['name']}: "
+                                         f"Cannot retrieve events : {tmp_logs}",
+                                        extra={'frontend': str(self.frontend)})
+                            else:
+                                logger.error(f"[{__parser__}]:execute: "
                                          f"Orga {orga['name']}: "
                                          f"Network {network['name']}: "
                                          f"Error getting events : {tmp_logs}",

@@ -109,9 +109,8 @@ class DefenderParser(ApiParser):
             if logs_from:
                 params.update({'sinceTimeUtc': logs_from.isoformat().replace('+00:00', "Z")})
 
-        logger.debug(f"{[__parser__]}:get_logs: params for request are {params}", extra={'frontend': str(self.frontend)})
-
         try:
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method: GET, params: {params}", extra={'frontend': str(self.frontend)})
             response = self.oauthSession.get(
                 url,
                 params=params,

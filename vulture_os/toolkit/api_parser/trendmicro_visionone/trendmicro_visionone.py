@@ -65,6 +65,7 @@ class TrendmicroVisiononeParser(ApiParser):
         link = self.URL_BASE + url_path
         try:
             while True:
+                logger.info(f"[{__parser__}]:__execute_query: URL: {link} , params: {query}", extra={'frontend': str(self.frontend)})
                 r = requests.get(link, params=query, headers=headers,proxies=self.proxies, verify=self.api_parser_verify_ssl, timeout=timeout)
                 if r.status_code != 200:
                     status = False

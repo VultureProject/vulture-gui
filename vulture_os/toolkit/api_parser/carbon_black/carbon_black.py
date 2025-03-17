@@ -75,6 +75,7 @@ class CarbonBlackParser(ApiParser):
 
         self._connect()
 
+        logger.info(f"[{__parser__}]:execute_query: URL: {url}, method: {method}, parameters: {query}", extra={'frontend': str(self.frontend)})
         if method == "GET":
             response = self.session.get(
                 url,

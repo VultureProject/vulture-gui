@@ -181,10 +181,15 @@ class NetskopeParser(ApiParser):
                 logger.info(f"[{__parser__}][execute]: Total logs fetched : {offset} on {logtype}",
                             extra={'frontend': str(self.frontend)})
                 self.last_collected_timestamps[logtype] = to + timedelta(seconds=1)
+                logger.info(f"[{__parser__}]:execute: New timestamp for {logtype} is "
+                            f"{self.last_collected_timestamps[logtype]}", extra={'frontend': str(self.frontend)})
 
             elif since < timezone.now() - timedelta(hours=1):
                 # If no logs where retrieved during the last 1hours,
                 # move forward 10min to prevent stagnate ad vitam eternam
                 self.last_collected_timestamps[logtype] = since + timedelta(minutes=10)
+                logger.info(f"[{__parser__}]:execute: New timestamp for {logtype} is "
+                            f"{self.last_collected_timestamps[logtype]}", extra={'frontend': str(self.frontend)})
+
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
