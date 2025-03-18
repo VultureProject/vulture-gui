@@ -52,7 +52,9 @@ logger = logging.getLogger('services')
 
 JINJA_PATH = path_join(settings.BASE_DIR, "services/rsyslogd/config/")
 RSYSLOG_PATH = path_join(settings.LOCALETC_PATH, "rsyslog.d")
+TIMEZONES_PATH = path_join(RSYSLOG_PATH, "_lookup_tables/timezones")
 INPUTS_PATH = path_join(RSYSLOG_PATH, "00-system.conf")
+TIMEZONE_CONF_PATH = path_join(RSYSLOG_PATH, "02-timezones.conf")
 
 RSYSLOG_PERMS = "640"
 RSYSLOG_OWNER = "vlt-os:wheel"
@@ -132,6 +134,25 @@ def configure_pstats(node_logger):
                              pstats_template.render({'node': node, 'tenants_name': Cluster.get_global_config().internal_tenants.name}),
                              RSYSLOG_OWNER, RSYSLOG_PERMS])
     return "Rsyslog configuration 'pstats.conf' written.\n"
+
+
+def configure_timezones(node_logger):
+    """ Timezones rulesets and lookup tables """
+    timezones = list()
+    for tz in Frontend.objects.exclude(expected_timezone=None).values_list("expected_timezone", flat=True).distinct():
+        timezones.append({
+            "name": tz,
+            "name_safe": tz.replace('/', '_').lower(),
+        })
+
+    jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH), autoescape=True)
+    pstats_template = jinja2_env.get_template("timezone_offset.conf")
+    write_conf(node_logger, [
+        TIMEZONE_CONF_PATH,
+        pstats_template.render({"timezones": timezones, "lookup_dbs_path": TIMEZONES_PATH}),
+        RSYSLOG_OWNER, RSYSLOG_PERMS
+    ])
+    return "Rsyslog configuration '02-timezones.conf' written.\n"
 
 
 def build_conf(node_logger, frontend_id=None):

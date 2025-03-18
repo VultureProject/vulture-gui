@@ -38,7 +38,7 @@ from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
                                       REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES, FILEBEAT_LISTENING_MODE,
-                                      FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES)
+                                      FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES, get_available_timezones)
 
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkAddress
@@ -209,7 +209,7 @@ class FrontendForm(ModelForm):
                            'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'headers', 'custom_haproxy_conf',
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_keep_alive',
-                           'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst',
+                           'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst', 'expected_timezone',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'nb_workers','mmdb_cache_size','redis_batch_size', 'redis_use_local',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
@@ -325,7 +325,7 @@ class FrontendForm(ModelForm):
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client',
                   'timeout_keep_alive', 'disable_octet_counting_framing', 'custom_tl_frame_delimiter',
                   'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
-                  'ratelimit_interval', 'ratelimit_burst', 'file_path',
+                  'ratelimit_interval', 'ratelimit_burst', 'expected_timezone', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                   'nb_workers','mmdb_cache_size','redis_batch_size', 'redis_mode', 'redis_use_lpop',
                   'redis_server', 'redis_port', 'redis_key', 'redis_password', 'redis_stream_consumerGroup',
@@ -429,6 +429,7 @@ class FrontendForm(ModelForm):
             'parser_tag': TextInput(attrs={'class': 'form-control'}),
             'ratelimit_interval': NumberInput(attrs={'class': 'form-control'}),
             'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
+            'expected_timezone': Select(choices=get_available_timezones(), attrs={'class': 'form-control select2'}),
             'file_path': TextInput(attrs={'class': 'form-control'}),
             'kafka_brokers': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'kafka_topic': TextInput(attrs={'class': 'form-control'}),
