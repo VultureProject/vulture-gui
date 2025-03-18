@@ -213,7 +213,7 @@ def mk_signed_cert(CN: str, C: str, ST: str, L: str, O: str, OU: str, serial: st
 
     csr, private_key = mk_request(2048, CN=CN, C=C, ST=ST, L=L, O=O, OU=OU)
 
-    cert = mk_cert_builder(serial=serial).subject_name(
+    cert = mk_cert_builder(serial=int(serial)).subject_name(
         csr.subject
     ).public_key(
         csr.public_key()

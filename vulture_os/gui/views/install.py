@@ -38,6 +38,7 @@ from toolkit.redis.redis_base import RedisBase
 from toolkit.system.secret_key import set_key
 from toolkit.system.rc import get_rc_config
 from redis import AuthenticationError, ResponseError
+from cryptography.x509 import random_serial_number as x509_random_serial_number
 import logging
 import requests
 import subprocess
@@ -111,7 +112,7 @@ def cluster_create(admin_user=None, admin_password=None):
         status='V',
         cert=ca_cert,
         key=ca_key,
-        serial=1
+        serial=x509_random_serial_number(),
     )
 
     ca_name = internal_ca.explose_dn()['CN']
@@ -126,7 +127,7 @@ def cluster_create(admin_user=None, admin_password=None):
         cert=cert,
         key=key,
         chain=ca_cert,
-        serial=2
+        serial=x509_random_serial_number(),
     )
 
     node_name = node_cert.explose_dn()['CN']
