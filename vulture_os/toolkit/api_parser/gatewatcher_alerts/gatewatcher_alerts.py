@@ -132,6 +132,7 @@ class GatewatcherAlertsParser(ApiParser):
             }
 
     def format_log(self, log):
+        log['host'] = self.gatewatcher_alerts_host
         return json.dumps(log)
 
     def execute(self):
