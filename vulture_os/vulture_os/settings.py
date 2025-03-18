@@ -104,7 +104,8 @@ CRONJOBS = [
     ("7 22 * * *", "gui.crontab.pki.update_acme"),  # Every day at 22:07
     ("0 23 * * *", "gui.crontab.feed.security_update"),  # Every day at 23:00
     ("25 19 * * wed,sat", "gui.crontab.feed.update_reputation_ctx"),  # Every wednesday and saturday at 06:00
-    ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks")  # Every day at 01:00
+    ("0 1 * * *", "gui.crontab.check_internal_tasks.check_internal_tasks"),  # Every day at 01:00
+    ("15 10 1 * *", "gui.crontab.generate_tzdbs.generate_timezone_dbs"),  # Every first day of the month at 10:15
 ]
 
 CRONTAB_COMMAND_PREFIX = "LANG=en_US.UTF-8"
