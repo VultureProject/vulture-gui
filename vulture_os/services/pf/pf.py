@@ -210,7 +210,7 @@ def _get_conf_lines_from_errors(config: list[str], errors: list[str]) -> list[tu
             try:
                 config_line_number = int(match_result[1])
                 config_line = config[config_line_number - 1]
-            except:
+            except Exception:
                 continue
             results.append((
                 error_line,
