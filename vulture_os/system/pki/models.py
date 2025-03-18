@@ -25,6 +25,7 @@ __doc__ = 'PKI main models'
 
 from django.conf import settings
 from django.forms.models import model_to_dict
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from djongo import models
 import logging
@@ -156,14 +157,36 @@ class X509Certificate(models.Model):
     chain : certification chain
     """
 
+    class X509CertificateStatus(models.TextChoices):
+        VALID = "V", _("valid")
+        REVOKED = "R", _("revoked")
+
     name = models.TextField()
+    cn = models.TextField(default="")
 
     """ Serial is ONLY used for internal PKI
         For external certificate, it is forced to zero
         The value cannot be stored as int in mongodb, as its too big for an uint32...
     """
     serial = models.TextField(default=x509.random_serial_number)
-    status = models.TextField(blank=True, default='V')
+    status = models.TextField(
+        blank=True,
+        choices=X509CertificateStatus.choices,
+        default=X509CertificateStatus.VALID,
+        )
+
+    valid_from = models.DateTimeField(
+        _("Certificate is valid from"),
+        auto_now=False,
+        auto_now_add=False,
+        default=timezone.now
+    )
+    valid_until = models.DateTimeField(
+        _("Certificate is valid until"),
+        auto_now=False,
+        auto_now_add=False,
+        default=timezone.now
+    )
 
     cert = models.TextField(blank=True)
     key = models.TextField(blank=True)
@@ -242,7 +265,7 @@ class X509Certificate(models.Model):
                         self.name = name
                         self.cert = pem_cert.decode('utf-8')
                         self.key = pem_key.decode('utf-8')
-                        self.status = 'V'
+                        self.status = self.X509CertificateStatus.VALID
                         self.is_vulture_ca = False
                         self.is_external = True
                         self.serial = tmp_crt.get_serial_number().decode('utf-8')
@@ -254,43 +277,36 @@ class X509Certificate(models.Model):
 
         return {'cert': self.cert, 'key': self.key}
 
-    def gen_cert(self, cn, name):
+    def gen_cert(self):
         """
         Create a Vulture internal certificate and save it into mongoDB.
 
-        :param cn: CN attribute of the certificate
-        :param name: Friendly name
         :return: the bundled certificate, or False in case of a failure
         """
-
-        # Abort if there is an existing certificate with this name (can occur during bootstrap failure)
-        try:
-            pki = X509Certificate.objects.get(is_vulture_ca=False, name=name)
-            return {'cert': pki.cert, 'key': pki.key}
-        except X509Certificate.DoesNotExist:
-            pass
 
         internal_ca = X509Certificate.objects.get(is_vulture_ca=True, name__startswith="Vulture_PKI")
         next_serial = internal_ca.get_next_serial
         attributes = internal_ca.explose_dn()
 
         try:
-            crt, pk2 = mk_signed_cert(cn, attributes['C'], attributes['ST'], attributes['L'],
+            crt, pk2 = mk_signed_cert(self.cn, attributes['C'], attributes['ST'], attributes['L'],
                                       attributes['O'], attributes['OU'], next_serial,
                                       internal_ca.cert.encode(), internal_ca.key.encode())
 
             # Store the certificate
-            self.name = name
             self.cert = get_cert_PEM(crt).decode('utf-8')
             self.key = get_key_PEM(pk2).decode('utf-8')
-            self.status = 'V'
+            self.status = self.X509CertificateStatus.VALID
             self.is_vulture_ca = False
             self.is_external = False
             self.serial = str(next_serial)
             self.chain = str(internal_ca.cert)
+            self.valid_from = crt.not_valid_before_utc
+            self.valid_until = crt.not_valid_after_utc
             self.save()
         except Exception as e:
-            logger.error("X509Certificate::gen_cert: {}".format(str(e)))
+            logger.exception("X509Certificate::gen_cert: Cannot generate the certificate")
+            logger.exception(e)
             return False
 
         return {'cert': self.cert, 'key': self.key}
@@ -302,6 +318,13 @@ class X509Certificate(models.Model):
         """
         return x509.random_serial_number()
 
+    @property
+    def _x509Cert(self):
+        return x509.load_pem_x509_certificate(self.cert.encode())
+
+    @property
+    def san(self):
+        return [san.value for san in self._x509Cert.extensions.get_extension_for_oid(x509.OID_SUBJECT_ALTERNATIVE_NAME).value]
 
     def to_template(self):
         """ Dictionary used to create configuration file related to the node
@@ -313,13 +336,13 @@ class X509Certificate(models.Model):
             logger.error(f"X509Certificate::to_template: could not load the certificate: {e}")
 
         conf = {
-            'id': str(self.id),
+            'id': str(self.pk),
             'name': self.name,
             'subject': cert.subject.rfc4514_string(),
             'issuer': cert.issuer.rfc4514_string(),
             'status': self.status,
-            'validfrom': str(cert.not_valid_before_utc.strftime("%c UTC")),
-            'validuntil': str(cert.not_valid_after_utc.strftime("%c UTC")),
+            'validfrom': str(self.valid_from.strftime("%c UTC")),
+            'validuntil': str(self.valid_until.strftime("%c UTC")),
             'is_vulture_ca': self.is_vulture_ca,
             'is_ca': self.is_ca,
             'is_external': self.is_external,
@@ -432,7 +455,7 @@ class X509Certificate(models.Model):
             return False
         else:
             self.rev_date = "{:%Y%m%d%H%M%SZ}".format(datetime.datetime.now())
-            self.status = 'R'
+            self.status = self.X509CertificateStatus.REVOKED
             self.save()
             self.gen_crl()
 
@@ -452,7 +475,7 @@ class X509Certificate(models.Model):
         return self.get_base_filename()+".pem"
 
     def get_extensions(self):
-        """ Return the list of extensions of this certificate 
+        """ Return the list of extensions of this certificate
         depending on attributes """
         extensions = {
             '.pem': self.as_bundle(),
@@ -551,7 +574,7 @@ class TLSProfile(models.Model):
         default=["tlsv13", "tlsv12"],
         help_text=_("Allowed protocol ciphers.")
     )
-    """ List of cipher algorithms (cipher suite) allowed 
+    """ List of cipher algorithms (cipher suite) allowed
     during the SSL/TLS handshake """
     cipher_suite = models.TextField(
         default=CIPHER_SUITES['broad'],

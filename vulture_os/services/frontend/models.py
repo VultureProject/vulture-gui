@@ -1838,10 +1838,16 @@ class Frontend(models.Model):
         if node_name != Cluster.get_current_node().name:
             try:
                 cluster_api_key = Cluster().get_global_config().cluster_api_key
+                node_cert = X509Certificate.objects.filter(
+                    cn=node_name,
+                    status=X509Certificate.X509CertificateStatus.VALID,
+                    valid_from__lte=timezone.now(),
+                    valid_until__gt=timezone.now()).last()
+                assert node_cert, f"Could not load a valid certificate to contact node {node_name}"
                 infos = post(f"https://{node_name}:8000/api/services/frontend/test_conf/",
-                             headers={'cluster-api-key': cluster_api_key},
-                             data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
-                             verify=X509Certificate.objects.get(name=node_name).ca_filename(), timeout=30).json()
+                                headers={'cluster-api-key': cluster_api_key},
+                                data={'conf': test_conf, 'filename': test_filename, 'disabled': not self.enabled},
+                                verify=node_cert.bundle_filename, timeout=30).json()
             except Exception as e:
                 # Node may be unavailable for the moment
                 # Changes will be synced if node is up within 30 days
