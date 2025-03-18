@@ -71,7 +71,19 @@ def pki_issue_cert(request):
     """
 
     node_name = request.POST['node_name']
-    bundle = X509Certificate().gen_cert(node_name, node_name)
+    cert, created = X509Certificate.objects.get_or_create(
+        name=node_name,
+        cn=node_name,
+        is_vulture_ca=False,
+        status=X509Certificate.X509CertificateStatus.VALID,
+    )
+    if created:
+        bundle = cert.gen_cert()
+    else:
+        bundle = {
+            "cert": cert.cert,
+            "key": cert.key,
+        }
 
     if bundle:
         return JsonResponse(bundle)
