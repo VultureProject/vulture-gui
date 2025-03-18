@@ -160,8 +160,9 @@ class X509Certificate(models.Model):
 
     """ Serial is ONLY used for internal PKI
         For external certificate, it is forced to zero
+        The value cannot be stored as int in mongodb, as its too big for an uint32...
     """
-    serial = models.SmallIntegerField(default=1)
+    serial = models.TextField(default=x509.random_serial_number)
     status = models.TextField(blank=True, default='V')
 
     cert = models.TextField(blank=True)
@@ -299,11 +300,8 @@ class X509Certificate(models.Model):
         """
         :return: An integer for the next serial number of self-signed Vulture certificate
         """
-        try:
-            x = X509Certificate.objects.filter(serial__gt=1).order_by('-serial')[0]
-            return x.serial + 1
-        except Exception:
-            return 2
+        return x509.random_serial_number()
+
 
     def to_template(self):
         """ Dictionary used to create configuration file related to the node

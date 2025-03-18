@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TESTS] Remove old 'testing' folder
 ### Changed
 - [SYSTEM] [SETTINGS] Use Hostname value from Django settings
+- [PKI] Generate a random serial for each new certificate
 ### Fixed
 - [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb
 - [API_PARSER] [WAF_CLOUDFLARE] Fix invalid time range requested for UTC-* consoles
