@@ -160,10 +160,12 @@ class WAFCloudflareParser(ApiParser):
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
+        # Query one second of logs, starting from 24 hours ago
+        # To prevent, for instance, UTC-10 missing logs
         current_time = timezone.now()
         try:
-            logs = list(self.get_logs(logs_from=(current_time - timedelta(seconds=62)),
-                                      logs_to=(current_time - timedelta(seconds=61))))
+            logs = list(self.get_logs(logs_from=(current_time - timedelta(hours=24, seconds=31)),
+                                      logs_to=(current_time - timedelta(hours=24, seconds=1))))
 
             return {
                 "status": True,
