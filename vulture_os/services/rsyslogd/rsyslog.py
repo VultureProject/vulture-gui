@@ -62,9 +62,8 @@ class RsyslogService(Service):
     """ Rsyslog service class wrapper """
 
     def __init__(self):
-        super().__init__()
+        super().__init__("rsyslogd", "rsyslog")
         self.model = RsyslogSettings
-        self.service_name = "rsyslogd"
         self.friendly_name = "R-Logging"
 
         self.config_file = "rsyslog_inputs.conf"

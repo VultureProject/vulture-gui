@@ -47,8 +47,7 @@ class OpenvpnService(Service):
 
     """ Openvpn service class wrapper """
     def __init__(self):
-        super().__init__()
-        self.service_name = "openvpn_client"
+        super().__init__("openvpn_client")
         self.friendly_name = "VPN SSL"
 
 

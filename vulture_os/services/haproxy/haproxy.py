@@ -65,9 +65,8 @@ class HaproxyService(Service):
     """ HAProxy service class wrapper """
 
     def __init__(self):
-        super().__init__()
+        super().__init__("haproxy", "haproxy")
         self.model = HAProxySettings
-        self.service_name = "haproxy"
         self.friendly_name = "Frontend"
 
         self.config_file = JINJA_TEMPLATE

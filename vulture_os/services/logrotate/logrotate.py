@@ -54,9 +54,8 @@ class LogRotateService(Service):
     """ HAProxy service class wrapper """
 
     def __init__(self):
-        super().__init__()
+        super().__init__("logrotate")
         self.model = LogRotateSettings
-        self.service_name = "logrotate"
         self.friendly_name = "Logs rotation"
 
         self.config_file = JINJA_TEMPLATE
