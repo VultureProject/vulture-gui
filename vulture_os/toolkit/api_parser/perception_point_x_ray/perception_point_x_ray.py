@@ -197,7 +197,7 @@ class PerceptionPointXRayParser(ApiParser):
         # Warning : the fetched logs are ordered in DESC (no option available in api doc)
 
         for log_type in self.LOG_TYPES:
-            since = self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] or (timezone.now() - timedelta(days=30))
+            since = self.last_collected_timestamps.get(f"perception_point_x_ray_{log_type}") or (timezone.now() - timedelta(days=30))
             # since = timezone.now() - timedelta(days=30)
             to = datetime.now()
             # to = min(since + timedelta(days=1), timezone.now())
@@ -208,7 +208,7 @@ class PerceptionPointXRayParser(ApiParser):
             while not self.evt_stop.is_set() and has_more_logs:
 
                 if total_logs > 979: # API return pages of 20 logs. Break collect before 1000 logs.
-                    msg = f"Parser collect more than 979 logs. Stop the collect for log_type {log_type}."
+                    msg = f"Parser collect more than 979 logs. Stop the collect for log type {log_type}."
                     logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                     break
 
