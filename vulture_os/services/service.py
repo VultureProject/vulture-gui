@@ -40,7 +40,7 @@ from services.exceptions import (ServiceConfigError, ServiceNoConfigError, Servi
 from jinja2 import Environment, FileSystemLoader
 from os import path as os_path
 from re import search as re_search
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, PIPE
 
 import datetime
 
@@ -109,8 +109,6 @@ class Service:
         return MENU
 
     def _exec_cmd(self, cmd, *args):
-        jail_name = JAIL_SERVICES.get(self.service_name)
-
         filtered_args = []
         for arg in args:
             if not isinstance(arg, str):
