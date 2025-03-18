@@ -57,9 +57,8 @@ class FilebeatService(Service):
     """ Filebeat service class wrapper """
 
     def __init__(self):
-        super().__init__()
+        super().__init__("filebeat", "rsyslog")
         self.model = FilebeatSettings
-        self.service_name = "filebeat"
         self.friendly_name = "F-Logging"
 
         self.config_file = "filebeat_inputs.conf"

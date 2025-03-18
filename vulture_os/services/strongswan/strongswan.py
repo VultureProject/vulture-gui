@@ -47,8 +47,7 @@ class StrongswanService(Service):
 
     """ Strongswan service class wrapper """
     def __init__(self):
-        super().__init__()
-        self.service_name = "strongswan"
+        super().__init__("strongswan")
         self.friendly_name = "IPSEC"
 
     def statusall(self):

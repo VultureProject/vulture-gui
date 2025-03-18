@@ -63,9 +63,8 @@ class DarwinService(Service):
     """ Darwin service class wrapper """
 
     def __init__(self):
-        super().__init__()
+        super().__init__("darwin")
         self.model = DarwinSettings
-        self.service_name = "darwin"
         self.friendly_name = "AI Framework"
 
         self.config_file = "darwin.conf"

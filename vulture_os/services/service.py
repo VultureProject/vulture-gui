@@ -68,10 +68,11 @@ JAIL_SERVICES = {
 class Service:
     """ Base class for all service classes """
 
-    def __init__(self, service_name=""):
+    def __init__(self, name="", jail=""):
         super().__init__()
         self.model = None
-        self.service_name = service_name
+        self.service_name = name
+        self.jail_name = jail or JAIL_SERVICES.get(name, "")
         self.owners = "root:wheel"
         self.perms = "640"
         self.jinja_template = {
@@ -117,8 +118,8 @@ class Service:
             else:
                 filtered_args.append(arg)
 
-        if jail_name:
-            command = ['/usr/local/bin/sudo', '/usr/sbin/jexec', jail_name, '/usr/sbin/service', self.service_name, cmd, *filtered_args]
+        if self.jail_name:
+            command = ['/usr/local/bin/sudo', '/usr/sbin/jexec', self.jail_name, '/usr/sbin/service', self.service_name, cmd, *filtered_args]
         else:
             command = ['/usr/local/bin/sudo', '/usr/sbin/service', self.service_name, cmd, *filtered_args]
 
@@ -262,8 +263,8 @@ class Service:
         """ Check system service status
         :returns: True if process is running, False otherwise
         """
-        output = check_output(['/usr/local/bin/sudo', '/bin/ps', '-A'])
-        if re_search(self.service_name, output):
+        _, _, retcode = self._exec_cmd("onestatus")
+        if retcode == 0:
             return True
         return False
 

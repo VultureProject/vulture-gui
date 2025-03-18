@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [WAF_CLOUDFLARE] Fix invalid time range requested for UTC-* consoles
 - [API_PARSER] [WAF_CLOUD_PROTECTOR] Catch invalid lines + fix timestamp handling
 - [SYSTEM] [PKI] Missing SAN
+- [SERVICES] Use 'onestatus' to establish if a service is running
 
 
 ## [2.22.2] - 2025-03-17
