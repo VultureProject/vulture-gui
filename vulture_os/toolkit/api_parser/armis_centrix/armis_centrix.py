@@ -201,7 +201,7 @@ class ArmisCentrixParser(ApiParser):
                 return logs  # in case of test function exection we want to return the logs as is without paginating
 
             self.write_to_file([self.format_log(log) for log in logs if log != ""]) # write the first n log's page
-            logger.debug(f"[{__parser__}][get_logs] :: Successfully gathered first {kind} page ({len(logs)}/{totalToRetrieve} logs) - {url}/{params}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}][get_logs] :: Successfully gathered first {kind} page ({len(logs)}/{totalToRetrieve} logs) - {url}/{params}", extra={'frontend': str(self.frontend)})
 
             # paginate if necessary to get remaining pages
             params["from"] = len(logs) # initialize offset
@@ -215,7 +215,7 @@ class ArmisCentrixParser(ApiParser):
                 params["from"] += len(logs) # increment offset
                 self.write_to_file([self.format_log(log) for log in logs if log != ""])
                 self.update_lock()
-                logger.debug(f"[{__parser__}][get_logs] :: Successfully gathered additionnals {kind} page ({params['from']}/{totalToRetrieve} logs) - {url}/{params} - {params['from']}/{totalToRetrieve}", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}][get_logs] :: Successfully gathered additionnals {kind} page ({params['from']}/{totalToRetrieve} logs) - {url}/{params} - {params['from']}/{totalToRetrieve}", extra={'frontend': str(self.frontend)})
 
             return params["from"] # return total logs fetched
 
@@ -225,9 +225,70 @@ class ArmisCentrixParser(ApiParser):
 
     def format_log(self, log: dict) -> str:
         try:
+            # source.ip, destination.ip, source.mac, destination.mac
+            src_ips = []
+            src_macs = []
+            srcEndpoints = log.get("sourceEndpoints", [])
+            for src_endpoint in srcEndpoints:
+                sip = src_endpoint.get("ip")
+                if isinstance(sip, str): src_ips.append(sip)
+                elif isinstance(sip, list): src_ips.extend(sip)
+                smac = src_endpoint.get("macAddress")
+                if isinstance(smac, str): src_macs.append(smac)
+                elif isinstance(smac, list): src_macs.extend(smac)
+            dst_ips = []
+            dst_macs = []
+            dstEndpoints = log.get("destinationEndpoints", [])
+            for dst_endpoint in dstEndpoints:
+                dip = dst_endpoint.get("ip")
+                if isinstance(dip, str): dst_ips.append(dip)
+                elif isinstance(dip, list): dst_ips.extend(dip)
+                dmac = dst_endpoint.get("macAddress")
+                if isinstance(dmac, str): dst_macs.append(dmac)
+                elif isinstance(dmac, list): dst_macs.extend(dmac)
+
+            log["custom_ip-mac"] = {
+                "src_ips": src_ips or ["0.0.0.1"],
+                "src_macs": src_macs or ["00:00:00:00:00:00"],
+                "dst_ips": dst_ips or ["0.0.0.1"],
+                "dst_macs": dst_macs or ["00:00:00:00:00:00"]
+            }
+
+            # threat.*
+            if log.get("alertId"):
+                subtechnique_ids = []
+                subtechnique_names = []
+                tactic_ids = []
+                tactic_names = []
+                technique_ids = []
+                technique_names = []
+
+                if labels := log.get("mitreAttackLabels", []):
+                    logger.info(f"[{__parser__}][execute] :: TOTO {labels}", extra={'frontend': str(self.frontend)})
+                    for label in labels:
+                        if subtechnique := label["subTechnique"]:
+                            subtechnique = subtechnique.split(" ")
+                            subtechnique_ids.extend(subtechnique[0])
+                            subtechnique_names.extend(subtechnique[1])
+                        if tactic := label["tactic"]:
+                            tactic = tactic.split(" ")
+                            tactic_ids.extend(tactic[0])
+                            tactic_names.extend(tactic[1])
+                        if technique := label["technique"]:
+                            technique = technique.split(" ")
+                            technique_ids.extend(technique[0])
+                            technique_names.extend(technique[1])
+
+                log["custom_mitre"] = {
+                    "tactic": {"ids": tactic_ids, "names": tactic_names},
+                    "technique": {"ids": technique_ids, "names": technique_names},
+                    "subtechnique": {"ids": subtechnique_ids, "names": subtechnique_names}
+                }
+
             return dumps(log)
+
         except Exception as e:
-            msg = f"Failed to json encode log {log.get('alertId') or log.get('activityUUID')} - {e}"
+            msg = f"Failed to format log {log.get('alertId') or log.get('activityUUID')} - {e}"
             logger.error(f"[{__parser__}][format_log] :: {msg}")
             return "" # this empty value is deleted before writing lines to rsyslog (she serves to not stop the execution of the collector prematurely)
 
