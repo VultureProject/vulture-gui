@@ -184,8 +184,9 @@ class PerceptionPointXRayParser(ApiParser):
         return logs, last_scans.get('has_more') == True, last_scans.get('next')
     @staticmethod
     def format_log(log):
+        log['timestamp_epoch'] = log['timestamp']
         # Remove unused and big fields
-        unused_fields = ["search_descendants", "warning_texts", "scan_tree", "warning_texts", "similarity_content_vector", "disclaimers"]
+        unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree", "warning_texts", "similarity_content_vector", "disclaimers"]
         for field in unused_fields:
             try:
                 del log[field]
