@@ -61,14 +61,13 @@ class ArmisCentrixParser(ApiParser):
         self.armis_token_expire_at = data.get("armis_centrix_token_expire_at", None)
 
         if not self.armis_host.startswith('https://'):
-            # self.armis_host = f"https://{self.armis_host}"
             self.armis_host = f"https://{self.armis_host.split('://')[-1].strip('/')}"
 
         self.session = None
 
     def test(self):
         try:
-            self.login(test=True) # establish a session to the console
+            self.login() # establish a session to the console
             logger.info(f"[{__parser__}][test] :: Running tests...", extra={'frontend': str(self.frontend)})
 
             since = timezone.now() - timedelta(days=1)
@@ -90,7 +89,7 @@ class ArmisCentrixParser(ApiParser):
             return {"status": False, "error": str(e)}
 
 
-    def login(self, test: bool = False) -> None:
+    def login(self) -> None:
         if not self.session:
             self.session = session()
             self.session.headers = {
@@ -102,7 +101,7 @@ class ArmisCentrixParser(ApiParser):
             # ask for a new token to API (token expiration seems to be by default to 15minutes)
             resp = self.execute_query(
                 method="POST",
-                url=f"{self.armis_host}/{self.AUTH_URL}",
+                url=f"{self.armis_host}{self.AUTH_URL}",
                 query={'secret_key': self.armis_secretkey}
             )
             assert resp.get("success", None), f"Cannot retrieve token from API (success!=true): {resp}"
@@ -115,8 +114,7 @@ class ArmisCentrixParser(ApiParser):
             self.armis_token = token
             self.armis_token_expire_at = token_expire_at
 
-            if not test:
-                self.save_access_token()
+            self.save_access_token()
 
             self.session.headers.update({"Authorization": token})
             logger.info(f"[{__parser__}][login] :: Successfully regenerate token", extra={'frontend': str(self.frontend)})
@@ -142,7 +140,7 @@ class ArmisCentrixParser(ApiParser):
         while(retry > 0):
             retry -= 1
             try:
-                if(method == "GET"):
+                if method == "GET":
                     response = self.session.get(
                         url,
                         params=query,
@@ -150,7 +148,7 @@ class ArmisCentrixParser(ApiParser):
                         proxies=self.proxies,
                         verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                     )
-                elif(method == "POST"):
+                elif method == "POST":
                     response = self.session.post(
                         url,
                         data=dumps(query),
@@ -179,12 +177,16 @@ class ArmisCentrixParser(ApiParser):
                     continue
             break  # no error we can break
 
-        response.raise_for_status()
+        if not response:
+            msg = f"[{__parser__}][execute_query] :: Querying logs failed"
+            logger.exception(msg, extra={'frontend': str(self.frontend)})
+            raise ArmisCentrixAPIError(msg)
 
         try:
+            response.raise_for_status()
             return response.json()
         except Exception as e:
-            logger.exception(f"[{__parser__}][execute_query] :: Server awnsers with an invalid json response : status ({response.status_code}) - response ({response.content})")
+            logger.exception(f"[{__parser__}][execute_query] :: Server awnsers with an invalid json response : status ({response.status_code}) - response ({response.content})", extra={'frontend': str(self.frontend)})
             raise Exception(e)
 
 
@@ -195,7 +197,7 @@ class ArmisCentrixParser(ApiParser):
             since = since.strftime("%Y-%m-%dT%H:%M:%S")
             to    =    to.strftime("%Y-%m-%dT%H:%M:%S")
 
-            url = f"{self.armis_host}/{self.SEARCH_URL}"
+            url = f"{self.armis_host}{self.SEARCH_URL}"
             if kind == "alerts":
                 url += "?aql=" + quote(f'in:alerts after:{since} before:{to} orderBy:(time asc)')
             elif kind == "activity":
@@ -218,7 +220,7 @@ class ArmisCentrixParser(ApiParser):
             return len(logs), totalToRetrieve, logs
 
         except Exception as e:
-            logger.exception(f"[{__parser__}][get_logs] :: Error querying {kind} logs")
+            logger.exception(f"[{__parser__}][get_logs] :: Error querying {kind} logs", extra={'frontend': str(self.frontend)})
             raise Exception(e)
 
 
@@ -272,30 +274,48 @@ class ArmisCentrixParser(ApiParser):
 
                 if labels := log.get("mitreAttackLabels", []):
                     for label in labels:
-                        if subtechnique := label["subTechnique"]:
+                        if subtechnique := label.get("subTechnique"):
                             subtechnique = subtechnique.split(" ")
-                            subtechnique_ids.extend(subtechnique[0])
-                            subtechnique_names.extend(subtechnique[1])
-                        if tactic := label["tactic"]:
+                            if isinstance(subtechnique[0], str):
+                                subtechnique_ids.append(subtechnique[0])
+                            elif isinstance(subtechnique[0], list):
+                                subtechnique_ids.extend(subtechnique[0])
+                            if isinstance(subtechnique[1], str):
+                                subtechnique_names.append(subtechnique[1])
+                            elif isinstance(subtechnique[1], list):
+                                subtechnique_names.extend(subtechnique[1])
+                        if tactic := label.get("tactic"):
                             tactic = tactic.split(" ")
-                            tactic_ids.extend(tactic[0])
-                            tactic_names.extend(tactic[1])
-                        if technique := label["technique"]:
+                            if isinstance(tactic[0], str):
+                                tactic_ids.append(tactic[0])
+                            elif isinstance(tactic[0], list):
+                                tactic_ids.extend(tactic[0])
+                            if isinstance(tactic[1], str):
+                                tactic_names.append(tactic[1])
+                            elif isinstance(tactic[1], list):
+                                tactic_names.extend(tactic[1])
+                        if technique := label.get("technique"):
                             technique = technique.split(" ")
-                            technique_ids.extend(technique[0])
-                            technique_names.extend(technique[1])
+                            if isinstance(technique[0], str):
+                                technique_ids.append(technique[0])
+                            elif isinstance(technique[0], list):
+                                technique_ids.extend(technique[0])
+                            if isinstance(technique[1], str):
+                                technique_names.append(technique[1])
+                            elif isinstance(technique[1], list):
+                                technique_names.extend(technique[1])
 
-                log["custom_mitre"] = {
-                    "tactic": {"ids": tactic_ids, "names": tactic_names},
-                    "technique": {"ids": technique_ids, "names": technique_names},
-                    "subtechnique": {"ids": subtechnique_ids, "names": subtechnique_names}
-                }
+                    log["custom_mitre"] = {
+                        "tactic": {"ids": tactic_ids, "names": tactic_names},
+                        "technique": {"ids": technique_ids, "names": technique_names},
+                        "subtechnique": {"ids": subtechnique_ids, "names": subtechnique_names}
+                    }
 
             return dumps(log)
 
         except Exception as e:
             msg = f"Failed to format log {log.get('alertId') or log.get('activityUUID')} - {e}"
-            logger.error(f"[{__parser__}][format_log] :: {msg}")
+            logger.error(f"[{__parser__}][format_log] :: {msg}", extra={'frontend': str(self.frontend)})
             return "" # this empty value is deleted before writing lines to rsyslog (she serves to not stop the execution of the collector prematurely)
 
 
@@ -313,6 +333,7 @@ class ArmisCentrixParser(ApiParser):
             to    = min(timezone.now() - timedelta(minutes=3), since + timedelta(hours=24))
             offset = 0
 
+            # get first page of logs
             logger.info(f"[{__parser__}][execute] :: Querying {kind} from {since} to {to}", extra={'frontend': str(self.frontend)})
             logs_len, total, logs = self.get_logs(kind=kind, since=since, to=to, offset=offset)
             offset += logs_len
@@ -326,8 +347,9 @@ class ArmisCentrixParser(ApiParser):
                 self.write_to_file([self.format_log(log) for log in logs if log != ""])
                 self.update_lock()
 
-            if logs_len > 0:
-                logger.info(f"[{__parser__}][execute] :: Successfully gets {logs_len} {kind} logs, updating last_collected_timestamps['armis_centrix_{kind}'] -> {to}", extra={'frontend': str(self.frontend)})
+            # update timestamps
+            if offset > 0:
+                logger.info(f"[{__parser__}][execute] :: Successfully gets {offset} {kind} logs, updating last_collected_timestamps['armis_centrix_{kind}'] -> {to}", extra={'frontend': str(self.frontend)})
                 self.last_collected_timestamps[f"armis_centrix_{kind}"] = to
             elif since < timezone.now() - timedelta(hours=24):
                 # if no logs retrieved and the last_collected_timestamp is older than 24h
