@@ -247,7 +247,7 @@ class WAFCloudProtectorParser(ApiParser):
                         else:
                             result[field][under_field_values[0]] = under_field_values[0]
 
-            return json_dumps(result)
+            return result
         except Exception:
             msg = f"Failed to parse line: {r}"
             logger.error(f"[{__parser__}]:parse_line: {msg}", extra={'frontend': str(self.frontend)})
@@ -284,25 +284,29 @@ class WAFCloudProtectorParser(ApiParser):
                     
                     ## FOR EACH LINE : start from the end ##
                     for line_byte in self.read_reversed_lines(file):
-                        
-                        line = line_byte.decode('utf8')
-                        # Choose the right column to take the date
-                        date_log = ""
-                        if log_type == 'alert':
-                            date_log = timezone.make_aware(datetime.strptime((line.split(',')[1]), '%Y-%m-%dT%H:%M:%S.%fZ'))
-                        else:
-                            date_log = timezone.make_aware(datetime.strptime((line.split(',')[2]), '%Y-%m-%dT%H:%M:%S.%fZ'))                            
 
-                        # The line of log is too yound for our request
-                        if date_log > to:
+                        try:
+                            line = line_byte.decode('utf8')
+
+                            # Use mapping to convert lines to json format
+                            json_line = self.parse_line(mapping, line.strip().encode('utf8'))
+
+                            date_log = timezone.make_aware(datetime.strptime(json_line.get("date_utc"), '%Y-%m-%dT%H:%M:%S.%fZ'))
+
+                            # The line of log is too yound for our request
+                            if date_log > to:
+                                continue
+
+                            # The line of log is too old for our request, and it's same for the rest of the file
+                            if date_log < since:
+                                break
+
+                            json_lines.append(json_dumps(json_line))
+
+                        except Exception as e:
+                            logger.warning(f"[{__parser__}]:parse_line: Unable to parse line '{line_byte}' "
+                                         f"with mapping {mapping}", extra={'frontend': str(self.frontend)})
                             continue
-                        
-                        # The line of log is too old for our request, and it's same for the rest of the file
-                        if date_log < since:
-                            break
-
-                        # Use mapping to convert lines to json format 
-                        json_lines.append(self.parse_line(mapping, line.strip().encode('utf8')))
 
                         # Refresh lock for each line
                         self.update_lock()
