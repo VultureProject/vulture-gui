@@ -1537,12 +1537,12 @@ class Frontend(models.Model):
     armis_centrix_host = models.TextField(
         verbose_name=_("Armis Centrix host"),
         help_text=_("Armis Centrix host"),
-        default="ex: https://xxx.xxx.com"
+        default=""
     )
     armis_centrix_secretkey = models.TextField(
         verbose_name=_("Armis Centrix Secret Key"),
         help_text=_("Armis Centrix Secret Key"),
-        default="ex: 19ccce9672b5a3eff776de363578c515b477c2af333bb998a367d02083d9a1s"
+        default=""
     )
     armis_centrix_get_activity_logs = models.BooleanField(
         verbose_name=_("Retrieve Armis Centrix Activity logs"),
@@ -1554,10 +1554,10 @@ class Frontend(models.Model):
         help_text=_("Armis Centrix token"),
         default=""
     )
-    armis_centrix_token_expire_at = models.PositiveIntegerField(
+    armis_centrix_token_expire_at = models.DateTimeField(
         verbose_name=_("Armis Centrix token expiration date stored in epoch from UTC format"),
         help_text=_("Armis Centrix token expiration date stored in epoch from UTC format"),
-        default=0
+        default=timezone.now
     )
 
 
