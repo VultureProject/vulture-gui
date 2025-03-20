@@ -28,7 +28,7 @@ import logging
 from datetime import timedelta, datetime
 from requests import exceptions, session
 from urllib.parse import quote
-from json import dumps
+from json import dumps, JSONDecodeError
 
 from django.conf import settings
 from django.utils import timezone
@@ -171,17 +171,19 @@ class ArmisCentrixParser(ApiParser):
                 continue
             break  # no error we can break
 
-        if not response:
-            msg = f"[{__parser__}][execute_query] :: Querying logs failed"
-            logger.exception(msg, extra={'frontend': str(self.frontend)})
-            raise ArmisCentrixAPIError(msg)
-
         try:
             response.raise_for_status()
             return response.json()
-        except Exception as e:
+        except JSONDecodeError:
+            logger.exception(f"[{__parser__}][execute_query] :: Server answer not a valid json (status code {response.status_code})", extra={'frontend': str(self.frontend)})
+            raise ArmisCentrixAPIError("Invalid JSON")
+        except exceptions.HTTPError:
             logger.exception(f"[{__parser__}][execute_query] :: Server answers with an invalid response : status ({response.status_code}) - response ({response.content})", extra={'frontend': str(self.frontend)})
-            raise ArmisCentrixAPIError(e)
+            raise ArmisCentrixAPIError(f"Response code {response.status_code}")
+        except AttributeError:
+            #In case response is None
+            logger.exception(f"[{__parser__}][execute_query] :: Querying logs failed", extra={'frontend': str(self.frontend)})
+            raise ArmisCentrixAPIError("No response")
 
 
     def get_logs(self, kind: str, since: datetime, to: datetime, offset: int = 0) -> tuple:
