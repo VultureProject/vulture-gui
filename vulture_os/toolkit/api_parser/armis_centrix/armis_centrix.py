@@ -162,19 +162,13 @@ class ArmisCentrixParser(ApiParser):
                 self.evt_stop.wait(10.0)
                 logger.error(f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (retries left: {retry}/3)", extra={'frontend': str(self.frontend)})
                 continue
-            if response.status_code == 401:
-                resp = response.json()
-                # maybe a bit too much, this handle the case where token had expired or is invalid "silently" for an unknown reason
-                if resp.get("message", "") == "Expired access token.": 
-                    logger.error(f"[{__parser__}][execute_query] :: Resets expired access token {self.armis_token} - expired_at ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
-                    self.armis_token = None # resets expired token
-                    self.login()
-                    continue
-                elif resp.get("message", "") == "Invalid access token.":
-                    logger.error(f"[{__parser__}][execute_query] :: Resets invalid access token {self.armis_token} - expiration ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
-                    self.armis_token = None # resets expired token
-                    self.login()
-                    continue
+            if response and response.status_code == 401:
+                logger.error(f"[{__parser__}][execute_query] :: Got a 401 status code, reseting authentication...", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}][execute_query] :: access token was expiring at ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
+                self.armis_token = None # resets expired token
+                self.armis_token_expire_at = None
+                self.login()
+                continue
             break  # no error we can break
 
         if not response:
