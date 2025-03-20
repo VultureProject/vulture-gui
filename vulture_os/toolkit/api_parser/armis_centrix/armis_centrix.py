@@ -137,7 +137,7 @@ class ArmisCentrixParser(ApiParser):
     def execute_query(self, method: str, url: str, query: dict, timeout: int = 10) -> dict:
         retry = 3
         response = None
-        while(retry > 0):
+        while(retry > 0 and not self.evt_stop.is_set()):
             retry -= 1
             try:
                 if method == "GET":
@@ -349,5 +349,8 @@ class ArmisCentrixParser(ApiParser):
                 # if no logs retrieved and the last_collected_timestamp is older than 24h
                 # move one hour forward to prevent stagnating ad vitam eternam
                 self.last_collected_timestamps[f"armis_centrix_{kind}"] = since + timedelta(hours=1)
+
+            if self.evt_stop.is_set():
+                break
 
         logger.info(f"[{__parser__}][execute] :: Parsing done.", extra={'frontend': str(self.frontend)})
