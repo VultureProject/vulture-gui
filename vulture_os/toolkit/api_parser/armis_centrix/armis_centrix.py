@@ -140,6 +140,7 @@ class ArmisCentrixParser(ApiParser):
         while(retry > 0 and not self.evt_stop.is_set()):
             retry -= 1
             try:
+                logger.info(f"[{__parser__}][get_logs] :: Querying ({method}) {url} with query {query} (retries: {retry})", extra={'frontend': str(self.frontend)})
                 if method == "GET":
                     response = self.session.get(
                         url,
@@ -157,10 +158,9 @@ class ArmisCentrixParser(ApiParser):
                         proxies=self.proxies,
                         verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                     )
-                logger.info(f"[{__parser__}][get_logs] :: Querying {url} with query {query}", extra={'frontend': str(self.frontend)})
             except exceptions.ReadTimeout:
-                self.evt_stop.wait(10.0)
                 logger.error(f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (retries left: {retry}/3)", extra={'frontend': str(self.frontend)})
+                self.evt_stop.wait(10.0)
                 continue
             if response and response.status_code == 401:
                 logger.error(f"[{__parser__}][execute_query] :: Got a 401 status code, reseting authentication...", extra={'frontend': str(self.frontend)})
@@ -180,8 +180,8 @@ class ArmisCentrixParser(ApiParser):
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            logger.exception(f"[{__parser__}][execute_query] :: Server awnsers with an invalid json response : status ({response.status_code}) - response ({response.content})", extra={'frontend': str(self.frontend)})
-            raise Exception(e)
+            logger.exception(f"[{__parser__}][execute_query] :: Server answers with an invalid response : status ({response.status_code}) - response ({response.content})", extra={'frontend': str(self.frontend)})
+            raise ArmisCentrixAPIError(e)
 
 
     def get_logs(self, kind: str, since: datetime, to: datetime, offset: int = 0) -> tuple:
@@ -323,7 +323,7 @@ class ArmisCentrixParser(ApiParser):
         for kind in kinds:
             # API have the capability to get back in time from the last 100 days at maximum
             since = self.last_collected_timestamps.get(f"armis_centrix_{kind}") or (timezone.now() - timedelta(days=30))
-            # collect at max 24h of range to avoid API taking too long to awnser and delay by 3 minutes to avoid missing alerts due to ELK insertion time
+            # collect at max 24h of range to avoid API taking too long to answer and delay by 3 minutes to avoid missing alerts due to ELK insertion time
             to    = min(timezone.now() - timedelta(minutes=3), since + timedelta(hours=24))
             offset = 0
 
