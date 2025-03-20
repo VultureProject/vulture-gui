@@ -128,7 +128,7 @@ class WAFCloudProtectorParser(ApiParser):
         uri = "/logs/"+ log_type + "/" + self.waf_cloud_protector_provider + "/" + self.waf_cloud_protector_tenant + '/' + server
         url = host_url + uri
 
-        epoch = str(datetime.now().timestamp()).replace(".", "")[:-3]   
+        epoch = str(datetime.now().timestamp()).replace(".", "")[:-3]
 
         payload = 'GET' + '\n' \
         + self.waf_cloud_protector_host + '\n' \
@@ -141,16 +141,16 @@ class WAFCloudProtectorParser(ApiParser):
             key=self.waf_cloud_protector_api_key_priv.encode(),
             msg=payload.encode(),
             digestmod=hashlib.sha256
-        ).digest() 
+        ).digest()
         signature = base64.b64encode(signature_digest).decode()
- 
+
         headers = {
             "Accept": "application/json",
             "Host": self.waf_cloud_protector_host,
-            "Authorization": f'DAAUTH apikey="{self.waf_cloud_protector_api_key_pub}", epoch="{epoch}", signature="{signature}"'    
+            "Authorization": f'DAAUTH apikey="{self.waf_cloud_protector_api_key_pub}", epoch="{epoch}", signature="{signature}"'
         }
         return url, headers
-     
+
     def test(self):
 
         current_time = timezone.now()
@@ -174,7 +174,7 @@ class WAFCloudProtectorParser(ApiParser):
 
         query = {}
         query['limit'] = nb_days
-        query['start_date'] = since.strftime("%Y-%m-%d")                
+        query['start_date'] = since.strftime("%Y-%m-%d")
 
         return self.__execute_query(host_url, log_type, server, query)
 
@@ -201,7 +201,7 @@ class WAFCloudProtectorParser(ApiParser):
             line = tmp[cursor:]
             yield line
 
-        # Lastest lines and skip the first line        
+        # Lastest lines and skip the first line
         rest = buffer.tell()
         buffer.seek(cursor_first_line, 0)
 
@@ -217,7 +217,7 @@ class WAFCloudProtectorParser(ApiParser):
         stream_line = StringIO(orig_line.decode('utf-8'))
 
         # Needed to prevent error : _csv.Error: field larger than field limit (131072)
-        csv.field_size_limit(sys_maxsize)   
+        csv.field_size_limit(sys_maxsize)
         r = csv.reader(stream_line, delimiter=",", doublequote=True, lineterminator="\n", quoting=csv.QUOTE_ALL)
         # Loop other the fields of the only line
         try:
@@ -228,7 +228,7 @@ class WAFCloudProtectorParser(ApiParser):
                     field = f"{field}_dict"
                     result[field] = {}
                     for under_field in value.split(' and '):
-                        # Change the format of the field to be able to use it in the json 
+                        # Change the format of the field to be able to use it in the json
                         # From -> "module_name == 'xxx' and event.desc == 'xxx ' and tokens['http_xxx'] == 'xxx'"
                         # To -> "module_name": "xxx", "event.desc": "xxx", "tokens.http_xxx": "xxx"
                         under_field_values = [under_field_value.replace("['", ".").replace("']", "").replace("'", "") for under_field_value in  under_field.split(' == ')]
@@ -243,7 +243,7 @@ class WAFCloudProtectorParser(ApiParser):
                             # It's for : "module_name": "xxx"
                             else:
                                 result[field][under_field_values[0]] = under_field_values[1]
-                        # If the field is not a key value pair, we just add the value to the key                           
+                        # If the field is not a key value pair, we just add the value to the key
                         else:
                             result[field][under_field_values[0]] = under_field_values[0]
 
@@ -268,7 +268,7 @@ class WAFCloudProtectorParser(ApiParser):
                     logger.info(f"[{__parser__}]: get_logs from {server} of type {log_type} since {since} to {to}", extra={'frontend': str(self.frontend)})
                     file_content = self.get_logs(since, delta, log_type, server)
                     self.update_lock()
-                    
+
                     ## DECOMPRESS LOGS ##
                     gzip_file = BytesIO(file_content)
                     buffer_file = gzip.GzipFile(fileobj=gzip_file, mode="rb")
@@ -281,10 +281,9 @@ class WAFCloudProtectorParser(ApiParser):
                     mapping = [column.replace('"','').replace(' ','').replace('&','').replace('.','').replace('/','') for column in first_line.decode('utf8').strip().split(',')]
 
                     json_lines = []
-                    
+
                     ## FOR EACH LINE : start from the end ##
                     for line_byte in self.read_reversed_lines(file):
-
                         try:
                             line = line_byte.decode('utf8')
 
@@ -303,7 +302,7 @@ class WAFCloudProtectorParser(ApiParser):
 
                             json_lines.append(json_dumps(json_line))
 
-                        except Exception as e:
+                        except Exception:
                             logger.warning(f"[{__parser__}]:parse_line: Unable to parse line '{line_byte}' "
                                          f"with mapping {mapping}", extra={'frontend': str(self.frontend)})
                             continue
