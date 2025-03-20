@@ -23,7 +23,7 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Tests for datetime/timezone.py'
 
-from datetime import timedelta, datetime, tzinfo
+from datetime import timedelta, datetime
 from django.test import SimpleTestCase
 from django.utils import timezone
 from toolkit.datetime.timezone import (
@@ -32,7 +32,7 @@ from toolkit.datetime.timezone import (
     get_local_boundaries,
     get_transient_timezones,
 )
-import pytz
+from zoneinfo import ZoneInfo
 
 class TimezoneTestCase(SimpleTestCase):
     TEST_CASE_NAME=f"{__name__}"
@@ -45,9 +45,7 @@ class TimezoneTestCase(SimpleTestCase):
         self.assertIsInstance(result, set)
         self.assertNotEqual(len(result), 0)
         for tz in result:
-            self.assertIsInstance(tz, tzinfo)
-            self.assertTrue(hasattr(tz, "_utc_transition_times"))
-            self.assertTrue(hasattr(tz, "_transition_info"))
+            self.assertIsInstance(tz, ZoneInfo)
 
 #####################
 # get_offset_string #
@@ -71,14 +69,18 @@ class TimezoneTestCase(SimpleTestCase):
 # get_timezone_transitions #
 ############################
     def test_get_timezone_transitions_europe_paris(self):
-        tz = pytz.timezone("europe/paris")
-        timestamps = get_timezone_transitions(tz)
+        tz = ZoneInfo("Europe/Paris")
+        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        timestamps = get_timezone_transitions(tz, start_date, end_date)
         self.assertIsNotNone(timestamps)
         self.assertIsNot(len(timestamps), 0)
 
     def test_get_timezone_transitions_contents(self):
-        tz = pytz.timezone("europe/paris")
-        timestamps = get_timezone_transitions(tz)
+        tz = ZoneInfo("Europe/Paris")
+        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        timestamps = get_timezone_transitions(tz, start_date, end_date)
         for timestamp in timestamps:
             self.assertListEqual(
                 list(timestamp.keys()),
@@ -89,31 +91,33 @@ class TimezoneTestCase(SimpleTestCase):
             )
 
     def test_get_timezone_transitions_ensure_tz_aware(self):
-        tz = pytz.timezone("europe/paris")
-        timestamps = get_timezone_transitions(tz)
+        tz = ZoneInfo("Europe/Paris")
+        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        timestamps = get_timezone_transitions(tz, start_date, end_date)
         for timestamp in timestamps:
             self.assertTrue(timezone.is_aware(timestamp['utc_timestamp']))
             self.assertTrue(timezone.is_aware(timestamp['local_timestamp']))
 
     def test_get_timezone_transitions_ensure_tz_utc(self):
-        tz = pytz.timezone("europe/paris")
-        timestamps = get_timezone_transitions(tz)
+        tz = ZoneInfo("Europe/Paris")
+        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        timestamps = get_timezone_transitions(tz, start_date, end_date)
         for timestamp in timestamps:
             self.assertEqual(timestamp['utc_timestamp'].tzinfo, timezone.utc)
             self.assertEqual(timestamp['local_timestamp'].tzinfo, timezone.utc)
 
     def test_get_timezone_transitions_local_value(self):
-        tz = pytz.timezone("europe/paris")
-        timestamps = get_timezone_transitions(tz)
+        tz = ZoneInfo("Europe/Paris")
+        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
+        end_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
+        timestamps = get_timezone_transitions(tz, start_date, end_date)
         for timestamp in timestamps:
             self.assertEquals(
                 timestamp['local_timestamp'],
                 timestamp['utc_timestamp'] + timedelta(seconds=timestamp['offset_seconds'])
             )
-
-    def test_get_timezone_transitions_utc(self):
-        tz = pytz.timezone("utc")
-        self.assertIsNone(get_timezone_transitions(tz))
 
 ########################
 # get_local_boundaries #

@@ -25,13 +25,14 @@ __doc__ = 'Python script used to generate Rsyslog-compatible timezone offset loo
 import json
 import os
 import sys
-from datetime import tzinfo, datetime
+from datetime import datetime, timezone
 from toolkit.datetime.timezone import (
     get_local_boundaries,
     get_offset_string,
     get_timezone_transitions,
     get_transient_timezones,
 )
+from zoneinfo import ZoneInfo
 from system.config.models import write_conf
 from system.exceptions import VultureSystemConfigError
 from services.exceptions import ServiceExit
@@ -51,8 +52,8 @@ logger = logging.getLogger('crontab')
 TZFILES_FOLDER = os.path.join(settings.LOCALETC_PATH, "rsyslog.d/_lookup_tables/timezones/")
 
 
-def _get_rsyslog_sparse_arrays(tz: tzinfo):
-    timestamps = get_timezone_transitions(tz)
+def _get_rsyslog_sparse_arrays(tz: ZoneInfo, start_date: datetime, end_date: datetime):
+    timestamps = get_timezone_transitions(tz, start_date, end_date)
     localized_array = set()
     utc_array = set()
     for index, timestamp in enumerate(timestamps):
@@ -90,12 +91,15 @@ def _generate_rsyslog_lookup_db(data):
 
 
 def generate_timezone_dbs():
-    logger.info("[generate_timezone_dbs] Beggining generation...")
+    now = datetime.now()
+    start_date = datetime(now.year - 1, 1, 1, tzinfo=timezone.utc)
+    end_date = datetime(now.year +10, 1, 1, tzinfo=timezone.utc)
+    logger.info(f"[generate_timezone_dbs] Beggining generation from {start_date} to {end_date}...")
 
     for tz in get_transient_timezones():
         timezone_name = str(tz)
         logger.info(f"[generate_timezone_dbs] (Re)generating lookup databases for timezone '{timezone_name}'...")
-        utc_array, localized_array = _get_rsyslog_sparse_arrays(tz)
+        utc_array, localized_array = _get_rsyslog_sparse_arrays(tz, start_date, end_date)
         filename_local = f"{timezone_name.lower().replace('/', '_')}_local.lookup"
         data_local = _generate_rsyslog_lookup_db(localized_array)
         try:
