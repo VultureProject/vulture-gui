@@ -21,7 +21,6 @@ kerberos
 pyrad
 maxminddb
 validators
-pytz
 
 # API parsers dependencies
 boto3 # Can be removed if AWS API parser is removed (this parser seems useless, like elasticsearch was)

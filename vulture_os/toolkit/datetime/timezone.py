@@ -22,20 +22,17 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Timezone generation and conversion tools'
 
-from datetime import timedelta, tzinfo
-from django.utils import timezone
-from pytz import (
-    timezone as pytz_timezone,
-    all_timezones_set
-)
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, available_timezones
 
 
 def get_transient_timezones():
     result = set()
-    for tz_name in all_timezones_set:
-        tz = pytz_timezone(tz_name)
-        if hasattr(tz, "_utc_transition_times") and hasattr(tz, "_transition_info"):
-            result.add(tz)
+    for tz_name in available_timezones():
+        try:
+            result.add(ZoneInfo(tz_name))
+        except ValueError:
+            continue
     return result
 
 
@@ -59,11 +56,39 @@ def get_offset_string(offset_seconds: int | timedelta) -> str:
     return tz_string
 
 
-def get_timezone_transitions(tz: tzinfo) -> list[dict] | None:
+def _find_utc_transitions(timezone_name: str, start_date: datetime, end_date: datetime):
+    tz = ZoneInfo(timezone_name)
+    transitions = []
+
+    # Start at the beginning of the given year range
+    dt = start_date.replace(tzinfo=timezone.utc)
+    end_dt = end_date.replace(tzinfo=timezone.utc)
+
+    prev_offset = dt.astimezone(tz).utcoffset()
+
+    while dt < end_dt:
+        new_offset = dt.astimezone(tz).utcoffset()
+        if new_offset != prev_offset:
+            low, high = dt - timedelta(days=1), dt
+            while (high - low).total_seconds() > 1:
+                mid = low + (high - low) / 2
+                if mid.astimezone(tz).utcoffset() == prev_offset:
+                    low = mid
+                else:
+                    high = mid
+            transitions.append((high.replace(microsecond=0), new_offset))
+            prev_offset = new_offset
+        dt += timedelta(days=1)
+    return transitions
+
+
+def get_timezone_transitions(local_tz: ZoneInfo, start_date: datetime, end_date: datetime) -> list[dict] | None:
     """Returns the utc, local and corresponding offsets of known timezone transitions for a specific timezone name
 
     Args:
-        tz (datetime.tzinfo): the timezone to get transitions from
+        local_tz (ZoneInfo): the local timezone to get transitions from
+        start_date (datetime): the (UTC) timezone to begin the list from
+        end_date (datetime): the (UTC) timezone to end the list with
 
     Returns:
         result (list[dict] | None): *None* if the provided timezone name wasn't found, else a list of dictionaries containing:
@@ -72,25 +97,37 @@ def get_timezone_transitions(tz: tzinfo) -> list[dict] | None:
             - offset_seconds: an int representing the new offset between UTC and local times
     """
     timestamps = list()
-    utc_time_changes = list()
-    if hasattr(tz, "_utc_transition_times") and hasattr(tz, "_transition_info"):
-        for index, transition in enumerate(tz._utc_transition_times):
-            # Set missing timezone to datetimes
-            transition = transition.replace(tzinfo=timezone.utc)
-            utc_time_changes.append((transition, tz._transition_info[index][0]))
-        # Generate the list, with utc and localized datetimes and their corresponding offset
-        for index, (date, offset) in enumerate(utc_time_changes):
-            try:
-                localized = date + offset
-                timestamps.append({
-                    "utc_timestamp": date,
-                    "local_timestamp": localized,
-                    "offset_seconds": int(offset.total_seconds())
+    increment_td = timedelta(days=1)
+
+    # Ensure research is done using UTC datetimes...
+    dt = start_date.astimezone(timezone.utc)
+    end_dt = end_date.astimezone(timezone.utc)
+
+    # ...but get offsets as local timezones
+    prev_offset = dt.astimezone(local_tz).utcoffset()
+    dt += increment_td
+
+    while dt < end_dt:
+        new_offset = dt.astimezone(local_tz).utcoffset()
+        if new_offset != prev_offset:
+            # Dichotomic search of exact (UTC) time change
+            low, high = dt - increment_td, dt
+            while (high - low).total_seconds() > 1:
+                # Cut in half...
+                mid = low + (high - low) / 2
+                # ...remove the half that doesn't contain the change
+                if mid.astimezone(local_tz).utcoffset() == prev_offset:
+                    low = mid
+                else:
+                    high = mid
+            # Search converged to the exact time of change
+            timestamps.append({
+                    "utc_timestamp": high.replace(microsecond=0),
+                    "local_timestamp": high.astimezone(local_tz).replace(microsecond=0, tzinfo=timezone.utc),
+                    "offset_seconds": int(new_offset.total_seconds()),
                 })
-            except (ValueError, OverflowError):
-                continue
-    else:
-        return None
+            prev_offset = new_offset
+        dt += increment_td
 
     return timestamps
 
