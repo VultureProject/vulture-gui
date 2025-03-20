@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [SETTINGS] Use Hostname value from Django settings
 ### Fixed
 - [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb
+- [API_PARSER] [WAF_CLOUDFLARE] Fix invalid time range requested for UTC-* consoles
 
 
 ## [2.22.2] - 2025-03-17
