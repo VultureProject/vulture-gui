@@ -60,8 +60,7 @@ class ArmisCentrixParser(ApiParser):
         self.armis_token           = data.get("armis_centrix_token", None)
         self.armis_token_expire_at = data.get("armis_centrix_token_expire_at", None)
 
-        if not self.armis_host.startswith('https://'):
-            self.armis_host = f"https://{self.armis_host.split('://')[-1].strip('/')}"
+        self.armis_host = f"https://{self.armis_host.split('://')[-1].strip('/')}"
 
         self.session = None
 
@@ -120,7 +119,7 @@ class ArmisCentrixParser(ApiParser):
             logger.info(f"[{__parser__}][login] :: Successfully regenerate token", extra={'frontend': str(self.frontend)})
 
         else: # use the non-expired access token
-            self.session.headers.update({"Authorization": self.frontend.armis_centrix_token})
+            self.session.headers.update({"Authorization": self.armis_token})
 
         logger.info(f"[{__parser__}][login] :: Successfully logged in", extra={'frontend': str(self.frontend)})
 
@@ -225,8 +224,7 @@ class ArmisCentrixParser(ApiParser):
             # source.ip, destination.ip, source.mac, destination.mac
             src_ips = []
             src_macs = []
-            srcEndpoints = log.get("sourceEndpoints", [])
-            for src_endpoint in srcEndpoints:
+            for src_endpoint in log.get("sourceEndpoints", []):
                 sip = src_endpoint.get("ip")
                 if isinstance(sip, str):
                     src_ips.append(sip)
@@ -239,8 +237,7 @@ class ArmisCentrixParser(ApiParser):
                     src_macs.extend(smac)
             dst_ips = []
             dst_macs = []
-            dstEndpoints = log.get("destinationEndpoints", [])
-            for dst_endpoint in dstEndpoints:
+            for dst_endpoint in log.get("destinationEndpoints", []):
                 dip = dst_endpoint.get("ip")
                 if isinstance(dip, str):
                     dst_ips.append(dip)
