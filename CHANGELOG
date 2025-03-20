@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [SETTINGS] Allow to configure project with django-environ
 - [TESTS] [SYSTEM] Implement Network test cases
 - [TESTS] [WORKFLOW] Implement Workflow test cases
+- [TIMEZONE] Allow to calculate current timezone offset for logs received on a Frontend
 ### Removed
 - [TESTS] Remove old 'testing' folder
 ### Changed
