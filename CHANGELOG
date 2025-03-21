@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [PORTAL] [SELF_SERVICE] Disabled workflows listed
 - [MONGODB] Allow clusters with more than 7 nodes
+- [SERVICES] [FRONTEND] Correctly get Darwin objects when building rsyslog configurations
 
 
 ## [2.25.0]
