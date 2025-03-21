@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.22.3] - 2025-03-21
 ### Fixed
 - [API_PARSER] [CYBEREASON] Handle 204 return codes
 - [API_PARSER] [CYBEREASON] Prevent crashes on empty comments, machines or users
