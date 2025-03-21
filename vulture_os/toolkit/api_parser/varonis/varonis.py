@@ -182,7 +182,7 @@ class VaronisParser(ApiParser):
         # Sometimes we hit this instruction with a status_code == 304 (Content Not Modified),
         # I don't have any insights or hints to understand what's happening but we should consider to retry a request whenever we received a 304 status code
         retry = 0
-        while res.status_code == 304 and not self.evt_stop.is_set() and retry < 5:
+        while res.status_code == 304 and not self.evt_stop.is_set() and retry < 10:
             res = self._execute_query("GET", f"/app/dataquery/api/search/{rows}?from=0&to=999")
             self.evt_stop.wait(1.0)
             retry += 1
@@ -216,23 +216,26 @@ class VaronisParser(ApiParser):
         logs = []
         for row in content["rows"]:
             log = {}
-            for i in range(len(row)):
-                if row[i]:
-                    path = content["columns"][i].split(".")
-                    len_path = len(path)
+            try:
+                for i in range(len(row)):
+                    if row[i]:
+                        path = content["columns"][i].split(".")
+                        len_path = len(path)
 
-                    depth_dict = log
-                    for key_depth,key in enumerate(path):
-                        key = self.camel_to_snake(key)
-                        if key not in depth_dict.keys():
-                            if key_depth == len_path - 1:
-                                # At the end of the path, we set the value
-                                depth_dict[key] = row[i]
-                            else:
-                                # We set the next key of the path
-                                depth_dict[key] = {}
-                        depth_dict = depth_dict[key]
-            logs.append(log)
+                        depth_dict = log
+                        for key_depth,key in enumerate(path):
+                            key = self.camel_to_snake(key)
+                            if key not in depth_dict.keys():
+                                if key_depth == len_path - 1:
+                                    # At the end of the path, we set the value
+                                    depth_dict[key] = row[i]
+                                else:
+                                    # We set the next key of the path
+                                    depth_dict[key] = {}
+                            depth_dict = depth_dict[key]
+                logs.append(log)
+            except:
+                logger.warning(f"[{__parser__}]: Unable to parse {row}", extra={"frontend": str(self.frontend)})
         return logs
 
     def get_alerts(self, since, to):
@@ -326,7 +329,6 @@ class VaronisParser(ApiParser):
 
     def get_logs(self, since, to):
         alerts = self.get_alerts(since, to)
-        logger.info(f"{alerts}", extra={"frontend": str(self.frontend)})
         events = []
         if alerts:
             alert_ids = [alert["alert"]["id"] for alert in alerts]
