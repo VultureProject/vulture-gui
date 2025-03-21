@@ -146,6 +146,10 @@ class CybereasonParser(ApiParser):
             msg = f"Error Cybereason API Call URL: {url} [TIMEOUT]"
             logger.error(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
             return {}
+        elif response.status_code == 204:
+            msg = f"No-Content for API Call URL: {url} [TIMEOUT], Code: {response.status_code}"
+            logger.warning(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
+            return {}
         elif response.status_code != 200:
             msg = f"Error Cybereason API Call URL: {url} [TIMEOUT], Code: {response.status_code}"
             logger.error(f"[{__parser__}]:execute_query: {msg}", extra={'frontend': str(self.frontend)})
@@ -196,7 +200,6 @@ class CybereasonParser(ApiParser):
             # Get last api call or 30 days ago
             since = self.last_collected_timestamps.get(f"cybereason_{log_type}") or (timezone.now() - timedelta(days=30))
             # 24h max per request
-
             to = min(timezone.now(), since + timedelta(hours=24))
 
             # delay the times of 5 minutes, to let the times at the API to have all logs
