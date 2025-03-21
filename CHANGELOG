@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TESTS] [SYSTEM] Implement Network test cases
 - [TESTS] [WORKFLOW] Implement Workflow test cases
 - [API_PARSER] [GATEWATCHER_ALERTS] Add 'host' field in json logs (requested url's domain)
+- [API_PARSER] [ARMIS_CENTRIX] New collector for Armis Centrix EDR (Alerts & Activity)
 ### Removed
 - [TESTS] Remove old 'testing' folder
 ### Changed

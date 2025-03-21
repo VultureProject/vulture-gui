@@ -1533,6 +1533,32 @@ class Frontend(models.Model):
         help_text=_("Varonis API Key"),
         default="",
     )
+    # Armis centrix attributes
+    armis_centrix_host = models.TextField(
+        verbose_name=_("Armis Centrix host"),
+        help_text=_("Armis Centrix host"),
+        default=""
+    )
+    armis_centrix_secretkey = models.TextField(
+        verbose_name=_("Armis Centrix Secret Key"),
+        help_text=_("Armis Centrix Secret Key"),
+        default=""
+    )
+    armis_centrix_get_activity_logs = models.BooleanField(
+        verbose_name=_("Retrieve Armis Centrix Activity logs"),
+        help_text=_("Retrieve Armis Centrix Activity logs"),
+        default=True
+    )
+    armis_centrix_token = models.TextField(
+        verbose_name=_("Armis Centrix token"),
+        help_text=_("Armis Centrix token"),
+        default=""
+    )
+    armis_centrix_token_expire_at = models.DateTimeField(
+        verbose_name=_("Armis Centrix token expiration date stored in epoch from UTC format"),
+        help_text=_("Armis Centrix token expiration date stored in epoch from UTC format"),
+        default=timezone.now
+    )
 
 
     @staticmethod
