@@ -6,7 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
-- [SERVICES] [FRONTEND] Only show node field for specific modes
 ### Added
 - [SYSTEM] [PATHS] Variabilize all system paths and allow to configure them from settings
 - [SYSTEM] [SETTINGS] Allow to configure project with django-environ
@@ -19,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [SETTINGS] Use Hostname value from Django settings
 - [PKI] Generate a random serial for each new certificate
 ### Fixed
+- [SERVICES] [FRONTEND] Only show node field for specific modes
 - [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb
 - [API_PARSER] [WAF_CLOUDFLARE] Fix invalid time range requested for UTC-* consoles
 - [API_PARSER] [WAF_CLOUD_PROTECTOR] Catch invalid lines + fix timestamp handling
