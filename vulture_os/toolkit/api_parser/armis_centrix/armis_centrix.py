@@ -44,7 +44,7 @@ class ArmisCentrixAPIError(Exception):
 
 class ArmisCentrixParser(ApiParser):
     # last slash is mandatory for endpoints
-    AUTH_URL   = "/api/v1/access_token/" 
+    AUTH_URL   = "/api/v1/access_token/"
     SEARCH_URL = "/api/v1/search/"
 
     LIMIT = 1000 # maximum limit is 9999 (ELK)
@@ -52,7 +52,7 @@ class ArmisCentrixParser(ApiParser):
 
     def __init__(self, data):
         super().__init__(data)
-    
+
         self.armis_host = data["armis_centrix_host"]
         self.armis_secretkey = data["armis_centrix_secretkey"]
         self.armis_get_activity_logs = data.get("armis_centrix_get_activity_logs", False)
