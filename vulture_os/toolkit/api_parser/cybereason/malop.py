@@ -116,7 +116,7 @@ class Malop:
             machine_guids = [
                 machine["guid"]
                 for data in alert.get('process_details', {}).values()
-                for machine in data.get('elementValues', {}).get('ownerMachine', {}).get('elementValues')
+                for machine in data.get('elementValues', {}).get('ownerMachine', {}).get('elementValues', [])
             ]
 
         else:
@@ -132,7 +132,7 @@ class Malop:
         # Requesting may take some while, so refresh token in Redis
         self.update_lock()
 
-        alert_devices_details = self._get_sensors(machine_guids)
+        alert_devices_details = self._get_sensors(machine_guids) if machine_guids else []
 
         # Requesting may take some while, so refresh token in Redis
         self.update_lock()
@@ -180,7 +180,7 @@ class Malop:
                 flattened_domain.append(device['domain'])
 
         for user in log.get('users', []):
-            domain = user.get('displayName', "").split('\\')[0]
+            domain = (user.get('displayName') or "").split('\\')[0]
             if domain and (domain not in flattened_domain):
                 flattened_domain.append(domain)
 
