@@ -42,6 +42,7 @@ from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, Node
 from applications.backend.models import Backend
 from system.pki.models import TLSProfile, X509Certificate
+from toolkit.datetime.timezone import get_transient_timezones
 from toolkit.network.network import JAIL_ADDRESSES
 from toolkit.http.headers import Header
 from system.tenants.models import Tenants
@@ -149,6 +150,14 @@ FILEBEAT_LISTENING_MODE = (
     ('file', "File"),
     ('api', 'Vendor specific API')
 )
+
+def get_available_timezones() -> list[tuple]:
+    result = list()
+    for tz in get_transient_timezones():
+        result.append(
+            (str(tz), str(tz))
+        )
+    return result
 
 
 # Jinja template for frontends rendering
@@ -324,6 +333,13 @@ class Frontend(models.Model):
         null=True,
         blank=True,
         help_text=_("Specifies the rate-limiting burst in number of messages.")
+    )
+    expected_timezone = models.CharField(
+        _("Expected timezone"),
+        choices=get_available_timezones(),
+        null=True,
+        blank=True,
+        max_length=256,
     )
     """ Status of frontend for each nodes """
     status = models.JSONField(
@@ -1949,6 +1965,10 @@ class Frontend(models.Model):
 
     def render_log_condition(self):
         log_oms = {}
+        result = ""
+        if self.expected_timezone is not None:
+            safe_timezone_name = self.expected_timezone.replace('/', '_').lower()
+            result += f"\ncall {safe_timezone_name}_get_offset\n"
         clean_log_condition = self.log_condition
         for line in self.log_condition.split('\n'):
             if line.count('{') < 2:
@@ -1963,10 +1983,11 @@ class Frontend(models.Model):
                     clean_log_condition = self.log_condition.replace(match.group(1), match.group(1).replace('-','_'))
                     log_oms[match.group(1).replace('-','_')] = LogOM.generate_conf(log_om, self.ruleset, frontend=self.name)
                     logger.info("Configuration of Log Forwarder named '{}' generated.".format(log_om.name))
-        internal_ruleset = ""
 
         tpl = JinjaTemplate(clean_log_condition)
-        return internal_ruleset + "\n\n" + tpl.render(Context(log_oms, autoescape=False)) + "\n"
+        result += tpl.render(Context(log_oms, autoescape=False)) + "\n"
+
+        return result
 
     def render_log_condition_failure(self):
         """ Render log_forwarders' config from self.log_forwarders_parse_failure

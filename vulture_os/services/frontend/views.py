@@ -144,6 +144,8 @@ def frontend_delete(request, object_id, api=False):
         # that is, if the frontend is associated with a policy with at least one filter with buffering configured
         was_darwin_buffered = DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists()
 
+        had_expected_timezone = frontend.expected_timezone is not None
+
         try:
             # If POST request and no error: delete frontend
             frontend.delete()
@@ -158,6 +160,9 @@ def frontend_delete(request, object_id, api=False):
                 # Delete frontend conf
                 if rsyslog_filename:
                     node.api_request('services.rsyslogd.rsyslog.delete_conf', rsyslog_filename)
+
+                if had_expected_timezone:
+                    node.api_request("services.rsyslogd.rsyslog.configure_timezones")
 
                 # Regenerate Rsyslog system conf and restart
                 node.api_request('services.rsyslogd.rsyslog.build_conf')
@@ -488,6 +493,8 @@ def frontend_edit(request, object_id=None, api=False):
                             # API request to rebuild global rsyslog configuration
                             logger.info(f"Rsyslogd global config reload asked on node {node}.")
                             node.api_request('services.rsyslogd.rsyslog.build_conf')
+                            # API request to ensure timezone rulesets are up-to-date on node
+                            node.api_request('services.rsyslogd.rsyslog.configure_timezones')
                             # And reload of Rsyslog service
                             node.api_request('services.rsyslogd.rsyslog.restart_service')
 
@@ -581,6 +588,9 @@ def frontend_edit(request, object_id=None, api=False):
             for node in node_listeners.keys():
 
                 logger.info("Writing conf of frontend '{}' on node '{}'".format(frontend.name, node.name))
+
+                if frontend.expected_timezone is not None or "expected_timezone" in form.changed_data:
+                    node.api_request('services.rsyslogd.rsyslog.configure_timezones')
 
                 if frontend.enable_logging:
                     """ We need to configure Rsyslog, it will check if conf has changed & restart service if needed """
