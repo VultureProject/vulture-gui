@@ -135,9 +135,9 @@ class PerceptionPointXRayParser(ApiParser):
                 self._connect()
 
             since = timezone.now() - timedelta(days=30)
-            to = datetime.now()
+            to = timezone.now()
 
-            response, _, _ = self.get_logs(since, to, self.LOG_TYPES[0], None)
+            response, _, _, _ = self.get_logs(since, to, self.LOG_TYPES[0], None)
 
             return {
                 "status": True,
@@ -173,15 +173,22 @@ class PerceptionPointXRayParser(ApiParser):
         return self._execute_query("GET", url, payload)
 
     def get_logs(self, since, to, log_type, next=None):
-
-        last_scans = self.get_last_scans(since, to, log_type, next)
+        last_scans = {}
+        while not self.evt_stop.is_set():
+            last_scans = self.get_last_scans(since, to, log_type, next)
+            if last_scans.get('count') >= 1000:
+                to = to - (to - since) / 2
+                msg = f"API returns more than 1000 logs. Updating 'to' to {to} for log_type {log_type}"
+                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+            else:
+                break
 
         logs = []
-        for scan in last_scans.get('results'):
+        for scan in last_scans.get('results', []):
             scan_log = self.get_scan_details(scan["full_scan_id"])
             logs.append(scan_log)
 
-        return logs, last_scans.get('has_more') == True, last_scans.get('next')
+        return logs, last_scans.get('has_more') == True, last_scans.get('next'), to
     @staticmethod
     def format_log(log):
         log['timestamp_epoch'] = log['timestamp']
@@ -195,39 +202,33 @@ class PerceptionPointXRayParser(ApiParser):
         return json.dumps(log)
 
     def execute(self):
-        # Warning : the fetched logs are ordered in DESC (no option available in api doc)
+        # Warning : the fetched logs are ordered in ASC (no option is available in API doc)
 
         for log_type in self.LOG_TYPES:
             since = self.last_collected_timestamps.get(f"perception_point_x_ray_{log_type}") or (timezone.now() - timedelta(days=30))
-            # since = timezone.now() - timedelta(days=30)
-            to = datetime.now()
-            # to = min(since + timedelta(days=1), timezone.now())
+            to = min(since + timedelta(days=1), timezone.now())
+
+            msg = f"Parser starting from {since} to {to} for log_type {log_type}"
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
             has_more_logs = True
             next_url = None
-            total_logs = 0
             while not self.evt_stop.is_set() and has_more_logs:
 
-                if total_logs > 979: # API return pages of 20 logs. Break collect before 1000 logs.
-                    msg = f"Parser collect more than 979 logs. Stop the collect for log type {log_type}."
-                    logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-                    break
-
-                msg = f"Parser starting from {since} to {to} for log_type {log_type}"
-                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-
-                logs, has_more_logs, next_url = self.get_logs(since, to, log_type, next_url)
-
-                total_logs += len(logs)
+                logs, has_more_logs, next_url, to = self.get_logs(since, to, log_type, next_url)
 
                 self.write_to_file([self.format_log(log) for log in logs])
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
 
                 if logs:
-                    max_timestamp = max(int(log.get("timestamp") * 10000000) for log in logs)
+                    max_timestamp = max(int(log.get("timestamp_epoch") * 10000000) for log in logs)
                     last_timestamp = datetime.fromtimestamp(max_timestamp/10000000, tz=timezone.utc)
                     self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = last_timestamp + timedelta(milliseconds=1)  # Add +1 ms for inclusive timestamp
+                elif len(logs) == 0 and since < timezone.now() - timedelta(hours=24):
+                    # If no logs where retrieved during the last 24hours,
+                    # move forward 1h to prevent stagnate ad vitam eternam
+                    self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = since + timedelta(hours=1, milliseconds=1)  # Add +1 ms for inclusive timestamp
                 else:
                     self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = to + timedelta(milliseconds=1)  # Add +1 ms for inclusive timestamp
 
