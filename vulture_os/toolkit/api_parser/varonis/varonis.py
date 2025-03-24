@@ -201,14 +201,14 @@ class VaronisParser(ApiParser):
 
     def camel_to_snake(self, value):
         result = value[0].lower()
-        for i in range(len(value) - 2):
-            if value[i+1].islower() and value[i+2].isupper():
-                result += (value[i+1].lower() + "_")
+        for i in range(1, len(value) - 1):
+            if value[i].islower() and value[i+1].isupper():
+                result += (value[i].lower() + "_")
             # Case when there are at least 3 uppercases at the beginning of the value
-            elif i < len(value) - 3 and value[i+1].isupper() and value[i+2].isupper() and value[i+3].islower():
-                result += (value[i+1].lower() + "_")
+            elif i < len(value) - 3 and value[i].isupper() and value[i+1].isupper() and value[i+2].islower():
+                result += (value[i].lower() + "_")
             else:
-                result += value[i+1].lower()
+                result += value[i].lower()
         result += value[-1].lower()
         return result
 
