@@ -118,7 +118,7 @@ if __name__ == "__main__":
                     if haproxy_service.process_is_running():
                         print("Reloading Haproxy...")
                         try:
-                            haproxy_service.restart()
+                            haproxy_service.reload(hard=True)
                         except Exception as e:
                             print(f"Error while restarting haproxy: {e}")
                     for name, jail in [("mongodb", ""), ("nginx", "apache"), ("gunicorn", "apache"), ("gunicorn", "portal")]:
