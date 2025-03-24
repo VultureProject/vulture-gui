@@ -163,8 +163,11 @@ class Service:
         logger.info("Service {} restarted: {}".format(self.service_name, stdout or stderr))
         return stdout or stderr
 
-    def reload(self, *args):
-        stdout, stderr, code = self._exec_cmd('reload', *args)
+    def reload(self, hard=False, *args):
+        if hard:
+            stdout, stderr, code = self._exec_cmd('hardreload', *args)
+        else:
+            stdout, stderr, code = self._exec_cmd('reload', *args)
 
         if ("not running" in stdout) or ("not running" in stderr):
             logger.info("Cannot reload service {} cause it is not running. Starting-it...".format(self.service_name))
