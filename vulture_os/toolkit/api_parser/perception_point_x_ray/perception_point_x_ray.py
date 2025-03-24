@@ -221,14 +221,14 @@ class PerceptionPointXRayParser(ApiParser):
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
 
-                if logs:
+                if logs and has_more_logs:
                     max_timestamp = max(int(log.get("timestamp_epoch") * 10000000) for log in logs)
                     last_timestamp = datetime.fromtimestamp(max_timestamp/10000000, tz=timezone.utc)
                     self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = last_timestamp + timedelta(milliseconds=1)  # Add +1 ms for inclusive timestamp
                 elif len(logs) == 0 and since < timezone.now() - timedelta(hours=24):
                     # If no logs where retrieved during the last 24hours,
                     # move forward 1h to prevent stagnate ad vitam eternam
-                    self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = since + timedelta(hours=1, milliseconds=1)  # Add +1 ms for inclusive timestamp
+                    self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = since + timedelta(hours=1)
                 else:
                     self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = to + timedelta(milliseconds=1)  # Add +1 ms for inclusive timestamp
 
