@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [WAF_CLOUD_PROTECTOR] Catch invalid lines + fix timestamp handling
 - [SYSTEM] [PKI] Missing SAN
 - [SERVICES] Use 'onestatus' to establish if a service is running
+- [SERVICES] [FILEBEAT] Improve how service and Filebeat processes' status are shown on GUI
 
 
 ## [2.22.3] - 2025-03-21

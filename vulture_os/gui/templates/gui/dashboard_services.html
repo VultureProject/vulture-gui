@@ -82,7 +82,8 @@
               var classes = {
                 'UP': 'text-green',
                 'UNKNOWN': 'text-orange',
-                'DOWN': down_color
+                'DOWN': down_color,
+                'ERROR': 'text-red',
               }
 
               html += `<tr><td>${service.friendly_name}</td><td><i class="${classes[service.status]} fas fa-circle"></i></td></tr>`;

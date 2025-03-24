@@ -75,6 +75,43 @@ class FilebeatService(Service):
     def get_conf_path(self, frontend=None):
         return frontend.get_filebeat_filename()
 
+    def status(self, *args):
+        """
+        Give status of service, and more if needed
+        :return: "DOWN"|"UP"|"UNKNOWN"|"ERROR", message information about status
+        """
+        # Executing service service_name status as vlt-os sudo
+        infos, errors, code = self._exec_cmd('onestatus', *args)
+
+        status = "UNKNOWN"
+        if infos:  # STDOUT -> service (not) running
+            logger.debug("[{}] Status of service: {}".format(self.service_name.upper(), infos.split('\n')[0]))
+            if code == 0:
+                status = "UP"
+            else:
+                # having a code other than 0 AND stdout means at least 1 process is failing
+                status = "ERROR"
+        elif errors:  # STDERR
+            """ Something were wrong during service call"""
+            status = "ERROR"
+            # Entry missing in /usr/local/etc/sudoers.d/vulture_sudoers
+            if "sudo: no tty present and no askpass program specified" in errors:
+                infos = "User vlt-os don't have permissions to do \"service {} status\". " \
+                        "Check sudoers file.".format(self.service_name.upper())
+            elif "does not exist in /etc/rc.d or the local startup" in errors:
+                infos = "It seems that the service {} is not installed (or script not executable)".format(
+                    self.service_name)
+            else:
+                infos = "{}".format(str(errors))
+
+            logger.error("[{}] - Error getting status: '{}'".format(self.service_name.upper(), str(infos)))
+
+        else:  # If no stdout nor sterr
+            """ Service status is DOWN"""
+            status = "DOWN"
+        logger.debug("[{}] Status of service: {}".format(self.service_name.upper(), status))
+        return status, infos
+
 
 def build_conf(node_logger, frontend_id):
     """ Generate conf of filebeat inputs, based on all frontends LOG

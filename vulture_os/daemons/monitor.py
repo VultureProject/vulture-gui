@@ -156,7 +156,7 @@ def monitor():
                 if frontend.has_filebeat_conf:
                     filebeat_service = FilebeatService()
                     filebeat_process_status = filebeat_service.status(frontend.pk)
-                    partial_statuses.append({'UP': "OPEN", 'DOWN': "ERROR"}.get(filebeat_process_status[0], "STOP"))
+                    partial_statuses.append({'UP': "OPEN", 'DOWN': "STOP", 'ERROR': "ERROR"}.get(filebeat_process_status[0], "STOP"))
                 if frontend.has_haproxy_conf:
                     partial_statuses.append(haproxy_statuses.get("FRONTEND", {}).get(frontend.name, "ERROR"))
                 logger.debug(f"Statuses of frontend '{frontend.name}': {partial_statuses}")
