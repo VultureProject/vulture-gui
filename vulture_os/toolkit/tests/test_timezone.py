@@ -76,6 +76,14 @@ class TimezoneTestCase(SimpleTestCase):
         self.assertIsNotNone(timestamps)
         self.assertIsNot(len(timestamps), 0)
 
+    def test_get_timezone_transitions_never_empty(self):
+        for tz in get_transient_timezones():
+            start_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
+            end_date = datetime(2025, 1, 1, tzinfo=timezone.utc)
+            timestamps = get_timezone_transitions(tz, start_date, end_date)
+            self.assertIsNotNone(timestamps, f"{tz} is None")
+            self.assertIsNot(len(timestamps), 0, f"{tz} returns no timezone transition")
+
     def test_get_timezone_transitions_contents(self):
         tz = ZoneInfo("Europe/Paris")
         start_date = datetime(1970, 1, 1, tzinfo=timezone.utc)

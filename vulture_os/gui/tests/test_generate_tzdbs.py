@@ -34,12 +34,15 @@ class GenerateTZDBsCrontabTestCase(SimpleTestCase):
     def test_get_rsyslog_sparse_arrays_simplified_europe_paris(self):
         tz_europe_paris = ZoneInfo("Europe/Paris")
         # List of the real Europe/Paris timezone (UTC) transitions between 2024 and 2026
+        # 2024-01-01T00:00:00Z (1704067200)    ->    +01:00 (Initial value for range)
         # 2024-03-31T01:00:00Z (1711846800)    ->    +02:00
         # 2024-10-27T01:00:00Z (1729990800)    ->    +01:00
         # 2025-03-30T01:00:00Z (1743296400)    ->    +02:00
         # 2025-10-26T01:00:00Z (1761440400)    ->    +01:00
         #
         # Which give the following ranges in local timestamps
+        # from 2024-00-00T01:00:00 (1704070800)   is    +01:00
+        # from 2024-03-31T02:00:00 (1711850400)   is    IMPOSSIBLE
         # from 2024-03-31T03:00:00 (1711854000)   is    +02:00
         # from 2024-10-27T02:00:00 (1729994400)   is    OVERLAP
         # from 2024-10-27T03:00:00 (1729998000)   is    +01:00
@@ -54,6 +57,7 @@ class GenerateTZDBsCrontabTestCase(SimpleTestCase):
         self.assertSetEqual(
             utc_array,
             {
+                (1704067200, "+01:00"),
                 (1711846800, "+02:00"),
                 (1729990800, "+01:00"),
                 (1743296400, "+02:00"),
@@ -63,6 +67,8 @@ class GenerateTZDBsCrontabTestCase(SimpleTestCase):
         self.assertSetEqual(
             localized_array,
             {
+                (1704070800, "+01:00"),
+                (1711850400, "IMPOSSIBLE"),
                 (1711854000, "+02:00"),
                 (1729994400, "OVERLAP"),
                 (1729998000, "+01:00"),

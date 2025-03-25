@@ -79,6 +79,11 @@ def get_timezone_transitions(local_tz: ZoneInfo, start_date: datetime, end_date:
 
     # ...but get offsets as local timezones
     prev_offset = dt.astimezone(local_tz).utcoffset()
+    timestamps.append({
+        "utc_timestamp": dt.replace(microsecond=0),
+        "local_timestamp": dt.astimezone(local_tz).replace(microsecond=0, tzinfo=timezone.utc),
+        "offset_seconds": int(prev_offset.total_seconds()),
+    })
     dt += increment_td
 
     while dt < end_dt:
