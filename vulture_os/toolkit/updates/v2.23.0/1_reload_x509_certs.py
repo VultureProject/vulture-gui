@@ -114,22 +114,6 @@ if __name__ == "__main__":
 
                     print("writing done")
 
-                    haproxy_service = HaproxyService()
-                    if haproxy_service.process_is_running():
-                        print("Reloading Haproxy...")
-                        try:
-                            haproxy_service.reload(hard=True)
-                        except Exception as e:
-                            print(f"Error while restarting haproxy: {e}")
-                    for name, jail in [("mongodb", ""), ("nginx", "apache"), ("gunicorn", "apache"), ("gunicorn", "portal")]:
-                        print(f"Reloading {name}...")
-                        service = Service(name, jail)
-                        if service.process_is_running():
-                            try:
-                                service.restart()
-                            except Exception as e:
-                                print(f"Error while restarting {name}: {e}")
-
                     for cert in old_certs:
                         print(f"Revoking old {cert} certificate")
                         cert.revoke()
