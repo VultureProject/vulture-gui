@@ -111,7 +111,6 @@ class VaronisParser(ApiParser):
             since = timezone.now() - timedelta(hours=24)
             to = timezone.now()
             (alerts, events) = self.get_logs(since, to)
-            alerts.extend(events)
             return {
                 "status": True,
                 "data": alerts + events
@@ -207,7 +206,7 @@ class VaronisParser(ApiParser):
             if value[i].islower() and value[i+1].isupper():
                 result += (value[i].lower() + "_")
             # Case when there are at least 3 uppercases at the beginning of the value
-            elif i < len(value) - 3 and value[i].isupper() and value[i+1].isupper() and value[i+2].islower():
+            elif i < len(value) - 2 and value[i].isupper() and value[i+1].isupper() and value[i+2].islower():
                 result += (value[i].lower() + "_")
             else:
                 result += value[i].lower()
@@ -236,8 +235,8 @@ class VaronisParser(ApiParser):
                                     depth_dict[key] = {}
                             depth_dict = depth_dict[key]
                 logs.append(log)
-            except:
-                logger.warning(f"[{__parser__}]: Unable to parse {row}", extra={"frontend": str(self.frontend)})
+            except Exception as e:
+                logger.error(f"[{__parser__}]: Unable to parse {row}: {e}", extra={"frontend": str(self.frontend)})
         return logs
 
     def get_alerts(self, since, to):
@@ -358,8 +357,8 @@ class VaronisParser(ApiParser):
                 self.frontend.last_api_call = self.last_api_call + timedelta(seconds=1)
                 self.frontend.save()
                 logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
-            # Unblock when there are no alert during 1 day
-            elif to - since >= timedelta(days=1):
+            # If no logs were retrieved and the beginning of the query is before 24h ago, jump 1h forward for next query
+            elif since < timezone.now() - timedelta(hours=24):
                 self.frontend.last_api_call = since + timedelta(hours=1)
                 self.frontend.save()
                 logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
