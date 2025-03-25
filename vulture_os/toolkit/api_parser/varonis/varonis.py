@@ -114,7 +114,7 @@ class VaronisParser(ApiParser):
             alerts.extend(events)
             return {
                 "status": True,
-                "data": alerts
+                "data": alerts + events
             }
         except Exception as e:
             logger.error(f"[{__parser__}]:test: {e}", extra={"frontend": str(self.frontend)})
@@ -182,9 +182,11 @@ class VaronisParser(ApiParser):
         # Sometimes we hit this instruction with a status_code == 304 (Content Not Modified),
         # I don't have any insights or hints to understand what's happening but we should consider to retry a request whenever we received a 304 status code
         retry = 0
-        while res.status_code == 304 and not self.evt_stop.is_set() and retry < 10:
+        while res.status_code == 304 and not self.evt_stop.is_set() and retry < 5:
             res = self._execute_query("GET", f"/app/dataquery/api/search/{rows}?from=0&to=999")
-            self.evt_stop.wait(1.0)
+            sleep_for = 5 + retry*5 # Add an additional 5-second delay between tries
+            logger.info(f"[{__parser__}] Received a 304 status code, will wait {sleep_for}s before retrying...", extra={"frontend": str(self.frontend)})
+            self.evt_stop.wait(sleep_for)
             retry += 1
         if res.status_code != 200:
             logger.error(f"[{__parser__}] Error while retrieving rows from search, {res.status_code}, {res.text}", extra={"frontend": str(self.frontend)})
@@ -358,7 +360,7 @@ class VaronisParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
             # Unblock when there are no alert during 1 day
             elif to - since >= timedelta(days=1):
-                self.frontend.last_api_call = since + timedelta(days=1)
+                self.frontend.last_api_call = since + timedelta(hours=1)
                 self.frontend.save()
                 logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
         except Exception as e:
