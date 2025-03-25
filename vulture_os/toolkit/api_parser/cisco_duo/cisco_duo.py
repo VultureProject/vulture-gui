@@ -175,7 +175,7 @@ class CiscoDuoParser(ApiParser):
         for endpoint in self.ENDPOINTS:
             try:
                 # delay log gathering for two minutes as API will return empty result otherwise in that range
-                since = self.frontend.last_api_call
+                since = (self.frontend.last_api_call or timedelta(days=7))
                 to = min(timezone.now() - timedelta(minutes=2), since + timedelta(hours=24))
                 if since >= to:
                     # Ensure mintime<maxtime (for the first execution)
@@ -188,7 +188,8 @@ class CiscoDuoParser(ApiParser):
                     self.write_to_file([self.format_log(log) for log in logs['authlogs']])
                     self.update_lock()
                     if next_offset := logs.get('metadata', {}).get('next_offset'):
-                        self.frontend.last_api_call = datetime.fromtimestamp(int(next_offset[0])/1000, tz=timezone.utc) # save this in case of failure
+                        next_offset = int(next_offset[0])
+                        self.frontend.last_api_call = datetime.fromtimestamp(int(next_offset/1000)+1, tz=timezone.utc) # save this in case of failure
                         logger.info(f"[{__parser__}]:Updated last_api_call {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
             except Exception as e:
