@@ -90,36 +90,36 @@ def _generate_rsyslog_lookup_db(data):
     return database
 
 
-def generate_timezone_dbs():
+def generate_timezone_dbs(node_logger=logger):
     now = datetime.now()
     start_date = datetime(now.year - 1, 1, 1, tzinfo=timezone.utc)
     end_date = datetime(now.year +10, 1, 1, tzinfo=timezone.utc)
-    logger.info(f"[generate_timezone_dbs] Beggining generation from {start_date} to {end_date}...")
+    node_logger.info(f"[generate_timezone_dbs] Beggining generation from {start_date} to {end_date}...")
 
     for tz in get_transient_timezones():
         timezone_name = str(tz)
-        logger.info(f"[generate_timezone_dbs] (Re)generating lookup databases for timezone '{timezone_name}'...")
+        node_logger.info(f"[generate_timezone_dbs] (Re)generating lookup databases for timezone '{timezone_name}'...")
         utc_array, localized_array = _get_rsyslog_sparse_arrays(tz, start_date, end_date)
         filename_local = f"{timezone_name.lower().replace('/', '_')}_local.lookup"
         data_local = _generate_rsyslog_lookup_db(localized_array)
         try:
-            write_conf(logger, [
+            write_conf(node_logger, [
                 f"{TZFILES_FOLDER}{filename_local}",
                 json.dumps(data_local),
                 "vlt-os:wheel", "640",
                 ])
         except (VultureSystemConfigError, ServiceExit) as e:
-            logger.warning(f"[generate_timezone_dbs] Could not write the updated '{filename_local}' file: {e}")
+            node_logger.warning(f"[generate_timezone_dbs] Could not write the updated '{filename_local}' file: {e}")
 
         filename_utc = f"{timezone_name.lower().replace('/', '_')}_utc.lookup"
         data_utc = _generate_rsyslog_lookup_db(utc_array)
         try:
-            write_conf(logger, [
+            write_conf(node_logger, [
                 f"{TZFILES_FOLDER}{filename_utc}",
                 json.dumps(data_utc),
                 "vlt-os:wheel", "640",
                 ])
         except (VultureSystemConfigError, ServiceExit) as e:
-            logger.warning(f"[generate_timezone_dbs] Could not write the updated '{filename_utc}' file: {e}")
+            node_logger.warning(f"[generate_timezone_dbs] Could not write the updated '{filename_utc}' file: {e}")
 
-    logger.info("[generate_timezone_dbs] Generations complete.")
+    node_logger.info("[generate_timezone_dbs] Generations complete.")

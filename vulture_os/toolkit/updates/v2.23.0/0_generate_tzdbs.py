@@ -46,8 +46,8 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            print("Generating Rsyslog timezone DBs...")
-            generate_timezone_dbs()
+            print("Triggering generation of Rsyslog timezone DBs...")
+            node.api_request("gui.crontab.generate_tzdbs.generate_timezone_dbs")
 
         except Exception as e:
             print("Failed to generate DBs: {}".format(e))
