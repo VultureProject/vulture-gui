@@ -56,32 +56,6 @@ def get_offset_string(offset_seconds: int | timedelta) -> str:
     return tz_string
 
 
-def _find_utc_transitions(timezone_name: str, start_date: datetime, end_date: datetime):
-    tz = ZoneInfo(timezone_name)
-    transitions = []
-
-    # Start at the beginning of the given year range
-    dt = start_date.replace(tzinfo=timezone.utc)
-    end_dt = end_date.replace(tzinfo=timezone.utc)
-
-    prev_offset = dt.astimezone(tz).utcoffset()
-
-    while dt < end_dt:
-        new_offset = dt.astimezone(tz).utcoffset()
-        if new_offset != prev_offset:
-            low, high = dt - timedelta(days=1), dt
-            while (high - low).total_seconds() > 1:
-                mid = low + (high - low) / 2
-                if mid.astimezone(tz).utcoffset() == prev_offset:
-                    low = mid
-                else:
-                    high = mid
-            transitions.append((high.replace(microsecond=0), new_offset))
-            prev_offset = new_offset
-        dt += timedelta(days=1)
-    return transitions
-
-
 def get_timezone_transitions(local_tz: ZoneInfo, start_date: datetime, end_date: datetime) -> list[dict] | None:
     """Returns the utc, local and corresponding offsets of known timezone transitions for a specific timezone name
 
