@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PKI] Generate a random serial for each new certificate
 - [API_PARSER] [VARONIS] Change the format of logs to avoid empty fields and to make the parsing easier
 - [API_PARSER] [VARONIS] DElay next request when receiving 304 errors
+- [COMMANDS] Ensure logs are written on stdout as well as in corresponding logging files
 ### Fixed
 - [SERVICES] [FRONTEND] Only show node field for specific modes
 - [SYSTEM] [MONGODB] Always refer to settings to connect to mongodb

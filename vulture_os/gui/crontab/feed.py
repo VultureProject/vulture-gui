@@ -128,7 +128,7 @@ def security_update(node_logger=None):
     return True
 
 
-def update_reputation_ctx_now(node_logger=None):
+def update_reputation_ctx_now(node_logger=logger):
     """
     Update the Reputation Context databases on the machine
     :return: True if the operation executed correctly, False otherwise
@@ -138,20 +138,20 @@ def update_reputation_ctx_now(node_logger=None):
     # We can now download and write all reputation contexts
     reputation_ctxs = ReputationContext.objects.filter(enable_hour_download=True)
     for reputation_ctx in reputation_ctxs:
-        logger.info(f"Crontab::update_reputation_ctx: Updating '{reputation_ctx.name}' DB")
+        node_logger.info(f"Crontab::update_reputation_ctx: Updating '{reputation_ctx.name}' DB")
         try:
             content = reputation_ctx.download()
         except VultureSystemError as e:
             if "404" in str(e) or "403" in str(e) and reputation_ctx.internal:
-                logger.info("Crontab::update_reputation_ctx: Reputation context '{}' is now unavailable ({}). "
+                node_logger.info("Crontab::update_reputation_ctx: Reputation context '{}' is now unavailable ({}). "
                             "Deleting it.".format(reputation_ctx, str(e)))
                 reputation_ctx.delete()
             else:
-                logger.error("Crontab::update_reputation_ctx::error: Failed to download reputation database '{}' : {}"
+                node_logger.error("Crontab::update_reputation_ctx::error: Failed to download reputation database '{}' : {}"
                              .format(reputation_ctx.name, e))
             continue
         except Exception as e:
-            logger.error("Crontab::update_reputation_ctx::error: Failed to download reputation database '{}' : {}"
+            node_logger.error("Crontab::update_reputation_ctx::error: Failed to download reputation database '{}' : {}"
                          .format(reputation_ctx.name, e))
             continue
         try:
@@ -167,30 +167,30 @@ def update_reputation_ctx_now(node_logger=None):
                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             if reload_rsyslog.returncode == 1:
                 if "rsyslogd not running" in reload_rsyslog.stderr.decode('utf8'):
-                    logger.info("Crontab::update_reputation_ctx: Database written and rsyslogd not runing.")
+                    node_logger.info("Crontab::update_reputation_ctx: Database written and rsyslogd not runing.")
                 else:
-                    logger.error("Crontab::update_reputation_ctx: It seems that the database cannot be written : {}".format(e))
+                    node_logger.error("Crontab::update_reputation_ctx: It seems that the database cannot be written : {}".format(e))
             elif reload_rsyslog.returncode == 0:
-                logger.info("Crontab::update_reputation_ctx: Database written and rsyslogd reloaded.")
+                node_logger.info("Crontab::update_reputation_ctx: Database written and rsyslogd reloaded.")
             else:
-                logger.error("Crontab::update_reputation_ctx: Database write failure : "
+                node_logger.error("Crontab::update_reputation_ctx: Database write failure : "
                              "stdout={}, stderr={}".format(reload_rsyslog.stdout.decode('utf8'),
                                                            reload_rsyslog.stderr.decode('utf8')))
-            logger.info("Crontab::update_reputation_ctx: Reputation database named '{}' (file '{}') successfully written."
+            node_logger.info("Crontab::update_reputation_ctx: Reputation database named '{}' (file '{}') successfully written."
                         .format(reputation_ctx.name, reputation_ctx.absolute_filename))
         except Exception as e:
-            logger.error("Crontab::update_reputation_ctx::error: Failed to write reputation database '{}' : {}"
+            node_logger.error("Crontab::update_reputation_ctx::error: Failed to write reputation database '{}' : {}"
                          .format(reputation_ctx.name, e))
 
-    restart_rsyslog_service(logger)
-    logger.info("Crontab::update_reputation_ctx: Task ended.")
+    restart_rsyslog_service(node_logger)
+    node_logger.info("Crontab::update_reputation_ctx: Task ended.")
     return True
 
 
-def update_reputation_ctx(node_logger=None):
-    logger.info("Crontab::update_reputation_ctx: Starting task")
+def update_reputation_ctx(node_logger=logger):
+    node_logger.info("Crontab::update_reputation_ctx: Starting task")
     delay = randint(1, 1800)
-    logger.info(f"Crontab::update_reputation_ctx: Waiting for {delay}s before downloading DBs")
+    node_logger.info(f"Crontab::update_reputation_ctx: Waiting for {delay}s before downloading DBs")
     sleep(delay)
 
     return update_reputation_ctx_now(node_logger)
