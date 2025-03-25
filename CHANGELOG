@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [PKI] Missing SAN
 - [SERVICES] Use 'onestatus' to establish if a service is running
 - [SERVICES] [FILEBEAT] Improve how service and Filebeat processes' status are shown on GUI
+- [BOOTSTRAP] Ensure GeoLite and timezone DBs are fetched/generated when bootstrapping a node
 
 
 ## [2.22.3] - 2025-03-21

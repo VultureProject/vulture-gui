@@ -196,6 +196,8 @@ def cluster_add(request):
         """ The method configure restart rsyslog if needed """
         logger.debug("API calls to configure rsyslog")
         new_node.api_request("services.rsyslogd.rsyslog.build_conf")
+        new_node.api_request("gui.crontab.generate_tzdbs.generate_timezone_dbs")
+        new_node.api_request("gui.crontab.feed.update_reputation_ctx_now")
         # API call to whole Cluster - to refresh mongodb uri in pf logs
         Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
 

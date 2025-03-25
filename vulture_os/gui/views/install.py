@@ -203,6 +203,8 @@ def cluster_create(admin_user=None, admin_password=None):
     logger.debug("API call to configure rsyslog")
     node.api_request("services.rsyslogd.rsyslog.build_conf")
     node.api_request("services.rsyslogd.rsyslog.configure_node")
+    node.api_request("gui.crontab.generate_tzdbs.generate_timezone_dbs")
+    node.api_request("gui.crontab.feed.update_reputation_ctx_now")
 
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")
