@@ -2289,14 +2289,14 @@ class Frontend(models.Model):
         return self.mode in ("log", "filebeat") or self.enable_logging
 
     @property
+    def has_filebeat_conf(self):
+        return self.mode == "filebeat"
+
+    @property
     def has_haproxy_conf(self):
         return self.mode in ("tcp", "http") or \
             self.mode == "log" and self.listening_mode in ("tcp", "tcp,udp", "relp") or \
             self.mode == "filebeat" and self.filebeat_listening_mode == "tcp"
-
-    @property
-    def has_filebeat_conf(self):
-        return self.mode == "filebeat"
 
     def has_tls(self):
         # Test self.pk to prevent M2M errors when object isn't saved in DB

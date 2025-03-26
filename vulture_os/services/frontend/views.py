@@ -126,19 +126,19 @@ def frontend_delete(request, object_id, api=False):
         # Save frontend nodes before delete-it
         nodes = frontend.get_nodes()
 
-        # Save frontend filename before delete-it
-        frontend_filename = frontend.get_base_filename()
-
         # Save Frontend id before deleting it
         frontend_id = frontend.pk
 
+        # Save frontend filename before delete-it
+        haproxy_filename = frontend.get_base_filename() if frontend.has_haproxy_conf else ""
+
         # Save rsyslog frontend conf filename
         # Whatever the type, delete the file because its name is its id
-        rsyslog_filename = frontend.get_rsyslog_base_filename()  # if frontend.mode != "tcp" else ""
+        rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend.has_rsyslog_conf else ""
 
         # Save filebeat conf filename
         # Whatever the type, delete the file because its name is its id
-        filebeat_filename = frontend.get_filebeat_base_filename()  if frontend.mode == "filebeat" else ""
+        filebeat_filename = frontend.get_filebeat_base_filename() if frontend.has_filebeat_conf else ""
 
         # Check if darwin buffering should be reloaded
         # that is, if the frontend is associated with a policy with at least one filter with buffering configured
@@ -152,12 +152,13 @@ def frontend_delete(request, object_id, api=False):
 
             # API request deletion of frontend filename
             for node in nodes:
-                node.api_request('services.haproxy.haproxy.delete_conf', frontend_filename)
+                # Delete frontend confs
+                if haproxy_filename:
+                    node.api_request('services.haproxy.haproxy.delete_conf', haproxy_filename)
 
-                # And reload HAProxy services
-                node.api_request('services.haproxy.haproxy.reload_service')
+                    # And reload HAProxy services
+                    node.api_request('services.haproxy.haproxy.reload_service')
 
-                # Delete frontend conf
                 if rsyslog_filename:
                     node.api_request('services.rsyslogd.rsyslog.delete_conf', rsyslog_filename)
 
@@ -397,23 +398,10 @@ def frontend_edit(request, object_id=None, api=False):
                             node_listeners[nic.node] = list()
                         node_listeners[nic.node].append(listener_obj)
 
-        old_nodes = None
-        old_rsyslog_filename = ""
-        old_haproxy_filename = ""
-        old_filebeat_filename = ""
-        if frontend:
-            old_nodes = frontend.get_nodes()
-
-            # Get current Rsyslog configuration filename
-            if frontend.enable_logging:
-                old_rsyslog_filename = frontend.get_rsyslog_base_filename()
-                # Get current Filebeat configuration filename
-                if frontend.mode == "filebeat":
-                    old_filebeat_filename = frontend.get_filebeat_base_filename()
-
-            # Get current Haproxy configuration filename
-            if not frontend.rsyslog_only_conf and not frontend.filebeat_only_conf:
-                old_haproxy_filename = frontend.get_base_filename()
+        old_nodes = frontend.get_nodes() if frontend else None
+        old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.has_rsyslog_conf else ""
+        old_filebeat_filename = frontend.get_filebeat_base_filename() if frontend and frontend.has_filebeat_conf else ""
+        old_haproxy_filename = frontend.get_base_filename() if frontend and frontend.has_haproxy_conf else ""
 
         # Frontend used by workflow type change check
         if object_id and "mode" in form.changed_data:
@@ -592,7 +580,7 @@ def frontend_edit(request, object_id=None, api=False):
                 if frontend.expected_timezone is not None or "expected_timezone" in form.changed_data:
                     node.api_request('services.rsyslogd.rsyslog.configure_timezones')
 
-                if frontend.enable_logging:
+                if frontend.has_rsyslog_conf:
                     """ We need to configure Rsyslog, it will check if conf has changed & restart service if needed """
                     api_res = node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                     if not api_res.get('status'):
@@ -601,13 +589,13 @@ def frontend_edit(request, object_id=None, api=False):
                     api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
 
                 """ We need to configure Filebeat, it will check if conf has changed """
-                if frontend.mode == "filebeat":
+                if frontend.has_filebeat_conf:
                     api_res = node.api_request("services.filebeat.filebeat.build_conf", frontend.id)
                     if not api_res.get('status'):
                         raise ServiceConfigError("on node {}: API request error.".format(node.name), "filebeat",
                                                  traceback=api_res.get('message'))
 
-                if not frontend.rsyslog_only_conf and not frontend.filebeat_only_conf:
+                if frontend.has_haproxy_conf:
                     """ Reload HAProxy service - After rsyslog / filebeat to prevent logging crash """
                     api_res = node.api_request("services.haproxy.haproxy.build_conf", frontend.id)
                     if not api_res.get('status'):
