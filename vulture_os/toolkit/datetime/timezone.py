@@ -30,7 +30,17 @@ def get_transient_timezones():
     result = set()
     for tz_name in available_timezones():
         try:
-            result.add(ZoneInfo(tz_name))
+            # Handle legacy GMT timezones specifically,
+            # as the offset in the name represents an OPPOSITE (and constant) offset from UTC now!
+            if "GMT" in tz_name:
+                if "+" in tz_name:
+                    offset = int(tz_name.split("+")[-1])
+                    result.add(timezone(timedelta(seconds=-offset*3600), name=f"UTC-{offset}"))
+                if "-" in tz_name:
+                    offset = int(tz_name.split("-")[-1])
+                    result.add(timezone(timedelta(seconds=offset*3600), name=f"UTC+{offset}"))
+            else:
+                result.add(ZoneInfo(tz_name))
         except ValueError:
             continue
     return result

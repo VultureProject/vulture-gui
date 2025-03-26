@@ -23,7 +23,7 @@ __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Tests for datetime/timezone.py'
 
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, tzinfo, timezone as dt_timezone
 from django.test import SimpleTestCase
 from django.utils import timezone
 from toolkit.datetime.timezone import (
@@ -45,7 +45,19 @@ class TimezoneTestCase(SimpleTestCase):
         self.assertIsInstance(result, set)
         self.assertNotEqual(len(result), 0)
         for tz in result:
-            self.assertIsInstance(tz, ZoneInfo)
+            self.assertIsInstance(tz, tzinfo)
+
+    def test_get_transient_timezones_no_gmt(self):
+        #Deprecated/misleading timezones
+        result = get_transient_timezones()
+        for tz in result:
+            self.assertFalse("GMT" in str(tz))
+
+    def test_get_transient_timezones_utcs(self):
+        #Deprecated/misleading timezones
+        result = get_transient_timezones()
+        for offset in range(-12,15):
+            self.assertIn(dt_timezone(timedelta(seconds=offset*3600), f"UTC{offset}"), result)
 
 #####################
 # get_offset_string #
