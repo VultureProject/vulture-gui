@@ -29,6 +29,7 @@ from datetime import timedelta, datetime
 from requests import exceptions, session
 from urllib.parse import quote
 from json import dumps, JSONDecodeError
+from copy import deepcopy
 
 from django.conf import settings
 from django.utils import timezone
@@ -139,7 +140,11 @@ class ArmisCentrixParser(ApiParser):
         while(retry > 0 and not self.evt_stop.is_set()):
             retry -= 1
             try:
-                logger.info(f"[{__parser__}][get_logs] :: Querying ({method}) {url} with query {query} (retries: {retry})", extra={'frontend': str(self.frontend)})
+                query_tolog = deepcopy(query)
+                if query_tolog.get("secret_key"):
+                    query_tolog["secret_key"] = "REDACTED"
+
+                logger.info(f"[{__parser__}][execute_query] :: Querying ({method}) {url} with query {query_tolog} (retries: {retry})", extra={'frontend': str(self.frontend)})
                 if method == "GET":
                     response = self.session.get(
                         url,
