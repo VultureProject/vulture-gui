@@ -46,6 +46,16 @@ def get_transient_timezones():
     return result
 
 
+def get_safe_tz_name(tz) -> str:
+    return str(tz).replace(
+        '/', '_'
+        ).replace(
+            '+', '_plus_'
+        ).replace(
+            '-', '_minus_'
+        ).lower()
+
+
 def get_offset_string(offset_seconds: int | timedelta) -> str:
     """Returns a string representation of the offset in seconds, in the form '[+-]XX:YY'
 

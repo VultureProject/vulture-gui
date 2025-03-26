@@ -31,15 +31,16 @@ from toolkit.datetime.timezone import (
     get_timezone_transitions,
     get_local_boundaries,
     get_transient_timezones,
+    get_safe_tz_name,
 )
 from zoneinfo import ZoneInfo
 
 class TimezoneTestCase(SimpleTestCase):
     TEST_CASE_NAME=f"{__name__}"
 
-####################
+###########################
 # get_transient_timezones #
-####################
+###########################
     def test_get_transient_timezones(self):
         result = get_transient_timezones()
         self.assertIsInstance(result, set)
@@ -58,6 +59,14 @@ class TimezoneTestCase(SimpleTestCase):
         result = get_transient_timezones()
         for offset in range(-12,15):
             self.assertIn(dt_timezone(timedelta(seconds=offset*3600), f"UTC{offset}"), result)
+
+####################
+# get_safe_tz_name #
+####################
+    def test_get_safe_tz_name(self):
+        result = get_transient_timezones()
+        for tz in result:
+            self.assertRegex(get_safe_tz_name(tz), r"^[a-z0-9_]+$")
 
 #####################
 # get_offset_string #

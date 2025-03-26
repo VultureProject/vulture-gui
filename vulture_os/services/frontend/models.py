@@ -42,7 +42,7 @@ from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, Node
 from applications.backend.models import Backend
 from system.pki.models import TLSProfile, X509Certificate
-from toolkit.datetime.timezone import get_transient_timezones
+from toolkit.datetime.timezone import get_transient_timezones, get_safe_tz_name
 from toolkit.network.network import JAIL_ADDRESSES
 from toolkit.http.headers import Header
 from system.tenants.models import Tenants
@@ -1967,7 +1967,7 @@ class Frontend(models.Model):
         log_oms = {}
         result = ""
         if self.expected_timezone is not None:
-            safe_timezone_name = self.expected_timezone.replace('/', '_').lower()
+            safe_timezone_name = get_safe_tz_name(self.expected_timezone)
             result += f"\ncall {safe_timezone_name}_get_offset\n"
         clean_log_condition = self.log_condition
         for line in self.log_condition.split('\n'):

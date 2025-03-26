@@ -31,6 +31,7 @@ from services.frontend.models import Frontend
 from services.rsyslogd.models import RsyslogSettings
 from system.cluster.models import Cluster
 from system.config.models import write_conf
+from toolkit.datetime.timezone import get_safe_tz_name
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -142,7 +143,7 @@ def configure_timezones(node_logger):
     for tz in Frontend.objects.exclude(expected_timezone=None).values_list("expected_timezone", flat=True).distinct():
         timezones.append({
             "name": tz,
-            "name_safe": tz.replace('/', '_').lower(),
+            "name_safe": get_safe_tz_name(tz),
         })
 
     jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH), autoescape=True)

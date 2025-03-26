@@ -31,6 +31,7 @@ from toolkit.datetime.timezone import (
     get_offset_string,
     get_timezone_transitions,
     get_transient_timezones,
+    get_safe_tz_name,
 )
 from zoneinfo import ZoneInfo
 from system.config.models import write_conf
@@ -98,9 +99,10 @@ def generate_timezone_dbs(node_logger=logger):
 
     for tz in get_transient_timezones():
         timezone_name = str(tz)
+        timezone_name_safe = get_safe_tz_name(timezone_name)
         node_logger.info(f"[generate_timezone_dbs] (Re)generating lookup databases for timezone '{timezone_name}'...")
         utc_array, localized_array = _get_rsyslog_sparse_arrays(tz, start_date, end_date)
-        filename_local = f"{timezone_name.lower().replace('/', '_')}_local.lookup"
+        filename_local = f"{timezone_name_safe}_local.lookup"
         data_local = _generate_rsyslog_lookup_db(localized_array)
         try:
             write_conf(node_logger, [
@@ -111,7 +113,7 @@ def generate_timezone_dbs(node_logger=logger):
         except (VultureSystemConfigError, ServiceExit) as e:
             node_logger.warning(f"[generate_timezone_dbs] Could not write the updated '{filename_local}' file: {e}")
 
-        filename_utc = f"{timezone_name.lower().replace('/', '_')}_utc.lookup"
+        filename_utc = f"{timezone_name_safe}_utc.lookup"
         data_utc = _generate_rsyslog_lookup_db(utc_array)
         try:
             write_conf(node_logger, [
