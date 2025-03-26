@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [WAF_CLOUD_PROTECTOR] Catch invalid lines + fix timestamp handling
 - [SYSTEM] [PKI] Missing SAN
 - [SERVICES] Use 'onestatus' to establish if a service is running
+- [SERVICES] [FRONTEND] Weird bug in djongo
 
 
 ## [2.22.3] - 2025-03-21
