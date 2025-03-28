@@ -95,8 +95,6 @@ class WAFCloudflareParser(ApiParser):
 
         query['fields'] = ",".join(self._get_allowed_fields())
 
-        logger.debug(f"[{__parser__}]:get_logs: params for request are {query}", extra={'frontend': str(self.frontend)})
-
         cpt = 0
         bulk = []
         logger.info(f"[{__parser__}]:get_logs: URL: {url} , params: {query}", extra={'frontend': str(self.frontend)})
@@ -116,9 +114,7 @@ class WAFCloudflareParser(ApiParser):
                 try:
                     bulk.append(line.decode('utf8'))
                 except UnicodeDecodeError:
-                    logger.warning(f"[{__parser__}]:get_logs: Error while trying to decode a log line",
-                            extra={'frontend': str(self.frontend)})
-                    logger.debug(f"[{__parser__}]:get_logs: {line}",
+                    logger.warning(f"[{__parser__}]:get_logs: Error while trying to decode a log line {line}",
                             extra={'frontend': str(self.frontend)})
                     pass
                 cpt += 1
@@ -133,14 +129,15 @@ class WAFCloudflareParser(ApiParser):
         # Aware UTC datetime
         current_time = timezone.now()
         since = self.frontend.last_api_call or (timezone.now() - timedelta(hours=24))
-
         # Start cannot exceed a time in the past greater than seven days.
         if since < (current_time - timedelta(hours=168)):
-            logger.info(f"[{__parser__}]:execute: Since is older than 168h, resetting-it",
+            logger.info(f"[{__parser__}]:execute: Since is older than 168h, resetting-it to 167h in the past",
                         extra={'frontend': str(self.frontend)})
-            since = current_time - timedelta(hours=168)
-        # Difference between start and end must be not greater than one hour.
+            since = current_time - timedelta(hours=167)
+
+        # Difference between start and end must not be greater than one hour.
         to = since + timedelta(hours=1)
+
         # end must be at least five (ONE (doc is invalid) minutes earlier than now
         if to > (current_time - timedelta(minutes=1)):
             to = current_time - timedelta(minutes=1)
@@ -160,7 +157,7 @@ class WAFCloudflareParser(ApiParser):
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
-        # Query one second of logs, starting from 24 hours ago
+        # Query 30 seconds of logs, starting from 24 hours ago
         # To prevent, for instance, UTC-10 missing logs
         current_time = timezone.now()
         try:
