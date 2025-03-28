@@ -161,11 +161,30 @@
     } // fnCreatedRow: function
   }); // var openid_table = $("#openid_list").dataTable
 
+  /* Filter datatable only 1s after end of user input */
+  $(".dataTables_filter input")
+  .off("keyup.DT input.DT")
+  .bind("input", (delay(function (e) {
+    openid_table.fnFilter($(".dataTables_filter input").val());
+  }, 1000)));
 
-  /* Reload table data every 5 seconds
-  setInterval( function() {
-    openid_table.fnDraw();
-  }, 5000);
-  */
+  function delay(callback, ms) {
+    var timer = 0;
+    return function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        callback.apply(this, arguments);
+      }, ms || 0);
+    };
+  }
+
+  /* Reload table data every 5 seconds if previous one answered */
+  let apiResponse = true;
+  setInterval(function(){
+    if(apiResponse == true) {
+      apiResponse = false;
+      openid_table.fnDraw(false);
+    }
+  }, 5000)
 
 {% endblock %}
