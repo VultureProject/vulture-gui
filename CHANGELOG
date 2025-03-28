@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.23.0] - 2025-03-28
 ### Added
 - [SYSTEM] [PATHS] Variabilize all system paths and allow to configure them from settings
 - [SYSTEM] [SETTINGS] Allow to configure project with django-environ
