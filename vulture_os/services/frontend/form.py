@@ -23,7 +23,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Frontends & Listeners dedicated form classes'
 
 # Django system imports
-import ast
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (BooleanField, CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
@@ -44,12 +43,11 @@ from services.frontend.models import (Frontend, FrontendReputationContext, Liste
 
 from services.rsyslogd.form import RsyslogQueueForm
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
-from system.cluster.models import NetworkAddress
+from system.cluster.models import Node, NetworkAddress
 from system.error_templates.models import ErrorTemplate
-from toolkit.network.network import parse_proxy_url
 from system.pki.models import TLSProfile, X509Certificate
-from system.cluster.models import Node
 from system.tenants.models import Tenants
+from toolkit.network.network import parse_proxy_url
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -77,10 +75,10 @@ class FrontendReputationContextForm(ModelForm):
         fields = ("enabled", "reputation_ctx", "arg_field", "dst_field")
 
         widgets = {
-            'enabled': CheckboxInput(attrs={'class': "form-control js-switch"}),
-            'reputation_ctx': Select(attrs={'class': "form-control select2"}),
-            'arg_field': TextInput(attrs={'class': "form-control", 'placeholder': "src_ip"}),
-            'dst_field': TextInput(attrs={'class': "form-control", 'placeholder': "src_reputation"})
+            'enabled': CheckboxInput(attrs={'class': 'form-control js-switch'}),
+            'reputation_ctx': Select(attrs={'class': 'form-control select2'}),
+            'arg_field': TextInput(attrs={'class': 'form-control', 'placeholder': 'src_ip'}),
+            'dst_field': TextInput(attrs={'class': 'form-control', 'placeholder': 'src_reputation'})
         }
 
     def __init__(self, *args, **kwargs):
@@ -223,43 +221,43 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'tls_profile', 'redis_key', 'redis_password',
                            'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
                            'api_parser_verify_ssl', 'api_parser_custom_certificate',
-                           'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
-                           "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name", "akamai_host",
-                           "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
+                           'forcepoint_host', 'forcepoint_username', 'forcepoint_password', 'symantec_username', 'symantec_password',
+                           'aws_access_key_id', 'aws_secret_access_key', 'aws_bucket_name', 'akamai_host',
+                           'akamai_client_secret', 'akamai_access_token', 'akamai_client_token', 'akamai_config_id',
                            'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
                            'imperva_base_url', 'imperva_api_key', 'imperva_api_id',
                            'imperva_private_key', 'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
                            'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
-                           "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
-                           "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey", "cortex_xdr_advanced_token",
-                           "cybereason_host", "cybereason_username", "cybereason_password",
-                           "cisco_meraki_apikey", "cisco_meraki_get_security_logs", "cisco_meraki_get_configuration_changes_logs",
+                           'mdatp_api_tenant', 'mdatp_api_appid', 'mdatp_api_secret',
+                           'cortex_xdr_host', 'cortex_xdr_apikey_id', 'cortex_xdr_apikey', 'cortex_xdr_advanced_token',
+                           'cybereason_host', 'cybereason_username', 'cybereason_password',
+                           'cisco_meraki_apikey', 'cisco_meraki_get_security_logs', 'cisco_meraki_get_configuration_changes_logs',
                            'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
-                           "carbon_black_host", 'carbon_black_orgkey', 'carbon_black_apikey',
-                           "netskope_host", 'netskope_apikey', 'netskope_get_page_logs', 'netskope_get_network_logs', 'netskope_get_application_logs',
+                           'carbon_black_host', 'carbon_black_orgkey', 'carbon_black_apikey',
+                           'netskope_host', 'netskope_apikey', 'netskope_get_page_logs', 'netskope_get_network_logs', 'netskope_get_application_logs',
                            'rapid7_idr_host', 'rapid7_idr_apikey',
                            'harfanglab_host', 'harfanglab_apikey',
                            'nozomi_probe_host', 'nozomi_probe_login', 'nozomi_probe_password',
                            'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
                            'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
                            'proofpoint_tap_secret', 'sentinel_one_host', 'sentinel_one_apikey', 'sentinel_one_account_type',
-                           'crowdstrike_request_incidents','crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
-                           'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id',
+                           'crowdstrike_request_incidents', 'crowdstrike_host', 'crowdstrike_client_id', 'crowdstrike_client_secret', 'crowdstrike_client',
+                           'vadesecure_o365_host', 'vadesecure_o365_tenant', 'vadesecure_o365_client_id',
                            'vadesecure_o365_client_secret',
-                           'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id',
+                           'blackberry_cylance_host', 'blackberry_cylance_tenant', 'blackberry_cylance_app_id',
                            'blackberry_cylance_app_secret',
                            'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret',
                            'sentinel_one_singularity_mobile_host', 'sentinel_one_singularity_mobile_client_id', 'sentinel_one_singularity_mobile_client_secret',
                            'ms_sentinel_subscription_id', 'ms_sentinel_resource_group', 'ms_sentinel_workspace',
                            'proofpoint_pod_uri', 'proofpoint_pod_cluster_id', 'proofpoint_pod_token',
-                           'waf_cloudflare_apikey','waf_cloudflare_zoneid',
+                           'waf_cloudflare_apikey', 'waf_cloudflare_zoneid',
                            'gsuite_alertcenter_json_conf', 'gsuite_alertcenter_admin_mail',
                            'sophos_cloud_client_id', 'sophos_cloud_client_secret', 'sophos_cloud_tenant_id',
                            'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
                            'trendmicro_worryfree_server_port',
                            'safenet_tenant_code', 'safenet_apikey',
                            'signalsciences_ngwaf_email', 'signalsciences_ngwaf_token', 'signalsciences_ngwaf_corp_name', 'signalsciences_ngwaf_site_name',
-                           'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
+                           'proofpoint_casb_api_key', 'proofpoint_casb_client_id', 'proofpoint_casb_client_secret',
                            'proofpoint_trap_host', 'proofpoint_trap_apikey',
                            'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv',
                            'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
@@ -272,21 +270,23 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                            'gatewatcher_alerts_host', 'gatewatcher_alerts_api_key',
                            'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
                            'waf_barracuda_token',
-                           "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
-                           "lockself_x_auth_token", "lockself_x_ls_token", "lockself_host", "lockself_organization_id",
-                           "cisco_umbrella_managed_org_api_key", "cisco_umbrella_managed_org_secret_key",
-                           "cisco_umbrella_managed_org_get_dns", "cisco_umbrella_managed_org_get_proxy",
-                           "catonetworks_account_id", "catonetworks_api_key",
-                           "infoblox_threat_defense_host", "infoblox_threat_defense_token",
-                           "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host",
-                           "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs", "beyondtrust_reportings_get_vault_account_activity_logs", "beyondtrust_reportings_get_support_session_logs",
-                           "varonis_host", "varonis_api_key",
-                           "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
-                           "perception_point_x_ray_host", "perception_point_x_ray_token", "perception_point_x_ray_organization_id", "perception_point_x_ray_environment_id",
-                           "extrahop_host", "extrahop_id", "extrahop_secret",
-                           "hornetsecurity_app_id", "hornetsecurity_token",
-                           "ubika_base_refresh_token",
-                            "sentinel_one_graph_token", "sentinel_one_graph_console_url",
+                           'beyondtrust_pra_client_id', 'beyondtrust_pra_secret', 'beyondtrust_pra_host',
+                           'lockself_x_auth_token', 'lockself_x_ls_token', 'lockself_host', 'lockself_organization_id',
+                           'cisco_umbrella_managed_org_api_key', 'cisco_umbrella_managed_org_secret_key',
+                           'cisco_umbrella_managed_org_get_dns', 'cisco_umbrella_managed_org_get_proxy',
+                           'catonetworks_account_id', 'catonetworks_api_key',
+                           'infoblox_threat_defense_host', 'infoblox_threat_defense_token',
+                           'beyondtrust_reportings_client_id', 'beyondtrust_reportings_secret', 'beyondtrust_reportings_host',
+                           'beyondtrust_reportings_get_team_logs', 'beyondtrust_reportings_get_access_session_logs',
+                           'beyondtrust_reportings_get_vault_account_activity_logs', 'beyondtrust_reportings_get_support_session_logs',
+                           'varonis_host', 'varonis_api_key',
+                           'armis_centrix_host', 'armis_centrix_secretkey', 'armis_centrix_get_activity_logs',
+                           'perception_point_x_ray_host', 'perception_point_x_ray_token', 'perception_point_x_ray_organization_id',
+                           'perception_point_x_ray_environment_id',
+                           'extrahop_host', 'extrahop_id', 'extrahop_secret',
+                           'hornetsecurity_app_id', 'hornetsecurity_token',
+                           'ubika_base_refresh_token',
+                           'sentinel_one_graph_token', 'sentinel_one_graph_console_url',
                            'messagetrace_o365_tenant_id', 'messagetrace_o365_client_id', 'messagetrace_o365_client_secret',
                            'cnapp_wiz_client_id', 'cnapp_wiz_client_secret', 'cnapp_wiz_api_url',
                            ]:
@@ -347,31 +347,31 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                   'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
                   'api_parser_custom_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',
                   'forcepoint_host', 'forcepoint_username', 'forcepoint_password',
-                  "symantec_username", "symantec_password",
-                  "aws_access_key_id", "aws_secret_access_key", "aws_bucket_name",
-                  "akamai_host", "akamai_client_secret", "akamai_access_token", "akamai_client_token", 'akamai_config_id',
+                  'symantec_username', 'symantec_password',
+                  'aws_access_key_id', 'aws_secret_access_key', 'aws_bucket_name',
+                  'akamai_host', 'akamai_client_secret', 'akamai_access_token', 'akamai_client_token', 'akamai_config_id',
                   'office365_tenant_id', 'office365_client_id', 'office365_client_secret',
                   'imperva_base_url', 'imperva_api_key', 'imperva_api_id', 'imperva_private_key',
                   'reachfive_host', 'reachfive_client_id', 'reachfive_client_secret',
                   'mongodb_api_user', 'mongodb_api_password', 'mongodb_api_group_id',
-                  "mdatp_api_tenant", "mdatp_api_appid", "mdatp_api_secret",
-                  "cortex_xdr_host", "cortex_xdr_apikey_id", "cortex_xdr_apikey", "cortex_xdr_advanced_token",
-                  "cybereason_host", "cybereason_username", "cybereason_password",
-                  "cisco_meraki_apikey", "cisco_meraki_get_security_logs", "cisco_meraki_get_configuration_changes_logs",
+                  'mdatp_api_tenant', 'mdatp_api_appid', 'mdatp_api_secret',
+                  'cortex_xdr_host', 'cortex_xdr_apikey_id', 'cortex_xdr_apikey', 'cortex_xdr_advanced_token',
+                  'cybereason_host', 'cybereason_username', 'cybereason_password',
+                  'cisco_meraki_apikey', 'cisco_meraki_get_security_logs', 'cisco_meraki_get_configuration_changes_logs',
                   'proofpoint_tap_host', 'proofpoint_tap_endpoint', 'proofpoint_tap_principal',
-                  "proofpoint_tap_secret",
-                  "sentinel_one_host", "sentinel_one_apikey", "sentinel_one_account_type",
+                  'proofpoint_tap_secret',
+                  'sentinel_one_host', 'sentinel_one_apikey', 'sentinel_one_account_type',
                   'netskope_host', 'netskope_apikey', 'netskope_get_page_logs', 'netskope_get_network_logs', 'netskope_get_application_logs',
                   'rapid7_idr_host', 'rapid7_idr_apikey',
                   'harfanglab_host', 'harfanglab_apikey',
                   'nozomi_probe_host', 'nozomi_probe_login', 'nozomi_probe_password',
                   'vadesecure_host', 'vadesecure_login', 'vadesecure_password',
-                  "carbon_black_host", "carbon_black_orgkey", "carbon_black_apikey",
+                  'carbon_black_host', 'carbon_black_orgkey', 'carbon_black_apikey',
                   'defender_token_endpoint', 'defender_client_id', 'defender_client_secret',
-                  'crowdstrike_request_incidents','crowdstrike_host','crowdstrike_client_id','crowdstrike_client_secret','crowdstrike_client',
-                  'vadesecure_o365_host','vadesecure_o365_tenant','vadesecure_o365_client_id',
+                  'crowdstrike_request_incidents', 'crowdstrike_host', 'crowdstrike_client_id', 'crowdstrike_client_secret', 'crowdstrike_client',
+                  'vadesecure_o365_host', 'vadesecure_o365_tenant', 'vadesecure_o365_client_id',
                   'vadesecure_o365_client_secret',
-                  'blackberry_cylance_host','blackberry_cylance_tenant','blackberry_cylance_app_id',
+                  'blackberry_cylance_host', 'blackberry_cylance_tenant', 'blackberry_cylance_app_id',
                   'blackberry_cylance_app_secret',
                   'ms_sentinel_tenant_id', 'ms_sentinel_appid', 'ms_sentinel_appsecret', 'ms_sentinel_subscription_id',
                   'ms_sentinel_resource_group', 'ms_sentinel_workspace',
@@ -384,7 +384,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                   'trendmicro_worryfree_access_token', 'trendmicro_worryfree_secret_key', 'trendmicro_worryfree_server_name',
                   'trendmicro_worryfree_server_port', 'safenet_tenant_code', 'safenet_apikey',
                   'signalsciences_ngwaf_email', 'signalsciences_ngwaf_token', 'signalsciences_ngwaf_corp_name', 'signalsciences_ngwaf_site_name',
-                  'proofpoint_casb_api_key','proofpoint_casb_client_id','proofpoint_casb_client_secret',
+                  'proofpoint_casb_api_key', 'proofpoint_casb_client_id', 'proofpoint_casb_client_secret',
                   'proofpoint_trap_host', 'proofpoint_trap_apikey',
                   'waf_cloud_protector_host', 'waf_cloud_protector_api_key_pub', 'waf_cloud_protector_api_key_priv',
                   'waf_cloud_protector_provider', 'waf_cloud_protector_tenant', 'waf_cloud_protector_servers',
@@ -397,35 +397,35 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                   'gatewatcher_alerts_host', 'gatewatcher_alerts_api_key',
                   'cisco_umbrella_client_id', 'cisco_umbrella_secret_key',
                   'waf_barracuda_token',
-                  "beyondtrust_pra_client_id", "beyondtrust_pra_secret", "beyondtrust_pra_host",
+                  'beyondtrust_pra_client_id', 'beyondtrust_pra_secret', 'beyondtrust_pra_host',
                   'lockself_x_auth_token', 'lockself_x_ls_token', 'lockself_host', 'lockself_organization_id',
                   'cisco_umbrella_managed_org_api_key', 'cisco_umbrella_managed_org_secret_key',
                   'cisco_umbrella_managed_org_get_dns', 'cisco_umbrella_managed_org_get_proxy',
                   'catonetworks_api_key', 'catonetworks_account_id',
-                  "infoblox_threat_defense_host", "infoblox_threat_defense_token",
-                  "beyondtrust_reportings_client_id", "beyondtrust_reportings_secret", "beyondtrust_reportings_host",
-                  "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs",
-                  "beyondtrust_reportings_get_vault_account_activity_logs",
-                  "beyondtrust_reportings_get_support_session_logs",
-                  "varonis_host", "varonis_api_key",
-                  "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
-                  "perception_point_x_ray_host", "perception_point_x_ray_token", "perception_point_x_ray_organization_id", "perception_point_x_ray_environment_id",
-                  "extrahop_host", "extrahop_id", "extrahop_secret",
-                  "hornetsecurity_app_id", "hornetsecurity_token",
-                  "ubika_base_refresh_token",
-                  "sentinel_one_graph_token", "sentinel_one_graph_console_url",
+                  'infoblox_threat_defense_host', 'infoblox_threat_defense_token',
+                  'beyondtrust_reportings_client_id', 'beyondtrust_reportings_secret', 'beyondtrust_reportings_host',
+                  'beyondtrust_reportings_get_team_logs', 'beyondtrust_reportings_get_access_session_logs',
+                  'beyondtrust_reportings_get_vault_account_activity_logs', 'beyondtrust_reportings_get_support_session_logs',
+                  'varonis_host', 'varonis_api_key',
+                  'armis_centrix_host', 'armis_centrix_secretkey', 'armis_centrix_get_activity_logs',
+                  'perception_point_x_ray_host', 'perception_point_x_ray_token', 'perception_point_x_ray_organization_id',
+                  'perception_point_x_ray_environment_id',
+                  'extrahop_host', 'extrahop_id', 'extrahop_secret',
+                  'hornetsecurity_app_id', 'hornetsecurity_token',
+                  'ubika_base_refresh_token',
+                  'sentinel_one_graph_token', 'sentinel_one_graph_console_url',
                   'messagetrace_o365_tenant_id', 'messagetrace_o365_client_id', 'messagetrace_o365_client_secret',
                   'cnapp_wiz_client_id', 'cnapp_wiz_client_secret', 'cnapp_wiz_api_url',
         ] + RsyslogQueueForm.Meta.fields
 
         widgets = {
-            'enabled': CheckboxInput(attrs={'class': "js-switch"}),
+            'enabled': CheckboxInput(attrs={'class': 'js-switch'}),
             'name': TextInput(attrs={'class': 'form-control'}),
-            'tags': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+            'tags': TextInput(attrs={'class': 'form-control', 'data-role': 'tagsinput'}),
             'mode': Select(choices=MODE_CHOICES, attrs={'class': 'form-control select2'}),
             'enable_logging': CheckboxInput({'class': 'js-switch'}),  # do not set js-switch
-            'tenants_config': Select(choices=Tenants.objects.all(), attrs={'class': "form-control select2"}),
-            'enable_logging_reputation': CheckboxInput(attrs={'class': "js-switch"}),
+            'tenants_config': Select(choices=Tenants.objects.all(), attrs={'class': 'form-control select2'}),
+            'enable_logging_reputation': CheckboxInput(attrs={'class': 'js-switch'}),
             'log_level': Select(choices=LOG_LEVEL_CHOICES, attrs={'class': 'form-control select2'}),
             'darwin_mode': Select(choices=DARWIN_MODE_CHOICES, attrs={'class': 'form-control select2'}),
             'log_condition': Textarea(attrs={'class': 'form-control'}),
@@ -434,17 +434,17 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'filebeat_listening_mode': Select(choices=FILEBEAT_LISTENING_MODE, attrs={'class': 'form-control select2'}),
             'filebeat_module': Select(choices=FILEBEAT_MODULE_LIST, attrs={'class': 'form-control select2'}),
             'filebeat_config': Textarea(attrs={'class': 'form-control'}),
-            'disable_octet_counting_framing': CheckboxInput(attrs={'class': " js-switch"}),
+            'disable_octet_counting_framing': CheckboxInput(attrs={'class': 'js-switch'}),
             'custom_tl_frame_delimiter': NumberInput(attrs={'class': 'form-control'}),
             'custom_actions': HiddenInput(),
             'custom_haproxy_conf': Textarea(attrs={'class': 'form-control'}),
-            'enable_cache': CheckboxInput(attrs={'class': " js-switch"}),
+            'enable_cache': CheckboxInput(attrs={'class': 'js-switch'}),
             'cache_total_max_size': NumberInput(attrs={'class': 'form-control'}),
             'cache_max_age': NumberInput(attrs={'class': 'form-control'}),
-            'enable_compression': CheckboxInput(attrs={'class': " js-switch"}),
+            'enable_compression': CheckboxInput(attrs={'class': 'js-switch'}),
             'compression_algos': SelectMultiple(choices=COMPRESSION_ALGO_CHOICES,
-                                                attrs={'class': "form-control select2"}),
-            'compression_mime_types': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+                                                attrs={'class': 'form-control select2'}),
+            'compression_mime_types': TextInput(attrs={'class': 'form-control', 'data-role': 'tagsinput'}),
             'error_template': Select(choices=ErrorTemplate.objects.all(), attrs={'class': 'form-control select2'}),
             'timeout_client': NumberInput(attrs={'class': 'form-control'}),
             'timeout_keep_alive': NumberInput(attrs={'class': 'form-control'}),
@@ -454,7 +454,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'ratelimit_burst': NumberInput(attrs={'class': 'form-control'}),
             'expected_timezone': Select(choices=get_available_timezones(), attrs={'class': 'form-control select2'}),
             'file_path': TextInput(attrs={'class': 'form-control'}),
-            'kafka_brokers': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+            'kafka_brokers': TextInput(attrs={'class': 'form-control', 'data-role': 'tagsinput'}),
             'kafka_topic': TextInput(attrs={'class': 'form-control'}),
             'kafka_consumer_group': TextInput(attrs={'class': 'form-control'}),
             'kafka_options': TextInput(attrs={'class': 'form-control'}),
@@ -475,7 +475,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
             'api_parser_custom_proxy': TextInput(attrs={'class': 'form-control'}),
             'api_parser_verify_ssl': CheckboxInput(attrs={'class': 'js-switch'}),
-            'api_parser_custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': "form-control select2"}),
+            'api_parser_custom_certificate': Select(choices=X509Certificate.objects.all(), attrs={'class': 'form-control select2'}),
         } | RsyslogQueueForm.Meta.widgets
 
     def clean_name(self):
@@ -567,7 +567,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         if not data:
             return []
         if "[" in data and "]" in data:
-            return ast.literal_eval(data)
+            return ast_literal_eval(data)
         return data.split(',')
 
     def clean_kafka_options(self):
@@ -575,7 +575,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         if not data:
             return []
         if "[" in data and "]" in data:
-            return ast.literal_eval(data)
+            return ast_literal_eval(data)
         return data.split(',')
 
     def clean_mmdb_cache_size(self):
