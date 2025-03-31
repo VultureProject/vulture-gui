@@ -45,7 +45,7 @@ class CrowdstrikeAPIError(Exception):
 
 class CrowdstrikeParser(ApiParser):
     AUTH_URI = "oauth2/token"
-    DEVICE_URI = "devices/queries/devices/v1"
+    # DEVICE_URI = "devices/queries/devices/v1"
     DETECTION_URI = "detects/queries/detects/v1"
     DETECTION_DETAILS_URI = "detects/entities/summaries/GET/v1"
     INCIDENT_URI = "incidents/queries/incidents/v1"
@@ -129,11 +129,10 @@ class CrowdstrikeParser(ApiParser):
                         verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                     )
                 elif(method == "POST"):
-                    headers = {'Content-Type': 'application/json'}
                     response = self.session.post(
                         url,
                         data=json.dumps(query),
-                        headers=headers,
+                        headers={'Content-Type': 'application/json'},
                         timeout=timeout,
                         proxies=self.proxies,
                         verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
@@ -142,6 +141,9 @@ class CrowdstrikeParser(ApiParser):
                 time.sleep(timeout)
                 continue
             break  # no error we break from the loop
+
+        logger.info(f"[{__parser__}]:execute_query: RESPONSE: {response.text}", extra={'frontend': str(self.frontend)})
+
 
         if response.status_code not in [200, 201]:
             msg = f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}"
@@ -162,146 +164,102 @@ class CrowdstrikeParser(ApiParser):
 
     def execute_query(self, method, url, query={}, timeout=10):
         # can set a custom limit of entry we want to retrieve
-        customLimit = int(query.get('limit', -1))
+        # query['limit'] = 100
 
         jsonResp = self.__execute_query(method, url, query, timeout=timeout)
         totalToRetrieve = jsonResp.get('meta', {}).get('pagination', {}).get('total', 0)
 
-        while(totalToRetrieve > 0 and totalToRetrieve != len(jsonResp.get('resources', []))):
-            # we retrieved enough data
-            if(customLimit > 0 and customLimit <= len(jsonResp['resources'])):
-                break
-            query['offset'] = len(jsonResp['resources'])
-            jsonAdditionalResp = self.__execute_query(method, url, query, timeout=timeout)
-            self.update_lock()
-            jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
-            #jsonResp += [jsonAdditionalResp]
+        if totalToRetrieve > 0:
+            # Continue to paginate while totalToRetrieve is different than the length of all logs gathered from successive paginations
+            # The default page size is 100 (when "limit" parameter is not passed to query, like the case here)
+            while(totalToRetrieve != len(jsonResp.get('resources', []))):
+                query['offset'] = len(jsonResp.get('resources', []))
+
+                jsonAdditionalResp = self.__execute_query(method, url, query, timeout=timeout)
+                self.update_lock()
+
+                jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
+
         return jsonResp
 
-    def getSummary(self):
-        nbSensor = self.getSensorsTotal()
-        version, updated = self.getApplianceVersion()
-        return nbSensor, version, updated
 
-    def getApplianceVersion(self):
-        return 0, 0
+    def get_detections(self, since, to):
+        logger.debug(f"[{__parser__}][get_detections]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
 
-    def getSensorsTotal(self):
-        device_url = f"{self.api_host}/{self.DEVICE_URI}"
-        ret = self.execute_query('GET', device_url, {'limit': 1})
-        return int(ret['meta']['pagination']['total'])
-
-    def getAlerts(self, since, to):
-        '''
-        we retrieve raw incidents and detections
-        '''
-        logger.info(f"[{__parser__}][getAlerts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
-
-        finalRawAlerts = []
-        # first retrieve the detection raw ids
-        alert_url = f"{self.api_host}/{self.DETECTION_URI}"
-        payload = {
-            "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
-            "sort": "last_behavior|desc"
-        }
-        ret = self.execute_query("GET", alert_url, payload)
+        detections = []
+        # first retrieve the detections raw ids
+        ret = self.execute_query(method="GET",
+                                 url=f"{self.api_host}/{self.DETECTION_URI}",
+                                 query={
+                                    "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
+                                    "sort": "last_behavior|desc"
+                                 })
         ids = ret['resources']
+        # then retrieve the content of selected detections ids
         if(len(ids) > 0):
-            # retrieve the content of detection selected
-            alert_url = f"{self.api_host}/{self.DETECTION_DETAILS_URI}"
-            payload = {"ids": ids}
-            ret = self.execute_query("POST", alert_url, payload)
+            ret = self.execute_query(method="POST",
+                                     url=f"{self.api_host}/{self.DETECTION_DETAILS_URI}",
+                                     query={"ids": ids})
+            ret = ret['resources']
+            for alert in ret: detections += [alert]
+        return detections
 
-            alerts = ret['resources']
-            for alert in alerts:
-                finalRawAlerts += [alert]
 
-        if self.request_incidents:
-            # then retrieve the incident raw ids
-            alert_url = f"{self.api_host}/{self.INCIDENT_URI}"
-            payload = {
-                "filter": f"start:>'{since}'+start:<='{to}'",
-                "sort": "end|desc"
-            }
+    def get_incidents(self, since, to):
+        logger.debug(f"[{__parser__}][get_incidents]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
 
-            ret = self.execute_query("GET", alert_url, payload)
-            ids = ret['resources']
+        incidents = []
+        # first retrieve the incidents raw ids
+        ret = self.execute_query(method="GET",
+                                 url=f"{self.api_host}/{self.INCIDENT_URI}",
+                                 query={
+                                    "filter": f"start:>'{since}'+start:<='{to}'",
+                                    "sort": "end|desc"
+                                 })
+        ids = ret['resources']
+        # then retrieve the content of selected incidents ids
+        if(len(ids) > 0):
+            ret = self.execute_query(method="POST",
+                                     url=f"{self.api_host}/{self.INCIDENT_DETAILS_URI}",
+                                     query={"ids": ids})
+            ret = ret['resources']
+            for alert in ret: incidents += [alert]
+        return incidents
 
-            if(len(ids) > 0):
-                # retrieve the content of selected incidents
-                alert_url = f"{self.api_host}/{self.INCIDENT_DETAILS_URI}"
-                payload = {"ids": ids}
-                ret = self.execute_query("POST", alert_url, payload)
-                alerts = ret['resources']
-                for alert in alerts:
-                    finalRawAlerts += [alert]
-        return finalRawAlerts
 
     def get_logs(self, kind, since, to):
+        logs = []
+
         msg = f"Querying {kind} from {since}, to {to}"
         logger.info(f"[{__parser__}][get_logs]: {msg}", extra={'frontend': str(self.frontend)})
-
         try:
-            return self.getAlerts(since, to)
+            get_func_type = getattr(self, f"get_{kind}") # get_detections/get_incidents function getter
+            logs = get_func_type(since, to)
         except Exception as e:
             logger.exception(f"[{__parser__}][get_logs]: {e}", extra={'frontend': str(self.frontend)})
             raise Exception(f"Error querying {kind} logs")
 
+        return logs
+
+
     def format_log(self, log):
-        log['kind'] = self.kind
-        log['observer_version'] = self.observer_version
         log['url'] = self.api_host
         return json.dumps(log)
 
-    def execute(self):
-        # Retrieve version of cybereason console
-        _, self.observer_version, _ = self.getSummary()
-
-        self.kind = "details"
-        # Default timestamp is 24 hours ago
-        since = self.last_api_call or (timezone.now() - datetime.timedelta(days=7))
-        # Get a batch of 24h at most, to avoid running the parser for too long
-        # delay the query time of 2 minutes, to avoid missing events
-        to = min(timezone.now()-timedelta(minutes=2), since + timedelta(hours=24))
-        to = to.strftime("%Y-%m-%dT%H:%M:%SZ")
-        since = since.strftime("%Y-%m-%dT%H:%M:%SZ")
-        tmp_logs = self.get_logs(self.kind, since=since, to=to)
-
-        # Downloading may take some while, so refresh token in Redis
-        self.update_lock()
-
-        total = len(tmp_logs)
-
-        if total > 0:
-            logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
-
-            # Logs sorted by timestamp descending, so first is newer
-            self.frontend.last_api_call = to
-
-        elif self.last_api_call < timezone.now()-timedelta(hours=24):
-            # If no logs where retrieved during the last 24hours,
-            # move forward 1h to prevent stagnate ad vitam eternam
-            self.frontend.last_api_call += timedelta(hours=1)
-
-        self.frontend.save(update_fields=["last_api_call"])
-
-        self.write_to_file([self.format_log(log) for log in tmp_logs])
-
-        # Writting may take some while, so refresh token in Redis
-        self.update_lock()
-
-        logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
-
     def test(self):
         try:
-            logger.debug(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
+            self.login() # establish a session to console
 
-            query_time = (timezone.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            logger.info(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
+
+            since = (timezone.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
             to = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-            logs = self.get_logs("details", query_time, to)
+            logs = []
+            logs += self.get_logs("detections", since, to)
+            if self.request_incidents: logs += self.get_logs("incidents", since, to)
 
-            msg = f"{len(logs)} details retrieved"
+            msg = f"{len(logs)} logs retrieved"
             logger.info(f"[{__parser__}][test]: {msg}", extra={'frontend': str(self.frontend)})
             return {
                 "status": True,
@@ -313,3 +271,41 @@ class CrowdstrikeParser(ApiParser):
                 "status": False,
                 "error": str(e)
             }
+
+
+    def execute(self):
+        self.login() # establish a session to console
+
+        kinds = ["detections"]
+        if self.request_incidents: kinds.append("incidents")
+
+        for kind in kinds:
+            # Default timestamp is 24 hours ago
+            since = self.last_collected_timestamps.get(f"crowdstrike_falcon_{kind}") or (timezone.now() - datetime.timedelta(days=7))
+            # Get a batch of 24h at most, to avoid running queries for too long
+            # also delay the query time of 3 minutes, to avoid missing events
+            to = min(timezone.now()-timedelta(minutes=3), since + timedelta(hours=24))
+
+            logs = self.get_logs(kind=kind,
+                                 since=since.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                                 to=to.strftime("%Y-%m-%dT%H:%M:%SZ"))
+            total = len(logs)
+
+            if total > 0:
+                logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
+                self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] = to
+
+            elif not self.last_collected_timestamps.get(f"crowdstrike_falcon_{kind}"):
+                    # If last_collected_timestamps for the kind requested doesn't exists
+                    # (possible in case we don't get logs for the next period of time at first collector execution)
+                    self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] = to
+
+            elif self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] < timezone.now()-timedelta(hours=24):
+                # If no logs where retrieved during the last 24hours,
+                # move forward 1h to prevent stagnate ad vitam eternam
+                self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] += timedelta(hours=1)
+
+            self.write_to_file([self.format_log(log) for log in logs])
+            self.update_lock()
+
+        logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
