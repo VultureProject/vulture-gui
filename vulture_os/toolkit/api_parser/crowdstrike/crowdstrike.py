@@ -196,7 +196,7 @@ class CrowdstrikeParser(ApiParser):
                                      url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
                                      query={"composite_ids": ids})
             ret = ret['resources']
-            for alert in ret: detections += [alert]
+            for detection in ret: detections += [detection]
         return detections
 
 
@@ -223,7 +223,15 @@ class CrowdstrikeParser(ApiParser):
                                      url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
                                      query={"composite_ids": ids})
             ret = ret['resources']
-            for alert in ret: incidents += [alert]
+            for incident in ret:
+                # if entities.agent_ids is present it means we need to enrich log with hosts informations
+                if ids := incident.get('entities', {}).get('agent_ids', []):
+                    devices = self.execute_query(method="POST",
+                            url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
+                            query={"ids": ids})
+                    incident['hosts'] = devices['resources']
+
+                incidents += [incident]
         return incidents
 
 
@@ -242,8 +250,9 @@ class CrowdstrikeParser(ApiParser):
         return logs
 
 
-    def format_log(self, log):
+    def format_log(self, kind, log):
         log['url'] = self.api_host
+        log['kind'] = kind
         return dumps(log)
 
     def test(self):
@@ -294,18 +303,16 @@ class CrowdstrikeParser(ApiParser):
             if total > 0:
                 logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
                 self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] = to
-
             elif not self.last_collected_timestamps.get(f"crowdstrike_falcon_{kind}"):
-                    # If last_collected_timestamps for the kind requested doesn't exists
-                    # (possible in case we don't get logs for the next period of time at first collector execution)
-                    self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] = to
-
+                # If last_collected_timestamps for the kind requested doesn't exists
+                # (possible in case we don't get logs for the next period of time at first collector execution)
+                self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] = to
             elif self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] < timezone.now()-timedelta(hours=24):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
                 self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] += timedelta(hours=1)
 
-            self.write_to_file([self.format_log(log) for log in logs])
+            self.write_to_file([self.format_log(kind, log) for log in logs])
             self.update_lock()
 
         logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
