@@ -24,13 +24,11 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'CrowdStrike API Parser toolkit'
 __parser__ = 'CROWDSTRIKE'
 
-import datetime
-import json
 import logging
-import time
+from json import dumps
 from datetime import timedelta
+from requests import session, exceptions
 
-import requests
 from django.conf import settings
 from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
@@ -45,11 +43,9 @@ class CrowdstrikeAPIError(Exception):
 
 class CrowdstrikeParser(ApiParser):
     AUTH_URI = "oauth2/token"
-    # DEVICE_URI = "devices/queries/devices/v1"
-    DETECTION_URI = "detects/queries/detects/v1"
-    DETECTION_DETAILS_URI = "detects/entities/summaries/GET/v1"
-    INCIDENT_URI = "incidents/queries/incidents/v1"
-    INCIDENT_DETAILS_URI = "incidents/entities/incidents/GET/v1"
+    ALERTS_URI = "alerts/queries/alerts/v2"
+    ALERTS_DETAILS_URI = "alerts/entities/alerts/v2"
+    DEVICE_DETAILS_URI = "devices/entities/devices/v2"
 
     HEADERS = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -72,13 +68,11 @@ class CrowdstrikeParser(ApiParser):
         if not self.api_host.startswith('https://'):
             self.api_host = f"https://{self.api_host}"
 
-        self.login()
-
     def login(self):
         logger.info(f"[{__parser__}][login]: Login in...", extra={'frontend': str(self.frontend)})
         auth_url = f"{self.api_host}/{self.AUTH_URI}"
 
-        self.session = requests.session()
+        self.session = session()
         self.session.headers.update(self.HEADERS)
 
         payload = {'client_id': self.client_id,
@@ -91,11 +85,11 @@ class CrowdstrikeParser(ApiParser):
                 proxies=self.proxies,
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
-        except requests.exceptions.ConnectionError:
+        except exceptions.ConnectionError:
             self.session = None
             logger.error(f'[{__parser__}][login]: Connection failed (ConnectionError)', exc_info=True, extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
-        except requests.exceptions.ReadTimeout:
+        except exceptions.ReadTimeout:
             self.session = None
             logger.error(f'[{__parser__}][login]: Connection failed {self.client_id} (read_timeout)', extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
@@ -131,19 +125,16 @@ class CrowdstrikeParser(ApiParser):
                 elif(method == "POST"):
                     response = self.session.post(
                         url,
-                        data=json.dumps(query),
+                        data=dumps(query),
                         headers={'Content-Type': 'application/json'},
                         timeout=timeout,
                         proxies=self.proxies,
                         verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                     )
-            except requests.exceptions.ReadTimeout:
-                time.sleep(timeout)
+            except exceptions.ReadTimeout:
+                self.evt_stop.wait(timeout)
                 continue
             break  # no error we break from the loop
-
-        logger.info(f"[{__parser__}]:execute_query: RESPONSE: {response.text}", extra={'frontend': str(self.frontend)})
-
 
         if response.status_code not in [200, 201]:
             msg = f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}"
@@ -182,24 +173,28 @@ class CrowdstrikeParser(ApiParser):
 
         return jsonResp
 
-
     def get_detections(self, since, to):
         logger.debug(f"[{__parser__}][get_detections]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
-
         detections = []
+
         # first retrieve the detections raw ids
-        ret = self.execute_query(method="GET",
-                                 url=f"{self.api_host}/{self.DETECTION_URI}",
+        filter = f"updated_timestamp:>'{since}'"
+        filter += f"+updated_timestamp:<='{to}'"
+        filter += f"+data_domains:'Endpoint'"
+        filter += f"+product:['epp', 'ngsiem', 'thirdparty']"
+        ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.ALERTS_URI}",
                                  query={
-                                    "filter": f"last_behavior:>'{since}'+last_behavior:<='{to}'",
-                                    "sort": "last_behavior|desc"
+                                    "filter": filter,
+                                    "sort": "updated_timestamps|desc",
+                                    "include_hidden": False
                                  })
         ids = ret['resources']
+
         # then retrieve the content of selected detections ids
         if(len(ids) > 0):
             ret = self.execute_query(method="POST",
-                                     url=f"{self.api_host}/{self.DETECTION_DETAILS_URI}",
-                                     query={"ids": ids})
+                                     url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
+                                     query={"composite_ids": ids})
             ret = ret['resources']
             for alert in ret: detections += [alert]
         return detections
@@ -207,21 +202,26 @@ class CrowdstrikeParser(ApiParser):
 
     def get_incidents(self, since, to):
         logger.debug(f"[{__parser__}][get_incidents]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
-
         incidents = []
+
         # first retrieve the incidents raw ids
-        ret = self.execute_query(method="GET",
-                                 url=f"{self.api_host}/{self.INCIDENT_URI}",
+        filter = f"updated_timestamp:>'{since}'"
+        filter += f"+updated_timestamp:<='{to}'"
+        filter += f"+data_domains:'Endpoint'"
+        filter += f"+product:['xdr']"
+        ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.ALERTS_URI}",
                                  query={
-                                    "filter": f"start:>'{since}'+start:<='{to}'",
-                                    "sort": "end|desc"
+                                    "filter": filter,
+                                    "sort": "updated_timestamps|desc",
+                                    "include_hidden": False
                                  })
         ids = ret['resources']
+
         # then retrieve the content of selected incidents ids
         if(len(ids) > 0):
             ret = self.execute_query(method="POST",
-                                     url=f"{self.api_host}/{self.INCIDENT_DETAILS_URI}",
-                                     query={"ids": ids})
+                                     url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
+                                     query={"composite_ids": ids})
             ret = ret['resources']
             for alert in ret: incidents += [alert]
         return incidents
@@ -244,7 +244,7 @@ class CrowdstrikeParser(ApiParser):
 
     def format_log(self, log):
         log['url'] = self.api_host
-        return json.dumps(log)
+        return dumps(log)
 
     def test(self):
         try:
@@ -281,7 +281,7 @@ class CrowdstrikeParser(ApiParser):
 
         for kind in kinds:
             # Default timestamp is 24 hours ago
-            since = self.last_collected_timestamps.get(f"crowdstrike_falcon_{kind}") or (timezone.now() - datetime.timedelta(days=7))
+            since = self.last_collected_timestamps.get(f"crowdstrike_falcon_{kind}") or (timezone.now() - timedelta(days=7))
             # Get a batch of 24h at most, to avoid running queries for too long
             # also delay the query time of 3 minutes, to avoid missing events
             to = min(timezone.now()-timedelta(minutes=3), since + timedelta(hours=24))
