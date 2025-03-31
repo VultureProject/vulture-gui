@@ -43,13 +43,6 @@ class RsyslogForm(ModelForm):
 
     class Meta:
         model = RsyslogSettings
-        fields = ['name']
-
-        widgets = {
-            'name': TextInput(attrs={'class': 'form-control'}),
-        }
-
-
-
-
+        fields = []
+        widgets = {}
 
