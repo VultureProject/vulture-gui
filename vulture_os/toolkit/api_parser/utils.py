@@ -81,6 +81,7 @@ from toolkit.api_parser.beyondtrust_reportings.beyondtrust_reportings import Bey
 from toolkit.api_parser.varonis.varonis import VaronisParser
 from toolkit.api_parser.armis_centrix.armis_centrix import ArmisCentrixParser
 from toolkit.api_parser.perception_point_x_ray.perception_point_x_ray import PerceptionPointXRayParser
+from toolkit.api_parser.extrahop.extrahop import ExtrahopParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -142,6 +143,7 @@ PARSER_LIST = {
     "varonis": VaronisParser,
     "armis_centrix": ArmisCentrixParser,
     "perception_point_x_ray": PerceptionPointXRayParser,
+    "extrahop": ExtrahopParser,
 }
 
 class ParserDoesNotExist(Exception):

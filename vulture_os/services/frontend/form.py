@@ -274,6 +274,7 @@ class FrontendForm(ModelForm):
                            "varonis_host", "varonis_api_key",
                            "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
                            "perception_point_x_ray_host", "perception_point_x_ray_token",
+                           "extrahop_host", "extrahop_id", "extrahop_secret",
                            ]:
             self.fields[field_name].required = False
 
@@ -396,6 +397,7 @@ class FrontendForm(ModelForm):
                   "varonis_host", "varonis_api_key",
                   "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
                   "perception_point_x_ray_host", "perception_point_x_ray_token",
+                  "extrahop_host", "extrahop_id", "extrahop_secret",
                   )
 
         widgets = {
@@ -624,6 +626,9 @@ class FrontendForm(ModelForm):
             'armis_centrix_get_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
             'perception_point_x_ray_host': TextInput(attrs={'class': 'form-control'}),
             'perception_point_x_ray_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'extrahop_host': TextInput(attrs={'class': 'form-control'}),
+            'extrahop_id': TextInput(attrs={'class': 'form-control'}),
+            'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         }
 
     def clean_name(self):

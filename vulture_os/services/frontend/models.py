@@ -1586,6 +1586,32 @@ class Frontend(models.Model):
         default="",
     )
 
+    extrahop_host = models.TextField(
+        verbose_name=_("Extrahop host"),
+        help_text=_("Extrahop host"),
+        default=""
+    )
+    extrahop_id = models.TextField(
+        verbose_name=_("Extrahop id"),
+        help_text=_("Extrahop id"),
+        default=""
+    )
+    extrahop_secret = models.TextField(
+        verbose_name=_("Extrahop secret"),
+        help_text=_("Extrahop secret"),
+        default=""
+    )
+    extrahop_access_token = models.TextField(
+        verbose_name=_("Extrahop access token"),
+        help_text=_("Extrahop access token"),
+        default=""
+    )
+    extrahop_expire_date = models.DateTimeField(
+        verbose_name=_("Extrahop token expiration date"),
+        help_text=_("Extrahop token expiration date"),
+        default=timezone.now
+    )
+
 
     @staticmethod
     def str_attrs():
