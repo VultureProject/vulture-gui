@@ -558,6 +558,17 @@
                         <div class="row log-mode">
                           <div class="col-md-12">
                             <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.save_on_shutdown.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.save_on_shutdown}}
+                                {{form.save_on_shutdown.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
                               <label class="col-sm-4 control-label">{{form.enable_disk_assist.label}}</label>
                               <div class="col-sm-5">
                                 {{form.enable_disk_assist}}
@@ -618,17 +629,6 @@
                                 <div class="col-sm-5">
                                   {{form.spool_directory}}
                                   {{form.spool_directory.errors|safe}}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="row log-mode">
-                            <div class="col-md-12">
-                              <div class="form-group">
-                                <label class="col-sm-4 control-label">{{form.save_on_shutdown.label}}</label>
-                                <div class="col-sm-5">
-                                  {{form.save_on_shutdown}}
-                                  {{form.save_on_shutdown.errors|safe}}
                                 </div>
                               </div>
                             </div>
