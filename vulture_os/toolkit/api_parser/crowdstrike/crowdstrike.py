@@ -43,9 +43,12 @@ class CrowdstrikeAPIError(Exception):
 
 class CrowdstrikeParser(ApiParser):
     AUTH_URI = "oauth2/token"
-    ALERTS_URI = "alerts/queries/alerts/v2"
-    ALERTS_DETAILS_URI = "alerts/entities/alerts/v2"
-    DEVICE_DETAILS_URI = "devices/entities/devices/v2"
+    ALERTS_URI = "alerts/queries/alerts/v2" # get alerts ids
+    ALERTS_DETAILS_URI = "alerts/entities/alerts/v2" # get alerts by id
+    HOST_URI = "devices/queries/devices/v1" # get host ids
+    HOST_DETAILS_URI = "devices/entities/devices/v2" # get host logs by id
+    VULNERABILITY_URI = "spotlight/queries/vulnerabilities/v1" # get vulnerability ids
+    VULNERABILITY_DETAILS_URI = "spotlight/entities/vulnerabilities/v2" # get vulnerability logs by id
 
     HEADERS = {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -63,7 +66,7 @@ class CrowdstrikeParser(ApiParser):
         self.product = 'crowdstrike'
         self.session = None
 
-        self.request_incidents = data.get('crowdstrike_request_incidents', False)
+        self.request_incidents = data.get('crowdstrike_request_incidents', False) # TODO: Modify to request_hosts and add request_vulnerabilities
 
         if not self.api_host.startswith('https://'):
             self.api_host = f"https://{self.api_host}"
@@ -173,60 +176,87 @@ class CrowdstrikeParser(ApiParser):
 
         return jsonResp
 
-    def get_detections(self, since: str, to: str):
-        logger.debug(f"[{__parser__}][get_detections]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
-        detections = []
+    def get_alerts(self, since: str, to: str):
+        logger.debug(f"[{__parser__}][get_alerts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
+        alerts = []
 
-        # first retrieve the detections raw ids
-        filter = f"updated_timestamp:>'{since}'"
-        filter += f"+updated_timestamp:<='{to}'"
-        filter += "+data_domains:'Endpoint'"
-        filter += "+product:['epp', 'ngsiem', 'thirdparty']"
+        # first retrieve the alerts raw ids
+        filter = f"timestamp:>'{since}'"
+        filter += f"+timestamp:<='{to}'"
         ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.ALERTS_URI}",
                                  query={
                                     "filter": filter,
-                                    "sort": "updated_timestamps|desc",
-                                    "include_hidden": False
+                                    "sort": "timestamp|asc",
                                  })
         ids = ret['resources']
 
-        # then retrieve the content of selected detections ids
+        # then retrieve the content of selected alerts ids
         if(len(ids) > 0):
             ret = self.execute_query(method="POST",
                                      url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
-                                     query={"composite_ids": ids})
+                                     query={
+                                         "composite_ids": ids,
+                                         "sort": "timestamp|desc"
+                                     })
             ret = ret['resources']
-            for detection in ret:
-                detections += [detection]
-        return detections
+            for alert in ret:
+                alerts += [alert]
+        return alerts
+    
+    def get_hosts(self, since: str, to: str):
+        logger.debug(f"[{__parser__}][get_hosts]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
+        hosts = []
 
-
-    def get_incidents(self, since: str, to: str):
-        logger.debug(f"[{__parser__}][get_incidents]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
-        incidents = []
-
-        # first retrieve the incidents raw ids
-        filter = f"updated_timestamp:>'{since}'"
-        filter += f"+updated_timestamp:<='{to}'"
-        filter += "+data_domains:'Endpoint'"
-        filter += "+product:['xdr']"
-        ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.ALERTS_URI}",
+        # first retrieve the hosts raw ids
+        filter = f"modified_timestamp:>'{since}'"
+        filter += f"+modified_timestamp:<='{to}'"
+        ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.HOST_URI}",
                                  query={
                                     "filter": filter,
-                                    "sort": "updated_timestamps|desc",
-                                    "include_hidden": False
+                                    "sort": "modified_timestamp|asc",
                                  })
         ids = ret['resources']
 
-        # then retrieve the content of selected incidents ids
+        # then retrieve the content of selected hosts ids
         if(len(ids) > 0):
             ret = self.execute_query(method="POST",
-                                     url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
-                                     query={"composite_ids": ids})
+                                     url=f"{self.api_host}/{self.HOST_DETAILS_URI}",
+                                     query={
+                                         "ids": ids,
+                                         "sort": "modified_timestamp|desc"
+                                     })
             ret = ret['resources']
-            for incident in ret:
-                incidents += [incident]
-        return incidents
+            for host in ret:
+                hosts += [host]
+        return hosts
+
+    def get_vulnerabilities(self, since: str, to: str):
+        logger.debug(f"[{__parser__}][get_vulnerabilities]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
+        vulnerabilities = []
+
+        # first retrieve the vulnerabilities raw ids
+        filter = f"updated_timestamp:>'{since}'"
+        filter += f"+updated_timestamp:<='{to}'"
+        ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.VULNERABILITY_URI}",
+                                 query={
+                                    "filter": filter,
+                                    "sort": "updated_timestamp|asc",
+                                 })
+        ids = ret['resources']
+
+        # then retrieve the content of selected vulnerabilities ids
+        if(len(ids) > 0):
+            ret = self.execute_query(method="POST",
+                                     url=f"{self.api_host}/{self.VULNERABILITY_DETAILS_URI}",
+                                     query={
+                                         "ids": ids,
+                                         "sort": "updated_timestamp|desc"
+                                         })
+            ret = ret['resources']
+            for vuln in ret:
+                vulnerabilities += [vuln]
+        return vulnerabilities
+
 
 
     def get_logs(self, kind: str, since: str, to: str):
@@ -246,32 +276,6 @@ class CrowdstrikeParser(ApiParser):
 
     def format_log(self, log: dict):
         log['url'] = self.api_host
-
-        if product := log.get("product"):
-            # this ensure the retro-compatibility of detections logs that contains .behaviors object
-            if product in ["epp", "ngsiem", "thirdparty"]:
-                behaviors = {}
-                for field in ["alleged_filetype", "behavior_id", "cmdline", "confidence", "control_graph_id",
-                              "description", "agent_id", "display_name", "filename", "filepath", "ioc_description",
-                              "ioc_source", "ioc_type", "ioc_value", "md5", "objective", "parent_details",
-                              "pattern_disposition", "pattern_disposition_description", "pattern_disposition_details",
-                              "scenario", "severity", "sha256", "tactic", "tactic_id", "technique",
-                              "technique_id", "timestamp", "triggering_process_graph_id", "user_id", "user_name"]:
-                    behavior_field = log.get(field)
-                    if isinstance(behavior_field, str):
-                        behaviors[field] = behavior_field
-                log['behaviors'] = behaviors
-            # if entities.agent_ids is present it means we need to enrich log with hosts informations
-            # this keeps retro-compatibility by enriching .hosts field for incidents 
-            # (that have been removed since the migration from v1 to v2 endpoints)
-            elif product == "xdr":
-                if ids := log.get('entities', {}).get('agent_ids', []):
-                    devices = self.execute_query(method="POST",
-                                                 url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
-                                                 query={"ids": ids})
-                    log['hosts'] = devices['resources']
-
-
         return dumps(log)
 
     def test(self):
@@ -305,11 +309,7 @@ class CrowdstrikeParser(ApiParser):
     def execute(self):
         self.login() # establish a session to console
 
-        kinds = ["detections"]
-        if self.request_incidents:
-            kinds.append("incidents")
-
-        for kind in kinds:
+        for kind in [ "alerts", "hosts", "vulnerabilities" ]:
             # Default timestamp is 24 hours ago
             since = self.last_collected_timestamps.get(f"crowdstrike_falcon_{kind}") or (timezone.now() - timedelta(days=7))
             # Get a batch of 24h at most, to avoid running queries for too long
@@ -317,8 +317,8 @@ class CrowdstrikeParser(ApiParser):
             to = min(timezone.now()-timedelta(minutes=3), since + timedelta(hours=24))
 
             logs = self.get_logs(kind=kind,
-                                 since=since.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                                 to=to.strftime("%Y-%m-%dT%H:%M:%SZ"))
+                                    since=since.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                                    to=to.strftime("%Y-%m-%dT%H:%M:%SZ"))
             total = len(logs)
 
             self.write_to_file([self.format_log(log) for log in logs])
