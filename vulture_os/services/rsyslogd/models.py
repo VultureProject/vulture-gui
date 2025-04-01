@@ -117,6 +117,20 @@ class RsyslogQueue(models.Model):
         verbose_name=_("Minimum messages to start a new worker"),
         validators=[MinValueValidator(1)]
     )
+    light_delay_mark = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Start throttling sender (if possible) when the queue reaches this percentage"),
+        verbose_name=_("Throttle input when queue reaches this size (between 1 and 99%)"),
+        validators=[MinValueValidator(1), MaxValueValidator(99)]
+    )
+    full_delay_mark = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Stop processing input logs when the queue reaches this percentage"),
+        verbose_name=_("Stop processing input logs when queue reaches this size (between 1 and 99%)"),
+        validators=[MinValueValidator(1), MaxValueValidator(99)]
+    )
     shutdown_timeout = models.PositiveIntegerField(
         default=5000,
         blank=True,
@@ -183,11 +197,19 @@ class RsyslogQueue(models.Model):
             "type": self.queue_type,
         }
         if self.queue_type != RsyslogQueue.QueueTypes.DIRECT:
+            light_delay_mark = None
+            full_delay_mark = None
+            if self.queue_size and self.light_delay_mark:
+                light_delay_mark = int(self.queue_size * self.light_delay_mark / 100)
+            if self.queue_size and self.full_delay_mark:
+                full_delay_mark = int(self.queue_size * self.full_delay_mark / 100)
             options_dict |= {
                 "size": self.queue_size,
                 "dequeueBatchSize": self.dequeue_batch_size,
                 "workerThreads": self.nb_workers,
                 "workerThreadMinimumMessages": self.new_worker_minimum_messages,
+                "lightDelayMark": light_delay_mark,
+                "fullDelaymark": full_delay_mark,
                 "timeoutshutdown": self.shutdown_timeout,
                 "saveOnShutdown": "on" if self.save_on_shutdown else None,
             }

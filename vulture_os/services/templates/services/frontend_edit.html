@@ -547,6 +547,28 @@
                         <div class="row log-mode">
                           <div class="col-md-12">
                             <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.light_delay_mark.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.light_delay_mark}}
+                                {{form.light_delay_mark.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.full_delay_mark.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.full_delay_mark}}
+                                {{form.full_delay_mark.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
                               <label class="col-sm-4 control-label">{{form.shutdown_timeout.label}}</label>
                               <div class="col-sm-5">
                                 {{form.shutdown_timeout}}
