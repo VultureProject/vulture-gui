@@ -180,8 +180,8 @@ class CrowdstrikeParser(ApiParser):
         # first retrieve the detections raw ids
         filter = f"updated_timestamp:>'{since}'"
         filter += f"+updated_timestamp:<='{to}'"
-        filter += f"+data_domains:'Endpoint'"
-        filter += f"+product:['epp', 'ngsiem', 'thirdparty']"
+        filter += "+data_domains:'Endpoint'"
+        filter += "+product:['epp', 'ngsiem', 'thirdparty']"
         ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.ALERTS_URI}",
                                  query={
                                     "filter": filter,
@@ -208,8 +208,8 @@ class CrowdstrikeParser(ApiParser):
         # first retrieve the incidents raw ids
         filter = f"updated_timestamp:>'{since}'"
         filter += f"+updated_timestamp:<='{to}'"
-        filter += f"+data_domains:'Endpoint'"
-        filter += f"+product:['xdr']"
+        filter += "+data_domains:'Endpoint'"
+        filter += "+product:['xdr']"
         ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.ALERTS_URI}",
                                  query={
                                     "filter": filter,
@@ -244,33 +244,33 @@ class CrowdstrikeParser(ApiParser):
         return logs
 
 
-    def format_log(self, kind: str, log: dict):
+    def format_log(self, log: dict):
         log['url'] = self.api_host
-        log['kind'] = kind
 
-        # if entities.agent_ids is present it means we need to enrich log with hosts informations
-        # this keeps retro-compatibility by enriching .hosts field for incidents 
-        # (that have been removed since the migration from v1 to v2 endpoints)
-        if kind == "incidents":
-            if ids := log.get('entities', {}).get('agent_ids', []):
-                devices = self.execute_query(method="POST",
-                                             url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
-                                             query={"ids": ids})
-                log['hosts'] = devices['resources']
+        if product := log.get("product"):
+            # this ensure the retro-compatibility of detections logs that contains .behaviors object
+            if product in ["epp", "ngsiem", "thirdparty"]:
+                behaviors = {}
+                for field in ["alleged_filetype", "behavior_id", "cmdline", "confidence", "control_graph_id",
+                              "description", "agent_id", "display_name", "filename", "filepath", "ioc_description",
+                              "ioc_source", "ioc_type", "ioc_value", "md5", "objective", "parent_details",
+                              "pattern_disposition", "pattern_disposition_description", "pattern_disposition_details",
+                              "scenario", "severity", "sha256", "tactic", "tactic_id", "technique",
+                              "technique_id", "timestamp", "triggering_process_graph_id", "user_id", "user_name"]:
+                    behavior_field = log.get(field)
+                    if isinstance(behavior_field, str):
+                        behaviors[field] = behavior_field
+                log['behaviors'] = behaviors
+            # if entities.agent_ids is present it means we need to enrich log with hosts informations
+            # this keeps retro-compatibility by enriching .hosts field for incidents 
+            # (that have been removed since the migration from v1 to v2 endpoints)
+            elif product == "xdr":
+                if ids := log.get('entities', {}).get('agent_ids', []):
+                    devices = self.execute_query(method="POST",
+                                                 url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
+                                                 query={"ids": ids})
+                    log['hosts'] = devices['resources']
 
-        # this ensure the retro-compatibility of detections logs that contains .behaviors object
-        elif kind == "detections":
-            behaviors = {}
-            for field in ["alleged_filetype", "behavior_id", "cmdline", "confidence", "control_graph_id",
-                          "description", "agent_id", "display_name", "filename", "filepath", "ioc_description",
-                          "ioc_source", "ioc_type", "ioc_value", "md5", "objective", "parent_details",
-                          "pattern_disposition", "pattern_disposition_description", "pattern_disposition_details",
-                          "scenario", "severity", "sha256", "tactic", "tactic_id", "technique",
-                          "technique_id", "timestamp", "triggering_process_graph_id", "user_id", "user_name"]:
-                behavior_field = log.get(field)
-                if isinstance(behavior_field, str):
-                    behaviors[field] = behavior_field
-            log['behaviors'] = behaviors
 
         return dumps(log)
 
@@ -285,7 +285,8 @@ class CrowdstrikeParser(ApiParser):
 
             logs = []
             logs += self.get_logs("detections", since, to)
-            if self.request_incidents: logs += self.get_logs("incidents", since, to)
+            if self.request_incidents:
+                logs += self.get_logs("incidents", since, to)
 
             msg = f"{len(logs)} logs retrieved"
             logger.info(f"[{__parser__}][test]: {msg}", extra={'frontend': str(self.frontend)})
@@ -305,7 +306,8 @@ class CrowdstrikeParser(ApiParser):
         self.login() # establish a session to console
 
         kinds = ["detections"]
-        if self.request_incidents: kinds.append("incidents")
+        if self.request_incidents:
+            kinds.append("incidents")
 
         for kind in kinds:
             # Default timestamp is 24 hours ago
@@ -319,7 +321,7 @@ class CrowdstrikeParser(ApiParser):
                                  to=to.strftime("%Y-%m-%dT%H:%M:%SZ"))
             total = len(logs)
 
-            self.write_to_file([self.format_log(kind, log) for log in logs])
+            self.write_to_file([self.format_log(log) for log in logs])
             self.update_lock()
 
             if total > 0:
