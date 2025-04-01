@@ -38,6 +38,7 @@ from applications.logfwd.models import LogOM, LogOMMongoDB
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinBuffering
 from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
+from services.rsyslogd.models import RsyslogQueue
 from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, Node
 from applications.backend.models import Backend
@@ -110,12 +111,6 @@ REDIS_STARTID_CHOICES = (
     ('>', "Undelivered entries"),
 )
 
-RSYSLOG_QUEUE_TYPE_CHOICES = (
-    ('linkedlist', "LinkedList (queue with maximal size but dynamic allocation)"),
-    ('fixedarray', "FixedArray (queue with fixed and preallocated size)"),
-    ('direct', "Direct (no queueing)")
-)
-
 DARWIN_MODE_CHOICES = (
     ('darwin', "generate alerts"),
     ('both', "enrich logs and generate alerts")
@@ -176,7 +171,7 @@ FRONTEND_PERMS = HAPROXY_PERMS
 UNIX_SOCKET_PATH = path_join(settings.SOCKETS_PATH, "rsyslog")
 LOG_API_PATH = path_join(settings.LOGS_PATH, "api_parser")
 
-class Frontend(models.Model):
+class Frontend(RsyslogQueue, models.Model):
     """ Model used to generate fontends configuration of HAProxy """
     """ Is that section enabled or disabled """
     enabled = models.BooleanField(
@@ -537,91 +532,6 @@ class Frontend(models.Model):
         default=False,
         help_text=_("Don't accept sessions if service is not ready"),
         verbose_name=_("Healthckeck service")
-    )
-    queue_type = models.TextField(
-        default=RSYSLOG_QUEUE_TYPE_CHOICES[0][0],
-        choices=RSYSLOG_QUEUE_TYPE_CHOICES,
-        help_text=_("Set a queue type for the ruleset"),
-        verbose_name=_("Rsyslog queue type")
-    )
-    queue_size = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text=_("Size of the queue in nb of message"),
-        verbose_name=_("Size of the queue in nb of message"),
-        validators=[MinValueValidator(100)]
-    )
-    dequeue_batch_size = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text=_("Size of the batch to dequeue"),
-        verbose_name=_("Size of the batch to dequeue"),
-        validators=[MinValueValidator(1)]
-    )
-    nb_workers = models.PositiveIntegerField(
-        default=8,
-        help_text=_("Maximum number of workers for rsyslog ruleset"),
-        verbose_name=_("Maximum parser workers"),
-        validators=[MinValueValidator(1)]
-    )
-    new_worker_minimum_messages = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text=_("Number of messages in queue to start a new worker thread"),
-        verbose_name=_("Minimum messages to start a new worker"),
-        validators=[MinValueValidator(1)]
-    )
-    shutdown_timeout = models.PositiveIntegerField(
-        default=5000,
-        blank=True,
-        null=True,
-        help_text=_("Time to wait for the queue to finish processing entries (in ms)"),
-        verbose_name=_("Queue timeout shutdown (ms)"),
-        validators=[MinValueValidator(1)]
-    )
-    enable_disk_assist = models.BooleanField(
-        default=False,
-        help_text=_("Enable disk-assisted queue on failure"),
-        verbose_name=_("Enable disk queue on failure")
-    )
-    high_watermark = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text=_("Write in DA queue after nb messages"),
-        verbose_name=_("High watermark target"),
-        validators=[MinValueValidator(100)]
-    )
-    low_watermark = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text=_("Write in DA queue until nb messages"),
-        verbose_name=_("Low watermark target"),
-        validators=[MinValueValidator(100)]
-    )
-    max_file_size = models.PositiveIntegerField(
-        default=256,
-        blank=True,
-        null=True,
-        help_text=_("Set the max value of the queue in MB"),
-        verbose_name=_("Max file size of the queue in MB"),
-        validators=[MinValueValidator(1)]
-    )
-    max_disk_space = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text=_("Limit the maximum disk space used by the queue in MB"),
-        verbose_name=_("Max disk space used by the queue in MB"),
-        validators=[MinValueValidator(1)]
-    )
-    spool_directory = models.TextField(
-        default="/var/tmp",
-        help_text=_("Set a writable folder to store DA queue"),
-        verbose_name=_("DA queue folder")
-    )
-    save_on_shutdown = models.BooleanField(
-        default=True,
-        help_text=_("Prevent message loss by writing on disk during a shutdown"),
-        verbose_name=_("Save in-memory queue on shutdown")
     )
     mmdb_cache_size = models.PositiveIntegerField(
         default=0,
@@ -2164,29 +2074,8 @@ class Frontend(models.Model):
         """ Render ruleset's options
         :return  Str containing the rendered config
         """
-        options_dict = {
-            "type": self.queue_type,
-            "size": self.queue_size,
-            "dequeueBatchSize": self.dequeue_batch_size,
-            "workerThreads": self.nb_workers,
-            "workerThreadMinimumMessages": self.new_worker_minimum_messages,
-            "timeoutshutdown": self.shutdown_timeout
-        }
-        if self.enable_disk_assist:
-            options_dict.update({
-                "highWatermark": self.high_watermark,
-                "lowWatermark": self.low_watermark,
-                "spoolDirectory": self.spool_directory or "/var/tmp",
-                "maxFileSize": f"{self.max_file_size}m" if self.max_file_size else None,
-                "maxDiskSpace": f"{self.max_disk_space}m" if self.max_disk_space else None,
-                "saveOnShutdown": "on" if self.save_on_shutdown else None,
-                "filename": f"{self.get_ruleset()}_disk-queue",
-                "checkpointInterval": 1024
-            })
-
-        options_dict = dict(filter(lambda x: x[1], options_dict.items()))
+        options_dict = self.get_rsyslog_queue_parameters()
         result = " ".join(f'queue.{k}="{v}"' for k,v in options_dict.items())
-
         return result
 
     @property

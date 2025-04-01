@@ -37,10 +37,11 @@ from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
-                                      REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES, RSYSLOG_QUEUE_TYPE_CHOICES,
+                                      REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES,
                                       FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES,
                                       get_available_timezones)
 
+from services.rsyslogd.form import RsyslogQueueForm
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkAddress
 from system.error_templates.models import ErrorTemplate
@@ -107,7 +108,7 @@ class FrontendReputationContextForm(ModelForm):
         return result
 
 
-class FrontendForm(ModelForm):
+class FrontendForm(RsyslogQueueForm, ModelForm):
     listeners = NoValidationField()
     headers = NoValidationField()
     reputation_ctx = NoValidationField()
@@ -212,10 +213,7 @@ class FrontendForm(ModelForm):
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst', 'expected_timezone',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
-                           'healthcheck_service', 'queue_type', 'queue_size', 'dequeue_batch_size', 'nb_workers',
-                           'new_worker_minimum_messages', 'shutdown_timeout', 'enable_disk_assist', 'high_watermark',
-                           'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory', 'save_on_shutdown',
-                           'mmdb_cache_size','redis_batch_size', 'redis_use_local',
+                           'healthcheck_service', 'mmdb_cache_size','redis_batch_size', 'redis_use_local',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
                            'api_parser_verify_ssl', 'api_parser_custom_certificate',
@@ -325,7 +323,7 @@ class FrontendForm(ModelForm):
 
     class Meta:
         model = Frontend
-        fields = ('enabled', 'tags', 'name', 'mode', 'enable_logging', 'log_level', 'log_condition', 'keep_source_fields', 'ruleset',
+        fields = ['enabled', 'tags', 'name', 'mode', 'enable_logging', 'log_level', 'log_condition', 'keep_source_fields', 'ruleset',
                   'listening_mode', 'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'custom_haproxy_conf',
                   'enable_cache', 'cache_total_max_size', 'cache_max_age',
                   'enable_compression', 'compression_algos', 'compression_mime_types', 'error_template',
@@ -335,10 +333,7 @@ class FrontendForm(ModelForm):
                   'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'ratelimit_interval', 'ratelimit_burst', 'expected_timezone', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
-                  'healthcheck_service', 'queue_type', 'queue_size', 'dequeue_batch_size', 'nb_workers',
-                  'new_worker_minimum_messages', 'shutdown_timeout', 'enable_disk_assist', 'high_watermark',
-                  'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory', 'save_on_shutdown',
-                  'mmdb_cache_size','redis_batch_size', 'redis_mode', 'redis_use_lpop',
+                  'healthcheck_service', 'mmdb_cache_size','redis_batch_size', 'redis_mode', 'redis_use_lpop',
                   'redis_server', 'redis_port', 'redis_key', 'redis_password', 'redis_stream_consumerGroup',
                   'redis_stream_consumerName', 'redis_stream_startID', 'redis_stream_acknowledge', 'redis_stream_reclaim_timeout',
                   'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
@@ -408,8 +403,8 @@ class FrontendForm(ModelForm):
                   "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
                   "perception_point_x_ray_host", "perception_point_x_ray_token",
                   "extrahop_host", "extrahop_id", "extrahop_secret",
-                  "hornetsecurity_app_id", "hornetsecurity_token"
-                  )
+                  "hornetsecurity_app_id", "hornetsecurity_token",
+        ] + RsyslogQueueForm.Meta.fields
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -462,19 +457,6 @@ class FrontendForm(ModelForm):
             'redis_stream_acknowledge': CheckboxInput(attrs={'class': 'js-switch'}),
             'redis_stream_reclaim_timeout': NumberInput(attrs={'class': 'form-control'}),
             'healthcheck_service': CheckboxInput(attrs={'class': 'js-switch'}),
-            'queue_type': Select(choices=RSYSLOG_QUEUE_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
-            'queue_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '50000'}),
-            'dequeue_batch_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '1024'}),
-            'nb_workers': NumberInput(attrs={'class': 'form-control', 'placeholder': '8'}),
-            'new_worker_minimum_messages': NumberInput(attrs={'class': 'form-control', 'placeholder': 'queue.size/queue.workerthreads'}),
-            'shutdown_timeout': NumberInput(attrs={'class': 'form-control', 'placeholder': '5000'}),
-            'enable_disk_assist': CheckboxInput(attrs={'class': 'js-switch'}),
-            'high_watermark': NumberInput(attrs={'class': 'form-control', 'placeholder': '90% of queue.size'}),
-            'low_watermark': NumberInput(attrs={'class': 'form-control', 'placeholder': '70% of queue.size'}),
-            'max_file_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '256MB'}),
-            'max_disk_space': NumberInput(attrs={'class': 'form-control', 'placeholder': 'Unlimited'}),
-            'spool_directory': TextInput(attrs={'class': 'form-control', 'placeholder': '/var/tmp'}),
-            'save_on_shutdown': CheckboxInput(attrs={'class': 'js-switch'}),
             'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
             'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
@@ -656,7 +638,7 @@ class FrontendForm(ModelForm):
             'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'hornetsecurity_app_id': TextInput(attrs={'class': 'form-control'}),
             'hornetsecurity_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-        }
+        } | RsyslogQueueForm.Meta.widgets
 
     def clean_name(self):
         """ HAProxy does not support space in frontend/listen name directive, replace them by _ """
@@ -931,30 +913,6 @@ class FrontendForm(ModelForm):
             self.add_error("ratelimit_burst", "This field cannot be left blank if rate-limiting interval is set")
         if cleaned_data.get('ratelimit_burst') and not cleaned_data.get('ratelimit_interval'):
             self.add_error("ratelimit_interval", "This field cannot be left blank if rate-limiting burst is set")
-
-        """ Rsyslog queue fields verification """
-        if cleaned_data.get('dequeue_batch_size'):
-            queue_size = cleaned_data.get('queue_size') or 50000
-            if cleaned_data['dequeue_batch_size'] > queue_size:
-                self.add_error("dequeue_batch_size", "This value cannot be over the queue size")
-
-        if cleaned_data.get('new_worker_minimum_messages'):
-            queue_size = cleaned_data.get('queue_size') or 50000
-            if cleaned_data['new_worker_minimum_messages'] > queue_size:
-                self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
-
-        if cleaned_data.get('enable_disk_assist') == True:
-            queue_size = cleaned_data.get('queue_size') or 50000
-            high_watermark = cleaned_data.get('high_watermark') or queue_size * 0.9
-            low_watermark = cleaned_data.get('low_watermark') or queue_size * 0.7
-
-            if high_watermark > queue_size or low_watermark > queue_size:
-                self.add_error("queue_size", "Queue size is lower than a watermark")
-            if high_watermark < low_watermark:
-                self.add_error("high_watermark", "High watermark is lower than the low watermark value")
-                self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            if cleaned_data.get('max_disk_space') and (cleaned_data.get('max_file_size') or 16) > cleaned_data.get('max_disk_space'):
-                self.add_error("max_file_size", "File size is higher than the disk space")
 
         return cleaned_data
 
