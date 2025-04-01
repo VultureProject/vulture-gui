@@ -29,8 +29,8 @@ from django.utils import timezone
 
 from toolkit.api_parser.api_parser import ApiParser
 
-import requests
-import json
+from requests import Session, exceptions
+from json import dumps, decoder
 
 from datetime import datetime, timedelta
 
@@ -53,26 +53,17 @@ class PerceptionPointXRayParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        self.perception_point_x_ray_host = data["perception_point_x_ray_host"].rstrip("/")
-        if not self.perception_point_x_ray_host.startswith('https://'):
-            self.perception_point_x_ray_host = f"https://{self.perception_point_x_ray_host}"
-
+        self.perception_point_x_ray_host = "https://" + data["perception_point_x_ray_host"].split("://")[-1].rstrip()
         self.token = data['perception_point_x_ray_token']
 
         self.session = None
 
-    def _execute_query(self, method, url, query=None, timeout=10):
-        if method != "GET":
-            raise PerceptionPointXRayAPIError(f"Error at request, unknown method : {method}")
+    def _execute_query(self, url, query=None, timeout=10):
 
-        max_retry = 3
         retry = 1
-        while retry <= max_retry:
+        while retry <= 3:  # 3 retries max
             if self.session is None:
                 self._connect()
-
-            msg = f"call {url} with query {query} (retry: {retry})"
-            logger.debug(f"[{__parser__}]:__execute_query: {msg}", extra={'frontend': str(self.frontend)})
 
             try:
                 response = self.session.get(
@@ -82,8 +73,8 @@ class PerceptionPointXRayParser(ApiParser):
                     proxies=self.proxies,
                     verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                 )
-            except requests.exceptions.Timeout:
-                logger.debug(f"[{__parser__}]:__execute_query: TimeoutError: retry += 1 (waiting 10s)",
+            except exceptions.Timeout:
+                logger.warning(f"[{__parser__}]:__execute_query: TimeoutError: retry += 1 (waiting 10s)",
                              extra={'frontend': str(self.frontend)})
                 retry += 1
                 self.evt_stop.wait(10.0)
@@ -95,7 +86,7 @@ class PerceptionPointXRayParser(ApiParser):
                 if response.status_code == 200:
                     try:
                         return response.json()
-                    except json.decoder.JSONDecodeError as e:
+                    except decoder.JSONDecodeError as e:
                         raise PerceptionPointXRayAPIError(
                             f"[{__parser__}]:__execute_query: Error at JSON decoding. Exception JSONDecodeError: {e}") from e
 
@@ -123,7 +114,7 @@ class PerceptionPointXRayParser(ApiParser):
 
     def _connect(self):
         if self.session is None:
-            self.session = requests.Session()
+            self.session = Session()
             self.session.headers.update(self.HEADERS)
             self.session.headers.update({"Authorization": f"Token {self.token}"})
             self.session.headers.update({"User-Agent": ""})
@@ -153,7 +144,7 @@ class PerceptionPointXRayParser(ApiParser):
     def get_scan_details(self, scan_id):
         # Get details for every scan
         url = f"{self.perception_point_x_ray_host}/api/v1/scans/list/{scan_id}/"
-        return self._execute_query("GET", url)
+        return self._execute_query(url)
 
     def get_last_scans(self, since, to, log_type, next=None):
         if self.session is None:
@@ -170,16 +161,16 @@ class PerceptionPointXRayParser(ApiParser):
                 "verbose_verdict": log_type,
             }
 
-        return self._execute_query("GET", url, payload)
+        return self._execute_query(url, payload)
 
     def get_logs(self, since, to, log_type, next=None):
         last_scans = {}
-        while not self.evt_stop.is_set():
+        while not self.evt_stop.is_set():  # Get the ideal timerange of logs to avoid errors if API returns more of 1000 logs
             last_scans = self.get_last_scans(since, to, log_type, next)
             if last_scans.get('count') >= 1000:
-                to = to - (to - since) / 2
+                to -= (to - since) / 2
                 msg = f"API returns more than 1000 logs. Updating 'to' to {to} for log_type {log_type}"
-                logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                logger.warning(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
             else:
                 break
 
@@ -188,7 +179,7 @@ class PerceptionPointXRayParser(ApiParser):
             scan_log = self.get_scan_details(scan["full_scan_id"])
             logs.append(scan_log)
 
-        return logs, last_scans.get('has_more') == True, last_scans.get('next'), to
+        return logs, last_scans.get('has_more', False), last_scans.get('next'), to
     @staticmethod
     def format_log(log):
         log['timestamp_epoch'] = log['timestamp']
@@ -199,7 +190,7 @@ class PerceptionPointXRayParser(ApiParser):
                 del log[field]
             except KeyError:
                 pass
-        return json.dumps(log)
+        return dumps(log)
 
     def execute(self):
         # Warning : the fetched logs are ordered in ASC (no option is available in API doc)
@@ -231,7 +222,5 @@ class PerceptionPointXRayParser(ApiParser):
                     self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = since + timedelta(hours=1)
                 else:
                     self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = to + timedelta(milliseconds=1)  # Add +1 ms for inclusive timestamp
-
-                self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

@@ -1578,7 +1578,7 @@ class Frontend(models.Model):
     perception_point_x_ray_host = models.TextField(
         verbose_name=_("Perception Point X Ray host"),
         help_text=_("Perception Point X Ray host"),
-        default="ex: https://xxx.xxx.com",
+        default="",
     )
     perception_point_x_ray_token = models.TextField(
         verbose_name=_("Perception Point X Ray API Key"),
