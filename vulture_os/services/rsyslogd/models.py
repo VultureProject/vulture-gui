@@ -134,19 +134,19 @@ class RsyslogQueue(models.Model):
         help_text=_("Save logs on disk if queue reaches high usage"),
         verbose_name=_("Enable disk queue on high queue usage")
     )
-    high_watermark = models.FloatField(
+    high_watermark = models.PositiveIntegerField(
         blank=True,
-        default=0.9,
+        default=90,
         help_text=_("Write logs on disk if size of queue reaches this threshold"),
-        verbose_name=_("High watermark for disk queuing"),
-        validators=[MinValueValidator(0), MaxValueValidator(1)]
+        verbose_name=_("High watermark for disk queuing (between 1 and 99%)"),
+        validators=[MinValueValidator(1), MaxValueValidator(99)]
     )
-    low_watermark = models.FloatField(
+    low_watermark = models.PositiveIntegerField(
         blank=True,
-        default=0.7,
+        default=70,
         help_text=_("Stop using disk when queue size falls below this threshold"),
-        verbose_name=_("Low watermark for disk queuing"),
-        validators=[MinValueValidator(0), MaxValueValidator(1)]
+        verbose_name=_("Low watermark for disk queuing (between 1 and 99%)"),
+        validators=[MinValueValidator(1), MaxValueValidator(99)]
     )
     max_file_size = models.PositiveIntegerField(
         blank=True,
@@ -192,8 +192,8 @@ class RsyslogQueue(models.Model):
                 "saveOnShutdown": "on" if self.save_on_shutdown else None,
             }
         if self.enable_disk_assist:
-            high_watermark = int(self.queue_size * self.high_watermark) if self.queue_size else None
-            low_watermark = int(self.queue_size * self.low_watermark) if self.queue_size else None
+            high_watermark = int(self.queue_size * self.high_watermark / 100) if self.queue_size else None
+            low_watermark = int(self.queue_size * self.low_watermark / 100) if self.queue_size else None
             options_dict |= {
                 "highWatermark": high_watermark,
                 "lowWatermark": low_watermark,
