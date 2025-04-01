@@ -108,7 +108,7 @@ class CrowdstrikeParser(ApiParser):
 
         return True, self.session
 
-    def __execute_query(self, method, url, query, timeout=10):
+    def __execute_query(self, method: str, url: str, query: dict, timeout=10):
         retry = 3
         while(retry > 0):
             retry -= 1
@@ -142,7 +142,7 @@ class CrowdstrikeParser(ApiParser):
             raise Exception(msg)
         return response.json()
 
-    def unionDict(self, dictBase, dictToAdd):
+    def unionDict(self, dictBase: dict, dictToAdd: dict):
         finalDict = {}
         for k, v in dictBase.items():
             if(isinstance(v, dict)):
@@ -153,7 +153,7 @@ class CrowdstrikeParser(ApiParser):
                 finalDict[k] = dictToAdd[k]
         return finalDict
 
-    def execute_query(self, method, url, query={}, timeout=10):
+    def execute_query(self, method: str, url: str, query: dict = {}, timeout: int = 10):
         # can set a custom limit of entry we want to retrieve
         # query['limit'] = 100
 
@@ -173,7 +173,7 @@ class CrowdstrikeParser(ApiParser):
 
         return jsonResp
 
-    def get_detections(self, since, to):
+    def get_detections(self, since: str, to: str):
         logger.debug(f"[{__parser__}][get_detections]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
         detections = []
 
@@ -196,11 +196,12 @@ class CrowdstrikeParser(ApiParser):
                                      url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
                                      query={"composite_ids": ids})
             ret = ret['resources']
-            for detection in ret: detections += [detection]
+            for detection in ret:
+                detections += [detection]
         return detections
 
 
-    def get_incidents(self, since, to):
+    def get_incidents(self, since: str, to: str):
         logger.debug(f"[{__parser__}][get_incidents]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
         incidents = []
 
@@ -224,18 +225,11 @@ class CrowdstrikeParser(ApiParser):
                                      query={"composite_ids": ids})
             ret = ret['resources']
             for incident in ret:
-                # if entities.agent_ids is present it means we need to enrich log with hosts informations
-                if ids := incident.get('entities', {}).get('agent_ids', []):
-                    devices = self.execute_query(method="POST",
-                            url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
-                            query={"ids": ids})
-                    incident['hosts'] = devices['resources']
-
                 incidents += [incident]
         return incidents
 
 
-    def get_logs(self, kind, since, to):
+    def get_logs(self, kind: str, since: str, to: str):
         logs = []
 
         msg = f"Querying {kind} from {since}, to {to}"
@@ -250,9 +244,34 @@ class CrowdstrikeParser(ApiParser):
         return logs
 
 
-    def format_log(self, kind, log):
+    def format_log(self, kind: str, log: dict):
         log['url'] = self.api_host
         log['kind'] = kind
+
+        # if entities.agent_ids is present it means we need to enrich log with hosts informations
+        # this keeps retro-compatibility by enriching .hosts field for incidents 
+        # (that have been removed since the migration from v1 to v2 endpoints)
+        if kind == "incidents":
+            if ids := log.get('entities', {}).get('agent_ids', []):
+                devices = self.execute_query(method="POST",
+                                             url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
+                                             query={"ids": ids})
+                log['hosts'] = devices['resources']
+
+        # this ensure the retro-compatibility of detections logs that contains .behaviors object
+        elif kind == "detections":
+            behaviors = {}
+            for field in ["alleged_filetype", "behavior_id", "cmdline", "confidence", "control_graph_id",
+                          "description", "agent_id", "display_name", "filename", "filepath", "ioc_description",
+                          "ioc_source", "ioc_type", "ioc_value", "md5", "objective", "parent_details",
+                          "pattern_disposition", "pattern_disposition_description", "pattern_disposition_details",
+                          "scenario", "severity", "sha256", "tactic", "tactic_id", "technique",
+                          "technique_id", "timestamp", "triggering_process_graph_id", "user_id", "user_name"]:
+                behavior_field = log.get(field)
+                if isinstance(behavior_field, str):
+                    behaviors[field] = behavior_field
+            log['behaviors'] = behaviors
+
         return dumps(log)
 
     def test(self):
@@ -300,6 +319,9 @@ class CrowdstrikeParser(ApiParser):
                                  to=to.strftime("%Y-%m-%dT%H:%M:%SZ"))
             total = len(logs)
 
+            self.write_to_file([self.format_log(kind, log) for log in logs])
+            self.update_lock()
+
             if total > 0:
                 logger.info(f"[{__parser__}][execute]: Total logs fetched : {total}", extra={'frontend': str(self.frontend)})
                 self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] = to
@@ -311,8 +333,5 @@ class CrowdstrikeParser(ApiParser):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
                 self.last_collected_timestamps[f"crowdstrike_falcon_{kind}"] += timedelta(hours=1)
-
-            self.write_to_file([self.format_log(kind, log) for log in logs])
-            self.update_lock()
 
         logger.info(f"[{__parser__}][execute]: Parsing done.", extra={'frontend': str(self.frontend)})
