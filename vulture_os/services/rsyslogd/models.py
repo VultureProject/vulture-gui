@@ -184,6 +184,7 @@ class RsyslogQueue(models.Model):
         verbose_name=_("Update bookkeeping information every Nth entry"),
     )
     spool_directory = models.TextField(
+        blank=True,
         default="/var/tmp",
         help_text=_("Set a writable folder to store DA queue"),
         verbose_name=_("Disk-Assisted queue folder")
