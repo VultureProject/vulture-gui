@@ -132,7 +132,7 @@ class RsyslogQueue(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(99)]
     )
     shutdown_timeout = models.PositiveIntegerField(
-        default=5000,
+        null=True,
         blank=True,
         help_text=_("Time to wait for the queue to finish processing entries (in ms) before shutting down"),
         verbose_name=_("Queue timeout shutdown (ms)"),
