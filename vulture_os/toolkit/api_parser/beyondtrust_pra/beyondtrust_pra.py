@@ -240,7 +240,11 @@ class BeyondtrustPRAParser(ApiParser):
 
         res = self._execute_query(url, query=parameters)
 
-        logs = xmltodict.parse(res.text)
+        try:
+            logs = xmltodict.parse(res.text)
+        except Exception:
+            logger.warning(f"[{__parser__}]:get_logs: Unable to parse {res.text}", extra={'frontend': str(self.frontend)})
+            return [], None
 
         if error := logs.get('error'):
             if "report information matching your chosen criteria is available." in error.get('#text'):
