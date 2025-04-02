@@ -213,19 +213,18 @@ class RsyslogQueue(models.Model):
                 "fullDelaymark": full_delay_mark,
                 "timeoutshutdown": self.shutdown_timeout,
             }
-        if self.enable_disk_assist:
-            high_watermark = int(self.queue_size * self.high_watermark / 100) if self.queue_size else None
-            low_watermark = int(self.queue_size * self.low_watermark / 100) if self.queue_size else None
-            options_dict |= {
-                "highWatermark": high_watermark,
-                "lowWatermark": low_watermark,
-                "spoolDirectory": self.spool_directory,
-                "filename": f"{self.get_ruleset()}_disk-queue",
-                "maxFileSize": f"{self.max_file_size}m" if self.max_file_size else None,
-                "maxDiskSpace": f"{self.max_disk_space}m" if self.max_disk_space else None,
-                "saveOnShutdown": "on" if self.save_on_shutdown else None,
-                "checkpointInterval": self.checkpoint_interval or None,
-            }
+            if self.enable_disk_assist:
+                high_watermark = int(self.queue_size * self.high_watermark / 100) if self.queue_size else None
+                low_watermark = int(self.queue_size * self.low_watermark / 100) if self.queue_size else None
+                options_dict |= {
+                    "highWatermark": high_watermark,
+                    "lowWatermark": low_watermark,
+                    "spoolDirectory": self.spool_directory,
+                    "maxFileSize": f"{self.max_file_size}m" if self.max_file_size else None,
+                    "maxDiskSpace": f"{self.max_disk_space}m" if self.max_disk_space else None,
+                    "saveOnShutdown": "on" if self.save_on_shutdown else None,
+                    "checkpointInterval": self.checkpoint_interval or None,
+                }
 
         #Filter out None values and format them all as string
         options_dict = dict(filter(lambda x: x[1] is not None, options_dict.items()))
