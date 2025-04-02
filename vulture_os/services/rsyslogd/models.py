@@ -214,8 +214,12 @@ class RsyslogQueue(models.Model):
                 "timeoutshutdown": self.shutdown_timeout,
             }
             if self.enable_disk_assist:
-                high_watermark = int(self.queue_size * self.high_watermark / 100) if self.queue_size else None
-                low_watermark = int(self.queue_size * self.low_watermark / 100) if self.queue_size else None
+                high_watermark = None
+                low_watermark = None
+                if self.queue_size and self.high_watermark:
+                    high_watermark = int(self.queue_size * self.high_watermark / 100)
+                if self.queue_size and self.low_watermark:
+                    low_watermark = int(self.queue_size * self.low_watermark / 100)
                 options_dict |= {
                     "highWatermark": high_watermark,
                     "lowWatermark": low_watermark,
