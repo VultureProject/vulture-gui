@@ -51,9 +51,7 @@ class ExtrahopParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        self.extrahop_host = data["extrahop_host"].rstrip("/")
-        if not self.extrahop_host.startswith('https://'):
-            self.extrahop_host = f"https://{self.extrahop_host}"
+        self.extrahop_host = "https://" + data["extrahop_host"].split("://")[-1].rstrip("/")
 
         self.id = data['extrahop_id']
         self.secret = data['extrahop_secret']
@@ -64,18 +62,22 @@ class ExtrahopParser(ApiParser):
         self.session = None
 
     def get_access_token(self):
-        if not self.access_token or self.expire_date < timezone.now() + timedelta(minutes=5):
+        if not all(self.access_token, self.expire_date) or self.expire_date < (timezone.now() + timedelta(minutes=5)):
             try:
                 url = f"{self.extrahop_host}/oauth2/token"
                 auth = HTTPBasicAuth(self.id, self.secret)
                 response = requests.post(url, auth=auth, data={"grant_type": "client_credentials"})
                 response.raise_for_status()
-            except requests.exceptions.HTTPError as err:
-                raise ExtrahopAPIError(f"Unable de renew access token. Error: {err}")
-            else:
                 response_json = response.json()
                 self.access_token = response_json["access_token"]
                 self.expire_date = (timezone.now() + timedelta(seconds=int(response_json["expires_in"]))).isoformat()
+            except requests.exceptions.HTTPError as err:
+                raise ExtrahopAPIError(f"Unable de renew access token. Error: {err}")
+            except json.DecodeError:
+                raise ExtrahopAPIError("Token renewal response is not a valid JSON")
+            except KeyError as err:
+                raise ExtrahopAPIError(f"Missing key in token renewal response: {err}")
+            else:
                 if self.frontend:
                     self.frontend.access_token = self.access_token
                     self.frontend.expire_date = self.expire_date
@@ -83,60 +85,50 @@ class ExtrahopParser(ApiParser):
 
         return self.access_token
 
-    def _execute_query(self, method, url, query, timeout=10):
+    def _execute_query(self, url, query, timeout=10):
         """
         raw request doesn't handle the pagination natively
         """
-        max_retry = 3
         retry = 1
-        while retry <= max_retry:
+        while retry <= 3:
             if self.session is None:
                 self._connect()
 
             msg = f"call {url} with query {query} (retry: {retry})"
-            logger.debug(f"[{__parser__}]:__execute_query: {msg}", extra={'frontend': str(self.frontend)})
-            if method == "POST":
-                try:
-                    response = self.session.post(
-                        url,
-                        json=query,
-                        timeout=timeout,
-                        proxies=self.proxies,
-                        verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
-                    )
+            logger.info(f"[{__parser__}]:__execute_query: {msg}", extra={'frontend': str(self.frontend)})
+            try:
+                response = self.session.post(
+                    url,
+                    json=query,
+                    timeout=timeout,
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
+                )
 
-                except Exception as e:
-                    logger.debug(f"[{__parser__}]:__execute_query: Exception: {e}", extra={'frontend': str(self.frontend)})
+            except Exception as e:
+                logger.warning(f"[{__parser__}]:__execute_query: Exception: {e}", extra={'frontend': str(self.frontend)})
+
+            else:
+                if response.status_code == 200:
+                    return response.json()
+                elif response.status_code == 204:
+                    return []
+
+                if "The specified access token is invalid." in response.text:
+                    # Force fetching a new token
+                    logger.warning(f"[{__parser__}]:__execute_query: Token is no longer valid, forcing renewal", extra={'frontend': str(self.frontend)})
                     self.session = None
                     self.access_token = None
-            else:
-                raise ExtrahopAPIError(f"Error at request, unknown method : {method}")
 
-            if response.status_code == 200:
-                break
-            elif response.status_code == 204:
-                return []
+            finally:
+                logger.debug(f"[{__parser__}]:__execute_query: retry += 1 (waiting 10s)",
+                             extra={'frontend': str(self.frontend)})
+                retry += 1
+                self.evt_stop.wait(10.0)
 
-            if "The specified access token is invalid." in response.text:
-                # Force fetching a new token
-                logger.debug(f"[{__parser__}]:__execute_query: Force fetching a new token", extra={'frontend': str(self.frontend)})
-                self.session = None
-                self.access_token = None
+        raise ExtrahopAPIError(f"Error at Extrahop API Call URL: {url}. Unable to fetch logs.")
 
-            logger.debug(f"[{__parser__}]:__execute_query: retry += 1 (waiting 10s)",
-                         extra={'frontend': str(self.frontend)})
-            retry += 1
-            self.evt_stop.wait(10.0)
 
-        # response.raise_for_status()
-        if response.status_code != 200:
-            logger.error(f"[{__parser__}]:__execute_query: Error at Extrahop API Call URL: {url} Code: {response.status_code} Content: {response.content}\n" \
-                f"Response : {response}", extra={'frontend': str(self.frontend)})
-            raise ExtrahopAPIError(
-                f"Error at Extrahop API Call URL: {url} Code: {response.status_code} Content: {response.content}\n" \
-                f"Response : {response}")
-
-        return response.json()
 
     def _connect(self):
         if self.session is None:
@@ -173,33 +165,40 @@ class ExtrahopParser(ApiParser):
         payload = {
             "create_time": int(since.timestamp() * 1000),
         }
-        return self._execute_query("POST", url, payload)
+        return self._execute_query(url, payload)
 
-    @staticmethod
-    def format_log(log):
-        log['timestamp_iso'] = datetime.fromtimestamp(log['create_time']/1000, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")
+    def format_log(self, log):
+        try:
+            log['timestamp_iso'] = datetime.fromtimestamp(log['create_time']/1000, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")
+        except KeyError as e:
+            logger.warning(f"[{__parser__}]:format_log: Error at Extrahop API log formatting: {e}. Skipping.",
+                         extra={'frontend': str(self.frontend)})
+
         return json.dumps(log)
 
     def execute(self):
-        since = self.last_api_call or (timezone.now() - timedelta(days=30))
+        since = self.last_api_call or (timezone.now() - timedelta(hours=24))
         to = timezone.now()
 
         msg = f"Parser starting from {since} to {to}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         if logs := self.get_logs(since):
-            max_timestamp = max(x['create_time'] for x in logs)
+
             self.write_to_file([self.format_log(log) for log in logs])
 
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
 
-            max_timestamp += 1  # since is inclusif
-            self.frontend.last_api_call = datetime.fromtimestamp(max_timestamp/1000.0, tz=timezone.utc)
-
+            try:
+                max_timestamp = max(x['create_time'] for x in logs)
+                max_timestamp += 1  # since is inclusif
+                self.frontend.last_api_call = datetime.fromtimestamp(max_timestamp/1000.0, tz=timezone.utc)
+            except KeyError as e:
+                logger.warning(f"[{__parser__}]:execute: Error at Extrahop API on last_api_call update: {e}.",
+                               extra={'frontend': str(self.frontend)})
         else:
             logger.info(f"[{__parser__}]:execute: Fetched 0 log.", extra={'frontend': str(self.frontend)})
             self.frontend.last_api_call = to
 
-        self.frontend.save()
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
