@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [API_PARSER] [WAF_CLOUDFLARE] Avoid querying the API with data from more than a week ago
 
 
 ## [2.23.0] - 2025-03-28
