@@ -2075,6 +2075,8 @@ class Frontend(RsyslogQueue, models.Model):
         :return  Str containing the rendered config
         """
         options_dict = self.get_rsyslog_queue_parameters()
+        if self.enable_disk_assist:
+            options_dict['filename'] = f"{self.get_ruleset()}_disk-queue"
         result = " ".join(f'queue.{k}="{v}"' for k,v in options_dict.items())
         return result
 
