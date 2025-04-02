@@ -151,6 +151,7 @@ class TrendmicroVisiononeParser(ApiParser):
                 try:
                     if retry < max_retries:
                         # That means this is not the first time and we are retrying -> waiting
+                        logger.info(f"[{__parser__}]:execute: Will retry..", extra={'frontend': str(self.frontend)})
                         time.sleep(sleep_retry)
 
                     while to <= timezone.now() - timedelta(minutes=5) and not self.evt_stop.is_set():
@@ -179,10 +180,7 @@ class TrendmicroVisiononeParser(ApiParser):
                                 f"[{__parser__}]:execute: Failed on {kind} logs, error status received",
                                 extra={'frontend': str(self.frontend)})
                             retry -= 1
-                            if retry > 0:
-                                logger.info(
-                                    f"[{__parser__}]:execute: Will retry..",
-                                    extra={'frontend': str(self.frontend)})
+
                     else:
                         logger.info(
                             f"[{__parser__}]:execute: Log collection for {kind}'s logs stopped at {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')}",
@@ -205,8 +203,6 @@ class TrendmicroVisiononeParser(ApiParser):
                     logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, between time of {since} and {to} : {e}", extra={'frontend': str(self.frontend)})
                     logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
                     retry -= 1
-                    if retry > 0:
-                        logger.info(f"[{__parser__}]:execute: Will retry..", extra={'frontend': str(self.frontend)})
 
             if not success and retry <= 0:
                 logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, max of {max_retries} retries exceeded",
