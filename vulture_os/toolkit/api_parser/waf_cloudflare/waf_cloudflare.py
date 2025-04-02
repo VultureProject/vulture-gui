@@ -114,7 +114,9 @@ class WAFCloudflareParser(ApiParser):
                 try:
                     bulk.append(line.decode('utf8'))
                 except UnicodeDecodeError:
-                    logger.warning(f"[{__parser__}]:get_logs: Error while trying to decode a log line {line}",
+                    logger.warning(f"[{__parser__}]:get_logs: Error while trying to decode a log line",
+                            extra={'frontend': str(self.frontend)})
+                    logger.debug(f"[{__parser__}]:get_logs: Log line -> {line}",
                             extra={'frontend': str(self.frontend)})
                     pass
                 cpt += 1
@@ -130,8 +132,8 @@ class WAFCloudflareParser(ApiParser):
         current_time = timezone.now()
         since = self.frontend.last_api_call or (timezone.now() - timedelta(hours=24))
         # Start cannot exceed a time in the past greater than seven days.
-        if since < (current_time - timedelta(hours=168)):
-            logger.info(f"[{__parser__}]:execute: Since is older than 168h, resetting-it to 167h in the past",
+        if since < (current_time - timedelta(hours=167)):
+            logger.info(f"[{__parser__}]:execute: Since is older than 167h, resetting-it to 167h in the past",
                         extra={'frontend': str(self.frontend)})
             since = current_time - timedelta(hours=167)
 
