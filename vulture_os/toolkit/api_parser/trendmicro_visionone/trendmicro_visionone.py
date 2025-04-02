@@ -36,6 +36,9 @@ from toolkit.api_parser.api_parser import ApiParser
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
+MAX_TOTAL_COUNT = 10000
+MIN_QUERY_INTERVAL = 10  # seconds
+
 
 class TrendmicroVisionOneAPIError(Exception):
     pass
@@ -71,6 +74,9 @@ class TrendmicroVisiononeParser(ApiParser):
                     status = False
                     logger.error(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
                     raise TrendmicroVisionOneAPIError(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
+
+                if r.json().get('totalCount') >= MAX_TOTAL_COUNT:
+                    raise requests.exceptions.ReadTimeout(f"Total count = {r.json().get('totalCount')} > {MAX_TOTAL_COUNT} (given max count)")
 
                 items.extend(r.json()['items'])
 
@@ -132,40 +138,79 @@ class TrendmicroVisiononeParser(ApiParser):
 
     def execute(self):
         for kind in ["alerts", "oat", "audit"]:
+            max_retries = 3
+            retry = max_retries
+            sleep_retry = 0.5
+            success = False
 
-            try:
-                since = getattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp") or (timezone.now() - timedelta(days=2))
-                to = since + timedelta(minutes=1)
+            since = getattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp") or (
+                        timezone.now() - timedelta(days=2))
+            to = since + timedelta(minutes=1)
 
-                while to <= timezone.now() - timedelta(minutes=5) and not self.evt_stop.is_set():
-                    logger.info(f"[{__parser__}]:execute: Parser gets {kind} logs from {since} to {to}", extra={'frontend': str(self.frontend)})
-                    start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
-                    end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
+            while not success and retry > 0 and not self.evt_stop.is_set():
+                try:
+                    if retry < max_retries:
+                        # That means this is not the first time and we are retrying -> waiting
+                        time.sleep(sleep_retry)
 
-                    self.update_lock()
-                    if kind == "alerts":
-                        logs, status = self._get_alerts(start_time, end_time)
-                    elif kind == "audit":
-                        logs, status = self._get_auditlogs(start_time, end_time)
-                    elif kind == "oat":
-                        logs, status = self._get_OAT(start_time, end_time)
+                    while to <= timezone.now() - timedelta(minutes=5) and not self.evt_stop.is_set():
+                        logger.info(f"[{__parser__}]:execute: Parser gets {kind} logs from {since} to {to}", extra={'frontend': str(self.frontend)})
+                        start_time = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+                        end_time = to.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-                    if status:
-                        self.write_to_file([self._format_logs(log) for log in logs])
                         self.update_lock()
-                        setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to)
-                        since = to
-                        to += timedelta(minutes=1)
-                        self.frontend.save()
+                        if kind == "alerts":
+                            logs, status = self._get_alerts(start_time, end_time)
+                        elif kind == "audit":
+                            logs, status = self._get_auditlogs(start_time, end_time)
+                        elif kind == "oat":
+                            logs, status = self._get_OAT(start_time, end_time)
+
+                        if status:
+                            self.write_to_file([self._format_logs(log) for log in logs])
+                            self.update_lock()
+                            setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to)
+                            since = to
+                            to += timedelta(minutes=1)
+                            self.frontend.save()
+                            success = True
+                        else:
+                            logger.error(
+                                f"[{__parser__}]:execute: Failed on {kind} logs, error status received",
+                                extra={'frontend': str(self.frontend)})
+                            retry -= 1
+                            if retry > 0:
+                                logger.info(
+                                    f"[{__parser__}]:execute: Will retry..",
+                                    extra={'frontend': str(self.frontend)})
                     else:
+                        logger.info(
+                            f"[{__parser__}]:execute: Log collection for {kind}'s logs stopped at {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')}",
+                            extra={'frontend': str(self.frontend)})
+
+                except requests.exceptions.ReadTimeout:
+                    logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+                    to -= (to - since) / 2
+                    if (to - since) < timedelta(seconds=MIN_QUERY_INTERVAL):
+                        logger.error(
+                            f"[{__parser__}]:execute: Failed on {kind} logs, time range too small between {since} and {to}",
+                            extra={'frontend': str(self.frontend)})
                         break
+                    else:
+                        logger.info(
+                            f"[{__parser__}]:execute: Will retry with smaller time range..",
+                            extra={'frontend': str(self.frontend)})
 
-                else:
-                    logger.info(f"[{__parser__}]:execute: Log collection for {kind}'s logs stopped at {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')}", extra={'frontend': str(self.frontend)})
+                except Exception as e:
+                    logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, between time of {since} and {to} : {e}", extra={'frontend': str(self.frontend)})
+                    logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+                    retry -= 1
+                    if retry > 0:
+                        logger.info(f"[{__parser__}]:execute: Will retry..", extra={'frontend': str(self.frontend)})
 
-            except Exception as e:
-                logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, between time of {since} and {to} : {e}", extra={'frontend': str(self.frontend)})
-                logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
+            if not success and retry <= 0:
+                logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, max of {max_retries} retries exceeded",
+                             extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
