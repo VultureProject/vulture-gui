@@ -61,7 +61,7 @@ class PerceptionPointXRayParser(ApiParser):
     def _execute_query(self, url, query=None, timeout=10):
 
         retry = 1
-        while retry <= 3:  # 3 retries max
+        while retry <= 3 and not self.evt_stop.is_set():
             if self.session is None:
                 self._connect()
 
@@ -96,15 +96,13 @@ class PerceptionPointXRayParser(ApiParser):
                         f"Wait a minute before continue. (retry {retry})",
                         extra={'frontend': str(self.frontend)})
                     retry += 1
-                    self.evt_stop.wait(60.0)
+                    self.evt_stop.wait(30.0)
                     continue
 
                 else:
-                    logger.error(f"[{__parser__}]:__execute_query: Error at PerceptionPointXRay API Call URL: {url} Code: {response.status_code} Content: {response.content}\n" \
+                    logger.error(f"[{__parser__}]:__execute_query: Error at PerceptionPointXRay API Call URL: {url} Code: {response.status_code} Content: {response.content}" \
                         f"Response : {response}", extra={'frontend': str(self.frontend)})
-                    retry += 1
-                    self.evt_stop.wait(10.0)
-                    continue
+                    break
 
         msg = f"Error at PerceptionPointXRay API Call URL: {url}: Unable to get a correct response"
         logger.error(f"[{__parser__}]:__execute_query: {msg}", extra={'frontend': str(self.frontend)})
@@ -117,7 +115,6 @@ class PerceptionPointXRayParser(ApiParser):
             self.session = Session()
             self.session.headers.update(self.HEADERS)
             self.session.headers.update({"Authorization": f"Token {self.token}"})
-            self.session.headers.update({"User-Agent": ""})
         return True
 
     def test(self):
@@ -125,7 +122,7 @@ class PerceptionPointXRayParser(ApiParser):
             if self.session is None:
                 self._connect()
 
-            since = timezone.now() - timedelta(days=30)
+            since = timezone.now() - timedelta(hours=24)
             to = timezone.now()
 
             response, _, _, _ = self.get_logs(since, to, self.LOG_TYPES[0], None)
@@ -147,9 +144,6 @@ class PerceptionPointXRayParser(ApiParser):
         return self._execute_query(url)
 
     def get_last_scans(self, since, to, log_type, next=None):
-        if self.session is None:
-            self._connect()
-
         if next:
             url = next
             payload = {}
