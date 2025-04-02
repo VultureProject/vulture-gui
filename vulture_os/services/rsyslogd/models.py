@@ -138,15 +138,15 @@ class RsyslogQueue(models.Model):
         verbose_name=_("Queue timeout shutdown (ms)"),
         validators=[MinValueValidator(1)]
     )
-    save_on_shutdown = models.BooleanField(
-        default=True,
-        help_text=_("Prevent message loss by writing on disk during a shutdown"),
-        verbose_name=_("Save remaining queue logs on shutdown")
-    )
     enable_disk_assist = models.BooleanField(
         default=False,
         help_text=_("Save logs on disk if queue reaches high usage"),
         verbose_name=_("Enable disk queue on high queue usage")
+    )
+    save_on_shutdown = models.BooleanField(
+        default=True,
+        help_text=_("Prevent message loss by writing on disk during a shutdown"),
+        verbose_name=_("Save remaining queue logs on shutdown")
     )
     high_watermark = models.PositiveIntegerField(
         blank=True,
