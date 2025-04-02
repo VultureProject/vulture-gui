@@ -65,6 +65,9 @@ class PerceptionPointXRayParser(ApiParser):
             if self.session is None:
                 self._connect()
 
+            msg = f"call {url} with query {query} (retry: {retry})"
+            logger.debug(f"[{__parser__}]:__execute_query: {msg}", extra={'frontend': str(self.frontend)})
+
             try:
                 response = self.session.get(
                     url,
