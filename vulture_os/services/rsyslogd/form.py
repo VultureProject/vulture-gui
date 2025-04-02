@@ -87,6 +87,8 @@ class RsyslogQueueForm(ModelForm):
             'spool_directory': TextInput(attrs={'class': 'form-control', 'placeholder': '/var/tmp'}),
         }
 
+    def clean_spool_directory(self):
+        return "/" + self.cleaned_data['spool_directory'].strip("/")
 
     def clean(self):
         cleaned_data = super().clean()

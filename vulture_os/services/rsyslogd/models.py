@@ -80,7 +80,7 @@ class RsyslogQueue(models.Model):
     class QueueTypes(models.TextChoices):
         DIRECT = "direct", _("Direct (no queuing)")
         LINKEDLIST = "linkedlist", _("LinkedList (queue with fixed size but dynamic allocation)")
-        FIXEDARRAY = 'fixedarray', "FixedArray (queue with fixed and preallocated size)"
+        FIXEDARRAY = "fixedarray", _("FixedArray (queue with fixed and preallocated size)")
 
     queue_type = models.TextField(
         default=QueueTypes.LINKEDLIST,
@@ -212,7 +212,6 @@ class RsyslogQueue(models.Model):
                 "lightDelayMark": light_delay_mark,
                 "fullDelaymark": full_delay_mark,
                 "timeoutshutdown": self.shutdown_timeout,
-                "saveOnShutdown": "on" if self.save_on_shutdown else None,
             }
         if self.enable_disk_assist:
             high_watermark = int(self.queue_size * self.high_watermark / 100) if self.queue_size else None
@@ -221,8 +220,10 @@ class RsyslogQueue(models.Model):
                 "highWatermark": high_watermark,
                 "lowWatermark": low_watermark,
                 "spoolDirectory": self.spool_directory,
+                "filename": f"{self.get_ruleset()}_disk-queue",
                 "maxFileSize": f"{self.max_file_size}m" if self.max_file_size else None,
                 "maxDiskSpace": f"{self.max_disk_space}m" if self.max_disk_space else None,
+                "saveOnShutdown": "on" if self.save_on_shutdown else None,
                 "checkpointInterval": self.checkpoint_interval or None,
             }
 
