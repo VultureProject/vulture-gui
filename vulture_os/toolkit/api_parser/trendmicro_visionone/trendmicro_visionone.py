@@ -26,6 +26,7 @@ __parser__ = 'TRENDMICRO VISIONONE'
 import json
 import logging
 import requests
+import time
 
 from datetime import timedelta
 from django.conf import settings
@@ -186,7 +187,7 @@ class TrendmicroVisiononeParser(ApiParser):
                             f"[{__parser__}]:execute: Log collection for {kind}'s logs stopped at {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')}",
                             extra={'frontend': str(self.frontend)})
 
-                except requests.exceptions.ReadTimeout:
+                except requests.exceptions.ReadTimeout as e:
                     logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
                     to -= (to - since) / 2
                     if (to - since) < timedelta(seconds=MIN_QUERY_INTERVAL):
