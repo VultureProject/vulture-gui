@@ -62,7 +62,7 @@ class ExtrahopParser(ApiParser):
         self.session = None
 
     def get_access_token(self):
-        if not all(self.access_token, self.expire_date) or self.expire_date < (timezone.now() + timedelta(minutes=5)):
+        if not all([self.access_token, self.expire_date]) or self.expire_date < (timezone.now() + timedelta(minutes=5)):
             try:
                 url = f"{self.extrahop_host}/oauth2/token"
                 auth = HTTPBasicAuth(self.id, self.secret)
@@ -70,17 +70,17 @@ class ExtrahopParser(ApiParser):
                 response.raise_for_status()
                 response_json = response.json()
                 self.access_token = response_json["access_token"]
-                self.expire_date = (timezone.now() + timedelta(seconds=int(response_json["expires_in"]))).isoformat()
+                self.expire_date = timezone.now() + timedelta(seconds=int(response_json["expires_in"]))
             except requests.exceptions.HTTPError as err:
                 raise ExtrahopAPIError(f"Unable de renew access token. Error: {err}")
-            except json.DecodeError:
+            except json.JSONDecodeError:
                 raise ExtrahopAPIError("Token renewal response is not a valid JSON")
             except KeyError as err:
                 raise ExtrahopAPIError(f"Missing key in token renewal response: {err}")
             else:
                 if self.frontend:
-                    self.frontend.access_token = self.access_token
-                    self.frontend.expire_date = self.expire_date
+                    self.frontend.extrahop_access_token = self.access_token
+                    self.frontend.extrahop_expire_date = self.expire_date
                     self.frontend.save()
 
         return self.access_token
@@ -90,10 +90,9 @@ class ExtrahopParser(ApiParser):
         raw request doesn't handle the pagination natively
         """
         retry = 1
-        while retry <= 3:
+        while retry <= 3 and not self.evt_stop.is_set():
             if self.session is None:
                 self._connect()
-
             msg = f"call {url} with query {query} (retry: {retry})"
             logger.info(f"[{__parser__}]:__execute_query: {msg}", extra={'frontend': str(self.frontend)})
             try:
@@ -104,30 +103,36 @@ class ExtrahopParser(ApiParser):
                     proxies=self.proxies,
                     verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                 )
-
-            except Exception as e:
-                logger.warning(f"[{__parser__}]:__execute_query: Exception: {e}", extra={'frontend': str(self.frontend)})
-
-            else:
+                response.raise_for_status()
                 if response.status_code == 200:
                     return response.json()
                 elif response.status_code == 204:
                     return []
-
-                if "The specified access token is invalid." in response.text:
-                    # Force fetching a new token
-                    logger.warning(f"[{__parser__}]:__execute_query: Token is no longer valid, forcing renewal", extra={'frontend': str(self.frontend)})
-                    self.session = None
-                    self.access_token = None
-
-            finally:
-                logger.debug(f"[{__parser__}]:__execute_query: retry += 1 (waiting 10s)",
+            except requests.exceptions.HTTPError as err:
+                logger.warning(f"[{__parser__}]:__execute_query: Failed to query API: {err}",
+                               extra={'frontend': str(self.frontend)})
+                if err.response:
+                    if err.response.status_code in (401, 403):
+                        logger.warning(f"[{__parser__}]:__execute_query: Authentication failed,"
+                                       " forcing renewal of token", extra={'frontend': str(self.frontend)})
+                        self.session = None
+                        self.access_token = None
+                        continue
+                    else:
+                        logger.warning(f"[{__parser__}]:__execute_query: HTTP Error {err.response.status_code}",
+                                       extra={'frontend': str(self.frontend)})
+            except TimeoutError as err:
+                    logger.warning(f"[{__parser__}]:__execute_query: Timeout querying API: {err}",
+                                   extra={'frontend': str(self.frontend)})
+            except json.JSONDecodeError as err:
+                logger.error(f"[{__parser__}]:__execute_query: failed to decode JSON answer from API {err}",
                              extra={'frontend': str(self.frontend)})
-                retry += 1
-                self.evt_stop.wait(10.0)
-
+                raise ExtrahopAPIError("Error decoding JSON from answer")
+            logger.warning(f"[{__parser__}]:__execute_query: Waiting 10 seconds before retrying...",
+                            extra={'frontend': str(self.frontend)})
+            self.evt_stop.wait(10.0)
+            retry += 1
         raise ExtrahopAPIError(f"Error at Extrahop API Call URL: {url}. Unable to fetch logs.")
-
 
 
     def _connect(self):
