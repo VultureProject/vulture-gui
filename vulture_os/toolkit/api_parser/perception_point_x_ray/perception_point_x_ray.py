@@ -59,15 +59,12 @@ class PerceptionPointXRayParser(ApiParser):
         self.session = None
 
     def _execute_query(self, url, query=None, timeout=10):
-
         retry = 1
         while retry <= 3 and not self.evt_stop.is_set():
             if self.session is None:
                 self._connect()
-
             msg = f"call {url} with query {query} (retry: {retry})"
             logger.debug(f"[{__parser__}]:__execute_query: {msg}", extra={'frontend': str(self.frontend)})
-
             try:
                 response = self.session.get(
                     url,
@@ -76,40 +73,37 @@ class PerceptionPointXRayParser(ApiParser):
                     proxies=self.proxies,
                     verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                 )
+                response.raise_for_status()
+                return response.json()
             except exceptions.Timeout:
                 logger.warning(f"[{__parser__}]:__execute_query: TimeoutError: retry += 1 (waiting 10s)",
                              extra={'frontend': str(self.frontend)})
                 retry += 1
                 self.evt_stop.wait(10.0)
                 continue
-            except Exception as e:
-                logger.error(f"[{__parser__}]:__execute_query: Exception: {e}", extra={'frontend': str(self.frontend)})
-                raise PerceptionPointXRayAPIError(f"[{__parser__}]:__execute_query: Error at request. Exception: {e}")
-            else:
-                if response.status_code == 200:
-                    try:
-                        return response.json()
-                    except decoder.JSONDecodeError as e:
-                        raise PerceptionPointXRayAPIError(
-                            f"[{__parser__}]:__execute_query: Error at JSON decoding. Exception JSONDecodeError: {e}") from e
-
-                elif response.status_code == 429:
-                    logger.error(
-                        f"[{__parser__}]:__execute_query: Error at PerceptionPointXRay API Call URL: {url} Code: 429."
-                        f"Wait a minute before continue. (retry {retry})",
-                        extra={'frontend': str(self.frontend)})
-                    retry += 1
-                    self.evt_stop.wait(30.0)
-                    continue
-
-                else:
-                    logger.error(f"[{__parser__}]:__execute_query: Error at PerceptionPointXRay API Call URL: {url} Code: {response.status_code} Content: {response.content}" \
-                        f"Response : {response}", extra={'frontend': str(self.frontend)})
-                    break
-
+            except exceptions.HTTPError as err:
+                if err.response:
+                    if err.response.status_code in (401, 403):
+                        logger.error(f"[{__parser__}]:__execute_query: Received a 401/403,"
+                                    " token is not (longer) valid!",
+                            extra={'frontend': str(self.frontend)})
+                        raise PerceptionPointXRayAPIError("Invalid token")
+                    if err.response.status_code == 429:
+                        logger.error(f"[{__parser__}]:__execute_query: Received a 429,"
+                                    " stopping collector and waiting for next run",
+                            extra={'frontend': str(self.frontend)})
+                        raise PerceptionPointXRayAPIError("Rate limit reached")
+                logger.error(f"[{__parser__}]:__execute_query: Unknown error at PerceptionPointXRay API Call URL:"
+                             f" {url}: {err}", extra={'frontend': str(self.frontend)})
+                retry += 1
+                self.evt_stop.wait(10.0)
+            except decoder.JSONDecodeError as err:
+                logger.error(f"[{__parser__}]:__execute_query: Could not decode JSON from answer: {err}",
+                            extra={'frontend': str(self.frontend)})
+                raise PerceptionPointXRayAPIError("JSON decoding error")
         msg = f"Error at PerceptionPointXRay API Call URL: {url}: Unable to get a correct response"
         logger.error(f"[{__parser__}]:__execute_query: {msg}", extra={'frontend': str(self.frontend)})
-        raise PerceptionPointXRayAPIError(msg)
+        raise PerceptionPointXRayAPIError("No response")
 
 
 
@@ -177,9 +171,22 @@ class PerceptionPointXRayParser(ApiParser):
             logs.append(scan_log)
 
         return logs, last_scans.get('has_more', False), last_scans.get('next'), to
+
     @staticmethod
     def format_log(log):
         log['timestamp_epoch'] = log['timestamp']
+        log["attachment_details"] = [
+            {
+                "url": log.get("attachment", ""),
+                "count": log.get("attachments_count", 0),
+                "names": log.get("names", ""),
+                "payload_type": log.get("payload_type", ""),
+                "file": {
+                    "extension": log.get("sample_file_type", ""),
+                    "size": log.get("sample", {}).get("file_size", "")
+                }
+            }
+        ]
         # Remove unused and big fields
         unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree", "warning_texts", "similarity_content_vector", "disclaimers"]
         for field in unused_fields:
@@ -209,15 +216,19 @@ class PerceptionPointXRayParser(ApiParser):
                 # Downloading may take some while, so refresh token in Redis
                 self.update_lock()
 
-                if logs and has_more_logs:
-                    max_timestamp = max(int(log.get("timestamp_epoch") * 10000000) for log in logs)
-                    last_timestamp = datetime.fromtimestamp(max_timestamp/10000000, tz=timezone.utc)
-                    self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = last_timestamp + timedelta(milliseconds=1)  # Add +1 ms for inclusive timestamp
-                elif len(logs) == 0 and since < timezone.now() - timedelta(hours=24):
+                if logs:
+                    if has_more_logs:
+                        max_timestamp = max(int(log.get("timestamp_epoch") * 10000000) for log in logs)
+                        last_timestamp = datetime.fromtimestamp(max_timestamp / 10000000, tz=timezone.utc)
+                        self.last_collected_timestamps[
+                            f"perception_point_x_ray_{log_type}"] = last_timestamp + timedelta(
+                            milliseconds=1)  # Add +1 ms for inclusive timestamp
+                    else:
+                        self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = to + timedelta(
+                            milliseconds=1)  # Add +1 ms for inclusive timestamp
+                elif since < timezone.now() - timedelta(hours=24):
                     # If no logs where retrieved during the last 24hours,
                     # move forward 1h to prevent stagnate ad vitam eternam
                     self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = since + timedelta(hours=1)
-                else:
-                    self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = to + timedelta(milliseconds=1)  # Add +1 ms for inclusive timestamp
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
