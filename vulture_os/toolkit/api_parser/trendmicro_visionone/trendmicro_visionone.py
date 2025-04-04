@@ -73,23 +73,20 @@ class TrendmicroVisiononeParser(ApiParser):
         query = {}
         url_path = ""
         link = ""
+        has_next = False
 
         while not status and retry > 0 and not self.evt_stop.is_set():
+            self.update_lock()
             try:
-                if retry < max_retries:
-                    # That means this is not the first time and we are retrying -> waiting
-                    logger.info(f"[{__parser__}]:__execute_query: Will retry..", extra={'frontend': str(self.frontend)})
-                    time.sleep(sleep_retry)
-
-                if kind == "alerts":
-                    query, url_path = self._prepare_request_alerts(since, to)
-                elif kind == "audit":
-                    query, url_path = self._prepare_request_auditlogs(since, to)
-                elif kind == "oat":
-                    query, url_path = self._prepare_request_OAT(since, to)
-
-                if not link:
-                    # We have to do this only once. Then, we are either using the same link or the next link
+                if not has_next:
+                    # We have to do this only if we're not using the next link
+                    # TODO : one prepare request which takes the kind as parameter
+                    if kind == "alerts":
+                        query, url_path = self._prepare_request_alerts(since, to)
+                    elif kind == "audit":
+                        query, url_path = self._prepare_request_auditlogs(since, to)
+                    elif kind == "oat":
+                        query, url_path = self._prepare_request_OAT(since, to)
                     link = self.URL_BASE + url_path
 
                 logger.info(f"[{__parser__}]:__execute_query: URL: {link} , params: {query}", extra={'frontend': str(self.frontend)})
@@ -108,11 +105,13 @@ class TrendmicroVisiononeParser(ApiParser):
 
                 if link := request_json.get('nextLink'):
                     query = None
-                    self.update_lock()
+                    has_next = True
                 else:
+                    has_next = False
                     status = True
             except requests.exceptions.ReadTimeout as e:
                 logger.exception(f"[{__parser__}]:__execute_query: {e}", extra={'frontend': str(self.frontend)})
+                has_next = False
                 to -= (to - since) / 2
                 if (to - since) < timedelta(seconds=MIN_QUERY_INTERVAL):
                     logger.error(
@@ -171,7 +170,7 @@ class TrendmicroVisiononeParser(ApiParser):
         query = {
             'detectedStartDateTime': start_time,
             'detectedEndDateTime': end_time,
-            'top': 5000
+            'top': 10000
         }
 
         return query, url_path
