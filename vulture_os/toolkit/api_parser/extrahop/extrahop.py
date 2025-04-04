@@ -202,6 +202,12 @@ class ExtrahopParser(ApiParser):
             except KeyError as e:
                 logger.warning(f"[{__parser__}]:execute: Error at Extrahop API on last_api_call update: {e}.",
                                extra={'frontend': str(self.frontend)})
+
+        elif len(logs) == 0 and since < timezone.now() - timedelta(hours=24):
+            # If no logs where retrieved during the last 24hours,
+            # move forward 1h to prevent stagnate ad vitam eternam
+            self.frontend.last_api_call = since + timedelta(hours=1)
+
         else:
             logger.info(f"[{__parser__}]:execute: Fetched 0 log.", extra={'frontend': str(self.frontend)})
             self.frontend.last_api_call = to
