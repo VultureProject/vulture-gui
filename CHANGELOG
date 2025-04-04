@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [PERCEPTION_POINT_XRAY] New collector
 ### Fixed
 - [API_PARSER] [WAF_CLOUDFLARE] Avoid querying the API with data from more than a week ago
 - [API_PARSER] [CISCO_DUO] Increment time pointer by 1s at the end of a run to avoid duplicates

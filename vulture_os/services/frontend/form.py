@@ -273,6 +273,7 @@ class FrontendForm(ModelForm):
                            "beyondtrust_reportings_get_team_logs", "beyondtrust_reportings_get_access_session_logs", "beyondtrust_reportings_get_vault_account_activity_logs", "beyondtrust_reportings_get_support_session_logs",
                            "varonis_host", "varonis_api_key",
                            "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
+                           "perception_point_x_ray_host", "perception_point_x_ray_token",
                            ]:
             self.fields[field_name].required = False
 
@@ -394,6 +395,7 @@ class FrontendForm(ModelForm):
                   "beyondtrust_reportings_get_support_session_logs",
                   "varonis_host", "varonis_api_key",
                   "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
+                  "perception_point_x_ray_host", "perception_point_x_ray_token",
                   )
 
         widgets = {
@@ -620,6 +622,8 @@ class FrontendForm(ModelForm):
             'armis_centrix_host': TextInput(attrs={'class': 'form-control'}),
             'armis_centrix_secretkey': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'armis_centrix_get_activity_logs': CheckboxInput(attrs={'class': 'js-switch'}),
+            'perception_point_x_ray_host': TextInput(attrs={'class': 'form-control'}),
+            'perception_point_x_ray_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         }
 
     def clean_name(self):

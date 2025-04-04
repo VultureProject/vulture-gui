@@ -2257,6 +2257,22 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-12 api_clients_row" id="api_perception_point_x_ray_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_host.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.perception_point_x_ray_host }}
+                            {{ form.perception_point_x_ray_host.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.perception_point_x_ray_token.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.perception_point_x_ray_token }}
+                            {{ form.perception_point_x_ray_token.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">

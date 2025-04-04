@@ -80,6 +80,7 @@ from toolkit.api_parser.infoblox_threat_defense.infoblox_threat_defense import I
 from toolkit.api_parser.beyondtrust_reportings.beyondtrust_reportings import BeyondtrustReportingsParser
 from toolkit.api_parser.varonis.varonis import VaronisParser
 from toolkit.api_parser.armis_centrix.armis_centrix import ArmisCentrixParser
+from toolkit.api_parser.perception_point_x_ray.perception_point_x_ray import PerceptionPointXRayParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -140,6 +141,7 @@ PARSER_LIST = {
     "beyondtrust_reportings": BeyondtrustReportingsParser,
     "varonis": VaronisParser,
     "armis_centrix": ArmisCentrixParser,
+    "perception_point_x_ray": PerceptionPointXRayParser,
 }
 
 class ParserDoesNotExist(Exception):
