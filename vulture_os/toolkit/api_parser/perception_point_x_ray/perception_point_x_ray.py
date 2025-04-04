@@ -48,7 +48,8 @@ class PerceptionPointXRayParser(ApiParser):
         "Accept": "application/json"
     }
 
-    LOG_TYPES = ["SUS", "MAL", "SPM"]  # Malicious, spam and suspicious
+    LOG_TYPES = ["SUS", "MAL", "SPM"]  # Suspicious, Malicious and Spam
+
 
     def __init__(self, data):
         super().__init__(data)
@@ -57,6 +58,7 @@ class PerceptionPointXRayParser(ApiParser):
         self.token = data['perception_point_x_ray_token']
 
         self.session = None
+
 
     def _execute_query(self, url, query=None, timeout=10):
         retry = 1
@@ -106,13 +108,13 @@ class PerceptionPointXRayParser(ApiParser):
         raise PerceptionPointXRayAPIError("No response")
 
 
-
     def _connect(self):
         if self.session is None:
             self.session = Session()
             self.session.headers.update(self.HEADERS)
             self.session.headers.update({"Authorization": f"Token {self.token}"})
         return True
+
 
     def test(self):
         try:
@@ -135,10 +137,12 @@ class PerceptionPointXRayParser(ApiParser):
                 "error": str(e)
             }
 
+
     def get_scan_details(self, scan_id):
         # Get details for every scan
         url = f"{self.perception_point_x_ray_host}/api/v1/scans/list/{scan_id}/"
         return self._execute_query(url)
+
 
     def get_last_scans(self, since, to, log_type, next=None):
         if next:
@@ -154,9 +158,11 @@ class PerceptionPointXRayParser(ApiParser):
 
         return self._execute_query(url, payload)
 
+
     def get_logs(self, since, to, log_type, next=None):
         last_scans = {}
-        while not self.evt_stop.is_set():  # Get the ideal timerange of logs to avoid errors if API returns more of 1000 logs
+        while not self.evt_stop.is_set():
+            # Get the ideal timerange of logs to avoid errors if API returns more of 1000 logs
             last_scans = self.get_last_scans(since, to, log_type, next)
             if last_scans.get('count') >= 1000:
                 to -= (to - since) / 2
@@ -188,7 +194,8 @@ class PerceptionPointXRayParser(ApiParser):
             }
         ]
         # Remove unused and big fields
-        unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree", "warning_texts", "similarity_content_vector", "disclaimers"]
+        unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree", "warning_texts",
+                         "similarity_content_vector", "disclaimers"]
         for field in unused_fields:
             try:
                 del log[field]
@@ -196,9 +203,9 @@ class PerceptionPointXRayParser(ApiParser):
                 pass
         return dumps(log)
 
+
     def execute(self):
         # Warning : the fetched logs are ordered in ASC (no option is available in API doc)
-
         for log_type in self.LOG_TYPES:
             since = self.last_collected_timestamps.get(f"perception_point_x_ray_{log_type}") or (timezone.now() - timedelta(days=30))
             to = min(since + timedelta(days=1), timezone.now())
