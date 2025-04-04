@@ -1,5 +1,5 @@
 django~=4.2.0
-djongo[json] @ https://github.com/VultureProject/djongo/archive/refs/tags/v1.3.7.zip
+djongo[json] @ https://github.com/VultureProject/djongo/archive/refs/heads/release/1.3.7.2.zip
 pymongo
 jinja2
 iptools

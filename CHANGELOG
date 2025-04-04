@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [API_PARSER] [PERCEPTION_POINT_XRAY] New collector
 - [API_PARSER] [EXTRAHOP] New collector
+### Changed
+- [DEPENDENCIES]
+  - cryptography 43.0.1 -> 44.0.2
+  - django 4.2.18 -> 4.2.20
+  - djongo 1.3.7 -> 1.3.7.2
+  - gunicorn 22.0.0 -> 23.0.0
+  - jinja2 3.1.3 -> 3.1.6
+  - sqlparse 0.4.4 -> 0.5.3
 ### Fixed
 - [API_PARSER] [WAF_CLOUDFLARE] Avoid querying the API with data from more than a week ago
 - [API_PARSER] [CISCO_DUO] Increment time pointer by 1s at the end of a run to avoid duplicates
