@@ -92,7 +92,7 @@ class TrendmicroVisiononeParser(ApiParser):
                 r = requests.get(link, params=query, headers=headers,proxies=self.proxies, verify=self.api_parser_verify_ssl, timeout=timeout)
                 if r.status_code != 200:
                     status = False
-                    logger.error(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
+                    logger.warning(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
                     raise TrendmicroVisionOneAPIError(f"Error on URL: {link} Status: {r.status_code} Reason/Content: {r.content}")
 
                 request_json = r.json()
@@ -113,7 +113,7 @@ class TrendmicroVisiononeParser(ApiParser):
                 has_next = False
                 to -= (to - since) / 2
                 if (to - since) < timedelta(seconds=MIN_QUERY_INTERVAL):
-                    logger.error(
+                    logger.warning(
                         f"[{__parser__}]:__execute_query: Failed on {kind} logs, time range too small between {since} and {to}",
                         extra={'frontend': str(self.frontend)})
                     break
@@ -123,7 +123,7 @@ class TrendmicroVisiononeParser(ApiParser):
                         extra={'frontend': str(self.frontend)})
 
             except Exception as e:
-                logger.error(f"[{__parser__}]:execute: Failed on {kind} logs, between time of {since} and {to} : {e}",
+                logger.warning(f"[{__parser__}]:execute: Failed on {kind} logs, between time of {since} and {to} : {e}",
                              extra={'frontend': str(self.frontend)})
                 logger.exception(f"[{__parser__}]:__execute_query: {e}", extra={'frontend': str(self.frontend)})
                 retry -= 1
