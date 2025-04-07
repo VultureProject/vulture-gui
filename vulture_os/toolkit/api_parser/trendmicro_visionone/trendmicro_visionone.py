@@ -26,7 +26,6 @@ __parser__ = 'TRENDMICRO VISIONONE'
 import json
 import logging
 import requests
-import time
 
 from datetime import timedelta
 from django.conf import settings
