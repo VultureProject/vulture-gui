@@ -60,7 +60,7 @@ class TrendmicroVisiononeParser(ApiParser):
         self.trendmicro_visionone_audit_timestamp = data.get("trendmicro_visionone_audit_timestamp")
         self.trendmicro_visionone_oat_timestamp = data.get("trendmicro_visionone_oat_timestamp")
 
-    def __execute_query(self, kind, since, to, timeout=10):
+    def __execute_query(self, kind, since, to, timeout=30):
 
         items = []
         status = False
@@ -68,7 +68,6 @@ class TrendmicroVisiononeParser(ApiParser):
         headers = {'Authorization': 'Bearer ' + self.trendmicro_visionone_token, 'TMV1-Filter': ""}
         max_retries = 3
         retry = max_retries
-        sleep_retry = 0.5
 
         query = {}
         url_path = ""
@@ -78,16 +77,16 @@ class TrendmicroVisiononeParser(ApiParser):
         while not status and retry > 0 and not self.evt_stop.is_set():
             self.update_lock()
             try:
-                # We have to do this only if we're not using the next link
-                # TODO : one prepare request which takes the kind as parameter
-                if kind == "alerts":
-                    query, url_path = self._prepare_request_alerts(since, to)
-                elif kind == "audit":
-                    query, url_path = self._prepare_request_auditlogs(since, to)
-                elif kind == "oat":
-                    query, url_path = self._prepare_request_OAT(since, to)
-
                 if not has_next:
+                    # We have to do this only if we're not using the next link
+                    if kind == "alerts":
+                        query, url_path = self._prepare_request_alerts(since, to)
+                    elif kind == "audit":
+                        query, url_path = self._prepare_request_auditlogs(since, to)
+                    elif kind == "oat":
+                        query, url_path = self._prepare_request_OAT(since, to)
+                        headers.update({'TMV1-Filter': "not (riskLevel eq 'info')"})
+
                     link = self.URL_BASE + url_path
 
                 logger.info(f"[{__parser__}]:__execute_query: URL: {link} , params: {query}", extra={'frontend': str(self.frontend)})
