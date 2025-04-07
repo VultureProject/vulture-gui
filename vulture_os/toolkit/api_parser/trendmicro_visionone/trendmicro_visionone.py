@@ -78,15 +78,16 @@ class TrendmicroVisiononeParser(ApiParser):
         while not status and retry > 0 and not self.evt_stop.is_set():
             self.update_lock()
             try:
+                # We have to do this only if we're not using the next link
+                # TODO : one prepare request which takes the kind as parameter
+                if kind == "alerts":
+                    query, url_path = self._prepare_request_alerts(since, to)
+                elif kind == "audit":
+                    query, url_path = self._prepare_request_auditlogs(since, to)
+                elif kind == "oat":
+                    query, url_path = self._prepare_request_OAT(since, to)
+
                 if not has_next:
-                    # We have to do this only if we're not using the next link
-                    # TODO : one prepare request which takes the kind as parameter
-                    if kind == "alerts":
-                        query, url_path = self._prepare_request_alerts(since, to)
-                    elif kind == "audit":
-                        query, url_path = self._prepare_request_auditlogs(since, to)
-                    elif kind == "oat":
-                        query, url_path = self._prepare_request_OAT(since, to)
                     link = self.URL_BASE + url_path
 
                 logger.info(f"[{__parser__}]:__execute_query: URL: {link} , params: {query}", extra={'frontend': str(self.frontend)})
