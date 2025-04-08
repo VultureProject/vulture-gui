@@ -49,6 +49,7 @@ if __name__ == "__main__":
             for frontend in Frontend.objects.filter(mode="filebeat"):
                 print("Asking reload of frontend {}".format(frontend.name))
                 api_res = node.api_request("services.filebeat.filebeat.build_conf", frontend.id)
+                api_res = node.api_request("services.filebeat.filebeat.restart_service", frontend.id)
                 if not api_res.get("status"):
                     print("Error while updating filebeat configuration of frontend '{}': "
                         "{}.".format(frontend.name, api_res.get("message")))

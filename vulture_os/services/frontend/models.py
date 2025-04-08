@@ -2262,7 +2262,8 @@ class Frontend(models.Model):
 
             if self.mode == "filebeat":
                 logger.info(f"Filebeat config asked on node {node}.")
-                node.api_request("services.filebeat.filebeat.build_conf", self.id)
+                node.api_request("services.filebeat.filebeat.build_conf", self.pk)
+                node.api_request("services.filebeat.filebeat.restart_service", self.pk)
 
             node.api_request("services.pf.pf.gen_config")
 
