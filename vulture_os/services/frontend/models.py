@@ -57,7 +57,7 @@ import glob
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
                                TemplateSyntaxError, UndefinedError)
-from services.exceptions import (ServiceJinjaError, ServiceStartError, ServiceTestConfigError, ServiceError)
+from services.exceptions import (ServiceJinjaError, ServiceTestConfigError)
 from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
@@ -2254,67 +2254,58 @@ class Frontend(models.Model):
         return nodes
 
     def enable(self):
-        """ Enable frontend in HAProxy, by management socket """
-        """ Cannot enable a disabled frontend ('enable' field) """
-        if not self.enabled:
-            raise ServiceError("Cannot start a disabled frontend.", "haproxy", "enable frontend",
-                               traceback="Please edit, enable and save a frontend to start-it.")
+        """ Quick enable a frontend """
+        if self.enabled:
+            return "This frontend is already enable."
 
-        """ If it is an Rsyslog only conf, start rsyslog """
-        if self.rsyslog_only_conf:
-            nodes = self.get_nodes()
-            for node in nodes:
-                api_res = node.api_request("services.rsyslogd.rsyslog.start_service")
-                if not api_res.get('status'):
-                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "rsyslog",
-                                            traceback=api_res.get('message'))
+        self.enabled = True
+        self.save()
 
-            return "Start rsyslog service asked on nodes {}".format(",".join([n.name for n in nodes]))
+        for node in self.get_nodes():
+            if self.enable_logging and self.listening_mode != "api":
+                logger.info(f"Rsyslogd global config reload asked on node {node}.")
+                node.api_request("services.rsyslogd.rsyslog.build_conf")
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
 
-        elif self.filebeat_only_conf:
-            nodes = self.get_nodes()
+            if self.mode == "filebeat":
+                logger.info(f"Filebeat config asked on node {node}.")
+                node.api_request("services.filebeat.filebeat.build_conf", self.pk)
+                node.api_request("services.filebeat.filebeat.restart_service", self.pk)
 
-            for node in nodes:
-                api_res = node.api_request("services.filebeat.filebeat.start_service", self.id)
-                if not api_res.get('status'):
-                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "filebeat",
-                                            traceback=api_res.get('message'))
+            node.api_request("services.pf.pf.gen_config")
 
-            return "Start filebeat service asked on nodes {}".format(",".join([n.name for n in nodes]))
+        if self.has_haproxy_conf:
+            for node in self.reload_conf():
+                node.api_request("services.haproxy.haproxy.reload_service")
 
-        else:
-            nodes = self.get_nodes()
-            for node in nodes:
-                api_res = node.api_request("services.haproxy.haproxy.host_start_frontend", self.name)
-                if not api_res.get('status'):
-                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "haproxy",
-                                            traceback=api_res.get('message'))
-
-            return "Start frontend '{}' asked on nodes {}".format(self.name, ",".join([n.name for n in nodes]))
-
+        return f"Start frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 
     def disable(self):
-
-        """ Disable frontend in HAProxy, by management socket """
+        """ Quick disable a frontend """
         if not self.enabled:
             return "This frontend is already disabled."
 
-        """ Cannot stop Rsyslog / Filebeat only frontend """
-        if self.rsyslog_only_conf:
-            raise ServiceError("Cannot hot disable an Rsyslog only frontend.", "rsyslog", "disable frontend",
-                               traceback="Please edit, disable and save the frontend.")
-        elif self.filebeat_only_conf:
-            raise ServiceError("Cannot hot disable a Filebeat only frontend.", "filebeat", "disable frontend",
-                               traceback="Please edit, disable and save the frontend.")
-        else:
-            nodes = self.get_nodes()
-            for node in nodes:
-                api_res = node.api_request("services.haproxy.haproxy.host_stop_frontend", self.name)
-                if not api_res.get('status'):
-                    raise ServiceStartError("API request failure on node '{}'".format(node.name), "haproxy",
-                                            traceback=api_res.get('message'))
+        self.enabled = False
+        self.save()
 
-            return "Stop frontend '{}' asked on nodes {}".format(self.name, ",".join([n.name for n in nodes]))
+        for node in self.get_nodes():
+            if self.enable_logging and self.listening_mode != "api":
+                node.api_request("services.rsyslogd.rsyslog.build_conf")
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
+
+            if self.mode == "filebeat":
+                # We have to delete the config to pause the Filebeat process
+                logger.info(f"Filebeat config '{self.get_filebeat_base_filename()}' deletion asked on node {node}.")
+                node.api_request('services.filebeat.filebeat.stop_service', self.pk)
+                node.api_request('services.filebeat.filebeat.delete_conf', self.get_filebeat_base_filename())
+
+            node.api_request("services.pf.pf.gen_config")
+
+        if self.has_haproxy_conf:
+            for node in self.reload_conf():
+                node.api_request("services.haproxy.haproxy.reload_service")
+
+        return f"Stop frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 
     @property
     def rsyslog_only_conf(self):
