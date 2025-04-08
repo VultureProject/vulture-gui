@@ -44,6 +44,10 @@ class TrendmicroVisionOneAPIError(Exception):
     pass
 
 
+class TrendmicroVisionOneAPICountTooLarge(Exception):
+    pass
+
+
 class TrendmicroVisiononeParser(ApiParser):
     URL_BASE = "https://api.eu.xdr.trendmicro.com"
 
@@ -103,7 +107,7 @@ class TrendmicroVisiononeParser(ApiParser):
                 request_json = r.json()
                 if kind != "audit" and request_json.get('totalCount') >= MAX_TOTAL_COUNT:
                     # Note : This attribute is not present in audit logs response
-                    raise requests.exceptions.ReadTimeout(f"Total count = {request_json.get('totalCount')} > {MAX_TOTAL_COUNT} (given max count)")
+                    raise TrendmicroVisionOneAPICountTooLarge(f"Total count = {request_json.get('totalCount')} > {MAX_TOTAL_COUNT} (given max count)")
 
                 items.extend(request_json['items'])
 
@@ -113,7 +117,7 @@ class TrendmicroVisiononeParser(ApiParser):
                     continue
                 else:
                     status = True
-            except requests.exceptions.ReadTimeout as e:
+            except (TrendmicroVisionOneAPICountTooLarge, requests.exceptions.ReadTimeout) as e:
                 logger.warning(f"[{__parser__}]:__execute_query: {e}", extra={'frontend': str(self.frontend)})
                 link = ""
                 to -= (to - since) / 2
