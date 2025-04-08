@@ -347,10 +347,10 @@ class LogOMFile(LogOM):
         result = set()
         from services.frontend.models import Frontend
         # FIXME : Add .distinct("ruleset") when implemented in djongo
-        for f in Frontend.objects.filter(log_forwarders=self.id).only('ruleset'):
+        for f in Frontend.objects.filter(log_forwarders=self.pk).only('ruleset'):
             result.add(f.ruleset)
         # Retrieve log_forwarders_parse_failure for log listeners
-        for f in Frontend.objects.filter(mode__in=["log", "filebeat"], log_forwarders_parse_failure=self.id).only('ruleset'):
+        for f in Frontend.objects.filter(mode__in=["log", "filebeat"], log_forwarders_parse_failure=self.pk).only('ruleset'):
             result.add(f.ruleset+"_garbage")
         return result
 
@@ -528,7 +528,7 @@ class LogOMHIREDIS(LogOM):
 
     def get_rsyslog_template(self):
         from services.frontend.models import Frontend
-        if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.id).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.id).exists():
+        if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.id).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.pk).exists():
             return f"template(name=\"{self.template_id()}\" type=\"string\" string=\"{self.key}\")"
         return ""
 
@@ -688,13 +688,13 @@ class LogOMElasticSearch(LogOM):
         """ Render filenames based on filename attribute, depending on frontend used """
         result = set()
         from services.frontend.models import Frontend
-        for f in Frontend.objects.filter(log_forwarders=self.id).only('name') | Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.id).only('name'):
+        for f in Frontend.objects.filter(log_forwarders=self.pk).only('name') | Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.pk).only('name'):
             result.add(f"/var/log/internal/{self.name}_{f.name}_error.log")
         return result
 
     def get_rsyslog_template(self):
         from services.frontend.models import Frontend
-        if Frontend.objects.filter(log_forwarders=self.id).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.id).exists():
+        if Frontend.objects.filter(log_forwarders=self.pk).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.pk).exists():
             return f"template(name=\"{self.template_id()}\" type=\"string\" string=\"{self.index_pattern}\")"
         return ""
 
@@ -847,7 +847,7 @@ class LogOMKAFKA(LogOM):
     def get_rsyslog_template(self):
         from services.frontend.models import Frontend
         template = ""
-        if Frontend.objects.filter(log_forwarders=self.id).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.id).exists():
+        if Frontend.objects.filter(log_forwarders=self.pk).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.pk).exists():
             if self.dynaKey:
                 template += f"template(name=\"{self.template_id()}\" type=\"string\" string=\"{self.key}\")\n"
             if self.dynaTopic:
