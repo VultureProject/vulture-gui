@@ -145,11 +145,10 @@ def monitor():
                 if frontend.mode == "log" and frontend.listening_mode == "api":
                     # Only change the Frontend's status if the current node has ownership
                     if node_selected(node, frontend):
-                        if node == tmp_node:
-                            # Let Rsyslog take the responsability to set the status to OPEN
-                            partial_statuses.append({'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status))
-                    # Set the status to STOP if the node is not currently holding the collector
+                        # Let Rsyslog take the responsability to set the status to OPEN
+                        partial_statuses.append({'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status))
                     else:
+                        # Set the status to STOP if the node is not currently holding the collector
                         partial_statuses.append("STOP")
                 if frontend.has_rsyslog_conf:
                     partial_statuses.append({'UP': "OPEN", 'DOWN': "ERROR"}.get(rsyslogd_status.status, rsyslogd_status.status))
