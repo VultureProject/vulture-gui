@@ -2259,6 +2259,7 @@ class Frontend(models.Model):
             if self.enable_logging and self.listening_mode != "api":
                 logger.info(f"Rsyslogd global config reload asked on node {node}.")
                 node.api_request("services.rsyslogd.rsyslog.build_conf")
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
 
             if self.mode == "filebeat":
                 logger.info(f"Filebeat config asked on node {node}.")
@@ -2284,6 +2285,7 @@ class Frontend(models.Model):
         for node in self.get_nodes():
             if self.enable_logging and self.listening_mode != "api":
                 node.api_request("services.rsyslogd.rsyslog.build_conf")
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
 
             if self.mode == "filebeat":
                 # We have to delete the config to pause the Filebeat process
