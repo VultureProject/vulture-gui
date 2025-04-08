@@ -57,7 +57,7 @@ import glob
 # Required exceptions imports
 from jinja2.exceptions import (TemplateAssertionError, TemplateNotFound, TemplatesNotFound, TemplateRuntimeError,
                                TemplateSyntaxError, UndefinedError)
-from services.exceptions import (ServiceJinjaError, ServiceStartError, ServiceTestConfigError, ServiceError)
+from services.exceptions import (ServiceJinjaError, ServiceTestConfigError)
 from system.exceptions import VultureSystemConfigError
 
 # Logger configuration imports
