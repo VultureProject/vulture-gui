@@ -71,7 +71,7 @@ class TrendmicroVisiononeParser(ApiParser):
                 self.session = requests.Session()
                 self.session.headers.update({'Authorization': 'Bearer ' + self.trendmicro_visionone_token})
                 self.session.proxies = self.proxies
-                self.session.verify = self.api_parser_verify_ssl
+                self.session.verify = self.api_parser_custom_certificate or self.api_parser_verify_ssl
             return True
         except Exception as err:
             raise TrendmicroVisionOneAPIError(err)
@@ -192,7 +192,7 @@ class TrendmicroVisiononeParser(ApiParser):
                         timezone.now() - timedelta(days=2))
 
             # we don't want logs newer than 5 minutes ago, to let some time for VisionOne to index logs
-            # we are retrieving maximum 24 hours at once, to avoid the collector to run for too long
+            # we are retrieving maximum 1 hour at once, to avoid the collector to run for too long
 
             max_to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=1))
             to = max_to
