@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [TRENDMICRO_VISIONONE] Add retries and check for total count
 - [FRONTEND] Hot-disable a collector manually
 - [GUI] [FRONTEND] Don't show Redis mode when unnecessary
+- [FRONTEND] [RSYSLOG] HAproxy config generation failure with new frontends
 
 
 ## [2.23.0] - 2025-03-28
