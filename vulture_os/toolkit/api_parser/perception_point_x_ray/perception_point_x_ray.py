@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
+
 __author__ = "nlancon"
 __credits__ = []
 __license__ = "GPLv3"
@@ -31,6 +32,7 @@ from toolkit.api_parser.api_parser import ApiParser
 
 from requests import Session, exceptions
 from json import dumps, decoder
+import contextlib
 
 from datetime import datetime, timedelta
 
@@ -194,13 +196,14 @@ class PerceptionPointXRayParser(ApiParser):
             }
         ]
         # Remove unused and big fields
-        unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree", "warning_texts",
-                         "similarity_content_vector", "disclaimers"]
+        unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree"]
         for field in unused_fields:
-            try:
+            with contextlib.suppress(KeyError):
                 del log[field]
-            except KeyError:
-                pass
+        with contextlib.suppress(KeyError):
+            del log["sample"]["similarity_content_vector"]
+        with contextlib.suppress(KeyError):
+            del log["sample"]["disclaimers"]
         return dumps(log)
 
 
