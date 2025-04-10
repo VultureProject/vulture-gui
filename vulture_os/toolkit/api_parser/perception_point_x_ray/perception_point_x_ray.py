@@ -32,7 +32,6 @@ from toolkit.api_parser.api_parser import ApiParser
 
 from requests import Session, exceptions
 from json import dumps, decoder
-import contextlib
 
 from datetime import datetime, timedelta
 
@@ -198,12 +197,13 @@ class PerceptionPointXRayParser(ApiParser):
         # Remove unused and big fields
         unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree"]
         for field in unused_fields:
-            with contextlib.suppress(KeyError):
+            if field in log:
                 del log[field]
-        with contextlib.suppress(KeyError):
-            del log["sample"]["similarity_content_vector"]
-        with contextlib.suppress(KeyError):
-            del log["sample"]["disclaimers"]
+        if "sample" in log:
+            if "similarity_content_vector" in log["sample"]:
+                del log["sample"]["similarity_content_vector"]
+            if "disclaimers" in log["sample"]:
+                del log["sample"]["disclaimers"]
         return dumps(log)
 
 
