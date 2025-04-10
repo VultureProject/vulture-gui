@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
+
 __author__ = "nlancon"
 __credits__ = []
 __license__ = "GPLv3"
@@ -194,13 +195,15 @@ class PerceptionPointXRayParser(ApiParser):
             }
         ]
         # Remove unused and big fields
-        unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree", "warning_texts",
-                         "similarity_content_vector", "disclaimers"]
+        unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree"]
         for field in unused_fields:
-            try:
+            if field in log:
                 del log[field]
-            except KeyError:
-                pass
+        if "sample" in log:
+            if "similarity_content_vector" in log["sample"]:
+                del log["sample"]["similarity_content_vector"]
+            if "disclaimers" in log["sample"]:
+                del log["sample"]["disclaimers"]
         return dumps(log)
 
 
