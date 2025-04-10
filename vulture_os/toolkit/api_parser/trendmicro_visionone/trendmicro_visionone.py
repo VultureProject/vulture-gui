@@ -208,13 +208,13 @@ class TrendmicroVisiononeParser(ApiParser):
                     self.write_to_file([self._format_logs(log) for log in logs])
                     self.update_lock()
                     total = len(logs)
-                    current_kind_timestamp = getattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp")
                     if total > 0:
                         setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to)
-                    elif current_kind_timestamp < timezone.now() - timedelta(hours=24):
+                    elif since < timezone.now() - timedelta(hours=24):
                         # If no logs where retrieved during the last 24hours,
                         # move forward 1h to prevent stagnate ad vitam eternam
-                        setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", current_kind_timestamp + timedelta(hours=1))
+                        setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", since + timedelta(hours=1))
+                        break
 
                     # we are re-using the computed time range as a basis for the next query
                     last_time_range = to - since
