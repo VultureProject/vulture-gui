@@ -181,7 +181,11 @@ class CiscoDuoParser(ApiParser):
                     # Ensure mintime<maxtime (for the first execution)
                     since -= timedelta(minutes=2)
 
-                # the reason we are not doing any iteration/pagnination in get_logs or here is because we can't get more than 1k logs and the API explicitly says that we must call it only 1 time/min (cf : https://duo.com/docs/adminapi#logs)
+                logger.info(f"[{__parser__}]: Fetching logs on endpoint {endpoint} from {since} to {to}",
+                            extra={'frontend': str(self.frontend)})
+                # the reason we are not doing any iteration/pagnination in get_logs or here is because
+                # we can't get more than 1k logs and the API explicitly says that we must call it only 1 time/min
+                # (cf : https://duo.com/docs/adminapi#logs)
                 logs = self.get_logs(since=since, to=to, endpoint=endpoint)
 
                 if "authlogs" in logs:
