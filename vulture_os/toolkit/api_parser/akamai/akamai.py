@@ -285,7 +285,7 @@ class AkamaiParser(ApiParser):
                     self.get_logs()
                     self.update_lock()
                     self.frontend.last_api_call = timezone.make_aware(datetime.datetime.utcfromtimestamp(self.last_log_time.value))
-                    self.frontend.save()
+                    self.frontend.save(update_fields=['last_api_call'])
                     msg = f"{self.last_log_time.value}"
                     logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
             except Exception as e:

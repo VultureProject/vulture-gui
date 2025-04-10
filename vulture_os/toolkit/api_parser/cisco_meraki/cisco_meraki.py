@@ -206,6 +206,7 @@ class CiscoMerakiParser(ApiParser):
                         if nb_events > 0:
                             # No need to make_aware, date already contains timezone
                             self.frontend.cisco_meraki_timestamp[f"{network['id']}_{product_type}"] = tmp_logs['pageEndAt']
+                            self.frontend.save(update_fields=["cisco_meraki_timestamp"])
                             since = tmp_logs['pageEndAt']
 
                     if total_nb_events:
@@ -241,6 +242,7 @@ class CiscoMerakiParser(ApiParser):
                 if len(security_events) > 0:
                     # No need to make_aware, date already contains timezone
                     self.frontend.cisco_meraki_timestamp[f"org{orga['id']}_security_events"] = security_events[-1]['ts']
+                    self.frontend.save(update_fields=["cisco_meraki_timestamp"])
 
 
             if self.cisco_meraki_get_configuration_changes_logs and not self.evt_stop.is_set():

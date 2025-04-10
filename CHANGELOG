@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SERVICES] [FRONTEND] Correctly get Darwin objects when building rsyslog configurations
 - [GUI] [RSYSLOG] Bring more details on GUI when configuration builds fail
 - [SERVICES] [FRONTEND] Improve deletion messages and conditions on GUI and API
+- [API_PARSER] Ensure modifications in configuration are not overriden by running instances
 
 
 ## [2.25.0]

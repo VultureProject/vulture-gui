@@ -249,4 +249,5 @@ class TrendmicroWorryfreeParser(ApiParser):
         self.update_lock()
 
         self.frontend.last_api_call = to
+        self.frontend.save(update_fields=["last_api_call"])
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

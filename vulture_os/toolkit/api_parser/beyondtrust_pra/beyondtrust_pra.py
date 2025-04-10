@@ -72,7 +72,7 @@ class BeyondtrustPRAParser(ApiParser):
         try:
             if self.frontend:
                 self.frontend.beyondtrust_pra_api_token = self.beyondtrust_pra_api_token
-                self.frontend.save()
+                self.frontend.save(update_fields=['beyondtrust_pra_api_token'])
         except Exception as e:
             raise BeyondtrustPRAAPIError(f"Unable to save access token: {e}")
 

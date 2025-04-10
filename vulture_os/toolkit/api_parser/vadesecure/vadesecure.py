@@ -288,7 +288,7 @@ class VadesecureParser(ApiParser):
 
             # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             self.frontend.last_api_call = to_tz + timedelta(milliseconds=1)
-            self.frontend.save()
+            self.frontend.save(update_fields=['last_api_call'])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 

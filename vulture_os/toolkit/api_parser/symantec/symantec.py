@@ -167,6 +167,7 @@ class SymantecParser(ApiParser):
                         msg = "No logs found"
                         logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                         self.frontend.last_api_call = timezone.now()
+                        self.frontend.save(update_fields=["last_api_call"])
                         self.finish()
                     else:
                         try:
@@ -181,6 +182,7 @@ class SymantecParser(ApiParser):
                                 raise Exception("Cannot find token in archive tail, aborting.")
                             else:
                                 self.frontend.symantec_token = symantec_token
+                                self.frontend.save(update_fields=['symantec_token'])
                             data = []
                             with zipfile.ZipFile(tmp_file) as zip_file:
                                 for gzip_filename in zip_file.namelist():
@@ -216,7 +218,7 @@ class SymantecParser(ApiParser):
                                                          extra={'frontend': str(self.frontend)})
 
                                         self.frontend.last_api_call = self.last_api_call
-                                        self.frontend.save()
+                                        self.frontend.save(update_fields=['last_api_call'])
                             self.finish()
 
                         except zipfile.BadZipfile as err:

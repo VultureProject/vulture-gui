@@ -184,6 +184,7 @@ class DefenderATPParser(ApiParser):
 
             # All alerts are retrieved, reset timezone to now
             self.frontend.last_api_call = timezone.now()
+            self.frontend.save(update_fields=["last_api_call"])
 
         self.write_to_file([json.dumps(l) for l in logs])
         # Writting may take some while, so refresh token in Redis
