@@ -129,7 +129,7 @@ class ArmisCentrixParser(ApiParser):
             if self.frontend:
                 self.frontend.armis_centrix_token = self.armis_token
                 self.frontend.armis_centrix_token_expire_at = self.armis_token_expire_at
-                self.frontend.save()
+                self.frontend.save(update_fields=['armis_centrix_token', 'armis_centrix_token_expire_at'])
         except Exception as e:
             raise ArmisCentrixAPIError(f"Unable to save access token: {e}")
 

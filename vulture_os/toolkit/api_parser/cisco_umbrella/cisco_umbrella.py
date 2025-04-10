@@ -181,6 +181,6 @@ class CiscoUmbrellaParser(ApiParser):
             self.frontend.save()
         self.frontend.cisco_umbrella_access_token = self.cisco_umbrella_access_token
         self.frontend.cisco_umbrella_expires_at = self.cisco_umbrella_expires_at
-        self.frontend.save()
+        self.frontend.save(update_fields=['cisco_umbrella_access_token', 'cisco_umbrella_expires_at'])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

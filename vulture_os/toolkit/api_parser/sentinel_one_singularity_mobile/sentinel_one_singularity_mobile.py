@@ -65,13 +65,13 @@ class SentinelOneSingularityMobileParser(ApiParser):
         if self.frontend:
             self.frontend.sentinel_one_singularity_mobile_access_token_expiry = None
             self.frontend.sentinel_one_singularity_mobile_access_token = None
-            self.frontend.save()
+            self.frontend.save(update_fields=['sentinel_one_singularity_mobile_access_token_expiry', 'sentinel_one_singularity_mobile_access_token'])
 
     def _save_token(self):
         if self.frontend:
             self.frontend.sentinel_one_singularity_mobile_access_token_expiry = self.expires_on
             self.frontend.sentinel_one_singularity_mobile_access_token = self.access_token
-            self.frontend.save()
+            self.frontend.save(update_fields=['sentinel_one_singularity_mobile_access_token_expiry', 'sentinel_one_singularity_mobile_access_token'])
 
     def get_access_token(self):
         if not self.expires_on or not self.access_token or timezone.now() > self.expires_on:

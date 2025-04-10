@@ -195,7 +195,7 @@ class ApexParser(ApiParser):
             if len(logs) > 0:
                 try:
                     self.frontend.apex_page_token[f"apex_{kind}_page_token"] = next_page_token
-                    self.frontend.save()
+                    self.frontend.save(update_fields=['apex_page_token'])
                 except Exception as err:
                     logger.error(f"[{__parser__}]:execute: {err}",
                                  extra={'frontend': str(self.frontend)})
@@ -218,7 +218,7 @@ class ApexParser(ApiParser):
             if len(logs) > 0:
                 try:
                     self.frontend.apex_timestamp[f"apex_{kind}_timestamp"] = next_timestamp
-                    self.frontend.save()
+                    self.frontend.save(update_fields=['apex_timestamp'])
                 except Exception as err:
                     logger.error(f"[{__parser__}]:execute: {err}",
                                  extra={'frontend': str(self.frontend)})

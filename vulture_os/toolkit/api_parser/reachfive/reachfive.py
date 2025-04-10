@@ -62,7 +62,7 @@ class ReachFiveParser(ApiParser):
             if self.frontend:
                 self.frontend.reachfive_access_token = self.reachfive_access_token
                 self.frontend.reachfive_expire_at = self.reachfive_expire_at
-                self.frontend.save()
+                self.frontend.save(update_fields=['reachfive_access_token', 'reachfive_expire_at'])
         except Exception as e:
             raise ReachFiveAPIError(f"Unable to save access token: {e}")
 

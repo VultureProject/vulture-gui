@@ -355,12 +355,12 @@ class VaronisParser(ApiParser):
             if alerts:
                 self.last_api_call = datetime.strptime(alerts[-1]["alert"]["time_utc"], "%Y-%m-%dT%H:%M:%S").astimezone(timezone.utc)
                 self.frontend.last_api_call = self.last_api_call + timedelta(seconds=1)
-                self.frontend.save()
+                self.frontend.save(update_fields=['last_api_call'])
                 logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
             # If no logs were retrieved and the beginning of the query is before 24h ago, jump 1h forward for next query
             elif since < timezone.now() - timedelta(hours=24):
                 self.frontend.last_api_call = since + timedelta(hours=1)
-                self.frontend.save()
+                self.frontend.save(update_fields=['last_api_call'])
                 logger.info(f"[{__parser__}]:execute: new last_api_call is {self.frontend.last_api_call}", extra={"frontend": str(self.frontend)})
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {e}", extra={"frontend": str(self.frontend)})

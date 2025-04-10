@@ -143,5 +143,5 @@ class LockselfParser(ApiParser):
         self.update_lock()
         # increment by 1s to avoid duplication of logs
         self.frontend.last_api_call = to + timedelta(seconds=1)
-        self.frontend.save()
+        self.frontend.save(update_fields=['last_api_call'])
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

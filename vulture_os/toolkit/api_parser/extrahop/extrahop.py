@@ -87,7 +87,7 @@ class ExtrahopParser(ApiParser):
                 if self.frontend:
                     self.frontend.extrahop_access_token = self.access_token
                     self.frontend.extrahop_expire_date = self.expire_date
-                    self.frontend.save()
+                    self.frontend.save(update_fields=['extrahop_access_token', 'extrahop_expire_date'])
 
         return self.access_token
 
