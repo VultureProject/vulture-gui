@@ -292,16 +292,23 @@ class MongoBase:
         self.connect_primary()
         config = self.db.admin.command("replSetGetConfig")['config']
         config['version'] = config['version'] + 1
-        i = len(config['members'])
+        ids = list(member.get("_id") for member in config['members'])
+        i = 0
+        while i in ids:
+            i+=1
         config['members'].append({"_id": i, "host": node})
+        config = self.repl_ensure_voting_count(config)
 
         try:
             res = self.db.admin.command("replSetReconfig", config)
+        except OperationFailure as e:
+            logger.error(f"MongoBase::repl_add: Error during mongoDB replSetReconfig: {e}")
+            return False, f"{e.details.get('codeName')} : {e.details.get('errmsg')}"
         except Exception as e:
-            logger.error("MongoBase::repl_add: Error during mongoDB replSetReconfig: {}".format(str(e)))
+            logger.error(f"MongoBase::repl_add: Error during mongoDB replSetReconfig: {e}")
             return False, str(e)
 
-        return True, res
+        return True, f"Status code : {res.get('ok')}"
 
     def repl_remove(self, node):
         """
@@ -315,23 +322,26 @@ class MongoBase:
 
         # If we are the only one member in the replicaset, we can't do anything
         if len(config['members']) == 1 and node == config['members']:
-            logger.warn("replRemove: Destroying local database, because there is only one member")
+            logger.warning("replRemove: Destroying local database, because there is only one member")
             self.replDestroy()
             return True, "Replicaset destroyed"
 
         config['version'] = config['version'] + 1
-        i = 0
-        for member in config['members']:
+        for i, member in enumerate(config['members']):
             if node == member.get('host'):
                 del config['members'][i]
-            i = i + 1
+        config = self.repl_ensure_voting_count(config)
 
         try:
             res = self.db.admin.command("replSetReconfig", config)
-            return True, res
+        except OperationFailure as e:
+            logger.error(f"MongoBase::repl_remove: Error during mongoDB replSetReconfig: {e}")
+            return False, f"{e.details.get('codeName')} : {e.details.get('errmsg')}"
         except Exception as e:
-            logger.error("replRemove: Error during mongoDB replSetReconfig: {}".format(str(e)))
+            logger.error(f"MongoBase::repl_remove: Error during mongoDB replSetReconfig: {e}")
             return False, str(e)
+
+        return True, f"Status code : {res.get('ok')}"
 
     def repl_rename(self, old_name, new_name):
         """
@@ -357,11 +367,10 @@ class MongoBase:
 
         config = self.db.admin.command("replSetGetConfig")['config']
         config['version'] = config['version'] + 1
-        i = 0
-        for member in config['members']:
-            if "{}:{}".format(old_name, 9091) == member.get('host'):
-                config['members'][i]['host'] = "{}:{}".format(new_name, "9091")
-            i = i + 1
+        for i, member in enumerate(config['members']):
+            if f"{old_name}:{9091}" == member.get('host'):
+                config['members'][i]['host'] = f"{new_name}:{9091}"
+
         try:
             self.db.admin.command("replSetReconfig", config, force=force)
         except Exception as e:
@@ -395,6 +404,21 @@ class MongoBase:
         except Exception as e:
             logger.error("MongoBase::replSetStepDown: Error during mongoDB replSetStepDown: {}".format(str(e)))
             return False, str(e)
+
+    def repl_ensure_voting_count(self, config={}):
+        """
+        MongoDB can have up to 7 voting members.
+        If a voting member is added/deleted, we ensure that the voting members count
+        is at least 7 if nodes are more than that in the cluster
+        """
+        if len(config.get("members", [])):
+            members = []
+            for i, member in enumerate(config['members']):
+                member['votes'] = 1 if i < 7 else 0
+                member['priority'] = 1 if i < 7 else 0
+                members.append(member)
+            config['members'] = members
+        return config
 
     def set_index_ttl(self, db, collection, time_field, nb_seconds, index_filter=None):
         """
