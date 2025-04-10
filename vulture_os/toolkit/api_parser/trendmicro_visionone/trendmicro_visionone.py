@@ -214,6 +214,7 @@ class TrendmicroVisiononeParser(ApiParser):
                         # If no logs where retrieved during the last 24hours,
                         # move forward 1h to prevent stagnate ad vitam eternam
                         setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", since + timedelta(hours=1))
+                        break
 
                     # we are re-using the computed time range as a basis for the next query
                     last_time_range = to - since
