@@ -68,7 +68,11 @@ class ExtrahopParser(ApiParser):
             try:
                 url = f"{self.extrahop_host}/oauth2/token"
                 auth = HTTPBasicAuth(self.id, self.secret)
-                response = requests.post(url, auth=auth, data={"grant_type": "client_credentials"})
+                response = requests.post(url,
+                                         auth=auth,
+                                         data={"grant_type": "client_credentials"},
+                                         proxies=self.proxies,
+                                         verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
                 response.raise_for_status()
                 response_json = response.json()
                 self.access_token = response_json["access_token"]
