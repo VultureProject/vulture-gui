@@ -183,7 +183,7 @@ $(function() {
   }
 
   function refresh_redis_local_use() {
-    if (  $('#id_redis_server').val() === redis_local.server
+    if ($('#id_redis_server').val() === redis_local.server
           && parseInt($('#id_redis_port').val()) === redis_local.port
           && $('#id_redis_password').val() === redis_local.password
         ) {
@@ -253,6 +253,7 @@ $(function() {
       $('.kafka-mode').hide();
       $('.redis-mode').hide();
       $('.api-mode').hide();
+      // ALWAYS put show at last
       $('.filebeat-api-mode').show();
     }else if (mode === "log" && listening_mode === "api") {
       $('.network-mode').hide();
@@ -275,7 +276,6 @@ $(function() {
       $('.kafka-mode').hide();
       // ALWAYS put show at last
       $('.redis-mode').show();
-      $('#id_redis_mode').trigger('change');
     } else {
       $('.file-mode').hide();
       $('.api-mode').hide();
@@ -284,13 +284,6 @@ $(function() {
       // ALWAYS put show at last
       $('.network-mode').show();
     }
-
-    // FIXME temporary fix to show redis fields when filebeat mode is activated
-    if (mode === "filebeat") {
-      $('.filebeat-mode.redis-mode').show();
-    }
-
-    refresh_redis_local_use();
   }
 
   /* Show rsyslog only fields, or hide them */
@@ -311,6 +304,23 @@ $(function() {
       $('.listening-tcp').show();
     } else {
       $('.listening-tcp').hide();
+    }
+  }
+
+  /* Show Redis settings, or hide them */
+  function show_redis_conf(mode, listening_mode, filebeat_listening_mode) {
+    if (mode === "log" && listening_mode === "redis") {
+      $('#redis-settings').show()
+      $('#id_redis_mode').trigger('change');
+      refresh_redis_local_use();
+    }
+    else {
+      $('#redis-settings').hide()
+    }
+
+    if (mode === "filebeat") {
+      $('.filebeat-mode.redis-mode').show();
+      refresh_redis_local_use();
     }
   }
 
@@ -406,14 +416,6 @@ $(function() {
     $('.filebeat-mode').hide();
     $('.'+mode+'-mode').show();
 
-    if (mode === "filebeat") {
-      $('.log-mode').show();
-      $('.no-filebeat-mode').hide();
-    }
-    else {
-      $('.filebeat-mode').hide();
-    }
-
     /* If mode = LOG / Filebeat => Activate logging automatically */
     var log_enabled = $('#id_enable_logging').is(":checked");
     if( (mode === "log" || mode === "filebeat") && !log_enabled ) {
@@ -441,6 +443,7 @@ $(function() {
     show_custom_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_listening_mode(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_network_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+    show_redis_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_node(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_log_condition_failure();
     old_mode = mode;
@@ -568,6 +571,7 @@ $(function() {
     show_custom_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
     show_listening_mode($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
     show_network_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
+    show_redis_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
     show_node($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
     refresh_input_logs_type($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
   }).trigger('change');
@@ -577,6 +581,7 @@ $(function() {
     show_custom_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
     show_listening_mode($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
     show_network_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
+    show_redis_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
     show_node($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
     refresh_input_logs_type($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
   }).trigger('change');
