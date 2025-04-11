@@ -298,7 +298,7 @@ $(function() {
   }
 
   /* Show fields, or hide them, depending on chosen listening mode */
-  function show_listening_mode(mode, listening_mode, filebeat_listening_mode) {
+  function show_tcp_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If listening mode is TCP, show according options */
     if (mode === "log" && ["tcp", "tcp,udp", "relp"].includes(listening_mode)) {
       $('.listening-tcp').show();
@@ -441,7 +441,7 @@ $(function() {
     refresh_ruleset($('#id_ruleset').val());
 
     show_custom_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
-    show_listening_mode(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+    show_tcp_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_network_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_redis_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_node(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
@@ -569,7 +569,7 @@ $(function() {
   /* Listening_mode bind */
   $('#id_listening_mode').on("change", function(e) {
     show_custom_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
-    show_listening_mode($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
+    show_tcp_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
     show_network_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
     show_redis_conf($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
     show_node($('#id_mode').val(), $(this).val(), $('#id_filebeat_listening_mode').val());
@@ -579,7 +579,7 @@ $(function() {
   /* Filebeat listening_mode bind */
   $('#id_filebeat_listening_mode').on("change", function(e) {
     show_custom_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
-    show_listening_mode($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
+    show_tcp_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
     show_network_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
     show_redis_conf($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
     show_node($('#id_mode').val(), $('#id_listening_mode').val(), $(this).val());
