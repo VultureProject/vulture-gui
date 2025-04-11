@@ -259,6 +259,7 @@ class ProofpointTAPParser(ApiParser):
             msg = f"Unknown error: {e}"
             logger.exception(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
         self.frontend.last_api_call = fromTime
+        self.frontend.save(update_fields=["last_api_call"])
         msg = f"last_api_call updated to {self.frontend.last_api_call}"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 

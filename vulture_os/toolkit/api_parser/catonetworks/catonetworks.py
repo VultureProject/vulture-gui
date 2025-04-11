@@ -148,6 +148,7 @@ class CatonetworksParser(ApiParser):
             self.update_lock()
             if self.marker != "":
                 self.frontend.catonetworks_marker = self.marker
+                self.frontend.save(update_fields=["catonetworks_marker"])
             self.write_to_file([self.format_log(log) for log in logs])
             # Writting may take some while, so refresh token in Redis
             self.update_lock()

@@ -185,12 +185,11 @@ class ApiParser:
         self.redis_cli.redis.delete(self.key_redis)
         if self.frontend:
             # Save timestamps in string-representation to keep timezone
-            self.frontend.refresh_from_db()
             self.frontend.last_collected_timestamps = {
                 name: timestamp_str.isoformat()
                 for name, timestamp_str in self.last_collected_timestamps.items()
             }
-            self.frontend.save()
+            self.frontend.save(update_fields=["last_collected_timestamps"])
 
     def test(self):
         raise NotImplementedError()

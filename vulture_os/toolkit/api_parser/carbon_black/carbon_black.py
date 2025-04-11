@@ -184,6 +184,7 @@ class CarbonBlackParser(ApiParser):
 
             if found == 0:
                 self.frontend.last_api_call = to
+                self.frontend.save(update_fields=["last_api_call"])
                 break
 
             self.write_to_file([self.format_log(log) for log in logs])
@@ -195,6 +196,7 @@ class CarbonBlackParser(ApiParser):
             # Replace "Z" by "+00:00" for datetime parsing
             self.frontend.last_api_call = datetime.fromisoformat(
                 logs[-1]['backend_update_timestamp'].replace("Z", "+00:00")) + timedelta(milliseconds=1)
+            self.frontend.save(update_fields=["last_api_call"])
             cursor += found
 
             if cursor > available:

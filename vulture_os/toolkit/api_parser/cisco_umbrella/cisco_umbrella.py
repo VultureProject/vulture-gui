@@ -178,7 +178,7 @@ class CiscoUmbrellaParser(ApiParser):
                 # All logs have been recovered, the parser can be stopped
                 self.frontend.last_api_call = to
                 break
-            self.frontend.save()
+            self.frontend.save(update_fields=['last_api_call'])
         self.frontend.cisco_umbrella_access_token = self.cisco_umbrella_access_token
         self.frontend.cisco_umbrella_expires_at = self.cisco_umbrella_expires_at
         self.frontend.save(update_fields=['cisco_umbrella_access_token', 'cisco_umbrella_expires_at'])

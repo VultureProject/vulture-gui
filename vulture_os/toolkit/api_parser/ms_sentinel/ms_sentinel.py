@@ -346,6 +346,7 @@ class MSSentinelParser(ApiParser):
                          extra={'frontend': str(self.frontend)})
 
             self.frontend.last_api_call = new_last_api_call
+            self.frontend.save(update_fields=["last_api_call"])
 
         else:
             logger.warning(f"[{__parser__}]:execute: No incident retrieved.", extra={'frontend': str(self.frontend)})

@@ -283,6 +283,8 @@ class CrowdstrikeParser(ApiParser):
             # move forward 1h to prevent stagnate ad vitam eternam
             self.frontend.last_api_call += timedelta(hours=1)
 
+        self.frontend.save(update_fields=["last_api_call"])
+
         self.write_to_file([self.format_log(log) for log in tmp_logs])
 
         # Writting may take some while, so refresh token in Redis

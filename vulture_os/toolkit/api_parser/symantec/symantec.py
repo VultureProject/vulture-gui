@@ -167,6 +167,7 @@ class SymantecParser(ApiParser):
                         msg = "No logs found"
                         logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
                         self.frontend.last_api_call = timezone.now()
+                        self.frontend.save(update_fields=["last_api_call"])
                         self.finish()
                     else:
                         try:

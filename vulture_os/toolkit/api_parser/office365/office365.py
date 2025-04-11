@@ -180,7 +180,7 @@ class Office365Parser(ApiParser):
                 self.write_to_file(data)
 
             self.frontend.last_api_call = self.last_api_call
-            self.finish()
+            self.frontend.save(update_fields=["last_api_call"])
 
         except Exception as e:
             raise Office365ParseError(e)
