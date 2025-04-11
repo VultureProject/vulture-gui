@@ -145,7 +145,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging -->
                     <div class="row log-mode">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -575,7 +575,7 @@
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
+                      </div> <!-- /.row log-mode listening-tcp -->
                       <div class="row log-mode listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
@@ -586,11 +586,11 @@
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
+                      </div> <!-- /.row log-mode listening-tcp -->
                       <div class="row log-mode listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "rate-limiting interval" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Rate-limiting interval" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_interval}}
                               {{form.ratelimit_interval.errors|safe}}
@@ -600,18 +600,18 @@
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
+                      </div> <!-- /.row log-mode listening-tcp -->
                       <div class="row log-mode listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "rate-limiting burst" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Rate-limiting burst" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_burst}}
                               {{form.ratelimit_burst.errors|safe}}
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
+                      </div> <!-- /.row log-mode listening-tcp -->
                       <div class="row log-mode filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
@@ -632,7 +632,7 @@
                         <a class="btn btn-flat btn-primary" id="add_listener"><i class="fa fa-plus-circle">&nbsp;</i>Add an entry</a>
                       </div>
                     </div>
-                    <div class="row http-mode log-mode tcp-mode">
+                    <div class="row http-mode tcp-mode log-mode filebeat-mode">
                       <div class="col-md-12">
                         <table id="listener_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
                           <!-- Here are the attributes of Listener class -->
@@ -834,7 +834,7 @@
                           </button>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging -->
                     <div class="row logging">
                       <div class="col-md-12 log-parser-json">
                         <div class="form-group collapse browsers-compat">
@@ -908,7 +908,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging http-mode-logging -->
                     <div class="row logging http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -919,7 +919,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging http-mode-logging -->
                     <div class="row reputation-mode">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -930,7 +930,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row reputation-mode -->
                     <div class="row reputation-mode">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -941,7 +941,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row reputation-mode -->
                     <div class="row logging http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -952,7 +952,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging http-mode-logging -->
                     <div class="row logging">
                       {% if not reputationctx_form.reputation_ctx.field.choices %}
                         <a class="btn btn-flat btn-primary" href="{% url 'applications.reputation_ctx.edit' %}">
