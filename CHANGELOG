@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SERVICES] [FRONTEND] Improve deletion messages and conditions on GUI and API
 - [API_PARSER] Ensure modifications in configuration are not overriden by running instances
 - [FRONTEND] Hot-disable a collector manually
+- [SERVICES] Prevent errors when deleted configuration files do not exist
 ### Changed
 - [FILEBEAT] Separate building configurations and restarting service
 - [GUI] Improve AJAX requests management

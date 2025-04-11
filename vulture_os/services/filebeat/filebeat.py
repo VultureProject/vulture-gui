@@ -179,7 +179,7 @@ def start_service(node_logger, *args):
 
 def delete_conf(node_logger, filename):
     try:
-        check_output(["/usr/local/bin/sudo", "/bin/rm", "{}/{}".format(FILEBEAT_PATH, filename)], stderr=PIPE).decode('utf8')
+        check_output(["/usr/local/bin/sudo", "/bin/rm", "-f", "{}/{}".format(FILEBEAT_PATH, filename)], stderr=PIPE).decode('utf8')
         # Return message to API request, that will be saved into MessageQueue result
         return "'{}' successfully deleted.".format(filename)
 
