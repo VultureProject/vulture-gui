@@ -256,6 +256,7 @@ class ProofpointPodParser(ApiParser):
         current_time = time.time()
         if not self.frontend.last_api_call:
             self.frontend.last_api_call = timezone.now()
+            self.frontend.save(update_fields=["last_api_call"])
         self.last_timestamp = self.frontend.last_api_call
 
         # stop parser after 1 hour when last call was more that an hour ago (need time to get bundle of logs for past hours, and will stop once it's done)
@@ -292,6 +293,7 @@ class ProofpointPodParser(ApiParser):
             self._flush_buffer()
 
         self.frontend.last_api_call = self.last_timestamp
+        self.frontend.save(update_fields=["last_api_call"])
         logger.info(f"[{__parser__}]:execute: Updated frontend timestamp is {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

@@ -87,7 +87,7 @@ class ExtrahopParser(ApiParser):
                 if self.frontend:
                     self.frontend.extrahop_access_token = self.access_token
                     self.frontend.extrahop_expire_date = self.expire_date
-                    self.frontend.save()
+                    self.frontend.save(update_fields=['extrahop_access_token', 'extrahop_expire_date'])
 
         return self.access_token
 
@@ -214,6 +214,7 @@ class ExtrahopParser(ApiParser):
                 max_timestamp = max(x['create_time'] for x in logs)
                 max_timestamp += 1  # since is inclusive, so increment to avoid duplicates
                 self.frontend.last_api_call = datetime.fromtimestamp(max_timestamp/1000.0, tz=timezone.utc)
+                self.frontend.save(update_fields=["last_api_call"])
             except KeyError as e:
                 logger.error(f"[{__parser__}]:execute: Error at Extrahop API on last_api_call update: {e}.",
                                extra={'frontend': str(self.frontend)})
@@ -225,5 +226,6 @@ class ExtrahopParser(ApiParser):
                 logger.info(f"[{__parser__}]:execute: No log retrieved for the last 24 hours,"
                             " advancing last_api_call by 1h.", extra={'frontend': str(self.frontend)})
                 self.frontend.last_api_call = since + timedelta(hours=1)
+                self.frontend.save(update_fields=["last_api_call"])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

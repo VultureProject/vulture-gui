@@ -65,13 +65,15 @@ class SentinelOneSingularityMobileParser(ApiParser):
         if self.frontend:
             self.frontend.sentinel_one_singularity_mobile_access_token_expiry = None
             self.frontend.sentinel_one_singularity_mobile_access_token = None
-            self.frontend.save()
+            self.frontend.save(update_fields=['sentinel_one_singularity_mobile_access_token_expiry',
+                                              'sentinel_one_singularity_mobile_access_token'])
 
     def _save_token(self):
         if self.frontend:
             self.frontend.sentinel_one_singularity_mobile_access_token_expiry = self.expires_on
             self.frontend.sentinel_one_singularity_mobile_access_token = self.access_token
-            self.frontend.save()
+            self.frontend.save(update_fields=['sentinel_one_singularity_mobile_access_token_expiry',
+                                              'sentinel_one_singularity_mobile_access_token'])
 
     def get_access_token(self):
         if not self.expires_on or not self.access_token or timezone.now() > self.expires_on:
@@ -177,10 +179,12 @@ class SentinelOneSingularityMobileParser(ApiParser):
                 last_time = datetime.fromtimestamp(logs[-1]['timestamp'] // 1000, tz=timezone.utc)
                 since = last_time + timedelta(milliseconds=1)
                 self.frontend.last_api_call = since
+                self.frontend.save(update_fields=["last_api_call"])
             elif self.last_api_call < (timezone.now() - timedelta(hours=24)):
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
                 self.frontend.last_api_call += timedelta(hours=1)
+                self.frontend.save(update_fields=["last_api_call"])
                 logger.info(f"[{__parser__}]:execute: No recent alert found and last_api_call too old - "
                             f"setting it to {self.frontend.last_api_call}",
                             extra={'frontend': str(self.frontend)})
@@ -188,6 +192,7 @@ class SentinelOneSingularityMobileParser(ApiParser):
             else:
                 since = to
                 self.frontend.last_api_call = since
+                self.frontend.save(update_fields=["last_api_call"])
 
             logger.info(f'[{__parser__}]:execute: frontend last_api_call: {self.frontend.last_api_call}', extra={'frontend': str(self.frontend)})
 

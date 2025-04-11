@@ -189,4 +189,6 @@ class ProofpointCASBParser(ApiParser):
             self.last_api_call = since + timedelta(hours=1)
 
         self.frontend.last_api_call = self.last_api_call
+        self.frontend.save(update_fields=["last_api_call"])
+
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

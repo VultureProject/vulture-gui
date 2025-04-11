@@ -219,5 +219,6 @@ class Rapid7IDRParser(ApiParser):
 
         # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
         self.frontend.last_api_call = to + timedelta(microseconds=1000)
+        self.frontend.save(update_fields=["last_api_call"])
         logger.info(f"[{__parser__}]:execute: last_api_call updated to {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

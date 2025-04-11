@@ -194,6 +194,7 @@ class CiscoDuoParser(ApiParser):
                     if next_offset := logs.get('metadata', {}).get('next_offset'):
                         next_offset = int(next_offset[0])
                         self.frontend.last_api_call = datetime.fromtimestamp(int(next_offset/1000)+1, tz=timezone.utc) # save this in case of failure
+                        self.frontend.save(update_fields=["last_api_call"])
                         logger.info(f"[{__parser__}]:Updated last_api_call {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
             except Exception as e:

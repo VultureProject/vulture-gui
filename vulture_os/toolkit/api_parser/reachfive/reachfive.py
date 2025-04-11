@@ -62,7 +62,7 @@ class ReachFiveParser(ApiParser):
             if self.frontend:
                 self.frontend.reachfive_access_token = self.reachfive_access_token
                 self.frontend.reachfive_expire_at = self.reachfive_expire_at
-                self.frontend.save()
+                self.frontend.save(update_fields=['reachfive_access_token', 'reachfive_expire_at'])
         except Exception as e:
             raise ReachFiveAPIError(f"Unable to save access token: {e}")
 
@@ -199,6 +199,7 @@ class ReachFiveParser(ApiParser):
                 # Replace "Z" by "+00:00" for datetime parsing
                 # No need to make_aware, date already contains timezone
                 self.frontend.last_api_call = datetime.fromisoformat(last_datetime.replace("Z", "+00:00"))
+                self.frontend.save(update_fields=["last_api_call"])
                 logger.info(f"[{__parser__}]:execute: Update last_api_call to {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
             if cpt % 10000 == 0:

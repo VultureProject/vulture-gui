@@ -168,6 +168,7 @@ class SophosCloudParser(ApiParser):
             last_event_date = events[-1].get('when')
             if last_event_date:
                 self.frontend.last_api_call = parse(last_event_date) + timedelta(seconds=1)
+                self.frontend.save(update_fields=["last_api_call"])
             else:
                 logger.error(f"[{__parser__}]:execute: Cannot set last_api_call, created_at not found",
                              extra={'frontend': str(self.frontend)})

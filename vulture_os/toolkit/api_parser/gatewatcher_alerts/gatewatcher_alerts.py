@@ -147,8 +147,9 @@ class GatewatcherAlertsParser(ApiParser):
 
         if logs: # increment by 1ms to avoid duplication of logs
             self.frontend.last_api_call = (datetime.fromisoformat(logs[-1]["alert"]["date"].replace("Z", "+00:00")) + timedelta(milliseconds=1))
+            self.frontend.save(update_fields=['last_api_call'])
         elif to == since + timedelta(hours=24): # if no logs during last 24h
             self.frontend.last_api_call += timedelta(hours=23, minutes=59)
-        self.frontend.save()
+            self.frontend.save(update_fields=['last_api_call'])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

@@ -209,7 +209,7 @@ class ImpervaParser(ApiParser):
                         finally:
                             self.frontend.imperva_last_log_file = file
                             self.frontend.last_api_call = timezone.now()
-                            self.frontend.save()
+                            self.frontend.save(update_fields=['imperva_last_log_file', 'last_api_call'])
             else:
                 logger.info(f"[{__parser__}]:execute: No file to download",
                             extra={'frontend': str(self.frontend)})

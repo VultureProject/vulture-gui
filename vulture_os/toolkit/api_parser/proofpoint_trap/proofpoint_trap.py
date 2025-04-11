@@ -236,7 +236,9 @@ class ProofpointTRAPParser(ApiParser):
 
             # update last_api_call only if logs are retrieved
             self.frontend.last_api_call = to
+            self.frontend.save(update_fields=["last_api_call"])
         elif since < timezone.now() - timedelta(hours=24):
             self.frontend.last_api_call = since + timedelta(hours=1)
+            self.frontend.save(update_fields=["last_api_call"])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

@@ -254,7 +254,7 @@ class CscDomainManagerParser(ApiParser):
                     break
 
             self.frontend.last_api_call = to
-            self.frontend.save()
+            self.frontend.save(update_fields=['last_api_call'])
 
             self.session = None
 
