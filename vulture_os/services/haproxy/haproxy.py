@@ -276,7 +276,7 @@ def restart_service(node_logger):
 
 def delete_conf(node_logger, filename):
     try:
-        cmd_res = check_output(["/bin/rm", "{}/{}".format(HAPROXY_PATH, filename)], stderr=PIPE).decode('utf8')
+        cmd_res = check_output(["/bin/rm", "-f", "{}/{}".format(HAPROXY_PATH, filename)], stderr=PIPE).decode('utf8')
 
         if cmd_res:
             if "sudo: no tty present and no askpass program specified" in cmd_res:
