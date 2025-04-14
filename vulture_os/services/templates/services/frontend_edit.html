@@ -104,7 +104,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row -->
-                    <div class="row tcp-mode log-mode http-mode">
+                    <div class="row http-mode tcp-mode log-mode filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Enable logging" %}</label>
@@ -114,7 +114,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode http-mode -->
+                    </div> <!-- /.row http-mode tcp-mode log-mode filebeat-mode -->
                     <div class="row http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -145,8 +145,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode no-filebeat-mode">
+                    </div> <!-- /.row logging -->
+                    <div class="row log-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Rsyslog Listening mode" %}</label>
@@ -157,7 +157,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row log-mode -->
-                    <div class="row log-mode filebeat-mode">
+                    <div class="row filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Filebeat Listening mode" %}</label>
@@ -167,8 +167,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode filebeat-mode">
+                    </div> <!-- /.row filebeat-mode -->
+                    <div class="row filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Filebeat Module" %}</label>
@@ -178,8 +178,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode filebeat-mode">
+                    </div> <!-- /.row filebeat-mode -->
+                    <div class="row filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Filebeat Configuration" %}</label>
@@ -189,8 +189,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode" id="ruleset-div">
+                    </div> <!-- /.row filebeat-mode -->
+                    <div class="row log-mode filebeat-mode" id="ruleset-div">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Input logs type" %}</label>
@@ -200,8 +200,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode forwarder-tag">
+                    </div> <!-- /.row log-mode filebeat-mode -->
+                    <div class="row log-mode filebeat-mode forwarder-tag">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.parser_tag.label }}</label>
@@ -211,8 +211,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode" id="node-div">
+                    </div> <!-- /.row log-mode filebeat-mode -->
+                    <div class="row log-mode filebeat-mode" id="node-div">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.node.label }}</label>
@@ -222,7 +222,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row log-mode filebeat-mode -->
                     <div class="row log-mode file-mode">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -278,7 +278,7 @@
                         </div>
                       </div>
                     </div> <!-- /.row log-mode -->
-                    <div class="row log-mode filebeat-mode redis-mode">
+                    <div class="row filebeat-mode redis-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">Use local Redis</label>
@@ -287,8 +287,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode filebeat-mode redis-mode redis-connect">
+                    </div> <!-- /.row filebeat-mode redis-mode -->
+                    <div class="row filebeat-mode redis-mode redis-connect">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.redis_server.label }}</label>
@@ -298,8 +298,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode filebeat-mode redis-mode redis-connect">
+                    </div> <!-- /.row filebeat-mode redis-mode redis-connect -->
+                    <div class="row filebeat-mode redis-mode redis-connect">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.redis_port.label }}</label>
@@ -309,8 +309,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode redis-mode">
+                    </div> <!-- /.row filebeat-mode redis-mode redis-connect -->
+                    <div class="row redis-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.redis_mode.label }}</label>
@@ -320,8 +320,8 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
-                    <div class="row log-mode redis-mode">
+                    </div> <!-- /.row redis-mode -->
+                    <div class="row redis-mode">
                       <div class="col-md-12">
                         <div class="form-group">
                           <label class="col-sm-4 control-label">{{ form.redis_key.label }}</label>
@@ -331,7 +331,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row redis-mode -->
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -366,7 +366,7 @@
                       </div> <!-- /.row darwin-mode -->
                     </div> <!-- /.row -->
                     <!-- Advanced tab -->
-                    <div class="row log-mode">
+                    <div class="row log-mode filebeat-mode">
                       <div class="col-sm-4 pull-right">
                         <div class="form-group">
                           <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
@@ -376,7 +376,7 @@
                       </div>
                     </div>
                     <div class="form-group collapse advanced_options">
-                      <div class="row log-mode filebeat-mode redis-mode redis-connect">
+                      <div class="row filebeat-mode redis-mode redis-connect">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{{ form.redis_password.label }}</label>
@@ -387,18 +387,7 @@
                           </div>
                         </div>
                       </div>
-                      <div class="row log-mode redis-mode redis-queue-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_use_lpop.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_use_lpop}}
-                              {{form.redis_use_lpop.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row log-mode redis-mode redis-queue-mode">
+                      <div class="row filebeat-mode redis-mode redis-queue-mode">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{{ form.redis_batch_size.label }}</label>
@@ -409,62 +398,75 @@
                           </div>
                         </div>
                       </div>
-                      <div class="row log-mode redis-mode redis-stream-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_stream_startID.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_stream_startID}}
-                              {{form.redis_stream_startID.errors|safe}}
+                      <div id="redis-settings">
+                        <div class="row redis-mode redis-queue-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_use_lpop.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_use_lpop}}
+                                {{form.redis_use_lpop.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row redis-mode redis-stream-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_stream_startID.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_stream_startID}}
+                                {{form.redis_stream_startID.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row redis-mode redis-stream-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_stream_consumerGroup.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_stream_consumerGroup}}
+                                {{form.redis_stream_consumerGroup.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row redis-mode redis-stream-mode redis-consumer-group">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_stream_consumerName.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_stream_consumerName}}
+                                {{form.redis_stream_consumerName.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row redis-mode redis-stream-mode redis-consumer-group">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_stream_acknowledge.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_stream_acknowledge}}
+                                {{form.redis_stream_acknowledge.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row redis-mode redis-stream-mode redis-consumer-group">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{ form.redis_stream_reclaim_timeout.label }}</label>
+                              <div class="col-sm-5">
+                                {{form.redis_stream_reclaim_timeout}}
+                                {{form.redis_stream_reclaim_timeout.errors|safe}}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div class="row log-mode redis-mode redis-stream-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_stream_consumerGroup.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_stream_consumerGroup}}
-                              {{form.redis_stream_consumerGroup.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row log-mode redis-mode redis-stream-mode redis-consumer-group">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_stream_consumerName.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_stream_consumerName}}
-                              {{form.redis_stream_consumerName.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row log-mode redis-mode redis-stream-mode redis-consumer-group">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_stream_acknowledge.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_stream_acknowledge}}
-                              {{form.redis_stream_acknowledge.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row log-mode redis-mode redis-stream-mode redis-consumer-group">
-                        <div class="col-md-12">
-                          <div class="form-group">
-                            <label class="col-sm-4 control-label">{{ form.redis_stream_reclaim_timeout.label }}</label>
-                            <div class="col-sm-5">
-                              {{form.redis_stream_reclaim_timeout}}
-                              {{form.redis_stream_reclaim_timeout.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row log-mode listening-tcp">
+                      <div class="row listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{{form.healthcheck_service.label}}</label>
@@ -475,7 +477,7 @@
                           </div>
                         </div>
                       </div>
-                      <div class="row log-mode">
+                      <div class="row log-mode filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{% translate "Max. number of rsyslog workers" %}</label>
@@ -486,7 +488,7 @@
                           </div>
                         </div>
                       </div>
-                      <div class="row log-mode">
+                      <div class="row log-mode filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{% translate "Size of mmdblookup cache" %}</label>
@@ -497,7 +499,7 @@
                           </div>
                         </div>
                       </div>
-                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                      <div class="row log-mode listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{% translate "Disable 'Octet-counted framing'" %}</label>
@@ -507,8 +509,8 @@
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
-                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                      </div> <!-- /.row log-mode listening-tcp -->
+                      <div class="row log-mode listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{% translate "Additional Frame Delimiter (AddtlFrameDelimiter)" %}</label>
@@ -518,11 +520,11 @@
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
-                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                      </div> <!-- /.row log-mode listening-tcp -->
+                      <div class="row log-mode listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "rate-limiting interval" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Rate-limiting interval" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_interval}}
                               {{form.ratelimit_interval.errors|safe}}
@@ -532,19 +534,19 @@
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
-                      <div class="row log-mode listening-tcp no-filebeat-mode">
+                      </div> <!-- /.row log-mode listening-tcp -->
+                      <div class="row log-mode listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "rate-limiting burst" %}</label>
+                            <label class="col-sm-4 control-label">{% translate "Rate-limiting burst" %}</label>
                             <div class="col-sm-5">
                               {{form.ratelimit_burst}}
                               {{form.ratelimit_burst.errors|safe}}
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
-                      <div class="row log-mode">
+                      </div> <!-- /.row log-mode listening-tcp -->
+                      <div class="row log-mode filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
                             <label class="col-sm-4 control-label">{{form.expected_timezone.label}}</label>
@@ -554,7 +556,7 @@
                             </div>
                           </div>
                         </div>
-                      </div> <!-- /.row log-mode -->
+                      </div> <!-- /.row log-mode filebeat-mode -->
                     </div> <!-- /advanced_options -->
                   </div> <!-- /.tab-pane tab_general -->
                   <div class="tab-pane" id="tab_network">
@@ -564,7 +566,7 @@
                         <a class="btn btn-flat btn-primary" id="add_listener"><i class="fa fa-plus-circle">&nbsp;</i>Add an entry</a>
                       </div>
                     </div>
-                    <div class="row http-mode log-mode tcp-mode">
+                    <div class="row http-mode tcp-mode log-mode filebeat-mode">
                       <div class="col-md-12">
                         <table id="listener_table" class="table table-striped table-bordered table-hover dt-responsive nowrap table-datatable">
                           <!-- Here are the attributes of Listener class -->
@@ -766,7 +768,7 @@
                           </button>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging -->
                     <div class="row logging">
                       <div class="col-md-12 log-parser-json">
                         <div class="form-group collapse browsers-compat">
@@ -840,7 +842,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging http-mode-logging -->
                     <div class="row logging http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -851,7 +853,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging http-mode-logging -->
                     <div class="row reputation-mode">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -862,7 +864,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row reputation-mode -->
                     <div class="row reputation-mode">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -873,7 +875,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row reputation-mode -->
                     <div class="row logging http-mode-logging">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -884,7 +886,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> <!-- /.row log-mode -->
+                    </div> <!-- /.row logging http-mode-logging -->
                     <div class="row logging">
                       {% if not reputationctx_form.reputation_ctx.field.choices %}
                         <a class="btn btn-flat btn-primary" href="{% url 'applications.reputation_ctx.edit' %}">
