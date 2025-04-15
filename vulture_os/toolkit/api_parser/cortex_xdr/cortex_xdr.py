@@ -262,5 +262,7 @@ class CortexXDRParser(ApiParser):
                             msg = f"Could not locate key '{self.event_kinds[kind]['time_field']}' from following log: {logs[-1]}"
                             logger.error(f"[{__parser__}]:execute: {msg}",
                                          extra={'frontend': str(self.frontend)})
+                    elif to - since >= timedelta(hours=24):
+                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", since + timedelta(hours=1))
 
         logger.info("CortexXDR parser ending.", extra={'frontend': str(self.frontend)})
