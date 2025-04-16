@@ -15,13 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture 4.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Theo Bertin"
+__author__ = "Fabien Amelinck"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture Project"
 __email__ = "contact@vultureproject.org"
-__doc__ = "Reload PF configurations"
+__doc__ = "Delete all ServiceStatus objects"
 
 import sys
 import os
@@ -33,6 +33,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 import django
 django.setup()
 
+from gui.models.monitor import ServiceStatus
 from system.cluster.models import Cluster
 
 if not Cluster.is_node_bootstrapped():
@@ -45,11 +46,11 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            print("Triggering generation of Rsyslog timezone DBs...")
-            node.api_request("gui.crontab.generate_tzdbs.generate_timezone_dbs")
+            print("Deleting every ServiceStatus...")
+            ServiceStatus.objects.all().delete()
 
         except Exception as e:
-            print("Failed to generate DBs: {}".format(e))
+            print(f"Failed to delete ServiceStatus: {e}")
             print("Please relaunch this script after solving the issue.")
 
         print("Done.")
