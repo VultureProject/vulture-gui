@@ -6,11 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.24.1] - 2025-04-17
 ### Fixed
 - [API_PARSER] [CORTEX_XDR] Update time when there is no log during one day
 
 
-## [2.24.0] - 2025-03-28
+## [2.24.0] - 2025-04-14
 ### Added
 - [API_PARSER] [PERCEPTION_POINT_XRAY] New collector
 - [API_PARSER] [EXTRAHOP] New collector
