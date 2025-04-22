@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [CISCO_MERAKI] Add support for configuration change logs
 ### Changed
 - [FILEBEAT] Separate building configurations and restarting service
 ### Fixed
