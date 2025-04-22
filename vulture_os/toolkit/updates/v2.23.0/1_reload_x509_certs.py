@@ -41,9 +41,6 @@ django.setup()
 from system.cluster.models import Cluster
 from system.pki.models import X509Certificate
 
-from services.haproxy.haproxy import HaproxyService
-from services.service import Service
-
 if not Cluster.is_node_bootstrapped():
     sys.exit(0)
 

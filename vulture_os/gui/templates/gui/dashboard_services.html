@@ -44,7 +44,7 @@
 
 {% block jquery_code %}
 
-  var mandatory_services = ["VULTURED", "RSYSLOGD", "PF"];
+  var mandatory_services = ["VULTURED", "PF", "MONGOD", "HAPROXY", "RSYSLOGD", "REDIS"];
 
   $(function(){
     $('.box-body, .box-header').css('backgroundColor', '#263135');

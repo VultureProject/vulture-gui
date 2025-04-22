@@ -83,7 +83,7 @@ def monitor():
 
     """ Initialize date and Monitor object """
     mon = Monitor(
-        date=timezone.now().replace(second=0, microsecond=0),
+        date=timezone.now().replace(microsecond=0),
         node=node
     )
     mon.services_id = set()
@@ -109,11 +109,20 @@ def monitor():
 
     """ Get status of Redis, Mongod and Sshd """
     # Instantiate mother class to get status easily
-    for service_name in ("redis", "mongod", "sshd"):
-        service = Service(service_name)
-        service_status = ServiceStatus.objects.filter(name=service_name).first() \
-                         or ServiceStatus(name=service_name)
-        service_status.status = service.status()[0]
+    additional_services = [
+        {"name": "mongod", "friendly_name": "MongoDB"},
+        {"name": "redis", "friendly_name": "Redis"},
+        {"name": "sshd", "friendly_name": "Sshd"}
+    ]
+    for services in additional_services:
+        service = Service(services["name"])
+        service_status, _ = ServiceStatus.objects.update_or_create(
+            name=service.service_name,
+            defaults={
+                'status': service.status()[0],
+                'friendly_name': services["friendly_name"],
+            }
+        )
         mon.services.add(service_status)
 
     mon.save()
