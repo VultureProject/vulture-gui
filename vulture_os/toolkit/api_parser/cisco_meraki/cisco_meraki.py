@@ -106,8 +106,8 @@ class CiscoMerakiParser(ApiParser):
             # retrieve organisation & networks
             data = self.get_organization_networks(orga['id'])
 
-            since = (timezone.now() - timedelta(days=1)).isoformat()
             if self.cisco_meraki_get_security_logs:
+                since = (timezone.now()-timedelta(days=1)).isoformat()
                 data.extend(self.get_organization_appliance_security_events(since, orga['id']))
             if self.cisco_meraki_get_configuration_changes_logs:
                 since = int((timezone.now() - timedelta(days=30)).timestamp())
