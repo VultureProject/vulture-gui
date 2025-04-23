@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [FILEBEAT] Separate building configurations and restarting service
 ### Fixed
+- [API_PARSER] [BEYONDTRUST_PRA] Catch invalid lines
 - [FRONTEND] Hot-disable a collector manually
 
 
