@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [CISCO_MERAKI] Add support for configuration change logs
+### Fixed
+- [API_PARSER] [BEYONDTRUST_PRA] Catch invalid lines
 
 
 ## [2.24.1] - 2025-04-17
