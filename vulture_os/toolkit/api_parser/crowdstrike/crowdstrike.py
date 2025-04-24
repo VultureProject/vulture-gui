@@ -28,7 +28,6 @@ import logging
 from json import dumps
 from datetime import timedelta
 from requests import session, exceptions
-from copy import deepcopy
 
 from django.conf import settings
 from django.utils import timezone
@@ -112,7 +111,7 @@ class CrowdstrikeParser(ApiParser):
         retry = 3
         while(retry > 0):
             retry -= 1
-            logger.info(f"[{__parser__}]:execute_query: URL: {url} , method: {method}, params: {query}, retry : {retry}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}][__execute_query]: URL: {url} , method: {method}, params: {query}, retry : {retry}", extra={'frontend': str(self.frontend)})
             try:
                 if(method == "GET"):
                     response = self.session.get(
@@ -168,31 +167,30 @@ class CrowdstrikeParser(ApiParser):
                 query['offset'] = len(jsonResp.get('resources', []))
 
                 jsonAdditionalResp = self.__execute_query("GET", url, query, timeout=timeout)
-                totalToRetrieve = jsonAdditionalResp.get('meta', {}).get('pagination', {}).get('total', 0) # we need to retrieve the meta.pagination.total for every requests as those to 'host' endpoint always returns a different number
+                # it's better to retrieve meta.pagination.total for every requests
+                # as some endpoints could returns variable output length as time vary
+                totalToRetrieve = jsonAdditionalResp.get('meta', {}).get('pagination', {}).get('total', 0)
                 self.update_lock()
 
                 jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
 
         resources = jsonResp.get('resources', [])
         resourcesLen = len(resources)
-        # split ids into chunks of size 4999 as API have a limit of 5000 logs requestable for single shot
+
+        # split ids into chunks of size 1000 as incidents/alerts API have a limit of 1000 logs requestable for a single shot
         chunks = []
-        if resourcesLen > 4999:
+        if resourcesLen >= 1000:
             i = 0
             tmp_logs = []
             while i < resourcesLen:
-                if i != 0 and i % 4999 == 0:
-                    tmp_logs.append(resources[i])
-                    chunks.append(deepcopy(tmp_logs))
-                    tmp_logs = []
-                else:
-                    tmp_logs.append(resources[i])
+                tmp_logs.append(resources[i])
                 i+=1
-            chunks.append(tmp_logs)
-
+                if i != 0 and i % 1000 == 0:
+                    chunks.append(tmp_logs)
+                    tmp_logs = []
+            chunks.append(tmp_logs) # append last logs occurence
         elif resourcesLen > 0:
             chunks.append(resources)
-
         return chunks
 
     def get_detections(self, since: str, to: str):
@@ -210,7 +208,6 @@ class CrowdstrikeParser(ApiParser):
                                     "sort": "updated_timestamps|asc",
                                     "include_hidden": False
                                  })
-
         # then retrieve the content of selected alerts ids
         if(len(chunks) > 0):
             for chunk in chunks:
@@ -241,7 +238,6 @@ class CrowdstrikeParser(ApiParser):
                             "sort": "timestamp|asc",
                             "include_hidden": False
                             })
-
         # then retrieve the content of selected alerts ids
         if(len(chunks) > 0):
             for chunk in chunks:
@@ -296,7 +292,7 @@ class CrowdstrikeParser(ApiParser):
             # (that have been removed since the migration from v1 to v2 endpoints)
             elif product == "xdr":
                 if ids := log.get('entities', {}).get('agent_ids', []):
-                    devices = self.execute_query(method="POST",
+                    devices = self.__execute_query(method="POST",
                                                  url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
                                                  query={"ids": ids})
                     log['hosts'] = devices['resources']
