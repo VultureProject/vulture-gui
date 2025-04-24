@@ -27,7 +27,8 @@ __parser__ = 'CROWDSTRIKE'
 import logging
 from json import dumps
 from datetime import timedelta
-from requests import session, exceptions
+from requests import session
+from requests.exceptions import ConnectionError, ReadTimeout
 
 from django.conf import settings
 from django.utils import timezone
@@ -64,8 +65,7 @@ class CrowdstrikeParser(ApiParser):
 
         self.request_incidents = data.get('crowdstrike_request_incidents', False)
 
-        if not self.api_host.startswith('https://'):
-            self.api_host = f"https://{self.api_host}"
+        self.api_host = "https://" + self.api_host.split('://')[-1]
 
     def login(self):
         logger.info(f"[{__parser__}][login]: Login in...", extra={'frontend': str(self.frontend)})
@@ -84,11 +84,11 @@ class CrowdstrikeParser(ApiParser):
                 proxies=self.proxies,
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
-        except exceptions.ConnectionError:
+        except ConnectionError:
             self.session = None
             logger.error(f'[{__parser__}][login]: Connection failed (ConnectionError)', exc_info=True, extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
-        except exceptions.ReadTimeout:
+        except ReadTimeout:
             self.session = None
             logger.error(f'[{__parser__}][login]: Connection failed {self.client_id} (read_timeout)', extra={'frontend': str(self.frontend)})
             return False, ('Connection failed')
@@ -109,7 +109,7 @@ class CrowdstrikeParser(ApiParser):
 
     def __execute_query(self, method: str, url: str, query: dict, timeout=10):
         retry = 3
-        while(retry > 0):
+        while retry > 0 and not self.evt_stop.is_set():
             retry -= 1
             logger.info(f"[{__parser__}][__execute_query]: URL: {url} , method: {method}, params: {query}, retry : {retry}", extra={'frontend': str(self.frontend)})
             try:
@@ -130,7 +130,7 @@ class CrowdstrikeParser(ApiParser):
                         proxies=self.proxies,
                         verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                     )
-            except exceptions.ReadTimeout:
+            except ReadTimeout:
                 self.evt_stop.wait(timeout)
                 continue
             break  # no error we break from the loop
@@ -138,7 +138,7 @@ class CrowdstrikeParser(ApiParser):
         if response.status_code not in [200, 201]:
             msg = f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}"
             logger.error(msg, extra={'frontend': str(self.frontend)})
-            raise Exception(msg)
+            raise CrowdstrikeAPIError(msg)
         return response.json()
 
     def unionDict(self, dictBase: dict, dictToAdd: dict):
@@ -153,9 +153,11 @@ class CrowdstrikeParser(ApiParser):
         return finalDict
 
 
-    def get_ids(self, url: str, query: dict = {}, timeout: int = 10) -> list[list]:
+    def get_ids(self, query: dict = {}, timeout: int = 10) -> list:
         # can set a custom limit of entry we want to retrieve for a single request
         query['limit'] = 1000
+
+        url = f"{self.api_host}/{self.ALERTS_URI}"
 
         jsonResp = self.__execute_query("GET", url, query, timeout=timeout)
         totalToRetrieve = jsonResp.get('meta', {}).get('pagination', {}).get('total', 0)
@@ -174,11 +176,12 @@ class CrowdstrikeParser(ApiParser):
 
                 jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
 
-        resources = jsonResp.get('resources', [])
-        resourcesLen = len(resources)
+        return jsonResp.get('resources', [])
 
+    def split_chunks(self, resources: list) -> list[list]:
         # split ids into chunks of size 1000 as incidents/alerts API have a limit of 1000 logs requestable for a single shot
         chunks = []
+        resourcesLen = len(resources)
         if resourcesLen >= 1000:
             i = 0
             tmp_logs = []
@@ -191,6 +194,7 @@ class CrowdstrikeParser(ApiParser):
             chunks.append(tmp_logs) # append last logs occurence
         elif resourcesLen > 0:
             chunks.append(resources)
+
         return chunks
 
     def get_detections(self, since: str, to: str):
@@ -202,12 +206,12 @@ class CrowdstrikeParser(ApiParser):
         filter += f"+updated_timestamp:<='{to}'"
         filter += "+data_domains:'Endpoint'"
         filter += "+product:['epp', 'ngsiem', 'thirdparty']"
-        chunks = self.get_ids(url=f"{self.api_host}/{self.ALERTS_URI}",
-                                 query={
-                                    "filter": filter,
-                                    "sort": "updated_timestamps|asc",
-                                    "include_hidden": False
-                                 })
+        ids = self.get_ids(query={
+                                "filter": filter,
+                                "sort": "updated_timestamps|asc",
+                                "include_hidden": False
+                            })
+        chunks = self.split_chunks(ids)
         # then retrieve the content of selected alerts ids
         if(len(chunks) > 0):
             for chunk in chunks:
@@ -218,7 +222,7 @@ class CrowdstrikeParser(ApiParser):
                         "composite_ids": chunk,
                         "sort": "timestamp|desc"
                     })
-                ret = ret['resources']
+                ret = ret.get('resources', [])
                 for alert in ret:
                     detections += [alert]
         return detections
@@ -232,12 +236,12 @@ class CrowdstrikeParser(ApiParser):
         filter += f"+updated_timestamp:<='{to}'"
         filter += "+data_domains:'Endpoint'"
         filter += "+product:['xdr']"
-        chunks = self.get_ids(url=f"{self.api_host}/{self.ALERTS_URI}",
-                            query={
+        ids = self.get_ids(query={
                             "filter": filter,
                             "sort": "timestamp|asc",
                             "include_hidden": False
                             })
+        chunks = self.split_chunks(ids)
         # then retrieve the content of selected alerts ids
         if(len(chunks) > 0):
             for chunk in chunks:
@@ -248,7 +252,7 @@ class CrowdstrikeParser(ApiParser):
                         "composite_ids": chunk,
                         "sort": "timestamp|desc"
                     })
-                ret = ret['resources']
+                ret = ret.get('resources', [])
                 for alert in ret:
                     incidents += [alert]
         return incidents
@@ -266,6 +270,12 @@ class CrowdstrikeParser(ApiParser):
             raise Exception(f"Error querying {kind} logs")
 
         return logs
+
+    def get_devices(self, ids):
+        devices = self.__execute_query(method="POST",
+                                url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
+                                query={"ids": ids})
+        return devices.get('resources', [])
 
 
     def format_log(self, log: dict):
@@ -290,10 +300,7 @@ class CrowdstrikeParser(ApiParser):
             # (that have been removed since the migration from v1 to v2 endpoints)
             elif product == "xdr":
                 if ids := log.get('entities', {}).get('agent_ids', []):
-                    devices = self.__execute_query(method="POST",
-                                                 url=f"{self.api_host}/{self.DEVICE_DETAILS_URI}",
-                                                 query={"ids": ids})
-                    log['hosts'] = devices['resources']
+                    log['hosts'] = self.get_devices(ids)
 
         if parent_cmdline := log.get('parent_details', {}).get('cmdline'):
             log['parent_details']['parent_cmdline'] = parent_cmdline
