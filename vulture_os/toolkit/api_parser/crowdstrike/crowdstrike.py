@@ -28,6 +28,7 @@ import logging
 from json import dumps
 from datetime import timedelta
 from requests import session, exceptions
+from copy import deepcopy
 
 from django.conf import settings
 from django.utils import timezone
@@ -60,7 +61,6 @@ class CrowdstrikeParser(ApiParser):
         self.client_secret = data["crowdstrike_client_secret"]
         self.client = data["crowdstrike_client"]
 
-        self.product = 'crowdstrike'
         self.session = None
 
         self.request_incidents = data.get('crowdstrike_request_incidents', False)
@@ -153,25 +153,47 @@ class CrowdstrikeParser(ApiParser):
                 finalDict[k] = dictToAdd[k]
         return finalDict
 
-    def execute_query(self, method: str, url: str, query: dict = {}, timeout: int = 10):
-        # can set a custom limit of entry we want to retrieve
-        # query['limit'] = 100
 
-        jsonResp = self.__execute_query(method, url, query, timeout=timeout)
+    def get_ids(self, url: str, query: dict = {}, timeout: int = 10) -> list[list]:
+        # can set a custom limit of entry we want to retrieve for a single request
+        query['limit'] = 1000
+
+        jsonResp = self.__execute_query("GET", url, query, timeout=timeout)
         totalToRetrieve = jsonResp.get('meta', {}).get('pagination', {}).get('total', 0)
 
         if totalToRetrieve > 0:
             # Continue to paginate while totalToRetrieve is different than the length of all logs gathered from successive paginations
-            # The default page size is 100 (when "limit" parameter is not passed to query, like the case here)
+            # The default page size is 100 (when "limit" parameter is not passed to query)
             while(totalToRetrieve != len(jsonResp.get('resources', []))):
                 query['offset'] = len(jsonResp.get('resources', []))
 
-                jsonAdditionalResp = self.__execute_query(method, url, query, timeout=timeout)
+                jsonAdditionalResp = self.__execute_query("GET", url, query, timeout=timeout)
+                totalToRetrieve = jsonAdditionalResp.get('meta', {}).get('pagination', {}).get('total', 0) # we need to retrieve the meta.pagination.total for every requests as those to 'host' endpoint always returns a different number
                 self.update_lock()
 
                 jsonResp = self.unionDict(jsonResp, jsonAdditionalResp)
 
-        return jsonResp
+        resources = jsonResp.get('resources', [])
+        resourcesLen = len(resources)
+        # split ids into chunks of size 4999 as API have a limit of 5000 logs requestable for single shot
+        chunks = []
+        if resourcesLen > 4999:
+            i = 0
+            tmp_logs = []
+            while i < resourcesLen:
+                if i != 0 and i % 4999 == 0:
+                    tmp_logs.append(resources[i])
+                    chunks.append(deepcopy(tmp_logs))
+                    tmp_logs = []
+                else:
+                    tmp_logs.append(resources[i])
+                i+=1
+            chunks.append(tmp_logs)
+
+        elif resourcesLen > 0:
+            chunks.append(resources)
+
+        return chunks
 
     def get_detections(self, since: str, to: str):
         logger.debug(f"[{__parser__}][get_detections]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
@@ -182,24 +204,27 @@ class CrowdstrikeParser(ApiParser):
         filter += f"+updated_timestamp:<='{to}'"
         filter += "+data_domains:'Endpoint'"
         filter += "+product:['epp', 'ngsiem', 'thirdparty']"
-        ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.ALERTS_URI}",
+        chunks = self.get_ids(url=f"{self.api_host}/{self.ALERTS_URI}",
                                  query={
                                     "filter": filter,
-                                    "sort": "updated_timestamps|desc",
+                                    "sort": "updated_timestamps|asc",
                                     "include_hidden": False
                                  })
-        ids = ret['resources']
 
-        # then retrieve the content of selected detections ids
-        if(len(ids) > 0):
-            ret = self.execute_query(method="POST",
-                                     url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
-                                     query={"composite_ids": ids})
-            ret = ret['resources']
-            for detection in ret:
-                detections += [detection]
+        # then retrieve the content of selected alerts ids
+        if(len(chunks) > 0):
+            for chunk in chunks:
+                ret = self.__execute_query(
+                    "POST",
+                    f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
+                    query={
+                        "composite_ids": chunk,
+                        "sort": "timestamp|desc"
+                    })
+                ret = ret['resources']
+                for alert in ret:
+                    detections += [alert]
         return detections
-
 
     def get_incidents(self, since: str, to: str):
         logger.debug(f"[{__parser__}][get_incidents]: From {since} until {to}",  extra={'frontend': str(self.frontend)})
@@ -210,24 +235,27 @@ class CrowdstrikeParser(ApiParser):
         filter += f"+updated_timestamp:<='{to}'"
         filter += "+data_domains:'Endpoint'"
         filter += "+product:['xdr']"
-        ret = self.execute_query(method="GET", url=f"{self.api_host}/{self.ALERTS_URI}",
-                                 query={
-                                    "filter": filter,
-                                    "sort": "updated_timestamps|desc",
-                                    "include_hidden": False
-                                 })
-        ids = ret['resources']
+        chunks = self.get_ids(url=f"{self.api_host}/{self.ALERTS_URI}",
+                            query={
+                            "filter": filter,
+                            "sort": "timestamp|asc",
+                            "include_hidden": False
+                            })
 
-        # then retrieve the content of selected incidents ids
-        if(len(ids) > 0):
-            ret = self.execute_query(method="POST",
-                                     url=f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
-                                     query={"composite_ids": ids})
-            ret = ret['resources']
-            for incident in ret:
-                incidents += [incident]
+        # then retrieve the content of selected alerts ids
+        if(len(chunks) > 0):
+            for chunk in chunks:
+                ret = self.__execute_query(
+                    "POST",
+                    f"{self.api_host}/{self.ALERTS_DETAILS_URI}",
+                    query={
+                        "composite_ids": chunk,
+                        "sort": "timestamp|desc"
+                    })
+                ret = ret['resources']
+                for alert in ret:
+                    incidents += [alert]
         return incidents
-
 
     def get_logs(self, kind: str, since: str, to: str):
         logs = []
@@ -248,8 +276,9 @@ class CrowdstrikeParser(ApiParser):
         log['url'] = self.api_host
 
         if product := log.get("product"):
-            # this ensure the retro-compatibility of detections logs that contains .behaviors object
+
             if product in ["epp", "ngsiem", "thirdparty"]:
+                # this ensure the retro-compatibility of detections logs that contains .behaviors object
                 behaviors = {}
                 for field in ["alleged_filetype", "behavior_id", "cmdline", "confidence", "control_graph_id",
                               "description", "agent_id", "display_name", "filename", "filepath", "ioc_description",
@@ -261,6 +290,7 @@ class CrowdstrikeParser(ApiParser):
                     if isinstance(behavior_field, str):
                         behaviors[field] = behavior_field
                 log['behaviors'] = behaviors
+
             # if entities.agent_ids is present it means we need to enrich log with hosts informations
             # this keeps retro-compatibility by enriching .hosts field for incidents 
             # (that have been removed since the migration from v1 to v2 endpoints)
@@ -317,8 +347,8 @@ class CrowdstrikeParser(ApiParser):
             to = min(timezone.now()-timedelta(minutes=3), since + timedelta(hours=24))
 
             logs = self.get_logs(kind=kind,
-                                 since=since.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                                 to=to.strftime("%Y-%m-%dT%H:%M:%SZ"))
+                                 since=since.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                                 to=to.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
             total = len(logs)
 
             self.write_to_file([self.format_log(log) for log in logs])
