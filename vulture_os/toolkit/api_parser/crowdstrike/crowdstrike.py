@@ -272,7 +272,6 @@ class CrowdstrikeParser(ApiParser):
         log['url'] = self.api_host
 
         if product := log.get("product"):
-
             if product in ["epp", "ngsiem", "thirdparty"]:
                 # this ensure the retro-compatibility of detections logs that contains .behaviors object
                 behaviors = {}
@@ -286,7 +285,6 @@ class CrowdstrikeParser(ApiParser):
                     if isinstance(behavior_field, str):
                         behaviors[field] = behavior_field
                 log['behaviors'] = behaviors
-
             # if entities.agent_ids is present it means we need to enrich log with hosts informations
             # this keeps retro-compatibility by enriching .hosts field for incidents 
             # (that have been removed since the migration from v1 to v2 endpoints)
@@ -297,6 +295,9 @@ class CrowdstrikeParser(ApiParser):
                                                  query={"ids": ids})
                     log['hosts'] = devices['resources']
 
+        if parent_cmdline := log.get('parent_details', {}).get('cmdline'):
+            log['parent_details']['parent_cmdline'] = parent_cmdline
+            del log['parent_details']['cmdline']
 
         return dumps(log)
 
