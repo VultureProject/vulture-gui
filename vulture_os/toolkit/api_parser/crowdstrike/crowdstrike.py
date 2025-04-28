@@ -25,7 +25,7 @@ __doc__ = 'CrowdStrike API Parser toolkit'
 __parser__ = 'CROWDSTRIKE'
 
 import logging
-from json import dumps
+from json import dumps, JSONDecodeError
 from datetime import timedelta
 from requests import session
 from requests.exceptions import ConnectionError, ReadTimeout
@@ -53,6 +53,7 @@ class CrowdstrikeParser(ApiParser):
         'accept': 'application/json'
     }
 
+
     def __init__(self, data):
         super().__init__(data)
 
@@ -66,6 +67,7 @@ class CrowdstrikeParser(ApiParser):
         self.request_incidents = data.get('crowdstrike_request_incidents', False)
 
         self.api_host = "https://" + self.api_host.split('://')[-1]
+
 
     def login(self) -> tuple:
         logger.info(f"[{__parser__}][login]: Login in...", extra={'frontend': str(self.frontend)})
@@ -109,8 +111,10 @@ class CrowdstrikeParser(ApiParser):
 
         return True, self.session
 
+
     def __execute_query(self, method: str, url: str, query: dict, timeout: int = 10) -> dict:
         retry = 3
+        response = None
         while retry > 0 and not self.evt_stop.is_set():
             retry -= 1
             logger.info(f"[{__parser__}][__execute_query]: URL: {url} , method: {method}, params: {query}, retry : {retry}", extra={'frontend': str(self.frontend)})
@@ -137,17 +141,22 @@ class CrowdstrikeParser(ApiParser):
                 continue
             break  # no error we break from the loop
 
-        if response.status_code not in [200, 201]:
+        if not response:
+            logger.error(f"[{__parser__}][__execute_query]: No response while querying API", extra={'frontend': str(self.frontend)})
+            raise CrowdstrikeAPIError("No Response")
+        elif response.status_code not in [200, 201]:
             msg = f"[{__parser__}][__execute_query]: Error at Crowdstrike API Call URL: {url} Code: {response.status_code} Content: {response.content}"
             logger.error(msg, extra={'frontend': str(self.frontend)})
             raise CrowdstrikeAPIError(msg)
 
         try:
             resp = response.json()
-        except:
+        except JSONDecodeError as e:
+            logger.warning(f"[{__parser__}][__execute_query]: Could not decode JSON from query: {e}", extra={'frontend': str(self.frontend)})
             resp = {}
 
         return resp
+
 
     def get_ids(self, query: dict, timeout: int = 10) -> list:
         """
@@ -166,18 +175,19 @@ class CrowdstrikeParser(ApiParser):
             ret.extend(jsonResp.get('resources', []))
             # Continue to paginate while totalToRetrieve is different than the length of all logs gathered from successive paginations
             # The default page size is 100 (when "limit" parameter is not passed to query)
-            while(totalToRetrieve != len(ret)):
+            while(totalToRetrieve > len(ret)):
                 query['offset'] = len(ret)
 
-                jsonAdditionalResp = self.__execute_query("GET", url, query, timeout=timeout)
+                jsonResp = self.__execute_query("GET", url, query, timeout=timeout)
                 # it's better to retrieve meta.pagination.total for every requests
                 # as some endpoints could returns variable output length as time vary
-                totalToRetrieve = jsonAdditionalResp.get('meta', {}).get('pagination', {}).get('total', 0)
+                totalToRetrieve = jsonResp.get('meta', {}).get('pagination', {}).get('total', 0)
                 self.update_lock()
 
-                ret.extend(jsonAdditionalResp.get('resources', []))
+                ret.extend(jsonResp.get('resources', []))
 
         return ret
+
 
     def split_chunks(self, resources: list) -> list[list]:
         """
@@ -200,6 +210,7 @@ class CrowdstrikeParser(ApiParser):
             chunks.append(resources)
 
         return chunks
+
 
     def get_detections(self, since: str, to: str) -> list:
         """
@@ -229,10 +240,9 @@ class CrowdstrikeParser(ApiParser):
                         "composite_ids": chunk,
                         "sort": "updated_timestamp|desc"
                     })
-                ret = ret.get('resources', [])
-                for alert in ret:
-                    detections += [alert]
+                detections.extend(ret.get('resources', []))
         return detections
+
 
     def get_incidents(self, since: str, to: str) -> list:
         """
@@ -262,10 +272,9 @@ class CrowdstrikeParser(ApiParser):
                         "composite_ids": chunk,
                         "sort": "updated_timestamp|desc"
                     })
-                ret = ret.get('resources', [])
-                for alert in ret:
-                    incidents += [alert]
+                incidents.extend(ret.get('resources', []))
         return incidents
+
 
     def get_logs(self, kind: str, since: str, to: str) -> list:
         """
@@ -283,6 +292,7 @@ class CrowdstrikeParser(ApiParser):
             raise Exception(f"Error querying {kind} logs")
 
         return logs
+
 
     def get_devices(self, ids: list) -> list:
         """
@@ -325,6 +335,7 @@ class CrowdstrikeParser(ApiParser):
             del log['parent_details']['cmdline']
 
         return dumps(log)
+
 
     def test(self) -> dict:
         try:
