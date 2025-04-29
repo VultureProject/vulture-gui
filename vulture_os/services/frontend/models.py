@@ -1621,7 +1621,16 @@ class Frontend(models.Model):
         help_text=_("Extrahop token expiration date"),
         default=timezone.now
     )
-
+    hornetsecurity_app_id = models.TextField(
+        verbose_name=_("Hornetsecurity header's APP-ID"),
+        help_text=_("Hornetsecurity header's APP-ID"),
+        default=""
+    )
+    hornetsecurity_token = models.TextField(
+        verbose_name=_("Hornetsecurity access token"),
+        help_text=_("Hornetsecurity access token"),
+        default=""
+    )
 
     @staticmethod
     def str_attrs():
