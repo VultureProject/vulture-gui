@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [PORTAL] [SELF_SERVICE] Disabled workflows listed
+- [API_PARSER] [PROOFPOINT_POD] Update time when there is no log during one hour
 
 
 ## [2.25.0]
