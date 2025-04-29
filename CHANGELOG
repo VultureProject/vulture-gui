@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] Middle click to edit an object in a new tab
 - [SCRIPT] [WIPE] New script to reset a bootstrapped node
 ### Fixed
+- [API_PARSER] [PROOFPOINT_POD] Update time when there is no log during one hour
 - [PORTAL] [SELF_SERVICE] Disabled workflows listed
 - [MONGODB] Allow clusters with more than 7 nodes
 - [SERVICES] [FRONTEND] Correctly get Darwin objects when building rsyslog configurations
