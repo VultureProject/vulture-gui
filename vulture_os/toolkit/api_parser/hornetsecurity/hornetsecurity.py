@@ -178,6 +178,84 @@ class HornetSecurityParser(ApiParser):
 
     def format_log(self, kind: str, log: dict) -> str:
         log['kind'] = kind
+
+        if kind == "emails":
+            # size
+            size : dict = log.get('size')
+            if size:
+                value : int = size.get('value', 0)
+                unit : str = size.get('unit', "kb")
+                unit = unit.lower()
+
+                unit_table = {"kb": 1000, "mb": 1000000, "gb": 1000000000}
+                size = value * unit_table.get(unit, 0)
+
+                log['size'] = size
+
+            # attachments
+            attachments : list = log.get('attachments', [])
+            new_attachments = []
+            if attachments:
+                for attachment in attachments:
+                    new_attachment = {"file": {}}
+                    if attachment.get("name"):
+                        new_attachment['file']['name'] = attachment["name"]
+                    if attachment.get("checksum"):
+                        new_attachment['file']['md5'] = attachment["checksum"]
+                    new_attachments.append(new_attachment)
+            log['attachments'] = new_attachments
+
+            # crypt_type_*
+            crypt_type_in_text : dict = log.get('crypt_type_in', {}).get('text')
+            if isinstance(crypt_type_in_text, str):
+                log['crypt_type_in'] = crypt_type_in_text.lower()
+            else:
+                log['crypt_type_in'] = "unknown"
+
+            crypt_type_out_text : dict = log.get('crypt_type_out', {}).get('text')
+            if isinstance(crypt_type_out_text, str):
+                log['crypt_type_out'] = crypt_type_out_text.lower()
+            else:
+                log['crypt_type_out'] = "unknown"
+
+            # direction
+            direction = log.get('direction')
+            if direction == 1:
+                log['direction'] = "inbound"
+            elif direction == 2:
+                log['direction'] = "outbound"
+            else:
+                log['direction'] = "unknown"
+
+            # classification
+            classification_text : dict = log.get('classification', {}).get('text')
+            if isinstance(classification_text, str):
+                log['classification'] = classification_text.lower()
+            else:
+                log['classification'] = "unknown"
+
+            # status
+            status_text : dict = log.get('status', {}).get('text')
+            if isinstance(status_text, str):
+                log['status'] = status_text.lower()
+            else:
+                log['status'] = "unknown"
+
+            # is_archived
+            is_archived = log.get('is_archived')
+            if not isinstance(is_archived, bool):
+                log['is_archived'] = False
+
+            # has_url_rewritten
+            has_url_rewritten = log.get('has_url_rewritten')
+            if not isinstance(has_url_rewritten, bool):
+                log['has_url_rewritten'] = False
+
+            # private
+            private = log.get('private')
+            if not isinstance(private, bool):
+                log['private'] = False
+
         return dumps(log)
 
 
@@ -186,20 +264,20 @@ class HornetSecurityParser(ApiParser):
             logs = []
 
             since = self.last_collected_timestamps.get(f"hornetsecurity_{kind}") or (timezone.now() - timedelta(days=7))
-            to = min(datetime.now() - timedelta(minutes=3), since + timedelta(days=1))
+            to = min(timezone.now() - timedelta(minutes=3), since + timedelta(days=1))
 
             new_logs, new_to = self.get_logs(kind, since, to)
 
             logger.info(f"[{__parser__}][execute]: Successfully get {len(new_logs)} {kind}'s logs from {since} to {new_to}", extra={'frontend': str(self.frontend)})
             logs.extend(new_logs)
 
-            # this incrementation is mandatory to not get doublons for every request - overlapping from one range to another - even if it's uggly and possibly causing logs missing
-            self.last_collected_timestamps[f"hornetsecurity_{kind}"] = new_to + timedelta(seconds=1)
-            logger.info(f"[{__parser__}][execute]: Updated last_collected_timestamps['hornetsecurity_{kind}'] to {new_to}", extra={'frontend': str(self.frontend)})
-
             if logs:
                 self.write_to_file([self.format_log(kind, log) for log in logs])
                 self.update_lock()
+
+            # this incrementation is mandatory to not get doublons for every request - overlapping from one range to another - even if it's uggly and possibly causing logs missing
+            self.last_collected_timestamps[f"hornetsecurity_{kind}"] = new_to + timedelta(seconds=1)
+            logger.info(f"[{__parser__}][execute]: Updated last_collected_timestamps['hornetsecurity_{kind}'] to {new_to}", extra={'frontend': str(self.frontend)})
 
     def test(self):
         try:
