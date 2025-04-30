@@ -119,9 +119,9 @@ def frontend_delete(request, object_id, api=False):
         return HttpResponseForbidden("Injection detected")
 
     listeners = frontend.listener_set.all()
+    used_by = set(frontend.userauthentication_set.all()).union(set(frontend.workflow_set.all()))
 
-    if((request.method == "POST" and request.POST.get('confirm', "").lower() == "yes")
-       or (api and request.method == "DELETE" and request.JSON.get('confirm', "").lower() == "yes")):
+    if not used_by and (api or (request.method == "POST" and request.POST.get('confirm', "").lower() == "yes")):
 
         # Save frontend nodes before delete-it
         nodes = frontend.get_nodes()
@@ -145,8 +145,6 @@ def frontend_delete(request, object_id, api=False):
         was_darwin_buffered = DarwinBuffering.objects.filter(destination_filter__policy__frontend_set=frontend).exists()
 
         had_expected_timezone = frontend.expected_timezone is not None
-
-        used_by = set(frontend.userauthentication_set.all()).union(set(frontend.workflow_set.all()))
 
         try:
             # If POST request and no error: delete frontend
@@ -193,7 +191,7 @@ def frontend_delete(request, object_id, api=False):
         except ProtectedError as e:
             logger.error("Error trying to delete Frontend '{}': Object is currently used :".format(frontend.name))
             logger.exception(e)
-            error = f"Object is currently used by {used_by}, cannot be deleted"
+            error = f"Object is currently used by {[str(obj) for obj in e.protected_objects]}, cannot be deleted"
 
             if api:
                 return JsonResponse({
@@ -211,8 +209,18 @@ def frontend_delete(request, object_id, api=False):
             if api:
                 return JsonResponse({'status': False,
                                      'error': error}, status=500)
+
     if api:
-        return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
+        if used_by:
+            return JsonResponse(
+                {
+                    "error": "Object is used in configurations",
+                    "used_by": [str(obj) for obj in used_by]
+                },
+                status=400
+            )
+        else:
+            return JsonResponse({'error': _("Please confirm with confirm=yes in JSON body.")}, status=400)
 
     # If GET request or POST request and API/Delete failure
     return render(request, 'generic_delete.html', {
