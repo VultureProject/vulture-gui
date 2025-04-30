@@ -315,7 +315,7 @@ class WAFCloudProtectorParser(ApiParser):
                     # And update lock after sending lines to Rsyslog
                     self.update_lock()
                     self.frontend.waf_cloud_protector_timestamps[log_type][server] = to
-                    self.frontend.save()
+                    self.frontend.save(update_fields=['waf_cloud_protector_timestamps'])
 
                 except Exception as e:
                     msg = f"Failed to server {server} on log type {log_type}: {e} "

@@ -209,7 +209,6 @@ class TrendmicroWorryfreeParser(ApiParser):
                             logger.info(f'[{__parser__}]:execute_query:{page_id}/{total_pages}', extra={'frontend': str(self.frontend)})
                         logger.info(f"[{__parser__}]:execute_query:query_logs_realtime successfully.", extra={'frontend': str(self.frontend)})
                     else:
-                        err = True
                         logger.info(f"[{__parser__}]:execute_query:query_logs_realtime return error.", extra={'frontend': str(self.frontend)})
         return result_logs
 
@@ -249,4 +248,5 @@ class TrendmicroWorryfreeParser(ApiParser):
         self.update_lock()
 
         self.frontend.last_api_call = to
+        self.frontend.save(update_fields=["last_api_call"])
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

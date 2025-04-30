@@ -166,8 +166,9 @@ class DefenderParser(ApiParser):
 
             # All alerts are retrieved, reset timezone to now (+1ms to avoid repeating last log)
             self.frontend.last_api_call = logs_to + timedelta(milliseconds=1)
+            self.frontend.save(update_fields=["last_api_call"])
 
-            self.write_to_file([json.dumps(l) for l in logs])
+            self.write_to_file([json.dumps(log) for log in logs])
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 

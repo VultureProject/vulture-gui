@@ -208,6 +208,7 @@ class ForcepointParser(ApiParser):
                 self.delete_file(file_url)
                 # And update last_api_call time
                 self.frontend.last_api_call = timezone.now()
+                self.frontend.save(update_fields=["last_api_call"])
             except Exception as e:
                 msg = f"Failed to retrieve file {file_url} : {e}"
                 logger.error(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})

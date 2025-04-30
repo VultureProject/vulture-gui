@@ -153,6 +153,7 @@ class WAFCloudflareParser(ApiParser):
                 self.write_to_file(logs)
             # from is inclusive, to is exclusive
             self.frontend.last_api_call = to
+            self.frontend.save(update_fields=["last_api_call"])
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {str(e)}", extra={'frontend': str(self.frontend)})
 

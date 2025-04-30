@@ -189,7 +189,7 @@ class ApiParser:
                 name: timestamp_str.isoformat()
                 for name, timestamp_str in self.last_collected_timestamps.items()
             }
-            self.frontend.save()
+            self.frontend.save(update_fields=["last_collected_timestamps"])
 
     def test(self):
         raise NotImplementedError()

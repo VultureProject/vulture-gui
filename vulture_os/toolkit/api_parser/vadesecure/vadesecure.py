@@ -105,7 +105,7 @@ class VadesecureParser(ApiParser):
                     response = response.json()
                     self.accountID = int(response["accounts"][0]["accountId"])
                     self.userID = int(response["accounts"][0].get("userId", 0))
-                except:
+                except Exception:
                     return False
             return True
 
@@ -157,7 +157,7 @@ class VadesecureParser(ApiParser):
                 response = self.__execute_query("POST", url, payload)
 
                 try:
-                    log["details"] = json.dumps([l for l in response["detail"].split("\r\n") if l != ""])
+                    log["details"] = json.dumps([detail for detail in response["detail"].split("\r\n") if detail != ""])
                 except Exception as e:
                     msg = f"No details for log: {payload}"
                     logger.error(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
@@ -168,7 +168,7 @@ class VadesecureParser(ApiParser):
                 logger.error(f"[{__parser__}]:fetch_details: {msg}", extra={'frontend': str(self.frontend)})
                 logger.exception(e, extra={'frontend': str(self.frontend)})
 
-        return [self.format_log(l) for l in logs]
+        return [self.format_log(log) for log in logs]
 
     def fetch_endpoint(self, endpoint, to, since, payload):
         msg = f"parser starting from {since} to {to}."
@@ -195,7 +195,7 @@ class VadesecureParser(ApiParser):
             # Downloading may take a while, so refresh token in Redis
             try:
                 self.update_lock()
-            except:
+            except Exception:
                 pass
 
             logs = response['logs']
@@ -219,7 +219,7 @@ class VadesecureParser(ApiParser):
                 # We need to call getdetail for each logs
                 logs_pages += self.fetch_details(payload, logs)
             else:
-                logs_pages += [self.format_log(l) for l in logs]
+                logs_pages += [self.format_log(log) for log in logs]
 
             # We do not want to timeout, it's only a test
             if self.isTest:
@@ -288,7 +288,7 @@ class VadesecureParser(ApiParser):
 
             # increment by 1ms to avoid repeating a line if its timestamp happens to be the exact timestamp 'to'
             self.frontend.last_api_call = to_tz + timedelta(milliseconds=1)
-            self.frontend.save()
+            self.frontend.save(update_fields=['last_api_call'])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 

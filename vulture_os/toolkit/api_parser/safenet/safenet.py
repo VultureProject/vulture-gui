@@ -171,9 +171,11 @@ class SafenetParser(ApiParser):
 
             # update last_api_call only if logs are retrieved
             self.frontend.last_api_call = to
+            self.frontend.save(update_fields=["last_api_call"])
         elif self.last_api_call < timezone.now()-timedelta(hours=24):
             # If no logs where retrieved during the last 24hours,
             # move forward 1h to prevent stagnate ad vitam eternam
             self.frontend.last_api_call += timedelta(hours=1)
+            self.frontend.save(update_fields=["last_api_call"])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

@@ -126,7 +126,7 @@ class ImpervaParser(ApiParser):
         r = self.__execute_query(url)
 
         r.raise_for_status()
-        log_files = [l for l in r.text.split('\n') if l]
+        log_files = [log for log in r.text.split('\n') if log]
         return log_files
 
     def get_file(self, filename):
@@ -209,7 +209,7 @@ class ImpervaParser(ApiParser):
                         finally:
                             self.frontend.imperva_last_log_file = file
                             self.frontend.last_api_call = timezone.now()
-                            self.frontend.save()
+                            self.frontend.save(update_fields=['imperva_last_log_file', 'last_api_call'])
             else:
                 logger.info(f"[{__parser__}]:execute: No file to download",
                             extra={'frontend': str(self.frontend)})

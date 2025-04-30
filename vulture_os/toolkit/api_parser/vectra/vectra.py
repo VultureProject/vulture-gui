@@ -67,7 +67,7 @@ class VectraParser(ApiParser):
             if self.frontend:
                 self.frontend.vectra_access_token = self.vectra_access_token
                 self.frontend.vectra_expire_at = self.vectra_expire_at
-                self.frontend.save()
+                self.frontend.save(update_fields=['vectra_access_token', 'vectra_expire_at'])
         except Exception as e:
             raise VectraAPIError(f"Unable to save access token: {e}")
 
@@ -217,12 +217,12 @@ class VectraParser(ApiParser):
             self.update_lock()
 
             # Send those lines to Rsyslog
-            self.write_to_file([self.format_log(l) for l in results])
+            self.write_to_file([self.format_log(log) for log in results])
 
             # And update lock after sending lines to Rsyslog
             self.update_lock()
             self.frontend.last_api_call = to
-            self.frontend.save()
+            self.frontend.save(update_fields=['last_api_call'])
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

@@ -170,6 +170,7 @@ class SignalSciencesNgwafParser(ApiParser):
             # If we are more than 24h05m late -> move forward 1h to prevent API error
             if self.frontend.last_api_call < now - timedelta(hours=24, minutes=5):
                 self.frontend.last_api_call += timedelta(hours=1)
+                self.frontend.save(update_fields=["last_api_call"])
 
             since = min(self.last_api_call, now - timedelta(minutes=6)).replace(second=0, microsecond=0)
             to = min(since + timedelta(hours=1), now - timedelta(minutes=5)).replace(second=0, microsecond=0)
@@ -196,6 +197,7 @@ class SignalSciencesNgwafParser(ApiParser):
                         self.update_lock()
 
                 self.frontend.last_api_call = to
+                self.frontend.save(update_fields=["last_api_call"])
                 since = to
                 to = min(since + timedelta(hours=1), now - timedelta(minutes=5)).replace(second=0, microsecond=0)
 
