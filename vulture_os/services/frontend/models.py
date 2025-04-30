@@ -2105,7 +2105,7 @@ class Frontend(models.Model):
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
 
             darwin_actions = []
-            for darwin_filter in FilterPolicy.objects.filter(policy__in=self.darwin_policies.all(), enabled=True):
+            for darwin_filter in FilterPolicy.objects.filter(policy_id__in=(p.id for p in self.darwin_policies.all()), enabled=True):
                 if not darwin_filter.filter_type.is_launchable:
                     continue
 
