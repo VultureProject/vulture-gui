@@ -13,16 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] [RSYSLOG] Bring more details on GUI when configuration builds fail
 - [SERVICES] [FRONTEND] Improve deletion messages and conditions on GUI and API
 - [API_PARSER] Ensure modifications in configuration are not overriden by running instances
-
-
-## [2.25.0]
-### Added
-- [API_PARSER] [CISCO_MERAKI] Add support for configuration change logs
+- [FRONTEND] Hot-disable a collector manually
 ### Changed
 - [FILEBEAT] Separate building configurations and restarting service
+
+
+## [2.25.0] - 2025-04-30
+### Added
+- [API_PARSER] [CISCO_MERAKI] Add support for configuration change logs
 ### Fixed
 - [API_PARSER] [BEYONDTRUST_PRA] Catch invalid lines
-- [FRONTEND] Hot-disable a collector manually
 
 
 ## [2.24.1] - 2025-04-17
