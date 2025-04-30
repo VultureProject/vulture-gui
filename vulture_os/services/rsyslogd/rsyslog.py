@@ -35,6 +35,7 @@ from toolkit.datetime.timezone import get_safe_tz_name
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import DatabaseError
 from services.exceptions import ServiceError
 from subprocess import CalledProcessError
 from system.exceptions import VultureSystemError
@@ -177,6 +178,13 @@ def build_conf(node_logger, frontend_id=None):
         except ObjectDoesNotExist:
             raise VultureSystemError("Frontend with id {} not found, failed to generate conf.".format(frontend_id),
                                      "build rsyslog conf", traceback=" ")
+        except DatabaseError:
+            raise VultureSystemError("Database error, please check logs",
+                                     "build rsyslog conf", traceback=" ")
+        except Exception as e:
+            raise VultureSystemError(f"Unknown error: {e}",
+                                     "build rsyslog conf", traceback=" ")
+
 
     """ Generate inputs configuration """
     service = RsyslogService()
