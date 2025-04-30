@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [PORTAL] [SELF_SERVICE] Disabled workflows listed
+- [MONGODB] Allow clusters with more than 7 nodes
 
 
 ## [2.25.0]
