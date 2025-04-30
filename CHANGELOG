@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [MONGODB] Allow clusters with more than 7 nodes
 - [SERVICES] [FRONTEND] Correctly get Darwin objects when building rsyslog configurations
 - [GUI] [RSYSLOG] Bring more details on GUI when configuration builds fail
+- [SERVICES] [FRONTEND] Improve deletion messages and conditions on GUI and API
 
 
 ## [2.25.0]
