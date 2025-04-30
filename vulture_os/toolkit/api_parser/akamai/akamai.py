@@ -55,15 +55,15 @@ def akamai_write(akamai):
             try:
                 # Wait max 2 seconds for a log
                 log = akamai.queue_write.get(block=True, timeout=2)
-            except:
-                msg = "Exception in queue_write.get()"
+            except Exception as e:
+                msg = f"Exception in queue_write.get(): {e}"
                 logger.info(f"[{__parser__}]:{get_bulk.__name__}: {msg}", extra={'frontend': str(akamai.frontend)})
                 continue
             try:
                 # Data to write must be bytes
                 res.append(json.dumps(log).encode('utf8'))
-            except:
-                msg = f"Line {log} is not json formated"
+            except Exception as e:
+                msg = f"Line {log} is not json formated: {e}"
                 logger.info(f"[{__parser__}]:{get_bulk.__name__}: {msg}", extra={'frontend': str(akamai.frontend)})
                 pass
                 #            queue_write.task_done()
@@ -82,7 +82,7 @@ def akamai_parse(akamai):
         try:
             # Wait max 2 seconds for a log
             log = json.loads(akamai.queue_parse.get(block=True, timeout=2).decode('utf-8'))
-        except:
+        except Exception:
             continue
 
         timestamp_epoch = int(log['httpMessage']['start'])
@@ -211,7 +211,6 @@ class AkamaiParser(ApiParser):
             params['limit'] = 1
 
         self.offset = None
-        result = []
 
         logger.info(f"[{__parser__}]:get_logs: URL: {url} , params: {params}", extra={'frontend': str(self.frontend)})
         with self.session.get(url, params=params, proxies=self.proxies,
@@ -236,7 +235,7 @@ class AkamaiParser(ApiParser):
                         msg = f"{line}"
                         logger.info(f"[{__parser__}]:get_logs: {msg}", extra={'frontend': str(self.frontend)})
                         self.offset = line['offset']
-                    except:
+                    except Exception:
                         continue
 
             logger.info(f"[{__parser__}]:get_logs: Fetched {i} lines", extra={'frontend': str(self.frontend)})

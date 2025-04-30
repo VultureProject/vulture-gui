@@ -163,7 +163,7 @@ class ProofpointCASBParser(ApiParser):
                 total += nb_logs
 
                 # Send logs to Rsyslog
-                self.write_to_file([json.dumps(l) for l in logs])
+                self.write_to_file([json.dumps(log) for log in logs])
 
                 # Writing may take some while, so refresh token in Redis
                 self.update_lock()

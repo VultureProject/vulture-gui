@@ -126,7 +126,7 @@ class ImpervaParser(ApiParser):
         r = self.__execute_query(url)
 
         r.raise_for_status()
-        log_files = [l for l in r.text.split('\n') if l]
+        log_files = [log for log in r.text.split('\n') if log]
         return log_files
 
     def get_file(self, filename):

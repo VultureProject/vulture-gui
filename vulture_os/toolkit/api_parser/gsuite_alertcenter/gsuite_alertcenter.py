@@ -157,7 +157,7 @@ class GsuiteAlertcenterParser(ApiParser):
                 self.frontend.last_api_call = last_timestamp
                 self.frontend.save(update_fields=["last_api_call"])
 
-            self.write_to_file([json.dumps(l) for l in tmp_logs['alerts']])
+            self.write_to_file([json.dumps(log) for log in tmp_logs['alerts']])
 
         elif self.last_api_call < timezone.now() - timedelta(hours=24):
             # If no logs where retrieved during the last 24hours,

@@ -217,7 +217,7 @@ class VectraParser(ApiParser):
             self.update_lock()
 
             # Send those lines to Rsyslog
-            self.write_to_file([self.format_log(l) for l in results])
+            self.write_to_file([self.format_log(log) for log in results])
 
             # And update lock after sending lines to Rsyslog
             self.update_lock()

@@ -338,7 +338,7 @@ class MSSentinelParser(ApiParser):
                         logger.error(f"[{__parser__}]:execute: Fail to retrieve alerts for incident {incident['name']}",
                                      extra={'frontend': str(self.frontend)})
 
-                self.write_to_file([self.format_log(l) for l in logs])
+                self.write_to_file([self.format_log(log) for log in logs])
                 # Writting & downloading may take some while, so refresh token in Redis
                 self.update_lock()
 

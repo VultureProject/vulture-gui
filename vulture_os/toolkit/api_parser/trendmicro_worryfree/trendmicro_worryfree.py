@@ -209,7 +209,6 @@ class TrendmicroWorryfreeParser(ApiParser):
                             logger.info(f'[{__parser__}]:execute_query:{page_id}/{total_pages}', extra={'frontend': str(self.frontend)})
                         logger.info(f"[{__parser__}]:execute_query:query_logs_realtime successfully.", extra={'frontend': str(self.frontend)})
                     else:
-                        err = True
                         logger.info(f"[{__parser__}]:execute_query:query_logs_realtime return error.", extra={'frontend': str(self.frontend)})
         return result_logs
 

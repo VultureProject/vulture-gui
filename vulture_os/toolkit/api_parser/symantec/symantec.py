@@ -211,10 +211,10 @@ class SymantecParser(ApiParser):
 
                                         try:
                                             self.last_api_call = datetime.datetime.strptime(gzip_filename.split("_")[2].split(".")[0], "%Y%m%d%H%M%S")+datetime.timedelta(hours=1)
-                                        except:
+                                        except Exception as e:
                                             self.last_api_call += datetime.timedelta(hours=1)
                                             logger.error(f"[{__parser__}]:execute: Fail to parse {gzip_filename} to set last_api_call, "
-                                                         f"setting it to {self.last_api_call}",
+                                                         f"setting it to {self.last_api_call} (error: {e})",
                                                          extra={'frontend': str(self.frontend)})
 
                                         self.frontend.last_api_call = self.last_api_call

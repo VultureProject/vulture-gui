@@ -66,9 +66,6 @@ class SophosCloudState:
     def save_state(self, a, b):
         pass
 
-    def load_state_file(self):
-        pass
-
 
 @dataclass
 class Options:

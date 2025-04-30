@@ -28,7 +28,6 @@ __parser__ = 'SENTINEL ONE SINGULARITY MOBILE'
 import requests
 import json
 import logging
-import time
 
 from datetime import timedelta, datetime
 from django.conf import settings

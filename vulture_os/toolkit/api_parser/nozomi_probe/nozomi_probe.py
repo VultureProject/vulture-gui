@@ -139,7 +139,7 @@ class NozomiProbeParser(ApiParser):
                 log['timestamp'] = datetime.fromtimestamp(log['time']/1000).isoformat()
                 return json.dumps(log)
 
-            self.write_to_file([format_log(l) for l in logs])
+            self.write_to_file([format_log(log) for log in logs])
             # Writting may take some while, so refresh token in Redis
             self.update_lock()
 
