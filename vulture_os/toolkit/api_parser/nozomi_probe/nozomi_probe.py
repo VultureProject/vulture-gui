@@ -130,6 +130,8 @@ class NozomiProbeParser(ApiParser):
             self.update_lock()
 
             total = tmp_logs['total']
+            if not total:
+                total = 0
             logs = tmp_logs['result']
             cpt += len(logs)
 
