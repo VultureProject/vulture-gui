@@ -26,8 +26,9 @@ __parser__ = 'HORNETSECURITY'
 
 
 from requests.sessions import Session
-from json import dumps
+from json import dumps, loads
 from datetime import datetime, timedelta
+from base64 import b64encode
 
 import logging
 from django.conf import settings
@@ -175,10 +176,13 @@ class HornetSecurityParser(ApiParser):
 
         return ret, to
 
-
     def format_log(self, kind: str, log: dict) -> str:
+        def is_ascii(s):
+            return all(ord(c) < 128 for c in s)
+
         log['kind'] = kind
 
+        ## EMAILS
         if kind == "emails":
             # size
             size : dict = log.get('size')
@@ -255,6 +259,38 @@ class HornetSecurityParser(ApiParser):
             private = log.get('private')
             if not isinstance(private, bool):
                 log['private'] = False
+
+        ## AUDITING
+        elif kind == "auditing":
+            # new_values
+            new_values = log.get('new_values')
+            if new_values:
+                new_values = loads(new_values)
+                if not isinstance(new_values, dict):
+                    log['new_values'] = {}
+                else:
+                    subject = new_values.get('subject')
+                    if subject and not is_ascii(subject):
+                        try:
+                            new_values['subject'] = subject.encode('utf-8').decode('utf-8')
+                        except:
+                            new_values['subject'] = ""
+                    log['new_values'] = new_values
+
+            # old_values
+            old_values = log.get('old_values')
+            if old_values:
+                old_values = loads(old_values)
+                if not isinstance(old_values, dict):
+                    log['old_values'] = {}
+                else:
+                    subject = old_values.get('subject')
+                    if subject and not is_ascii(subject):
+                        try:
+                            old_values['subject'] = subject.encode('utf-8').decode('utf-8')
+                        except:
+                            old_values['subject'] = ""
+                    log['old_values'] = old_values
 
         return dumps(log)
 
