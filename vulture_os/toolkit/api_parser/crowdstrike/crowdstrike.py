@@ -69,7 +69,7 @@ class CrowdstrikeParser(ApiParser):
         self.api_host = "https://" + self.api_host.split('://')[-1]
 
 
-    def login(self) -> tuple:
+    def login(self) -> None:
         logger.info(f"[{__parser__}][login]: Login in...", extra={'frontend': str(self.frontend)})
         auth_url = f"{self.api_host}/{self.AUTH_URI}"
 
@@ -88,20 +88,23 @@ class CrowdstrikeParser(ApiParser):
                 proxies=self.proxies,
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
-        except ConnectionError:
+        except ConnectionError as e:
             self.session = None
-            logger.error(f'[{__parser__}][login]: Connection failed (ConnectionError)', exc_info=True, extra={'frontend': str(self.frontend)})
-            return False, ('Connection failed')
-        except ReadTimeout:
+            msg = "Connection failed (ConnectionError)"
+            logger.error(f'[{__parser__}][login]: {msg}', exc_info=True, extra={'frontend': str(self.frontend)})
+            raise e
+        except ReadTimeout as e:
             self.session = None
-            logger.error(f'[{__parser__}][login]: Connection failed {self.client_id} (read_timeout)', extra={'frontend': str(self.frontend)})
-            return False, ('Connection failed')
+            msg = f"Connection failed {self.client_id} (read_timeout)"
+            logger.error(f'[{__parser__}][login]: {msg}', extra={'frontend': str(self.frontend)})
+            raise e
 
         response.raise_for_status()
         if response.status_code not in [200, 201]:
             self.session = None
-            logger.error(f'[{__parser__}][login]: Authentication failed. code {response.status_code}', extra={'frontend': str(self.frontend)})
-            return False, ('Authentication failed')
+            msg = f"Authentication failed. Code {response.status_code} -- {response.content}"
+            logger.error(f'[{__parser__}][login]: {msg}', extra={'frontend': str(self.frontend)})
+            raise Exception(msg)
 
         ret = response.json()
         self.session.headers.update(
@@ -109,7 +112,7 @@ class CrowdstrikeParser(ApiParser):
         del self.session.headers['Content-Type']
         del self.session.headers['Accept-Encoding']
 
-        return True, self.session
+        return
 
 
     def __execute_query(self, method: str, url: str, query: dict, timeout: int = 10) -> dict:
