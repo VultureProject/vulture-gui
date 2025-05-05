@@ -328,7 +328,13 @@ class CrowdstrikeParser(ApiParser):
         # (that have been removed since the migration from v1 to v2 endpoints)
         elif product == "xdr":
             if ids := log.get('entities', {}).get('agent_ids', []):
-                log['hosts'] = self.get_devices(ids)
+                devices = self.get_devices(ids)
+                # limit size of hosts array to 100, ensuring low output log size (theorically no more than 65ko - half the rsyslog limit) :
+                #   - 50 bytes (max observed field size)
+                #   - 13 (max observed fields inside hosts object)
+                #   - 100 (hosts limit)
+                # => 50*13*100 = 65 000 = 65ko
+                log['hosts'] = devices[0:99]
 
         if parent_cmdline := log.get('parent_details', {}).get('cmdline'):
             log['parent_details']['parent_cmdline'] = parent_cmdline
