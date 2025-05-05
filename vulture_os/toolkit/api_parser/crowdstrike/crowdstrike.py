@@ -332,6 +332,7 @@ class CrowdstrikeParser(ApiParser):
         elif product == "xdr":
             if ids := log.get('entities', {}).get('agent_ids', []):
                 devices = self.get_devices(ids)
+                log['hosts_count'] = len(devices)
                 # limit size of hosts array to 100, ensuring low output log size (theorically no more than 65ko - half the rsyslog limit) :
                 #   - 50 bytes (max observed field size)
                 #   - 13 (max observed fields inside hosts object)
