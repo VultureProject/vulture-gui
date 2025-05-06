@@ -2230,20 +2230,17 @@ class Frontend(models.Model):
         """
         :return: Return node(s) where the frontend has been declared
         """
-        result = set()
+        nodes = set()
         if self.mode == "log" and self.listening_mode in ["file", "kafka", "redis"]:
-            result = {self.node} if self.node else set(Node.objects.all())
-        elif self.mode == "filebeat" and self.filebeat_listening_mode in ["file", "api"] :
-            result = {self.node}
+            nodes = {self.node} if self.node else set(Node.objects.all())
+        elif self.mode == "filebeat" and self.filebeat_listening_mode in ["file", "api"]:
+            nodes = {self.node}
         elif self.mode == "log" and self.listening_mode == "api":
-            result = set(Node.objects.all())
+            nodes = set(Node.objects.all())
         else:
-            result = set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.id))
+            nodes = set(Node.objects.filter(networkinterfacecard__networkaddress__listener__frontend=self.pk))
 
-        if None in result:
-            result.remove(None)
-
-        return result
+        return [node for node in nodes if node is not None]
 
     def reload_conf(self):
         """ Generate conf based on MongoDB data and save-it on concerned nodes
@@ -2251,9 +2248,40 @@ class Frontend(models.Model):
          """
         nodes = set()
         for node in self.get_nodes():
-            api_res = node.api_request("services.haproxy.haproxy.build_conf", self.id)
-            if not api_res.get('status'):
-                logger.error(f"[FRONTEND] API error while trying to reload {self.name} conf : {api_res.get('message')}")
+            if self.has_rsyslog_conf:
+                if self.enabled:
+                    node.api_request("services.rsyslogd.rsyslog.build_conf", self.pk)
+                # Don't remove rsyslog configurations for API collectors when Frontend is disabled
+                # (avoid dropping existing instances of a collector sending logs to Rsyslog)
+                elif self.listening_mode != "api":
+                    node.api_request("services.rsyslogd.rsyslog.delete_conf",
+                                     self.get_rsyslog_base_filename())
+                    # API request to rebuild global rsyslog configuration
+                    node.api_request('services.rsyslogd.rsyslog.build_conf')
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
+
+            if self.has_filebeat_conf:
+                if self.enabled:
+                    node.api_request("services.filebeat.filebeat.build_conf", self.pk)
+                    node.api_request("services.filebeat.filebeat.restart_service", self.pk)
+                else:
+                    node.api_request('services.filebeat.filebeat.stop_service', self.pk)
+                    node.api_request('services.filebeat.filebeat.delete_conf',
+                                     self.get_filebeat_base_filename())
+
+            if self.has_haproxy_conf:
+                if self.enabled:
+                    node.api_request("services.haproxy.haproxy.build_conf", self.pk)
+                else:
+                    node.api_request('services.haproxy.haproxy.delete_conf', self.get_base_filename())
+                node.api_request("services.haproxy.haproxy.reload_service")
+
+            # Reload LogRotate config
+            if self.enable_logging and (self.log_forwarders.filter(logomfile__enabled=True).count() > 0 or
+                                self.log_forwarders_parse_failure.filter(logomfile__enabled=True).count()):
+                node.api_request("services.logrotate.logrotate.reload_conf")
+            self.status[node.name] = "WAITING"
+            self.save(update_fields=["status"])
             nodes.add(node)
 
         return nodes
@@ -2261,27 +2289,13 @@ class Frontend(models.Model):
     def enable(self):
         """ Quick enable a frontend """
         if self.enabled:
-            return "This frontend is already enable."
+            return "This frontend is already enabled."
 
         self.enabled = True
-        self.save()
+        self.save(update_fields=['enabled'])
 
-        for node in self.get_nodes():
-            if self.enable_logging and self.listening_mode != "api":
-                logger.info(f"Rsyslogd global config reload asked on node {node}.")
-                node.api_request("services.rsyslogd.rsyslog.build_conf")
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
-
-            if self.mode == "filebeat":
-                logger.info(f"Filebeat config asked on node {node}.")
-                node.api_request("services.filebeat.filebeat.build_conf", self.pk)
-                node.api_request("services.filebeat.filebeat.restart_service", self.pk)
-
+        for node in self.reload_conf():
             node.api_request("services.pf.pf.gen_config")
-
-        if self.has_haproxy_conf:
-            for node in self.reload_conf():
-                node.api_request("services.haproxy.haproxy.reload_service")
 
         return f"Start frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 
@@ -2291,24 +2305,10 @@ class Frontend(models.Model):
             return "This frontend is already disabled."
 
         self.enabled = False
-        self.save()
+        self.save(update_fields=['enabled'])
 
-        for node in self.get_nodes():
-            if self.enable_logging and self.listening_mode != "api":
-                node.api_request("services.rsyslogd.rsyslog.build_conf")
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
-
-            if self.mode == "filebeat":
-                # We have to delete the config to pause the Filebeat process
-                logger.info(f"Filebeat config '{self.get_filebeat_base_filename()}' deletion asked on node {node}.")
-                node.api_request('services.filebeat.filebeat.stop_service', self.pk)
-                node.api_request('services.filebeat.filebeat.delete_conf', self.get_filebeat_base_filename())
-
+        for node in self.reload_conf():
             node.api_request("services.pf.pf.gen_config")
-
-        if self.has_haproxy_conf:
-            for node in self.reload_conf():
-                node.api_request("services.haproxy.haproxy.reload_service")
 
         return f"Stop frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 
