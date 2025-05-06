@@ -327,8 +327,8 @@ class ArmisCentrixParser(ApiParser):
         for kind in kinds:
             # API have the capability to get back in time from the last 100 days at maximum
             since = self.last_collected_timestamps.get(f"armis_centrix_{kind}") or (timezone.now() - timedelta(days=30))
-            # collect at max 24h of range to avoid API taking too long to answer and delay by 3 minutes to avoid missing alerts due to ELK insertion time
-            to    = min(timezone.now() - timedelta(minutes=3), since + timedelta(hours=24))
+            # collect at max 1h of range to avoid API taking too long to answer and delay by 3 minutes to avoid missing alerts due to ELK insertion time
+            to    = min(timezone.now() - timedelta(minutes=3), since + timedelta(hours=1))
             offset = 0
 
             # get first page of logs
