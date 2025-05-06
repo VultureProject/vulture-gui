@@ -326,30 +326,71 @@ class CrowdstrikeParser(ApiParser):
                 if isinstance(behavior_field, str):
                     behaviors[field] = behavior_field
             log['behaviors'] = behaviors
+
+            # truncate cmdlines to 4096 char
+            log['cmdline'] = log.get('cmdline', "")[0:4096]
+            if parent_cmdline := log.get('parent_details', {}).get('cmdline'): # keeps retro-compat field .parent_cmdline
+                log['parent_details']['parent_cmdline'] = parent_cmdline[0:4096]
+                del log['parent_details']['cmdline']
+            if grandparent_cmdline := log.get('grandparent_details', {}).get('cmdline', ""):
+                log['grandparent_details']['cmdline'] = grandparent_cmdline[0:4096]
+            if behaviors_cmdline := log.get('behaviors', {}).get('cmdline'):
+                log['behaviors']['cmdline'] = behaviors_cmdline[0:4096]
+
         # if entities.agent_ids is present it means we need to enrich log with hosts informations
         # this keeps retro-compatibility by enriching .hosts field for incidents 
         # (that have been removed since the migration from v1 to v2 endpoints)
         elif product == "xdr":
             if ids := log.get('entities', {}).get('agent_ids', []):
                 devices = self.get_devices(ids)
+                new_devices = []
+
                 log['hosts_count'] = len(devices)
-                # limit size of hosts array to 100, ensuring low output log size (theorically no more than 65ko - half the rsyslog limit) :
+
+                for device in devices:
+                    first_policy_match = ""
+                    if policies := device.get('policies'):
+                        if len(policies) > 0:
+                            first_policy_match = policies[0].get('policy_type', "")
+
+                    new_device = {
+                        "local_ip": device.get('local_ip', ""),
+                        "hostname": device.get('hostname', ""),
+                        "os_version": device.get('os_version', ""),
+                        "os_product_name": device.get('os_product_name', ""),
+                        "external_ip": device.get('external_ip', ""),
+                        "mac_address": device.get('mac_address', ""),
+                        "device_id": device.get('device_id', ""),
+                        "product_type_desc": device.get('product_type_desc', ""),
+                        "last_login_user": device.get('last_login_user', ""),
+                        "ou": device.get('ou', ""),
+                        "site_name": device.get('site_name', ""),
+                        "connection_ip": device.get('connection_ip', ""),
+                        "default_gateway_ip": device.get('default_gateway_ip', ""),
+                        "connection_mac_address": device.get('connection_mac_address', ""),
+                        "machine_domain": device.get('machine_domain', ""),
+                        "first_policy_match": first_policy_match
+                    }
+                    new_devices.append(new_device)
+
+                # limit size of hosts array to 100, ensuring low output log size (theorically no more than 80ko - about half the rsyslog limit)
                 #   - 50 bytes (max observed field size)
-                #   - 13 (max observed fields inside hosts object)
+                #   - 16 (max observed fields inside hosts object)
                 #   - 100 (hosts limit)
-                # => 50*13*100 = 65 000 = 65ko
-                log['hosts'] = devices[0:99]
+                # => 50*16*100 = 65 000 = 80ko
+                log['hosts'] = new_devices[0:99]
+
+            # url's from incidents are not redirecting to console, we must apply a manual modification
+            console_url : str = log.get("falcon_host_link")
+            if console_url:
+                incident_id = console_url.split("%7C")[1].split("?_cid=")[0].replace("-", ":")
+                log['falcon_host_link'] = "https://falcon.eu-1.crowdstrike.com/crowdscore/incidents/details/" + incident_id
 
         # To not interfer with parser product
         log['dataset'] = product
         del log['product']
 
-        if parent_cmdline := log.get('parent_details', {}).get('cmdline'):
-            log['parent_details']['parent_cmdline'] = parent_cmdline
-            del log['parent_details']['cmdline']
-
         return dumps(log)
-
 
     def test(self) -> dict:
         try:
