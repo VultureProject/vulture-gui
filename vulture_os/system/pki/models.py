@@ -375,12 +375,15 @@ class X509Certificate(models.Model):
         """
         :return: True if the certificate is a Certificate Authority
         """
-        cert = x509.load_pem_x509_certificate(self.cert.encode())
-        # try to get basic constraints (oid 2.5.29.19) from certificate
-        try:
-            constraint = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.BASIC_CONSTRAINTS)
-            return constraint.value.ca
-        except x509.ExtensionNotFound:
+        if self.cert:
+            cert = x509.load_pem_x509_certificate(self.cert.encode())
+            # try to get basic constraints (oid 2.5.29.19) from certificate
+            try:
+                constraint = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.BASIC_CONSTRAINTS)
+                return constraint.value.ca
+            except x509.ExtensionNotFound:
+                return False
+        else:
             return False
 
     def gen_crl(self):
