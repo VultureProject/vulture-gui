@@ -340,6 +340,10 @@ class CrowdstrikeParser(ApiParser):
                 # => 50*13*100 = 65 000 = 65ko
                 log['hosts'] = devices[0:99]
 
+        # To not interfer with parser product
+        log['dataset'] = product
+        del log['product']
+
         if parent_cmdline := log.get('parent_details', {}).get('cmdline'):
             log['parent_details']['parent_cmdline'] = parent_cmdline
             del log['parent_details']['cmdline']
