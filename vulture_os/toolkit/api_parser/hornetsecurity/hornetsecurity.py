@@ -16,7 +16,7 @@ along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
 
 __author__ = "mbonniot"
-__credits__ = [""]
+__credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
@@ -26,8 +26,8 @@ __parser__ = 'HORNETSECURITY'
 
 
 from requests.sessions import Session
-from json import dumps, loads
 from datetime import datetime, timedelta
+from json import dumps, loads
 from base64 import b64encode
 
 import logging
@@ -114,13 +114,13 @@ class HornetSecurityParser(ApiParser):
                 json_resp = resp.json()
             except Exception as e:
                 logger.exception(f"[{__parser__}][execute_query]: Failed to decode json response {resp.content} -- {e}", extra={'frontend': str(self.frontend)})
+                raise HornetSecurityAPIError(e)
 
             # Handles more than 10k logs to retrieve in a single query
             toRetrieve = json_resp.get('num_found_items', 0)
             if toRetrieve >= 10000: # error_id returned by API in this case is 3089
                 return "divide", toRetrieve, []
 
-            # resp.raise_for_status()
             if resp.status_code != 200:
                 logger.exception(f"[{__parser__}][execute_query]: Receive {resp.status_code} != 200 while fetching {kind}'s logs - {since, to} -- {resp.content}", extra={'frontend': str(self.frontend)})
                 retry -= 1
@@ -138,17 +138,13 @@ class HornetSecurityParser(ApiParser):
 
     def get_logs(self, kind: str, since: datetime, to: datetime) -> tuple[list, datetime]:
         """
-        Get logs by kind specification and (since; to)
-        Don't know if timerange is exclusive or inclusive as now
-        If there is more than 10000 logs to retrieve, we will miss somes as :
-            -> there is no possibility to query with a request validating : (offset + limit) >= 10 000
-            -> there is no possibility to sort AND by default logs are descendently sorted (so the max timestamp received will always be the last timestamp stored in ELK)
-        ==
-            The only way I found to limit impact of this behavior is to divide period of time by 2 
-            if more than 10k logs tries to be fetched and redo it every time this condition satisfies (thus discarding log's writing)
-        ==
+        Get logs by kind specification and (since; to) couple
+        If there is more than 10000 logs to retrieve, the collector continuously divide the range of time to get by two; reducing probability to encounters more than the limit number of logs
+            -> there is no possibility to query with a request containing an (offset + limit) >= 10 000
+            -> there is no possibility to sort
+            -> by default logs are timestamp descendently sorted (thus we always retrieve the max serie timestamp on the first chunk's log)
         """
-        # API doesn't supports microseconds precision
+        # API doesn't supports microseconds precision we must remove it
         since = since.replace(microsecond=0)
         to = to.replace(microsecond=0)
 
@@ -159,7 +155,6 @@ class HornetSecurityParser(ApiParser):
         if op == "divide":
             to = since + ((to - since) / 2)
             logger.info(f"[{__parser__}][get_logs]: We've tried to retrieve more than 10k {kind} in one query ({count}) - dividing the range of time by 2 -> {since.isoformat(), to.isoformat()}", extra={'frontend': str(self.frontend)})
-            pass
         elif op == "write":
             ret.extend(logs)
 
@@ -260,6 +255,23 @@ class HornetSecurityParser(ApiParser):
             if not isinstance(private, bool):
                 log['private'] = False
 
+            # subject
+            subject = log.get('subject')
+            log['is_subject_encoded'] = False
+            if isinstance(subject, str) and not is_ascii(subject):
+                try:
+                    log['subject'] = str(b64encode(subject.encode('utf-8')))
+                    log['is_subject_encoded'] = True
+                except:
+                    log['subject'] = ""
+
+            # destination_hostname
+            destination_hostname : str = log.get('destination_hostname')
+            if destination_hostname and "[" in destination_hostname:
+                log['destination_hostname'] = destination_hostname.split('[')[0]
+            else:
+                log['destination_hostname'] = ""
+
         ## AUDITING
         elif kind == "auditing":
             # new_values
@@ -270,9 +282,11 @@ class HornetSecurityParser(ApiParser):
                     log['new_values'] = {}
                 else:
                     subject = new_values.get('subject')
-                    if subject and not is_ascii(subject):
+                    if isinstance(subject, str) and not is_ascii(subject):
+                        new_values['is_subject_encoded'] = False
                         try:
-                            new_values['subject'] = subject.encode('utf-8').decode('utf-8')
+                            new_values['subject'] = str(b64encode(subject.encode('utf-8')))
+                            new_values['is_subject_encoded'] = True
                         except:
                             new_values['subject'] = ""
                     log['new_values'] = new_values
@@ -285,9 +299,11 @@ class HornetSecurityParser(ApiParser):
                     log['old_values'] = {}
                 else:
                     subject = old_values.get('subject')
-                    if subject and not is_ascii(subject):
+                    if isinstance(subject, str) and not is_ascii(subject):
+                        old_values['is_subject_encoded'] = False
                         try:
-                            old_values['subject'] = subject.encode('utf-8').decode('utf-8')
+                            old_values['subject'] = str(b64encode(subject.encode('urd-8')))
+                            old_values['is_subject_encoded'] = True
                         except:
                             old_values['subject'] = ""
                     log['old_values'] = old_values
