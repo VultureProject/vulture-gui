@@ -220,16 +220,13 @@ def cluster_create(admin_user=None, admin_password=None):
     node.api_request("services.pf.pf.gen_config")
 
 
-def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None, key=None):
+def cluster_join(master_hostname, master_ip, secret_key):
     """
     Join an existing cluster
 
     :param master_hostname: Master hostname
     :param master_ip: Master management Ip address
     :param secret_key: The node's secret key
-    :param ca_cert: The CA Certificate (optional: can be retrieved automagically)
-    :param cert: The node certificate (optional: can be retrieved automagically)
-    :param key: The node private key (optional: can be retrieved automagically)
     :return: True / False
     """
 
@@ -299,43 +296,36 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         logger.error("Error at API Request Cluster Key: {}".format(e), exc_info=1)
         return False
 
-    if not ca_cert:
-        logger.info("[+] Getting ca certificate and key")
+    logger.info("[+] Getting ca certificate and key")
+    try:
+        infos = requests.post(
+            "https://{}:8000/api/system/pki/get_ca/".format(master_ip),
+            headers={'Cluster-api-key': secret_key},
+            verify=False
+        ).json()
 
-        try:
-            infos = requests.post(
-                "https://{}:8000/api/system/pki/get_ca/".format(master_ip),
-                headers={'Cluster-api-key': secret_key},
-                verify=False
-            ).json()
+        ca_cert = infos.get('ca_cert')
+        ca_key= infos.get('ca_key')
+    except Exception as e:
+        logger.error("Unable to retrieve CA certificate: {}".format(e))
+        return False
+    logger.info("[-] OK!")
 
-            ca_cert = infos.get('ca_cert')
-            ca_key= infos.get('ca_key')
-        except Exception as e:
-            logger.error("Unable to retrieve CA certificate: {}".format(e))
-            return False
+    logger.info("[+] Getting node certificate and key")
+    try:
+        infos = requests.post(
+            "https://{}:8000/api/system/pki/get_cert/".format(master_ip),
+            headers={'Cluster-api-key': secret_key},
+            data={'node_name': settings.HOSTNAME},
+            verify=False
+        ).json()
 
-        logger.info("[-] OK!")
-
-    """ We are coming from the CLI interface """
-    if not cert or not key:
-        logger.info("[+] Getting certificate and key")
-
-        try:
-            infos = requests.post(
-                "https://{}:8000/api/system/pki/get_cert/".format(master_ip),
-                headers={'Cluster-api-key': secret_key},
-                data={'node_name': settings.HOSTNAME},
-                verify=False
-            ).json()
-
-            cert = infos.get('cert')
-            key = infos.get('key')
-        except Exception as e:
-            logger.error("Unable to retrieve Node certificate: {}".format(e))
-            return False
-
-        logger.info("[-] OK!")
+        cert = infos.get('cert')
+        key = infos.get('key')
+    except Exception as e:
+        logger.error("Unable to retrieve Node certificate: {}".format(e))
+        return False
+    logger.info("[-] OK!")
 
     if cert and key:
         bundle = cert + key
@@ -343,19 +333,19 @@ def cluster_join(master_hostname, master_ip, secret_key, ca_cert=None, cert=None
         logger.error("Unable to retrieve Node certificate and key, check secret key")
         return False
 
-    with open(path_join(settings.TMP_PATH, "ca.pem", "w")) as f:
+    with open(path_join(settings.TMP_PATH, "ca.pem"), "w") as f:
         f.write(ca_cert)
 
-    with open(path_join(settings.TMP_PATH, "ca.key", "w")) as f:
+    with open(path_join(settings.TMP_PATH, "ca.key"), "w") as f:
         f.write(ca_key)
 
-    with open(path_join(settings.TMP_PATH, "node.cert", "w")) as f:
+    with open(path_join(settings.TMP_PATH, "node.cert"), "w") as f:
         f.write(cert)
 
-    with open(path_join(settings.TMP_PATH, "node.key", "w")) as f:
+    with open(path_join(settings.TMP_PATH, "node.key"), "w") as f:
         f.write(key)
 
-    with open(path_join(settings.TMP_PATH, "node.pem", "w")) as f:
+    with open(path_join(settings.TMP_PATH, "node.pem"), "w") as f:
         f.write(bundle)
 
     """ At this point we should have valid certificates:
