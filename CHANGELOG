@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [PORTAL] [SELF_SERVICE] Disabled workflows listed
+- [API_PARSER] [ARMIS_CENTRIX] Collect at max 1h of range to avoid API taking too long to answer
 
 
 ## [2.25.0]
