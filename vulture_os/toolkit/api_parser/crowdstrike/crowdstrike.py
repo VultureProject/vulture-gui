@@ -88,25 +88,26 @@ class CrowdstrikeParser(ApiParser):
                 proxies=self.proxies,
                 verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
             )
+            ret = response.json()
+
         except ConnectionError as e:
-            self.session = None
             msg = "Connection failed (ConnectionError)"
             logger.error(f'[{__parser__}][login]: {msg}', exc_info=True, extra={'frontend': str(self.frontend)})
-            raise e
+            raise CrowdstrikeAPIError(e)
         except ReadTimeout as e:
-            self.session = None
             msg = f"Connection failed {self.client_id} (read_timeout)"
             logger.error(f'[{__parser__}][login]: {msg}', extra={'frontend': str(self.frontend)})
-            raise e
-
+            raise CrowdstrikeAPIError(e)
+        except JSONDecodeError as e:
+            msg = f"Failed to decode json -- {e}"
+            logger.error(f'[{__parser__}][login]: {msg}', extra={'frontend': str(self.frontend)})
+            raise CrowdstrikeAPIError(e)
         response.raise_for_status()
         if response.status_code not in [200, 201]:
-            self.session = None
             msg = f"Authentication failed. Code {response.status_code} -- {response.content}"
             logger.error(f'[{__parser__}][login]: {msg}', extra={'frontend': str(self.frontend)})
-            raise Exception(msg)
+            raise CrowdstrikeAPIError(msg)
 
-        ret = response.json()
         self.session.headers.update(
             {'authorization': f"{ret['token_type'].capitalize()} {ret['access_token']}"})
         del self.session.headers['Content-Type']
@@ -349,9 +350,8 @@ class CrowdstrikeParser(ApiParser):
 
                 for device in devices:
                     first_policy_match = ""
-                    if policies := device.get('policies'):
-                        if len(policies) > 0:
-                            first_policy_match = policies[0].get('policy_type', "")
+                    if policies := device.get('policies', []):
+                        first_policy_match = policies[0].get('policy_type', "")
 
                     new_device = {
                         "local_ip": device.get('local_ip', ""),
@@ -381,10 +381,12 @@ class CrowdstrikeParser(ApiParser):
                 log['hosts'] = new_devices[0:99]
 
             # url's from incidents are not redirecting to console, we must apply a manual modification
-            console_url : str = log.get("falcon_host_link")
-            if console_url:
-                incident_id = console_url.split("%7C")[1].split("?_cid=")[0].replace("-", ":")
-                log['falcon_host_link'] = "https://falcon.eu-1.crowdstrike.com/crowdscore/incidents/details/" + incident_id
+            if console_url := log.get("falcon_host_link"):
+                try:
+                    incident_id = console_url.split("%7C")[1].split("?_cid=")[0].replace("-", ":")
+                    log['falcon_host_link'] = "https://falcon.eu-1.crowdstrike.com/crowdscore/incidents/details/" + incident_id
+                except IndexError:
+                    pass
 
         # To not interfer with parser product
         log['dataset'] = product
