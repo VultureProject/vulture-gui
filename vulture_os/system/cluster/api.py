@@ -299,7 +299,7 @@ def get_message_queues(request):
         limit = request.GET.get('limit', "100")
         try:
             limit = int(limit)
-        except:
+        except (TypeError, ValueError):
             return JsonResponse({
                 'status': False,
                 'data': _("Invalid value for parameter 'limit'")

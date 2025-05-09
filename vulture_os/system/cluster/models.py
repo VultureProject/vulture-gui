@@ -373,18 +373,18 @@ class Node(models.Model):
         """ Retrieve all Listeners that uses those network addresses """
         listeners = Listener.objects.filter(network_address__in=addresses, frontend__enabled=True)
         listeners_enabled = list()
-        for l in listeners:
+        for listener in listeners:
             """ Protocol is tcp in any case,
                except for frontend mode=log => proto will be tcp or udp or tcp,udp
                                                        listening_mode attribute """
             proto = "tcp"
-            if l.frontend.mode == "log" and "udp" in l.frontend.listening_mode:
-                proto = l.frontend.listening_mode
-            elif l.frontend.mode == "filebeat" and l.frontend.filebeat_listening_mode == "udp":
-                proto = l.frontend.filebeat_listening_mode
+            if listener.frontend.mode == "log" and "udp" in listener.frontend.listening_mode:
+                proto = listener.frontend.listening_mode
+            elif listener.frontend.mode == "filebeat" and listener.frontend.filebeat_listening_mode == "udp":
+                proto = listener.frontend.filebeat_listening_mode
             """ Return (ip, port, interface.family) """
-            listeners_enabled.append((l.whitelist_ips, l.network_address.ip, l.port, l.rsyslog_port,
-                                      proto, l.network_address.family, l.max_src, l.max_rate))
+            listeners_enabled.append((listener.whitelist_ips, listener.network_address.ip, listener.port, listener.rsyslog_port,
+                                      proto, listener.network_address.family, listener.max_src, listener.max_rate))
         return listeners_enabled
 
     @property
@@ -397,7 +397,7 @@ class Node(models.Model):
         """ For each address, retrieve the associated listeners having frontend enabled """
         listener_ids = list()
         for a in addresses:
-            listener_ids.extend([l.id for l in a.listener_set.filter(frontend__enabled=True)])
+            listener_ids.extend([listener.id for listener in a.listener_set.filter(frontend__enabled=True)])
 
         query_filter = Q(enabled=True) &\
             Q(frontend_set__isnull=False) &\
@@ -517,9 +517,9 @@ class Node(models.Model):
         listener_addr = dict()
         for a in addresses:
             try:
-                listener_addr[a].extend([l.id for l in a.listener_set.filter(frontend__enabled=True)])
+                listener_addr[a].extend([listener.id for listener in a.listener_set.filter(frontend__enabled=True)])
             except KeyError:
-                listener_addr[a] = [l.id for l in a.listener_set.filter(frontend__enabled=True)]
+                listener_addr[a] = [listener.id for listener in a.listener_set.filter(frontend__enabled=True)]
 
         """ Loop on each NetworkAddress to retrieve Backends associated with (enabled) Frontends """
         for listener_ids in listener_addr.values():

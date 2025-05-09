@@ -176,7 +176,7 @@ class DeleteNode(DeleteView):
         Return a set of strings, printed in template as "Used by this object:"
         """
         used_by = set(object.frontend_set.all())
-        used_by = used_by.union(set(f"Listener '{l}' in {l.frontend}" for l in Listener.objects.filter(network_address__in=object.addresses())))
+        used_by = used_by.union(set(f"Listener '{listener}' in {listener.frontend}" for listener in Listener.objects.filter(network_address__in=object.addresses())))
 
         try:
             node_cert = object.get_certificate()
@@ -190,8 +190,8 @@ class DeleteNode(DeleteView):
 
             tls_profiles = node_cert.certificate_of.all()
             for p in tls_profiles:
-                used_by = used_by.union(set(f"TLS Profile of '{l}' in {l.frontend}" for l in p.listener_set.all()))
-                used_by = used_by.union(set(f"TLS Profile of '{s}' in {s.backend}" for s in p.server_set.all()))
+                used_by = used_by.union(set(f"TLS Profile of '{listener}' in {listener.frontend}" for listener in p.listener_set.all()))
+                used_by = used_by.union(set(f"TLS Profile of '{server}' in {server.backend}" for server in p.server_set.all()))
         except ObjectDoesNotExist:
             pass
 
