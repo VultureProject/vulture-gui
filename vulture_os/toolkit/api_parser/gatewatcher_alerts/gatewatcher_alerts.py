@@ -115,7 +115,8 @@ class GatewatcherAlertsParser(ApiParser):
                 # Merge `raw_alert` into `alert`
                 fields_to_delete = ["id", "severity"]  # Remove duplicate fields to avoid loss of information
                 for field in fields_to_delete:
-                    del raw_alert[field]
+                    if field in raw_alert:
+                        del raw_alert[field]
                 alert.update(raw_alert)
 
                 results.append({'alert': alert})
