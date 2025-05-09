@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLUSTER_JOIN] Fix writing of certificates on new node's disk
 - [REDIS] Use proper Sentinel client when updating service
 ### Changed
+- [API_PARSER] [CROWDSTRIKE] Evolve collector to use API v2 instead of v1
 - [FILEBEAT] Separate building configurations and restarting service
 - [GUI] Improve AJAX requests management
 - [CLUSTER] Improve node import routine
