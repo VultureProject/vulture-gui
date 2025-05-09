@@ -25,7 +25,7 @@ __doc__ = 'System Utils Redis Toolkit'
 
 from ast import literal_eval
 from os.path import join as path_join
-from redis import Redis, RedisError
+from redis import Redis, Sentinel, RedisError
 from toolkit.network.network import get_management_ip
 
 from django.conf import settings
@@ -113,77 +113,6 @@ class RedisBase:
             return True
         return False
 
-    def sentinel_monitor(self, node=None):
-        """
-        Dynamically configure sentinel to monitor the local redis node.
-         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
-        :param node: IP address of an existing node
-        :return: False if we are not connected to sentinel
-        """
-        if not self.get_role() == "sentinel":
-            return False
-        return self.redis.sentinel_monitor('mymaster', node or self.node, 6379, 2)
-
-    def sentinel_failover(self):
-        """
-        Force a new election inside the replicaset.
-         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
-        :return: False if we are not connected to sentinel
-        """
-        if not self.get_role() == "sentinel":
-            return False
-        return self.redis.sentinel_failover('mymaster')
-
-    def sentinel_remove(self):
-        """
-        Configure sentinel to remove monitoring on local redis node.
-         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
-        :return: False if we are not connected to sentinel
-        """
-        if not self.get_role() == "sentinel":
-            return False
-        return self.redis.sentinel_remove('mymaster')
-
-    def sentinel_reset(self):
-        """
-        Forget a replica from configuration.
-         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
-        :return: False if we are not connected to sentinel
-        """
-        if not self.get_role() == "sentinel":
-            return False
-        return self.redis.sentinel_reset('mymaster')
-
-    def sentinel_set_announce_ip(self):
-        """
-        Set sentinel announce_ip through RedisBase class.
-        :return: False if we are not connected to sentinel
-        """
-        if not self.get_role() == "sentinel":
-            return False
-        try:
-            self.redis.execute_command('sentinel', 'config', 'set', 'announce-ip', self.node)
-        except Exception as e:
-            logger.exception(f"[SENTINEL SET ANNOUNCE IP] Error: {e}")
-            return False
-        return True
-
-    def sentinel_set_cluster_password(self, password):
-        """
-        Set sentinel password to authenticate against
-        redis servers through RedisBase class.
-        :param password: redis_password of redis nodes
-        :return: False if we are not connected to sentinel
-        """
-        if not self.get_role() == "sentinel":
-            return False
-        try:
-            self.redis.sentinel_set('mymaster', 'auth-pass', password)
-        except Exception as e:
-            logger.exception(f"[SENTINEL SET CLUSTER PASSWORD] Error: {e}")
-            return False
-        return True
-
     # Write function : need master Redis
     def hmset(self, hash, mapping):
         result = None
@@ -231,6 +160,86 @@ class RedisBase:
         return result
 
 
+class SentinelBase(RedisBase):
+
+    def __init__(self, node=None, port=None, password=None):
+        self.node = node
+        self.port = port
+        self.password = password
+        self._redis_client = None
+
+    @property
+    def redis(self):
+        if not self._redis_client:
+            if self.node and self.port:
+                self._redis_client = Sentinel([(self.node, self.port)], password=self.password, socket_connect_timeout=1.0)
+            elif self.node:
+                self._redis_client = Sentinel([(self.node, 26379)], password=self.password, socket_connect_timeout=1.0)
+            else:
+                self._redis_client = Sentinel([(settings.REDISIP, 26379)], password=self.password, socket_connect_timeout=1.0)
+
+        return self._redis_client
+
+    def sentinel_monitor(self, node=None):
+        """
+        Dynamically configure sentinel to monitor the local redis node.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :param node: IP address of an existing node
+        :return: False if we are not connected to sentinel
+        """
+        return self.redis.sentinel_monitor('mymaster', node or self.node, 6379, 2)
+
+    def sentinel_failover(self):
+        """
+        Force a new election inside the replicaset.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        return self.redis.sentinel_failover('mymaster')
+
+    def sentinel_remove(self):
+        """
+        Configure sentinel to remove monitoring on local redis node.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        return self.redis.sentinel_remove('mymaster')
+
+    def sentinel_reset(self):
+        """
+        Forget a replica from configuration.
+         WARNING: For sentinel to work properly, self.node is supposed to be an IP address)
+        :return: False if we are not connected to sentinel
+        """
+        return self.redis.sentinel_reset('mymaster')
+
+    def sentinel_set_announce_ip(self):
+        """
+        Set sentinel announce_ip through RedisBase class.
+        :return: False if we are not connected to sentinel
+        """
+        try:
+            self.redis.execute_command('sentinel', 'config', 'set', 'announce-ip', self.node)
+        except Exception as e:
+            logger.exception(f"[SENTINEL SET ANNOUNCE IP] Error: {e}")
+            return False
+        return True
+
+    def sentinel_set_cluster_password(self, password):
+        """
+        Set sentinel password to authenticate against
+        redis servers through RedisBase class.
+        :param password: redis_password of redis nodes
+        :return: False if we are not connected to sentinel
+        """
+        try:
+            self.redis.sentinel_set('mymaster', 'auth-pass', password)
+        except Exception as e:
+            logger.exception(f"[SENTINEL SET CLUSTER PASSWORD] Error: {e}")
+            return False
+        return True
+
+
 def set_replica_of(logger, args):
     """
     Set Redis as a replica of the current main node
@@ -249,7 +258,7 @@ def set_replica_of(logger, args):
         logger.error("Unable to set Redis replication")
         raise RedisError("Unable to set Redis replication")
 
-    sentinel = RedisBase(get_management_ip(), 26379)
+    sentinel = SentinelBase(get_management_ip(), 26379)
     result = sentinel.sentinel_monitor(node=main_node)
     if not result:
         logger.error("Unable to set Sentinel monitor")
@@ -273,8 +282,8 @@ def set_password(logger, passwords=("","")):
     except Exception as e:
         raise RedisError(f"Cannot connect to Redis: {e}")
     try:
-        sentinel = RedisBase(get_management_ip(), 26379)
-        sentinel.redis.ping()
+        sentinel = SentinelBase(get_management_ip(), 26379)
+        assert sentinel.redis.execute_command("PING")
     except Exception as e:
         raise RedisError(f"Cannot connect to Redis Sentinel: {e}")
 
@@ -290,12 +299,12 @@ def set_password(logger, passwords=("","")):
     return result
 
 
-def sentinel_reset(logger):
+def renew_sentinel_configuration(logger):
     """
     Reset sentinel known sentinels and replicas
     :return: True if Sentinel command succeded
     """
-    sentinel = RedisBase(get_management_ip(), 26379)
+    sentinel = SentinelBase(get_management_ip(), 26379)
     result = sentinel.sentinel_reset()
     if not result:
         logger.error("Unable to reset Sentinel monitor")
