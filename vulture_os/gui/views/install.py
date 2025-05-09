@@ -34,7 +34,7 @@ from system.pki.models import X509Certificate, TLSProfile
 from system.users.models import User
 from toolkit.network.network import get_management_ip
 from toolkit.mongodb.mongo_base import MongoBase
-from toolkit.redis.redis_base import RedisBase
+from toolkit.redis.redis_base import RedisBase, SentinelBase
 from toolkit.system.secret_key import set_key
 from toolkit.system.rc import get_rc_config
 from redis import AuthenticationError, ResponseError
@@ -177,7 +177,7 @@ def cluster_create(admin_user=None, admin_password=None):
         redis.set_password(system_config.redis_password)
 
     """ Tell local sentinel to monitor local redis server """
-    sentinel = RedisBase(get_management_ip(), 26379)
+    sentinel = SentinelBase(get_management_ip(), 26379)
     try:
         # It may fail if Sentinel is already configured
         sentinel.sentinel_monitor()

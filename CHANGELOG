@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] Hot-disable a collector manually
 - [SERVICES] Prevent errors when deleted configuration files do not exist
 - [CLUSTER_JOIN] Fix writing of certificates on new node's disk
+- [REDIS] Use proper Sentinel client when updating service
 ### Changed
 - [FILEBEAT] Separate building configurations and restarting service
 - [GUI] Improve AJAX requests management

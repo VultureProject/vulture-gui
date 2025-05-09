@@ -38,7 +38,7 @@ from system.cluster.models import Cluster, Node
 from system.pki.models import TLSProfile
 from system.users.models import User
 from toolkit.mongodb.mongo_base import MongoBase
-from toolkit.redis.redis_base import RedisBase
+from toolkit.redis.redis_base import RedisBase, SentinelBase
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
@@ -136,7 +136,7 @@ class DeleteNode(DeleteView):
             c.repl_remove(node_name + ":9091")
 
             """ Before Deleting the node we need to remove it from Redis """
-            c = RedisBase(obj_inst.management_ip, 26379)
+            c = SentinelBase(obj_inst.management_ip, 26379)
             try:
                 c.sentinel_remove()
             except ResponseError as e:
