@@ -24,7 +24,7 @@ __doc__ = 'System Utils Network Toolkit'
 
 from toolkit.system.rc import get_rc_config, set_rc_config, remove_rc_config
 
-from ipaddress import IPv4Address, IPv6Address, ip_address, AddressValueError
+from ipaddress import IPv4Address, IPv6Address, AddressValueError
 from iptools.ipv4 import netmask2prefix
 from ast import literal_eval
 import subprocess
@@ -33,6 +33,7 @@ import os
 import platform
 import re
 
+from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 
 logger = logging.getLogger('system')
@@ -190,7 +191,7 @@ def parse_proxy_url(custom_proxy):
     validate = URLValidator()
     try:
         validate(custom_proxy)
-    except:
+    except ValidationError:
         return None
 
     return custom_proxy
@@ -363,9 +364,6 @@ def destroy_virtual_interface(logger, iface_name):
     :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-    from system.cluster.models import Cluster
-    node = Cluster.get_current_node()
-
     ret = True
 
     logger.info(f"Node::destroy_virtual_interface: destroying interface {iface_name}")
@@ -384,9 +382,6 @@ def create_virtual_interface(logger, iface_name):
     :param interface: a string representing the exact name of the interface (as seen by the system)
     :return: True / False
     """
-    from system.cluster.models import Cluster
-    node = Cluster.get_current_node()
-
     ret = True
 
     logger.info(f"Node::create_virtual_interface: creating interface {iface_name}")
