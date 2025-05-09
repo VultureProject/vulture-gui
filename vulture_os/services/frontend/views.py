@@ -594,6 +594,7 @@ def frontend_edit(request, object_id=None, api=False):
                     if not api_res.get('status'):
                         raise ServiceConfigError("on node {}: API request error.".format(node.name), "filebeat",
                                                  traceback=api_res.get('message'))
+                    api_res = node.api_request("services.filebeat.filebeat.restart_service", frontend.id)
 
                 if frontend.has_haproxy_conf:
                     """ Reload HAProxy service - After rsyslog / filebeat to prevent logging crash """

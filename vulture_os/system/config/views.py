@@ -153,6 +153,7 @@ def config_edit(request, api=False, update=False):
                     node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
                     if frontend.mode == "filebeat":
                         node.api_request("services.filebeat.filebeat.build_conf", frontend.pk)
+                        node.api_request("services.filebeat.filebeat.restart_service", frontend.pk)
             Cluster.api_request("services.rsyslogd.rsyslog.restart_service")
         if "logs_ttl" in form.changed_data:
             res, mess = config_model.set_logs_ttl()

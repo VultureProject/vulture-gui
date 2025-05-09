@@ -128,7 +128,6 @@ def build_conf(node_logger, frontend_id):
         """ Generate filebeat conf for frontend + write-it if changed """
         if service.reload_conf(frontend=frontend):
             result += "Frontend '{}' filebeat conf written.\n".format(frontend_id)
-            result += service.restart(frontend_id)
         else:
             result += f"Filebeat conf of frontend {frontend} hasn't changed."
     except ObjectDoesNotExist:

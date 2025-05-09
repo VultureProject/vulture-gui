@@ -51,8 +51,9 @@ if __name__ == "__main__":
             for frontend in Frontend.objects.filter(query).only(*Frontend.str_attrs(), 'ruleset'):
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
                 print("Listener {}({}) Rsyslog configuration reload asked.".format(frontend, frontend.ruleset))
-                if frontend.mode == "filebeat":
+                if frontend.mode == "filebeat" and node in frontend.get_nodes():
                     node.api_request("services.filebeat.filebeat.build_conf", frontend.id)
+                    node.api_request("services.filebeat.filebeat.restart_service", frontend.pk)
                     print("Listener {}({}) Filebeat configuration reload asked.".format(frontend, frontend.ruleset))
             node.api_request("services.rsyslogd.rsyslog.restart_service")
 
