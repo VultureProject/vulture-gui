@@ -276,6 +276,7 @@ class FrontendForm(ModelForm):
                            "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
                            "perception_point_x_ray_host", "perception_point_x_ray_token",
                            "extrahop_host", "extrahop_id", "extrahop_secret",
+                           "hornetsecurity_app_id", "hornetsecurity_token",
                            ]:
             self.fields[field_name].required = False
 
@@ -400,6 +401,7 @@ class FrontendForm(ModelForm):
                   "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
                   "perception_point_x_ray_host", "perception_point_x_ray_token",
                   "extrahop_host", "extrahop_id", "extrahop_secret",
+                  "hornetsecurity_app_id", "hornetsecurity_token"
                   )
 
         widgets = {
@@ -633,6 +635,8 @@ class FrontendForm(ModelForm):
             'extrahop_host': TextInput(attrs={'class': 'form-control'}),
             'extrahop_id': TextInput(attrs={'class': 'form-control'}),
             'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'hornetsecurity_app_id': TextInput(attrs={'class': 'form-control'}),
+            'hornetsecurity_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         }
 
     def clean_name(self):
