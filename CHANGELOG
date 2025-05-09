@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [PORTAL] [SELF_SERVICE] Disabled workflows listed
+- [API_PARSER] [BEYONDTRUST_REPORTINGS] Add session_details in logs and split them
 
 
 ## [2.25.0]
