@@ -291,12 +291,9 @@ class ProofpointPodParser(ApiParser):
         if self.buffer:
             logger.debug(f"[{__parser__}]:execute: flushing remaining logs", extra={'frontend': str(self.frontend)})
             self._flush_buffer()
-        # When there is no logs, we increment the timestamp to avoid to block on the same time range
-        if self.frontend.last_api_call == self.last_timestamp and self.last_timestamp.timestamp() + 3600 < current_time:
-            self.last_timestamp = self.last_timestamp + timedelta(hours=1)
 
-        self.frontend.last_api_call = self.last_timestamp
-        self.frontend.save(update_fields=["last_api_call"])
+        # Increment the last_api_call of 1 second to avoid duplication
+        self.frontend.last_api_call = self.last_timestamp + timedelta(seconds=1)
         logger.info(f"[{__parser__}]:execute: Updated frontend timestamp is {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
