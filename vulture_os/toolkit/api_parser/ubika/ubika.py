@@ -177,6 +177,30 @@ class UbikaParser(ApiParser):
         return logs
 
     def format_log(self, log: dict) -> str:
+        request_headers : list = log.get('request', {}).get('headers', [])
+        if request_headers:
+            new_request_headers = {}
+            for header in request_headers:
+                new_key = header.get('key').lower()
+                new_value = header.get('value')
+                if new_key and new_value:
+                    new_request_headers[new_key] = new_value
+            log['request']['headers'] = new_request_headers
+
+        request_cookies : list = log.get('request', {}).get('cookies', [])
+        if request_cookies:
+            new_request_cookies = {}
+            for cookie in request_cookies:
+                new_key = cookie.get('key').lower()
+                new_value = cookie.get('value')
+                if new_key and new_value:
+                    new_request_cookies[new_key] = new_value
+            log['request']['cookies'] = new_request_cookies
+
+        context_reaction : str = log.get('context', {}).get('reaction')
+        if context_reaction:
+            log['context']['reaction'] = context_reaction.lower()
+
         return dumps(log)
 
     def test(self):
