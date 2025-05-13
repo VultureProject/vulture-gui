@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] Improve AJAX requests management
 - [CLUSTER] Improve node import routine
 - [CLUSTER] Improve node deletion from the gui
+- [API_PARSER] [PROOFPOINT_POD] Increment the last_api_call of 1 second to avoid duplication
 
 
 ## [2.25.0] - 2025-04-30
