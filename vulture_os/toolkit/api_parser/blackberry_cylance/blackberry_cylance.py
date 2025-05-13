@@ -146,16 +146,10 @@ class BlackberryCylanceParser(ApiParser):
                     proxies=self.proxies,
                     verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                 )
-                # According to the documentation, we have to wait 60s when we encounter a 429 error
+
                 if response.status_code == 429:
-                    self.evt_stop.wait(60.0)
-                    response = self.session.get(
-                        url,
-                        params=query,
-                        timeout=timeout,
-                        proxies=self.proxies,
-                        verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
-                    )
+                    logger.warning(f"[{__parser__}]:_execute_query: API Request failed (code 429), stopping this run and waiting for the next", extra={'frontend': str(self.frontend)})
+                    raise BlackberryCylanceAPIError(f"Rate limit exceeded")
 
                 if response.status_code not in [200, 201]:
                     logger.error(f"[{__parser__}]:_execute_query: Error while getting logs. code: {response.status_code}", extra={'frontend': str(self.frontend)})
