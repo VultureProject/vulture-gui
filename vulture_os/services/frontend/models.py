@@ -1651,6 +1651,12 @@ class Frontend(models.Model):
         help_text=_("Ubika access token"),
         default=""
     )
+    ubika_access_expires_at = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text=_("Ubika refresh token expiration timestamp"),
+        verbose_name=_("Ubika refresh token expiration timestamp")
+    )
 
     @staticmethod
     def str_attrs():
