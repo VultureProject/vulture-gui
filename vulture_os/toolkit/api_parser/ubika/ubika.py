@@ -25,7 +25,7 @@ __doc__ = 'Ubika API Parser toolkit'
 __parser__ = 'Ubika'
 
 
-from requests import HTTPError, ReadTimeout, sessions
+from requests import HTTPError, ReadTimeout, get, post
 
 from datetime import datetime, timedelta
 from json import JSONDecodeError, dumps
@@ -47,13 +47,8 @@ class UbikaParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        self.session = sessions.Session()
-
         self.ubika_base_refresh_token = data.get("ubika_base_refresh_token", "")
         self.ubika_namespaces = data.get("ubika_namespaces", "").split(",")
-
-        self.ubika_refresh_token = data.get("ubika_refresh_token", "")
-        self.ubika_access_token = data.get("ubika_access_token", "")
 
         self.login_endpoint = "https://login.ubika.io/auth/realms/main/protocol/openid-connect/token"
         self.security_events_endpoint = "https://api.ubika.io/rest/logs.ubika.io/v1/ns/__NAMESPACE__/security-events"
@@ -61,39 +56,60 @@ class UbikaParser(ApiParser):
 
 
     def login(self) -> None:
-        resp = self.__execute_query(
-            method = "POST",
-            url = self.login_endpoint,
-            data = {
-                "client_id": "rest-api",
-                "grant_type": "refresh_token",
-                "refresh_token": self.ubika_base_refresh_token
-                # "refresh_token": self.ubika_refresh_token or self.ubika_base_refresh_token
-            }
-        )
+        if not self.frontend.ubika_refresh_token: # this case happened only for the initial collector instanciation
+            resp = self.__execute_query(
+                method = "POST",
+                url = self.login_endpoint,
+                data = {
+                    "client_id": "rest-api",
+                    "grant_type": "refresh_token",
+                    "refresh_token": self.frontend.ubika_base_refresh_token
+                }
+            )
+        else:
+            resp = self.__execute_query(
+                method = "POST",
+                url = self.login_endpoint,
+                data = {
+                    "client_id": "rest-api",
+                    "grant_type": "refresh_token",
+                    "refresh_token": self.frontend.ubika_refresh_token
+                }
+            )
 
-        self.ubika_refresh_token = resp.get('refresh_token', "")
-        self.ubika_access_token = resp.get('access_token', "")
+        self.frontend.ubika_refresh_token = resp.get('refresh_token', "")
+        self.frontend.ubika_access_token = resp.get('access_token', "")
+        self.frontend.ubika_access_expires_at = int(timezone.now().timestamp()) + resp.get('expires_in', 0)
+
+        assert self.frontend.ubika_refresh_token, f"[{__parser__}][login]: Failed to get refresh_token -- {resp}"
+        assert self.frontend.ubika_access_token, f"[{__parser__}][login]: Failed to get access_token -- {resp}"
+        assert self.frontend.ubika_access_expires_at, f"[{__parser__}][login]: Failed to get refresh token expiration -- {resp}"
+
+        logger.info(f"[{__parser__}][login]: Successfully re-generate access / refresh token", extra={'frontend': str(self.frontend)})
 
         return
 
-    def __execute_query(self, method: str, url: str, data: dict, headers: dict = {}) -> dict:
+    def __execute_query(self, method: str, url: str, data: dict) -> dict:
         retry = 3
 
         while retry > 0:
             try:
                 if method == "GET":
-                    resp = self.session.get(
+                    resp = get(
                         url = url,
-                        headers = headers,
+                        headers = {"Authorization": f"Bearer {self.frontend.ubika_access_token}"},
                         params = data,
+                        proxies = self.proxies,
+                        verify = self.api_parser_custom_certificate or self.api_parser_verify_ssl,
                         timeout = 10
                     )
                 elif method == "POST":
-                    resp = self.session.post(
+                    resp = post(
                         url = url,
-                        headers = headers,
+                        headers = {"Authorization": f"Bearer {self.frontend.ubika_access_token}"},
                         data = data,
+                        proxies = self.proxies,
+                        verify = self.api_parser_custom_certificate or self.api_parser_verify_ssl,
                         timeout = 10
                     )
 
@@ -146,7 +162,7 @@ class UbikaParser(ApiParser):
 
         data = {
             "pagination.pageSize": 10001,
-            "pagination.realtime": False,
+            "pagination.realtime": True
         }
 
         page_end = False
@@ -160,11 +176,10 @@ class UbikaParser(ApiParser):
             resp = self.__execute_query(
                 method = "GET",
                 url = url,
-                headers = {"Authorization": f"Bearer {self.ubika_access_token}"},
                 data = data)
 
             next_token = resp.get('spec', {}).get('nextPageToken')
-            logger.info(f"[{__parser__}][get_logs]: Save logs and continuing to paginate with url = {url}, last_save_token = {last_save_token}, next_token = {next_token}", extra={'frontend': str(self.frontend)})
+            logger.debug(f"[{__parser__}][get_logs]: Paginate with url = {url}, last_save_token = {last_save_token}, next_token = {next_token}", extra={'frontend': str(self.frontend)})
 
             if next_token != last_save_token:
                 newLogs = resp.get('spec', {}).get('items', [])
@@ -207,7 +222,8 @@ class UbikaParser(ApiParser):
         logs = []
 
         try:
-            self.login()
+            if (not self.frontend.ubika_access_token) or (self.frontend.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1)).timestamp()):
+                self.login()
 
             namespace = self.ubika_namespaces[0]
             for kind in ["security", "traffic"]:
@@ -240,9 +256,10 @@ class UbikaParser(ApiParser):
             }
 
     def execute(self):
-        self.login()
-
         for namespace in self.ubika_namespaces:
+            if (not self.frontend.ubika_access_token) or (self.frontend.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1)).timestamp()):
+                self.login()
+
             for kind in ["security", "traffic"]:
                 if kind == "security":
                     url = self.security_events_endpoint
