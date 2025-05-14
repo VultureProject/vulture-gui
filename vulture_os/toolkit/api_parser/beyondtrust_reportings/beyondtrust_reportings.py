@@ -29,6 +29,7 @@ import logging
 import requests
 from requests.exceptions import JSONDecodeError
 from xmltodict import parse as xmltodict_parse
+from copy import deepcopy
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -198,6 +199,22 @@ class BeyondtrustReportingsParser(ApiParser):
 
         return formated_logs
 
+    def format_event_value(self, event):
+        child_session_details = deepcopy(event)
+
+        if 'data' in event:
+            data = {}
+            event_value = event['data'].get('value')
+
+            if isinstance(event_value, list):
+                for elem in event_value:
+                    data[elem['@name']] = elem['@value']
+            elif isinstance(event_value, dict):
+                data[event_value['@name']] = event_value['@value']
+            child_session_details['data'] = data
+
+        return child_session_details
+
     def format_access_session_logs(self, logs):
         formated_logs = []
         try:
@@ -206,13 +223,20 @@ class BeyondtrustReportingsParser(ApiParser):
                 sessions_logs = [sessions_logs]
 
             for log in sessions_logs:
-                del log['session_details']  # Avoid too long session log
                 log["@timestamp"] = log["start_time"]["@timestamp"]
-                formated_logs.append(log)
+
+                if not log.get('session_details', {}).get('event'):
+                    formated_logs.append(log)
+                    continue
+
+                for event in log['session_details']['event']:
+                    child_log = deepcopy(log)
+                    child_log['session_details'] = self.format_event_value(event)
+                    formated_logs.append(child_log)
+
         except KeyError as e:
             logger.error(f"[{__parser__}] An error occurred while formating AccessSession logs: {e}",
                         extra={'frontend': str(self.frontend)})
-
         return formated_logs
 
     def format_vault_account_activity_list_logs(self, logs):
@@ -227,20 +251,28 @@ class BeyondtrustReportingsParser(ApiParser):
             return formated_logs
 
     def format_support_session_logs(self, logs):
+        formated_logs = []
         try:
-            formated_logs = logs.get('session_list', {}).get('session', [])
+            sessions_logs = logs.get('session_list', {}).get('session', [])
 
-            if isinstance(formated_logs, dict):
-                formated_logs = [formated_logs]
+            if not isinstance(formated_logs, list):
+                sessions_logs = [sessions_logs]
 
-            for log in formated_logs:
-                del log['session_details']  # Avoid too long session log
+            for log in sessions_logs:
                 log["@timestamp"] = log["start_time"]["@timestamp"]
+
+                if not log.get('session_details', {}).get('event'):
+                    formated_logs.append(log)
+                    continue
+
+                for event in log['session_details']['event']:
+                    child_log = deepcopy(log)
+                    child_log['session_details'] = self.format_event_value(event)
+                    formated_logs.append(child_log)
         except KeyError as e:
-            logger.error(f"[{__parser__}] An error occurred while formating AccountActivityList logs: {e}",
+            logger.error(f"[{__parser__}] An error occurred while formating SupportSession logs: {e}",
                         extra={'frontend': str(self.frontend)})
-        else:
-            return formated_logs
+        return formated_logs
 
     def get_logs(self, resource: str, requested_type: str, since: datetime, tries: int = 1):
         url = f"{self.beyondtrust_reportings_host}/api/{resource}"
