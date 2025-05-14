@@ -47,7 +47,7 @@ class UbikaParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        self.ubika_base_refresh_token = data.get("ubika_base_refresh_token", "")
+        self.ubika_base_refresh_token = data["ubika_base_refresh_token"]
         self.ubika_namespaces = data.get("ubika_namespaces", "").split(",")
 
         self.login_endpoint = "https://login.ubika.io/auth/realms/main/protocol/openid-connect/token"
@@ -56,38 +56,31 @@ class UbikaParser(ApiParser):
 
 
     def login(self) -> None:
+        req = {
+            "client_id": "rest-api",
+            "grant_type": "refresh_token"
+        }
         if not self.frontend.ubika_refresh_token: # this case happened only for the initial collector instanciation
-            resp = self.__execute_query(
-                method = "POST",
-                url = self.login_endpoint,
-                data = {
-                    "client_id": "rest-api",
-                    "grant_type": "refresh_token",
-                    "refresh_token": self.frontend.ubika_base_refresh_token
-                }
-            )
+            req["refresh_token"] = self.frontend.ubika_base_refresh_token
         else:
-            resp = self.__execute_query(
-                method = "POST",
-                url = self.login_endpoint,
-                data = {
-                    "client_id": "rest-api",
-                    "grant_type": "refresh_token",
-                    "refresh_token": self.frontend.ubika_refresh_token
-                }
-            )
+            req["refresh_token"] = self.frontend.ubika_refresh_token
+
+        resp = self.__execute_query(
+            method = "POST",
+            url = self.login_endpoint,
+            data = req
+        )
 
         self.frontend.ubika_refresh_token = resp.get('refresh_token', "")
         self.frontend.ubika_access_token = resp.get('access_token', "")
         self.frontend.ubika_access_expires_at = int(timezone.now().timestamp()) + resp.get('expires_in', 0)
 
-        assert self.frontend.ubika_refresh_token, f"[{__parser__}][login]: Failed to get refresh_token -- {resp}"
-        assert self.frontend.ubika_access_token, f"[{__parser__}][login]: Failed to get access_token -- {resp}"
-        assert self.frontend.ubika_access_expires_at, f"[{__parser__}][login]: Failed to get refresh token expiration -- {resp}"
+        assert self.frontend.ubika_refresh_token, f"[{__parser__}][login]: Failed to get ubika_refresh_token -- {resp}"
+        assert self.frontend.ubika_access_token, f"[{__parser__}][login]: Failed to get ubika_access_token -- {resp}"
+        assert self.frontend.ubika_access_expires_at, f"[{__parser__}][login]: Failed to get refresh ubika_access_expires_at -- {resp}"
 
         logger.info(f"[{__parser__}][login]: Successfully re-generate access / refresh token", extra={'frontend': str(self.frontend)})
 
-        return
 
     def __execute_query(self, method: str, url: str, data: dict) -> dict:
         retry = 3
@@ -120,28 +113,17 @@ class UbikaParser(ApiParser):
                 logger.exception(f"{msg}", extra={'frontend': str(self.frontend)})
                 raise e
             except ConnectionError as e:
-                msg = f"[{__parser__}][__execute_query]: Connection failed (ConnectionError)"
+                msg = f"[{__parser__}][__execute_query]: Connection failed (ConnectionError) -- {resp}"
                 logger.exception(f'{msg}', extra={'frontend': str(self.frontend)})
                 raise e
             except ReadTimeout as e:
-                msg = f"[{__parser__}][__execute_query]: Connection failed {url} (read_timeout)"
+                msg = f"[{__parser__}][__execute_query]: Connection failed (ReadTimeout) {url} -- {resp}"
                 logger.exception(f'{msg}', extra={'frontend': str(self.frontend)})
                 raise e
             except HTTPError as e:
-                msg = f"[{__parser__}][__execute_query]: HTTPError-- {e}"
+                msg = f"[{__parser__}][__execute_query]: Connection failed (HTTPError)"
                 logger.exception(f'{msg}', extra={'frontend': str(self.frontend)})
                 raise e
-
-            # grpc_error_code = resp_json.get('code')
-            # if grpc_error_code:
-                # grpc_error_msg = resp_json.get('message')
-
-                # if grpc_error_code == 16 and grpc_error_msg == "token has invalid claims: token is expired":
-                    # self.login()
-                # else:
-                    # msg = f"[EXECUTE_QUERY] Unhandled GRPC API error code for url {url} {grpc_error_code} ({self.grpc_status_codes[grpc_error_code]}) - {grpc_error_msg}"
-                    # logger.info(msg)
-                # retry -= 1
 
             if resp.status_code not in [200, 201]:
                 msg = f"[{__parser__}][__execute_query]: Status code not in [200, 201]. Code {resp.status_code} -- {resp.content}"
@@ -149,6 +131,12 @@ class UbikaParser(ApiParser):
                 if resp.status_code == 401:
                     self.login()
                 retry -= 1
+
+            # grpc_error_code = resp_json.get('code')
+            # if grpc_error_code:
+                # grpc_error_msg = resp_json.get('message')
+                # if grpc_error_code == 16 and grpc_error_msg == "token has invalid claims: token is expired":
+                    # self.login()
 
             break # no error we break from the loop
 
@@ -178,7 +166,7 @@ class UbikaParser(ApiParser):
                 url = url,
                 data = data)
 
-            next_token = resp.get('spec', {}).get('nextPageToken')
+            next_token = resp.get('spec', {}).get('nextPageToken', '')
             logger.debug(f"[{__parser__}][get_logs]: Paginate with url = {url}, last_save_token = {last_save_token}, next_token = {next_token}", extra={'frontend': str(self.frontend)})
 
             if next_token != last_save_token:
@@ -279,4 +267,9 @@ class UbikaParser(ApiParser):
                     logger.info(f"[{__parser__}][get_logs]: Succesfully gets {len(logs)} for url = {url}; from {since} to {to}", extra={'frontend': str(self.frontend)})
 
                     self.write_to_file([self.format_log(log) for log in logs])
-                    self.last_collected_timestamps[f"ubika_{namespace}_{kind}"] = to
+                    self.update_lock()
+
+                    if not self.evt_stop.is_set():
+                        self.last_collected_timestamps[f"ubika_{namespace}_{kind}"] = to
+
+            self.update_lock()
