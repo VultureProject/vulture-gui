@@ -167,7 +167,7 @@ def strongswan_edit(request, object_id=None, api=False, update=False):
             else:
                 strongswan.node.api_request("services.strongswan.strongswan.set_rc_conf", "YES")
                 """Reload strongswan"""
-                api_res = strongswan.node.api_request("services.strongswan.strongswan.restart_service")
+                api_res = strongswan.node.api_request("services.strongswan.strongswan.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
                 if not api_res.get('status'):
                     raise ServiceRestartError(
                         "on node {}\n API request error.".format(strongswan.node.name),
@@ -308,6 +308,7 @@ def strongswan_restart(request, object_id, api=False):
         return HttpResponseForbidden('Injection detected.')
 
     try:
+        # Don't delay this action, as it's manually triggered by a user
         res = strongswan.node.api_request("services.strongswan.strongswan.restart_service")
         if not res.get('status'):
             res['error'] = res.pop('message', "")
@@ -380,6 +381,7 @@ def strongswan_reload(request, object_id, api=False):
         return HttpResponseForbidden('Injection detected.')
 
     try:
+        # Don't delay this action, as it's manually triggered by a user
         res = strongswan.node.api_request("services.strongswan.strongswan.reload_service")
         if not res.get('status'):
             res['error'] = res.pop('message', "")

@@ -157,7 +157,7 @@ def frontend_delete(request, object_id, api=False):
                     node.api_request('services.haproxy.haproxy.delete_conf', haproxy_filename)
 
                     # And reload HAProxy services
-                    node.api_request('services.haproxy.haproxy.reload_service')
+                    node.api_request('services.haproxy.haproxy.reload_service', run_delay=settings.SERVICE_RESTART_DELAY)
 
                 if rsyslog_filename:
                     node.api_request('services.rsyslogd.rsyslog.delete_conf', rsyslog_filename)
@@ -167,7 +167,7 @@ def frontend_delete(request, object_id, api=False):
 
                 # Regenerate Rsyslog system conf and restart
                 node.api_request('services.rsyslogd.rsyslog.build_conf')
-                node.api_request('services.rsyslogd.rsyslog.restart_service')
+                node.api_request('services.rsyslogd.rsyslog.restart_service', run_delay=settings.SERVICE_RESTART_DELAY)
 
                 # Delete Filebeat conf and restart if concerned
                 if filebeat_filename:
@@ -181,6 +181,7 @@ def frontend_delete(request, object_id, api=False):
 
                 # Update node's PF configuration
                 node.api_request("services.pf.pf.gen_config")
+                node.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if api:
                 return JsonResponse({
@@ -522,6 +523,7 @@ def frontend_edit(request, object_id=None, api=False):
             for node in new_nodes:
                 if frontend.expected_timezone is not None or "expected_timezone" in form.changed_data:
                     node.api_request('services.rsyslogd.rsyslog.configure_timezones')
+                    node.api_request('services.rsyslogd.rsyslog.restart_service', run_delay=settings.SERVICE_RESTART_DELAY)
 
             # Remove old/obsoleted configurations
             for node in old_nodes:
@@ -542,7 +544,7 @@ def frontend_edit(request, object_id=None, api=False):
                         # API request to ensure timezone rulesets are up-to-date on node
                         node.api_request('services.rsyslogd.rsyslog.configure_timezones')
                         # And reload of Rsyslog service
-                        node.api_request('services.rsyslogd.rsyslog.restart_service')
+                        node.api_request('services.rsyslogd.rsyslog.restart_service', run_delay=settings.SERVICE_RESTART_DELAY)
 
                 if old_filebeat_filename:
                     if frontend.mode != "filebeat" \
@@ -560,7 +562,7 @@ def frontend_edit(request, object_id=None, api=False):
                         # API request deletion of frontend filename
                         node.api_request('services.haproxy.haproxy.delete_conf', old_haproxy_filename)
                         # And reload of HAProxy service
-                        node.api_request('services.haproxy.haproxy.reload_service')
+                        node.api_request('services.haproxy.haproxy.reload_service', run_delay=settings.SERVICE_RESTART_DELAY)
 
             # If the frontend is associated with a policy containing buffered filters
             # then the buffering policy needs a refresh
@@ -576,6 +578,7 @@ def frontend_edit(request, object_id=None, api=False):
 
             # Reload cluster PF configuration
             Cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         except (VultureSystemError, ServiceError) as e:
             """ Error saving configuration file """

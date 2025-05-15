@@ -164,8 +164,11 @@ class DeleteNode(DeleteView):
 
             """ Reload every configurations """
             Cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
             Cluster.api_request("services.haproxy.haproxy.configure_node")
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
             Cluster.api_request("services.rsyslogd.rsyslog.build_conf")
+            Cluster.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
             Cluster.api_request("toolkit.redis.redis_base.renew_sentinel_configuration")
             Cluster.api_request("toolkit.network.network.delete_hostname", node_name)
 

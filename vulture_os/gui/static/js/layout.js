@@ -59,14 +59,16 @@ var aoColumns_process = [
     defaultContent: "",
     mData: "status",
     mRender: function(data, type, row){
-      if (data === "new")
-        return "<i class='fas fa-plus'></i>";
-      else if (data === "running")
+      if (data === "running")
         return "<i class='fas fa-spinner fa-spin'></i>";
       else if (data === "done")
         return "<i class='fas fa-check'></i>";
       else if (data === "failure")
         return "<i class='fas fa-exclamation-triangle'></i>";
+      else if (moment(row.run_at) > moment.utc())
+        return "<i class='fas fa-clock'></i>";
+      else if (data === "new")
+        return "<i class='fas fa-plus'></i>";
       return "<i class='fas fa-question'></i>";
     }
   }
@@ -118,6 +120,9 @@ process_queue_table = $('#table-process').dataTable({
   fnCreatedRow: function(nRow, aData, iDataIndex){
     /* Events binding to print a frontend conf */
     $(nRow).on('click', function(e) {
+      if (aData['result'] === null)
+        aData['result'] = "";
+
       var html = "<b>" + aData['action'] + ": " + aData['result'].split('\n').join('<br/>') + "</b></br>";
 
       if (aData['config'])

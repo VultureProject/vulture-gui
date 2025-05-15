@@ -176,10 +176,11 @@ def logfwd_edit(request, fw_type, object_id=None, api=False):
                     node.api_request("services.logrotate.logrotate.reload_conf")
 
             for node in updated_nodes:
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             """ Reload cluster PF configuration """
-            Cluster.api_request ("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if api:
                 return build_response(log_om.id, "applications.logfwd.api", COMMAND_LIST)
@@ -230,7 +231,8 @@ def logfwd_delete(request, fw_type, object_id, api=False):
             log_om.delete()
 
             # Reload cluster PF configuration
-            Cluster.api_request ("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if api:
                 return JsonResponse({
