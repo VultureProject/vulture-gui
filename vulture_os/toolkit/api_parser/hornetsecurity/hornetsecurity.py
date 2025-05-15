@@ -351,7 +351,7 @@ class HornetSecurityParser(ApiParser):
 
             if new_logs:
                 logger.info(f"[{__parser__}][execute]: Successfully got {len(new_logs)} {kind}'s logs "\
-                            "from {since} to {new_to}", extra={'frontend': str(self.frontend)})
+                            f"from {since} to {new_to}", extra={'frontend': str(self.frontend)})
                 self.write_to_file([self.format_log(kind, log) for log in new_logs])
                 self.update_lock()
 
