@@ -66,10 +66,15 @@ class HornetSecurityParser(ApiParser):
             resp = get(
                 url = self.HIERARCHY_GET,
                 params = {"limit": 1, "offset": 0},
-                headers = {"Authorization": f"Token {self.hornetsecurity_token}"})
+                headers = {"Authorization": f"Token {self.hornetsecurity_token}"},
+                timeout=10,
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
+
             resp.raise_for_status()
             json_resp = resp.json()
             return json_resp['hierarchy'][0]['id']
+
         except (TimeoutError, ConnectionError, HTTPError) as e:
             logger.error(f"[{__parser__}][get_root_hierarchy]: Error while fetching root hierarchy: {e}",
                          extra={'frontend': str(self.frontend)})
