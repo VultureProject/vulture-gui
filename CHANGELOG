@@ -25,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [REDIS] Use proper Sentinel client when updating service
 ### Changed
 - [API_PARSER] [CROWDSTRIKE] Evolve collector to use API v2 instead of v1
-- [API_PARSER] [GATEWATCHER_ALERTS] Merge `raw_alert` into `alert` log object
 - [API_PARSER] [ARMIS_CENTRIX] Collect at max 1h of range to avoid API taking too long to answer
 - [API_PARSER] [BEYONDTRUST_REPORTINGS] Add session_details in logs and split them
 - [FILEBEAT] Separate building configurations and restarting service

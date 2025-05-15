@@ -111,15 +111,7 @@ class GatewatcherAlertsParser(ApiParser):
             for alert in alerts.get("results", []):
                 raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.RAW_ALERTS_ENDPOINT}/{alert['uuid']}"
                 raw_alert = self.execute_query(raw_alert_url)
-
-                # Merge `raw_alert` into `alert`
-                fields_to_delete = ["id", "severity"]  # Remove duplicate fields to avoid loss of information
-                for field in fields_to_delete:
-                    if field in raw_alert:
-                        del raw_alert[field]
-                alert.update(raw_alert)
-
-                results.append({'alert': alert})
+                results.append({'alert': alert, 'raw_alert': raw_alert})
                 self.update_lock()
 
         return results
