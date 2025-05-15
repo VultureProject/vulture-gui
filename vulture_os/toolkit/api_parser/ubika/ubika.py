@@ -50,6 +50,10 @@ class UbikaParser(ApiParser):
         self.ubika_base_refresh_token = data["ubika_base_refresh_token"]
         self.ubika_namespaces = data.get("ubika_namespaces", "").split(",")
 
+        self.ubika_access_token = data.get("ubika_access_token", "")
+        self.ubika_refresh_token = data.get("ubika_refresh_token", "")
+        self.ubika_access_expires_at = data.get("ubika_access_expires_at", 0)
+
         self.login_endpoint = "https://login.ubika.io/auth/realms/main/protocol/openid-connect/token"
         self.security_events_endpoint = "https://api.ubika.io/rest/logs.ubika.io/v1/ns/__NAMESPACE__/security-events"
         self.traffic_logs_endpoint = "https://api.ubika.io/rest/logs.ubika.io/v1/ns/__NAMESPACE__/traffic-logs"
@@ -60,10 +64,10 @@ class UbikaParser(ApiParser):
             "client_id": "rest-api",
             "grant_type": "refresh_token"
         }
-        if not self.frontend.ubika_refresh_token: # this case happened only for the initial collector instanciation
-            req["refresh_token"] = self.frontend.ubika_base_refresh_token
+        if not self.ubika_refresh_token: # this case happened only for the initial collector instanciation
+            req["refresh_token"] = self.ubika_base_refresh_token
         else:
-            req["refresh_token"] = self.frontend.ubika_refresh_token
+            req["refresh_token"] = self.ubika_refresh_token
 
         resp = self.__execute_query(
             method = "POST",
@@ -71,13 +75,13 @@ class UbikaParser(ApiParser):
             data = req
         )
 
-        self.frontend.ubika_refresh_token = resp.get('refresh_token', "")
-        self.frontend.ubika_access_token = resp.get('access_token', "")
-        self.frontend.ubika_access_expires_at = int(timezone.now().timestamp()) + resp.get('expires_in', 0)
+        self.ubika_refresh_token = resp.get('refresh_token', "")
+        self.ubika_access_token = resp.get('access_token', "")
+        self.ubika_access_expires_at = int(timezone.now().timestamp()) + resp.get('expires_in', 0)
 
-        assert self.frontend.ubika_refresh_token, f"[{__parser__}][login]: Failed to get ubika_refresh_token -- {resp}"
-        assert self.frontend.ubika_access_token, f"[{__parser__}][login]: Failed to get ubika_access_token -- {resp}"
-        assert self.frontend.ubika_access_expires_at, f"[{__parser__}][login]: Failed to get refresh ubika_access_expires_at -- {resp}"
+        assert self.ubika_refresh_token, f"[{__parser__}][login]: Failed to get ubika_refresh_token -- {resp}"
+        assert self.ubika_access_token, f"[{__parser__}][login]: Failed to get ubika_access_token -- {resp}"
+        assert self.ubika_access_expires_at, f"[{__parser__}][login]: Failed to get refresh ubika_access_expires_at -- {resp}"
 
         logger.info(f"[{__parser__}][login]: Successfully re-generate access / refresh token", extra={'frontend': str(self.frontend)})
 
@@ -90,7 +94,7 @@ class UbikaParser(ApiParser):
                 if method == "GET":
                     resp = get(
                         url = url,
-                        headers = {"Authorization": f"Bearer {self.frontend.ubika_access_token}"},
+                        headers = {"Authorization": f"Bearer {self.ubika_access_token}"},
                         params = data,
                         proxies = self.proxies,
                         verify = self.api_parser_custom_certificate or self.api_parser_verify_ssl,
@@ -99,7 +103,7 @@ class UbikaParser(ApiParser):
                 elif method == "POST":
                     resp = post(
                         url = url,
-                        headers = {"Authorization": f"Bearer {self.frontend.ubika_access_token}"},
+                        headers = {"Authorization": f"Bearer {self.ubika_access_token}"},
                         data = data,
                         proxies = self.proxies,
                         verify = self.api_parser_custom_certificate or self.api_parser_verify_ssl,
@@ -210,7 +214,7 @@ class UbikaParser(ApiParser):
         logs = []
 
         try:
-            if (not self.frontend.ubika_access_token) or (self.frontend.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1)).timestamp()):
+            if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1)).timestamp()):
                 self.login()
 
             namespace = self.ubika_namespaces[0]
@@ -223,7 +227,7 @@ class UbikaParser(ApiParser):
 
                 logger.info(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
 
-                since = timezone.now() - timedelta(minutes=10)
+                since = timezone.now() - timedelta(minutes=15)
                 to = timezone.now() - timedelta(minutes=5)
 
                 newLogs = self.get_logs(url, since, to)
@@ -245,7 +249,7 @@ class UbikaParser(ApiParser):
 
     def execute(self):
         for namespace in self.ubika_namespaces:
-            if (not self.frontend.ubika_access_token) or (self.frontend.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1)).timestamp()):
+            if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1)).timestamp()):
                 self.login()
 
             for kind in ["security", "traffic"]:
