@@ -97,7 +97,9 @@ class ArmisCentrixParser(ApiParser):
                 "Content-Type": "application/x-www-form-urlencoded"
             }
 
-        if not self.armis_token or not self.armis_token_expire_at or (self.armis_token_expire_at <= (timezone.now() - timedelta(minutes=5))):
+        # Refresh token if exiration is passed or is coming in less than 5 minutes
+        if not self.armis_token or not self.armis_token_expire_at or (timezone.now() >= (self.armis_token_expire_at - timedelta(minutes=5))):
+            logger.info(f"[{__parser__}][login] :: renewing access token...", extra={'frontend': str(self.frontend)})
             # ask for a new token to API (token expiration seems to be by default to 15minutes)
             resp = self.execute_query(
                 method="POST",
@@ -117,7 +119,7 @@ class ArmisCentrixParser(ApiParser):
             self.save_access_token()
 
             self.session.headers.update({"Authorization": token})
-            logger.info(f"[{__parser__}][login] :: Successfully regenerate token", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}][login] :: Successfully renewed token", extra={'frontend': str(self.frontend)})
 
         else: # use the non-expired access token
             self.session.headers.update({"Authorization": self.armis_token})
@@ -166,8 +168,8 @@ class ArmisCentrixParser(ApiParser):
                 logger.error(f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (retries left: {retry}/3)", extra={'frontend': str(self.frontend)})
                 self.evt_stop.wait(10.0)
                 continue
-            if response and response.status_code == 401:
-                logger.error(f"[{__parser__}][execute_query] :: Got a 401 status code, reseting authentication...", extra={'frontend': str(self.frontend)})
+            if response is not None and response.status_code == 401:
+                logger.warning(f"[{__parser__}][execute_query] :: Got a 401 status code, reseting authentication...", extra={'frontend': str(self.frontend)})
                 logger.info(f"[{__parser__}][execute_query] :: access token was expiring at ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
                 self.armis_token = None # resets expired token
                 self.armis_token_expire_at = None
