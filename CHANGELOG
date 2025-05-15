@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [HORNETSECURITY] New collector
 - [GUI] Middle click to edit an object in a new tab
 - [SCRIPT] [WIPE] New script to reset a bootstrapped node
+- [VULTURED] Delay option on api_resquest calls
 ### Fixed
 - [PORTAL] [SELF_SERVICE] Disabled workflows listed
 - [MONGODB] Allow clusters with more than 7 nodes
