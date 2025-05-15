@@ -2267,15 +2267,15 @@ class Frontend(models.Model):
                                      self.get_rsyslog_base_filename())
                     # API request to rebuild global rsyslog configuration
                     node.api_request('services.rsyslogd.rsyslog.build_conf')
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if self.has_filebeat_conf:
                 if self.enabled:
                     node.api_request("services.filebeat.filebeat.build_conf", self.pk)
-                    node.api_request("services.filebeat.filebeat.restart_service", self.pk)
+                    node.api_request("services.filebeat.filebeat.restart_service", self.pk, run_delay=settings.SERVICE_RESTART_DELAY)
                 else:
-                    node.api_request('services.filebeat.filebeat.stop_service', self.pk)
-                    node.api_request('services.filebeat.filebeat.delete_conf',
+                    node.api_request("services.filebeat.filebeat.stop_service", self.pk)
+                    node.api_request("services.filebeat.filebeat.delete_conf",
                                      self.get_filebeat_base_filename())
 
             if self.has_haproxy_conf:
@@ -2283,12 +2283,16 @@ class Frontend(models.Model):
                     node.api_request("services.haproxy.haproxy.build_conf", self.pk)
                 else:
                     node.api_request('services.haproxy.haproxy.delete_conf', self.get_base_filename())
-                node.api_request("services.haproxy.haproxy.reload_service")
+                node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             # Reload LogRotate config
             if self.enable_logging and (self.log_forwarders.filter(logomfile__enabled=True).count() > 0 or
                                 self.log_forwarders_parse_failure.filter(logomfile__enabled=True).count()):
                 node.api_request("services.logrotate.logrotate.reload_conf")
+
+            node.api_request("services.pf.pf.gen_config")
+            node.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
+
             self.status[node.name] = "WAITING"
             self.save(update_fields=["status"])
             nodes.add(node)
@@ -2303,8 +2307,7 @@ class Frontend(models.Model):
         self.enabled = True
         self.save(update_fields=['enabled'])
 
-        for node in self.reload_conf():
-            node.api_request("services.pf.pf.gen_config")
+        self.reload_conf()
 
         return f"Start frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 
@@ -2316,8 +2319,7 @@ class Frontend(models.Model):
         self.enabled = False
         self.save(update_fields=['enabled'])
 
-        for node in self.reload_conf():
-            node.api_request("services.pf.pf.gen_config")
+        self.reload_conf()
 
         return f"Stop frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 

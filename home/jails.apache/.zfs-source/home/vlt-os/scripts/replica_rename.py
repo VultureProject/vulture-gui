@@ -23,6 +23,7 @@ sys.path.append("/home/vlt-os/vulture_os/")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
+from django.conf import settings
 django.setup()
 from django.db.models import Q
 
@@ -69,6 +70,7 @@ if __name__ == "__main__":
     # Update node name in services config
     Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
     Cluster.api_request("services.haproxy.haproxy.configure_node")
+    Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
     # Update Internal mongodb forwarder config in concerned frontends
     update_nodes = set()
@@ -78,7 +80,7 @@ if __name__ == "__main__":
             update_nodes.add(node)
 
     for node in update_nodes:
-        node.api_request("services.rsyslogd.rsyslog.restart_service")
+        node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
     if not res[0]:
         print("Replica_rename::Error : Rename failure : {}".format(res[1]))

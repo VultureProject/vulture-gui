@@ -87,7 +87,7 @@ def workflow_delete(request, object_id, api=False):
             Cluster.api_request('services.haproxy.haproxy.delete_conf', filename)
 
             for node in nodes:
-                api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
                 if not api_res.get('status'):
                     logger.error("Workflow::edit: API error while trying to "
                                  "restart HAProxy service : {}".format(api_res.get('message')))
@@ -237,7 +237,7 @@ def save_workflow(request, workflow_obj, object_id=None):
 
         for node in nodes:
             # Finally, Reload HAProxy on concerned nodes
-            api_res = node.api_request("services.haproxy.haproxy.reload_service")
+            api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
             if not api_res.get('status'):
                 logger.error("Workflow::edit: API error while trying to "
                              "restart HAProxy service : {}".format(api_res.get('message')))

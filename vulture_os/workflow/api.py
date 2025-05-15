@@ -411,7 +411,7 @@ def workflow_edit(request, object_id, action=None):
 
             for node in nodes:
                 # Reload HAProxy and PF on concerned nodes
-                api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
                 if not api_res.get('status'):
                     logger.error("Workflow::edit: API error while trying to "

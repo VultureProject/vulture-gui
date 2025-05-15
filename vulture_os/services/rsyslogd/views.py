@@ -102,6 +102,7 @@ def reload(request):
     error_nodes = {}
     for node in Node.objects.all():
         """ Send API request to reload haproxy service """
+        # Don't delay this action, as it's manually triggered by a user
         api_res = node.api_request("services.haproxy.haproxy.reload_service")
 
         if not api_res.get('status'):
