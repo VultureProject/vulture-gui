@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SERVICES] [FRONTEND] Improve deletion messages and conditions on GUI and API
 - [API_PARSER] Ensure modifications in configuration are not overriden by running instances
 - [API_PARSER] [NOZOMI_PROBE] Fix type error when the field total is null
+- [API_PARSER] [ARMIS_CENTRIX] Fix condition to ask for a new token
 - [FRONTEND] Hot-disable a collector manually
 - [SERVICES] Prevent errors when deleted configuration files do not exist
 - [CLUSTER_JOIN] Fix writing of certificates on new node's disk

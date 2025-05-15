@@ -97,7 +97,7 @@ class ArmisCentrixParser(ApiParser):
                 "Content-Type": "application/x-www-form-urlencoded"
             }
 
-        if not self.armis_token or (self.armis_token_expire_at <= (timezone.now() + timedelta(minutes=5))):
+        if not self.armis_token or not self.armis_token_expire_at or (self.armis_token_expire_at <= (timezone.now() - timedelta(minutes=5))):
             # ask for a new token to API (token expiration seems to be by default to 15minutes)
             resp = self.execute_query(
                 method="POST",
