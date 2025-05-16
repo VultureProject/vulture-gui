@@ -66,10 +66,15 @@ class HornetSecurityParser(ApiParser):
             resp = get(
                 url = self.HIERARCHY_GET,
                 params = {"limit": 1, "offset": 0},
-                headers = {"Authorization": f"Token {self.hornetsecurity_token}"})
+                headers = {"Authorization": f"Token {self.hornetsecurity_token}"},
+                timeout=10,
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
+
             resp.raise_for_status()
             json_resp = resp.json()
             return json_resp['hierarchy'][0]['id']
+
         except (TimeoutError, ConnectionError, HTTPError) as e:
             logger.error(f"[{__parser__}][get_root_hierarchy]: Error while fetching root hierarchy: {e}",
                          extra={'frontend': str(self.frontend)})
@@ -103,7 +108,7 @@ class HornetSecurityParser(ApiParser):
         while retry <= 3:
             try:
                 logger.info(f"[{__parser__}][execute_query] Querying {url} with parameters {params} "\
-                            "and data {data}")
+                            f"and data {data}")
                 resp = post(
                     url = url,
                     params = params,
@@ -131,7 +136,7 @@ class HornetSecurityParser(ApiParser):
             except HTTPError as e:
                 e.response.status_code
                 logger.warning(f"[{__parser__}][execute_query]: Received {e.response.status_code} "\
-                               "status code while fetching logs: {e.response.content}",
+                               f"status code while fetching logs: {e.response.content}",
                                extra={'frontend': str(self.frontend)})
                 retry += 1
                 continue
@@ -178,7 +183,7 @@ class HornetSecurityParser(ApiParser):
                 to = since + ((to - since) / 2)
                 ret = []
                 logger.info(f"[{__parser__}][get_logs]: We've tried to retrieve more than 10k {kind} in one query "\
-                            "({count}) - dividing the range of time by 2 -> {since.isoformat(), to.isoformat()}",
+                            f"({count}) - dividing the range of time by 2 -> {since.isoformat(), to.isoformat()}",
                             extra={'frontend': str(self.frontend)})
                 continue
             elif count > 0:
@@ -346,7 +351,7 @@ class HornetSecurityParser(ApiParser):
 
             if new_logs:
                 logger.info(f"[{__parser__}][execute]: Successfully got {len(new_logs)} {kind}'s logs "\
-                            "from {since} to {new_to}", extra={'frontend': str(self.frontend)})
+                            f"from {since} to {new_to}", extra={'frontend': str(self.frontend)})
                 self.write_to_file([self.format_log(kind, log) for log in new_logs])
                 self.update_lock()
 
@@ -354,7 +359,7 @@ class HornetSecurityParser(ApiParser):
                 # to another - even if it's uggly and possibly causing logs missing
                 self.last_collected_timestamps[f"hornetsecurity_{kind}"] = new_to + timedelta(seconds=1)
                 logger.info(f"[{__parser__}][execute]: Updated last_collected_timestamps['hornetsecurity_{kind}'] "\
-                            "to {new_to}", extra={'frontend': str(self.frontend)})
+                            f"to {new_to}", extra={'frontend': str(self.frontend)})
             else:
                 logger.info(f"[{__parser__}][execute]: No new log received for {kind} logs",
                             extra={'frontend': str(self.frontend)})
