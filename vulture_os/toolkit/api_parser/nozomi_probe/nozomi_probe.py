@@ -129,7 +129,7 @@ class NozomiProbeParser(ApiParser):
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
 
-            total = tmp_logs['total']
+            total = tmp_logs.get('total') or 0
             logs = tmp_logs['result']
             cpt += len(logs)
 

@@ -97,7 +97,9 @@ class ArmisCentrixParser(ApiParser):
                 "Content-Type": "application/x-www-form-urlencoded"
             }
 
-        if not self.armis_token or (self.armis_token_expire_at <= (timezone.now() + timedelta(minutes=5))):
+        # Refresh token if exiration is passed or is coming in less than 5 minutes
+        if not self.armis_token or not self.armis_token_expire_at or (timezone.now() >= (self.armis_token_expire_at - timedelta(minutes=5))):
+            logger.info(f"[{__parser__}][login] :: Renewing access token...", extra={'frontend': str(self.frontend)})
             # ask for a new token to API (token expiration seems to be by default to 15minutes)
             resp = self.execute_query(
                 method="POST",
@@ -117,7 +119,7 @@ class ArmisCentrixParser(ApiParser):
             self.save_access_token()
 
             self.session.headers.update({"Authorization": token})
-            logger.info(f"[{__parser__}][login] :: Successfully regenerate token", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}][login] :: Successfully renewed token", extra={'frontend': str(self.frontend)})
 
         else: # use the non-expired access token
             self.session.headers.update({"Authorization": self.armis_token})
@@ -135,16 +137,17 @@ class ArmisCentrixParser(ApiParser):
 
 
     def execute_query(self, method: str, url: str, query: dict, timeout: int = 10) -> dict:
-        retry = 3
+        tries = 0
+        max_tries = 3
         response = None
-        while(retry > 0 and not self.evt_stop.is_set()):
-            retry -= 1
+        while(tries < max_tries and not self.evt_stop.is_set()):
+            tries += 1
             try:
                 query_tolog = deepcopy(query)
                 if query_tolog.get("secret_key"):
                     query_tolog["secret_key"] = "REDACTED"
 
-                logger.info(f"[{__parser__}][execute_query] :: Querying ({method}) {url} with query {query_tolog} (retries: {retry})", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}][execute_query] :: Querying ({method}) {url} with query {query_tolog} (try: {tries}/{max_tries})", extra={'frontend': str(self.frontend)})
                 if method == "GET":
                     response = self.session.get(
                         url,
@@ -163,11 +166,11 @@ class ArmisCentrixParser(ApiParser):
                         verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
                     )
             except exceptions.ReadTimeout:
-                logger.error(f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (retries left: {retry}/3)", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}][execute_query] :: Encounters a ReadTimeout, sleeping {timeout} seconds and retry (tries left: {max_tries-tries})", extra={'frontend': str(self.frontend)})
                 self.evt_stop.wait(10.0)
                 continue
-            if response and response.status_code == 401:
-                logger.error(f"[{__parser__}][execute_query] :: Got a 401 status code, reseting authentication...", extra={'frontend': str(self.frontend)})
+            if response is not None and response.status_code == 401:
+                logger.warning(f"[{__parser__}][execute_query] :: Got a 401 status code, reseting authentication...", extra={'frontend': str(self.frontend)})
                 logger.info(f"[{__parser__}][execute_query] :: access token was expiring at ({self.armis_token_expire_at})", extra={'frontend': str(self.frontend)})
                 self.armis_token = None # resets expired token
                 self.armis_token_expire_at = None
@@ -179,14 +182,14 @@ class ArmisCentrixParser(ApiParser):
             response.raise_for_status()
             return response.json()
         except JSONDecodeError:
-            logger.exception(f"[{__parser__}][execute_query] :: Server answer not a valid json (status code {response.status_code})", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}][execute_query] :: Server answer not a valid json (status code {response.status_code})", extra={'frontend': str(self.frontend)})
             raise ArmisCentrixAPIError("Invalid JSON")
         except exceptions.HTTPError:
-            logger.exception(f"[{__parser__}][execute_query] :: Server answers with an invalid response : status ({response.status_code}) - response ({response.content})", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}][execute_query] :: Server answers with an invalid response : status ({response.status_code}) - response ({response.content})", extra={'frontend': str(self.frontend)})
             raise ArmisCentrixAPIError(f"Response code {response.status_code}")
         except AttributeError:
             #In case response is None
-            logger.exception(f"[{__parser__}][execute_query] :: Querying logs failed", extra={'frontend': str(self.frontend)})
+            logger.error(f"[{__parser__}][execute_query] :: Querying logs failed", extra={'frontend': str(self.frontend)})
             raise ArmisCentrixAPIError("No response")
 
 
@@ -220,7 +223,7 @@ class ArmisCentrixParser(ApiParser):
             return len(logs), totalToRetrieve, logs
 
         except Exception as e:
-            logger.exception(f"[{__parser__}][get_logs] :: Error querying {kind} logs", extra={'frontend': str(self.frontend)})
+            logger.exception(f"[{__parser__}][get_logs] :: Error querying '{kind}' logs", extra={'frontend': str(self.frontend)})
             raise Exception(e)
 
 
@@ -332,7 +335,7 @@ class ArmisCentrixParser(ApiParser):
             offset = 0
 
             # get first page of logs
-            logger.info(f"[{__parser__}][execute] :: Querying {kind} from {since} to {to}", extra={'frontend': str(self.frontend)})
+            logger.info(f"[{__parser__}][execute] :: Querying '{kind}' from {since} to {to}", extra={'frontend': str(self.frontend)})
             logs_len, total, logs = self.get_logs(kind=kind, since=since, to=to, offset=offset)
             offset += logs_len
             self.write_to_file([self.format_log(log) for log in logs if log != ""])
@@ -347,7 +350,7 @@ class ArmisCentrixParser(ApiParser):
 
             # update timestamps
             if offset > 0:
-                logger.info(f"[{__parser__}][execute] :: Successfully gets {offset} {kind} logs, updating last_collected_timestamps['armis_centrix_{kind}'] -> {to}", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}][execute] :: Successfully gets {offset} '{kind}' logs, updating last_collected_timestamps['armis_centrix_{kind}'] -> {to}", extra={'frontend': str(self.frontend)})
                 self.last_collected_timestamps[f"armis_centrix_{kind}"] = to
             elif since < timezone.now() - timedelta(hours=24):
                 # if no logs retrieved and the last_collected_timestamp is older than 24h
