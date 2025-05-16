@@ -26,6 +26,7 @@ __doc__ = ''
 from system.cluster.models import MessageQueue
 from django.http import JsonResponse
 from django.conf import settings
+from django.utils import timezone
 from gui.models.rss import RSS
 import logging.config
 import json
@@ -51,10 +52,14 @@ def process_queue_state(request):
         col_order = "-date_add"
 
     objs = []
+    exclude_msg = []
 
     max_objs = 50
     # Do NOT send internal MessageQueues
-    for message in MessageQueue.objects.filter(internal=False).order_by(col_order)[:max_objs]:
+    for message in MessageQueue.objects.filter(internal=False, run_at__gt=timezone.now()).order_by("-run_at")[:max_objs]:
+        exclude_msg.append(message.pk)
+        objs.append(message.to_template())
+    for message in MessageQueue.objects.filter(internal=False).exclude(id__in=exclude_msg).order_by(col_order)[:max_objs]:
         objs.append(message.to_template())
 
     return JsonResponse({
