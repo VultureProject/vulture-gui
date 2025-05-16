@@ -41,8 +41,8 @@ class GatewatcherAlertsAPIError(Exception):
 
 
 class GatewatcherAlertsParser(ApiParser):
-    ALERTS_ENDPOINT = "/api/alerts/"
-    RAW_ALERTS_ENDPOINT = "/api/raw-alerts/"
+    ALERTS_ENDPOINT = "/api/v1/alerts/"
+    RAW_ALERTS_ENDPOINT = "/api/v1/raw-alerts/"
 
     HEADERS = {
         "Content-Type": "application/json",
