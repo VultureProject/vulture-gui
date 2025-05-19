@@ -184,12 +184,13 @@ def cluster_edit(request, object_id, api=False, update=False):
 
         if pstats_forwarders_changed:
             node.api_request("services.rsyslogd.rsyslog.configure_pstats")
-            node.api_request("services.rsyslogd.rsyslog.restart_service")
+            node.api_request("services.rsyslogd.rsyslog.restart_service", delay_run=10)
 
         # Update Cluster's pf configurations if needed
         if ip_changed or pstats_forwarders_changed or pf_custom_param_config_changed or pf_custom_nat_config_changed or \
            pf_custom_rdr_config_changed or pf_custom_config_changed:
-            Cluster.api_request ("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
 
         if api:
             return build_response(node.id, "system.node.api", COMMAND_LIST)

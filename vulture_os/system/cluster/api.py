@@ -79,13 +79,13 @@ def cluster_add(request):
 
     """ Make the new_node_name resolvable on all Cluster nodes """
     new_node_is_resolvable = current_node.api_request("toolkit.network.network.make_hostname_resolvable", (new_node_name, new_node_ip))
-    if not new_node_is_resolvable.get('status', False) or 'instance' not in new_node_is_resolvable:
+    if not new_node_is_resolvable.get('status', False) or 'instances' not in new_node_is_resolvable:
         logger.error(f"Error while creating new 'network.make_hostname_resolvable' task: {new_node_is_resolvable.get('message')}")
         return JsonResponse({
             'status': False,
             'message': 'Error during repl_add. Check logs'
         })
-    new_node_is_resolvable = new_node_is_resolvable.get('instance', None)
+    new_node_is_resolvable = new_node_is_resolvable.get('instances', [None])[0]
 
     """ Now the new node should be in the cluster: Add its management IP """
     new_node = Node()
@@ -99,13 +99,13 @@ def cluster_add(request):
     """ Ask cluster to reload PF Conf and wait for it """
     logger.info("Call cluster-wide services.pf.pf.gen_config()...")
     pf_conf_generated = current_node.api_request("services.pf.pf.gen_config")
-    if not pf_conf_generated.get('status', False) or 'instance' not in pf_conf_generated:
+    if not pf_conf_generated.get('status', False) or 'instances' not in pf_conf_generated:
         logger.error(f"Error while creating new 'pf.gen_config' task: {pf_conf_generated.get('message')}")
         return JsonResponse({
             'status': False,
             'message': 'Error during repl_add. Check logs'
         })
-    pf_conf_generated = pf_conf_generated.get('instance', None)
+    pf_conf_generated = pf_conf_generated.get('instances', [None])[0]
 
     try:
         action_result, message = new_node_is_resolvable.await_result()
@@ -194,6 +194,7 @@ def cluster_add(request):
             idp.save_conf()
         # Reload/Build global haproxy configurations and reload service for all nodes
         Cluster.api_request("services.haproxy.haproxy.configure_node")
+        Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
 
         logger.debug("API call to reload whole darwin configuration")
         new_node.api_request("services.darwin.darwin.reload_all")
@@ -205,12 +206,14 @@ def cluster_add(request):
         new_node.api_request("gui.crontab.feed.update_reputation_ctx_now")
         # API call to whole Cluster - to refresh mongodb uri in pf logs
         Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
+        Cluster.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
 
         logger.debug("API call to configure logrotate")
         new_node.api_request("services.logrotate.logrotate.reload_conf")
 
         logger.debug("API call to update PF")
         Cluster.api_request("services.pf.pf.gen_config")
+        Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
 
         return JsonResponse({
             'status': True,
