@@ -111,7 +111,7 @@ def config_edit(request, api=False, update=False):
                 error_msg = "Could not change password"
                 try:
                     error_msg += f": {results[0]['result']}"
-                except:
+                except Exception:
                     pass
                 form.add_error('redis_password', error_msg)
                 Cluster.await_api_request("toolkit.redis.redis_base.set_password", (old_redis_password, config.redis_password), internal=True)
