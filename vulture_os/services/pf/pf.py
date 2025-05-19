@@ -241,6 +241,15 @@ def gen_config(node_logger):
     pf = PFService()
     if pf.reload_conf():
        node_logger.info("PF Configuration updated")
-       pf.reload()
     else:
        node_logger.info("PF Configuration does not need any change")
+
+
+def reload_service(node_logger):
+    pf = PFService()
+
+    # Warning : can raise ServiceError
+    result = pf.reload()
+    node_logger.info(f"PF service reloaded : {result}")
+
+    return result

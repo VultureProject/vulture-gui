@@ -94,7 +94,6 @@ def configure_node(node_logger):
 
     if service.reload_conf():
         result += "HAProxy conf updated.\n"
-        result += service.reload()
     else:
         result += "HAProxy conf hasn't changed.\n"
 
