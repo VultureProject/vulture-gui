@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [VULTURED] Delay option on api_resquest calls
+### Fixed
+- [SYSTEM] [PKI] Rebuild haproxy configurations
 
 
 ## [2.26.1] - 2025-05-21
