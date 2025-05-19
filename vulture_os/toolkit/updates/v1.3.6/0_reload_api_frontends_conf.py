@@ -62,7 +62,7 @@ if __name__ == "__main__":
                         "{}.".format(frontend.name, api_res.get("message")))
 
         if restart_rsyslog:
-            node.api_request("services.rsyslogd.rsyslog.restart_service")
+            node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
             if not api_res.get("status"):
                 print("Error while restarting rsyslog: "
                     "{}.".format(api_res.get("message")))

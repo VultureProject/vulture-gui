@@ -101,7 +101,7 @@ if __name__ == "__main__":
                     frontend_node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
                     updated_nodes.add(frontend_node)
             for node in updated_nodes:
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
             print("[-] Reloaded dependent frontends")
 
             print("[+] Removing empty policies...")

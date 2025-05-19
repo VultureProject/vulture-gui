@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 idp_portal.save_conf()
                 print(f"Triggering configuration rebuild for IDP '{idp_portal.name}'")
 
-            api_res = node.api_request("services.haproxy.haproxy.reload_service")
+            api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
             if not api_res.get('status'):
                 print("API error while trying to "
                             "restart HAProxy service : {}".format(api_res.get('message')))

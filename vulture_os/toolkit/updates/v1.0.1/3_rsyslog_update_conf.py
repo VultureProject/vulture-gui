@@ -44,5 +44,5 @@ if __name__ == "__main__":
     if not node:
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
-        node.api_request("services.rsyslogd.rsyslog.configure_node")
+        node.api_request("services.rsyslogd.rsyslog.configure_node", run_delay=10)
         print("2_rsyslog_update_conf done.")

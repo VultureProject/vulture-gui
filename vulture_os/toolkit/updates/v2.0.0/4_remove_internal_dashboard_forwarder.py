@@ -75,7 +75,7 @@ if __name__ == "__main__":
             print("Reloading Rsyslog's pstats configuration")
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
             print("Restarting Rsyslog")
-            Cluster.api_request("services.rsyslogd.rsyslog.restart_service")
+            Cluster.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
 
             print('Removing Forwarder...')
             forwarder.delete()

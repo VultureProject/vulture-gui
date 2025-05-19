@@ -65,7 +65,7 @@ if __name__ == "__main__":
                 backend.reload_conf()
 
             if reload_haproxy:
-                node.api_request("services.haproxy.haproxy.reload_service")
+                node.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
 
         except TLSProfile.DoesNotExist:
             print("Default TLS profile doesn't exist anymore (or was renamed), skipping!")

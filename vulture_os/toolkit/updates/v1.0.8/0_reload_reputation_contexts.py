@@ -51,7 +51,7 @@ if __name__ == "__main__":
         # Launch reputation contexts download to reload filenames
         node.api_request("gui.crontab.feed.security_update")
         # Reload configuration of Rsyslog templates
-        node.api_request("services.rsyslogd.rsyslog.configure_node")
+        node.api_request("services.rsyslogd.rsyslog.configure_node", run_delay=10)
         # And, considering the filenames has changed, reload Rsyslog configuration of frontends
         restart_rsyslog = False
         for frontend in Frontend.objects.filter(enabled=True, enable_logging=True):
@@ -64,7 +64,7 @@ if __name__ == "__main__":
                           "{}.".format(frontend.name, api_res.get("message")))
 
         if restart_rsyslog:
-            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
+            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
             if not api_res.get("status"):
                 print("Error while restarting rsyslog: "
                         "{}.".format(api_res.get("message")))

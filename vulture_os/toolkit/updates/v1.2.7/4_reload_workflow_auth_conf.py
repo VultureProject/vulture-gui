@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 portal.save_conf()
                 print("IDP portal {} conf reload asked".format(portal))
 
-            node.api_request("services.haproxy.haproxy.restart_service")
+            node.api_request("services.haproxy.haproxy.restart_service", run_delay=10)
 
         except Exception as e:
             print("Failed to update authentication related configurations: {}".format(e))

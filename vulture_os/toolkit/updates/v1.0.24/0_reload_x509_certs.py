@@ -59,6 +59,6 @@ if __name__ == "__main__":
                 print("error while reloading a certificate: {}".format(e))
 
         print("reloading Haproxy configuration...")
-        node.api_request("services.haproxy.haproxy.restart_service")
+        node.api_request("services.haproxy.haproxy.restart_service", run_delay=10)
 
         print("Done.")

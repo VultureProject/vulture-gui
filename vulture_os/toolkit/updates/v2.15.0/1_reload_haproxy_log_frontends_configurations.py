@@ -49,8 +49,8 @@ if __name__ == "__main__":
             for frontend in Frontend.objects.filter(mode__in=['log', 'filebeat']).distinct():
                 print(f"Triggering configuration rebuild for Frontend '{frontend.name}'")
                 node.api_request("services.haproxy.haproxy.build_conf", frontend.pk)
-            node.api_request("services.haproxy.haproxy.configure_node")
-            api_res = node.api_request("services.haproxy.haproxy.reload_service")
+            node.api_request("services.haproxy.haproxy.configure_node", run_delay=10)
+            api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
             if not api_res.get('status'):
                 print(f"API error while trying to restart HAProxy service : {api_res.get('message')}")
 
