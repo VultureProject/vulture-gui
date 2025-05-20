@@ -46,7 +46,7 @@ if __name__ == "__main__":
     else:
         try:
             node.api_request("services.darwin.darwin.reload_conf")
-            node.api_request("services.darwin.darwin.restart_service", run_delay=10)
+            node.api_request("services.darwin.darwin.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to reload Darwin configurations: {}".format(e))

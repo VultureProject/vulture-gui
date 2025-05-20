@@ -160,7 +160,7 @@ def pki_edit(request, object_id=None, api=False):
 
         """ Reload HAProxy on certificate change """
         if X509Certificate.objects.filter(certificate_of__listener__isnull=False, id=pki.id).exists() or X509Certificate.objects.filter(certificate_of__server__isnull=False, id=pki.id).exists():
-            Cluster.api_request("services.haproxy.haproxy.reload_service")
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         if api:
             return build_response(pki.pk, "api.system.pki", [])
@@ -302,7 +302,7 @@ def tls_profile_edit(request, object_id=None, api=False):
                 logger.info("Backend confs reloaded")
 
             if tls_profile.server_set.exists():
-                Cluster.api_request("services.haproxy.haproxy.reload_service")
+                Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         except VultureSystemConfigError as e:
             """ If we get here, problem occurred during save_conf, after save """

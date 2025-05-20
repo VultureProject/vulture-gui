@@ -134,7 +134,7 @@ def config_edit(request, api=False, update=False):
         # If the internal Tenants config has changed, reload Rsyslog configuration of pstats
         if "internal_tenants" in form.changed_data:
             Cluster.api_request("services.rsyslogd.rsyslog.configure_pstats")
-            Cluster.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
+            Cluster.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
         if "portal_cookie_name" in form.changed_data or "public_token" in form.changed_data:
             # Reload Workflows with authentication : session checks must be updated with the new cookie's name/public token
             for workflow in Workflow.objects.filter(authentication__isnull=False):
@@ -142,10 +142,10 @@ def config_edit(request, api=False, update=False):
                     node.api_request("workflow.workflow.build_conf", workflow.pk)
             for portal in UserAuthentication.objects.filter(enable_external=True):
                 portal.save_conf()
-            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
         if "redis_password" in form.changed_data:
             Cluster.api_request("services.haproxy.haproxy.configure_node")
-            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
             for frontend in Frontend.objects.filter(Q(mode="log") | Q(mode="filebeat")):
                 if frontend.redis_server == "127.0.0.5" and frontend.redis_port == 6379:
                     frontend.redis_password = config.redis_password
@@ -161,7 +161,7 @@ def config_edit(request, api=False, update=False):
             "pf_ssh_restrict",
             "pf_admin_restrict"]):
             Cluster.api_request("services.pf.pf.gen_config")
-            Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         if api:
             return build_response_config("system.config.api", [])
@@ -244,5 +244,5 @@ def pf_whitelist_blacklist(request, list_type=None):
 
     config_model.save()
     Cluster.api_request("services.pf.pf.gen_config")
-    Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
+    Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
     return JsonResponse({'status': True, "data": ""})

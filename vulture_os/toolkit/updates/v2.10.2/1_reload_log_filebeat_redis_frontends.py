@@ -53,9 +53,9 @@ if __name__ == "__main__":
                 print("Listener {}({}) Rsyslog configuration reload asked.".format(frontend, frontend.ruleset))
                 if frontend.mode == "filebeat" and node in frontend.get_nodes():
                     node.api_request("services.filebeat.filebeat.build_conf", frontend.id)
-                    node.api_request("services.filebeat.filebeat.restart_service", frontend.pk, run_delay=10)
+                    node.api_request("services.filebeat.filebeat.restart_service", frontend.pk, run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
                     print("Listener {}({}) Filebeat configuration reload asked.".format(frontend, frontend.ruleset))
-            node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
+            node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update Rsyslog configuration: {}".format(e))

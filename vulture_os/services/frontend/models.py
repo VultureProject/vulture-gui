@@ -2267,12 +2267,12 @@ class Frontend(models.Model):
                                      self.get_rsyslog_base_filename())
                     # API request to rebuild global rsyslog configuration
                     node.api_request('services.rsyslogd.rsyslog.build_conf')
-                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if self.has_filebeat_conf:
                 if self.enabled:
                     node.api_request("services.filebeat.filebeat.build_conf", self.pk)
-                    node.api_request("services.filebeat.filebeat.restart_service", self.pk, run_delay=10)
+                    node.api_request("services.filebeat.filebeat.restart_service", self.pk, run_delay=settings.SERVICE_RESTART_DELAY)
                 else:
                     node.api_request("services.filebeat.filebeat.stop_service", self.pk)
                     node.api_request("services.filebeat.filebeat.delete_conf",
@@ -2283,15 +2283,15 @@ class Frontend(models.Model):
                     node.api_request("services.haproxy.haproxy.build_conf", self.pk)
                 else:
                     node.api_request('services.haproxy.haproxy.delete_conf', self.get_base_filename())
-                node.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+                node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             # Reload LogRotate config
             if self.enable_logging and (self.log_forwarders.filter(logomfile__enabled=True).count() > 0 or
                                 self.log_forwarders_parse_failure.filter(logomfile__enabled=True).count()):
                 node.api_request("services.logrotate.logrotate.reload_conf")
 
-            node.api_request("services.pf.pf.gen_config", run_delay=10)
-            node.api_request("services.pf.pf.reload_service", run_delay=10)
+            node.api_request("services.pf.pf.gen_config", run_delay=settings.SERVICE_RESTART_DELAY)
+            node.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             self.status[node.name] = "WAITING"
             self.save(update_fields=["status"])

@@ -48,8 +48,8 @@ if __name__ == "__main__":
         try:
             if Frontend.objects.filter(mode='log', listening_mode='tcp,udp').exists():
                 print("Node contains TCP+UDP log collection, reloading rsyslog input configuration...")
-                node.api_request("services.rsyslogd.rsyslog.build_conf", run_delay=10)
-                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
+                node.api_request("services.rsyslogd.rsyslog.build_conf", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
         except Exception as e:
             print(f"Failed to update Rsyslog configurations: {e}")
             print("Please relaunch this script after solving the issue.")

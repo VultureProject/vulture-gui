@@ -52,7 +52,7 @@ if __name__ == "__main__":
                 backend.reload_conf()
                 print("Backend {} conf reload asked".format(backend))
 
-            node.api_request("services.haproxy.haproxy.restart_service", run_delay=10)
+            node.api_request("services.haproxy.haproxy.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update backend configurations: {}".format(e))

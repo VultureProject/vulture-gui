@@ -58,10 +58,10 @@ if __name__ == "__main__":
                         "{}.".format(frontend.name, api_res.get("message")))
 
             print("Restarting Rsyslog service")
-            node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
+            node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
             print("Restarting Haproxy service")
-            node.api_request("services.haproxy.haproxy.restart_service", run_delay=10)
+            node.api_request("services.haproxy.haproxy.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update logging frontend related configurations: {}".format(e))

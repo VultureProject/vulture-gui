@@ -49,5 +49,5 @@ if __name__ == "__main__":
         for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():
             frontend.reload_conf()
         # Refresh haproxy_internals.cfg
-        node.api_request("services.haproxy.haproxy.configure_node", run_delay=10)
+        node.api_request("services.haproxy.haproxy.configure_node", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
         print("Done.")

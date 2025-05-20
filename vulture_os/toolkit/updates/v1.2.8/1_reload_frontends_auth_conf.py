@@ -52,7 +52,7 @@ if __name__ == "__main__":
                 workflow.frontend.reload_conf()
                 print("Frontend {} conf reload asked".format(workflow.frontend))
 
-            node.api_request("services.haproxy.haproxy.restart_service", run_delay=10)
+            node.api_request("services.haproxy.haproxy.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update authentication related configurations: {}".format(e))

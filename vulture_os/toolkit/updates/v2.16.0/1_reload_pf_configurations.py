@@ -46,7 +46,7 @@ if __name__ == "__main__":
     else:
         try:
             print("Reloading PF configurations for node...")
-            node.api_request("services.pf.pf.gen_config", run_delay=10)
+            node.api_request("services.pf.pf.gen_config", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update PF configurations: {}".format(e))

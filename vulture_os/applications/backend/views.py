@@ -124,11 +124,11 @@ def backend_delete(request, object_id, api=False):
             Cluster.api_request("services.haproxy.haproxy.delete_conf", backend_filename)
 
             # And reload of HAProxy service
-            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             # Reload cluster PF configuration
             Cluster.api_request("services.pf.pf.gen_config")
-            Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if api:
                 return JsonResponse({
@@ -417,7 +417,7 @@ def backend_edit(request, object_id=None, api=False):
             logger.debug("Write conf of backend '{}' asked on cluster".format(backend.name))
 
             """ Reload HAProxy service - After rsyslog to prevent logging crash """
-            api_res = Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+            api_res = Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
             if not api_res.get('status'):
                 raise ServiceReloadError("on cluster\n API request error.", "haproxy",
                                          traceback=api_res.get('message'))
@@ -427,8 +427,8 @@ def backend_edit(request, object_id=None, api=False):
 
             backend.save()
 
-            Cluster.api_request("services.pf.pf.gen_config", run_delay=10)
-            Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
+            Cluster.api_request("services.pf.pf.gen_config", run_delay=settings.SERVICE_RESTART_DELAY)
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
 
         except (VultureSystemError, ServiceError) as e:

@@ -59,6 +59,6 @@ if __name__ == "__main__":
                 print("error while reloading a certificate: {}".format(e))
 
         print("reloading Haproxy configuration...")
-        node.api_request("services.haproxy.haproxy.restart_service", run_delay=10)
+        node.api_request("services.haproxy.haproxy.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         print("Done.")

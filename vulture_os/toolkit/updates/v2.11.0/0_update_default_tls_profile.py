@@ -65,7 +65,7 @@ if __name__ == "__main__":
                 backend.reload_conf()
 
             if reload_haproxy:
-                node.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+                node.api_request("services.haproxy.haproxy.reload_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except TLSProfile.DoesNotExist:
             print("Default TLS profile doesn't exist anymore (or was renamed), skipping!")

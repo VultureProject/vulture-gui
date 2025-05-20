@@ -51,7 +51,7 @@ if __name__ == "__main__":
                 node.api_request("services.haproxy.haproxy.build_conf", frontend.id)
                 print("Frontend '{}' conf reload asked".format(frontend))
 
-            node.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+            node.api_request("services.haproxy.haproxy.reload_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update authentication related frontend configurations: {}".format(e))

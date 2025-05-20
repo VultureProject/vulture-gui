@@ -149,8 +149,8 @@ def netif_edit(request, object_id=None, api=False):
             Cluster.api_request('toolkit.network.network.address_cleanup')
 
         """ Update PF configurations """
-        Cluster.api_request("services.pf.pf.gen_config", run_delay=10)
-        Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
+        Cluster.api_request("services.pf.pf.gen_config", run_delay=settings.SERVICE_RESTART_DELAY)
+        Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         if api:
             return build_response(netif.id, "api.system.netaddr", [])
@@ -211,8 +211,8 @@ def netif_delete(request, object_id, api=False):
             Cluster.api_request('toolkit.network.network.address_cleanup')
 
             """ Update PF configurations """
-            Cluster.api_request("services.pf.pf.gen_config", run_delay=10)
-            Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
+            Cluster.api_request("services.pf.pf.gen_config", run_delay=settings.SERVICE_RESTART_DELAY)
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if api:
                 return JsonResponse({

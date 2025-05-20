@@ -194,7 +194,7 @@ def cluster_add(request):
             idp.save_conf()
         # Reload/Build global haproxy configurations and reload service for all nodes
         Cluster.api_request("services.haproxy.haproxy.configure_node")
-        Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+        Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         logger.debug("API call to reload whole darwin configuration")
         new_node.api_request("services.darwin.darwin.reload_all")
@@ -206,14 +206,14 @@ def cluster_add(request):
         new_node.api_request("gui.crontab.feed.update_reputation_ctx_now")
         # API call to whole Cluster - to refresh mongodb uri in pf logs
         Cluster.api_request("services.rsyslogd.rsyslog.configure_node")
-        Cluster.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
+        Cluster.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         logger.debug("API call to configure logrotate")
         new_node.api_request("services.logrotate.logrotate.reload_conf")
 
         logger.debug("API call to update PF")
         Cluster.api_request("services.pf.pf.gen_config")
-        Cluster.api_request("services.pf.pf.reload_service", run_delay=10)
+        Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         return JsonResponse({
             'status': True,

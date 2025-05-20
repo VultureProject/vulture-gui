@@ -56,4 +56,4 @@ if __name__ == "__main__":
                 print("Reload configuration of listener {}({}) asked.".format(frontend, frontend.ruleset))
 
             if restart_rsyslog:
-                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=10)
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)

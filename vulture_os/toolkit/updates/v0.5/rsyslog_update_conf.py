@@ -41,7 +41,7 @@ if __name__ == "__main__":
     if not node:
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
-        api_res = node.api_request("services.rsyslogd.rsyslog.configure_node", run_delay=10)
+        api_res = node.api_request("services.rsyslogd.rsyslog.configure_node", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
         if not api_res.get("status"):
             print("Error while updating rsyslog configuration: {}.".format(api_res.get("message")))
         else:

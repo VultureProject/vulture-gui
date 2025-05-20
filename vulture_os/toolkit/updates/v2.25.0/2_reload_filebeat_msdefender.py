@@ -48,6 +48,6 @@ if __name__ == "__main__":
     else:
         for frontend in Frontend.objects.filter(mode="filebeat", filebeat_module="microsoft").only(*Frontend.str_attrs(),
                                                                                                 'ruleset'):
-            node.api_request('services.filebeat.filebeat.restart_service', frontend.pk, run_delay=10)
+            node.api_request('services.filebeat.filebeat.restart_service', frontend.pk, run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
             print("Reload configuration of Filebeat service for listener {}({}) asked.".format(frontend, frontend.ruleset))
         print("Done.")

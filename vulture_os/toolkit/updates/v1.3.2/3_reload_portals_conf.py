@@ -52,7 +52,7 @@ if __name__ == "__main__":
                 idp_portal.save_conf()
                 print("IDP Portal {} conf reload asked".format(idp_portal))
 
-            node.api_request("services.haproxy.haproxy.restart_service", run_delay=10)
+            node.api_request("services.haproxy.haproxy.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update IDP Portal configurations: {}".format(e))
