@@ -743,17 +743,16 @@ class Cluster(models.Model):
         instances = list()
         # Ignore pending nodes
         for node in [node] if node else Node.objects.exclude(management_ip__exact=''):
-            m, created = MessageQueue.objects.get_or_create(
+            m, created = MessageQueue.objects.update_or_create(
                 node=node,
                 status=MessageQueue.MessageQueueStatus.NEW,
                 action=action,
                 config=config,
-                internal=internal
+                internal=internal,
+                defaults={"run_at": timezone.now() + timezone.timedelta(seconds=run_delay)}
             )
 
-            if run_delay:
-                m.run_at = timezone.now() + timezone.timedelta(seconds=run_delay)
-                m.save()
+            if not created:
                 logger.debug(f"Cluster::api_request: Action \"{action}\" has been updated to : {m.run_at}")
 
             try:
