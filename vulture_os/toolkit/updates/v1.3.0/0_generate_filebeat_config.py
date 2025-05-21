@@ -46,7 +46,7 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initiated yet.")
     else:
         try:
-            node.api_request("services.filebeat.filebeat.build_conf")
+            node.api_request("services.filebeat.filebeat.build_conf", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
             print("Reload of filebeat configuration asked.")
         except Exception:
             print("Failed to reload filebeat configuration.")

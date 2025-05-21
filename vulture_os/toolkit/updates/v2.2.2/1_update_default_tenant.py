@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
 
             if len(frontends_to_reload) > 0:
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update frontends related to tenant: {}".format(e))

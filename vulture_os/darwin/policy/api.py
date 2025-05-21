@@ -287,7 +287,7 @@ class DarwinPolicyAPIv1(View):
         for frontend in policy.frontend_set.all():
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.reload_conf")
@@ -358,7 +358,7 @@ class DarwinPolicyAPIv1(View):
         for frontend in policy.frontend_set.all():
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         if DarwinBuffering.objects.filter(destination_filter__policy=policy).exists():
             DarwinPolicy.update_buffering()
@@ -398,7 +398,7 @@ class DarwinPolicyAPIv1(View):
                 for frontend in policy.frontend_set.all():
                     for node in frontend.get_nodes():
                         node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
-                        node.api_request("services.rsyslogd.rsyslog.restart_service")
+                        node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
                 Cluster.api_request("services.darwin.darwin.reload_conf")
 

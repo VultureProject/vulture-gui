@@ -189,7 +189,7 @@ class ErrorTemplateAPIv1(View):
 
                 """ And reload HAProxy """
                 for node in nodes:
-                    api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                    api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
                     if not api_res.get('status'):
                         error = _("An error has occurred")
 
@@ -271,7 +271,7 @@ def template_edit(form):
 
                     """ And reload HAProxy """
                     for node in nodes:
-                        api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                        api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
                         if not api_res.get('status'):
                             logger.exception(e)
                             if settings.DEV_MODE:

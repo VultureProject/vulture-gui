@@ -57,7 +57,7 @@ if __name__ == "__main__":
                 portal.save_conf()
                 print("IDP portal {} conf reload asked".format(portal))
 
-            node.api_request("services.haproxy.haproxy.reload_service")
+            node.api_request("services.haproxy.haproxy.reload_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update authentication related configurations: {}".format(e))

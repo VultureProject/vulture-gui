@@ -52,7 +52,7 @@ if __name__ == "__main__":
                 backend.save()
                 backend.reload_conf()
                 print(f"Backend {backend} conf reload asked")
-            node.api_request("services.haproxy.haproxy.restart_service")
+            node.api_request("services.haproxy.haproxy.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to migrate statuses: {}".format(e))

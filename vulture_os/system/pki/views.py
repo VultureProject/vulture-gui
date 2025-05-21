@@ -153,14 +153,33 @@ def pki_edit(request, object_id=None, api=False):
     elif request.method in ("POST", "PUT") and form.is_valid() and cert_type == "external":
 
         """ External certificate """
+        if "name" in form.changed_data:
+            x509_model.delete_conf()
         pki = form.save(commit=False)
         pki.is_external = True
         pki.is_vulture_ca = False
         pki.save()
 
         """ Reload HAProxy on certificate change """
-        if X509Certificate.objects.filter(certificate_of__listener__isnull=False, id=pki.id).exists() or X509Certificate.objects.filter(certificate_of__server__isnull=False, id=pki.id).exists():
-            Cluster.api_request("services.haproxy.haproxy.reload_service")
+        if pki.certificate_of.filter(listener__isnull=False).exists() or pki.certificate_of.filter(server__isnull=False).exists():
+            if "name" in form.changed_data:
+                frontends = set()
+                for tls_profile in pki.certificate_of.filter(listener__isnull=False):
+                    for listener in tls_profile.listener_set.all():
+                        frontends.add(listener.frontend)
+                for frontend in frontends:
+                    frontend.reload_conf()
+                    logger.info("Frontend confs reloaded")
+
+                backends = set()
+                for tls_profile in pki.certificate_of.filter(server__isnull=False):
+                    for server in tls_profile.server_set.all():
+                        backends.add(server.backend)
+                for backend in backends:
+                    backend.reload_conf()
+                    logger.info("Backend confs reloaded")
+
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         if api:
             return build_response(pki.pk, "api.system.pki", [])
@@ -293,16 +312,16 @@ def tls_profile_edit(request, object_id=None, api=False):
             tls_profile.save_conf()
             logger.info("TLSProfile '{}' write on disk requested.".format(tls_profile.name))
 
-            for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
-                frontend.reload_conf()
-                logger.info("Frontend confs reloaded")
+            if tls_profile.listener_set.exists() or tls_profile.server_set.exists():
+                for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
+                    frontend.reload_conf()
+                    logger.info("Frontend confs reloaded")
 
-            for backend in set(server.backend for server in tls_profile.server_set.all()):
-                backend.reload_conf()
-                logger.info("Backend confs reloaded")
+                for backend in set(server.backend for server in tls_profile.server_set.all()):
+                    backend.reload_conf()
+                    logger.info("Backend confs reloaded")
 
-            if tls_profile.server_set.exists():
-                Cluster.api_request("services.haproxy.haproxy.reload_service")
+                Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         except VultureSystemConfigError as e:
             """ If we get here, problem occurred during save_conf, after save """

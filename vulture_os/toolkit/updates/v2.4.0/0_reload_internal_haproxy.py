@@ -46,12 +46,12 @@ if __name__ == "__main__":
     else:
         try:
             print("Starting a reload of internal haproxy configurations")
-            node.api_request("services.haproxy.haproxy.configure_node")
+            node.api_request("services.haproxy.haproxy.configure_node", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
             try:
                 os.unlink("/usr/local/etc/haproxy.d/internal_portals.cfg")
             except FileNotFoundError:
                 pass
-            node.api_request("services.pf.pf.gen_config")
+            node.api_request("services.pf.pf.gen_config", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print("Failed to update authentication related configurations: {}".format(e))

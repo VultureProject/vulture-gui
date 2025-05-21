@@ -50,7 +50,7 @@ if __name__ == "__main__":
             # Reload all frontends with authenticated workflows
             for frontend in Frontend.objects.filter(workflow__authentication__isnull=False).distinct():
                 frontend.reload_conf()
-            node.api_request("services.haproxy.haproxy.configure_node")
+            node.api_request("services.haproxy.haproxy.configure_node", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
             print("Reload of spoe session configuration asked.")
         except Exception:
             print("Failed to reload spoe session configuration.")

@@ -83,7 +83,7 @@ def monitor():
 
     """ Initialize date and Monitor object """
     mon = Monitor(
-        date=timezone.now().replace(second=0, microsecond=0),
+        date=timezone.now().replace(microsecond=0),
         node=node
     )
     mon.services_id = set()

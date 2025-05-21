@@ -59,8 +59,8 @@ if __name__ == "__main__":
             if reload_necessary:
                 # Regenerate general input configuration file for Rsyslog before restarting the service
                 # (remove impcap inputs)
-                Cluster.api_request('services.rsyslogd.rsyslog.build_conf')
-                Cluster.api_request('services.rsyslogd.rsyslog.restart_service')
+                Cluster.api_request("services.rsyslogd.rsyslog.build_conf", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
+                Cluster.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
 
         except Exception as e:
             print(f"Error while removing a Frontend: {e}")

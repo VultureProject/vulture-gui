@@ -46,7 +46,7 @@ if __name__ == "__main__":
     else:
         try:
             print("Starting a reload of internal rsyslog configurations")
-            node.api_request("services.rsyslogd.rsyslog.configure_node")
+            node.api_request("services.rsyslogd.rsyslog.configure_node", run_delay=django.conf.settings.SERVICE_RESTART_DELAY)
         except Exception as e:
             print("Failed to update Rsyslog configuration: {}".format(e))
             print("Please relaunch this script after solving the issue.")
