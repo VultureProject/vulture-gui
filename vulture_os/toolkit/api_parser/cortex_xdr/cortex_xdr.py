@@ -257,12 +257,20 @@ class CortexXDRParser(ApiParser):
                         # No need to make_aware, date already contains timezone
                         # add 1 (ms) to timestamp to avoid getting last alert again
                         try:
-                            setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", datetime.fromtimestamp((logs[-1][self.event_kinds[kind]['time_field']]+1)/1000, tz=timezone.utc))
+                            updated_datetime = datetime.fromtimestamp((logs[-1][self.event_kinds[kind]['time_field']]+1)/1000, tz=timezone.utc)
+                            setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", updated_datetime)
+                            self.frontend.save(update_fields=[f"cortex_xdr_{kind}_timestamp"])
+                            logger.info(f"[{__parser__}]:execute: Updated cortex_xdr_{kind}_timestamp to {updated_datetime}",
+                                    extra={'frontend': str(self.frontend)})
                         except Exception:
                             msg = f"Could not locate key '{self.event_kinds[kind]['time_field']}' from following log: {logs[-1]}"
                             logger.error(f"[{__parser__}]:execute: {msg}",
                                          extra={'frontend': str(self.frontend)})
                     elif to - since >= timedelta(hours=24):
-                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", since + timedelta(hours=1))
+                        updated_datetime = since + timedelta(hours=1)
+                        setattr(self.frontend, f"cortex_xdr_{kind}_timestamp", updated_datetime)
+                        self.frontend.save(update_fields=[f"cortex_xdr_{kind}_timestamp"])
+                        logger.info(f"[{__parser__}]:execute: Updated cortex_xdr_{kind}_timestamp to {updated_datetime}",
+                                extra={'frontend': str(self.frontend)})
 
         logger.info("CortexXDR parser ending.", extra={'frontend': str(self.frontend)})

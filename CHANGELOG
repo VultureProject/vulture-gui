@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [API_PARSER] [TRENDMICRO_VISIONONE] Last api call was not updated
+- [API_PARSER] [CORTEX_XDR] Last api call was not updated
 
 ## [2.26.0] - 2025-05-16
 ### Added
