@@ -236,7 +236,7 @@ class TrendmicroVisiononeParser(ApiParser):
                     f"[{__parser__}]:execute: Log collection for {kind}'s logs stopped at {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')}",
                     extra={'frontend': str(self.frontend)})
 
-        self.frontend.save()
+        self.frontend.save(update_fields=['trendmicro_visionone_alerts_timestamp', 'trendmicro_visionone_audit_timestamp', 'trendmicro_visionone_oat_timestamp'])
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):
