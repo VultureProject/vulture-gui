@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
-
+### Fixed
+- [API_PARSER] [BEYONDTRUST_REPORTINGS] Fix parsing of support session logs
 
 ## [2.26.1] - 2025-05-21
 ### Fixed
