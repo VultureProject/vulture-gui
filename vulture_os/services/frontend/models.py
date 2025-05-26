@@ -1631,6 +1631,18 @@ class Frontend(models.Model):
         help_text=_("Hornetsecurity access token"),
         default=""
     )
+    sentinel_one_identity_graph_token = models.TextField(
+        verbose_name=_("Sentinel One Identity Graph Token"),
+        help_text=_("Sentinel One Identity Graph Token"),
+        default=""
+    )
+    sentinel_one_identity_graph_console_url = models.TextField(
+        verbose_name=_("Sentinel One Identity Graph Console URL"),
+        help_text=_("Sentinel One Identity Graph Console URL"),
+        default=""
+    )
+
+
 
     @staticmethod
     def str_attrs():
