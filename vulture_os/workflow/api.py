@@ -203,7 +203,7 @@ def generate_workflow(workflow):
         for a in actions:
             data.append(a)
 
-    if workflow.authentication != None:
+    if workflow.authentication is not None:
         user_authentication_id = str(uuid.uuid4())
         data.append({
             'id': user_authentication_id,
@@ -216,7 +216,7 @@ def generate_workflow(workflow):
         })
         parent = user_authentication_id
 
-    if workflow.authentication_filter != None:
+    if workflow.authentication_filter is not None:
         user_authentication_filter_id = str(uuid.uuid4())
         data.append({
             'id': user_authentication_filter_id,
@@ -286,7 +286,7 @@ def workflow_edit(request, object_id, action=None):
                         if public_dir[-1] != '/':
                             public_dir += '/'
 
-                    enable_cors_policy = form_data.get('enable_cors_policy') == True
+                    enable_cors_policy = form_data.get('enable_cors_policy', False)
                     cors_allowed_methods = form_data.get('cors_allowed_methods', ['*'])
                     CORS_VALUES = [i[0] for i in CORS_METHODS]
                     for method in cors_allowed_methods:

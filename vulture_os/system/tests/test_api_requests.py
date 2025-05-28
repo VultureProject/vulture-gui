@@ -25,7 +25,6 @@ __doc__ = 'Tests for System API Requests'
 
 from django.test import TestCase
 from django.utils import timezone
-from unittest.mock import patch
 
 from system.cluster.models import Cluster, Node, MessageQueue
 

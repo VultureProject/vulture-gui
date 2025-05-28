@@ -19,18 +19,18 @@ along with Vulture 3.  If not, see http://www.gnu.org/licenses/.
 import os
 import sys
 
+from applications.logfwd.models import LogOMMongoDB
+from django.db.models import Q
+from services.frontend.models import Frontend
+from system.cluster.models import Cluster, Node
+from toolkit.mongodb.mongo_base import MongoBase
+
 sys.path.append("/home/vlt-os/vulture_os/")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 
 import django
 from django.conf import settings
 django.setup()
-from django.db.models import Q
-
-from applications.logfwd.models import LogOMMongoDB
-from services.frontend.models import Frontend
-from system.cluster.models import Cluster, Node
-from toolkit.mongodb.mongo_base import MongoBase
 
 
 if __name__ == "__main__":

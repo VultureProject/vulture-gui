@@ -137,7 +137,7 @@ def user_authentication_edit(request, object_id=None, api=False):
             try:
                 if (repo_changed or disconnect_url_changed or timeout_changed) and profile.workflow_set.count() > 0:
                     for workflow in profile.workflow_set.all():
-                        nodes = workflow.frontend.reload_conf()
+                        workflow.frontend.reload_conf()
 
                 if profile.enable_external:
                     # Automatically create OpenID repo

@@ -273,11 +273,14 @@ def template_edit(form):
                     for node in nodes:
                         api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
                         if not api_res.get('status'):
-                            logger.exception(e)
+                            error = _("An error has occurred")
+
                             if settings.DEV_MODE:
-                                raise
+                                error = "Template::edit: API error while trying to "\
+                                        "reload HAProxy service : {}".format(api_res.get('message'))
+
                             return JsonResponse({
-                                'error': str(e)
+                                'error': error
                             }, status=500)
 
             return build_response(error_template.id, "system.error_templates.api", COMMAND_LIST)

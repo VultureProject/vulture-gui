@@ -50,8 +50,8 @@ def haproxy_edit(request, object_id=None):
     if object_id:
         try:
             haproxy_model = HAProxySettings.objects.get(pk=object_id)
-            pf_model = PFSettings.objects.get()
-            darwin_model = DarwinSettings.objects.get()
+            PFSettings.objects.get()
+            DarwinSettings.objects.get()
             if not haproxy_model:
                 raise InvalidId()
         except InvalidId:

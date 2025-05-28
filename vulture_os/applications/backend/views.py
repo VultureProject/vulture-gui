@@ -372,15 +372,15 @@ def backend_edit(request, object_id=None, api=False):
             logger.debug("Backend '{}' (id={}) saved in MongoDB.".format(backend.name, backend.id))
 
             """ And all the listeners created earlier """
-            for s in server_objs:
-                s.backend = backend
-                logger.debug("Saving server {}".format(str(s)))
-                s.save()
+            for server in server_objs:
+                server.backend = backend
+                logger.debug("Saving server {}".format(str(server)))
+                server.save()
 
             """ Delete listeners deleted in form """
-            for s in backend.server_set.exclude(pk__in=[l.id for l in server_objs]):
-                s.delete()
-                logger.info("Deleting server {}".format(s))
+            for server in backend.server_set.exclude(pk__in=[server.id for server in server_objs]):
+                server.delete()
+                logger.info("Deleting server {}".format(server))
 
             """ If mode is HTTP """
             if backend.mode == "http":

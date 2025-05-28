@@ -260,7 +260,7 @@ class DarwinPolicyAPIv1(View):
                 if error:
                     try:
                         policy.delete()
-                    except:
+                    except Exception:
                         pass
                     return JsonResponse({
                         "error": error
@@ -269,7 +269,7 @@ class DarwinPolicyAPIv1(View):
         except Exception as e:
             try:
                 policy.delete()
-            except:
+            except Exception:
                 pass
 
             logger.critical(e, exc_info=1)
@@ -307,7 +307,7 @@ class DarwinPolicyAPIv1(View):
                 if isinstance(filters, str):
                     try:
                         filters = json.loads(filters)
-                    except json.JsonDecodeError as e:
+                    except json.JSONDecodeError as e:
                         logger.error(e)
                         return JsonResponse({
                             'error': str(e)
@@ -331,7 +331,7 @@ class DarwinPolicyAPIv1(View):
                     if created:
                         try:
                             policy.delete()
-                        except:
+                        except Exception:
                             pass
                     return JsonResponse({
                         "error": error
