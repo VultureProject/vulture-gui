@@ -183,7 +183,7 @@ def pf_whitelist_blacklist(request, list_type=None):
     try:
         ip_address = request.JSON.get('ip_address')
         action = request.JSON.get('action')
-    except:
+    except AttributeError:
         #We are coming from the GUI
         if not list_type:
             list_type = request.POST.get("list_type")

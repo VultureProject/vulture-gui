@@ -73,7 +73,7 @@ class ListErrorTemplate(View):
             s = Q(name__icontains=search)
 
         objs = []
-        for obj in ErrorTemplate.objects.all():
+        for obj in ErrorTemplate.objects.filter(s):
             objs.append(obj.to_template())
 
         max_objs = len(objs)
