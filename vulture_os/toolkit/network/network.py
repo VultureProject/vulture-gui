@@ -502,7 +502,7 @@ def write_network_config(logger):
 def remove_netif_configs(logger, rc_confs):
     if isinstance(rc_confs, str):
         rc_confs = literal_eval(rc_confs)
-    
+
     from system.cluster.models import Cluster
     node = Cluster.get_current_node()
 
@@ -573,7 +573,7 @@ def make_hostname_resolvable(logger, hostname_ip):
 
 def delete_hostname(logger, hostname):
     """Remove hostname/IP from /etc/hosts
-    
+
     :param logger:        API logger (to be called by an API request)
     :param hostname:      String containing the remote hostname to delete
     :return:
