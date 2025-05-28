@@ -151,9 +151,11 @@ class CiscoUmbrellaParser(ApiParser):
         # Due to a limitation in the API, we have update from and to dynamically
         # to collect all logs during the minute of execution
         # So this parser will keep running as long as it's not up-to-date or asked to stop
+
+        since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=15))
+        to = timezone.now()
+
         while not self.evt_stop.is_set():
-            since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=15))
-            to = timezone.now()
             logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}.", extra={'frontend': str(self.frontend)})
 
             index = 0
@@ -172,15 +174,15 @@ class CiscoUmbrellaParser(ApiParser):
                 self.update_lock()
             # When there are more than 15000 logs, last_api_call is the timestamp of the last log
             if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX + self.LIMIT_MAX:
-                timestamp = logs[-1]['timestamp']/1000
-                self.frontend.last_api_call = datetime.fromtimestamp(timestamp, tz=timezone.now().astimezone().tzinfo)
+                last_timestamp = max(log['timestamp'] for log in logs)
+                since = datetime.fromtimestamp(int(last_timestamp) / 1000, tz=timezone.utc)
             else:
                 # All logs have been recovered, the parser can be stopped
-                self.frontend.last_api_call = to
                 break
-            self.frontend.save(update_fields=['last_api_call'])
+
+        self.frontend.last_api_call = to
         self.frontend.cisco_umbrella_access_token = self.cisco_umbrella_access_token
         self.frontend.cisco_umbrella_expires_at = self.cisco_umbrella_expires_at
-        self.frontend.save(update_fields=['cisco_umbrella_access_token', 'cisco_umbrella_expires_at'])
+        self.frontend.save()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
