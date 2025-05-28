@@ -984,6 +984,14 @@ class ListenerForm(ModelForm):
                     raise ValidationError("'{}' is not a valid ip address or cidr.".format(v))
         return value
 
+    def clean_tls_profiles(self):
+        """ Verify that profile has a x509_certificate selected """
+        tls_profiles = self.cleaned_data.get('tls_profiles')
+        for tls_profile in tls_profiles:
+            if tls_profile.x509_certificate is None:
+                raise ValidationError("This TLS Profile does not have any certificate.")
+        return tls_profiles
+
     def as_table_headers(self):
         """ Format field names as table head """
         result = "<tr><th style=\"visibility:hidden;\">{}</th>\n"

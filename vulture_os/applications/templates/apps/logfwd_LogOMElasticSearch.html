@@ -155,10 +155,10 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
-                    <label class="col-sm-4 control-label">{% translate "Use TLS Certificate or CA" %}</label>
+                    <label class="col-sm-4 control-label">{{form.tls_profile.label}}</label>
                     <div class="col-sm-5">
-                      {{form.x509_certificate}}
-                      {{form.x509_certificate.errors|safe}}
+                      {{form.tls_profile}}
+                      {{form.tls_profile.errors|safe}}
                     </div>
                   </div>
                 </div>

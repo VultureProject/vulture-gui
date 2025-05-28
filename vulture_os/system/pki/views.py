@@ -25,6 +25,7 @@ __doc__ = 'Network View'
 
 # Django system imports
 from django.conf import settings
+from django.db.models import Q
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.http.response import HttpResponseNotFound
 from django.shortcuts import render, HttpResponse
@@ -33,10 +34,11 @@ from django.urls import reverse
 
 # Django project imports
 from gui.forms.form_utils import DivErrorList
+from services.frontend.models import Frontend
 from system.exceptions import VultureSystemConfigError
 from system.pki.form import TLSProfileForm, X509ExternalCertificateForm, X509InternalCertificateForm
 from system.pki.models import CIPHER_SUITES, PROTOCOLS_HANDLER, TLSProfile, X509Certificate
-from system.cluster.models import Cluster
+from system.cluster.models import Cluster, Node
 from toolkit.api.responses import build_response, build_form_errors
 
 # Required exceptions imports
@@ -293,16 +295,36 @@ def tls_profile_edit(request, object_id=None, api=False):
             tls_profile.save_conf()
             logger.info("TLSProfile '{}' write on disk requested.".format(tls_profile.name))
 
-            for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
-                frontend.reload_conf()
-                logger.info("Frontend confs reloaded")
+            """ We need to reload all Frontend's rsyslog configuration that uses
+                the related  """
+            updated_nodes = set()
+            for node in Node.objects.all():
+                frontends = Frontend.objects.filter(
+                    Q(enabled=True) &
+                    (
+                        Q(log_forwarders__in=list(tls_profile.logomelasticsearch_set.all())) |
+                        Q(log_forwarders_parse_failure__in=list(tls_profile.logomelasticsearch_set.all()))
+                    )
+                ).distinct()
+                for frontend in frontends:
+                    updated_nodes.add(node)
+                    node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
 
-            for backend in set(server.backend for server in tls_profile.server_set.all()):
-                backend.reload_conf()
-                logger.info("Backend confs reloaded")
+            for node in updated_nodes:
+                node.api_request("services.rsyslogd.rsyslog.restart_service")
 
-            if tls_profile.server_set.exists():
-                Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
+            if tls_profile.listener_set.exists() or tls_profile.server_set.exists():
+                updated_nodes = set()
+                for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
+                    updated_nodes.update(frontend.reload_conf())
+                    logger.info("Frontend confs reloaded")
+
+                for backend in set(server.backend for server in tls_profile.server_set.all()):
+                    updated_nodes.update(Node.objects.all())
+                    logger.info("Backend confs reloaded")
+
+                for node in updated_nodes:
+                    node.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
 
         except VultureSystemConfigError as e:
             """ If we get here, problem occurred during save_conf, after save """

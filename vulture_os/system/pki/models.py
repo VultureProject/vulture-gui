@@ -562,8 +562,11 @@ class TLSProfile(models.Model):
     x509_certificate = models.ForeignKey(
         to=X509Certificate,
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name="certificate_of",
-        help_text=_("X509Certificate object to use.")
+        help_text=_("X509Certificate object to use."),
+        verbose_name=_("My certificate")
     )
     """ Compatibility of web browsers """
     compatibility = models.TextField(
@@ -593,8 +596,9 @@ class TLSProfile(models.Model):
     verify_client = models.TextField(
         default="none",
         choices=VERIFY_CHOICES,
-        help_text=_("If set to 'none', client certificate is not requested. This is the default. In other cases, "
-                    "a client certificate is requested.")
+        help_text=_("If set to 'none', peer certificate is not requested. This is the default. In other cases, "
+                    "a peer certificate is requested."),
+        verbose_name=_("Verify peer certificate")
     )
     """ CA certificate as PEM, used to verify client cert """
     ca_cert = models.ForeignKey(
@@ -603,11 +607,12 @@ class TLSProfile(models.Model):
         null=True,
         blank=False,
         related_name="ca_cert_of",
-        help_text=_("CA certificate used to verify client's certificate if verify != none.")
+        help_text=_("CA certificate used to verify peer's certificate if verify != none."),
+        verbose_name=_("Peer's CA certificate")
     )
 
     def __str__(self):
-        return "TLS Profile '{}' ({}:{})".format(self.name, str(self.x509_certificate), self.protocols)
+        return f"TLS Profile '{self.name}' ({str(self.x509_certificate or self.ca_cert)}:{self.protocols})"
 
     def to_html_template(self):
         return {

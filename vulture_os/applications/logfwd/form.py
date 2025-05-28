@@ -30,7 +30,7 @@ from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, 
 # Django project imports
 from applications.logfwd.models import (LogOM, LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch,
                                         LogOMMongoDB, LogOMKAFKA, OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES)
-from system.pki.models import X509Certificate
+from system.pki.models import X509Certificate, TLSProfile
 
 # Required exceptions imports
 from django.forms import ValidationError
@@ -222,17 +222,10 @@ class LogOMFWDForm(LogOMForm):
 
 class LogOMElasticSearchForm(LogOMForm):
 
-    x509_certificate = ModelChoiceField(
-        queryset=X509Certificate.objects.filter(is_ca=False).only(*(X509Certificate.str_attrs())),
-        required=False,
-        widget=Select(attrs={'class': 'select2'}),
-        empty_label="No SSL"
-    )
-
     class Meta(LogOMForm.Meta):
         model = LogOMElasticSearch
         fields = LogOMForm.Meta.fields + ('servers', 'es8_compatibility', 'data_stream_mode',
-                  'retry_on_els_failures', 'index_pattern', 'uid', 'pwd', 'x509_certificate')
+                  'retry_on_els_failures', 'index_pattern', 'uid', 'pwd', 'tls_profile')
 
         widgets = {
             'servers': TextInput(attrs={'class': 'form-control'}),
@@ -242,9 +235,13 @@ class LogOMElasticSearchForm(LogOMForm):
             'index_pattern': TextInput(attrs={'class': 'form-control'}),
             'uid': TextInput(attrs={'class': 'form-control'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
-            'x509_certificate': Select(attrs={'class': 'form-control'}),
+            'tls_profile': Select(choices=TLSProfile.objects.all(), attrs={'class': 'form-control select2'}),
         }
         widgets.update(LogOMForm.Meta.widgets)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['tls_profile'].empty_label = "No TLS"
 
     def clean_index_pattern(self):
         field = self.cleaned_data.get('index_pattern')
@@ -254,7 +251,7 @@ class LogOMElasticSearchForm(LogOMForm):
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
-        if cleaned_data.get('retry_on_els_failures') == True and cleaned_data.get('data_stream_mode') == False:
+        if cleaned_data.get('retry_on_els_failures') is True and cleaned_data.get('data_stream_mode') is False:
             self.add_error('retry_on_els_failures', "This field cannot be set if Stream Mode is disabled.")
         return cleaned_data
 
