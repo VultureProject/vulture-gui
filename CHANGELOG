@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [BLACKBERRY_CYLANCE] Stop collector earlier and wait for next run when rate-limited by the API
 ### Fixed
 - [API_PARSER] [BEYONDTRUST_REPORTINGS] Fix parsing of support session logs
+- [API_PARSER] [PROOFPOINT_POD] Increment the last_api_call of 1 second to avoid duplication
 
 
 ## [2.26.1] - 2025-05-21
