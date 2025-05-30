@@ -29,6 +29,7 @@ from services.frontend.models import Frontend
 from system.cluster.models import Cluster
 from time import sleep
 from multiprocessing import Process
+from toolkit.api_parser.api_parser import EarlyTerminationWarning
 
 import logging
 logging.config.dictConfig(settings.LOG_SETTINGS)
@@ -59,6 +60,9 @@ def execute_parser(frontend):
             parser.frontend.status[Cluster.get_current_node().name] = "OPEN"
         except Exception as e:
             logger.exception(e)
+    except EarlyTerminationWarning as e:
+        logger.warning(f"API Parser {frontend['name']} (tenant={frontend['tenant_name']}) stopped early: {e}",
+                     extra={'frontend': str(frontend['name'])})
     except Exception as e:
         logger.error(f"API Parser {frontend['name']} (tenant={frontend['tenant_name']}) failure : ",
                      extra={'frontend': str(frontend['name'])})
