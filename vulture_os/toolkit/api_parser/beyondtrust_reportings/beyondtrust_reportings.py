@@ -255,7 +255,7 @@ class BeyondtrustReportingsParser(ApiParser):
         try:
             sessions_logs = logs.get('session_list', {}).get('session', [])
 
-            if not isinstance(formated_logs, list):
+            if not isinstance(sessions_logs, list):
                 sessions_logs = [sessions_logs]
 
             for log in sessions_logs:
