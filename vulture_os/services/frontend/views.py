@@ -363,7 +363,7 @@ def frontend_edit(request, object_id=None, api=False):
                 reputationctx_ids = json_loads(request.POST.get('reputation_contexts', "[]"))
             assert isinstance(reputationctx_ids, list), "reputation_contexts field must be a list."
         except Exception as e:
-            return render_form(frontend, save_error=["Error in ReputationConext field : {}".format(e),
+            return render_form(frontend, save_error=["Error in ReputationContext field : {}".format(e),
                                                      str.join('', format_exception(*exc_info()))])
 
         """ For each reputation_context in list """
