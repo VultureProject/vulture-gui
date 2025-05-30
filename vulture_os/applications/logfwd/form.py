@@ -221,6 +221,13 @@ class LogOMFWDForm(LogOMForm):
 
 
 class LogOMElasticSearchForm(LogOMForm):
+    tls_profile = ModelChoiceField(
+        queryset=TLSProfile.objects.all(),
+        required=False,
+        widget=Select(attrs={'class': 'form-control select2'}),
+        label=LogOMElasticSearch.tls_profile.field.verbose_name,
+        empty_label="No TLS"
+    )
 
     class Meta(LogOMForm.Meta):
         model = LogOMElasticSearch
@@ -235,13 +242,8 @@ class LogOMElasticSearchForm(LogOMForm):
             'index_pattern': TextInput(attrs={'class': 'form-control'}),
             'uid': TextInput(attrs={'class': 'form-control'}),
             'pwd': TextInput(attrs={'class': 'form-control'}),
-            'tls_profile': Select(choices=TLSProfile.objects.all(), attrs={'class': 'form-control select2'}),
         }
         widgets.update(LogOMForm.Meta.widgets)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['tls_profile'].empty_label = "No TLS"
 
     def clean_index_pattern(self):
         field = self.cleaned_data.get('index_pattern')
