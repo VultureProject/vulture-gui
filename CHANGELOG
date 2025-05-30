@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [VULTURED] Delay option on api_request calls
+- [FRONTEND] Rsyslog queue settings
 
 
 ## [2.26.1] - 2025-05-21

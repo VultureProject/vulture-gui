@@ -38,6 +38,7 @@ from applications.logfwd.models import LogOM, LogOMMongoDB
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinBuffering
 from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
+from services.rsyslogd.models import RsyslogQueue
 from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, Node
 from applications.backend.models import Backend
@@ -105,9 +106,9 @@ REDIS_MODE_CHOICES = (
 )
 
 REDIS_STARTID_CHOICES = (
-    ('$',"New entries"),
+    ('$', "New entries"),
     ('-', "All entries"),
-    ('>',"Undelivered entries"),
+    ('>', "Undelivered entries"),
 )
 
 DARWIN_MODE_CHOICES = (
@@ -170,7 +171,7 @@ FRONTEND_PERMS = HAPROXY_PERMS
 UNIX_SOCKET_PATH = path_join(settings.SOCKETS_PATH, "rsyslog")
 LOG_API_PATH = path_join(settings.LOGS_PATH, "api_parser")
 
-class Frontend(models.Model):
+class Frontend(RsyslogQueue, models.Model):
     """ Model used to generate fontends configuration of HAProxy """
     """ Is that section enabled or disabled """
     enabled = models.BooleanField(
@@ -531,11 +532,6 @@ class Frontend(models.Model):
         default=False,
         help_text=_("Don't accept sessions if service is not ready"),
         verbose_name=_("Healthckeck service")
-    )
-    nb_workers = models.PositiveIntegerField(
-        default=8,
-        help_text=_("Maximum number of workers for rsyslog ruleset"),
-        verbose_name=_("Maximum parser workers")
     )
     mmdb_cache_size = models.PositiveIntegerField(
         default=0,
@@ -1845,6 +1841,7 @@ class Frontend(models.Model):
             'log_level': self.log_level,
             'log_condition': self.log_condition,
             'ruleset_name': self.get_ruleset(),
+            'ruleset_options': self.render_ruleset_options(),
             'parser_tag': self.parser_tag,
             'ratelimit_interval': self.ratelimit_interval,
             'ratelimit_burst': self.ratelimit_burst,
@@ -1866,7 +1863,6 @@ class Frontend(models.Model):
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
-            'nb_workers': self.nb_workers,
             'healthcheck_service': self.healthcheck_service,
             'mmdb_cache_size': self.mmdb_cache_size,
             'redis_batch_size': self.redis_batch_size,
@@ -2072,6 +2068,16 @@ class Frontend(models.Model):
             if log_om.enabled:
                 result += f"{log_om.generate_pre_conf(self.ruleset+'_garbage', frontend=self.name+'_garbage')}\n"
                 logger.info(f"[RENDER PRE RULESET FAILURE] {log_om}")
+        return result
+
+    def render_ruleset_options(self):
+        """ Render ruleset's options
+        :return  Str containing the rendered config
+        """
+        options_dict = self.get_rsyslog_queue_parameters()
+        if self.enable_disk_assist:
+            options_dict['filename'] = f"{self.get_ruleset()}_disk-queue"
+        result = " ".join(f'queue.{k}="{v}"' for k,v in options_dict.items())
         return result
 
     @property

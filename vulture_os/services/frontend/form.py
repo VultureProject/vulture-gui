@@ -37,9 +37,11 @@ from darwin.policy.models import DarwinPolicy
 from gui.forms.form_utils import NoValidationField
 from services.frontend.models import (Frontend, FrontendReputationContext, Listener, COMPRESSION_ALGO_CHOICES,
                                       LISTENING_MODE_CHOICES, LOG_LEVEL_CHOICES, MODE_CHOICES, DARWIN_MODE_CHOICES,
-                                      REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES, FILEBEAT_LISTENING_MODE,
-                                      FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES, get_available_timezones)
+                                      REDIS_MODE_CHOICES, REDIS_STARTID_CHOICES,
+                                      FILEBEAT_LISTENING_MODE, FILEBEAT_MODULE_LIST, SENTINEL_ONE_ACCOUNT_TYPE_CHOICES,
+                                      get_available_timezones)
 
+from services.rsyslogd.form import RsyslogQueueForm
 from services.rsyslogd.rsyslog import JINJA_PATH as JINJA_RSYSLOG_PATH
 from system.cluster.models import NetworkAddress
 from system.error_templates.models import ErrorTemplate
@@ -106,7 +108,7 @@ class FrontendReputationContextForm(ModelForm):
         return result
 
 
-class FrontendForm(ModelForm):
+class FrontendForm(RsyslogQueueForm, ModelForm):
     listeners = NoValidationField()
     headers = NoValidationField()
     reputation_ctx = NoValidationField()
@@ -211,7 +213,7 @@ class FrontendForm(ModelForm):
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst', 'expected_timezone',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
-                           'healthcheck_service', 'nb_workers', 'mmdb_cache_size', 'redis_batch_size', 'redis_use_local',
+                           'healthcheck_service', 'mmdb_cache_size','redis_batch_size', 'redis_use_local',
                            'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
                            'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
                            'api_parser_verify_ssl', 'api_parser_custom_certificate',
@@ -321,7 +323,7 @@ class FrontendForm(ModelForm):
 
     class Meta:
         model = Frontend
-        fields = ('enabled', 'tags', 'name', 'mode', 'enable_logging', 'log_level', 'log_condition', 'keep_source_fields', 'ruleset',
+        fields = ['enabled', 'tags', 'name', 'mode', 'enable_logging', 'log_level', 'log_condition', 'keep_source_fields', 'ruleset',
                   'listening_mode', 'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'custom_haproxy_conf',
                   'enable_cache', 'cache_total_max_size', 'cache_max_age',
                   'enable_compression', 'compression_algos', 'compression_mime_types', 'error_template',
@@ -331,7 +333,7 @@ class FrontendForm(ModelForm):
                   'https_redirect', 'log_forwarders_parse_failure', 'parser_tag',
                   'ratelimit_interval', 'ratelimit_burst', 'expected_timezone', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
-                  'healthcheck_service', 'nb_workers', 'mmdb_cache_size', 'redis_batch_size', 'redis_mode', 'redis_use_lpop',
+                  'healthcheck_service', 'mmdb_cache_size','redis_batch_size', 'redis_mode', 'redis_use_lpop',
                   'redis_server', 'redis_port', 'redis_key', 'redis_password', 'redis_stream_consumerGroup',
                   'redis_stream_consumerName', 'redis_stream_startID', 'redis_stream_acknowledge', 'redis_stream_reclaim_timeout',
                   'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
@@ -401,8 +403,8 @@ class FrontendForm(ModelForm):
                   "armis_centrix_host", "armis_centrix_secretkey", "armis_centrix_get_activity_logs",
                   "perception_point_x_ray_host", "perception_point_x_ray_token",
                   "extrahop_host", "extrahop_id", "extrahop_secret",
-                  "hornetsecurity_app_id", "hornetsecurity_token"
-                  )
+                  "hornetsecurity_app_id", "hornetsecurity_token",
+        ] + RsyslogQueueForm.Meta.fields
 
         widgets = {
             'enabled': CheckboxInput(attrs={'class': "js-switch"}),
@@ -455,7 +457,6 @@ class FrontendForm(ModelForm):
             'redis_stream_acknowledge': CheckboxInput(attrs={'class': 'js-switch'}),
             'redis_stream_reclaim_timeout': NumberInput(attrs={'class': 'form-control'}),
             'healthcheck_service': CheckboxInput(attrs={'class': 'js-switch'}),
-            'nb_workers': NumberInput(attrs={'class': 'form-control'}),
             'mmdb_cache_size': NumberInput(attrs={'class': 'form-control'}),
             'redis_batch_size': NumberInput(attrs={'class': 'form-control'}),
             'api_parser_use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
@@ -637,7 +638,7 @@ class FrontendForm(ModelForm):
             'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'hornetsecurity_app_id': TextInput(attrs={'class': 'form-control'}),
             'hornetsecurity_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-        }
+        } | RsyslogQueueForm.Meta.widgets
 
     def clean_name(self):
         """ HAProxy does not support space in frontend/listen name directive, replace them by _ """
@@ -738,12 +739,6 @@ class FrontendForm(ModelForm):
         if "[" in data and "]" in data:
             return ast.literal_eval(data)
         return data.split(',')
-
-    def clean_nb_workers(self):
-        data = self.cleaned_data.get('nb_workers')
-        if data == 0:
-            self.add_error('nb_workers', "Number of workers should be strictly positive")
-        return data
 
     def clean_mmdb_cache_size(self):
         data = self.cleaned_data.get('mmdb_cache_size')

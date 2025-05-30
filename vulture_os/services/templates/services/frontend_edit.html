@@ -480,17 +480,6 @@
                       <div class="row log-mode filebeat-mode">
                         <div class="col-md-12">
                           <div class="form-group">
-                            <label class="col-sm-4 control-label">{% translate "Max. number of rsyslog workers" %}</label>
-                            <div class="col-sm-5">
-                              {{form.nb_workers}}
-                              {{form.nb_workers.errors|safe}}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row log-mode filebeat-mode">
-                        <div class="col-md-12">
-                          <div class="form-group">
                             <label class="col-sm-4 control-label">{% translate "Size of mmdblookup cache" %}</label>
                             <div class="col-sm-5">
                               {{form.mmdb_cache_size}}
@@ -499,6 +488,175 @@
                           </div>
                         </div>
                       </div>
+                      <div class="row log-mode">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{{form.queue_type.label}}</label>
+                            <div class="col-sm-5">
+                              {{form.queue_type}}
+                              {{form.queue_type.errors|safe}}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div id="tab-queue">
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.queue_size.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.queue_size}}
+                                {{form.queue_size.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.dequeue_batch_size.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.dequeue_batch_size}}
+                                {{form.dequeue_batch_size.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.nb_workers.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.nb_workers}}
+                                {{form.nb_workers.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.new_worker_minimum_messages.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.new_worker_minimum_messages}}
+                                {{form.new_worker_minimum_messages.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.light_delay_mark.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.light_delay_mark}}
+                                {{form.light_delay_mark.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.full_delay_mark.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.full_delay_mark}}
+                                {{form.full_delay_mark.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.shutdown_timeout.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.shutdown_timeout}}
+                                {{form.shutdown_timeout.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row log-mode">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label class="col-sm-4 control-label">{{form.enable_disk_assist.label}}</label>
+                              <div class="col-sm-5">
+                                {{form.enable_disk_assist}}
+                                {{form.enable_disk_assist.errors|safe}}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div id="tab-disk">
+                          <div class="row log-mode">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.save_on_shutdown.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.save_on_shutdown}}
+                                  {{form.save_on_shutdown.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row log-mode">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.low_watermark.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.low_watermark}}
+                                  {{form.low_watermark.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row log-mode">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.high_watermark.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.high_watermark}}
+                                  {{form.high_watermark.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row log-mode">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.max_file_size.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.max_file_size}}
+                                  {{form.max_file_size.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row log-mode">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.max_disk_space.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.max_disk_space}}
+                                  {{form.max_disk_space.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row log-mode">
+                            <div class="col-md-12">
+                              <div class="form-group">
+                                <label class="col-sm-4 control-label">{{form.spool_directory.label}}</label>
+                                <div class="col-sm-5">
+                                  {{form.spool_directory}}
+                                  {{form.spool_directory.errors|safe}}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div> <!-- /.tab-disk -->
+                      </div> <!-- /.tab-queue -->
                       <div class="row log-mode listening-tcp">
                         <div class="col-md-12">
                           <div class="form-group">
