@@ -46,6 +46,8 @@ logger = logging.getLogger('api_parser')
 class NodeNotBootstraped(Exception):
     pass
 
+class EarlyTerminationWarning(Warning):
+    pass
 
 class ApiParser:
     def __init__(self, data):
