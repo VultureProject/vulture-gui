@@ -44,9 +44,6 @@ class GatewatcherAlertsParser(ApiParser):
     ALERTS_ENDPOINT = "/api/v1/alerts/"
     RAW_ALERTS_ENDPOINT = "/api/v1/raw-alerts/"
 
-    DEPRECATED_ALERTS_ENDPOINT = "/api/alerts/"
-    DEPRECATED_RAW_ALERTS_ENDPOINT = "/api/raw-alerts/"
-
     HEADERS = {
         "Content-Type": "application/json",
         'Accept': 'application/json'
@@ -83,7 +80,7 @@ class GatewatcherAlertsParser(ApiParser):
         if response.status_code == 404:
             logger.warning(f"[{__parser__}]:execute_query: 404 error at Gatewatcher API Call, content : {response.content}", extra={'frontend': str(self.frontend)})
             # The cause of the 404 error can be that the former endpoint us used
-            url = url.replace("/api/", "/api/v1/")
+            url = url.replace("/api/v1/", "/api/")
             response = self.session.get(
                 url,
                 params=params,
