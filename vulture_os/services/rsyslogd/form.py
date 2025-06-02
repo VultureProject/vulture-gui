@@ -66,6 +66,7 @@ class RsyslogQueueForm(ModelForm):
             'low_watermark',
             'max_file_size',
             'max_disk_space',
+            'checkpoint_interval',
             'spool_directory',
             ]
 
@@ -84,6 +85,7 @@ class RsyslogQueueForm(ModelForm):
             'low_watermark': NumberInput(attrs={'class': 'form-control', 'placeholder': '70% of queue.size'}),
             'max_file_size': NumberInput(attrs={'class': 'form-control', 'placeholder': '1MB/16MB'}),
             'max_disk_space': NumberInput(attrs={'class': 'form-control', 'placeholder': 'Unlimited'}),
+            'checkpoint_interval': NumberInput(attrs={'class': 'form-control', 'placeholder': 'None'}),
             'spool_directory': TextInput(attrs={'class': 'form-control', 'placeholder': '/var/tmp'}),
         }
 

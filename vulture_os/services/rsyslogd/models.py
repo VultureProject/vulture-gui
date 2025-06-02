@@ -182,6 +182,7 @@ class RsyslogQueue(models.Model):
         null=True,
         help_text=_("To improve reliability, write/update bookkeeping information every Nth record handled"),
         verbose_name=_("Update bookkeeping information every Nth entry"),
+        validators=[MinValueValidator(0)]
     )
     spool_directory = models.TextField(
         blank=True,
