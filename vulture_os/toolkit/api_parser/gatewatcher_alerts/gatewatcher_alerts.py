@@ -78,9 +78,10 @@ class GatewatcherAlertsParser(ApiParser):
             verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
         )
         if response.status_code == 404:
-            logger.warning(f"[{__parser__}]:execute_query: 404 error at Gatewatcher API Call, content : {response.content}", extra={'frontend': str(self.frontend)})
-            # The cause of the 404 error can be that the former endpoint us used
+            logger.warning(f"[{__parser__}]:execute_query: 404 error at Gatewatcher API Call, content : {response.content}, trying again with old endpoint version...", extra={'frontend': str(self.frontend)})
+            # The cause of the 404 error can be that the former endpoint must be used
             url = url.replace("/api/v1/", "/api/")
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {params}", extra={'frontend': str(self.frontend)})
             response = self.session.get(
                 url,
                 params=params,

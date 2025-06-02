@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [BEYONDTRUST_REPORTINGS] Fix parsing of support session logs
 - [API_PARSER] [PROOFPOINT_POD] Increment the last_api_call of 1 second to avoid duplication
 - [API_PARSER] [PERCEPTION_POINT_X_RAY] Improve error message
+- [API_PARSER] [GATEWATCHER_ALERTS] Update endpoint of the API
 
 
 ## [2.26.1] - 2025-05-21
@@ -42,7 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SERVICES] Prevent errors when deleted configuration files do not exist
 - [CLUSTER_JOIN] Fix writing of certificates on new node's disk
 - [REDIS] Use proper Sentinel client when updating service
-- [API_PARSER] [GATEWATCHER_ALERTS] Update endpoint of the API
 ### Changed
 - [API_PARSER] [CROWDSTRIKE] Evolve collector to use API v2 instead of v1
 - [API_PARSER] [ARMIS_CENTRIX] Collect at max 1h of range to avoid API taking too long to answer
