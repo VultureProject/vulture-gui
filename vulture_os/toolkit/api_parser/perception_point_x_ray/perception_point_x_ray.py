@@ -85,7 +85,7 @@ class PerceptionPointXRayParser(ApiParser):
                 self.evt_stop.wait(10.0)
                 continue
             except exceptions.HTTPError as err:
-                if err.response:
+                if err.response is not None:
                     if err.response.status_code in (401, 403):
                         logger.error(f"[{__parser__}]:__execute_query: Received a 401/403,"
                                     " token is not (longer) valid!",
