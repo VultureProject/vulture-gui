@@ -121,8 +121,8 @@ class RsyslogQueueForm(ModelForm):
                     self.add_error("high_watermark", "Queue size needs to be set if a watermark is set")
                     self.add_error("low_watermark", "Queue size needs to be set if a watermark is set")
 
-                high_watermark = cleaned_data.get('high_watermark') or 90
                 low_watermark = cleaned_data.get('low_watermark') or 70
+                high_watermark = cleaned_data.get('high_watermark') or 90
 
                 if high_watermark < low_watermark:
                     self.add_error("high_watermark", "High watermark is lower than the low watermark value")

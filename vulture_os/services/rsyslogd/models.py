@@ -149,15 +149,15 @@ class RsyslogQueue(models.Model):
         verbose_name=_("Save remaining queue logs on shutdown")
     )
     high_watermark = models.PositiveIntegerField(
+        null=True,
         blank=True,
-        default=90,
         help_text=_("Write logs on disk if size of queue reaches this threshold"),
         verbose_name=_("High watermark for disk queuing (between 1 and 99%)"),
         validators=[MinValueValidator(1), MaxValueValidator(99)]
     )
     low_watermark = models.PositiveIntegerField(
+        null=True,
         blank=True,
-        default=70,
         help_text=_("Stop using disk when queue size falls below this threshold"),
         verbose_name=_("Low watermark for disk queuing (between 1 and 99%)"),
         validators=[MinValueValidator(1), MaxValueValidator(99)]
@@ -175,7 +175,7 @@ class RsyslogQueue(models.Model):
         null=True,
         help_text=_("Limit the maximum disk space used by the queue in MB"),
         verbose_name=_("Max total disk space used by the queue (in MB)"),
-        validators=[MinValueValidator(1)]
+        validators=[MinValueValidator(0)]
     )
     checkpoint_interval = models.PositiveIntegerField(
         blank=True,
