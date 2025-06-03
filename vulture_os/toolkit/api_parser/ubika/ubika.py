@@ -22,7 +22,7 @@ __version__ = "1.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
 __doc__ = 'Ubika API Parser toolkit'
-__parser__ = 'Ubika'
+__parser__ = 'UBIKA'
 
 
 from requests import HTTPError, ReadTimeout, get, post
@@ -40,7 +40,7 @@ logger = logging.getLogger('api_parser')
 
 
 
-class CrowdstrikeAPIError(Exception):
+class UbikaParserError(Exception):
     pass
 
 class UbikaParser(ApiParser):
@@ -48,15 +48,16 @@ class UbikaParser(ApiParser):
         super().__init__(data)
 
         self.ubika_base_refresh_token = data["ubika_base_refresh_token"]
-        self.ubika_namespaces = data.get("ubika_namespaces", "").split(",")
+        self.ubika_namespaces = data.get("ubika_namespaces", [])
 
-        self.ubika_access_token = data.get("ubika_access_token", "")
-        self.ubika_refresh_token = data.get("ubika_refresh_token", "")
-        self.ubika_access_expires_at = data.get("ubika_access_expires_at", 0)
+        self.ubika_access_token = data.get("ubika_access_token")
+        self.ubika_refresh_token = data.get("ubika_refresh_token")
+        self.ubika_access_expires_at = data.get("ubika_access_expires_at")
 
-        self.login_endpoint = "https://login.ubika.io/auth/realms/main/protocol/openid-connect/token"
-        self.security_events_endpoint = "https://api.ubika.io/rest/logs.ubika.io/v1/ns/__NAMESPACE__/security-events"
-        self.traffic_logs_endpoint = "https://api.ubika.io/rest/logs.ubika.io/v1/ns/__NAMESPACE__/traffic-logs"
+        self.LOGIN_ENDPOINT = "https://login.ubika.io/auth/realms/main/protocol/openid-connect/token"
+        self.BASE_LOGS_ENDPOINT = "https://api.ubika.io/rest/logs.ubika.io/v1/ns/"
+
+        self.LOGS_KIND = ["security", "traffic"]
 
 
     def login(self) -> None:
@@ -64,33 +65,35 @@ class UbikaParser(ApiParser):
             "client_id": "rest-api",
             "grant_type": "refresh_token"
         }
-        if not self.ubika_refresh_token: # this case happened only for the initial collector instanciation
+        if not self.ubika_refresh_token: # this case happened only for the initial collector instanciation or on log collection pause for more than 30min
             req["refresh_token"] = self.ubika_base_refresh_token
         else:
             req["refresh_token"] = self.ubika_refresh_token
 
         resp = self.__execute_query(
             method = "POST",
-            url = self.login_endpoint,
+            url = self.LOGIN_ENDPOINT,
             data = req
         )
 
-        self.ubika_refresh_token = resp.get('refresh_token', "")
-        self.ubika_access_token = resp.get('access_token', "")
-        self.ubika_access_expires_at = int(timezone.now().timestamp()) + resp.get('expires_in', 0)
+        self.ubika_refresh_token = resp['refresh_token']
+        self.ubika_access_token = resp['access_token']
 
-        assert self.ubika_refresh_token, f"[{__parser__}][login]: Failed to get ubika_refresh_token -- {resp}"
-        assert self.ubika_access_token, f"[{__parser__}][login]: Failed to get ubika_access_token -- {resp}"
-        assert self.ubika_access_expires_at, f"[{__parser__}][login]: Failed to get refresh ubika_access_expires_at -- {resp}"
+        current_time = timezone.now()
+        self.ubika_access_expires_at = current_time + timedelta(seconds=resp.get('expires_in', 0))
+        assert self.ubika_access_expires_at > current_time, f"[{__parser__}][login]: Failed to get refresh ubika_access_expires_at -- {resp}"
 
         logger.info(f"[{__parser__}][login]: Successfully re-generate access / refresh token", extra={'frontend': str(self.frontend)})
 
 
     def __execute_query(self, method: str, url: str, data: dict) -> dict:
-        retry = 3
+        retry = 0
 
-        while retry > 0:
+        while retry < 3:
             try:
+                msg = f"[{__parser__}][__execute_query]: Querying {url} with method {method} and data {data}"
+                logger.info(f"{msg}", extra={'frontend': str(self.frontend)})
+
                 if method == "GET":
                     resp = get(
                         url = url,
@@ -110,42 +113,30 @@ class UbikaParser(ApiParser):
                         timeout = 10
                     )
 
-                resp_json = resp.json()
+                resp.raise_for_status()
+                return resp.json()
 
             except JSONDecodeError as e:
                 msg = f"[{__parser__}][__execute_query]: Failed to decode json response - {resp.status_code} -- {resp}"
-                logger.exception(f"{msg}", extra={'frontend': str(self.frontend)})
-                raise e
+                logger.warning(f"{msg}", extra={'frontend': str(self.frontend)})
             except ConnectionError as e:
                 msg = f"[{__parser__}][__execute_query]: Connection failed (ConnectionError) -- {resp}"
-                logger.exception(f'{msg}', extra={'frontend': str(self.frontend)})
-                raise e
+                logger.warning(f'{msg}', extra={'frontend': str(self.frontend)})
             except ReadTimeout as e:
                 msg = f"[{__parser__}][__execute_query]: Connection failed (ReadTimeout) {url} -- {resp}"
-                logger.exception(f'{msg}', extra={'frontend': str(self.frontend)})
-                raise e
+                logger.warning(f'{msg}', extra={'frontend': str(self.frontend)})
             except HTTPError as e:
-                msg = f"[{__parser__}][__execute_query]: Connection failed (HTTPError)"
-                logger.exception(f'{msg}', extra={'frontend': str(self.frontend)})
-                raise e
-
-            if resp.status_code not in [200, 201]:
-                msg = f"[{__parser__}][__execute_query]: Status code not in [200, 201]. Code {resp.status_code} -- {resp.content}"
-                logger.exception(f'{msg}', extra={'frontend': str(self.frontend)})
-                if resp.status_code == 401:
+                if e.response and e.response.status_code == 401:
                     self.login()
-                retry -= 1
+                    retry += 1
+                    continue
+                msg = f"[{__parser__}][__execute_query]: Connection failed (HTTPError)"
+                logger.warning(f'{msg}', extra={'frontend': str(self.frontend)})
+                raise UbikaParserError(e)
 
-            # grpc_error_code = resp_json.get('code')
-            # if grpc_error_code:
-                # grpc_error_msg = resp_json.get('message')
-                # if grpc_error_code == 16 and grpc_error_msg == "token has invalid claims: token is expired":
-                    # self.login()
+            retry += 1
 
-            break # no error we break from the loop
-
-        return resp_json
-
+        raise UbikaParserError(f"[{__parser__}][__execute_query]: The maximum retry count has been exceeded by attempting to make more than three unsuccessful requests")
 
     def get_logs(self, url: str, since: datetime, to: datetime) -> list:
         logs = []
@@ -174,8 +165,7 @@ class UbikaParser(ApiParser):
             logger.debug(f"[{__parser__}][get_logs]: Paginate with url = {url}, last_save_token = {last_save_token}, next_token = {next_token}", extra={'frontend': str(self.frontend)})
 
             if next_token != last_save_token:
-                newLogs = resp.get('spec', {}).get('items', [])
-                if newLogs:
+                if newLogs := resp.get('spec', {}).get('items', []):
                     logs.extend(newLogs)
                 last_save_token = next_token
             else:
@@ -184,46 +174,42 @@ class UbikaParser(ApiParser):
         return logs
 
     def format_log(self, log: dict) -> str:
-        request_headers : list = log.get('request', {}).get('headers', [])
         new_request_headers = {}
-        if request_headers:
+        if request_headers := log.get('request', {}).get('headers', []):
             for header in request_headers:
-                new_key = header.get('key').lower()
+                new_key = header.get('key', '').lower()
                 new_value = header.get('value')
                 if new_key and new_value:
                     new_request_headers[new_key] = new_value
         log['request']['headers'] = new_request_headers
 
-        request_cookies : list = log.get('request', {}).get('cookies', [])
         new_request_cookies = {}
-        if request_cookies:
+        if request_cookies := log.get('request', {}).get('cookies', []):
             for cookie in request_cookies:
-                new_key = cookie.get('key').lower()
+                new_key = cookie.get('key', '').lower()
                 new_value = cookie.get('value')
                 if new_key and new_value:
                     new_request_cookies[new_key] = new_value
         log['request']['cookies'] = new_request_cookies
 
-        context_reaction : str = log.get('context', {}).get('reaction')
-        if context_reaction:
+        if context_reaction := log.get('context', {}).get('reaction', ''):
             log['context']['reaction'] = context_reaction.lower()
 
         return dumps(log)
 
     def test(self):
+        if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
+            self.login()
+
         logs = []
 
         try:
-            if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1)).timestamp()):
-                self.login()
-
             namespace = self.ubika_namespaces[0]
-            for kind in ["security", "traffic"]:
+            for kind in self.LOGS_KIND:
                 if kind == "security":
-                    url = self.security_events_endpoint
+                    url = self.BASE_LOGS_ENDPOINT + namespace + "/security-events"
                 elif kind == "traffic":
-                    url = self.traffic_logs_endpoint
-                url = url.replace("__NAMESPACE__", namespace)
+                    url = self.BASE_LOGS_ENDPOINT + namespace + "/traffic-logs"
 
                 logger.info(f"[{__parser__}][test]:Running tests...", extra={'frontend': str(self.frontend)})
 
@@ -248,16 +234,15 @@ class UbikaParser(ApiParser):
             }
 
     def execute(self):
-        for namespace in self.ubika_namespaces:
-            if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1)).timestamp()):
-                self.login()
+        if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
+            self.login()
 
-            for kind in ["security", "traffic"]:
+        for namespace in self.ubika_namespaces:
+            for kind in self.LOGS_KIND:
                 if kind == "security":
-                    url = self.security_events_endpoint
+                    url = self.BASE_LOGS_ENDPOINT + namespace + "/security-events"
                 elif kind == "traffic":
-                    url = self.traffic_logs_endpoint
-                url = url.replace("__NAMESPACE__", namespace)
+                    url = self.BASE_LOGS_ENDPOINT + namespace + "/traffic-logs"
 
                 current_time = timezone.now()
                 to = None
@@ -268,7 +253,7 @@ class UbikaParser(ApiParser):
 
                     logs = self.get_logs(url, since, to)
 
-                    logger.info(f"[{__parser__}][get_logs]: Succesfully gets {len(logs)} for url = {url}; from {since} to {to}", extra={'frontend': str(self.frontend)})
+                    logger.info(f"[{__parser__}][get_logs]: Successfully got {len(logs)} logs for namespace '{namespace}', for kind '{kind}', from {since} to {to}", extra={'frontend': str(self.frontend)})
 
                     self.write_to_file([self.format_log(log) for log in logs])
                     self.update_lock()
