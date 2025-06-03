@@ -76,12 +76,13 @@ class UbikaParser(ApiParser):
             data = req
         )
 
-        self.ubika_access_token = resp['access_token']
-        self.ubika_refresh_token = resp['refresh_token']
-
-        current_time = timezone.now()
-        self.ubika_access_expires_at = current_time + timedelta(seconds=resp['expires_in'])
-        assert self.ubika_access_expires_at > current_time, f"[{__parser__}][login]: Failed to get refresh ubika_access_expires_at -- {resp}"
+        try:
+            self.ubika_access_token = resp['access_token']
+            self.ubika_refresh_token = resp['refresh_token']
+            current_time = timezone.now()
+            self.ubika_access_expires_at = current_time + timedelta(seconds=resp['expires_in'])
+        except KeyError:
+            raise UbikaParserError("Could not get necessary info while logging in")
 
         self.frontend.ubika_access_token = self.ubika_access_token
         self.frontend.ubika_refresh_token = self.ubika_refresh_token
