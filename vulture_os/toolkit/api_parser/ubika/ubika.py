@@ -76,17 +76,25 @@ class UbikaParser(ApiParser):
             data = req
         )
 
-        self.ubika_refresh_token = resp['refresh_token']
         self.ubika_access_token = resp['access_token']
+        self.ubika_refresh_token = resp['refresh_token']
 
         current_time = timezone.now()
-        self.ubika_access_expires_at = current_time + timedelta(seconds=resp.get('expires_in', 0))
+        self.ubika_access_expires_at = current_time + timedelta(seconds=resp['expires_in'])
         assert self.ubika_access_expires_at > current_time, f"[{__parser__}][login]: Failed to get refresh ubika_access_expires_at -- {resp}"
+
+        self.frontend.ubika_access_token = self.ubika_access_token
+        self.frontend.ubika_refresh_token = self.ubika_refresh_token
+        self.frontend.ubika_access_expires_at = self.ubika_access_expires_at
+        self.frontend.save(update_fields=['ubika_access_token', 'ubika_refresh_token', 'ubika_access_expires_at'])
 
         logger.info(f"[{__parser__}][login]: Successfully re-generate access / refresh token", extra={'frontend': str(self.frontend)})
 
 
     def __execute_query(self, method: str, url: str, data: dict) -> dict:
+        if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
+            self.login()
+
         retry = 0
 
         while retry < 3:
@@ -198,9 +206,6 @@ class UbikaParser(ApiParser):
         return dumps(log)
 
     def test(self):
-        if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
-            self.login()
-
         logs = []
 
         try:
@@ -234,9 +239,6 @@ class UbikaParser(ApiParser):
             }
 
     def execute(self):
-        if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
-            self.login()
-
         for namespace in self.ubika_namespaces:
             for kind in self.LOGS_KIND:
                 if kind == "security":
