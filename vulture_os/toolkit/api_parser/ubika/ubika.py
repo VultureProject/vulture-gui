@@ -60,6 +60,13 @@ class UbikaParser(ApiParser):
         self.LOGS_KIND = ["security", "traffic"]
 
 
+    def _save_frontend_attributes(self):
+        self.frontend.ubika_access_token = self.ubika_access_token
+        self.frontend.ubika_refresh_token = self.ubika_refresh_token
+        self.frontend.ubika_access_expires_at = self.ubika_access_expires_at
+        self.frontend.save(update_fields=['ubika_access_token', 'ubika_refresh_token', 'ubika_access_expires_at'])
+
+
     def login(self) -> None:
         req = {
             "client_id": "rest-api",
@@ -84,10 +91,7 @@ class UbikaParser(ApiParser):
         except KeyError:
             raise UbikaParserError("Could not get necessary info while logging in")
 
-        self.frontend.ubika_access_token = self.ubika_access_token
-        self.frontend.ubika_refresh_token = self.ubika_refresh_token
-        self.frontend.ubika_access_expires_at = self.ubika_access_expires_at
-        self.frontend.save(update_fields=['ubika_access_token', 'ubika_refresh_token', 'ubika_access_expires_at'])
+        self._save_frontend_attributes()
 
         logger.info(f"[{__parser__}][login]: Successfully re-generate access / refresh token", extra={'frontend': str(self.frontend)})
 
