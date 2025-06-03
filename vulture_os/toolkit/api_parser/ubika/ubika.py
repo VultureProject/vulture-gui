@@ -97,9 +97,6 @@ class UbikaParser(ApiParser):
 
 
     def __execute_query(self, method: str, url: str, data: dict) -> dict:
-        if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
-            self.login()
-
         retry = 0
 
         while retry < 3:
@@ -140,6 +137,7 @@ class UbikaParser(ApiParser):
                 logger.warning(f'{msg}', extra={'frontend': str(self.frontend)})
             except HTTPError as e:
                 if e.response and e.response.status_code == 401:
+                    self.ubika_access_token, self.ubika_access_expires_at = None, None
                     self.login()
                     retry += 1
                     continue
@@ -214,6 +212,9 @@ class UbikaParser(ApiParser):
         logs = []
 
         try:
+            if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
+                self.login()
+
             namespace = self.ubika_namespaces[0]
             for kind in self.LOGS_KIND:
                 if kind == "security":
@@ -244,6 +245,9 @@ class UbikaParser(ApiParser):
             }
 
     def execute(self):
+        if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
+            self.login()
+
         for namespace in self.ubika_namespaces:
             for kind in self.LOGS_KIND:
                 if kind == "security":
