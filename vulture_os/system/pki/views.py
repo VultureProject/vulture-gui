@@ -296,35 +296,20 @@ def tls_profile_edit(request, object_id=None, api=False):
             logger.info("TLSProfile '{}' write on disk requested.".format(tls_profile.name))
 
             """ We need to reload all Frontend's rsyslog configuration that uses
-                the related  """
-            updated_nodes = set()
-            for node in Node.objects.all():
-                frontends = Frontend.objects.filter(
-                    Q(enabled=True) &
-                    (
-                        Q(log_forwarders__in=list(tls_profile.logomelasticsearch_set.all())) |
-                        Q(log_forwarders_parse_failure__in=list(tls_profile.logomelasticsearch_set.all()))
-                    )
-                ).distinct()
-                for frontend in frontends:
-                    updated_nodes.add(node)
-                    node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
+                the related profile """
+            for frontend in Frontend.objects.filter(
+                Q(log_forwarders__in=list(tls_profile.logomelasticsearch_set.all())) |
+                Q(log_forwarders_parse_failure__in=list(tls_profile.logomelasticsearch_set.all()))).distinct():
+                frontend.reload_conf()
+                logger.info("LogOM Elasticsearch confs reloaded")
 
-            for node in updated_nodes:
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+            for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
+                frontend.reload_conf()
+                logger.info("Frontend confs reloaded")
 
-            if tls_profile.listener_set.exists() or tls_profile.server_set.exists():
-                updated_nodes = set()
-                for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
-                    updated_nodes.update(frontend.reload_conf())
-                    logger.info("Frontend confs reloaded")
-
-                for backend in set(server.backend for server in tls_profile.server_set.all()):
-                    updated_nodes.update(Node.objects.all())
-                    logger.info("Backend confs reloaded")
-
-                for node in updated_nodes:
-                    node.api_request("services.haproxy.haproxy.reload_service", run_delay=10)
+            for backend in set(server.backend for server in tls_profile.server_set.all()):
+                backend.reload_conf()
+                logger.info("Backend confs reloaded")
 
         except VultureSystemConfigError as e:
             """ If we get here, problem occurred during save_conf, after save """
