@@ -175,7 +175,7 @@ class CiscoUmbrellaParser(ApiParser):
             # When there are more than 15000 logs, last_api_call is the timestamp of the last log
             if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX + self.LIMIT_MAX:
                 last_timestamp = max(log['timestamp'] for log in logs)
-                since = datetime.fromtimestamp(int(last_timestamp) / 1000, tz=timezone.utc)
+                since = datetime.fromtimestamp(int(last_timestamp) / 1000, tz=timezone.now().astimezone().tzinfo)
             else:
                 # All logs have been recovered, the parser can be stopped
                 break
@@ -183,6 +183,6 @@ class CiscoUmbrellaParser(ApiParser):
         self.frontend.last_api_call = to
         self.frontend.cisco_umbrella_access_token = self.cisco_umbrella_access_token
         self.frontend.cisco_umbrella_expires_at = self.cisco_umbrella_expires_at
-        self.frontend.save()
+        self.frontend.save(update_fields=['last_api_call', 'cisco_umbrella_access_token', 'cisco_umbrella_expires_at'])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
