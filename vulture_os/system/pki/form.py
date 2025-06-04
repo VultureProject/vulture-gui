@@ -156,14 +156,6 @@ class TLSProfileForm(ModelForm):
             self.add_error('cipher_suite', "Invalid cipher suite")
         return value
 
-    def clean_x509_certificate(self):
-        """ Verify x509_certificate selected """
-        x509_certificate = self.cleaned_data.get('x509_certificate')
-        if x509_certificate is None and \
-        (self.instance.listener_set.exists() or self.instance.server_set.exists()):
-            raise ValidationError("TLS Profiles used by listeners/backends need a certificate.")
-        return x509_certificate
-
     def clean(self):
         """ Verify if ca_cert is filled-in if verify_client is not "none" """
         cleaned_data = super().clean()
