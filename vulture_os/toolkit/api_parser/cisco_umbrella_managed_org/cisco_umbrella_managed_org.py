@@ -118,6 +118,54 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
                 'cisco_umbrella_managed_org_parent_expires_at'
             ])
 
+
+    def _get_customers(self, timeout : int = 10) -> list:
+        if not self.cisco_umbrella_managed_org_parent_access_token or not self.cisco_umbrella_managed_org_parent_expires_at or (self.cisco_umbrella_managed_org_parent_expires_at - timedelta(seconds=10) < timezone.now()):
+            logger.info(f"[{__parser__}]: Updating main access token...", extra={'frontend': str(self.frontend)})
+            self._update_parent_token()
+
+        logger.info(f"[{__parser__}]: Getting the list of organisation id", extra={'frontend': str(self.frontend)})
+        try:
+            response = self._execute_query(
+                url = self.ORGANIZATIONS_URL,
+                timeout = timeout,
+                additional_headers = {'Authorization': f"Bearer {self.cisco_umbrella_managed_org_parent_access_token}"}
+            )
+        except requests.HTTPError as e:
+            error_code = ""
+            error_str = str(e)
+            if e.response:
+                error_code = str(e.response.status_code)
+                error_str = e.response.content
+
+            logger.error(f"[{__parser__}]:[_get_customers]: Error {error_code} while trying to get IDs: {error_str}", extra={'frontend': str(self.frontend)})
+            raise CiscoUmbrellaManagedOrgAPIError("Failed to get customer's IDs")
+
+        available_customers = list()
+        for customer in response:
+            available_customers.append({"id": str(customer.get("customerId", "")), "name": str(customer.get("customerName", ""))})
+        available_customers_ids = [customer['id'] for customer in available_customers]
+        logger.info(f"[{__parser__}]:[_get_customers]: Available Customers ids are {available_customers_ids}", extra={'frontend': str(self.frontend)})
+
+        if isinstance(self.cisco_umbrella_managed_org_customers_id, list): # for execute() function
+            selected_customer_ids = set(self.cisco_umbrella_managed_org_customers_id)
+            customers_ids = selected_customer_ids.intersection(available_customers_ids)
+        elif isinstance(self.cisco_umbrella_managed_org_customers_id, str): # for test() function we must check as the type of arg is a string instead of a list
+            selected_customer_ids = set(self.cisco_umbrella_managed_org_customers_id.split(","))
+            customers_ids = selected_customer_ids.intersection(available_customers_ids)
+        else:
+            customers_ids = available_customers_ids
+        logger.info(f"[{__parser__}]:[_get_customers]: Selected Customers ids are {customers_ids}", extra={'frontend': str(self.frontend)})
+
+        # filters available customers
+        customers = []
+        for customer_id in customers_ids:
+            for customer in available_customers:
+                if customer_id == customer.get('id'):
+                    customers.append(customer)
+
+        return customers
+
     def _update_customer_token(self, customer_id: str) -> None:
         logger.info(f"[{__parser__}]: Getting a new authentication token for customer {customer_id}", extra={'frontend': str(self.frontend)})
 
@@ -148,53 +196,6 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
         if self.frontend:
             self.frontend.cisco_umbrella_managed_org_customers_tokens[customer_id] = deepcopy(self.cisco_umbrella_managed_org_customers_tokens[customer_id])
             self.frontend.save(update_fields=['cisco_umbrella_managed_org_customers_tokens'])
-
-    def _get_customers(self, timeout : int = 10) -> list:
-        if not self.cisco_umbrella_managed_org_parent_access_token or not self.cisco_umbrella_managed_org_parent_expires_at or (self.cisco_umbrella_managed_org_parent_expires_at - timedelta(seconds=10) < timezone.now()):
-            logger.info(f"[{__parser__}]: Updating main access token...", extra={'frontend': str(self.frontend)})
-            self._update_parent_token()
-
-        logger.info(f"[{__parser__}]: Getting the list of organisation id", extra={'frontend': str(self.frontend)})
-        try:
-            response = self._execute_query(
-                url = self.ORGANIZATIONS_URL,
-                timeout = timeout,
-                additional_headers = {'Authorization': f"Bearer {self.cisco_umbrella_managed_org_parent_access_token}"}
-            )
-        except requests.HTTPError as e:
-            error_code = ""
-            error_str = str(e)
-            if e.response:
-                error_code = str(e.response.status_code)
-                error_str = e.response.content
-
-            logger.error(f"[{__parser__}]:[_get_customers]: Error {error_code} while trying to get IDs: {error_str}", extra={'frontend': str(self.frontend)})
-            raise CiscoUmbrellaManagedOrgAPIError("Failed to get customer's IDs")
-
-        available_customers = list()
-        for customer in response:
-            available_customers.append({"id": str(customer.get("customerId", "")), "name": str(customer.get("customerName", ""))})
-        available_customers_ids = [customer['id'] for customer in available_customers]
-        logger.info(f"[{__parser__}]:test: Available Customers ids are {available_customers_ids}", extra={'frontend': str(self.frontend)})
-
-        if isinstance(self.cisco_umbrella_managed_org_customers_id, list):
-            selected_customer_ids = set(self.cisco_umbrella_managed_org_customers_id)
-            customers_ids = selected_customer_ids.intersection(available_customers_ids)
-        elif isinstance(self.cisco_umbrella_managed_org_customers_id, str):
-            selected_customer_ids = set(self.cisco_umbrella_managed_org_customers_id.split(","))
-            customers_ids = selected_customer_ids.intersection(available_customers_ids)
-        else:
-            customers_ids = available_customers_ids
-        logger.info(f"[{__parser__}]:test: Selected Customers ids are {customers_ids}", extra={'frontend': str(self.frontend)})
-
-        # filters available customers
-        customers = []
-        for customer_id in customers_ids:
-            for customer in available_customers:
-                if customer_id == customer.get('id'):
-                    customers.append(customer)
-
-        return customers
 
     def test(self) -> dict:
         result = []
