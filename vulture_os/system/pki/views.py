@@ -38,7 +38,7 @@ from services.frontend.models import Frontend
 from system.exceptions import VultureSystemConfigError
 from system.pki.form import TLSProfileForm, X509ExternalCertificateForm, X509InternalCertificateForm
 from system.pki.models import CIPHER_SUITES, PROTOCOLS_HANDLER, TLSProfile, X509Certificate
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
 
 # Required exceptions imports

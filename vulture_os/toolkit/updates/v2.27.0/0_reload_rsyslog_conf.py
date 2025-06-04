@@ -35,6 +35,7 @@ django.setup()
 
 from django.db.models import Q
 from system.cluster.models import Cluster
+from services.frontend.models import Frontend
 from applications.logfwd.models import LogOMElasticSearch
 
 if not Cluster.is_node_bootstrapped():
@@ -47,18 +48,16 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            print("Building frontend configurations using an Elasticsearch forwarder...")
+            print("Rebuilding Frontend configurations using an Elasticsearch forwarder...")
             logfwds = LogOMElasticSearch.objects.all()
             frontends = set()
             for logfwd in logfwds:
-                frontends.update(logfwd.frontend_set.filter(enabled=True))
+                frontends.update(logfwd.frontend_set.all())
             for frontend in frontends:
-                node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
-
-            node.api_request("services.rsyslogd.rsyslog.restart_service")
+                frontend.reload_conf()
 
         except Exception as e:
-            print(f"Failed to generate DBs: {e}")
+            print(f"Failed to rebuild Frontends: {e}")
             print("Please relaunch this script after solving the issue.")
 
         print("Done.")

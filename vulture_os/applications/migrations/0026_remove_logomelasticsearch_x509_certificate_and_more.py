@@ -41,7 +41,7 @@ def inject_tls_profile(apps, schema_editor):
     logomelasticsearch = logomelasticsearch_model.objects.using(db_alias)
 
     for logom in logomelasticsearch.all():
-        if new_profiles[logom.id]:
+        if logom.id in new_profiles:
             # inject the new tls_profile
             logom.tls_profile = new_profiles[logom.id]
             logom.save()
