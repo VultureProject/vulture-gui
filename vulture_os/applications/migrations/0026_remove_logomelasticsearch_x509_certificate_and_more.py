@@ -7,43 +7,53 @@ import django.db.models.deletion
 existing_certificates = {}
 new_profiles = {}
 
+
 def save_x509_certificate(apps, schema_editor):
-    logomelasticsearch_model = apps.get_model("applications", "logomelasticsearch")
     db_alias = schema_editor.connection.alias
+    logomelasticsearch_model = apps.get_model("applications", "logomelasticsearch")
     logomelasticsearch = logomelasticsearch_model.objects.using(db_alias)
 
     for logom in logomelasticsearch.filter(x509_certificate__isnull=False):
         existing_certificates[logom.id] = logom.x509_certificate
 
+
 def create_tls_profile(apps, schema_editor):
-    tls_profile_model = apps.get_model("system", "tlsprofile")
     db_alias = schema_editor.connection.alias
+    tls_profile_model = apps.get_model("system", "tlsprofile")
     tls_profile = tls_profile_model.objects.using(db_alias)
 
     for id, certificate in existing_certificates.items():
-        if certificate.is_ca_cert() is True:
-            new_profile, created = tls_profile.get_or_create(
-                name=f"TLS Profile {certificate}",
-                verify_client="required",
-                ca_cert=certificate
-            )
+        if certificate.is_ca:
+            if not tls_profile.filter(verify_client__in=["required", "optional"], ca_cert=certificate).exists():
+                new_profiles[id] = tls_profile.create(
+                    name=f"TLS Profile {certificate.name}",
+                    verify_client="required",
+                    ca_cert=certificate,
+                )
+            else:
+                new_profiles[id] = tls_profile.filter(verify_client__in=["required", "optional"], ca_cert=certificate).last()
         else:
-            new_profile, created = tls_profile.get_or_create(
-                name=f"TLS Profile {certificate}",
-                x509_certificate=certificate
-            )
-        new_profile.save_conf()
-        new_profiles[id] = new_profile
+            if not tls_profile.filter(x509_certificate=certificate).exists():
+                new_profiles[id] = tls_profile.create(
+                    name=f"TLS Profile {certificate.name}",
+                    x509_certificate=certificate,
+                )
+            else:
+                new_profiles[id] = tls_profile.filter(x509_certificate=certificate).last()
+
 
 def inject_tls_profile(apps, schema_editor):
-    logomelasticsearch_model = apps.get_model("applications", "logomelasticsearch")
     db_alias = schema_editor.connection.alias
+    logomelasticsearch_model = apps.get_model("applications", "logomelasticsearch")
     logomelasticsearch = logomelasticsearch_model.objects.using(db_alias)
+    tls_profile_model = apps.get_model("system", "tlsprofile")
+    tls_profile = tls_profile_model.objects.using(db_alias)
 
     for logom in logomelasticsearch.all():
         if logom.id in new_profiles:
+            tls = tls_profile.get(pk=new_profiles[logom.id].pk)
             # inject the new tls_profile
-            logom.tls_profile = new_profiles[logom.id]
+            logom.tls_profile = tls
             logom.save()
 
 
