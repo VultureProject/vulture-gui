@@ -2501,6 +2501,22 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-12 api_clients_row" id="api_ubika_row">
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.ubika_base_refresh_token.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.ubika_base_refresh_token }}
+                            {{ form.ubika_base_refresh_token.errors|safe }}
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">{{ form.ubika_namespaces.label }}</label>
+                          <div class="col-sm-5">
+                            {{ form.ubika_namespaces }}
+                            {{ form.ubika_namespaces.errors|safe }}
+                          </div>
+                        </div>
+                      </div>
                       <div class="col-md-12 api-mode">
                         <div class="text-center mar-btm">
                           <button class="btn btn-warning" id="test_api_parser" type="button">

@@ -1627,6 +1627,31 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Hornetsecurity access token"),
         default=""
     )
+    ubika_base_refresh_token = models.TextField(
+        verbose_name=_("Ubika base refresh token (used to established first login)"),
+        help_text=_("Ubika base refresh token (used to established first login)"),
+        default=""
+    )
+    ubika_namespaces = models.JSONField(
+        verbose_name=_("Ubika namespaces to fetch"),
+        help_text=_("Ubika namespaces to fetch"),
+        default=[]
+    )
+    ubika_refresh_token = models.TextField(
+        verbose_name=_("Ubika refresh token"),
+        help_text=_("Ubika refresh token"),
+        default=""
+    )
+    ubika_access_token = models.TextField(
+        verbose_name=_("Ubika access token"),
+        help_text=_("Ubika access token"),
+        default=""
+    )
+    ubika_access_expires_at = models.DateTimeField(
+        default=timezone.now,
+        help_text=_("Ubika refresh token expiration timestamp"),
+        verbose_name=_("Ubika refresh token expiration timestamp")
+    )
 
     @staticmethod
     def str_attrs():

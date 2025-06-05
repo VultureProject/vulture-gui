@@ -279,6 +279,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                            "perception_point_x_ray_host", "perception_point_x_ray_token",
                            "extrahop_host", "extrahop_id", "extrahop_secret",
                            "hornetsecurity_app_id", "hornetsecurity_token",
+                           "ubika_base_refresh_token", "ubika_namespaces"
                            ]:
             self.fields[field_name].required = False
 
@@ -311,6 +312,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         self.initial['kafka_brokers'] = ",".join(self.initial.get('kafka_brokers', []) or self.fields['kafka_brokers'].initial)
         self.initial['kafka_options'] = ",".join(self.initial.get('kafka_options', []) or self.fields['kafka_options'].initial)
         self.initial['cisco_umbrella_managed_org_customers_id'] = ",".join(self.initial.get('cisco_umbrella_managed_org_customers_id', []) or self.fields['cisco_umbrella_managed_org_customers_id'].initial)
+        self.initial['ubika_namespaces'] = ",".join(self.initial.get('ubika_namespaces', []) or self.fields['ubika_namespaces'].initial)
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
@@ -404,6 +406,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                   "perception_point_x_ray_host", "perception_point_x_ray_token",
                   "extrahop_host", "extrahop_id", "extrahop_secret",
                   "hornetsecurity_app_id", "hornetsecurity_token",
+                  "ubika_base_refresh_token", "ubika_namespaces",
         ] + RsyslogQueueForm.Meta.fields
 
         widgets = {
@@ -638,6 +641,8 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'hornetsecurity_app_id': TextInput(attrs={'class': 'form-control'}),
             'hornetsecurity_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'ubika_base_refresh_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'ubika_namespaces': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
         } | RsyslogQueueForm.Meta.widgets
 
     def clean_name(self):
@@ -754,6 +759,14 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
     def clean_cisco_umbrella_managed_org_customers_id(self):
         data = self.cleaned_data.get('cisco_umbrella_managed_org_customers_id')
+        if not data:
+            return []
+        if "[" in data and "]" in data:
+            return ast.literal_eval(data)
+        return data.split(',')
+
+    def clean_ubika_namespaces(self):
+        data = self.cleaned_data.get('ubika_namespaces')
         if not data:
             return []
         if "[" in data and "]" in data:
