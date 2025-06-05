@@ -31,7 +31,7 @@ from django.forms.models import model_to_dict
 from djongo import models
 
 # Django project imports
-from system.pki.models import X509Certificate
+from system.pki.models import X509Certificate, TLSProfile
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
@@ -528,7 +528,7 @@ class LogOMHIREDIS(LogOM):
 
     def get_rsyslog_template(self):
         from services.frontend.models import Frontend
-        if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.id).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.pk).exists():
+        if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.pk).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.pk).exists():
             return f"template(name=\"{self.template_id()}\" type=\"string\" string=\"{self.key}\")"
         return ""
 
@@ -611,13 +611,14 @@ class LogOMElasticSearch(LogOM):
     index_pattern = models.TextField(unique=True, null=False, default='mylog-%$!timestamp:1:10%')
     uid = models.TextField(null=True, blank=True, default=None)
     pwd = models.TextField(null=True, blank=True, default=None)
-    x509_certificate = models.ForeignKey(
-        X509Certificate,
+    tls_profile = models.ForeignKey(
+        TLSProfile,
         on_delete=models.CASCADE,
-        help_text=_("X509Certificate object to use."),
         default=None,
         null=True,
-        blank=True
+        blank=True,
+        help_text=_("TLSProfile object to use."),
+        verbose_name=_("Use a TLS Profile")
     )
 
     def to_dict(self, fields=None):
@@ -677,11 +678,12 @@ class LogOMElasticSearch(LogOM):
             'type': 'Elasticsearch',
             'output': self.servers + ' (index = {})'.format(self.index_pattern)
         })
-        if self.x509_certificate:
-            template['ssl_ca'] = self.x509_certificate.ca_filename()
-            if not self.x509_certificate.is_ca_cert():
-                template['ssl_cert'] = self.x509_certificate.get_base_filename() + ".crt"
-                template['ssl_key'] = self.x509_certificate.get_base_filename() + ".key"
+        if self.tls_profile:
+            if self.tls_profile.ca_cert:
+                template['ssl_ca'] = self.tls_profile.ca_cert.ca_filename()
+            if self.tls_profile.x509_certificate:
+                template['ssl_cert'] = self.tls_profile.x509_certificate.get_base_filename() + ".crt"
+                template['ssl_key'] = self.tls_profile.x509_certificate.get_base_filename() + ".key"
         return template
 
     def get_rsyslog_filenames(self):

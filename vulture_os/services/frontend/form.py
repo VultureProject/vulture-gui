@@ -932,13 +932,17 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
 class ListenerForm(ModelForm):
 
+    tls_profiles = ModelMultipleChoiceField(
+        queryset=TLSProfile.objects.filter(x509_certificate__isnull=False),
+        widget=SelectMultiple(attrs={'class': 'form-control select2'}),
+    )
+
     class Meta:
         model = Listener
         fields = ('network_address', 'port', 'tls_profiles', 'whitelist_ips', 'max_src', 'max_rate',)
 
         widgets = {
             'port': NumberInput(attrs={'class': 'form-control'}),
-            'tls_profiles': SelectMultiple(choices=TLSProfile.objects.all(), attrs={'class': 'form-control select2'}),
             'whitelist_ips': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'max_src': NumberInput(attrs={'class': 'form-control'}),
             'max_rate': NumberInput(attrs={'class': 'form-control'})
@@ -983,6 +987,14 @@ class ListenerForm(ModelForm):
                     logger.exception(e)
                     raise ValidationError("'{}' is not a valid ip address or cidr.".format(v))
         return value
+
+    def clean_tls_profiles(self):
+        """ Verify that profile has a x509_certificate selected """
+        tls_profiles = self.cleaned_data.get('tls_profiles')
+        for tls_profile in tls_profiles:
+            if tls_profile.x509_certificate is None:
+                raise ValidationError("This TLS Profile does not have any certificate.")
+        return tls_profiles
 
     def as_table_headers(self):
         """ Format field names as table head """
