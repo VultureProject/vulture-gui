@@ -103,7 +103,9 @@ class UbikaParser(ApiParser):
             retry += 1
             resp = None
             try:
-                msg = f"[{__parser__}][__execute_query]: Querying {url} with method {method} and data {data} (try {retry}/3)"
+                # Don't show sensitive information (such as refresh/access tokens) in logs
+                cleaned_data = dict(filter(lambda item: item[0] not in ["refresh_token"], data.items()))
+                msg = f"[{__parser__}][__execute_query]: {method} {url} with data {cleaned_data} (try {retry}/3)"
                 logger.info(f"{msg}", extra={'frontend': str(self.frontend)})
 
                 if method == "GET":
