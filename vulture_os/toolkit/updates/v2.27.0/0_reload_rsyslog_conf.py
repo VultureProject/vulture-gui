@@ -49,11 +49,11 @@ if __name__ == "__main__":
     else:
         try:
             print("Rebuilding Frontend configurations using an Elasticsearch forwarder...")
-            logfwds = LogOMElasticSearch.objects.all()
-            frontends = set()
-            for logfwd in logfwds:
-                frontends.update(logfwd.frontend_set.all())
-            for frontend in frontends:
+            logfwds = list(LogOMElasticSearch.objects.all())
+            for frontend in Frontend.objects.filter(
+                Q(log_forwarders__in=logfwds) |
+                Q(log_forwarders_parse_failure__in=logfwds)).distinct():
+                print(f"Reloading configuration of {frontend}")
                 frontend.reload_conf()
 
         except Exception as e:
