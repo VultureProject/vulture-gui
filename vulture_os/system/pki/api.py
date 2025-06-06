@@ -102,7 +102,7 @@ class PKIView(View):
             if object_id:
                 ret = X509Certificate.objects.get(pk=object_id).to_dict(fields=fields)
             elif name:
-                ret = X509Certificate.objects.get(name=name).to_dict(fields=fields)
+                ret = X509Certificate.objects.filter(name=name).last().to_dict(fields=fields)
             else:
                 ret = [p.to_dict(fields=fields) for p in X509Certificate.objects.all()]
 
