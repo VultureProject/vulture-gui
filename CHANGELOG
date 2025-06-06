@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [PERCEPTION_POINT_X_RAY] Improve error message
 - [API_PARSER] [GATEWATCHER_ALERTS] Update endpoint of the API
 - [API_PARSER] [CISCO_UMBRELLA_MANAGED_ORG] Ensure all attributes always have the correct type in code
+- [API_PARSER] [CISCO_UMBRELLA] Avoid never-ending collect
 - [API] [X509CERTIFICATE] Avoid conflicts when requesting a specific certificate
 
 
