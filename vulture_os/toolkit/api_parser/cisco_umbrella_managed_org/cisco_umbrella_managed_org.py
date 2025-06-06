@@ -148,27 +148,10 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
         available_customers = list()
         for customer in response:
             available_customers.append({"id": str(customer.get("customerId", "")), "name": str(customer.get("customerName", ""))})
-        available_customers_ids = [customer['id'] for customer in available_customers]
-        logger.info(f"[{__parser__}]:[_get_customers]: Available Customers ids are {available_customers_ids}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:[_get_customers]: Available Customers ids are {[customer['id'] for customer in available_customers]}", extra={'frontend': str(self.frontend)})
 
-        if isinstance(self.cisco_umbrella_managed_org_customers_id, list): # for execute() function
-            selected_customer_ids = set(self.cisco_umbrella_managed_org_customers_id)
-            customers_ids = selected_customer_ids.intersection(available_customers_ids)
-        elif isinstance(self.cisco_umbrella_managed_org_customers_id, str): # for test() function we must check as the type of arg is a string instead of a list
-            selected_customer_ids = set(self.cisco_umbrella_managed_org_customers_id.split(","))
-            customers_ids = selected_customer_ids.intersection(available_customers_ids)
-        else:
-            customers_ids = available_customers_ids
-        logger.info(f"[{__parser__}]:[_get_customers]: Selected Customers ids are {customers_ids}", extra={'frontend': str(self.frontend)})
+        return list(filter(lambda customer: customer['id'] in self.cisco_umbrella_managed_org_customers_id, available_customers))
 
-        # filters available customers
-        customers = []
-        for customer_id in customers_ids:
-            for customer in available_customers:
-                if customer_id == customer.get('id'):
-                    customers.append(customer)
-
-        return customers
 
     def _update_customer_token(self, customer_id: str) -> None:
         logger.info(f"[{__parser__}]: Getting a new authentication token for customer {customer_id}", extra={'frontend': str(self.frontend)})
