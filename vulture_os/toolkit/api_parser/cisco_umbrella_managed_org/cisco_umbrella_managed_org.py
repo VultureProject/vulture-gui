@@ -61,6 +61,10 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
         self.cisco_umbrella_managed_org_secret_key = data["cisco_umbrella_managed_org_secret_key"]
         self.cisco_umbrella_managed_org_customers_id = data["cisco_umbrella_managed_org_customers_id"]
 
+        #Handle data coming from the GUI
+        if isinstance(self.cisco_umbrella_managed_org_customers_id, str):
+            self.cisco_umbrella_managed_org_customers_id = self.cisco_umbrella_managed_org_customers_id.split(",")
+
         self.cisco_umbrella_managed_org_get_proxy = data["cisco_umbrella_managed_org_get_proxy"]
         self.cisco_umbrella_managed_org_get_dns = data["cisco_umbrella_managed_org_get_dns"]
 
@@ -215,8 +219,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
             customer_ids_available = [customer['id'] for customer in customers]
 
             if self.cisco_umbrella_managed_org_customers_id:
-                selected_customer_ids = set(self.cisco_umbrella_managed_org_customers_id.split(","))
-                if difference := selected_customer_ids.difference(customer_ids_available):
+                if difference := set(self.cisco_umbrella_managed_org_customers_id).difference(customer_ids_available):
                     result.append(f"WARNING: The following customer IDs are currently not available on the account: {list(difference)}")
                     result.append(f"Available customer IDs: {customer_ids_available}")
 
