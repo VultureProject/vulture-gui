@@ -158,6 +158,7 @@ class CiscoUmbrellaParser(ApiParser):
         while not self.evt_stop.is_set():
             logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}.", extra={'frontend': str(self.frontend)})
 
+            logs = []
             index = 0
             logs_count = self.LIMIT_MAX
             while logs_count == self.LIMIT_MAX and index <= self.OFFSET_MAX:
@@ -173,9 +174,13 @@ class CiscoUmbrellaParser(ApiParser):
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
             # When there are more than 15000 logs, last_api_call is the timestamp of the last log
+            last_timestamp = int(max(log['timestamp'] for log in logs)) / 1000
             if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX + self.LIMIT_MAX:
-                last_timestamp = max(log['timestamp'] for log in logs)
-                since = datetime.fromtimestamp(int(last_timestamp) / 1000, tz=timezone.now().astimezone().tzinfo)
+                # Got to the limit of logs in a request, update 'since' to make a new one
+                since = datetime.fromtimestamp(last_timestamp, tz=timezone.utc)
+            elif self.evt_stop.is_set():
+                # Not all logs have been recovered, but keep the last timestamp in latest logs for next time
+                to = datetime.fromtimestamp(last_timestamp, tz=timezone.utc)
             else:
                 # All logs have been recovered, the parser can be stopped
                 break
