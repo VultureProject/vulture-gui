@@ -286,7 +286,7 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
 
                     logger.info(f"[{__parser__}]:execute: got {logs_count} new lines", extra={'frontend': str(self.frontend)})
                     index += logs_count
-                    
+
                     logger.info(f"[{__parser__}]:execute: retrieved a total of {index} lines", extra={'frontend': str(self.frontend)})
                     self.write_to_file([self.format_log(log, customer) for log in logs])
                     self.update_lock()
