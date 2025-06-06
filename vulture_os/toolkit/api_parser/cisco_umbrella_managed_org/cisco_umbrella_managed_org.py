@@ -150,7 +150,10 @@ class CiscoUmbrellaManagedOrgParser(ApiParser):
             available_customers.append({"id": str(customer.get("customerId", "")), "name": str(customer.get("customerName", ""))})
         logger.info(f"[{__parser__}]:[_get_customers]: Available Customers ids are {[customer['id'] for customer in available_customers]}", extra={'frontend': str(self.frontend)})
 
-        return list(filter(lambda customer: customer['id'] in self.cisco_umbrella_managed_org_customers_id, available_customers))
+        if self.cisco_umbrella_managed_org_customers_id:
+            return list(filter(lambda customer: customer['id'] in self.cisco_umbrella_managed_org_customers_id, available_customers))
+        else:
+            return available_customers
 
 
     def _update_customer_token(self, customer_id: str) -> None:
