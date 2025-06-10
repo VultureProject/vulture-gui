@@ -1628,8 +1628,8 @@ class Frontend(RsyslogQueue, models.Model):
         default=""
     )
     ubika_base_refresh_token = models.TextField(
-        verbose_name=_("Ubika base refresh token (used to established first login)"),
-        help_text=_("Ubika base refresh token (used to established first login)"),
+        verbose_name=_("Ubika base refresh token (used to establish first login)"),
+        help_text=_("Ubika base refresh token (used to establish first login)"),
         default=""
     )
     ubika_namespaces = models.JSONField(

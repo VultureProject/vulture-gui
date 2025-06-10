@@ -55,6 +55,8 @@ class UbikaParser(ApiParser):
 
         self.ubika_base_refresh_token = data["ubika_base_refresh_token"]
         self.ubika_namespaces = data.get("ubika_namespaces", [])
+        if isinstance(self.ubika_namespaces, str):
+            self.ubika_namespaces = self.ubika_namespaces.split(',')
 
         self.ubika_access_token = data.get("ubika_access_token")
         self.ubika_refresh_token = data.get("ubika_refresh_token")
@@ -216,7 +218,9 @@ class UbikaParser(ApiParser):
         logs = []
 
         try:
-            if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
+            if (not self.ubika_access_token) or \
+                (not self.ubika_access_expires_at) or \
+                    (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
                 self.login()
 
             namespace = self.ubika_namespaces[0]
@@ -252,7 +256,9 @@ class UbikaParser(ApiParser):
 
 
     def execute(self):
-        if (not self.ubika_access_token) or (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
+        if (not self.ubika_access_token) or \
+            (not self.ubika_access_expires_at) or \
+                (self.ubika_access_expires_at <= (timezone.now() + timedelta(minutes=1))):
             self.login()
 
         for namespace in self.ubika_namespaces:
