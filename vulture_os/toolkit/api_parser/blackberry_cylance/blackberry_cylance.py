@@ -34,7 +34,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.utils import dateparse, timezone
 
-from toolkit.api_parser.api_parser import ApiParser, EarlyTerminationWarning
+from toolkit.api_parser.api_parser import ApiParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
@@ -146,10 +146,6 @@ class BlackberryCylanceParser(ApiParser):
                     proxies=self.proxies,
                     verify=self.api_parser_custom_certificate if self.api_parser_custom_certificate else self.api_parser_verify_ssl
                 )
-
-                if response.status_code == 429:
-                    logger.warning(f"[{__parser__}]:_execute_query: API Request failed (code 429), stopping this run and waiting for the next", extra={'frontend': str(self.frontend)})
-                    raise EarlyTerminationWarning("Rate limit exceeded")
 
                 if response.status_code not in [200, 201]:
                     logger.error(f"[{__parser__}]:_execute_query: Error while getting logs. code: {response.status_code}", extra={'frontend': str(self.frontend)})

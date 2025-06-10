@@ -9,10 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [VULTURED] Delay option on api_request calls
 - [FRONTEND] Rsyslog queue settings
-- [API_PARSER] Add Possibility for Collectors to stop early without reporting errors
 - [API_PARSER] [UBIKA] New collector
 ### Changed
-- [API_PARSER] [BLACKBERRY_CYLANCE] Stop collector earlier and wait for next run when rate-limited by the API
 - [API_PARSER] [CISCO_UMBRELLA_MANAGED_ORG] Add organisation id and name in output logs
 - [APPLICATIONS] [LOGOMELASTICSEARCH] Allow use of a TLS Profile instead of a simple X509 Certificate
 - [SYSTEM] [TLS_PROFILE] Reorder parameters into 2 separate sections
