@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [TLS_PROFILE] Reorder parameters into 2 separate sections
 ### Fixed
 - [API_PARSER] [BEYONDTRUST_REPORTINGS] Fix parsing of support session logs
-- [API_PARSER] [PROOFPOINT_POD] Increment the last_api_call of 1 second to avoid duplication
 - [API_PARSER] [PERCEPTION_POINT_X_RAY] Improve error message
 - [API_PARSER] [GATEWATCHER_ALERTS] Update endpoint of the API
 - [API_PARSER] [CISCO_UMBRELLA_MANAGED_ORG] Ensure all attributes always have the correct type in code
