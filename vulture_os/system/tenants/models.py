@@ -98,4 +98,4 @@ class Tenants(models.Model):
                     node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.id)
 
         for node in updated_nodes:
-            node.api_request("services.rsyslogd.rsyslog.restart_service")
+            node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)

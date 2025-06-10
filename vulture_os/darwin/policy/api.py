@@ -260,7 +260,7 @@ class DarwinPolicyAPIv1(View):
                 if error:
                     try:
                         policy.delete()
-                    except:
+                    except Exception:
                         pass
                     return JsonResponse({
                         "error": error
@@ -269,7 +269,7 @@ class DarwinPolicyAPIv1(View):
         except Exception as e:
             try:
                 policy.delete()
-            except:
+            except Exception:
                 pass
 
             logger.critical(e, exc_info=1)
@@ -287,7 +287,7 @@ class DarwinPolicyAPIv1(View):
         for frontend in policy.frontend_set.all():
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         Cluster.api_request("services.darwin.darwin.write_policy_conf", policy.pk)
         Cluster.api_request("services.darwin.darwin.reload_conf")
@@ -307,7 +307,7 @@ class DarwinPolicyAPIv1(View):
                 if isinstance(filters, str):
                     try:
                         filters = json.loads(filters)
-                    except json.JsonDecodeError as e:
+                    except json.JSONDecodeError as e:
                         logger.error(e)
                         return JsonResponse({
                             'error': str(e)
@@ -331,7 +331,7 @@ class DarwinPolicyAPIv1(View):
                     if created:
                         try:
                             policy.delete()
-                        except:
+                        except Exception:
                             pass
                     return JsonResponse({
                         "error": error
@@ -358,7 +358,7 @@ class DarwinPolicyAPIv1(View):
         for frontend in policy.frontend_set.all():
             for node in frontend.get_nodes():
                 node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         if DarwinBuffering.objects.filter(destination_filter__policy=policy).exists():
             DarwinPolicy.update_buffering()
@@ -398,7 +398,7 @@ class DarwinPolicyAPIv1(View):
                 for frontend in policy.frontend_set.all():
                     for node in frontend.get_nodes():
                         node.api_request("services.rsyslogd.rsyslog.build_conf", frontend.pk)
-                        node.api_request("services.rsyslogd.rsyslog.restart_service")
+                        node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
                 Cluster.api_request("services.darwin.darwin.reload_conf")
 

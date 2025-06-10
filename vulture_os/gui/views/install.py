@@ -155,6 +155,7 @@ def cluster_create(admin_user=None, admin_password=None):
 
     # regenerate PF configuration to account for new system configuration
     node.api_request("services.pf.pf.gen_config")
+    node.api_request("services.pf.pf.reload_service")
 
     for name in ('Administrator', 'Log Viewer'):
         Group.objects.get_or_create(
@@ -203,11 +204,13 @@ def cluster_create(admin_user=None, admin_password=None):
     logger.debug("API call to configure rsyslog")
     node.api_request("services.rsyslogd.rsyslog.build_conf")
     node.api_request("services.rsyslogd.rsyslog.configure_node")
+    node.api_request("services.rsyslogd.rsyslog.restart_service")
     node.api_request("gui.crontab.generate_tzdbs.generate_timezone_dbs")
     node.api_request("gui.crontab.feed.update_reputation_ctx_now")
 
     logger.debug("API call to configure HAProxy")
     node.api_request("services.haproxy.haproxy.configure_node")
+    node.api_request("services.haproxy.haproxy.reload_service")
 
     logger.debug("API call to reload whole darwin configuration")
     DarwinPolicy.update_buffering()
@@ -218,6 +221,7 @@ def cluster_create(admin_user=None, admin_password=None):
 
     logger.debug("API call to update PF")
     node.api_request("services.pf.pf.gen_config")
+    node.api_request("services.pf.pf.reload_service")
 
 
 def cluster_join(master_hostname, master_ip, secret_key):

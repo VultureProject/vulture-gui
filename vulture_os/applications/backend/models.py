@@ -618,6 +618,7 @@ class Backend(models.Model):
         params = [self.get_filename(), self.configuration, BACKEND_OWNER, BACKEND_PERMS]
         try:
             Cluster.api_request('system.config.models.write_conf', config=params)
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
         except Exception as e:  # e used by VultureSystemConfigError
             logger.error(e, exc_info=1)
             raise VultureSystemConfigError("on cluster.\nRequest failure to write_conf()")

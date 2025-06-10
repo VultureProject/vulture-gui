@@ -73,7 +73,7 @@ class ListErrorTemplate(View):
             s = Q(name__icontains=search)
 
         objs = []
-        for obj in ErrorTemplate.objects.all():
+        for obj in ErrorTemplate.objects.filter(s):
             objs.append(obj.to_template())
 
         max_objs = len(objs)
@@ -163,7 +163,7 @@ def template_edit(request, object_id=None):
 
                 """ And reload HAProxy """
                 for node in nodes:
-                    api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                    api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
                     if not api_res.get('status'):
                         return render_form(save_error=["API request error on node {}".format(node.name),
                                                        api_res.get('message')])
@@ -224,7 +224,7 @@ def template_delete(request, object_id):
 
             """ And reload HAProxy """
             for node in nodes:
-                api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
                 if not api_res.get('status'):
                     logger.error("Template::delete: API error while trying to "
                                  "reload HAProxy service : {}".format(api_res.get('message')))

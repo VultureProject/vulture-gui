@@ -449,6 +449,22 @@ $(function() {
     old_mode = mode;
   }).trigger('change');
 
+  $('#id_queue_type').on('change', function(e){
+    if ($(this).val() === "direct") {
+      $('#tab-queue').hide();
+    } else {
+      $('#tab-queue').show();
+    }
+  }).trigger('change');
+
+  $('#id_enable_disk_assist').on('change', function(e){
+    if ($(this).is(':checked')) {
+      $('#tab-disk').show();
+    } else {
+      $('#tab-disk').hide();
+    }
+  }).trigger('change');
+
   $('#id_redis_mode').on('change', function(event) {
     if ($(this).val() === "queue") {
       $('.redis-queue-mode').show();

@@ -50,6 +50,8 @@ SYSTEM_LOGS_PATH = os_path.join(LOGS_PATH, env.str("SYSTEM_LOGS_PATH", "vulture/
 
 HOSTNAME = env.str("HOSTNAME", get_hostname())
 
+SERVICE_RESTART_DELAY = env.int("SERVICE_RESTART_DELAY", 10)
+
 # Retrieving Django SECRET_KEY
 try:
     from vulture_os.secret_key import SECRET_KEY

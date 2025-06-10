@@ -53,95 +53,108 @@
                   </div>
                 </div>
               {% endif %}
-              <div class="row">
-                <div class="col-md-12">
-                    <div class="form-group">
-                      <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
-                      <div class="col-sm-5">
-                        {{form.name}}
-                        {{form.name.errors|safe}}
+              <div class="nav-tabs-custom nav-tabs-no-margin">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
+                  <li><a href="#tab_server" data-toggle="tab">{% translate "TLS Server options" %}</a></li>
+                </ul>
+                <div class="tab-content">
+                  <br/>
+                  <div class="tab-pane active" id="tab_general">
+                    <div class="row">
+                      <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
+                            <div class="col-sm-5">
+                              {{form.name}}
+                              {{form.name.errors|safe}}
+                            </div>
+                          </div>
                       </div>
                     </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{% translate "Certificate" %}</label>
-                    <div class="col-sm-5">
-                        {{form.x509_certificate}}
-                        {{form.x509_certificate.errors|safe}}
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.x509_certificate.label}}</label>
+                          <div class="col-sm-5">
+                              {{form.x509_certificate}}
+                              {{form.x509_certificate.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{% translate "Browsers compatibility" %}</label>
-                    <div class="col-sm-5">
-                      {{form.compatibility}}
-                      {{form.compatibility.errors|safe}}
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.verify_client.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.verify_client}}
+                            {{form.verify_client.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".browsers-compat">
-                      <i class="fa fa-plus"></i> Advanced
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group browsers-compat collapse">
-                    <label class="col-sm-4 control-label">{% translate "Allowed cipher protocols" %}</label>
-                    <div class="col-sm-5">
-                      {{form.protocols}}
-                      {{form.protocols.errors|safe}}
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group require-cert">
+                          <label class="col-sm-4 control-label">{{form.ca_cert.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.ca_cert}}
+                            {{form.ca_cert.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group browsers-compat collapse">
-                    <label class="col-sm-4 control-label">{% translate "Allowed ciphers" %}</label>
-                    <div class="col-sm-5">
-                      {{form.cipher_suite}}
-                      {{form.cipher_suite.errors|safe}}
+                  </div> <!-- /.tab-pane tab_general -->
+                  <div class="tab-pane" id="tab_server">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% translate "Browsers compatibility" %}</label>
+                          <div class="col-sm-5">
+                            {{form.compatibility}}
+                            {{form.compatibility.errors|safe}}
+                          </div>
+                          <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".browsers-compat">
+                            <i class="fa fa-plus"></i> Advanced
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{% translate "Advertise protocol list" %}</label>
-                    <div class="col-sm-5">
-                      {{form.alpn}}
-                      {{form.alpn.errors|safe}}
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group browsers-compat collapse">
+                          <label class="col-sm-4 control-label">{% translate "Allowed cipher protocols" %}</label>
+                          <div class="col-sm-5">
+                            {{form.protocols}}
+                            {{form.protocols.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group">
-                    <label class="col-sm-4 control-label">{% translate "Verify client certificate" %}</label>
-                    <div class="col-sm-5">
-                      {{form.verify_client}}
-                      {{form.verify_client.errors|safe}}
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group browsers-compat collapse">
+                          <label class="col-sm-4 control-label">{% translate "Allowed ciphers" %}</label>
+                          <div class="col-sm-5">
+                            {{form.cipher_suite}}
+                            {{form.cipher_suite.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group require-cert">
-                    <label class="col-sm-4 control-label">{% translate "Client's CA certificate" %}</label>
-                    <div class="col-sm-5">
-                      {{form.ca_cert}}
-                      {{form.ca_cert.errors|safe}}
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% translate "Advertise protocol list" %}</label>
+                          <div class="col-sm-5">
+                            {{form.alpn}}
+                            {{form.alpn.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </div> <!-- /.tab-pane tab_server -->
                 </div>
               </div>
             </div>

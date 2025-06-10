@@ -352,6 +352,6 @@ class ReputationContext(models.Model):
                     res.append(node)
 
         for node in updated_nodes:
-            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service")
+            api_res = node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         return res

@@ -151,11 +151,14 @@ class CiscoUmbrellaParser(ApiParser):
         # Due to a limitation in the API, we have update from and to dynamically
         # to collect all logs during the minute of execution
         # So this parser will keep running as long as it's not up-to-date or asked to stop
+
+        since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=15))
+        to = timezone.now()
+
         while not self.evt_stop.is_set():
-            since = self.frontend.last_api_call or (timezone.now() - timedelta(minutes=15))
-            to = timezone.now()
             logger.info(f"[{__parser__}]:execute: Parser starting from {since} to {to}.", extra={'frontend': str(self.frontend)})
 
+            logs = []
             index = 0
             logs_count = self.LIMIT_MAX
             while logs_count == self.LIMIT_MAX and index <= self.OFFSET_MAX:
@@ -171,16 +174,20 @@ class CiscoUmbrellaParser(ApiParser):
                 # Writting may take some while, so refresh token in Redis
                 self.update_lock()
             # When there are more than 15000 logs, last_api_call is the timestamp of the last log
+            last_timestamp = int(max(log['timestamp'] for log in logs)) / 1000
             if logs_count == self.LIMIT_MAX and index == self.OFFSET_MAX + self.LIMIT_MAX:
-                timestamp = logs[-1]['timestamp']/1000
-                self.frontend.last_api_call = datetime.fromtimestamp(timestamp, tz=timezone.now().astimezone().tzinfo)
+                # Got to the limit of logs in a request, update 'since' to make a new one
+                since = datetime.fromtimestamp(last_timestamp, tz=timezone.utc)
+            elif self.evt_stop.is_set():
+                # Not all logs have been recovered, but keep the last timestamp in latest logs for next time
+                to = datetime.fromtimestamp(last_timestamp, tz=timezone.utc)
             else:
                 # All logs have been recovered, the parser can be stopped
-                self.frontend.last_api_call = to
                 break
-            self.frontend.save(update_fields=['last_api_call'])
+
+        self.frontend.last_api_call = to
         self.frontend.cisco_umbrella_access_token = self.cisco_umbrella_access_token
         self.frontend.cisco_umbrella_expires_at = self.cisco_umbrella_expires_at
-        self.frontend.save(update_fields=['cisco_umbrella_access_token', 'cisco_umbrella_expires_at'])
+        self.frontend.save(update_fields=['last_api_call', 'cisco_umbrella_access_token', 'cisco_umbrella_expires_at'])
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})

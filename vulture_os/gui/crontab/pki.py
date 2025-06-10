@@ -67,4 +67,4 @@ def acme_update():
                 need_restart = True
 
     if need_restart:
-        Cluster.api_request("services.haproxy.haproxy.reload_service")
+        Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)

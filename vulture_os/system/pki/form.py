@@ -98,7 +98,8 @@ class TLSProfileForm(ModelForm):
     ca_cert = ModelChoiceField(
         queryset=X509Certificate.objects.filter(is_ca=True),
         required=False,
-        widget=Select(attrs={'class': 'form-control select2'})
+        widget=Select(attrs={'class': 'form-control select2'}),
+        label=TLSProfile.ca_cert.field.verbose_name
     )
 
     class Meta:
@@ -118,7 +119,8 @@ class TLSProfileForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field_name in ['x509_certificate', 'compatibility', 'protocols', 'alpn', 'verify_client', 'ca_cert']:
+        self.fields['x509_certificate'].empty_label = "No SSL"
+        for field_name in ['compatibility', 'protocols', 'alpn', 'verify_client', 'ca_cert']:
             self.fields[field_name].empty_label = None
 
     def clean_protocols(self):
@@ -159,5 +161,7 @@ class TLSProfileForm(ModelForm):
         cleaned_data = super().clean()
         if cleaned_data.get('verify_client') != "none" and not cleaned_data.get('ca_cert'):
             # If the error is associated with a particular field, use add_error
-            self.add_error('ca_cert', "This field is required if 'Verify client' is not 'No'")
+            self.add_error('ca_cert', "This field is required if 'Verify peer certificate' is not 'No'")
+        elif cleaned_data.get('verify_client') == "none" and self.cleaned_data.get('x509_certificate') is None:
+            self.add_error('x509_certificate', "This field is required if 'Verify peer certificate' is 'No'")
         return cleaned_data

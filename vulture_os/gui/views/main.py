@@ -47,14 +47,14 @@ def process_queue_state(request):
         columns = json.loads(request.POST.get('columns'))
         col_sort = columns[int(request.POST.get("iSortCol_0"))]
         col_order = "{}{}".format(order[request.POST.get('sSortDir_0')], col_sort)
-    except:
+    except (json.JSONDecodeError, ValueError, KeyError):
         col_order = "-date_add"
 
     objs = []
 
     max_objs = 50
     # Do NOT send internal MessageQueues
-    for message in MessageQueue.objects.filter(internal=False).order_by(col_order)[:max_objs]:
+    for message in MessageQueue.objects.filter(internal=False).order_by("-run_at", col_order)[:max_objs]:
         objs.append(message.to_template())
 
     return JsonResponse({

@@ -114,7 +114,7 @@ def edit(request, object_id=None, api=False):
             for node in workflow.frontend.get_nodes():
                 node.api_request("workflow.workflow.build_conf", workflow.pk)
 
-        Cluster.api_request("services.haproxy.haproxy.reload_service")
+        Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         # If everything succeed, redirect to list view
         if api:

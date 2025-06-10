@@ -41,8 +41,8 @@ class GatewatcherAlertsAPIError(Exception):
 
 
 class GatewatcherAlertsParser(ApiParser):
-    ALERTS_ENDPOINT = "/api/alerts/"
-    RAW_ALERTS_ENDPOINT = "/api/raw-alerts/"
+    ALERTS_ENDPOINT = "/api/v1/alerts/"
+    RAW_ALERTS_ENDPOINT = "/api/v1/raw-alerts/"
 
     HEADERS = {
         "Content-Type": "application/json",
@@ -77,6 +77,19 @@ class GatewatcherAlertsParser(ApiParser):
             timeout=timeout,
             verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
         )
+        if response.status_code == 404:
+            logger.warning(f"[{__parser__}]:execute_query: 404 error at Gatewatcher API Call, content : {response.content}, trying again with old endpoint version...", extra={'frontend': str(self.frontend)})
+            # The cause of the 404 error can be that the former endpoint must be used
+            url = url.replace("/api/v1/", "/api/")
+            logger.info(f"[{__parser__}]:execute_query: URL: {url} , params: {params}", extra={'frontend': str(self.frontend)})
+            response = self.session.get(
+                url,
+                params=params,
+                proxies=self.proxies,
+                timeout=timeout,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
+            )
+
         if response.status_code != 200:
             error = f"Error at Gatewatcher API Call: status : {response.status_code}, content : {response.content}"
             logger.error(f"[{__parser__}]:execute_query: {error}", extra={'frontend': str(self.frontend)})
