@@ -25,9 +25,9 @@ __doc__ = 'Haproxy dedicated form class'
 # Django system imports
 from django.conf import settings
 from django.forms import (ModelChoiceField, ModelForm, Select, SelectMultiple, TextInput, Textarea, ValidationError,
-    CharField, ChoiceField, RadioSelect)
-from system.pki.models import (ALPN_CHOICES, BROWSER_CHOICES, PROTOCOL_CHOICES, TLSProfile, X509Certificate,
-                               VERIFY_CHOICES)
+    CharField, ChoiceField)
+from system.pki.models import (TLSProfile, X509Certificate, ALPN_CHOICES, BROWSER_CHOICES, PROTOCOL_CHOICES,
+                               VERIFY_CHOICES, CERTIFICATE_TYPE_CHOICES)
 
 from ast import literal_eval
 from cryptography import x509
@@ -39,35 +39,46 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
 
 
-class X509InternalCertificateForm(ModelForm):
+class X509CertificateForm(ModelForm):
 
-    cn = CharField(required=True)
-    type = ChoiceField(required=True,choices=(('internal','Self-Signed Vulture Certificate'),('letsencrypt','Let\'s Encrypt Certificate'),('external','External certificate')))
+    cn = CharField(widget=TextInput(attrs={'class': 'form-control'}))
+    type = ChoiceField(
+        required=True,
+        choices=CERTIFICATE_TYPE_CHOICES,
+        widget=Select(attrs={'class': 'form-control select2'})
+    )
 
     class Meta:
         model = X509Certificate
-        fields = ('name','cn','type',)
+        fields = ('name', 'cn', 'type')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
-            'type': RadioSelect(choices=(('internal','Self-Signed Vulture Certificate'),('letsencrypt','Let\'s Encrypt Certificate'),('external','External certificate')), attrs={'class': 'form-control select2'}),
-            'cn': TextInput(attrs={'class': 'form-control'})
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            if self.instance.is_external:
+                self.fields['type'].choices = ((k,v) for k,v in CERTIFICATE_TYPE_CHOICES if k == "external")
+            else:
+                self.fields['type'].choices = ((k,v) for k,v in CERTIFICATE_TYPE_CHOICES if k == "internal")
+                self.fields['cn'].disabled = True
 
-class X509ExternalCertificateForm(ModelForm):
+    def clean(self):
+        """ Verify if cn is filled-in if type is internal """
+        cleaned_data = super().clean()
+        if cleaned_data.get('type') == "internal" and not cleaned_data.get('cn'):
+            self.add_error('cn', "This field is required if 'type' is 'internal'")
+        return cleaned_data
 
-    cn = CharField(required=False)
-    type = ChoiceField(required=True,choices=(('internal','Self-Signed Vulture Certificate'),('letsencrypt','Let\'s Encrypt Certificate'),('external','External certificate')))
 
-    class Meta:
+class X509ExternalCertificateForm(X509CertificateForm):
+
+    class Meta(X509CertificateForm.Meta):
         model = X509Certificate
-        fields = ('name', 'type', 'cert', 'key', 'chain', 'crl', 'crl_uri')
-
-        widgets = {
-            'name': TextInput(attrs={'class': 'form-control'}),
-            'type': RadioSelect(choices=(('internal','Self-Signed Vulture Certificate'),('letsencrypt','Let\'s Encrypt Certificate'),('external','External certificate')), attrs={'class': 'form-control select2'}),
-            'cn': TextInput(attrs={'class': 'form-control'}),
+        fields = X509CertificateForm.Meta.fields + ('cert', 'key', 'chain', 'crl', 'crl_uri')
+        widgets = X509CertificateForm.Meta.widgets | {
             'cert': Textarea(attrs={'class': 'form-control'}),
             'key': Textarea(attrs={'class': 'form-control'}),
             'chain': Textarea(attrs={'class': 'form-control'}),
