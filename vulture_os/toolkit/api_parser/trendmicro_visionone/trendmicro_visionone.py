@@ -192,9 +192,16 @@ class TrendmicroVisiononeParser(ApiParser):
                         timezone.now() - timedelta(days=2))
 
             # we don't want logs newer than 5 minutes ago, to let some time for VisionOne to index logs
-            # we are retrieving maximum 1 hour at once, to avoid the collector to run for too long
 
-            max_to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=1))
+            if kind == "oat":
+                # we are retrieving maximum 1 hour at once for OAT to avoid the collector running for too long
+                # because there are lots of logs
+                max_to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=1))
+            else:
+                # we are retrieving maximum 24 hours at once for audit and alerts to avoid being 24 hours late on events
+                # because there are few logs
+                max_to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=24))
+
             to = max_to
 
             # "to" may be modified in the loop by __execute_query if there are too many logs
