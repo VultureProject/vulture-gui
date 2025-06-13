@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [API_PARSER] [TRENDMICRO_VISIONONE] Avoid delays on log collection, depending on log types
 
 
 ## [2.27.0] - 2025-06-10
