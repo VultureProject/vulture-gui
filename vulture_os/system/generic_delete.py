@@ -42,7 +42,7 @@ from toolkit.redis.redis_base import RedisBase, SentinelBase
 
 # Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
-from redis import AuthenticationError, ResponseError
+from redis import AuthenticationError, ResponseError, ConnectionError, TimeoutError
 
 # Extern modules imports
 
@@ -140,7 +140,9 @@ class DeleteNode(DeleteView):
             try:
                 c.sentinel_remove()
             except ResponseError as e:
-                logger.error(e)
+                logger.error(f"Error while removing node's sentinel from cluster: {e}")
+            except (ConnectionError, TimeoutError) as e:
+                logger.warning(f"Could not connect to removed node's Sentinel server: {e}")
 
             c = RedisBase(obj_inst.management_ip, password=Cluster.get_global_config().redis_password)
             try:
@@ -149,6 +151,10 @@ class DeleteNode(DeleteView):
             except AuthenticationError:
                 c = RedisBase(obj_inst.management_ip)
                 c.replica_of('NO', 'ONE')
+            except ResponseError as e:
+                logger.error(f"Error while removing node's redis from cluster: {e}")
+            except (ConnectionError, TimeoutError) as e:
+                logger.warning(f"Could not connect to removed node's Redis server: {e}")
 
             """ Let's rock """
             obj_inst.delete()
