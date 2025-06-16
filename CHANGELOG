@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [NETWORK] Pitfall when modifying the GUI's network interface
 
 
 ## [2.27.1] - 2025-06-13
