@@ -277,16 +277,6 @@ class HornetSecurityParser(ApiParser):
             if not isinstance(private, bool):
                 log['private'] = False
 
-            # subject
-            subject = log.get('subject')
-            log['is_subject_encoded'] = False
-            if isinstance(subject, str) and not is_ascii(subject):
-                try:
-                    log['subject'] = str(b64encode(subject.encode('utf-8')))
-                    log['is_subject_encoded'] = True
-                except (ValueError, TypeError): # Failed to b64 or utf8 encode
-                    log['subject'] = ""
-
             # destination_hostname
             destination_hostname : str = log.get('destination_hostname', "")
             if destination_hostname and "[" in destination_hostname:

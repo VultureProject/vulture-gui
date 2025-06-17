@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [MIGRATIONS] Set missing default values for complex fields in Frontends
 - [API_PARSER] [CISCO_MERAKI] Correctly set and save timestamp after log collection
 - [API_PARSER] [MS_SENTINEL] Add a 5 minutes delay to retrieve entities
+- [API_PARSER] [HORNETSECURITY] Remove 'subject' field base64-encoding for 'emails' logs
 
 
 ## [2.28.0] - 2025-06-26
