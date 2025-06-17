@@ -21,9 +21,8 @@ old_version="$(/bin/cat /home/vlt-os/vulture_os/gui_old_version)"
 if [ -z "$old_version" ] ; then
     exit 0
 fi
-for update_dir in /home/vlt-os/vulture_os/toolkit/updates/v*
+for dir_version in $(basename $(ls -d /home/vlt-os/vulture_os/toolkit/updates/v*) | cut -d 'v' -f 2 | sort -t '.' -k1n -k2n -k3n)
 do
-    dir_version=$(basename "$update_dir" | cut -d 'v' -f 2)
     # If old_version < dir_version && dir_version <= current_version
     if [ "$(pkg version --test-version "$old_version" "$dir_version")" == "<" -a "$(pkg version --test-version "$dir_version" "$(pkg query "%v" vulture-gui)" | grep -E "<|=")" ]
     then
