@@ -14,24 +14,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
 """
-__author__ = "Theo Bertin"
+__author__ = "Mael Bonniot"
 __credits__ = []
 __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Proofpoint TAP SIEM API'
-__parser__ = 'PROOFPOINT'
+__doc__ = 'Sentinel One Identity Graph Collector'
+__parser__ = 'SENTINEL_ONE_IDENTITY_GRAPH'
 
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from json import JSONDecodeError, dumps
 from requests.exceptions import ConnectionError, ConnectTimeout, HTTPError, ReadTimeout
 from requests import Session
 
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from toolkit.api_parser.api_parser import ApiParser
 
 
@@ -50,7 +49,6 @@ class SentinelOneIdentityGraphParser(ApiParser):
         self.sentinel_one_identity_graph_token = data["sentinel_one_identity_graph_token"]
 
         self.sentinel_one_identity_graph_console_url = data["sentinel_one_identity_graph_console_url"]
-
         self.path_url = 'web/api/v2.1/unifiedalerts/graphql'
         self.url = self.sentinel_one_identity_graph_console_url + self.path_url
 
@@ -60,35 +58,42 @@ class SentinelOneIdentityGraphParser(ApiParser):
         self.session.headers.update({"Authorization": f"Bearer {self.sentinel_one_identity_graph_token}"})
         return
 
-    def execute_query(self, url: str, data: dict, timeout: int = 10):
-        retry = 3
+    def execute_query(self, url: str, data: dict, timeout: int = 10) -> dict:
+        retry = 0
 
-        while retry > 0:
+        while retry < 3 and not self.evt_stop.is_set():
             try:
+                logger.info(f"[{__parser__}][execute_query]: url {url} - retry {retry}/3", extra={'frontend': str(self.frontend)})
+
                 response = self.session.post(
                     url=url,
                     json=data,
-                    timeout=timeout)
+                    timeout=timeout,
+                    proxies=self.proxies,
+                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
+
                 resp_json = response.json()
 
             except (HTTPError, ConnectionError) as e:
-                logger.exception(f"[{__parser__}][execute_query]: HTTPError raised -- {url} - {data} -- {response.content}", extra={'frontend': str(self.frontend)})
-                raise e
+                logger.error(f"[{__parser__}][execute_query]: HTTPError raised -- {url} - {data} -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
+                retry += 1
+                continue
             except JSONDecodeError as e:
-                logger.exception(f"[{__parser__}][execute_query]: Impossible to decode json response -- {response.content}", extra={'frontend': str(self.frontend)})
-                retry -= 1
+                logger.error(f"[{__parser__}][execute_query]: Impossible to decode json response -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
+                retry += 1
                 continue
             except (TimeoutError, ReadTimeout, ConnectTimeout) as e:
-                logger.exception(f"[{__parser__}][execute_query]: TimeoutError we will retry a request soon -- retry {retry}/3 -- {response.content}", extra={'frontend': str(self.frontend)})
-                retry -= 1
+                logger.warning(f"[{__parser__}][execute_query]: TimeoutError we will retry a request soon -- retry {retry}/3 -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
+                retry += 1
                 continue
+
             break
 
         response.raise_for_status()
 
         return resp_json
 
-    def get_itdr_events_ids(self, since: int, to: int, limit: int = 50):
+    def get_itdr_events_ids(self, since: int, to: int, limit: int = 50) -> list:
         query = """
             fragment PageInfo on PageInfo {endCursor hasNextPage}
             query GetAlerts($first:Int, $after:String, $filters:[FilterInput!]) {
@@ -106,7 +111,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         """
 
         variables  = {
-            'first': 50, # This is the limit of API returns for one query
+            'first': limit, # This is the limit of API returns for one query
             'filters' : [
                 {
                     'fieldId': 'detectedAt',
@@ -117,8 +122,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
                         'endInclusive': False
                     }
                 }
-                # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Could be ignorded, this way of API will be used for EDR as well
-                # -> this tends to weird API bugs in combination of detectedAt
+                # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Should be ignored -> this tends to produces weird bugs while using it (returning variable results length)
             ]
         }
 
@@ -128,26 +132,19 @@ class SentinelOneIdentityGraphParser(ApiParser):
         response = self.execute_query(
             self.url,
             data={'query': query, 'variables': variables})
-        logger.info(response, extra={'frontend': str(self.frontend)})
-
-
 
         alerts = response.get('data', {}).get('alerts', {})
         edges.extend(alerts.get('edges', []))
 
-        while alerts.get('pageInfo', {}).get('hasNextPage', False):
+        while alerts.get('pageInfo', {}).get('hasNextPage', False) and not self.evt_stop.is_set():
             variables['after'] = alerts.get('pageInfo', {}).get('endCursor', '')
 
             response = self.execute_query(
                 self.url,
                 data={'query': query, 'variables': variables})
-            logger.info(response, extra={'frontend': str(self.frontend)})
-
 
             alerts = response.get('data', {}).get('alerts', {})
             edges.extend(alerts.get('edges', []))
-
-        logger.info(since, to, edges, extra={'frontend': str(self.frontend)})
 
         ret = [edge.get('node', {}).get('id') for edge in edges if edge]
 
@@ -222,21 +219,21 @@ class SentinelOneIdentityGraphParser(ApiParser):
         return dumps(log)
 
     def test(self):
-        self.login()
-
         logs = []
 
         try:
+            self.login()
+
             since = timezone.now() - timedelta(days=1)
             to = timezone.now()
 
             alert_ids = self.get_itdr_events_ids(
                 since=int(since.timestamp()*1000),
                 to=int(to.timestamp()*1000),
-                limit=10)
+                limit=100)
 
             for id in alert_ids:
-                logs.append(self.format_log(self.get_itdr_event_details(id)))
+                logs.append(self.get_itdr_event_details(id))
 
             return {
                 "status": True,
@@ -248,53 +245,28 @@ class SentinelOneIdentityGraphParser(ApiParser):
                 "error": str(e)
             }
 
-    def get_max_timestamp(self, logs: list[dict]) -> datetime:
-        max_timestamp = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0).replace(tzinfo=timezone.utc)
-        for log in logs:
-            if log.get("detectedAt"):
-                detectedAt = datetime.strptime(log['detectedAt'], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
-                if detectedAt > max_timestamp:
-                    max_timestamp = detectedAt
-        return max_timestamp
-
     def execute(self):
         self.login()
 
         current_time = timezone.now()
-        fetch = True
 
-        while fetch:
-            since = self.frontend.last_api_call or current_time - timedelta(days=7)
-            to = min(since + timedelta(days=1), current_time - timedelta(minutes=3))
+        since = self.last_api_call or (current_time - timedelta(days=7))
+        to = min(since + timedelta(hours=24), current_time - timedelta(minutes=3))
 
-            logger.info(f"[{__parser__}][execute]: Parser starting from {since} to {to}", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}][execute]: Parser starting from {since} to {to}", extra={'frontend': str(self.frontend)})
 
-            if not (to < current_time - timedelta(minutes=3)):
-                break
+        alert_ids = self.get_itdr_events_ids(
+            since=int(since.timestamp()*1000),
+            to=int(to.timestamp()*1000),
+            limit=100
+        )
 
-            alert_ids = self.get_itdr_events_ids(
-                since=int(since.timestamp()*1000),
-                to=int(to.timestamp()*1000),
-                limit=100
-            )
-            logger.info(f"[{__parser__}][execute]: Successfully gets {len(alert_ids)} alert's ids", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}][execute]: Successfully got {len(alert_ids)} alert's ids", extra={'frontend': str(self.frontend)})
 
-            logs = []
-            for id in alert_ids:
-                logs.append(self.get_itdr_event_details(id))
-            self.write_to_file([self.format_log(log) for log in logs])
+        for id in alert_ids:
+            event_detail = self.get_itdr_event_details(id)
+            self.write_to_file(event_detail)
 
-            if len(logs) > 0: # if logs fetched or timestamp too old we must update it
-                maxDetectedAt = self.get_max_timestamp(logs)
-                if maxDetectedAt:
-                    self.frontend.last_api_call = maxDetectedAt
-                else:
-                    self.frontend.last_api_call = to
-                self.frontend.save(update_fields=["last_api_call"])
-                logger.info(f"[{__parser__}][execute]: Successfully updated last_api_call to {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
-
-            elif since < current_time - timedelta(hours=24):
-                self.frontend.last_api_call = to
-                self.frontend.save(update_fields=["last_api_call"])
-
-                logger.info(f"[{__parser__}][execute]: Successfully updated last_api_call to {to}", extra={'frontend': str(self.frontend)})
+        if len(alert_ids) > 0 or (since < current_time - timedelta(hours=24)): # if logs or timestamp to old
+            self.frontend.last_api_call = to
+            self.frontend.save(update_fields=["last_api_call"])
