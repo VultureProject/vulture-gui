@@ -267,6 +267,15 @@ class SentinelOneIdentityGraphParser(ApiParser):
             event_detail = self.get_itdr_event_details(id)
             self.write_to_file([self.format_log(event_detail)])
 
-        if len(alert_ids) > 0 or (since < current_time - timedelta(hours=24)): # if logs or timestamp to old
+        logger.info(f"[{__parser__}][execute]: Succesfully got {len(alert_ids)} alerts", extra={'frontend': str(self.frontend)})
+
+        if len(alert_ids) > 0: # if logs
             self.frontend.last_api_call = to
             self.frontend.save(update_fields=["last_api_call"])
+            logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
+        elif since < current_time - timedelta(hours=24): # or timestamp to old
+            self.frontend.last_api_call += timedelta(hours=1)
+            self.frontend.save(update_fields=["last_api_call"])
+            logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
+
+        logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
