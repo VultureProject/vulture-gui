@@ -38,6 +38,7 @@ from applications.logfwd.models import LogOM, LogOMMongoDB
 from applications.reputation_ctx.models import ReputationContext, DATABASES_PATH
 from darwin.policy.models import DarwinPolicy, FilterPolicy, DarwinBuffering
 from services.haproxy.haproxy import test_haproxy_conf, HAPROXY_OWNER, HAPROXY_PATH, HAPROXY_PERMS
+from services.rsyslogd.models import RsyslogQueue
 from system.error_templates.models import ErrorTemplate
 from system.cluster.models import Cluster, NetworkAddress, Node
 from applications.backend.models import Backend
@@ -105,9 +106,9 @@ REDIS_MODE_CHOICES = (
 )
 
 REDIS_STARTID_CHOICES = (
-    ('$',"New entries"),
+    ('$', "New entries"),
     ('-', "All entries"),
-    ('>',"Undelivered entries"),
+    ('>', "Undelivered entries"),
 )
 
 DARWIN_MODE_CHOICES = (
@@ -170,7 +171,7 @@ FRONTEND_PERMS = HAPROXY_PERMS
 UNIX_SOCKET_PATH = path_join(settings.SOCKETS_PATH, "rsyslog")
 LOG_API_PATH = path_join(settings.LOGS_PATH, "api_parser")
 
-class Frontend(models.Model):
+class Frontend(RsyslogQueue, models.Model):
     """ Model used to generate fontends configuration of HAProxy """
     """ Is that section enabled or disabled """
     enabled = models.BooleanField(
@@ -531,11 +532,6 @@ class Frontend(models.Model):
         default=False,
         help_text=_("Don't accept sessions if service is not ready"),
         verbose_name=_("Healthckeck service")
-    )
-    nb_workers = models.PositiveIntegerField(
-        default=8,
-        help_text=_("Maximum number of workers for rsyslog ruleset"),
-        verbose_name=_("Maximum parser workers")
     )
     mmdb_cache_size = models.PositiveIntegerField(
         default=0,
@@ -1631,6 +1627,31 @@ class Frontend(models.Model):
         help_text=_("Hornetsecurity access token"),
         default=""
     )
+    ubika_base_refresh_token = models.TextField(
+        verbose_name=_("Ubika base refresh token (used to establish first login)"),
+        help_text=_("Ubika base refresh token (used to establish first login)"),
+        default=""
+    )
+    ubika_namespaces = models.JSONField(
+        verbose_name=_("Ubika namespaces to fetch"),
+        help_text=_("Ubika namespaces to fetch"),
+        default=[]
+    )
+    ubika_refresh_token = models.TextField(
+        verbose_name=_("Ubika refresh token"),
+        help_text=_("Ubika refresh token"),
+        default=""
+    )
+    ubika_access_token = models.TextField(
+        verbose_name=_("Ubika access token"),
+        help_text=_("Ubika access token"),
+        default=""
+    )
+    ubika_access_expires_at = models.DateTimeField(
+        default=timezone.now,
+        help_text=_("Ubika refresh token expiration timestamp"),
+        verbose_name=_("Ubika refresh token expiration timestamp")
+    )
     sentinel_one_identity_graph_token = models.TextField(
         verbose_name=_("Sentinel One Identity Graph Token"),
         help_text=_("Sentinel One Identity Graph Token"),
@@ -1641,8 +1662,6 @@ class Frontend(models.Model):
         help_text=_("Sentinel One Identity Graph Console URL"),
         default=""
     )
-
-
 
     @staticmethod
     def str_attrs():
@@ -1857,6 +1876,7 @@ class Frontend(models.Model):
             'log_level': self.log_level,
             'log_condition': self.log_condition,
             'ruleset_name': self.get_ruleset(),
+            'ruleset_options': self.render_ruleset_options(),
             'parser_tag': self.parser_tag,
             'ratelimit_interval': self.ratelimit_interval,
             'ratelimit_burst': self.ratelimit_burst,
@@ -1878,7 +1898,6 @@ class Frontend(models.Model):
             'JAIL_ADDRESSES': JAIL_ADDRESSES,
             'CONF_PATH': HAPROXY_PATH,
             'tags': self.tags,
-            'nb_workers': self.nb_workers,
             'healthcheck_service': self.healthcheck_service,
             'mmdb_cache_size': self.mmdb_cache_size,
             'redis_batch_size': self.redis_batch_size,
@@ -2086,6 +2105,16 @@ class Frontend(models.Model):
                 logger.info(f"[RENDER PRE RULESET FAILURE] {log_om}")
         return result
 
+    def render_ruleset_options(self):
+        """ Render ruleset's options
+        :return  Str containing the rendered config
+        """
+        options_dict = self.get_rsyslog_queue_parameters()
+        if self.enable_disk_assist:
+            options_dict['filename'] = f"{self.get_ruleset()}_disk-queue"
+        result = " ".join(f'queue.{k}="{v}"' for k,v in options_dict.items())
+        return result
+
     @property
     def api_rsyslog_port(self):
         return 20000+self.id
@@ -2279,15 +2308,15 @@ class Frontend(models.Model):
                                      self.get_rsyslog_base_filename())
                     # API request to rebuild global rsyslog configuration
                     node.api_request('services.rsyslogd.rsyslog.build_conf')
-                node.api_request("services.rsyslogd.rsyslog.restart_service")
+                node.api_request("services.rsyslogd.rsyslog.restart_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if self.has_filebeat_conf:
                 if self.enabled:
                     node.api_request("services.filebeat.filebeat.build_conf", self.pk)
-                    node.api_request("services.filebeat.filebeat.restart_service", self.pk)
+                    node.api_request("services.filebeat.filebeat.restart_service", self.pk, run_delay=settings.SERVICE_RESTART_DELAY)
                 else:
-                    node.api_request('services.filebeat.filebeat.stop_service', self.pk)
-                    node.api_request('services.filebeat.filebeat.delete_conf',
+                    node.api_request("services.filebeat.filebeat.stop_service", self.pk)
+                    node.api_request("services.filebeat.filebeat.delete_conf",
                                      self.get_filebeat_base_filename())
 
             if self.has_haproxy_conf:
@@ -2295,12 +2324,16 @@ class Frontend(models.Model):
                     node.api_request("services.haproxy.haproxy.build_conf", self.pk)
                 else:
                     node.api_request('services.haproxy.haproxy.delete_conf', self.get_base_filename())
-                node.api_request("services.haproxy.haproxy.reload_service")
+                node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             # Reload LogRotate config
             if self.enable_logging and (self.log_forwarders.filter(logomfile__enabled=True).count() > 0 or
                                 self.log_forwarders_parse_failure.filter(logomfile__enabled=True).count()):
                 node.api_request("services.logrotate.logrotate.reload_conf")
+
+            node.api_request("services.pf.pf.gen_config")
+            node.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
+
             self.status[node.name] = "WAITING"
             self.save(update_fields=["status"])
             nodes.add(node)
@@ -2315,8 +2348,7 @@ class Frontend(models.Model):
         self.enabled = True
         self.save(update_fields=['enabled'])
 
-        for node in self.reload_conf():
-            node.api_request("services.pf.pf.gen_config")
+        self.reload_conf()
 
         return f"Start frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 
@@ -2328,8 +2360,7 @@ class Frontend(models.Model):
         self.enabled = False
         self.save(update_fields=['enabled'])
 
-        for node in self.reload_conf():
-            node.api_request("services.pf.pf.gen_config")
+        self.reload_conf()
 
         return f"Stop frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 

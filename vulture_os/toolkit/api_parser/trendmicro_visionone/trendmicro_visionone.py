@@ -192,9 +192,16 @@ class TrendmicroVisiononeParser(ApiParser):
                         timezone.now() - timedelta(days=2))
 
             # we don't want logs newer than 5 minutes ago, to let some time for VisionOne to index logs
-            # we are retrieving maximum 1 hour at once, to avoid the collector to run for too long
 
-            max_to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=1))
+            if kind == "oat":
+                # we are retrieving maximum 1 hour at once for OAT to avoid the collector running for too long
+                # because there are lots of logs
+                max_to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=1))
+            else:
+                # we are retrieving maximum 24 hours at once for audit and alerts to avoid being 24 hours late on events
+                # because there are few logs
+                max_to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=24))
+
             to = max_to
 
             # "to" may be modified in the loop by __execute_query if there are too many logs
@@ -209,11 +216,18 @@ class TrendmicroVisiononeParser(ApiParser):
                     self.update_lock()
                     total = len(logs)
                     if total > 0:
+                        logger.info(f"[{__parser__}]:execute: Update trendmicro_visionone_{kind}_timestamp to {to}",
+                                    extra={'frontend': str(self.frontend)})
                         setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", to)
+                        self.frontend.save(update_fields=[f"trendmicro_visionone_{kind}_timestamp"])
                     elif since < timezone.now() - timedelta(hours=24):
                         # If no logs where retrieved during the last 24hours,
                         # move forward 1h to prevent stagnate ad vitam eternam
+                        logger.info(f"[{__parser__}]:execute: Update trendmicro_visionone_{kind}_timestamp "
+                                    f"to {since + timedelta(hours=1)}",
+                                    extra={'frontend': str(self.frontend)})
                         setattr(self.frontend, f"trendmicro_visionone_{kind}_timestamp", since + timedelta(hours=1))
+                        self.frontend.save(update_fields=[f"trendmicro_visionone_{kind}_timestamp"])
                         break
 
                     # we are re-using the computed time range as a basis for the next query
@@ -230,7 +244,6 @@ class TrendmicroVisiononeParser(ApiParser):
                 logger.info(
                     f"[{__parser__}]:execute: Log collection for {kind}'s logs stopped at {getattr(self.frontend, f'trendmicro_visionone_{kind}_timestamp')}",
                     extra={'frontend': str(self.frontend)})
-
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
 
     def test(self):

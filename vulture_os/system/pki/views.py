@@ -25,6 +25,7 @@ __doc__ = 'Network View'
 
 # Django system imports
 from django.conf import settings
+from django.db.models import Q
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.http.response import HttpResponseNotFound
 from django.shortcuts import render, HttpResponse
@@ -33,6 +34,7 @@ from django.urls import reverse
 
 # Django project imports
 from gui.forms.form_utils import DivErrorList
+from services.frontend.models import Frontend
 from system.exceptions import VultureSystemConfigError
 from system.pki.form import TLSProfileForm, X509ExternalCertificateForm, X509InternalCertificateForm
 from system.pki.models import CIPHER_SUITES, PROTOCOLS_HANDLER, TLSProfile, X509Certificate
@@ -160,7 +162,7 @@ def pki_edit(request, object_id=None, api=False):
 
         """ Reload HAProxy on certificate change """
         if X509Certificate.objects.filter(certificate_of__listener__isnull=False, id=pki.id).exists() or X509Certificate.objects.filter(certificate_of__server__isnull=False, id=pki.id).exists():
-            Cluster.api_request("services.haproxy.haproxy.reload_service")
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
         if api:
             return build_response(pki.pk, "api.system.pki", [])
@@ -293,6 +295,14 @@ def tls_profile_edit(request, object_id=None, api=False):
             tls_profile.save_conf()
             logger.info("TLSProfile '{}' write on disk requested.".format(tls_profile.name))
 
+            """ We need to reload all Frontend's rsyslog configuration that uses
+                the related profile """
+            for frontend in Frontend.objects.filter(
+                Q(log_forwarders__in=list(tls_profile.logomelasticsearch_set.all())) |
+                Q(log_forwarders_parse_failure__in=list(tls_profile.logomelasticsearch_set.all()))).distinct():
+                frontend.reload_conf()
+                logger.info("LogOM Elasticsearch confs reloaded")
+
             for frontend in set(listener.frontend for listener in tls_profile.listener_set.all()):
                 frontend.reload_conf()
                 logger.info("Frontend confs reloaded")
@@ -300,9 +310,6 @@ def tls_profile_edit(request, object_id=None, api=False):
             for backend in set(server.backend for server in tls_profile.server_set.all()):
                 backend.reload_conf()
                 logger.info("Backend confs reloaded")
-
-            if tls_profile.server_set.exists():
-                Cluster.api_request("services.haproxy.haproxy.reload_service")
 
         except VultureSystemConfigError as e:
             """ If we get here, problem occurred during save_conf, after save """

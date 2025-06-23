@@ -137,7 +137,7 @@ def user_authentication_edit(request, object_id=None, api=False):
             try:
                 if (repo_changed or disconnect_url_changed or timeout_changed) and profile.workflow_set.count() > 0:
                     for workflow in profile.workflow_set.all():
-                        nodes = workflow.frontend.reload_conf()
+                        workflow.frontend.reload_conf()
 
                 if profile.enable_external:
                     # Automatically create OpenID repo
@@ -157,7 +157,7 @@ def user_authentication_edit(request, object_id=None, api=False):
 
                 Cluster.api_request("authentication.user_portal.api.write_templates", profile.id)
                 profile.save_conf()
-                Cluster.api_request("services.haproxy.haproxy.reload_service")
+                Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             except Exception as e:
                 if api:

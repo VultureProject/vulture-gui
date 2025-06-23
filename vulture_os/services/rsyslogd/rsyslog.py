@@ -115,15 +115,6 @@ def configure_node(node_logger):
 
     result += configure_pstats(node_logger)
 
-    """ If this method has been called, there is a reason - a Node has been modified
-          so we need to restart Rsyslog because at least PF conf has been changed 
-    """
-    # if Frontend.objects.filter(enable_logging=True).count() > 0:
-    #    node_logger.debug("Logging enabled, reload of Rsyslog needed.")
-    restart_service(node_logger)
-    node_logger.info("Rsyslog service restarted.")
-    result += "Rsyslogd service restarted."
-
     return result
 
 

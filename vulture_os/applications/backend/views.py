@@ -121,13 +121,14 @@ def backend_delete(request, object_id, api=False):
             backend.delete()
 
             # API request deletion of backend filename
-            Cluster.api_request('services.haproxy.haproxy.delete_conf', backend_filename)
+            Cluster.api_request("services.haproxy.haproxy.delete_conf", backend_filename)
 
             # And reload of HAProxy service
-            Cluster.api_request('services.haproxy.haproxy.reload_service')
+            Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             # Reload cluster PF configuration
-            Cluster.api_request ("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
             if api:
                 return JsonResponse({
@@ -371,15 +372,15 @@ def backend_edit(request, object_id=None, api=False):
             logger.debug("Backend '{}' (id={}) saved in MongoDB.".format(backend.name, backend.id))
 
             """ And all the listeners created earlier """
-            for s in server_objs:
-                s.backend = backend
-                logger.debug("Saving server {}".format(str(s)))
-                s.save()
+            for server in server_objs:
+                server.backend = backend
+                logger.debug("Saving server {}".format(str(server)))
+                server.save()
 
             """ Delete listeners deleted in form """
-            for s in backend.server_set.exclude(pk__in=[l.id for l in server_objs]):
-                s.delete()
-                logger.info("Deleting server {}".format(s))
+            for server in backend.server_set.exclude(pk__in=[server.id for server in server_objs]):
+                server.delete()
+                logger.info("Deleting server {}".format(server))
 
             """ If mode is HTTP """
             if backend.mode == "http":
@@ -416,7 +417,7 @@ def backend_edit(request, object_id=None, api=False):
             logger.debug("Write conf of backend '{}' asked on cluster".format(backend.name))
 
             """ Reload HAProxy service - After rsyslog to prevent logging crash """
-            api_res = Cluster.api_request("services.haproxy.haproxy.reload_service")
+            api_res = Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
             if not api_res.get('status'):
                 raise ServiceReloadError("on cluster\n API request error.", "haproxy",
                                          traceback=api_res.get('message'))
@@ -427,6 +428,7 @@ def backend_edit(request, object_id=None, api=False):
             backend.save()
 
             Cluster.api_request("services.pf.pf.gen_config")
+            Cluster.api_request("services.pf.pf.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
 
 
         except (VultureSystemError, ServiceError) as e:

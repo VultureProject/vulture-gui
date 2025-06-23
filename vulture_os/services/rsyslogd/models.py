@@ -23,18 +23,12 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Rsyslog settings model'
 
 # Django system imports
+from typing import Any
 from django.conf import settings
 from djongo import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Q
-
-# Django project imports
-from applications.logfwd.models import LogOM
-from applications.reputation_ctx.models import DATABASES_PATH
-from services.frontend.models import Frontend, Listener
-from system.cluster.models import Cluster
-from system.config.models import Config
-
-# Required exceptions imports
+from django.utils.translation import gettext_lazy as _
 
 # Logger configuration imports
 import logging
@@ -51,6 +45,11 @@ class RsyslogSettings(models.Model):
         :return     Dictionnary of configuration parameters
         """
         """ Variables used by template rendering """
+        from applications.logfwd.models import LogOM
+        from applications.reputation_ctx.models import DATABASES_PATH
+        from services.frontend.models import Frontend, Listener
+        from system.cluster.models import Cluster
+        from system.config.models import Config
         current_node = Cluster.get_current_node()
         frontends = set(listener.frontend for listener in Listener.objects.filter(network_address__nic__node=current_node).distinct())
         frontends.update(Frontend.objects.filter(
@@ -69,3 +68,170 @@ class RsyslogSettings(models.Model):
 
     def __str__(self):
         return "Rsyslogd settings"
+
+class RsyslogQueue(models.Model):
+    """ Parameters used for Rsyslog actions and queues
+    """
+
+    #This class is not in DB, only used to define common fields in different models
+    class Meta:
+        abstract = True
+
+    class QueueTypes(models.TextChoices):
+        DIRECT = "direct", _("Direct (no queuing)")
+        LINKEDLIST = "linkedlist", _("LinkedList (queue with fixed size but dynamic allocation)")
+        FIXEDARRAY = "fixedarray", _("FixedArray (queue with fixed and preallocated size)")
+
+    queue_type = models.TextField(
+        default=QueueTypes.LINKEDLIST,
+        choices=QueueTypes.choices,
+        help_text=_("Set a queue type for the rsyslog's Frontend/LogForwarder configuration"),
+        verbose_name=_("Rsyslog queue type")
+    )
+    queue_size = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Size of the queue in nb of message"
+                    " (default to 1000 for LogForwarders, 50000 for Frontends)"),
+        verbose_name=_("Size of the queue in nb of message"),
+        validators=[MinValueValidator(100)]
+    )
+    dequeue_batch_size = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Maximum number of messages to use in a dequeuing batch"
+                    " (default to 128 for LogForwarders, 1024 for Frontends)"),
+        verbose_name=_("Size of the batch to dequeue"),
+        validators=[MinValueValidator(1)]
+    )
+    nb_workers = models.PositiveIntegerField(
+        default=8,
+        help_text=_("Maximum number of workers for the rsyslog's LogForwarder/Frontend configuration"),
+        verbose_name=_("Maximum parser workers"),
+        validators=[MinValueValidator(1)]
+    )
+    new_worker_minimum_messages = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Number of messages still in queue to start a new worker thread"),
+        verbose_name=_("Minimum messages to start a new worker"),
+        validators=[MinValueValidator(1)]
+    )
+    light_delay_mark = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Start throttling sender (if possible) when the queue reaches this percentage"),
+        verbose_name=_("Throttle input when queue reaches this size (between 1 and 99%)"),
+        validators=[MinValueValidator(1), MaxValueValidator(99)]
+    )
+    full_delay_mark = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Stop processing input logs when the queue reaches this percentage"),
+        verbose_name=_("Stop processing input logs when queue reaches this size (between 1 and 99%)"),
+        validators=[MinValueValidator(1), MaxValueValidator(99)]
+    )
+    shutdown_timeout = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Time to wait for the queue to finish processing entries (in ms) before shutting down"),
+        verbose_name=_("Queue timeout shutdown (ms)"),
+        validators=[MinValueValidator(1)]
+    )
+    enable_disk_assist = models.BooleanField(
+        default=False,
+        help_text=_("Save logs on disk if queue reaches high usage"),
+        verbose_name=_("Enable disk queue on high queue usage")
+    )
+    save_on_shutdown = models.BooleanField(
+        default=True,
+        help_text=_("Prevent message loss by writing on disk during a shutdown"),
+        verbose_name=_("Save remaining queue logs on shutdown")
+    )
+    high_watermark = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Write logs on disk if size of queue reaches this threshold"),
+        verbose_name=_("High watermark for disk queuing (between 1 and 99%)"),
+        validators=[MinValueValidator(1), MaxValueValidator(99)]
+    )
+    low_watermark = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Stop using disk when queue size falls below this threshold"),
+        verbose_name=_("Low watermark for disk queuing (between 1 and 99%)"),
+        validators=[MinValueValidator(1), MaxValueValidator(99)]
+    )
+    max_file_size = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Set the max value of a queue file in MB"
+                    " (default to 1MB for actions and 16MB for rulesets)"),
+        verbose_name=_("Max size of a queue file (in MB)"),
+        validators=[MinValueValidator(1)]
+    )
+    max_disk_space = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Limit the maximum disk space used by the queue in MB"),
+        verbose_name=_("Max total disk space used by the queue (in MB)"),
+        validators=[MinValueValidator(0)]
+    )
+    checkpoint_interval = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("To improve reliability, write/update bookkeeping information every Nth record handled"),
+        verbose_name=_("Update bookkeeping information every Nth entry"),
+        validators=[MinValueValidator(0)]
+    )
+    spool_directory = models.TextField(
+        blank=True,
+        default="/var/tmp",
+        help_text=_("Set a writable folder to store DA queue"),
+        verbose_name=_("Disk-Assisted queue folder")
+    )
+
+    def get_rsyslog_queue_parameters(self) -> dict[str, Any]:
+        """ get ruleset/action's explicitely defined options
+        :return  Dict containing the fields set
+        """
+        options_dict = {
+            "type": self.queue_type,
+        }
+        if self.queue_type != RsyslogQueue.QueueTypes.DIRECT:
+            light_delay_mark = None
+            full_delay_mark = None
+            if self.queue_size and self.light_delay_mark:
+                light_delay_mark = int(self.queue_size * self.light_delay_mark / 100)
+            if self.queue_size and self.full_delay_mark:
+                full_delay_mark = int(self.queue_size * self.full_delay_mark / 100)
+            options_dict |= {
+                "size": self.queue_size,
+                "dequeueBatchSize": self.dequeue_batch_size,
+                "workerThreads": self.nb_workers,
+                "workerThreadMinimumMessages": self.new_worker_minimum_messages,
+                "lightDelayMark": light_delay_mark,
+                "fullDelaymark": full_delay_mark,
+                "timeoutshutdown": self.shutdown_timeout,
+            }
+            if self.enable_disk_assist:
+                high_watermark = None
+                low_watermark = None
+                if self.queue_size and self.high_watermark:
+                    high_watermark = int(self.queue_size * self.high_watermark / 100)
+                if self.queue_size and self.low_watermark:
+                    low_watermark = int(self.queue_size * self.low_watermark / 100)
+                options_dict |= {
+                    "highWatermark": high_watermark,
+                    "lowWatermark": low_watermark,
+                    "spoolDirectory": self.spool_directory,
+                    "maxFileSize": f"{self.max_file_size}m" if self.max_file_size else None,
+                    "maxDiskSpace": f"{self.max_disk_space}m" if self.max_disk_space else None,
+                    "saveOnShutdown": "on" if self.save_on_shutdown else None,
+                    "checkpointInterval": self.checkpoint_interval or None,
+                }
+
+        #Filter out None values and format them all as string
+        options_dict = dict(filter(lambda x: x[1] is not None, options_dict.items()))
+
+        return options_dict

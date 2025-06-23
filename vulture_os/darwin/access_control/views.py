@@ -163,13 +163,13 @@ def access_control_edit(request, object_id=None, api=None):
                     reload_all = True
 
                 if reload_all:
-                    api_res = Cluster.api_request("services.haproxy.haproxy.reload_service")
+                    api_res = Cluster.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
                     if not api_res.get('status'):
                         logger.error("Access_Control::edit: API error while trying to "
                                 "restart HAProxy service : {}".format(api_res.get('message')))
                 else:
                     for node in nodes:
-                        api_res = node.api_request("services.haproxy.haproxy.reload_service")
+                        api_res = node.api_request("services.haproxy.haproxy.reload_service", run_delay=settings.SERVICE_RESTART_DELAY)
                         if not api_res.get('status'):
                             logger.error("Access_Control::edit: API error while trying to "
                                         "restart HAProxy service : {}".format(api_res.get('message')))

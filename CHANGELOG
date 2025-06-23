@@ -6,6 +6,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.27.1] - 2025-06-13
+### Fixed
+- [API_PARSER] [TRENDMICRO_VISIONONE] Avoid delays on log collection, depending on log types
+
+
+## [2.27.0] - 2025-06-10
+### Added
+- [VULTURED] Delay option on api_request calls
+- [FRONTEND] Rsyslog queue settings
+- [API_PARSER] [UBIKA] New collector
+### Changed
+- [API_PARSER] [CISCO_UMBRELLA_MANAGED_ORG] Add organisation id and name in output logs
+- [APPLICATIONS] [LOGOMELASTICSEARCH] Allow use of a TLS Profile instead of a simple X509 Certificate
+- [SYSTEM] [TLS_PROFILE] Reorder parameters into 2 separate sections
+### Fixed
+- [API_PARSER] [BEYONDTRUST_REPORTINGS] Fix parsing of support session logs
+- [API_PARSER] [PERCEPTION_POINT_X_RAY] Improve error message
+- [API_PARSER] [GATEWATCHER_ALERTS] Update endpoint of the API
+- [API_PARSER] [CISCO_UMBRELLA_MANAGED_ORG] Ensure all attributes always have the correct type in code
+- [API_PARSER] [CISCO_UMBRELLA] Avoid never-ending collect
+- [API] [X509CERTIFICATE] Avoid conflicts when requesting a specific certificate
+
+
+## [2.26.1] - 2025-05-21
+### Fixed
+- [API_PARSER] [TRENDMICRO_VISIONONE] Last api call was not updated
+- [API_PARSER] [CORTEX_XDR] Last api call was not updated
+
+
+## [2.26.0] - 2025-05-16
 ### Added
 - [API_PARSER] [HORNETSECURITY] New collector
 - [GUI] Middle click to edit an object in a new tab
@@ -17,18 +49,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [GUI] [RSYSLOG] Bring more details on GUI when configuration builds fail
 - [SERVICES] [FRONTEND] Improve deletion messages and conditions on GUI and API
 - [API_PARSER] Ensure modifications in configuration are not overriden by running instances
+- [API_PARSER] [NOZOMI_PROBE] Fix type error when the field total is null
+- [API_PARSER] [ARMIS_CENTRIX] Fix condition to ask for a new token
 - [FRONTEND] Hot-disable a collector manually
 - [SERVICES] Prevent errors when deleted configuration files do not exist
 - [CLUSTER_JOIN] Fix writing of certificates on new node's disk
 - [REDIS] Use proper Sentinel client when updating service
 ### Changed
 - [API_PARSER] [CROWDSTRIKE] Evolve collector to use API v2 instead of v1
-- [API_PARSER] [GATEWATCHER_ALERTS] Merge `raw_alert` into `alert` log object
 - [API_PARSER] [ARMIS_CENTRIX] Collect at max 1h of range to avoid API taking too long to answer
+- [API_PARSER] [BEYONDTRUST_REPORTINGS] Add session_details in logs and split them
 - [FILEBEAT] Separate building configurations and restarting service
 - [GUI] Improve AJAX requests management
 - [CLUSTER] Improve node import routine
 - [CLUSTER] Improve node deletion from the gui
+- [DEPENDENCIES]
+  - certifi 2024.12.14 -> 2025.4.26
+  - django 4.2.20 -> 4.2.21
+  - maxminddb 2.5.2 -> 2.7.0
+  - requests 2.31.0 0 -> 2.32.3
+  - werkzeug 3.0.3 -> 3.1.3
+  - setuptools 70.0.0 -> removed
 
 
 ## [2.25.0] - 2025-04-30

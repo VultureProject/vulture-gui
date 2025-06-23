@@ -187,18 +187,19 @@ class Node(models.Model):
             result['pstats_forwarders'] = [p.to_dict() for p in self.pstats_forwarders.all()]
         return result
 
-    def api_request(self, action, config=None, internal=False):
+    def api_request(self, action, config=None, run_delay=0, internal=False):
         """
 
         :param action:    The requested action
         :param config:    The associated config
+        :param run_delay: The delay applied to run the request
         :param internal:  Is this request internal ? Means that it will not be shown to the admin
         :return:
             { 'status': True, 'message': 'A meaningfull message' }
             { 'status': False, 'message': 'A meaningfull message' }
         """
 
-        return Cluster.api_request(action, config, self, internal=internal)
+        return Cluster.api_request(action, config, self, run_delay, internal=internal)
 
     def synchronizeNICs(self):
         """
@@ -571,7 +572,10 @@ class Node(models.Model):
     def get_pending_messages(self, count=None):
         try:
             return MessageQueue.objects.filter(
-            node=self, status__in=[MessageQueue.MessageQueueStatus.NEW, MessageQueue.MessageQueueStatus.RUNNING]).order_by('modified')[0:count]
+                node=self,
+                status__in=[MessageQueue.MessageQueueStatus.NEW, MessageQueue.MessageQueueStatus.RUNNING],
+                run_at__lte=timezone.now()
+            ).order_by('modified')[0:count]
 
         except Exception as e:
             logger.error(f"Could not get list of pending messages: {str(e)}")
@@ -702,92 +706,64 @@ class Cluster(models.Model):
                     the result string of the message (in case of failure, the error details)
             """
 
-        action_cmd = Cluster.api_request(action, config, node, internal)
-        if node:
-            logger.info(f"Cluster::await_api_request:: waiting for result of {action} on node {node}")
-            instance = action_cmd.get('instance')
+        action_cmd = Cluster.api_request(action, config, node, 0, internal)
+
+        logger.info(f"Cluster::await_api_request:: waiting for result of {action} on " + (f"node {node}" if node else "all nodes"))
+        status, results = True, list()
+
+        for instance in action_cmd.get('instances'):
             try:
-                return instance.await_result(interval, tries)
+                partial_status, result = instance.await_result(interval, tries)
             except APISyncResultTimeOutException:
                 logger.error(f"Cluster::await_api_request:: Action didn't return in {interval*tries}s, returning")
-                return False, ""
-        else:
-            results = list()
-            status = True
-            logger.info(f"Cluster::await_api_request:: waiting for result of {action} on all nodes")
-            instances = action_cmd.get('instances')
-            for instance in instances:
-                try:
-                    partial_status, result = instance.await_result(interval, tries)
-                except APISyncResultTimeOutException:
-                    status = False
-                    logger.error(f"Cluster::await_api_request:: Action didn't return in {interval*tries}s, returning")
-                    result = ""
-                results.append({
-                    "status": partial_status,
-                    "result": result
-                })
-                if not partial_status:
-                    status = partial_status
+                partial_status, result = False, ""
+            results.append({
+                "status": partial_status,
+                "result": result
+            })
+            if not partial_status:
+                status = partial_status
 
-            return status, results
+        return status, results
 
     @staticmethod
-    def api_request(action, config=None, node=None, internal=False):
+    def api_request(action, config=None, node=None, run_delay=0, internal=False):
         """
 
-        :param node: The node we want to send a message to
-        :param action:    The requested action
-        :param config:    The associated config
-        :param node:      The node to set the action to
-        :param internal:  Is this request internal ? Means that it will not be shown to the admin
+        :param action:      The requested action
+        :param config:      The associated config
+        :param node:        The node to set the action to
+        :param run_delay:   The delay applied to run the request
+        :param internal:    Is this request internal ? Means that it will not be shown to the admin
         :return:
-                for no node is specified:
-                { 'status': True, 'message': 'A meaningful message' }
-                for specific node:
-                { 'status': True, 'message': 'A meaningful message', instance: messagequeue_object_created }
-            { 'status': False, 'message': 'A meaningful message' }
+                { 'status': True, 'message': 'A meaningful message', instances: [messagequeue_object_created] }
         """
 
-        if not node:
-            instances = list()
-            # Ignore pending nodes
-            for node in Node.objects.exclude(management_ip__exact=''):
-                m, created = MessageQueue.objects.get_or_create(
-                    node=node,
-                    status="new",
-                    action=action,
-                    config=config,
-                    internal=internal
-                )
-
-                try:
-                    logger.debug("Cluster::api_request: Calling \"{}\" on node \"{}\". Config is: \"{}\"".format(
-                        action, node.name, config))
-                    m.save()
-                    instances.append(m)
-                except Exception as e:
-                    logger.error("Cluster::api_request: {}".format(str(e)))
-                    return {'status': False, 'message': str(e)}
-            return {'status': True, 'message': '', 'instances': instances}
-        else:
-            m, created = MessageQueue.objects.get_or_create(
+        instances = list()
+        # Ignore pending nodes
+        for node in [node] if node else Node.objects.exclude(management_ip__exact=''):
+            m, created = MessageQueue.objects.update_or_create(
                 node=node,
-                status="new",
+                status=MessageQueue.MessageQueueStatus.NEW,
                 action=action,
                 config=config,
-                internal=internal
+                internal=internal,
+                defaults={
+                    "run_at": timezone.now() + timezone.timedelta(seconds=run_delay),
+                    "modified": timezone.now(),
+                }
             )
 
-            try:
-                logger.debug("Cluster::api_request: Calling \"{}\" on node \"{}\". Config is: \"{}\"".format(
-                    action, node.name, config))
-                m.save()
-            except Exception as e:
-                logger.error("Cluster::api_request: {}".format(str(e)))
-                return {'status': False, 'message': str(e)}
+            if not created:
+                logger.debug(f"Cluster::api_request: Action \"{action}\" has been updated to : {m.run_at}")
 
-            return {'status': True, 'message': '', 'instance': m}
+            try:
+                logger.debug(f"Cluster::api_request: Calling \"{action}\" on node \"{node.name}\". Config is: \"{config}\"")
+                instances.append(m)
+            except Exception as e:
+                logger.error(f"Cluster::api_request: {str(e)}")
+                return {'status': False, 'message': str(e)}
+        return {'status': True, 'message': '', 'instances': instances}
 
 
 class MessageQueue(models.Model):
@@ -820,6 +796,9 @@ class MessageQueue(models.Model):
     # Use to sort jobs in the queue
     modified = models.DateTimeField()
 
+    # Optional delay to schedule the task later
+    run_at = models.DateTimeField(default=timezone.now)
+
     # Report to the admin this object ?
     internal = models.BooleanField(default=False)
 
@@ -832,13 +811,13 @@ class MessageQueue(models.Model):
             'config': self.config,
             'result': self.result,
             'modified': self.modified,
+            'run_at': self.run_at,
             'internal': self.internal
         }
 
     def save(self, *args, **kwargs):
         self.modified = timezone.now()
         return super().save(*args, **kwargs)
-
 
     def execute(self):
         self.status = MessageQueue.MessageQueueStatus.RUNNING
@@ -866,7 +845,6 @@ class MessageQueue(models.Model):
 
         self.save()
         return self.status, self.result
-
 
     def await_result(self, interval=2, tries=10):
         """
