@@ -149,7 +149,7 @@ PARSER_LIST = {
     "extrahop": ExtrahopParser,
     "hornetsecurity": HornetSecurityParser,
     "ubika": UbikaParser,
-    "sentinel_one_identity_graph": SentinelOneIdentityGraphParser
+    "sentinel_one_identity_graph": SentinelOneIdentityGraphParser,
 }
 
 class ParserDoesNotExist(Exception):

@@ -279,8 +279,8 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                            "perception_point_x_ray_host", "perception_point_x_ray_token",
                            "extrahop_host", "extrahop_id", "extrahop_secret",
                            "hornetsecurity_app_id", "hornetsecurity_token",
+                           "ubika_base_refresh_token", "ubika_namespaces",
                             "sentinel_one_identity_graph_token", "sentinel_one_identity_graph_console_url",
-                           "ubika_base_refresh_token", "ubika_namespaces"
                            ]:
             self.fields[field_name].required = False
 
@@ -407,8 +407,8 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                   "perception_point_x_ray_host", "perception_point_x_ray_token",
                   "extrahop_host", "extrahop_id", "extrahop_secret",
                   "hornetsecurity_app_id", "hornetsecurity_token",
-                  "sentinel_one_identity_graph_token", "sentinel_one_identity_graph_console_url",
                   "ubika_base_refresh_token", "ubika_namespaces",
+                  "sentinel_one_identity_graph_token", "sentinel_one_identity_graph_console_url",
         ] + RsyslogQueueForm.Meta.fields
 
         widgets = {
@@ -643,10 +643,10 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'hornetsecurity_app_id': TextInput(attrs={'class': 'form-control'}),
             'hornetsecurity_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'sentinel_one_identity_graph_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'sentinel_one_identity_graph_console_url': TextInput(attrs={'class': 'form-control'}),
             'ubika_base_refresh_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'ubika_namespaces': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
+            'sentinel_one_identity_graph_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
+            'sentinel_one_identity_graph_console_url': TextInput(attrs={'class': 'form-control'}),
         } | RsyslogQueueForm.Meta.widgets
 
     def clean_name(self):

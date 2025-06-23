@@ -54,9 +54,11 @@ class SentinelOneIdentityGraphParser(ApiParser):
 
         self.session = Session()
 
+
     def login(self):
         self.session.headers.update({"Authorization": f"Bearer {self.sentinel_one_identity_graph_token}"})
         return
+
 
     def execute_query(self, url: str, data: dict, timeout: int = 10):
         retry = 0
@@ -65,7 +67,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         while retry <= 3 and not self.evt_stop.is_set():
             retry += 1
             try:
-                logger.info(f"[{__parser__}][execute_query]: url {url} - retry {retry}/3", extra={'frontend': str(self.frontend)})
+                logger.info(f"[{__parser__}][execute_query]: Querying url {url} - retry {retry}/3", extra={'frontend': str(self.frontend)})
 
                 response = self.session.post(
                     url=url,
@@ -78,11 +80,11 @@ class SentinelOneIdentityGraphParser(ApiParser):
                 resp_json = response.json()
 
             except (HTTPError, ConnectionError) as e:
-                logger.error(f"[{__parser__}][execute_query]: HTTPError raised -- {url} - {data} -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}][execute_query]: HTTPError raised -- {e}", extra={'frontend': str(self.frontend)})
                 retry += 1
                 continue
             except JSONDecodeError as e:
-                logger.error(f"[{__parser__}][execute_query]: Impossible to decode json response -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
+                logger.error(f"[{__parser__}][execute_query]: Impossible to decode json response -- {e}", extra={'frontend': str(self.frontend)})
                 retry += 1
                 continue
             except (TimeoutError, ReadTimeout, ConnectTimeout) as e:
@@ -91,6 +93,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
                 continue
 
         return resp_json
+
 
     def get_itdr_events_ids(self, since: int, to: int, limit: int = 50):
         query = """
@@ -110,7 +113,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         """
 
         variables  = {
-            'first': limit, # This is the limit of API returns for one query
+            'first': limit, # This is the limit of items returned for one query
             'filters' : [
                 {
                     'fieldId': 'detectedAt',
@@ -121,7 +124,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
                         'endInclusive': False
                     }
                 }
-                # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Should be ignored -> this tends to produces weird bugs while using it (returning variable results length)
+                # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Should be ignored -> this tends to produce weird bugs while using it (returning results of variable length)
             ]
         }
 
@@ -214,8 +217,10 @@ class SentinelOneIdentityGraphParser(ApiParser):
 
         return response.get('data', {}).get('alert', {})
 
+
     def format_log(self, log: dict) -> str:
         return dumps(log)
+
 
     def test(self):
         logs = []
@@ -244,6 +249,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
                 "error": str(e)
             }
 
+
     def execute(self):
         self.login()
 
@@ -260,9 +266,10 @@ class SentinelOneIdentityGraphParser(ApiParser):
             limit=100
         )
 
-        logger.info(f"[{__parser__}][execute]: Successfully got {len(alert_ids)} alert's ids", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}][execute]: {len(alert_ids)} alerts to get...", extra={'frontend': str(self.frontend)})
 
         for id in alert_ids:
+            logger.debug(f"[{__parser__}][execute]: Getting alert '{id}'", extra={'frontend': str(self.frontend)})
             event_detail = self.get_itdr_event_details(id)
             self.write_to_file([self.format_log(event_detail)])
 
