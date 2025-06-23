@@ -254,6 +254,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         self.login()
 
         current_time = timezone.now()
+        logs = list()
 
         since = self.last_api_call or (current_time - timedelta(days=7))
         to = min(since + timedelta(hours=24), current_time - timedelta(minutes=3))
@@ -271,11 +272,18 @@ class SentinelOneIdentityGraphParser(ApiParser):
         for id in alert_ids:
             logger.debug(f"[{__parser__}][execute]: Getting alert '{id}'", extra={'frontend': str(self.frontend)})
             event_detail = self.get_itdr_event_details(id)
-            self.write_to_file([self.format_log(event_detail)])
+            logs.append(self.format_log(event_detail))
+            if not self.evt_stop.is_set():
+                break
 
         logger.info(f"[{__parser__}][execute]: Succesfully got {len(alert_ids)} alerts", extra={'frontend': str(self.frontend)})
 
-        if len(alert_ids) > 0: # if logs
+        # this condition is ugly but permit to not refacto the entire collector now because we are short of time
+        # it is there to avoid writing logs / save timestamp in case we are stopping the collector
+        # it MAY NOT have a important incidence as observed volumetry is arround 1log/day, thus it's not so costly to redo log gathering operations
+        # on collector restart and SHOULD have a limited impact
+        if len(alert_ids) > 0 and not self.evt_stop.is_set(): # if logs
+            self.write_to_file(logs)
             self.frontend.last_api_call = to
             self.frontend.save(update_fields=["last_api_call"])
             logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
