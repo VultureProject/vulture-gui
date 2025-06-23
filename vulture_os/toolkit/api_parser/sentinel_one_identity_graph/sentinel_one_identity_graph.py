@@ -48,7 +48,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
 
         self.sentinel_one_identity_graph_token = data["sentinel_one_identity_graph_token"]
 
-        self.sentinel_one_identity_graph_console_url = data["sentinel_one_identity_graph_console_url"]
+        self.sentinel_one_identity_graph_console_url = "https://" + self.data["sentinel_one_identity_graph_console_url"].split("://")[-1].rstrip("/")
         self.path_url = 'web/api/v2.1/unifiedalerts/graphql'
         self.url = self.sentinel_one_identity_graph_console_url + self.path_url
 
@@ -58,7 +58,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         self.session.headers.update({"Authorization": f"Bearer {self.sentinel_one_identity_graph_token}"})
         return
 
-    def execute_query(self, url: str, data: dict, timeout: int = 10) -> dict:
+    def execute_query(self, url: str, data: dict, timeout: int = 10):
         retry = 0
 
         while retry < 3 and not self.evt_stop.is_set():
@@ -93,7 +93,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
 
         return resp_json
 
-    def get_itdr_events_ids(self, since: int, to: int, limit: int = 50) -> list:
+    def get_itdr_events_ids(self, since: int, to: int, limit: int = 50):
         query = """
             fragment PageInfo on PageInfo {endCursor hasNextPage}
             query GetAlerts($first:Int, $after:String, $filters:[FilterInput!]) {
@@ -151,7 +151,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         return ret
 
 
-    def get_itdr_event_details(self, event_id: str) -> dict:
+    def get_itdr_event_details(self, event_id: str):
         query = """
             fragment Account on Account {name}
             fragment Analytics on Analytics {category name type}
@@ -265,7 +265,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
 
         for id in alert_ids:
             event_detail = self.get_itdr_event_details(id)
-            self.write_to_file(event_detail)
+            self.write_to_file([self.format_log(event_detail)])
 
         if len(alert_ids) > 0 or (since < current_time - timedelta(hours=24)): # if logs or timestamp to old
             self.frontend.last_api_call = to

@@ -643,7 +643,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'hornetsecurity_app_id': TextInput(attrs={'class': 'form-control'}),
             'hornetsecurity_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
-            'sentinel_one_identity_graph_token': TextInput(attrs={'class': 'form-control'}),
+            'sentinel_one_identity_graph_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'sentinel_one_identity_graph_console_url': TextInput(attrs={'class': 'form-control'}),
             'ubika_base_refresh_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'ubika_namespaces': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
