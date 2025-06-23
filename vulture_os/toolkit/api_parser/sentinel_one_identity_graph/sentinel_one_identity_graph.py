@@ -60,8 +60,10 @@ class SentinelOneIdentityGraphParser(ApiParser):
 
     def execute_query(self, url: str, data: dict, timeout: int = 10):
         retry = 0
+        resp_json = dict()
 
-        while retry < 3 and not self.evt_stop.is_set():
+        while retry <= 3 and not self.evt_stop.is_set():
+            retry += 1
             try:
                 logger.info(f"[{__parser__}][execute_query]: url {url} - retry {retry}/3", extra={'frontend': str(self.frontend)})
 
@@ -72,6 +74,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
                     proxies=self.proxies,
                     verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
 
+                response.raise_for_status()
                 resp_json = response.json()
 
             except (HTTPError, ConnectionError) as e:
@@ -86,10 +89,6 @@ class SentinelOneIdentityGraphParser(ApiParser):
                 logger.warning(f"[{__parser__}][execute_query]: TimeoutError we will retry a request soon -- retry {retry}/3 -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
                 retry += 1
                 continue
-
-            break
-
-        response.raise_for_status()
 
         return resp_json
 
