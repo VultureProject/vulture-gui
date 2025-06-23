@@ -33,7 +33,7 @@ from toolkit.api_parser.api_parser import ApiParser
 # Extern modules imports
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Logger import & configuration
 import logging
@@ -261,7 +261,7 @@ class MSSentinelParser(ApiParser):
         return datetime.fromisoformat(time_str)
 
     def outdated_alert(self, alert_time):
-        return (alert_time <= self.last_api_call)
+        return (alert_time <= self.last_api_call + timedelta(minutes=5))
 
     def format_log(self, log):
         if '/' in log.get('id', ""):
