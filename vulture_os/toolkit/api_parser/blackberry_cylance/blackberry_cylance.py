@@ -149,6 +149,7 @@ class BlackberryCylanceParser(ApiParser):
                 # According to the documentation, we have to wait 60s when we encounter a 429 error
                 if response.status_code == 429:
                     logger.info(f"[{__parser__}]:_execute_query: rate-limited by API, waiting 60s before trying again...", extra={'frontend': str(self.frontend)})
+                    self.update_lock()
                     self.evt_stop.wait(60.0)
                     logger.info(f"[{__parser__}]:_execute_query: sending second request to {url}, with parameters {query}", extra={'frontend': str(self.frontend)})
                     response = self.session.get(
