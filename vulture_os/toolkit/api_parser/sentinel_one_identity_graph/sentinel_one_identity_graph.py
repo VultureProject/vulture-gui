@@ -271,7 +271,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
             logger.debug(f"[{__parser__}][execute]: Getting alert '{id}'", extra={'frontend': str(self.frontend)})
             event_detail = self.get_itdr_event_details(id)
             logs.append(self.format_log(event_detail))
-            if not self.evt_stop.is_set():
+            if self.evt_stop.is_set():
                 break
 
         logger.info(f"[{__parser__}][execute]: Succesfully got {len(alert_ids)} alerts", extra={'frontend': str(self.frontend)})
