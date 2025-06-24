@@ -145,10 +145,16 @@ class DeleteNode(DeleteView):
             c = RedisBase(obj_inst.management_ip, password=Cluster.get_global_config().redis_password)
             try:
                 c.replica_of('NO', 'ONE')
+                # Pretty much useless since node is removed before vultured can process this task
                 obj_inst.api_request("toolkit.redis.redis_base.set_password", ("", Cluster.get_global_config().redis_password), internal=True)
             except AuthenticationError:
                 c = RedisBase(obj_inst.management_ip)
                 c.replica_of('NO', 'ONE')
+
+            for address in obj_inst.addresses():
+                if len(address.nic.all()) <= 1:
+                    logger.warning(f"[DELETE NODE] Deleting address {address}")
+                    address.delete()
 
             """ Let's rock """
             obj_inst.delete()
