@@ -123,7 +123,8 @@ class SentinelOneIdentityGraphParser(ApiParser):
                     }
                 }
                 # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Should be ignored -> this tends to produce weird bugs while using it (returning results of variable length for every call)
-            ]
+            ],
+            'sort': {'by': 'detectedAt', 'order': 'ASC'},
         }
 
         edges = []
