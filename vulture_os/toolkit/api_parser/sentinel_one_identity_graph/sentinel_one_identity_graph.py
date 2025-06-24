@@ -304,7 +304,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
             self.frontend.last_api_call = to
             self.frontend.save(update_fields=["last_api_call"])
             logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
-        elif since < current_time - timedelta(hours=24): # or timestamp to old
+        elif (since < (current_time - timedelta(hours=24))) and not self.evt_stop.is_set(): # or timestamp to old
             self.frontend.last_api_call += timedelta(hours=1)
             self.frontend.save(update_fields=["last_api_call"])
             logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
