@@ -83,8 +83,8 @@ from toolkit.api_parser.armis_centrix.armis_centrix import ArmisCentrixParser
 from toolkit.api_parser.perception_point_x_ray.perception_point_x_ray import PerceptionPointXRayParser
 from toolkit.api_parser.extrahop.extrahop import ExtrahopParser
 from toolkit.api_parser.hornetsecurity.hornetsecurity import HornetSecurityParser
-from toolkit.api_parser.sentinel_one_identity_graph.sentinel_one_identity_graph import SentinelOneIdentityGraphParser
 from toolkit.api_parser.ubika.ubika import UbikaParser
+from toolkit.api_parser.sentinel_one_identity_graph.sentinel_one_identity_graph import SentinelOneIdentityGraphParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')

@@ -87,11 +87,11 @@ class SentinelOneIdentityGraphParser(ApiParser):
                 logger.error(f"[{__parser__}][execute_query]: Impossible to decode json response -- {e}", extra={'frontend': str(self.frontend)})
                 continue
             except (TimeoutError, ReadTimeout, ConnectTimeout) as e:
-                logger.warning(f"[{__parser__}][execute_query]: TimeoutError we will retry a request soon -- retry {retry}/3 -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
+                logger.warning(f"[{__parser__}][execute_query]: TimeoutError we will retry a request soon -- {e}", extra={'frontend': str(self.frontend)})
                 continue
 
         if retry == 3:
-            raise SentinelOneIdentityGraphError("Failed to fetch logs more than 3 times, raising an exception to avoid silent timestamp update")
+            raise SentinelOneIdentityGraphError("Failed to fetch logs after 3 tries")
 
         return resp_json
 
@@ -224,8 +224,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         tactics = list()
         techniques = list()
 
-        indicators = log.get("indicators")
-        for indicator in indicators:
+        for indicator in log.get("indicators", []):
             attacks = indicator.get("attacks")
             if isinstance(attacks, list):
                 for attack in attacks:
@@ -293,20 +292,20 @@ class SentinelOneIdentityGraphParser(ApiParser):
             if self.evt_stop.is_set():
                 break
 
-        logger.info(f"[{__parser__}][execute]: Succesfully got {len(alert_ids)} alerts", extra={'frontend': str(self.frontend)})
-
         # this condition is ugly but permit to not refacto the entire collector now because we are short of time
         # it is there to avoid writing logs / save timestamp in case we are stopping the collector
         # it MAY NOT have a important incidence as observed volumetry is arround 1log/day, thus it's not so costly to redo log gathering operations
         # on collector restart and SHOULD have a limited impact
-        if len(alert_ids) > 0 and not self.evt_stop.is_set(): # if logs
-            self.write_to_file(logs)
-            self.frontend.last_api_call = to
-            self.frontend.save(update_fields=["last_api_call"])
-            logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
-        elif (since < (current_time - timedelta(hours=24))) and not self.evt_stop.is_set(): # or timestamp to old
-            self.frontend.last_api_call += timedelta(hours=1)
-            self.frontend.save(update_fields=["last_api_call"])
-            logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
+        if not self.evt_stop.is_set():
+            if len(alert_ids) > 0: # if logs
+                logger.info(f"[{__parser__}][execute]: Succesfully got {len(alert_ids)} alerts", extra={'frontend': str(self.frontend)})
+                self.write_to_file(logs)
+                self.frontend.last_api_call = to
+                self.frontend.save(update_fields=["last_api_call"])
+                logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
+            elif (since < (current_time - timedelta(hours=24))): # or timestamp to old
+                self.frontend.last_api_call += timedelta(hours=1)
+                self.frontend.save(update_fields=["last_api_call"])
+                logger.info(f"[{__parser__}]:execute: Updated last_api_call -- {self.frontend.last_api_call}", extra={'frontend': str(self.frontend)})
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
