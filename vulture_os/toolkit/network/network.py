@@ -314,27 +314,30 @@ def address_cleanup(logger):
             found = False
             for netif in node.addresses(nic):
                 if netif.ip == ip:
-                    if "/" in netif.prefix_or_netmask:
-                        netif.prefix = netif.prefix_or_netmask[1:]
+                    if netif.type == "dynamic":
+                        found = True
                     else:
-                        netif.prefix = netmask2prefix(netif.prefix_or_netmask)
-                        if netif.prefix == 0:
-                            netif.prefix = netif.prefix_or_netmask
+                        if "/" in netif.prefix_or_netmask:
+                            netif.prefix = netif.prefix_or_netmask[1:]
+                        else:
+                            netif.prefix = netmask2prefix(netif.prefix_or_netmask)
+                            if netif.prefix == 0:
+                                netif.prefix = netif.prefix_or_netmask
 
-                    if netif.family == "inet" and str(netif.prefix) == str(prefix):
-                        logger.debug("Node::address_cleanup(): IPv4 {}/{} has been found on {}".format(
-                            ip,
-                            prefix,
-                            nic.dev
-                        ))
-                        found = True
-                    elif netif.family == "inet6" and str(prefix) == str(netif.prefix_or_netmask):
-                        logger.debug("Node::address_cleanup(): IPv6 {}/{} has been found on {}".format(
-                            ip,
-                            prefix,
-                            nic.dev
-                        ))
-                        found = True
+                        if netif.family == "inet" and str(netif.prefix) == str(prefix):
+                            logger.debug("Node::address_cleanup(): IPv4 {}/{} has been found on {}".format(
+                                ip,
+                                prefix,
+                                nic.dev
+                            ))
+                            found = True
+                        elif netif.family == "inet6" and str(prefix) == str(netif.prefix_or_netmask):
+                            logger.debug("Node::address_cleanup(): IPv6 {}/{} has been found on {}".format(
+                                ip,
+                                prefix,
+                                nic.dev
+                            ))
+                            found = True
 
             """ IP Address not found: Delete it """
             if not found:
@@ -654,7 +657,7 @@ def make_hostname_resolvable(logger, hostname_ip):
 
 def delete_hostname(logger, hostname):
     """Remove hostname/IP from /etc/hosts
-    
+
     :param logger:        API logger (to be called by an API request)
     :param hostname:      String containing the remote hostname to delete
     :return:
