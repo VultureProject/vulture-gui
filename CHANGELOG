@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [BLACKBERRY_CYLANCE] Wait for 60s when rate-limited by the API
 - [SYSTEM] [PF] Add missing internal rule for inter-cluster GUI/API access
 - [CLUSTER] [REDIS] Allow to correctly remove node even if it/redis is inaccessible
+- [SYSTEM] [NODE] Node deletion error caused by logomelasticsearch model modification
 
 
 ## [2.27.1] - 2025-06-13

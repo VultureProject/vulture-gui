@@ -191,7 +191,6 @@ class DeleteNode(DeleteView):
             node_cert = object.get_certificate()
             used_by.add(f"X509 Certificate '{node_cert.name}'")
             used_by = used_by.union(set(node_cert.certificate_of.all()))
-            used_by = used_by.union(set(node_cert.logomelasticsearch_set.all()))
             used_by = used_by.union(set(node_cert.logommongodb_set.all()))
             used_by = used_by.union(set(node_cert.logomrelp_set.all()))
             used_by = used_by.union(set(f"API Custom certificate of {f}" for f in node_cert.certificate_used_by_api_parser.all()))
@@ -201,6 +200,7 @@ class DeleteNode(DeleteView):
             for p in tls_profiles:
                 used_by = used_by.union(set(f"TLS Profile of '{listener}' in {listener.frontend}" for listener in p.listener_set.all()))
                 used_by = used_by.union(set(f"TLS Profile of '{server}' in {server.backend}" for server in p.server_set.all()))
+                used_by = used_by.union(set(f"TLS Profile of '{logfwd}'" for logfwd in p.logomelasticsearch_set.all()))
         except ObjectDoesNotExist:
             pass
 
