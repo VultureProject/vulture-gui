@@ -49,7 +49,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         self.sentinel_one_identity_graph_token = data["sentinel_one_identity_graph_token"]
 
         self.sentinel_one_identity_graph_console_url = "https://" + self.data["sentinel_one_identity_graph_console_url"].split("://")[-1].rstrip("/")
-        self.path_url = 'web/api/v2.1/unifiedalerts/graphql'
+        self.path_url = '/web/api/v2.1/unifiedalerts/graphql'
         self.url = self.sentinel_one_identity_graph_console_url + self.path_url
 
         self.session = Session()
