@@ -84,6 +84,7 @@ from toolkit.api_parser.perception_point_x_ray.perception_point_x_ray import Per
 from toolkit.api_parser.extrahop.extrahop import ExtrahopParser
 from toolkit.api_parser.hornetsecurity.hornetsecurity import HornetSecurityParser
 from toolkit.api_parser.ubika.ubika import UbikaParser
+from toolkit.api_parser.sentinel_one_identity_graph.sentinel_one_identity_graph import SentinelOneIdentityGraphParser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -148,6 +149,7 @@ PARSER_LIST = {
     "extrahop": ExtrahopParser,
     "hornetsecurity": HornetSecurityParser,
     "ubika": UbikaParser,
+    "sentinel_one_identity_graph": SentinelOneIdentityGraphParser,
 }
 
 class ParserDoesNotExist(Exception):
