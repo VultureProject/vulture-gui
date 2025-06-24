@@ -456,39 +456,28 @@ def address_cleanup(logger):
             found = False
             for netif in node.addresses(nic):
                 if netif.ip == ip:
-                    if "/" in netif.prefix_or_netmask:
-                        netif.prefix = netif.prefix_or_netmask[1:]
+                    if netif.type == "dynamic":
+                        found = True
                     else:
-                        netif.prefix = netmask2prefix(netif.prefix_or_netmask)
-                        if netif.prefix == 0:
-                            netif.prefix = netif.prefix_or_netmask
+                        if "/" in netif.prefix_or_netmask:
+                            netif.prefix = netif.prefix_or_netmask[1:]
+                        else:
+                            netif.prefix = netmask2prefix(netif.prefix_or_netmask)
+                            if netif.prefix == 0:
+                                netif.prefix = netif.prefix_or_netmask
 
-                    if netif.family == "inet" and str(netif.prefix) == str(prefix):
-                        logger.debug("address_cleanup(): IPv4 {}/{} has been found on {}".format(
-                            ip,
-                            prefix,
-                            nic.dev
-                        ))
-                        found = True
-                    elif netif.family == "inet6" and str(prefix) == str(netif.prefix_or_netmask):
-                        logger.debug("address_cleanup(): IPv6 {}/{} has been found on {}".format(
-                            ip,
-                            prefix,
-                            nic.dev
-                        ))
-                        found = True
+                        if netif.family == "inet" and str(netif.prefix) == str(prefix):
+                            logger.debug(f"address_cleanup(): IPv4 {ip}/{prefix} has been found on {nic.dev}")
+                            found = True
+                        elif netif.family == "inet6" and str(prefix) == str(netif.prefix_or_netmask):
+                            logger.debug(f"address_cleanup(): IPv6 {ip}/{prefix} has been found on {nic.dev}")
+                            found = True
 
             """ IP Address not found: Delete it """
             if not found:
-                logger.info(
-                    "address_cleanup(): Deleting {}/{} on {}".format(
-                        ip, prefix, nic.dev
-                    ))
+                logger.info(f"address_cleanup(): Deleting {ip}/{prefix} on {nic.dev}")
 
-                logger.debug('address_cleanup() /usr/local/bin/sudo /sbin/ifconfig {} {} {} delete'.format(
-                    nic.dev,
-                    family, str(ip) + "/" + str(prefix))
-                )
+                logger.debug(f'address_cleanup() /usr/local/bin/sudo /sbin/ifconfig {nic.dev} {family} {str(ip) + "/" + str(prefix)} delete')
 
                 proc = subprocess.Popen([
                     '/usr/local/bin/sudo', '/sbin/ifconfig',
@@ -497,8 +486,7 @@ def address_cleanup(logger):
 
                 success, error = proc.communicate()
                 if error:
-                    logger.error(
-                        "address_cleanup(): {}".format(str(error)))
+                    logger.error(f"address_cleanup(): {str(error)}")
 
     return ret
 
@@ -554,8 +542,7 @@ def write_management_ips(logger):
             value=getattr(node, attr),
             filename='network')
         if not status:
-            logger.error(
-                f"write_management_ips: Could not update value of {attr} -> {error}")
+            logger.error(f"write_management_ips: Could not update value of {attr} -> {error}")
 
 
 def write_network_config(logger):
@@ -591,17 +578,11 @@ def write_network_config(logger):
             logger.debug(configuration)
             status, error = set_rc_config(**configuration)
             if not status:
-                logger.error(
-                    "write_network_config() {}:{}: {}".format(
-                        nic.dev, address.ip_cidr, str(error))
-                )
+                logger.error(f"write_network_config() {nic.dev}:{address.ip_cidr}: {str(error)}")
                 ret = False
                 continue
             else:
-                logger.info(
-                    "write_network_config() {}:{}: Ok".format(
-                        nic.dev, address.ip_cidr)
-                )
+                logger.info(f"write_network_config() {nic.dev}:{address.ip_cidr}: Ok")
                 continue
 
 
@@ -631,15 +612,11 @@ def write_network_config(logger):
     for config in configs:
         status, error = set_rc_config(variable=config[0], value=config[1])
         if not status:
-            logger.error(
-                f"write_network_config(routing): {config[0]} -> {str(error)}"
-            )
+            logger.error(f"write_network_config(routing): {config[0]} -> {str(error)}")
             ret = False
             continue
         else:
-            logger.info(
-                f"write_network_config(routing): {config[0]} -> Ok"
-            )
+            logger.info(f"write_network_config(routing): {config[0]} -> Ok")
             continue
 
     return ret
@@ -796,7 +773,7 @@ def make_hostname_resolvable(logger, hostname_ip):
 
 def delete_hostname(logger, hostname):
     """Remove hostname/IP from /etc/hosts
-    
+
     :param logger:        API logger (to be called by an API request)
     :param hostname:      String containing the remote hostname to delete
     :return:
