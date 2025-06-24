@@ -26,9 +26,13 @@ __doc__ = 'Haproxy dedicated form class'
 from django.conf import settings
 from django.forms import (ModelChoiceField, ModelForm, Select, SelectMultiple, TextInput, Textarea, ValidationError,
     CharField, ChoiceField, RadioSelect)
+
+# Django project imports
+from gui.forms.form_utils import bootstrap_tooltips
 from system.pki.models import (ALPN_CHOICES, BROWSER_CHOICES, PROTOCOL_CHOICES, TLSProfile, X509Certificate,
                                VERIFY_CHOICES)
 
+# External libraries
 from ast import literal_eval
 from cryptography import x509
 from ssl import PROTOCOL_TLS, SSLContext, SSLError
@@ -119,6 +123,7 @@ class TLSProfileForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         self.fields['x509_certificate'].empty_label = "No SSL"
         for field_name in ['compatibility', 'protocols', 'alpn', 'verify_client', 'ca_cert']:
             self.fields[field_name].empty_label = None

@@ -30,6 +30,7 @@ from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, 
 # Django project imports
 from applications.logfwd.models import (LogOM, LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch,
                                         LogOMMongoDB, LogOMKAFKA, OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES)
+from gui.forms.form_utils import bootstrap_tooltips
 from system.pki.models import X509Certificate, TLSProfile
 
 # Required exceptions imports
@@ -74,6 +75,7 @@ class LogOMForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self = bootstrap_tooltips(self)
         for field_name in ['high_watermark', 'low_watermark', 'max_file_size', 'max_disk_space', 'spool_directory']:
             self.fields[field_name].required = False
 
