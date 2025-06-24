@@ -64,7 +64,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
         retry = 0
         resp_json = dict()
 
-        while retry <= 3 and not self.evt_stop.is_set():
+        while retry < 3 and not self.evt_stop.is_set():
             retry += 1
             try:
                 logger.info(f"[{__parser__}][execute_query]: Querying url {url} - retry {retry}/3", extra={'frontend': str(self.frontend)})
@@ -78,18 +78,16 @@ class SentinelOneIdentityGraphParser(ApiParser):
 
                 response.raise_for_status()
                 resp_json = response.json()
+                break
 
             except (HTTPError, ConnectionError) as e:
                 logger.error(f"[{__parser__}][execute_query]: HTTPError raised -- {e}", extra={'frontend': str(self.frontend)})
-                retry += 1
                 continue
             except JSONDecodeError as e:
                 logger.error(f"[{__parser__}][execute_query]: Impossible to decode json response -- {e}", extra={'frontend': str(self.frontend)})
-                retry += 1
                 continue
             except (TimeoutError, ReadTimeout, ConnectTimeout) as e:
                 logger.warning(f"[{__parser__}][execute_query]: TimeoutError we will retry a request soon -- retry {retry}/3 -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
-                retry += 1
                 continue
 
         return resp_json
@@ -124,7 +122,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
                         'endInclusive': False
                     }
                 }
-                # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Should be ignored -> this tends to produce weird bugs while using it (returning results of variable length)
+                # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Should be ignored -> this tends to produce weird bugs while using it (returning results of variable length for every call)
             ]
         }
 
