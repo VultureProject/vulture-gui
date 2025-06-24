@@ -638,7 +638,7 @@ class Node(models.Model):
 
     def set_state(self, state):
         if state in [state_tmp for state_tmp, choice in STATE_CHOICES] and self._vstate != state:
-            logger.warn(f"[NODE SET STATE] State changed to: {state}")
+            logger.warning(f"[NODE SET STATE] State changed to: {state}")
             self._vstate = state
             self.save()
 

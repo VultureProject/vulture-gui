@@ -80,62 +80,44 @@ def netif_edit(request, object_id=None, api=False):
                 return render(request, 'system/netif_edit.html', {'form': form})
         netif.save()
 
-        """ CARP settings are defined by default, even if they are not used """
-        priority = 50
-        pwd = get_random_string(20)
+        """ Get existing CARP parameters """
+        max_prio = netif.networkaddressnic_set.aggregate(Max('carp_priority'))['carp_priority__max']
+        priority =  max_prio + 50 if max_prio else 50
+        if netif.networkaddressnic_set.count():
+            pwd = netif.networkaddressnic_set.first().carp_passwd
+        else:
+            pwd = get_random_string(20)
         # Get Node concerned by NetAddr, will be used in case of 'vlan' or 'lagg' virtual interface
         # to create its virtual interface in DB
         node = None
 
-        """ This is a new network address """
-        if not object_id:
-            if api:
-                nics = request.JSON.get('nic')
-            else:
-                nics = request.POST.getlist("nic")
-            for nic in nics:
-                addr_nic = NetworkAddressNIC.objects.create(
-                    nic_id=nic,
-                    network_address=netif,
-                    carp_passwd=pwd,
-                    carp_priority=priority
-                )
-
-                node = addr_nic.nic.node
-
-                priority = priority + 50
+        if api:
+            nics = request.JSON.get("nic")
         else:
-            # Get current highest priority and increment for next interface card
-            priority = netif.networkaddressnic_set.aggregate(Max('carp_priority'))['carp_priority__max'] + 50
-            # Get already existing CARP password
-            pwd = netif.networkaddressnic_set.first().carp_passwd
-
+            nics = request.POST.getlist("nic")
+        for nic in nics:
             """ Add new NIC, if any """
-            if api:
-                nic_list = request.JSON.get('nic')
-            else:
-                nic_list = request.POST.getlist('nic')
+            addr_nic, created = NetworkAddressNIC.objects.get_or_create(
+                nic_id=nic,
+                network_address=netif,
+                defaults={
+                    "carp_passwd": pwd,
+                    "carp_priority": priority
+                }
+            )
 
-            for nic in nic_list:
-                try:
-                    addr_nic = NetworkAddressNIC.objects.get(network_address=netif, nic_id=nic)
-                except NetworkAddressNIC.DoesNotExist:
-                    addr_nic = NetworkAddressNIC.objects.create(
-                        nic_id=nic,
-                        network_address=netif,
-                        carp_passwd=pwd,
-                        carp_priority=priority
-                    )
+            node = addr_nic.nic.node
+            if created:
+                """ This is a new network address """
+                priority = priority + 50
 
-                    priority = priority + 50
-
-                node = addr_nic.nic.node
+        if object_id:
             """ Delete old NIC, if any """
             for current_networkadress_nic in NetworkAddressNIC.objects.filter(network_address=netif):
 
                 """ If the current nic is not in the new config anymore:
                 Remove it from NetworkAddressNIC """
-                if str(current_networkadress_nic.nic.pk) not in nic_list:
+                if str(current_networkadress_nic.nic.pk) not in nics:
                     node_of_removed_nic = current_networkadress_nic.nic.node
                     rc_confs = netif.rc_config()
                     current_networkadress_nic.delete()
