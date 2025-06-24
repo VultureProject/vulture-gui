@@ -90,6 +90,9 @@ class SentinelOneIdentityGraphParser(ApiParser):
                 logger.warning(f"[{__parser__}][execute_query]: TimeoutError we will retry a request soon -- retry {retry}/3 -- {response.content} -- {e}", extra={'frontend': str(self.frontend)})
                 continue
 
+        if retry == 3:
+            raise SentinelOneIdentityGraphError("Failed to fetch logs more than 3 times, raising an exception to avoid silent timestamp update")
+
         return resp_json
 
 
@@ -218,6 +221,21 @@ class SentinelOneIdentityGraphParser(ApiParser):
 
 
     def format_log(self, log: dict) -> str:
+        tactics = list()
+        techniques = list()
+
+        indicators = log.get("indicators")
+        for indicator in indicators:
+            attacks = indicator.get("attacks")
+            if isinstance(attacks, list):
+                for attack in attacks:
+                    tactics.append(attack.get("tactic"))
+                    techniques.append(attack.get("technique"))
+
+        log["indicators"] = {}
+        log["indicators"]["tactics"] = tactics
+        log["indicators"]["techniques"] = techniques
+
         return dumps(log)
 
 
