@@ -79,8 +79,18 @@ class NetIfForm(ModelForm):
 
         if cleaned_data.get('type') in ("system", "dynamic"):
             incompatible_types = {"system": "dynamic", "dynamic": "system"}
-            if NetworkAddressNIC.objects.filter(nic=cleaned_data.get('nic').first().pk, network_address__type=incompatible_types[cleaned_data['type']]).exclude(network_address__ip=cleaned_data['ip']).exists():
-                self.add_error('type', f"A {incompatible_types[cleaned_data['type']]} interface is already configured, this is not supported")
+            try:
+                if NetworkAddressNIC.objects.filter(
+                    nic=cleaned_data['nic'].first().pk,
+                    network_address__ip_version=cleaned_data.get("ip_version"),
+                    network_address__type=incompatible_types[cleaned_data['type']]
+                ).exclude(
+                    pk=self.instance.pk
+                ).exists():
+                    self.add_error('type', f"A {incompatible_types[cleaned_data['type']]} interface is already configured, this is not supported")
+            except KeyError as e:
+                # Field missing error is already catched
+                pass
 
         if cleaned_data.get('type') == "lagg":
             if not cleaned_data.get('lagg_proto'):
