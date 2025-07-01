@@ -71,9 +71,6 @@ class NetworkInterfaceCardAPIv1(View):
             }, status=404)
 
         except Exception as e:
-            if settings.DEV_MODE:
-                raise
-
             logger.critical(e, exc_info=1)
             error = _("An error has occurred")
 
@@ -160,9 +157,6 @@ class NetworkAddressAPIv1(View):
             }, status=404)
 
         except Exception as e:
-            if settings.DEV_MODE:
-                raise
-
             logger.critical(e, exc_info=1)
             error = _("An error has occurred")
 
@@ -180,9 +174,6 @@ class NetworkAddressAPIv1(View):
             return netif_views.netif_edit(request, api=True)
 
         except Exception as e:
-            if settings.DEV_MODE:
-                raise
-
             logger.critical(e, exc_info=1)
             error = _("An error has occurred")
 
@@ -200,9 +191,6 @@ class NetworkAddressAPIv1(View):
             return netif_views.netif_edit(request, object_id, api=True)
 
         except Exception as e:
-            if settings.DEV_MODE:
-                raise
-
             logger.critical(e, exc_info=1)
             error = _("An error has occurred")
 

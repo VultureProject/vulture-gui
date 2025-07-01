@@ -173,7 +173,7 @@ class X509Certificate(models.Model):
         blank=True,
         choices=X509CertificateStatus.choices,
         default=X509CertificateStatus.VALID,
-        )
+    )
 
     valid_from = models.DateTimeField(
         _("Certificate is valid from"),
