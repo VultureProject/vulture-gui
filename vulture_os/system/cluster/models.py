@@ -345,7 +345,6 @@ class Node(models.Model):
             if matched:
                 yield matched.group(1), matched.group(3)
 
-
     def addresses(self, nic=None):
         """
         Return the list of network addresses on the current node, or node/nic

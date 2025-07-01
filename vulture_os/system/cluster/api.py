@@ -117,7 +117,7 @@ def cluster_add(request):
                 'status': False,
                 'message': 'Error during repl_add. Check logs'
             })
-        action_result, message = pf_conf_generated.await_result()
+        action_result, message = pf_conf_generated.await_result(tries=20)
         if not action_result:
             logger.error(f"Could not regenerate pf configuration : {message}")
             return JsonResponse({
