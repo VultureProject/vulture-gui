@@ -318,8 +318,13 @@ class Service:
 
             template = jinja2_env.get_template(self.jinja_template['tpl_name'])
 
+            node = Cluster.get_current_node()
+
             return template.render({
-                'node': Cluster.get_current_node(),
+                'node': node,
+                'listeners_enabled': node.get_listeners_enabled,
+                'forwarders_enabled': node.get_forwarders_enabled,
+                'backends_enabled': node.get_backends_enabled,
                 **self.get_dict_conf(),
                 **kwargs
             })
