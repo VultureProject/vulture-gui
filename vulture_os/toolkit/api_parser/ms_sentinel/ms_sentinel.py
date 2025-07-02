@@ -26,6 +26,7 @@ __parser__ = 'MICROSOFT SENTINEL'
 # Django system imports
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 # Django project imports
 from toolkit.api_parser.api_parser import ApiParser
@@ -33,7 +34,7 @@ from toolkit.api_parser.api_parser import ApiParser
 # Extern modules imports
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Logger import & configuration
 import logging
@@ -325,7 +326,7 @@ class MSSentinelParser(ApiParser):
 
                         for alert in alerts:
                             alert_time = self.parse_alert_time(alert['properties']['processingEndTime'])
-                            if not self.outdated_alert(alert_time):
+                            if not self.outdated_alert(alert_time) and alert_time < (timezone.now() - timedelta(minutes=5)):
                                 alert['incident'] = incident
                                 logs.append(alert)
                                 if alert_time > new_last_api_call:
