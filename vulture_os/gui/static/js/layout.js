@@ -148,14 +148,14 @@ process_queue_table = $('#table-process').dataTable({
 });
 
 function doRedrawDatatable() {
-  processQueueResponse = false;
-  process_queue_table.fnDraw();
+  if(ProcessQueueCanRedraw == true) {
+    ProcessQueueCanRedraw = false;
+    process_queue_table.fnDraw();
+  }
 };
 
 setInterval(function(){
-  if(ProcessQueueCanRedraw == true) {
-    doRedrawDatatable();
-  }
+  doRedrawDatatable();
 }, 5000);
 
 $('#reload_process_queue').on('click', doRedrawDatatable);
