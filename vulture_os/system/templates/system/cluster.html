@@ -209,6 +209,8 @@
 
         /* REPL Step DOWN */
         $(nRow).find("#stepdown").on("click", function(e) {
+          ProcessQueueCanRedraw = false;
+          datatableCanRedraw = false;
           e.stopPropagation();
 
           $('#node_msg').html('<i class="fas fa-spinner fa-spin"></i>{% translate "Please wait ..." %}');
@@ -220,12 +222,26 @@
             type   : "GET",
             url    : url,
           }).fail( function( jqXHR, textStatus ) {
-            $('#node_msg').html("<b style='color:red;'>{% translate 'Failure: '%}" + textStatus + "</b></br>" +
-                                    "Status code : " + jqXHR.status + "</br>" +
-                                    "Message : " + jqXHR.responseJSON.error);
+            if (jqXHR.responseJSON) {
+              $('#node_msg').html("<b style='color:red;'>{% translate 'Failure: '%}" + textStatus + "</b></br>" +
+                                  "Status code : " + jqXHR.status + "</br>" +
+                                  "Message : " + jqXHR.responseJSON.error);
+            } else if (jqXHR.status === 400) { // connection dropped due to mongodb disconnect
+              $('#node_msg').html("<b style='color:green;'>{% translate 'Success: '%}</b><br>" +
+                                  "node " + id + " stepped down");
+            } else {
+              $('#node_msg').html("<b style='color:red;'>{% translate 'Failure: '%}" + textStatus + "</b></br>" +
+                                  "Status code : " + jqXHR.status + "</br>" +
+                                  "Message : " + jqXHR.statusText);
+            }
+            ProcessQueueCanRedraw = true;
+            datatableCanRedraw = true;
           }).done( function( msg ) {
             $('#node_msg').html("<b style='color:green;'>{% translate 'Success: '%}</b><br>" +
-                                      "node " + id + " stepped down" );
+                                "node " + id + " stepped down" + "</br>" +
+                                "output: " + JSON.stringify(msg.message));
+            ProcessQueueCanRedraw = true;
+            datatableCanRedraw = true;
           });
         });
 
