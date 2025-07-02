@@ -48,10 +48,12 @@ class OsMiddleware:
         # Code to be executed for each request before
         # the view (and later middleware) are called.
         if not self.node_bootstrapped:
-            return render(request, "gui/not_install.html", {
-                'TITLE': 'VultureOS',
-                'WALLPAPER': static("img/VultureOS_wallpaper.png")
-            })
+            self.node_bootstrapped = Cluster.is_node_bootstrapped()
+            if not self.node_bootstrapped:
+                return render(request, "gui/not_install.html", {
+                    'TITLE': 'VultureOS',
+                    'WALLPAPER': static("img/VultureOS_wallpaper.png")
+                })
 
         # No authentication for API (protected later by decorators)
         if request.path_info.startswith('/api/'):
