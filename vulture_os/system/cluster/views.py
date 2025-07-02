@@ -23,19 +23,29 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Cluster View'
 
 
-from django.http import (HttpResponseForbidden, HttpResponseRedirect, JsonResponse, HttpResponseBadRequest)
+# Django system imports
 from django.conf import settings
-from system.cluster.form import NodeForm
-from toolkit.mongodb.mongo_base import MongoBase
+from django.http import (HttpResponseForbidden, HttpResponseRedirect, JsonResponse, HttpResponseBadRequest)
 from django.shortcuts import render
-from services.pf.pf import PFService
-from system.cluster.models import Cluster, Node
-from gui.forms.form_utils import DivErrorList
 from django.utils.translation import gettext_lazy as _
-from toolkit.api.responses import build_response
 
+# Django project imports
+from gui.forms.form_utils import DivErrorList
+from services.pf.pf import PFService
+from system.cluster.form import NodeForm
+from system.cluster.models import Cluster, Node
+from toolkit.api.responses import build_response
+from toolkit.mongodb.mongo_base import MongoBase
+
+# Required exceptions imports
 from django.core.exceptions import ObjectDoesNotExist
 
+# Extern modules imports
+from time import sleep
+
+import logging
+logging.config.dictConfig(settings.LOG_SETTINGS)
+logger = logging.getLogger('system')
 
 def cluster_stepdown(request, object_id, api=False):
     """
@@ -67,9 +77,15 @@ def cluster_stepdown(request, object_id, api=False):
 
     status, message = c.repl_set_step_down()  # Automagically connect to the primary node
 
-    c = MongoBase()
-    c.connect()
+    if message.get("ok"):
+        message['operationTime'] = message['operationTime'].as_datetime().isoformat()
+        message.pop('$clusterTime')
 
+    while not c.get_primary():
+        logger.debug("Waiting for primary to be elected")
+        sleep(2)
+
+    sleep(10)
     return JsonResponse({'status': status, 'message': message})
 
 
