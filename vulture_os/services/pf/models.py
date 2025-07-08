@@ -29,7 +29,7 @@ from djongo import models
 
 # Django project imports
 from applications.reputation_ctx.models import DATABASES_PATH
-from system.cluster.models import Cluster, Node
+from system.cluster.models import Cluster, Node, NetworkInterfaceCard
 from toolkit.network.network import JAIL_ADDRESSES
 from toolkit.network.network import get_sanitized_proxy
 
@@ -55,6 +55,9 @@ class PFSettings(models.Model):
         """
         return {
             'nodes': Node.objects.exclude(name=settings.HOSTNAME),
+            'carp_allowed_interfaces': set(NetworkInterfaceCard.objects.filter(
+                networkaddress__carp_vhid__gt=0,
+                node__name=settings.HOSTNAME).values_list('dev', flat=True)),
             'global_config': Cluster.get_global_config(),
             'jail_addresses': JAIL_ADDRESSES,
             'databases_path': DATABASES_PATH,
