@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.27.1] - 2025-06-13
 ### Fixed
 - [API_PARSER] [TRENDMICRO_VISIONONE] Avoid delays on log collection, depending on log types
+- [API_PARSER] [CISCO_MERAKI] Wait 1 minute when we cannot retrieve org network because it is newly created
 
 
 ## [2.27.0] - 2025-06-10

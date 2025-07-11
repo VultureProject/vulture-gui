@@ -78,6 +78,14 @@ class CiscoMerakiParser(ApiParser):
         self._connect()
         try:
             return self.session.organizations.getOrganizationNetworks(orga_id)
+        except meraki.exceptions.APIError as e:
+            logger.warning(f"[{__parser__}]:get_organization_networks: An error has occured while getting organisation {orga_id} networks. Waiting 1 minute and retry.",
+                        extra={'frontend': str(self.frontend)})
+            self.evt_stop.wait(60.0)
+            try:
+                return self.session.organizations.getOrganizationNetworks(orga_id)
+            except Exception as e:
+                raise CiscoMerakiAPIError(e)
         except Exception as e:
             raise CiscoMerakiAPIError(e)
 
