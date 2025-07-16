@@ -268,7 +268,7 @@ class SentinelOneGraphParser(ApiParser):
                     'id': comment['id'],
                     'message': comment['text'],
                     'username': f"{name} ({email})",
-                    'timestamp': datetime.fromisoformat(date)
+                    'timestamp': datetime.fromisoformat(date).isoformat()
                 })
             log['comments'] = comments
 
