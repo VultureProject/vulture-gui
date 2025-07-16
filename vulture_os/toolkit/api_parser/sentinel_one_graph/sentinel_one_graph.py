@@ -24,7 +24,7 @@ __doc__ = 'Sentinel One Graph Collector'
 __parser__ = 'SENTINEL_ONE_GRAPH'
 
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 from json import JSONDecodeError, dumps
 from requests.exceptions import ConnectionError, ConnectTimeout, HTTPError, ReadTimeout
 from requests import Session
@@ -49,8 +49,8 @@ class SentinelOneGraphParser(ApiParser):
         self.sentinel_one_graph_token = data["sentinel_one_graph_token"]
 
         self.sentinel_one_graph_console_url = "https://" + self.data["sentinel_one_graph_console_url"].split("://")[-1].rstrip("/")
-        self.path_url = '/web/api/v2.1/unifiedalerts/graphql'
-        self.url = self.sentinel_one_graph_console_url + self.path_url
+        self.UNIFIED_ALERTS = '/web/api/v2.1/unifiedalerts/graphql'
+        self.url = f"{self.sentinel_one_graph_console_url}/{self.UNIFIED_ALERTS}"
 
         self.session = Session()
 
@@ -60,7 +60,7 @@ class SentinelOneGraphParser(ApiParser):
         return
 
 
-    def execute_query(self, url: str, data: dict, timeout: int = 10):
+    def execute_query(self, url: str, data: dict, timeout: int = 10) -> dict:
         retry = 0
         resp_json = dict()
 
@@ -96,7 +96,7 @@ class SentinelOneGraphParser(ApiParser):
         return resp_json
 
 
-    def get_itdr_events_ids(self, since: int, to: int, limit: int = 50):
+    def get_itdr_alert_ids(self, since: int, to: int, limit: int = 50) -> list:
         query = """
             fragment PageInfo on PageInfo {endCursor hasNextPage}
             query GetAlerts($first:Int, $after:String, $filters:[FilterInput!]) {
@@ -125,6 +125,7 @@ class SentinelOneGraphParser(ApiParser):
                         'endInclusive': False
                     }
                 }
+                # {'fieldId': 'detectionSource.product', 'stringIn':{'values': products}} # It is not possible to filter out nested fields from GraphQL responses -> we will do it locally
                 # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Should be ignored -> this tends to produce weird bugs while using it (returning results of variable length for every call)
             ],
             'sort': {'by': 'detectedAt', 'order': 'ASC'},
@@ -137,7 +138,7 @@ class SentinelOneGraphParser(ApiParser):
             self.url,
             data={'query': query, 'variables': variables})
 
-        alerts = response.get('data', {}).get('alerts', {})
+        alerts: dict = response.get('data', {}).get('alerts', {})
         edges.extend(alerts.get('edges', []))
 
         while alerts.get('pageInfo', {}).get('hasNextPage', False) and not self.evt_stop.is_set():
@@ -155,19 +156,19 @@ class SentinelOneGraphParser(ApiParser):
         return ret
 
 
-    def get_itdr_event_details(self, event_id: str):
+    def get_itdr_alert_details(self, event_id: str) -> dict:
         query = """
-            fragment Account on Account {name}
+            fragment Account on Account {id name}
             fragment Analytics on Analytics {category name type}
             fragment Asset on Asset {agentUuid agentVersion category connectivityToConsole id lastLoggedInUser name osType osVersion pendingReboot policy subcategory type}
             fragment Assignee on User {email fullName}
             fragment Attacker on DetectionAttackerDetails {host ip}
             fragment Cloud on DetectionCloud {accountId cloudProvider image instanceId instanceSize location network tags}
             fragment File on FileDetail {certExpiresAt certSerialNumber certSubject md5 name path sha1 sha256 size}
-            fragment Group on Group {name}
+            fragment Group on Group {id name}
             fragment Kubernetes on DetectionKubernetes {clusterName containerId containerImageName containerLabels containerName containerNetworkStatus controllerLabels controllerName controllerType namespaceLabels namespaceName nodeLabels nodeName podLabels podName}
             fragment Observables on Observable {name type value}
-            fragment Site on Site {name}
+            fragment Site on Site {id name}
             fragment DetectionSource on DetectionSource {engine product}
             fragment Tactic on Tactic {name uid}
             fragment TargetUser on DetectionTargetUserDetails {domain name}
@@ -175,9 +176,10 @@ class SentinelOneGraphParser(ApiParser):
             fragment Attacks on Attack {tactic {...Tactic} technique {...Technique}}
             fragment Process on ProcessDetail {cmdLine file {...File} parentName username}
             fragment Scope on Scope {account {...Account} group {...Group} site {...Site}}
-            fragment DetectionTime on DetectionTime {attacker {...Attacker} cloud {...Cloud} kubernetes {...Kubernetes} targetUser {...TargetUser}}
+            fragment DetectionTime on DetectionTime {attacker {...Attacker} cloud {...Cloud} kubernetes {...Kubernetes} targetUser {...TargetUser} asset {...DetectionAsset}}
             fragment Indicators on Indicator {attacks {...Attacks} eventTime message observables {...Observables} severity type}
             fragment RealTime on RealTime {scope {...Scope}}
+            fragment DetectionAsset on DetectionAsset {ipV4 ipV6 domain consoleIpAddress}
             query GetAlert($id:ID!) {
                 alert(id:$id) {
                     analystVerdict
@@ -208,6 +210,7 @@ class SentinelOneGraphParser(ApiParser):
                     status
                     storylineId
                     updatedAt
+                    rawData
                 }
             }
         """
@@ -220,7 +223,27 @@ class SentinelOneGraphParser(ApiParser):
         return response.get('data', {}).get('alert', {})
 
 
+    def get_itdr_alert_comments(self, event_id: str) -> list:
+        query = """
+        fragment User on User {email fullName}
+            query GetAlertnotes($alertId:ID!) {
+                alertNotes(alertId:$alertId) {
+                    data {id text createdAt updatedAt author {...User}
+                }
+            }
+        }
+        """
+
+        response = self.execute_query(
+            self.url,
+            data={'query': query, 'variables': {'alertId': event_id}}
+        )
+
+        return response.get('data', {}).get('alertNotes', {}).get('data', [])
+
+
     def format_log(self, log: dict) -> str:
+        # Mitre tactics/techniques
         tactics = list()
         techniques = list()
 
@@ -231,9 +254,29 @@ class SentinelOneGraphParser(ApiParser):
                     tactics.append(attack.get("tactic"))
                     techniques.append(attack.get("technique"))
 
-        log["indicators"] = {}
-        log["indicators"]["tactics"] = tactics
-        log["indicators"]["techniques"] = techniques
+        log["mitre_techniques"] = tactics
+        log["mitre_tactics"] = techniques
+
+        # Comments
+        if log.get('noteExists'):
+            comments = []
+            for comment in self.get_itdr_alert_comments(log.get("id")):
+                name = comment.get('author', {}).get('fullName', "")
+                email = comment.get('author', {}).get('email', "")
+                date = comment.get('createdAt').replace('Z', '+00:00')
+                comments.append({
+                    'id': comment['id'],
+                    'message': comment['text'],
+                    'username': f"{name} ({email})",
+                    'timestamp': datetime.fromisoformat(date)
+                })
+            log['comments'] = comments
+
+        resolved = log.get('resolved', '')
+        status = log.get('status', '')
+        log['needs_attention'] = str(status).lower() not in resolved
+
+        log['createdAt'] = datetime.fromisoformat(log.get('createdAt').replace('Z', '+00:00')).isoformat()
 
         return dumps(log)
 
@@ -247,13 +290,13 @@ class SentinelOneGraphParser(ApiParser):
             since = timezone.now() - timedelta(days=1)
             to = timezone.now()
 
-            alert_ids = self.get_itdr_events_ids(
+            alert_ids = self.get_itdr_alert_ids(
                 since=int(since.timestamp()*1000),
                 to=int(to.timestamp()*1000),
                 limit=100)
 
             for id in alert_ids:
-                logs.append(self.get_itdr_event_details(id))
+                logs.append(self.format_log(self.get_itdr_alert_details(id)))
 
             return {
                 "status": True,
@@ -277,7 +320,7 @@ class SentinelOneGraphParser(ApiParser):
 
         logger.info(f"[{__parser__}][execute]: Parser starting from {since} to {to}", extra={'frontend': str(self.frontend)})
 
-        alert_ids = self.get_itdr_events_ids(
+        alert_ids = self.get_itdr_alert_ids(
             since=int(since.timestamp()*1000),
             to=int(to.timestamp()*1000),
             limit=100
@@ -287,14 +330,20 @@ class SentinelOneGraphParser(ApiParser):
 
         for id in alert_ids:
             logger.debug(f"[{__parser__}][execute]: Getting alert '{id}'", extra={'frontend': str(self.frontend)})
-            event_detail = self.get_itdr_event_details(id)
-            logs.append(self.format_log(event_detail))
+            event_detail = self.get_itdr_alert_details(id)
+            detectionProduct = event_detail.get('detectionSource', {}).get('product', "")
+
+            # filter out products (see comment l.128)
+            if isinstance(detectionProduct, str):
+                if detectionProduct in ["EDR", "CWS", "STAR"]:
+                    logs.append(self.format_log(event_detail))
+
             if self.evt_stop.is_set():
                 break
 
         # this condition is ugly but permit to not refacto the entire collector now because we are short of time
         # it is there to avoid writing logs / save timestamp in case we are stopping the collector
-        # it MAY NOT have a important incidence as observed volumetry is arround 1log/day, thus it's not so costly to redo log gathering operations
+        # it MAY NOT have a important incidence, as observed volumetry is arround 1log/day, thus it's not so costly to redo log gathering operations
         # on collector restart and SHOULD have a limited impact
         if not self.evt_stop.is_set():
             if len(alert_ids) > 0: # if logs
