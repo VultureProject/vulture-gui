@@ -114,7 +114,7 @@ class SentinelOneGraphParser(ApiParser):
         """
 
         variables  = {
-            'first': limit, # This is the limit of items returned for one query
+            'first': limit, # This is the limit of items returned for one query - not the entire gathering, as we paginate below
             'filters' : [
                 {
                     'fieldId': 'detectedAt',
@@ -125,8 +125,6 @@ class SentinelOneGraphParser(ApiParser):
                         'endInclusive': False
                     }
                 }
-                # {'fieldId': 'detectionSource.product', 'stringIn':{'values': products}} # It is not possible to filter out nested fields from GraphQL responses -> we will do it locally
-                # {'fieldId': 'detectionProduct', 'stringIn': {'values': ['Identity']}} # Should be ignored -> this tends to produce weird bugs while using it (returning results of variable length for every call)
             ],
             'sort': {'by': 'detectedAt', 'order': 'ASC'},
         }
@@ -159,7 +157,7 @@ class SentinelOneGraphParser(ApiParser):
     def get_itdr_alert_details(self, event_id: str) -> dict:
         query = """
             fragment Account on Account {id name}
-            fragment Analytics on Analytics {category name type}
+            fragment Analytics on Analytics {category name typeValue}
             fragment Asset on Asset {agentUuid agentVersion category connectivityToConsole id lastLoggedInUser name osType osVersion pendingReboot policy subcategory type}
             fragment Assignee on User {email fullName}
             fragment Attacker on DetectionAttackerDetails {host ip}
@@ -243,6 +241,9 @@ class SentinelOneGraphParser(ApiParser):
 
 
     def format_log(self, log: dict) -> str:
+        # Observer name
+        log["observer_name"] = self.sentinel_one_identity_graph_console_url
+
         # Mitre tactics/techniques
         tactics = list()
         techniques = list()
@@ -254,8 +255,10 @@ class SentinelOneGraphParser(ApiParser):
                     tactics.append(attack.get("tactic"))
                     techniques.append(attack.get("technique"))
 
-        log["mitre_techniques"] = tactics
-        log["mitre_tactics"] = techniques
+        log["mitre_technique_ids"] = [x["uid"] for x in techniques]
+        log["mitre_technique_names"] = [x["name"] for x in techniques]
+        log["mitre_tactic_ids"] = [x["uid"] for x in tactics]
+        log["mitre_tactic_names"] = [x["name"] for x in tactics]
 
         # Comments
         if log.get('noteExists'):
@@ -264,6 +267,7 @@ class SentinelOneGraphParser(ApiParser):
                 name = comment.get('author', {}).get('fullName', "")
                 email = comment.get('author', {}).get('email', "")
                 date = comment.get('createdAt').replace('Z', '+00:00')
+                logger.info(f"Date : {date}", extra={'frontend': str(self.frontend)})
                 comments.append({
                     'id': comment['id'],
                     'message': comment['text'],
@@ -272,11 +276,44 @@ class SentinelOneGraphParser(ApiParser):
                 })
             log['comments'] = comments
 
+        # needs_attention
         resolved = log.get('resolved', '')
         status = log.get('status', '')
         log['needs_attention'] = str(status).lower() not in resolved
 
+        # createdAt
         log['createdAt'] = datetime.fromisoformat(log.get('createdAt').replace('Z', '+00:00')).isoformat()
+
+        # process.args
+        process_cmdline = log.get("process", {}).get("cmdLine")
+        if isinstance(process_cmdline, str):
+            process_path = log.get("process", {}).get("path", "")
+            process_deduces_args = process_cmdline.replace(process_path, "")
+            log["process"]["args"] = process_deduces_args.split(" ")
+
+        # is_blocked
+        unblocked = ['unmitigated', 'begnin']
+        log['is_blocked'] = log.get('result', "").lower() not in unblocked
+
+        # is_kubernetes
+        log['is_kubernetes'] = False
+        if kubernetes := log.get('detectionTime', {}).get('kubernetes', {}):
+            log['is_kubernetes'] = any(kubernetes.values())
+
+        # is_cloud
+        log['is_cloud'] = False
+        if cloud := log.get('detectionTime', {}).get('cloud', {}):
+            if cloud.get('cloudProvider'):
+                log["is_cloud"] = True
+
+        # rawData interesting fields selection (to avoid as much as possible log expansion)
+        evidences = log["rawData"].get('evidences')
+        if isinstance(evidences, list):
+            log["process"]["file"]["extension"] = evidences[0].get('process', {}).get('file', {}).get('mime_type', "")
+            log["process"]["file"]["signature"] = {
+                "is_signed": evidences[0].get('process', {}).get('file', {}).get('signature', {}).get('algorithm', "")
+            }
+        del log["rawData"]
 
         return dumps(log)
 
@@ -333,10 +370,11 @@ class SentinelOneGraphParser(ApiParser):
             event_detail = self.get_itdr_alert_details(id)
             detectionProduct = event_detail.get('detectionSource', {}).get('product', "")
 
-            # filter out products (see comment l.128)
-            if isinstance(detectionProduct, str):
-                if detectionProduct in ["EDR", "CWS", "STAR"]:
-                    logs.append(self.format_log(event_detail))
+            # filters out interesting log's type (Identity (itdr) and ['EDR', 'CWS', 'STAR'] (edr))
+            # as API have trouble to deal with nested objects
+            if isinstance(detectionProduct, str) and detectionProduct in ["Identity", 
+                                                                          "EDR", "CWS", "STAR"]:
+                logs.append(self.format_log(event_detail))
 
             if self.evt_stop.is_set():
                 break
