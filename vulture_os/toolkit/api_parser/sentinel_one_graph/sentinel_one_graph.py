@@ -255,10 +255,10 @@ class SentinelOneGraphParser(ApiParser):
                     tactics.append(attack.get("tactic"))
                     techniques.append(attack.get("technique"))
 
-        log["mitre_technique_ids"] = [x["uid"] for x in techniques]
-        log["mitre_technique_names"] = [x["name"] for x in techniques]
-        log["mitre_tactic_ids"] = [x["uid"] for x in tactics]
-        log["mitre_tactic_names"] = [x["name"] for x in tactics]
+        log["mitre_technique_ids"] = list(set([x["uid"] for x in techniques]))
+        log["mitre_technique_names"] = list(set([x["name"] for x in techniques]))
+        log["mitre_tactic_ids"] = list(set([x["uid"] for x in tactics]))
+        log["mitre_tactic_names"] = list(set([x["name"] for x in tactics]))
 
         # Comments
         if log.get('noteExists'):
@@ -277,23 +277,28 @@ class SentinelOneGraphParser(ApiParser):
             log['comments'] = comments
 
         # needs_attention
-        resolved = log.get('resolved', '')
-        status = log.get('status', '')
-        log['needs_attention'] = str(status).lower() not in resolved
+        resolved = log.get('resolved')
+        status = log.get('status')
+        if status and resolved:
+            log['needs_attention'] = str(status).lower() not in resolved
 
         # createdAt
-        log['createdAt'] = datetime.fromisoformat(log.get('createdAt').replace('Z', '+00:00')).isoformat()
+        if createdAt := log.get('createdAt'):
+            log['createdAt'] = datetime.fromisoformat(createdAt.replace('Z', '+00:00')).isoformat()
 
-        # process.args
-        process_cmdline = log.get("process", {}).get("cmdLine")
-        if isinstance(process_cmdline, str):
-            process_path = log.get("process", {}).get("path", "")
-            process_deduces_args = process_cmdline.replace(process_path, "")
-            log["process"]["args"] = process_deduces_args.split(" ")
+        # process_args
+        process = log.get("process")
+        if isinstance(process, dict):
+            process_cmdline = process.get("cmdLine")
+            if isinstance(process_cmdline, str):
+                process_path = process.get("path", "")
+                process_deduces_args = process_cmdline.replace(process_path, "")
+                log["process_args"] = process_deduces_args.split(" ")
 
         # is_blocked
-        unblocked = ['unmitigated', 'begnin']
-        log['is_blocked'] = log.get('result', "").lower() not in unblocked
+        result = log.get('result')
+        if isinstance(result,str):
+            log['is_blocked'] = result.lower() not in ['unmitigated', 'begnin']
 
         # is_kubernetes
         log['is_kubernetes'] = False
@@ -309,10 +314,8 @@ class SentinelOneGraphParser(ApiParser):
         # rawData interesting fields selection (to avoid as much as possible log expansion)
         evidences = log["rawData"].get('evidences')
         if isinstance(evidences, list):
-            log["process"]["file"]["extension"] = evidences[0].get('process', {}).get('file', {}).get('mime_type', "")
-            log["process"]["file"]["signature"] = {
-                "is_signed": evidences[0].get('process', {}).get('file', {}).get('signature', {}).get('algorithm', "")
-            }
+            log["process_file_extension"] = evidences[0].get('process', {}).get('file', {}).get('mime_type', "")
+            log["process_file_signature_is_signed"] = evidences[0].get('process', {}).get('file', {}).get('signature', {}).get('algorithm', "")
         del log["rawData"]
 
         return dumps(log)
