@@ -123,7 +123,10 @@ def netif_edit(request, object_id=None, api=False):
                 """ If the current nic is not in the new config anymore:
                 Remove it from NetworkAddressNIC """
                 if str(current_networkadress_nic.nic.pk) not in nic_list:
+                    node_of_removed_nic = current_networkadress_nic.nic.node
+                    rc_confs = netif.rc_config()
                     current_networkadress_nic.delete()
+                    node_of_removed_nic.api_request('toolkit.network.network.remove_netif_configs', rc_confs)
 
 
         """ Write permanent network configuration on disk """
