@@ -255,25 +255,29 @@ class SentinelOneGraphParser(ApiParser):
                     tactics.append(attack.get("tactic"))
                     techniques.append(attack.get("technique"))
 
-        log["mitre_technique_ids"] = list(set([x["uid"] for x in techniques]))
-        log["mitre_technique_names"] = list(set([x["name"] for x in techniques]))
-        log["mitre_tactic_ids"] = list(set([x["uid"] for x in tactics]))
-        log["mitre_tactic_names"] = list(set([x["name"] for x in tactics]))
+        log["mitre_technique_ids"] = list(set([x.get("uid") for x in techniques]))
+        log["mitre_technique_names"] = list(set([x.get("name") for x in techniques]))
+        log["mitre_tactic_ids"] = list(set([x.get("uid") for x in tactics]))
+        log["mitre_tactic_names"] = list(set([x.get("name") for x in tactics]))
 
         # Comments
         if log.get('noteExists'):
             comments = []
-            for comment in self.get_itdr_alert_comments(log.get("id")):
-                name = comment.get('author', {}).get('fullName', "")
-                email = comment.get('author', {}).get('email', "")
-                date = comment.get('createdAt').replace('Z', '+00:00')
-                logger.info(f"Date : {date}", extra={'frontend': str(self.frontend)})
-                comments.append({
-                    'id': comment['id'],
-                    'message': comment['text'],
-                    'username': f"{name} ({email})",
-                    'timestamp': datetime.fromisoformat(date).isoformat()
-                })
+            try:
+                for comment in self.get_itdr_alert_comments(log.get("id")):
+                    name = comment.get('author', {}).get('fullName', "")
+                    email = comment.get('author', {}).get('email', "")
+                    if date := comment.get('createdAt') and isinstance(date, str):
+                        date = date.replace('Z', '+00:00')
+                    logger.info(f"Date : {date}", extra={'frontend': str(self.frontend)})
+                    comments.append({
+                        'id': comment['id'],
+                        'message': comment['text'],
+                        'username': f"{name} ({email})",
+                        'timestamp': datetime.fromisoformat(date).isoformat()
+                    })
+            except:
+                pass
             log['comments'] = comments
 
         # needs_attention
@@ -283,7 +287,7 @@ class SentinelOneGraphParser(ApiParser):
             log['needs_attention'] = str(status).lower() not in resolved
 
         # createdAt
-        if createdAt := log.get('createdAt'):
+        if createdAt := log.get('createdAt') and isinstance(createdAt, str):
             log['createdAt'] = datetime.fromisoformat(createdAt.replace('Z', '+00:00')).isoformat()
 
         # process_args
@@ -298,7 +302,7 @@ class SentinelOneGraphParser(ApiParser):
         # is_blocked
         result = log.get('result')
         if isinstance(result,str):
-            log['is_blocked'] = result.lower() not in ['unmitigated', 'begnin']
+            log['is_blocked'] = result.lower() not in ['unmitigated', 'benign']
 
         # is_kubernetes
         log['is_kubernetes'] = False
@@ -314,8 +318,9 @@ class SentinelOneGraphParser(ApiParser):
         # rawData interesting fields selection (to avoid as much as possible log expansion)
         evidences = log["rawData"].get('evidences')
         if isinstance(evidences, list):
-            log["process_file_extension"] = evidences[0].get('process', {}).get('file', {}).get('mime_type', "")
-            log["process_file_signature_is_signed"] = evidences[0].get('process', {}).get('file', {}).get('signature', {}).get('algorithm', "")
+            if len(evidences) > 0:
+                log["process_file_extension"] = evidences[0].get('process', {}).get('file', {}).get('mime_type', "")
+                log["process_file_signature_signature"] = evidences[0].get('process', {}).get('file', {}).get('signature', {}).get('algorithm', "")
         del log["rawData"]
 
         return dumps(log)
