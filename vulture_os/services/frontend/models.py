@@ -1652,12 +1652,12 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Ubika refresh token expiration timestamp"),
         verbose_name=_("Ubika refresh token expiration timestamp")
     )
-    sentinel_one_identity_graph_token = models.TextField(
+    sentinel_one_graph_token = models.TextField(
         verbose_name=_("Sentinel One Identity Graph Token"),
         help_text=_("Sentinel One Identity Graph Token"),
         default=""
     )
-    sentinel_one_identity_graph_console_url = models.TextField(
+    sentinel_one_graph_console_url = models.TextField(
         verbose_name=_("Sentinel One Identity Graph Console URL"),
         help_text=_("Sentinel One Identity Graph Console URL"),
         default=""
