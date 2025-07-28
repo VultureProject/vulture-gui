@@ -2258,7 +2258,7 @@ class Frontend(RsyslogQueue, models.Model):
                           "\\\"captured_request_cookie\\\": \\\"%{+E}CC\\\", " \
                           "\\\"captured_response_cookie\\\": \\\"%{+E}CS\\\", " \
                           "\\\"http_method\\\": \\\"%{+E}HM\\\", " \
-                          "\\\"http_path\\\": \\\"%{+E}HP\\\", " \
+                          "\\\"http_path\\\": \\\"%{+E}HPO\\\", " \
                           "\\\"http_get_params\\\": \\\"%{+E}HQ\\\", " \
                           "\\\"http_version\\\": \\\"%{+E}HV\\\", " \
                           "\\\"http_user_agent\\\": \\\"%[capture.req.hdr(0)]\\\", " \
