@@ -20,8 +20,8 @@ __license__ = "GPLv3"
 __version__ = "4.0.0"
 __maintainer__ = "Vulture OS"
 __email__ = "contact@vultureproject.org"
-__doc__ = 'Sentinel One Identity Graph Collector'
-__parser__ = 'SENTINEL_ONE_IDENTITY_GRAPH'
+__doc__ = 'Sentinel One Graph Collector'
+__parser__ = 'SENTINEL_ONE_GRAPH'
 
 import logging
 from datetime import timedelta
@@ -38,25 +38,25 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 
-class SentinelOneIdentityGraphError(Exception):
+class SentinelOneGraphError(Exception):
     pass
 
 
-class SentinelOneIdentityGraphParser(ApiParser):
+class SentinelOneGraphParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        self.sentinel_one_identity_graph_token = data["sentinel_one_identity_graph_token"]
+        self.sentinel_one_graph_token = data["sentinel_one_graph_token"]
 
-        self.sentinel_one_identity_graph_console_url = "https://" + self.data["sentinel_one_identity_graph_console_url"].split("://")[-1].rstrip("/")
+        self.sentinel_one_graph_console_url = "https://" + self.data["sentinel_one_graph_console_url"].split("://")[-1].rstrip("/")
         self.path_url = '/web/api/v2.1/unifiedalerts/graphql'
-        self.url = self.sentinel_one_identity_graph_console_url + self.path_url
+        self.url = self.sentinel_one_graph_console_url + self.path_url
 
         self.session = Session()
 
 
     def login(self):
-        self.session.headers.update({"Authorization": f"Bearer {self.sentinel_one_identity_graph_token}"})
+        self.session.headers.update({"Authorization": f"Bearer {self.sentinel_one_graph_token}"})
         return
 
 
@@ -91,7 +91,7 @@ class SentinelOneIdentityGraphParser(ApiParser):
                 continue
 
         if retry == 3:
-            raise SentinelOneIdentityGraphError("Failed to fetch logs after 3 tries")
+            raise SentinelOneGraphError("Failed to fetch logs after 3 tries")
 
         return resp_json
 
