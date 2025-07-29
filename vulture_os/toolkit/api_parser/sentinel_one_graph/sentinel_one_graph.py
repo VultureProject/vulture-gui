@@ -113,6 +113,8 @@ class SentinelOneGraphParser(ApiParser):
             }
         """
 
+        logger.info(f"[{__parser__}][get_itdr_alert_ids]: Getting available alert IDs, from {since} to {to}", extra={'frontend': str(self.frontend)})
+
         variables  = {
             'first': limit, # This is the limit of items returned for one query - not the entire gathering, as we paginate below
             'filters' : [
@@ -212,13 +214,33 @@ class SentinelOneGraphParser(ApiParser):
                 }
             }
         """
+        logger.info(f"[{__parser__}][get_itdr_alert_details]: Getting alert details for alert {event_id}", extra={'frontend': str(self.frontend)})
 
         response = self.execute_query(
             self.url,
             data={'query': query, 'variables': {'id': event_id}}
         )
 
-        return response.get('data', {}).get('alert', {})
+        log = response.get('data', {}).get('alert', {})
+
+        # Comments
+        if log.get('noteExists'):
+            comments = []
+            if log_id := log.get("id"):
+                for comment in self.get_itdr_alert_comments(log_id):
+                    name = comment.get('author', {}).get('fullName', "")
+                    email = comment.get('author', {}).get('email', "")
+                    if (date := comment.get('createdAt')) and isinstance(date, str):
+                        date = date.replace('Z', '+00:00')
+                    comments.append({
+                        'id': comment['id'],
+                        'message': comment['text'],
+                        'username': f"{name} ({email})",
+                        'timestamp': datetime.fromisoformat(date).isoformat()
+                    })
+            log['comments'] = comments
+
+        return log
 
 
     def get_itdr_alert_comments(self, event_id: str) -> list:
@@ -231,6 +253,7 @@ class SentinelOneGraphParser(ApiParser):
             }
         }
         """
+        logger.info(f"[{__parser__}][get_itdr_alert_comments]: Getting alert comments for alert {event_id}", extra={'frontend': str(self.frontend)})
 
         response = self.execute_query(
             self.url,
@@ -260,26 +283,6 @@ class SentinelOneGraphParser(ApiParser):
         log["mitre_tactic_ids"] = list(set([x.get("uid") for x in tactics]))
         log["mitre_tactic_names"] = list(set([x.get("name") for x in tactics]))
 
-        # Comments
-        if log.get('noteExists'):
-            comments = []
-            try:
-                for comment in self.get_itdr_alert_comments(log.get("id")):
-                    name = comment.get('author', {}).get('fullName', "")
-                    email = comment.get('author', {}).get('email', "")
-                    if date := comment.get('createdAt') and isinstance(date, str):
-                        date = date.replace('Z', '+00:00')
-                    logger.info(f"Date : {date}", extra={'frontend': str(self.frontend)})
-                    comments.append({
-                        'id': comment['id'],
-                        'message': comment['text'],
-                        'username': f"{name} ({email})",
-                        'timestamp': datetime.fromisoformat(date).isoformat()
-                    })
-            except:
-                pass
-            log['comments'] = comments
-
         # needs_attention
         resolved = log.get('resolved')
         status = log.get('status')
@@ -287,7 +290,7 @@ class SentinelOneGraphParser(ApiParser):
             log['needs_attention'] = str(status).lower() not in resolved
 
         # createdAt
-        if createdAt := log.get('createdAt') and isinstance(createdAt, str):
+        if (createdAt := log.get('createdAt')) and isinstance(createdAt, str):
             log['createdAt'] = datetime.fromisoformat(createdAt.replace('Z', '+00:00')).isoformat()
 
         # process_args
