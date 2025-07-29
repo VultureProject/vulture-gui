@@ -50,7 +50,7 @@ class SentinelOneGraphParser(ApiParser):
 
         self.sentinel_one_graph_console_url = "https://" + self.data["sentinel_one_graph_console_url"].split("://")[-1].rstrip("/")
         self.UNIFIED_ALERTS = '/web/api/v2.1/unifiedalerts/graphql'
-        self.url = f"{self.sentinel_one_graph_console_url}/{self.UNIFIED_ALERTS}"
+        self.url = f"{self.sentinel_one_graph_console_url}{self.UNIFIED_ALERTS}"
 
         self.session = Session()
 
@@ -242,7 +242,7 @@ class SentinelOneGraphParser(ApiParser):
 
     def format_log(self, log: dict) -> str:
         # Observer name
-        log["observer_name"] = self.sentinel_one_identity_graph_console_url
+        log["observer_name"] = self.sentinel_one_graph_console_url
 
         # Mitre tactics/techniques
         tactics = list()
@@ -389,7 +389,7 @@ class SentinelOneGraphParser(ApiParser):
 
         # this condition is ugly but permit to not refacto the entire collector now because we are short of time
         # it is there to avoid writing logs / save timestamp in case we are stopping the collector
-        # it MAY NOT have a important incidence, as observed volumetry is arround 1log/day, thus it's not so costly to redo log gathering operations
+        # it MAY NOT have a important incidence, as observed volumetry is around 1log/day, thus it's not so costly to redo log gathering operations
         # on collector restart and SHOULD have a limited impact
         if not self.evt_stop.is_set():
             if len(alert_ids) > 0: # if logs
