@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.28.2] - 2025-07-28
 ### Fixed
 - [PORTAL] Ensure Haproxy configurations are up to date on Portal changes
 
