@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.29.0]
 ### Changed
 - [API_PARSER] [SENTINEL_ONE_IDENTITY_GRAPH] rename to Sentinel One Graph
 - [API_PARSER] [SENTINEL_ONE_GRAPH] Filter events with detectionSource.product
