@@ -59,6 +59,7 @@ ACTION_TYPE = (
     ('omfwd', 'Syslog'),
     ('omhiredis', 'Redis'),
     ('ommongodb', 'MongoDB'),
+    ('omsentinel', 'Sentinel'),
     ('omrelp', 'RELP'),
     ('omkafka', 'Kafka'),
 )
@@ -74,6 +75,13 @@ ROTATION_PERIOD_CHOICES = (
     ('monthly', "Every month"),
     ('yearly', "Every year")
 )
+
+ZLIB_LEVEL_CHOICES = [
+    (-1, _('Balanced')),
+    (0, _('No compression')),
+    (1, _('Fastest compression')),
+    (9, _('Best compression')),
+]
 
 OMHIREDIS_MODE_CHOICES = (
     ('queue', "Queue/list mode, using lpush/rpush"),
@@ -252,6 +260,8 @@ class LogOM (models.Model):
             subclass_obj = self.logomhiredis
         elif hasattr(self, 'logommongodb'):
             subclass_obj = self.logommongodb
+        elif hasattr(self, 'logomsentinel'):
+            subclass_obj = self.logomsentinel
         elif hasattr(self, 'logomrelp'):
             subclass_obj = self.logomrelp
         elif hasattr(self, 'logomkafka'):
@@ -782,6 +792,147 @@ class LogOMMongoDB(LogOM):
         # FIXME: Dynamically build mongodb mapping based on Input's Log Format
         return "property(name=\"$!app_name\")"
 
+class LogOMSentinel(LogOM):
+    tenant_id = models.TextField(
+        null=False, 
+        blank=False, 
+        default=None,
+        help_text=_("the ID of the tenant to use, will be included in the URI"),
+        verbose_name=_("Tenant ID"),
+        validators=[RegexValidator(
+                regex=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                message="The tenant ID is not a valid (expected format (UUID v4): 47673b71-c5ae-4a2a-8d8a-e86e79f1f967)."
+        )]
+        )
+    client_id = models.TextField(
+        null=False,
+        blank=False,
+        default=None,
+        help_text=_("the client ID for OpenID application authentication"),
+        verbose_name=_("Client ID"),
+        validators=[RegexValidator(
+                regex=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                message="The client ID is not a valid (expected format (UUID v4): 47673b71-c5ae-4a2a-8d8a-e86e79f1f967)."
+        )]
+    )
+    client_secret = models.TextField(
+        null=False,
+        blank=False,
+        default=None,
+        help_text=_("the client secret for OpenID application authentication"),
+        verbose_name=_("Client Secret")
+    )
+    dcr = models.TextField(
+        null=False,
+        blank=False,
+        default=None,
+        help_text=_("The Sentinel Data Collection Rule to use while ingesting data"),
+        verbose_name=_("DCR"),
+        validators=[RegexValidator(
+                regex=r"^dcr-[0-9a-f]{32}$",
+                message="The DCR ID is not valid (expected format : dcr-cbb3586665ebdbc6ebadd796e3ba5bcf)."
+        )]
+    )
+    dce = models.TextField(
+        null=False,
+        blank=False,
+        default=None,
+        help_text=_("The Sentinel Data Collection Endpoint to use for ingestion"),
+        verbose_name=_("DCE")
+    )
+    stream_name = models.TextField(
+        null=False,
+        blank=False,
+        default=None,
+        help_text=_("The Sentinel stream on which to insert the logs"),
+        verbose_name=_("Stream Name")
+    )
+    scope = models.URLField(
+        default='https://monitor.azure.com/.default',
+        help_text=_("the OpenID scope to use. For Sentinel ingestion API, corresponds to the Azure Environment"),
+        verbose_name=_("Scope")
+    )
+    batch_maxsize = models.PositiveIntegerField(
+        default=1,
+        help_text=_("Controls how many messages should be sent at most in one request")
+    )
+    batch_maxbytes = models.PositiveIntegerField(
+        default=10485760,
+        help_text=_("Defines the maximum size (in bytes) of one request")
+    )
+    compression_level = models.IntegerField(
+        choices=ZLIB_LEVEL_CHOICES,
+        default=-1,
+        help_text=_("Activates and defines the level of compression of requests")
+    )
+    tls_profile = models.ForeignKey(
+        TLSProfile,
+        on_delete=models.CASCADE,
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("TLSProfile object to use."),
+        verbose_name=_("Use a TLS Profile")
+    )
+
+    def to_dict(self, fields=None):
+        result = model_to_dict(self, fields=fields)
+        if not fields or "type" in fields:
+            result['type'] = 'Sentinel'
+        return result
+
+    def to_html_template(self):
+        """ Returns only needed attributes for display in GUI """
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'internal': self.internal,
+            'enabled': self.enabled,
+            'type': 'Sentinel',
+            'output': 'https://{}/dataCollectionRules/{}/streams/{}?api-version=2023-01-01'.format(self.dce,self.dcr,self.stream_name)
+        }
+
+    @property
+    def template(self):
+        return 'om_sentinel.tpl'
+
+    def to_template(self, **kwargs):
+        """  returns the attributes of the class """
+        template = super().to_template(**kwargs)
+        template.update({
+            'tenant_id': self.tenant_id,
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'dcr': self.dcr,
+            'dce': self.dce,
+            'stream_name': self.stream_name,
+            'scope': self.scope,
+            'batch_maxsize': self.batch_maxsize,
+            'batch_maxbytes': self.batch_maxbytes,
+            'compression_level': self.compression_level,
+            'type': 'Sentinel',
+            'output': 'https://{}/dataCollectionRules/{}/streams/{}?api-version=2023-01-01'.format(self.dce,self.dcr,self.stream_name)
+        })
+        if self.tls_profile:
+            if self.tls_profile.ca_cert:
+                template['ssl_ca'] = self.tls_profile.ca_cert.ca_filename()
+            if self.tls_profile.x509_certificate:
+                template['ssl_cert'] = self.tls_profile.x509_certificate.get_base_filename() + ".crt"
+                template['ssl_key'] = self.tls_profile.x509_certificate.get_base_filename() + ".key"
+        return template
+
+    def get_rsyslog_filenames(self):
+        """ Render filenames based on filename attribute, depending on frontend used """
+        result = set()
+        from services.frontend.models import Frontend
+        for f in Frontend.objects.filter(log_forwarders=self.pk).only('name') | Frontend.objects.filter(mode="log", log_forwarders_parse_failure=self.pk).only('name'):
+            result.add(f"/var/log/internal/{self.name}_{f.name}_error.log")
+        return result
+
+    @property
+    def mapping_id(self):
+        return 'mapping_'+self.template_id()
+    
 
 class LogOMKAFKA(LogOM):
     broker = models.TextField(blank=True, default='["1.2.3.4:9092"]')
