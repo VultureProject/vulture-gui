@@ -1,0 +1,425 @@
+{% extends "layout2.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block css_include %}
+
+
+{% endblock %}
+
+{% block js_include %}
+
+{% endblock %}
+
+
+{% block content %}
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <form id="frontend_edit_form" class="form-horizontal bootstrap-validator-form" action="" method="post" novalidate="novalidate">
+          {% csrf_token %}
+          <div class="panel">
+            <div class="panel-heading">
+                <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Sentinel Log forwarder" %}</h1>
+            </div>
+            <div class="panel-body">
+              {# Print form errors correctly #}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger alert-dismissible">
+                  <h4><i class="icon fa fa-ban"></i> Form errors </h4>
+                  <div class="tab-content no-padding">
+                    {{ form.non_field_errors|safe }}
+                  </div>
+                </div>
+              {% endif %}
+              {# If there is save/configuration errors #}
+              {% if save_error %}
+                <div class="alert alert-danger alert-dismissible nav-tabs-custom">
+                  <ul class="nav nav-tabs pull-right ui-sortable-handle">
+                    <li><a href="#tab_2" data-toggle="tab">Advanced informations</a></li>
+                    <li class="active"><a href="#tab_1" data-toggle="tab">Message</a></li>
+                    <li class="pull-left header"><i class="fa fa-inbox"></i>Configuration error</li>
+                  </ul>
+                  <div class="tab-content no-padding">
+                    <div class="tab-pane active" id="tab_1">
+                      <pre>{{ save_error.0 }}</pre>
+                    </div>
+                    <!-- /.tab-pane -->
+                    <div class="tab-pane" id="tab_2">
+                      <pre>{{ save_error.1 }}</pre>
+                    </div>
+                    <!-- /.tab-pane -->
+                  </div>
+                </div>
+              {% endif %}
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{% translate "Enable forwarder" %}</label>
+                    <div class="col-sm-5">
+                      {{form.enabled}}
+                      {{form.enabled.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{% translate "Friendly name" %}</label>
+                    <div class="col-sm-5">
+                      {{form.name}}
+                      {{form.name.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.tenant_id.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.tenant_id}}
+                      {{form.tenant_id.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.client_id.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.client_id}}
+                      {{form.client_id.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.client_secret.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.client_secret}}
+                      {{form.client_secret.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row datastream-mode">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.dcr.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.dcr}}
+                      {{form.dcr.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.dce.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.dce}}
+                      {{form.dce.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.stream_name.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.stream_name}}
+                      {{form.stream_name.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.send_as_raw.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.send_as_raw}}
+                      {{form.send_as_raw.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Advanced tab -->
+              <div class="row log-mode">
+                <div class="col-sm-4 pull-right">
+                  <div class="form-group">
+                    <button class="btn btn-box-tool" type="button" data-toggle="collapse" data-target=".advanced_options">
+                      <i class="fa fa-plus"></i> {% trans "Advanced" %}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group collapse advanced_options">
+                <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.scope.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.scope}}
+                      {{form.scope.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.batch_maxsize.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.batch_maxsize}}
+                      {{form.batch_maxsize.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.batch_maxbytes.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.batch_maxbytes}}
+                      {{form.batch_maxbytes.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.compression_level.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.compression_level}}
+                      {{form.compression_level.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+               <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.tls_profile.label}}</label>
+                    <div class="col-sm-5">
+                      {{form.tls_profile}}
+                      {{form.tls_profile.errors|safe}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.queue_size.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.queue_size}}
+                        {{form.queue_size.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.dequeue_size.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.dequeue_size}}
+                        {{form.dequeue_size.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.max_workers.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.max_workers}}
+                        {{form.max_workers.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.queue_timeout_shutdown.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.queue_timeout_shutdown}}
+                        {{form.queue_timeout_shutdown.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.new_worker_minimum_messages.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.new_worker_minimum_messages}}
+                        {{form.new_worker_minimum_messages.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.worker_timeout_shutdown.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.worker_timeout_shutdown}}
+                        {{form.worker_timeout_shutdown.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{form.enable_retry.label}}</label>
+                      <div class="col-sm-5">
+                        {{form.enable_retry}}
+                        {{form.enable_retry.errors|safe}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="tab-queue">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label">{{form.enable_disk_assist.label}}</label>
+                        <div class="col-sm-5">
+                          {{form.enable_disk_assist}}
+                          {{form.enable_disk_assist.errors|safe}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="tab-disk">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.high_watermark.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.high_watermark}}
+                            {{form.high_watermark.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.low_watermark.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.low_watermark}}
+                            {{form.low_watermark.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.max_file_size.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.max_file_size}}
+                            {{form.max_file_size.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.max_disk_space.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.max_disk_space}}
+                            {{form.max_disk_space.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{form.spool_directory.label}}</label>
+                          <div class="col-sm-5">
+                            {{form.spool_directory}}
+                            {{form.spool_directory.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div> <!-- /.tab-disk -->
+                </div> <!-- /.tab-queue -->
+              </div> <!-- /.advanced_options -->
+            </div>
+            <div class="panel-footer">
+              <a type="button" href="{% url 'applications.logfwd.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block jquery_code %}
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+    };
+  }
+
+  $(function() {
+
+    $('.select2').select2();
+
+    /* Switchery mandatory code */
+    var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+      elems.forEach(function(html) {
+      var switchery = new Switchery(html, {
+        'color': '#FA9834'
+      });
+    });
+
+    $('#id_enable_retry').on('change', function(e){
+      if ($(this).is(':checked')) {
+        $('#tab-queue').show();
+      } else {
+        $('#tab-queue').hide();
+      }
+    }).trigger('change');
+
+    $('#id_enable_disk_assist').on('change', function(e){
+      if ($(this).is(':checked')) {
+        $('#tab-disk').show();
+      } else {
+        $('#tab-disk').hide();
+      }
+    }).trigger('change');
+
+  }); // end of function()
+
+{% endblock %}
