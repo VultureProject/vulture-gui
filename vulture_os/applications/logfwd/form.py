@@ -25,11 +25,12 @@ __doc__ = 'rsyslog dedicated form classes'
 # Django system imports
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, NumberInput, Select
+from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, NumberInput, Select, URLInput
 
 # Django project imports
 from applications.logfwd.models import (LogOM, LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch,
-                                        LogOMMongoDB, LogOMKAFKA, OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES)
+                                        LogOMMongoDB, LogOMKAFKA, LogOMSentinel,
+                                        OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES, ZLIB_LEVEL_CHOICES)
 from system.pki.models import X509Certificate, TLSProfile
 
 # Required exceptions imports
@@ -374,3 +375,34 @@ class LogOMKafkaForm(LogOMForm):
             if topic.count("%") % 2 != 0:
                 self.add_error("topic", "seems like your number of '%' is incorrect, please check your templated topic")
         return cleaned_data
+
+
+class LogOMSentinelForm(LogOMForm):
+    tls_profile = ModelChoiceField(
+        queryset=TLSProfile.objects.all(),
+        required=False,
+        widget=Select(attrs={'class': 'form-control select2'}),
+        label=LogOMSentinel.tls_profile.field.verbose_name,
+        empty_label="No TLS"
+    )
+
+    class Meta(LogOMForm.Meta):
+        model = LogOMSentinel
+        fields = LogOMForm.Meta.fields + ('tenant_id', 'client_id', 'client_secret',
+                                          'dcr', 'dce', 'stream_name', 'compression_level', 'scope',
+                                          'batch_maxsize', 'batch_maxbytes', 'tls_profile')
+
+        widgets = {
+            'tenant_id': TextInput(attrs={'class': 'form-control', 'placeholder': '47673b71-c5ae-4a2a-8d8a-e86e79f1f967'}),
+            'client_id': TextInput(attrs={'class': 'form-control', 'placeholder': '47673b71-c5ae-4a2a-8d8a-e86e79f1f967'}),
+            'client_secret': TextInput(attrs={'class': 'form-control'}),
+            'dcr': TextInput(attrs={'class': 'form-control', 'placeholder': 'dcr-cbb3586665ebdbc6ebadd796e3ba5bcf'}),
+            'dce': TextInput(attrs={'class': 'form-control', 'placeholder': 'example-a1b2.francecentral-1.ingest.monitor.azure.com'}),
+            'stream_name': TextInput(attrs={'class': 'form-control', 'placeholder': 'table name / stream name'}),
+            'compression_level': Select(choices=ZLIB_LEVEL_CHOICES, attrs={'class': 'select2'}),
+            'scope': URLInput(attrs={'class': 'form-control'}),
+            'batch_maxsize': NumberInput(attrs={'class': 'form-control', 'placeholder': 'nb of messages per request'}),
+            'batch_maxbytes': NumberInput(attrs={'class': 'form-control', 'placeholder': 'Max size per request (bytes)'}),
+
+        }
+        widgets.update(LogOMForm.Meta.widgets)
