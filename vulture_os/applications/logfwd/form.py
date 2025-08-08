@@ -29,7 +29,7 @@ from django.forms import ModelChoiceField, ModelForm, TextInput, CheckboxInput, 
 
 # Django project imports
 from applications.logfwd.models import (LogOM, LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch,
-                                        LogOMMongoDB, LogOMSentinel, LogOMKAFKA, OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES)
+                                        LogOMMongoDB, LogOMSentinel, LogOMKAFKA, OMFWD_PROTOCOL, OMHIREDIS_MODE_CHOICES, ZLIB_LEVEL_CHOICES)
 from system.pki.models import X509Certificate, TLSProfile
 
 # Required exceptions imports
@@ -299,21 +299,14 @@ class LogOMSentinelForm(LogOMForm):
             'client_secret': TextInput(attrs={'class': 'form-control'}),
             'dcr': TextInput(attrs={'class': 'form-control', 'placeholder': 'dcr-cbb3586665ebdbc6ebadd796e3ba5bcf'}),
             'dce': TextInput(attrs={'class': 'form-control', 'placeholder': 'example-a1b2.francecentral-1.ingest.monitor.azure.com'}),
-            'stream_name': TextInput(attrs={'class': 'form-control'}),
-            'compression_level': NumberInput(attrs={'class': 'form-control'}),
+            'stream_name': TextInput(attrs={'class': 'form-control', 'placeholder': 'table name / stream name'}),
+            'compression_level': Select(choices=ZLIB_LEVEL_CHOICES, attrs={'class': 'select2'}),
             'scope': URLInput(attrs={'class': 'form-control'}),
-            'batch_maxsize': NumberInput(attrs={'class': 'form-control'}),
-            'batch_maxbytes': NumberInput(attrs={'class': 'form-control'}),
+            'batch_maxsize': NumberInput(attrs={'class': 'form-control', 'placeholder': 'nb of messages per request'}),
+            'batch_maxbytes': NumberInput(attrs={'class': 'form-control', 'placeholder': 'Max size per request (bytes)'}),
 
         }
         widgets.update(LogOMForm.Meta.widgets)
-
-    def clean_dce(self):
-        dce = self.cleaned_data['dce']
-
-        if "http://" in dce:
-            dce = dce.replace('http://', 'https://', 1)
-        return dce
 
 
 class LogOMKafkaForm(LogOMForm):

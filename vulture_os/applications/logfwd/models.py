@@ -77,10 +77,17 @@ ROTATION_PERIOD_CHOICES = (
 )
 
 ZLIB_LEVEL_CHOICES = [
-    (-1, _('Balanced')),
-    (0, _('No compression')),
-    (1, _('Fastest compression')),
-    (9, _('Best compression')),
+    (-1, "Balanced"),
+    (0, "No compression"),
+    (1, "Fastest compression"),
+    (2, "Compression level 2"),
+    (3, "Compression level 3"),
+    (4, "Compression level 4"),
+    (5, "Compression level 5"),
+    (6, "Compression level 6"),
+    (7, "Compression level 7"),
+    (8, "Compression level 8"),
+    (9, "Best compression"),
 ]
 
 OMHIREDIS_MODE_CHOICES = (
@@ -853,7 +860,7 @@ class LogOMSentinel(LogOM):
         verbose_name=_("Scope")
     )
     batch_maxsize = models.PositiveIntegerField(
-        default=1,
+        default=100,
         help_text=_("Controls how many messages should be sent at most in one request")
     )
     batch_maxbytes = models.PositiveIntegerField(
@@ -861,8 +868,12 @@ class LogOMSentinel(LogOM):
         help_text=_("Defines the maximum size (in bytes) of one request")
     )
     compression_level = models.IntegerField(
+        default=ZLIB_LEVEL_CHOICES[0][0],
         choices=ZLIB_LEVEL_CHOICES,
-        default=-1,
+        validators=[
+        MinValueValidator(-1, message="Minimum allowed value is -1 (Balanced)."),
+        MaxValueValidator(9, message="Maximum allowed value is 9. (Best compression)")
+    ],
         help_text=_("Activates and defines the level of compression of requests")
     )
     tls_profile = models.ForeignKey(

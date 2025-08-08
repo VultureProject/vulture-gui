@@ -23,7 +23,7 @@ action(type="omsentinel"
             tls.cacert="{{ssl_ca}}"
         {%- endif %}
         {%- if ssl_key %}
-            tls.myprivkey="{{ssl_ca}}"
+            tls.myprivkey="{{ssl_key}}"
         {%- endif %}
             queue.type="LinkedList"
             queue.size="{{queue_size}}"
