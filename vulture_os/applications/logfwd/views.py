@@ -34,8 +34,8 @@ from system.cluster.models import Cluster
 
 # Django project imports
 from applications.logfwd.form import (LogOMFileForm, LogOMRELPForm, LogOMHIREDISForm, LogOMFWDForm,
-                                      LogOMElasticSearchForm, LogOMMongoDBForm, LogOMKafkaForm)
-from applications.logfwd.models import LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMKAFKA
+                                      LogOMElasticSearchForm, LogOMMongoDBForm, LogOMSentinelForm, LogOMKafkaForm)
+from applications.logfwd.models import LogOMFile, LogOMRELP, LogOMHIREDIS, LogOMFWD, LogOMElasticSearch, LogOMMongoDB, LogOMSentinel, LogOMKAFKA
 from gui.forms.form_utils import DivErrorList
 from services.frontend.models import Frontend
 from system.cluster.models import Node
@@ -60,6 +60,7 @@ LOGFWD_MODELS = {
     'Syslog': LogOMFWD,
     'Elasticsearch': LogOMElasticSearch,
     'MongoDB': LogOMMongoDB,
+    'Sentinel': LogOMSentinel,
     'Kafka' : LogOMKAFKA
 }
 
@@ -70,6 +71,7 @@ LOGFWD_FORMS = {
     'Syslog': LogOMFWDForm,
     'Elasticsearch': LogOMElasticSearchForm,
     'MongoDB': LogOMMongoDBForm,
+    'Sentinel': LogOMSentinelForm,
     'Kafka' : LogOMKafkaForm
 }
 

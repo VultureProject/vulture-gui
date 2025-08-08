@@ -12,9 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [SENTINEL_ONE_GRAPH] Various log formatting improvements
 ### Added
 - [API_PARSER] [SENTINEL_ONE_GRAPH] Get more fields from alert details
+- [LOG_FORWARDER] [SENTINEL] Add new Log Forwarder to Vulture GUI
 ### Fixed
 - [PORTAL] [HAPROXY] Only set X-Forwarded-Proto header if it doesn't already exist in request
-
+- [LOG_FORWARDER] [SENTINEL] code clean up and improving compression_level
 
 ## [2.28.2] - 2025-07-28
 ### Fixed
