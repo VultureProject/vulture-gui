@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [SENTINEL_ONE_IDENTITY_GRAPH] rename to Sentinel One Graph
 - [API_PARSER] [SENTINEL_ONE_GRAPH] Filter events with detectionSource.product
 - [API_PARSER] [SENTINEL_ONE_GRAPH] Various log formatting improvements
+- [LOG_FORWARDER] [SENTINEL] changing to UUIDField for tenant_id and client_id
 ### Added
 - [API_PARSER] [SENTINEL_ONE_GRAPH] Get more fields from alert details
 - [LOG_FORWARDER] [SENTINEL] Add new Log Forwarder to Vulture GUI
