@@ -287,7 +287,11 @@ class BeyondtrustReportingsParser(ApiParser):
         logger.info(f"[{__parser__}] get_logs: {msg}", extra={'frontend': str(self.frontend)})
 
         res = self._execute_query(url, query=parameters, tries=tries)
-        logs = xmltodict_parse(res.text)
+        try:
+            logs = xmltodict_parse(res.text)
+        except Exception:
+            logger.warning(f"[{__parser__}]:get_logs: Unable to parse {res.text}", extra={'frontend': str(self.frontend)})
+            return [], None
 
         if error := logs.get('error'):
             # if "report information matching your chosen criteria is available." in error.get('#text'):
