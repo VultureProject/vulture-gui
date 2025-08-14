@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [PORTAL] [HAPROXY] Only set X-Forwarded-Proto header if it doesn't already exist in request
 - [LOG_FORWARDER] [SENTINEL] code clean up and improving compression_level
+- [LOG_FORWARDER] [SENTINEL] UUIDField is not supported by Djongo
 
 ## [2.28.2] - 2025-07-28
 ### Fixed

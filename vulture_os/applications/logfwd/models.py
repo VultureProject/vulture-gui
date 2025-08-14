@@ -800,19 +800,28 @@ class LogOMMongoDB(LogOM):
         return "property(name=\"$!app_name\")"
 
 class LogOMSentinel(LogOM):
-    tenant_id = models.UUIDField(
+    tenant_id = models.TextField(
         null=False, 
         blank=False, 
         default=None,
         help_text=_("the ID of the tenant to use, will be included in the URI"),
-        verbose_name=_("Tenant ID")
+        verbose_name=_("Tenant ID"),
+        validators=[RegexValidator(
+                regex=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                message="The tenant ID format is not a valid"
+        )]
+        
         )
-    client_id = models.UUIDField(
+    client_id = models.TextField(
         null=False,
         blank=False,
         default=None,
         help_text=_("the client ID for OpenID application authentication"),
-        verbose_name=_("Client ID")
+        verbose_name=_("Client ID"),
+        validators=[RegexValidator(
+                regex=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                message="The client ID format is not a valid"
+        )]
     )
     client_secret = models.TextField(
         null=False,
