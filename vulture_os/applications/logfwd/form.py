@@ -87,7 +87,7 @@ class LogOMForm(ModelForm):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
         logger.info(self.initial)
-        if cleaned_data['enable_disk_assist'] == True:
+        if cleaned_data['enable_disk_assist'] is True:
             if cleaned_data['queue_size'] is not None and cleaned_data['high_watermark'] is not None:
                 if cleaned_data['queue_size'] < cleaned_data['high_watermark']:
                     self.add_error("queue_size", "Queue size is lower than the high watermark")
@@ -185,7 +185,7 @@ class LogOMHIREDISForm(LogOMForm):
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
-        if cleaned_data.get('dynamic_key') == True and cleaned_data.get('key'):
+        if cleaned_data.get('dynamic_key') is True and cleaned_data.get('key'):
             key = cleaned_data['key']
             if key.count("%") % 2 != 0:
                 self.add_error("key", "seems like your number of '%' is incorrect, please check your templated key")
@@ -362,14 +362,14 @@ class LogOMKafkaForm(LogOMForm):
     def clean(self):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
-        if cleaned_data.get('dynaKey') == True:
+        if cleaned_data.get('dynaKey') is True:
             if cleaned_data.get('key'):
                 key = cleaned_data['key']
                 if key.count("%") % 2 != 0:
                     self.add_error("key", "seems like your number of '%' is incorrect, please check your templated key")
             else:
                 self.add_error("key", "This field is required.")
-        if cleaned_data.get('dynaTopic') == True and cleaned_data.get('topic'):
+        if cleaned_data.get('dynaTopic') is True and cleaned_data.get('topic'):
             topic = cleaned_data['topic']
             if topic.count("%") % 2 != 0:
                 self.add_error("topic", "seems like your number of '%' is incorrect, please check your templated topic")

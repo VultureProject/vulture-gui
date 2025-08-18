@@ -256,7 +256,7 @@ class LogOM (models.Model):
             subclass_obj = self.logomrelp
         elif hasattr(self, 'logomkafka'):
             subclass_obj = self.logomkafka
-        elif hasattr(self, "logom_ptr") and type(self.logom_ptr) != LogOM:
+        elif hasattr(self, "logom_ptr") and not isinstance(self.logom_ptr, LogOM):
             subclass_obj = self.logom_ptr
         else:
             raise Exception(f"Cannot find type of LogOM named '{self.name}' !")
@@ -828,7 +828,7 @@ class LogOMKAFKA(LogOM):
         template.update({
             'broker': self.broker,
             'topic': self.topic,
-            'key': self.key,
+            'key': key,
             'dynaKey': self.dynaKey,
             'dynaTopic': self.dynaTopic,
             'template_id': self.template_id(),
