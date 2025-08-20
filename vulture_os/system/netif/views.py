@@ -23,6 +23,7 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'Network View'
 
 
+from django.db.models import Max
 from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from system.cluster.models import NetworkAddress, NetworkAddressNIC, NetworkInterfaceCard, Cluster
 from system.netif.form import NetIfForm
@@ -96,6 +97,10 @@ def netif_edit(request, object_id=None, api=False):
 
                 priority = priority + 50
         else:
+            # Get current highest priority and increment for next interface card
+            priority = netif.networkaddressnic_set.aggregate(Max('carp_priority'))['carp_priority__max'] + 50
+            # Get already existing CARP password
+            pwd = netif.networkaddressnic_set.first().carp_passwd
 
             """ Add new NIC, if any """
             if api:
@@ -123,7 +128,10 @@ def netif_edit(request, object_id=None, api=False):
                 """ If the current nic is not in the new config anymore:
                 Remove it from NetworkAddressNIC """
                 if str(current_networkadress_nic.nic.pk) not in nic_list:
+                    node_of_removed_nic = current_networkadress_nic.nic.node
+                    rc_confs = netif.rc_config()
                     current_networkadress_nic.delete()
+                    node_of_removed_nic.api_request('toolkit.network.network.remove_netif_configs', rc_confs)
 
 
         """ Write permanent network configuration on disk """
