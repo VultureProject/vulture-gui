@@ -831,3 +831,344 @@ $(function(){
                     }
                 });
 })
+
+var custom_operations_vue = new Vue({
+  el: '#custom_operations_vue',
+  delimiters: ['${', '}'],
+  data: {
+    or_lines: [],
+    rule: ""
+  },
+
+  methods: {
+    is_selected: function (type, line, value) {
+      return line[type] === value ? "selected" : "";
+    },
+
+    generate_id: function () {
+      return Math.random().toString(36).substring(5);
+    },
+
+    render_config: function () {
+      if (jQuery.isEmptyObject(this.or_lines)) return;
+
+      let result = "";
+      let has_or_lines = false;
+
+      for (var j in this.or_lines) {
+        var or_line = this.or_lines[j];
+        if (!or_line.lines.length) continue;
+
+        has_or_lines = true;
+
+        result += "# Block " + (parseInt(j) + 1) + "\n";
+
+        let conditions = [];
+        for (var i in or_line.lines) {
+          var and_line = or_line.lines[i];
+          var condition = and_line.condition;
+          var condition_var = and_line.condition_variable;
+          var condition_val = and_line.condition_value;
+          var action = and_line.action;
+          var result_var = and_line.result_variable;
+          var result_val = and_line.result_value;
+
+          let cond_str = "";
+          let comment = "";
+
+          switch (condition) {
+            case "always":
+              cond_str = "";
+              comment = "#always";
+              break;
+            case "exists":
+              cond_str = `exists(${condition_var})`;
+              comment = "#exists";
+              break;
+            case "not exists":
+              cond_str = `not exists(${condition_var})`;
+              comment = "#not exists";
+              break;
+            case "equals":
+              cond_str = `${condition_var} == "${condition_val}"`;
+              comment = "#equals";
+              break;
+            case "iequals":
+              cond_str = `ieq(${condition_var}, "${condition_val}")`;
+              comment = "#iequals";
+              break;
+            case "contains":
+              cond_str = `${condition_var} contains "${condition_val}"`;
+              comment = "#contains";
+              break;
+            case "icontains":
+              cond_str = `icontains(${condition_var}, "${condition_val}")`;
+              comment = "#icontains";
+              break;
+            case "regex":
+              cond_str = `re_match(${condition_var}, "${condition_val}")`;
+              comment = "#regex";
+              break;
+            case "iregex":
+              cond_str = `re_match_i(${condition_var}, "${condition_val}")`;
+              comment = "#iregex";
+              break;
+            default:
+              cond_str = "";
+              comment = "#unknown";
+          }
+
+          let action_str = "";
+          switch (action) {
+            case "set":
+              action_str = `set ${result_var} = "${result_val}"`;
+              break;
+            case "unset":
+              action_str = `unset ${result_var}`;
+              break;
+            case "drop":
+              action_str = "drop";
+              break;
+            default:
+              action_str = "noaction";
+          }
+
+          conditions.push({
+            condition: cond_str,
+            action: action_str,
+            comment: comment
+          });
+        }
+
+        for (let i = 0; i <= conditions.length - 1; i++) {
+          if (i !== 0) {
+            result += "} else "
+          }
+          if (conditions[i].condition === "") {
+            if (conditions.length !== 1) {
+              result += `{ ${conditions[i].comment}\n  `;
+            }
+          } else {
+            result += `if ${conditions[i].condition} then { ${conditions[i].comment}\n  `;
+          }
+          result += `${conditions[i].action}\n`;
+        }
+        if (conditions.length !== 1 || conditions[0].condition !== "") {
+          result += "}\n";
+        }
+      }
+
+      if (!has_or_lines) {
+        result = "# No rules defined\n";
+      }
+
+      this.rule = result
+        .split('\n')
+        .map(line => line)
+        .join('\n');
+    },
+
+    get_or_index: function (or_id) {
+      for (let i in this.or_lines) {
+        if (this.or_lines[i].pk === or_id) return i;
+      }
+      return -1;
+    },
+
+    check_config: function (and_line) {
+      let errors = [];
+
+      if (!and_line.condition) errors.push('condition');
+
+      if (and_line.condition !== "always" && !and_line.condition_variable) errors.push('condition_variable');
+      if (!['always', 'exists', 'not exists'].includes(and_line.condition) && !and_line.condition_value) errors.push('condition_value');
+
+      if (!and_line.action) errors.push('action');
+
+      if (['set', 'unset'].includes(and_line.action) && !and_line.result_variable) errors.push('result_variable');
+      if (and_line.action === 'set' && !and_line.result_value) errors.push('result_value');
+
+      return errors.length ? errors : null;
+    },
+
+    render_error: function (errors, input) {
+      if (!input) return errors ? "<i class='fas fa-exclamation-triangle fa-2x'></i>" : "";
+      return errors !== null && errors.includes(input) ? "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + gettext('This input is mandatory') : "";
+    },
+
+    render_class_and_line: function (error) {
+      return error ? "and_line and_line_error" : "and_line";
+    },
+
+    add_or: function () {
+      let pk = this.generate_id();
+      this.or_lines.push({
+        pk: pk,
+        lines: []
+      });
+      this.render_config();
+      this.add_and(pk);
+    },
+
+    remove_or: function (or_id) {
+      let index = this.get_or_index(or_id);
+      if (index !== -1) {
+        this.or_lines.splice(index, 1);
+        this.render_config();
+      }
+    },
+
+    render_id: function (or_index, and_index) {
+      return `and_line_${or_index}_${and_index}`;
+    },
+
+    reconstruct_rules: function () {
+      var self = this;
+      $('.condition_block').each(function () {
+        var or_index = $(this).data('index');
+        $(this).find('.and_line').each(function () {
+          var and_index = $(this).data('index');
+          var and_line = self.or_lines[or_index].lines[and_index];
+
+          and_line.condition = $(`#and_line_${or_index}_${and_index} .condition`).val();
+          and_line.condition_variable = $(`#and_line_${or_index}_${and_index} .condition_variable`).val();
+          and_line.condition_value = $(`#and_line_${or_index}_${and_index} .condition_value`).val();
+          and_line.action = $(`#and_line_${or_index}_${and_index} .action`).val();
+          and_line.result_variable = $(`#and_line_${or_index}_${and_index} .result_variable`).val();
+          and_line.result_value = $(`#and_line_${or_index}_${and_index} .result_value`).val();
+
+          and_line.error = self.check_config(and_line);
+          self.or_lines[or_index].lines[and_index] = and_line;
+        });
+      });
+    },
+
+    add_and: function (or_id) {
+      var self = this;
+      let index = self.get_or_index(or_id);
+      self.reconstruct_rules();
+
+      this.or_lines[index].lines.push({
+        condition: "always",
+        condition_variable: "",
+        condition_value: "",
+        action: "set",
+        result_variable: "",
+        result_value: "",
+        error: null
+      });
+
+      this.$nextTick(() => {
+        $('.action').on('change', function () { self.render_config(); });
+        $('.condition').on('change', function () { self.render_config(); });
+        $('.condition_variable, .condition_value, .result_variable, .result_value').on('keyup', function () { self.render_config(); });
+      });
+
+      this.render_config();
+    },
+
+    remove_and: function (or_id, and_index) {
+      let index = this.get_or_index(or_id);
+      if (index !== -1) {
+        this.or_lines[index].lines.splice(and_index, 1);
+        this.render_config();
+      }
+    },
+
+    dragStart(e, or_index, and_index) {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ or_index, and_index }));
+      e.dataTransfer.effectAllowed = 'move';
+      document.querySelectorAll('.and_line').forEach(el => el.classList.add('dragging'));
+      document.querySelector(`#and_line_${or_index}_${and_index}`)?.classList.add('dragging-active');
+    },
+
+    dragEnter(e) {
+      e.dataTransfer.dropEffect = 'move';
+    },
+
+    dragDrop(e, target_or_index, target_and_index) {
+      e.preventDefault();
+      const data = e.dataTransfer.getData('text/plain');
+      if (!data) return;
+
+      const { or_index, and_index } = JSON.parse(data);
+
+      if (or_index === target_or_index && and_index === target_and_index) return;
+
+      if (or_index !== target_or_index) return;
+
+      const lines = this.or_lines[or_index].lines;
+
+      const draggedLine = lines.splice(and_index, 1)[0];
+
+      lines.splice(target_and_index, 0, draggedLine);
+
+      this.$nextTick(() => {
+        this.render_config();
+        this.reconstruct_rules();
+      });
+    },
+
+    save_form: function () {
+      var txt = $('#save_form_btn').html();
+      $('#save_form_btn').html('<i class="fa fa-spinner fa-spin"></i>');
+      $('#save_form_btn').prop('disabled', 'disabled');
+
+      var self = this;
+      self.reconstruct_rules();
+      self.render_config();
+
+      for (var or_line of self.or_lines) {
+        for (var and_line of or_line.lines) {
+          if (self.check_config(and_line)) return false;
+        }
+      }
+
+      var data = {
+        or_lines: JSON.stringify(self.or_lines),
+        rule: self.rule,
+        name: $('#id_name').val(),
+        enabled: $('#id_enabled').is(':checked')
+      };
+
+      $.ajax({
+        url: '',
+        data: data,
+        type: "POST",
+        success: function (response) {
+          $('#save_form_btn').html(txt);
+          $('#save_form_btn').prop('disabled', '');
+          if (check_json_error(response)) {
+            notify('success', gettext('Saved successfully'));
+            setTimeout(() => window.location.href = frontend_list_uri, 1000);
+          }
+        },
+        error: function () {
+          $('#save_form_btn').html(txt);
+          $('#save_form_btn').prop('disabled', '');
+        }
+      });
+    }
+  },
+
+  mounted: function () {
+    var self = this;
+    // if (pk_frontend) {
+    //   $.post(frontend_get_uri, {'pk': pk_frontend}, function(response) {
+    //     if (check_json_error(response)) {
+    //       self.or_lines = JSON.parse(response.frontend.rules);
+    //       self.render_config();
+    //     }
+    //   });
+    // } else {
+    self.add_or();
+    // }
+  },
+
+  updated: function () {
+    $('.condition_block').each(function () {
+      var index = $(this).data('index');
+      $(this).css('marginLeft', index * 50 + "px");
+    });
+  }
+});
