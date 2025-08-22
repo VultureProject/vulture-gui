@@ -1876,7 +1876,6 @@ class Frontend(RsyslogQueue, models.Model):
             'log_level': self.log_level,
             'log_condition': self.log_condition,
             'ruleset_name': self.get_ruleset(),
-            'ruleset_options': self.render_ruleset_options(),
             'parser_tag': self.parser_tag,
             'ratelimit_interval': self.ratelimit_interval,
             'ratelimit_burst': self.ratelimit_burst,
@@ -2149,6 +2148,7 @@ class Frontend(RsyslogQueue, models.Model):
             template = jinja2_env.get_template(template_name)
             conf = self.to_template()
             conf['ruleset'] = self.ruleset
+            conf['ruleset_options'] = self.render_ruleset_options()
             conf['log_condition'] = self.render_log_condition() if self.enabled and self.enable_logging else ""
             conf['log_condition_failure'] = self.render_log_condition_failure() if self.enabled and self.enable_logging else ""
             conf['pre_ruleset'] = self.render_pre_ruleset() if self.enabled and self.enable_logging else ""
