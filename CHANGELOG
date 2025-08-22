@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] [SENTINEL] Add new Log Forwarder to Vulture GUI
 
 
+## [2.29.1] - 2025-08-22
+### Added
+- [RSYSLOG] add mmutf8fix to default loaded modules
+### Fixed
+- [PORTAL] [HAPROXY] Only set X-Forwarded-Proto header if it doesn't already exist in request
+- [LOGFWD] [KAFKA] Correctly use key value for templating
+
+
 ## [2.29.0] - 2025-08-01
 ### Changed
 - [API_PARSER] [SENTINEL_ONE_IDENTITY_GRAPH] rename to Sentinel One Graph
