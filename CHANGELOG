@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [LOG_FORWARDER] [SENTINEL] Add new Log Forwarder to Vulture GUI
-
+### Fixed
+- [RSYSLOG] [TEMPLATES] Missing sentinel templates in built-in log types
 
 ## [2.29.0] - 2025-08-01
 ### Changed
