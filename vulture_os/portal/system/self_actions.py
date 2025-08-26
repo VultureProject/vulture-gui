@@ -47,7 +47,7 @@ from workflow.models import Workflow
 from authentication.openid.models import OpenIDRepository
 
 # Required exceptions imports
-from portal.system.exceptions import RedirectionNeededError, PasswordMatchError, PasswordEmptyError, TokenNotFoundError
+from portal.system.exceptions import RedirectionNeededError, PasswordMatchError, PasswordEmptyError, TokenNotFoundError, ACLError
 from toolkit.auth.exceptions import AuthenticationError, AuthenticationFailed, UserNotFound
 
 # Extern modules imports
@@ -181,6 +181,7 @@ class SELFService(object):
         # And get username from redis_portal_session
         self.backend_id = self.redis_portal_session.get_auth_backend(self.workflow.id)
         self.username = self.redis_portal_session.get_login(str(self.backend_id))
+        self.user_filtered_user_infos = self.redis_portal_session.get_filtered_user_infos(self.backend_id)
 
         assert self.username, "Unable to find username in portal session !"
         return self.username
@@ -196,6 +197,11 @@ class SELFService(object):
             repo_id = OpenIDRepository.objects.get(client_id=self.workflow.authentication.oauth_client_id).id
 
         for workflow in Workflow.objects.filter(authentication__repositories_id__exact=repo_id, enabled=True):
+            try:
+                workflow.validate_scope(self.user_filtered_user_infos)
+            except ACLError:
+                logger.info(f"User {self.username} doesn't have access to app {workflow}, skipping...")
+                continue
             # Workflow links needs to go through OpenID redirection if that was the repo used to authenticate
             if self.workflow.authentication.enable_external or backend_subtype == "openid":
                 port = workflow.frontend.listener_set.first().port

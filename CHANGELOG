@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PORTAL] [JWT] Correctly write IDP certificate files on system for JWT validation
 - [LOGFWD] [FORM] Avoid KeyError exceptions when updating a LogForwarder
 - [PORTAL] Correctly filter users on Authentication ACLs enabled Workflows for any type of authentication
+- [PORTAL] [SELF_SERVICE] Only show allowed (Authentication ACLs) Apps to authenticated user
 
 
 ## [2.30.0] - 2025-09-04
