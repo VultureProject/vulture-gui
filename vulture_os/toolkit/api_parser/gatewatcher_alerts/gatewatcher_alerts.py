@@ -91,7 +91,7 @@ class GatewatcherAlertsParser(ApiParser):
             )
 
         if response.status_code != 200:
-            error = f"Error at Gatewatcher API Call: status : {response.status_code}, content : {response.content}"
+            error = f"Error at Gatewatcher API Call: URL : {url}, status : {response.status_code}, content : {response.content}"
             logger.error(f"[{__parser__}]:execute_query: {error}", extra={'frontend': str(self.frontend)})
             raise GatewatcherAlertsAPIError(error)
 
@@ -108,7 +108,7 @@ class GatewatcherAlertsParser(ApiParser):
             'date_from': since,
             'date_to': to,
             'sort_by': "date",
-            'page_size': 1000
+            'page_size': 10
         }
         results = []
         nb_logs = 0
@@ -122,7 +122,7 @@ class GatewatcherAlertsParser(ApiParser):
             nb_logs += len(alerts["results"])
 
             for alert in alerts.get("results", []):
-                raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.RAW_ALERTS_ENDPOINT}/{alert['uuid']}"
+                raw_alert_url = f"https://{self.gatewatcher_alerts_host}{self.RAW_ALERTS_ENDPOINT}{alert['uuid']}"
                 raw_alert = self.execute_query(raw_alert_url)
                 results.append({'alert': alert, 'raw_alert': raw_alert})
                 self.update_lock()
