@@ -87,6 +87,9 @@ class Authentication(object):
     def get_user_infos(self, workflow_id):
         return self.redis_portal_session.get_user_infos(self.redis_portal_session.get_auth_backend(workflow_id))
 
+    def get_user_filtered_claims(self, workflow_id):
+        return self.redis_portal_session.get_filtered_user_infos(self.redis_portal_session.get_auth_backend(workflow_id))
+
     def double_authentication_required(self):
         return self.workflow.authentication.otp_repository is not None and \
             not self.redis_portal_session.is_double_authenticated(self.workflow.authentication.otp_repository.id)
@@ -211,6 +214,7 @@ class Authentication(object):
                                                                           self.oauth2_token,
                                                                           self.refresh_token,
                                                                           authentication_results,
+                                                                          oauth2_scope,
                                                                           self.workflow.authentication.auth_timeout)
 
         logger.debug("AUTH::register_user: Authentication results successfully written in Redis portal session")

@@ -222,9 +222,11 @@ def openid_callback(request, workflow_id, repo_id):
                 logger.info(f"OpenID_callback::{portal}: Repo attributes retrieved from "
                             f"{portal.lookup_ldap_repo} for {ldap_attr}={claim} : {repo_attributes}")
 
-        # Create user scope depending on GUI configuration attributes, raises an AssertionError if scope is not validated for filtering
-        user_scope = workflow.get_and_validate_scope(claims, repo_attributes)
-        logger.info(f"OpenID_callback::{portal}: User scope created from claims(/repo) : {user_scope}")
+        # Create user scope depending on GUI configuration attributes, and raise an AssertionError if scope is not validated for filtering
+        user_scope = workflow.get_user_scope(claims, repo_attributes)
+        logger.debug(f"OpenID_callback::{portal}: Filtered user scopes are: {user_scope}")
+        workflow.validate_scope(user_scope)
+        logger.info(f"OpenID_callback::{portal}: Filtered user scopes successfully validated against authentication ACLs")
 
         # Set authentication attributes required
         authentication.backend_id = repo_id
@@ -669,11 +671,12 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
 
                     # Authenticate user with retrieved credentials
                     authentication_results = authentication.authenticate(request)
-                    logger.debug(f"PORTAL::log_in: Authentication succeed on backend {authentication.backend_id}, user infos : {authentication_results}")
+                    logger.info(f"PORTAL::log_in: Authentication succeeded on backend {authentication.backend_id} for user {authentication.credentials[0]}")
+                    logger.debug(f"PORTAL::log_in: user infos for user {authentication.credentials[0]} on backend {authentication.backend_id} : {authentication_results}")
 
-                    # Create user scope depending on GUI configuration attributes
-                    # raises an AssertionError if scope is not validated for filtering
-                    user_scope = workflow.get_and_validate_scope({}, authentication_results)
+                    # Get user scope depending on GUI configuration attributes
+                    user_scope = workflow.get_user_scope({}, authentication_results)
+                    logger.debug(f"Filtered user scopes are: {user_scope}")
 
                     # Register authentication results in Redis
                     portal_cookie, oauth2_token, refresh_token = authentication.register_user(authentication_results, user_scope)
@@ -733,6 +736,17 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                 return HttpResponseServerError()
     else:
         authentication = POSTAuthentication(portal_cookie, workflow, scheme)
+
+    # Validate user rights depending on Workflow's authentication ACLs
+    try:
+        # Get filtered user scopes generated on backend authentication
+        user_scope = authentication.get_user_filtered_claims(workflow.pk)
+        # Raise an AssertionError if scope is not valid against Authentication ACLs
+        workflow.validate_scope(user_scope)
+        logger.info(f"Filtered user scopes successfully validated against authentication ACLs for user {authentication.credentials[0]}")
+    except ACLError as e:
+        logger.error(f"PORTAL::log_in: ACLError while trying to authenticate user '{authentication.credentials[0]}' : {e}")
+        return error_response(workflow.authentication, "User unauthorized, please contact administrator")
 
     # If the user is authenticated but not double-authenticated and double-authentication required
     if authentication.double_authentication_required():
