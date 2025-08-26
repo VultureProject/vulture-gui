@@ -396,7 +396,7 @@ class LogOMSentinelForm(LogOMForm):
         widgets = {
             'tenant_id': TextInput(attrs={'class': 'form-control', 'placeholder': '47673b71-c5ae-4a2a-8d8a-e86e79f1f967'}),
             'client_id': TextInput(attrs={'class': 'form-control', 'placeholder': '47673b71-c5ae-4a2a-8d8a-e86e79f1f967'}),
-            'client_secret': TextInput(attrs={'class': 'form-control'}),
+            'client_secret': TextInput(attrs={'class': 'form-control', 'type': 'password'}),
             'dcr': TextInput(attrs={'class': 'form-control', 'placeholder': 'dcr-cbb3586665ebdbc6ebadd796e3ba5bcf'}),
             'dce': TextInput(attrs={'class': 'form-control', 'placeholder': 'example-a1b2.francecentral-1.ingest.monitor.azure.com'}),
             'stream_name': TextInput(attrs={'class': 'form-control', 'placeholder': 'table name / stream name'}),
