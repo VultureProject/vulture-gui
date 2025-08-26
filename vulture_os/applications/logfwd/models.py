@@ -1002,7 +1002,7 @@ class LogOMSentinel(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
-        proxy = self.parse_proxy
+        proxy = self.get_parsed_proxy
         template = super().to_template(**kwargs)
         template.update({
             'tenant_id': self.tenant_id,
@@ -1040,22 +1040,24 @@ class LogOMSentinel(LogOM):
     def mapping_id(self):
         return 'mapping_'+self.template_id()
     
-    @property
-    def parse_proxy(self):
-        # proxy uri parse
-        if(self.use_proxy):
-            f = Faup()
-            if(self.custom_proxy):
-                f.decode(self.custom_proxy)
-                if(f.get_scheme() == None):
-                    return {'proxy_host': f'{f.get_host()}', 'proxy_port': f.get_port() }
-                else:
-                    return {'proxy_host': f'{f.get_scheme()}://{f.get_host()}', 'proxy_port': f.get_port() }
+    def get_parsed_proxy(self):
+        if self.use_proxy:
+            faup_parser = Faup()
+            if self.custom_proxy:
+                raw_proxy = self.custom_proxy
             else:
-                system_proxy = get_proxy()
-                if(system_proxy == {}):
-                    raise Exception(f"System proxy not found. Please check if /etc/rc.conf.proxy exists.")
-                elif(system_proxy['http'] == None):
-                    raise Exception(f"No system proxy is defined.")
+                raw_proxy = get_proxy()
+                if raw_proxy:
+                    # Using the 'http' version is the safest option, but that may raise some issues for HTTPS-only proxies
+                    raw_proxy = raw_proxy.get('http')
+                              
+            if raw_proxy:
+                faup_parser.decode(raw_proxy)
+                if not faup_parser.get_scheme():
+                    return {'proxy_host': f'{faup_parser.get_host()}', 'proxy_port': faup_parser.get_port() }
                 else:
-                    return {'proxy_host': f'{f.get_scheme()}://{f.get_host()}', 'proxy_port': f.get_port() }
+                    return {'proxy_host': f'{faup_parser.get_scheme()}://{faup_parser.get_host()}', 'proxy_port': faup_parser.get_port() }
+                
+        return {'proxy_host': '', 'proxy_port': ''}
+    
+       

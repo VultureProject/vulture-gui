@@ -444,16 +444,6 @@
       }
     }).trigger('change');
 
-
-    $('#id_enable_disk_assist').on('change', function(e){
-      if ($(this).is(':checked')) {
-        $('#tab-disk').show();
-      } else {
-        $('#tab-disk').hide();
-      }
-    }).trigger('change');
-
-
     $('#id_use_proxy').on('change', function(e){
       if ($(this).is(':checked')) {
         $('#custom-proxy').show();
