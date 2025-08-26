@@ -1090,14 +1090,26 @@
                     </div>
                   </div> <!-- /.tab-pane tab_enrichment -->
                   <div class="tab-pane" id="tab_custom_rsyslog">
-                    <br/>
-                    <section class="content form-horizontal" id="custom_operations_vue">
+                    {{ form.custom_actions }}
+                    {{ form.custom_actions.errors|safe }}
+                    <section class="content form-horizontal" id="custom_actions_vue">
+                      <div v-if="global_errors && global_errors.length > 0" class="alert alert-danger alert-dismissible" role="alert">
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                        <strong>{% translate "Global Errors" %}:</strong>
+                        <ul class="mb-0">
+                          <li v-for="err in global_errors" :key="err.message">
+                            <span v-html="err.message"></span>
+                          </li>
+                        </ul>
+                      </div>
                       <div class="row logging-conf">
                         <div class="col-md-12" id="condition-list">
-                          <div v-for="(or_line, or_index) in or_lines" class="panel panel-bordered-primary condition_block" :data-index="or_index">
+                          <div v-for="(condition_block, block_index) in condition_blocks" class="panel panel-bordered-primary condition_group" style="background-color: rgba(250,240,210,.5)" :data-index="block_index">
                             <div class="panel-heading">
                               <div class="panel-control">
-                                <button v-if="or_lines.length > 1" type="button" class="btn btn-xs btn-danger btn-flat" v-on:click="remove_or(or_line.pk)">
+                                <button type="button" class="btn btn-xs btn-danger btn-flat" v-on:click="remove_condition_block(condition_block.pk)">
                                   <i class="fas fa-trash-alt"></i>
                                 </button>
                               </div>
@@ -1116,14 +1128,14 @@
                                   </tr>
                                 </thead>
                                 <tbody class="body_lines">
-                                  <tr v-for="(and, and_index) in or_line.lines" :id="render_id(or_index, and_index)"
-                                  :class="render_class_and_line(and.error)" :data-index="and_index" draggable="true"
-                                  @dragstart="dragStart($event, or_index, and_index)" @dragover.prevent @drop="dragDrop($event, or_index, and_index)"
-                                  @dragenter="dragEnter($event)" class="and_line">
+                                  <tr v-for="(condition_line, line_index) in condition_block.lines" :id="render_id(block_index, line_index)"
+                                  :class="render_class_condition_line(condition_line.errors)" :data-index="line_index" draggable="true"
+                                  @dragstart="dragStart($event, block_index, line_index)" @dragover.prevent @drop="dragDrop($event, block_index, line_index)"
+                                  @dragenter="dragEnter($event)" class="condition_line">
 
                                     <!-- Condition -->
                                     <td>
-                                      <select class="form-control condition" v-model="and.condition">
+                                      <select class="form-control condition" v-model="condition_line.condition">
                                         <option value="always">{% translate "Always" %}</option>
                                         <option value="exists">{% translate "Exists" %}</option>
                                         <option value="not exists">{% translate "Not exists" %}</option>
@@ -1134,46 +1146,46 @@
                                         <option value="regex">{% translate "Regex" %}</option>
                                         <option value="iregex">{% translate "iRegex" %}</option>
                                       </select>
-                                      <span class="text-danger" v-html="render_error(and.error, 'condition')"></span>
+                                      <span class="text-danger" v-html="render_error(condition_line.errors, 'condition')"></span>
                                     </td>
 
                                     <!-- Condition Variable -->
                                     <td>
-                                      <input type="text" class="form-control condition_variable" v-model="and.condition_variable" :disabled="and.condition === 'always'" placeholder="ex: $!source!ip" />
-                                      <span class="text-danger" v-html="render_error(and.error, 'condition_variable')"></span>
+                                      <input type="text" class="form-control condition_variable" v-model="condition_line.condition_variable" :disabled="condition_line.condition === 'always'" placeholder="ex: $!source!ip" />
+                                      <span class="text-danger" v-html="render_error(condition_line.errors, 'condition_variable')"></span>
                                     </td>
 
                                     <!-- Condition Value -->
                                     <td>
-                                      <input type="text" class="form-control condition_value" v-model="and.condition_value" :disabled="['always', 'exists', 'not exists'].includes(and.condition)" placeholder="{% translate 'Enter value' %}" />
-                                      <span class="text-danger" v-html="render_error(and.error, 'condition_value')"></span>
+                                      <input type="text" class="form-control condition_value" v-model="condition_line.condition_value" :disabled="['always', 'exists', 'not exists'].includes(condition_line.condition)" placeholder="{% translate 'Enter value' %}" />
+                                      <span class="text-danger" v-html="render_error(condition_line.errors, 'condition_value')"></span>
                                     </td>
 
                                     <!-- Action -->
                                     <td>
-                                      <select class="form-control action" v-model="and.action">
+                                      <select class="form-control action" v-model="condition_line.action">
                                         <option value="set">{% translate "Set" %}</option>
                                         <option value="unset">{% translate "Unset" %}</option>
                                         <option value="drop">{% translate "Drop" %}</option>
                                       </select>
-                                      <span class="text-danger" v-html="render_error(and.error, 'action')"></span>
+                                      <span class="text-danger" v-html="render_error(condition_line.errors, 'action')"></span>
                                     </td>
 
                                     <!-- Result Variable -->
                                     <td>
-                                      <input type="text" class="form-control result_variable" v-model="and.result_variable" :disabled="and.action === 'drop'" placeholder="ex: $internal!log" />
-                                      <span class="text-danger" v-html="render_error(and.error, 'result_variable')"></span>
+                                      <input type="text" class="form-control result_variable" v-model="condition_line.result_variable" :disabled="condition_line.action === 'drop'" placeholder="ex: $internal!log" />
+                                      <span class="text-danger" v-html="render_error(condition_line.errors, 'result_variable')"></span>
                                     </td>
 
                                     <!-- Result Value -->
                                     <td>
-                                      <input type="text" class="form-control result_value" v-model="and.result_value" :disabled="['unset', 'drop'].includes(and.action)" placeholder="{% translate 'Enter value or $var' %}" />
-                                      <span class="text-danger" v-html="render_error(and.error, 'result_value')"></span>
+                                      <input type="text" class="form-control result_value" v-model="condition_line.result_value" :disabled="['unset', 'drop'].includes(condition_line.action)" placeholder="{% translate 'Enter value or $var' %}" />
+                                      <span class="text-danger" v-html="render_error(condition_line.errors, 'result_value')"></span>
                                     </td>
 
                                     <!-- Delete button -->
                                     <td>
-                                      <button class="btn btn-xs btn-danger" type="button" v-on:click="remove_and(or_line.pk, and_index)">
+                                      <button class="btn btn-xs btn-danger" type="button" v-on:click="remove_line(condition_block.pk, line_index)">
                                         <i class="fas fa-trash-alt"></i> {% translate "Delete" %}
                                       </button>
                                     </td>
@@ -1188,8 +1200,8 @@
                                     <td></td>
                                     <td></td>
                                     <td>
-                                      <button type="button" v-on:click="add_and(or_line.pk, or_index)" class="btn btn-success btn-flat">
-                                        <i class="fa fa-plus">&nbsp;&nbsp;</i> {% translate "AND" %}
+                                      <button type="button" v-on:click="add_line(condition_block.pk, block_index)" class="btn btn-success btn-flat">
+                                        <i class="fa fa-plus">&nbsp;&nbsp;</i> {% translate "Add condition" %}
                                       </button>
                                     </td>
                                   </tr>
@@ -1197,12 +1209,12 @@
                               </table>
                             </div>
                           </div>
-                          <button type="button" class="btn btn-warning btn-flat pull-right" v-on:click="add_or">
-                            <i class="fas fa-plus">&nbsp;&nbsp;</i> {% translate "OR" %}
+                          <button type="button" class="btn btn-warning btn-flat pull-right" v-on:click="add_condition_block">
+                            <i class="fas fa-plus">&nbsp;&nbsp;</i> {% translate "Add group" %}
                           </button>
                         </div>
                       </div>
-                      <br />
+                      <br>
                       <div class="row">
                         <div class="col-md-12">
                           <pre v-html="rule"></pre>
@@ -2670,7 +2682,6 @@
             </div>
             <div class="panel-footer">
               <a type="button" href="{% url 'services.frontend.list' %}" class="btn btn-flat btn-default">{% translate "Cancel" %}</a>
-              <button type="button" v-on:click="save_form" id="save_form_btn" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
               <button type="submit" class="btn btn-info btn-flat pull-right">{% translate "Submit" %}</button>
             </div>
           </div>
@@ -2721,6 +2732,16 @@
   var log_om_table_td = `{{log_om_table.as_table_td|safe}}`;
   var reputationctx_form_td = `{{reputationctx_form.as_table_td|safe}}`;
   var old_mode = $('id_mode').val();
+  //var custom_actions = {% if form.custom_actions %}{{form.custom_actions.initial}}{% else %}[]{% endif %};
+  var custom_actions = [{% for condition_block in form.custom_actions.initial %}
+    {'lines': [{% for condition_line in condition_block %}
+      {{% for k, v in condition_line.items %}
+        '{{k}}': '{{v}}',
+      {% endfor %}
+        'errors': []
+    },
+    {% endfor %}]},
+  {% endfor %}]
 
   var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";
   var fetch_frontend_api_parser_data_uri = "{% url 'services.frontend.fetch_apiparser_data' %}";

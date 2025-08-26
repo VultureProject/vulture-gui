@@ -725,6 +725,29 @@ $(function() {
 
     /* Enable button before posting, it won't be in post data otherwize */
     $('#id_enable_logging').prop('disabled', false);
+
+    let custom_actions = new Array();
+    custom_actions_vue.reconstruct_configs();
+    for (let condition_block of custom_actions_vue.condition_blocks) {
+      let condition_block_array = new Array();
+      for (let condition_line of condition_block.lines) {
+        if (custom_actions_vue.check_config(condition_line).length > 0) {
+          notify('error', gettext('Error'), gettext('Error identified in custom operations tab'))
+          event.preventDefault()
+        };
+        condition_block_array.push({
+          'condition': condition_line.condition,
+          'condition_variable': condition_line.condition_variable,
+          'condition_value': condition_line.condition_value,
+          'action': condition_line.action,
+          'result_variable': condition_line.result_variable,
+          'result_value': condition_line.result_value
+        });
+      }
+      custom_actions.push(condition_block_array)
+    }
+    $('#id_custom_actions').val(JSON.stringify(custom_actions));
+
     // event.preventDefault();
   });
 
@@ -832,11 +855,12 @@ $(function(){
                 });
 })
 
-var custom_operations_vue = new Vue({
-  el: '#custom_operations_vue',
+var custom_actions_vue = new Vue({
+  el: '#custom_actions_vue',
   delimiters: ['${', '}'],
   data: {
-    or_lines: [],
+    condition_blocks: custom_actions.length > 0 ? custom_actions : [],
+    global_errors: [],
     rule: ""
   },
 
@@ -850,28 +874,26 @@ var custom_operations_vue = new Vue({
     },
 
     render_config: function () {
-      if (jQuery.isEmptyObject(this.or_lines)) return;
+      if (jQuery.isEmptyObject(this.condition_blocks)) return;
 
       let result = "";
-      let has_or_lines = false;
+      let has_condition_line = false;
 
-      for (var j in this.or_lines) {
-        var or_line = this.or_lines[j];
-        if (!or_line.lines.length) continue;
+      for (let condition_block of this.condition_blocks) {
+        if (!condition_block.lines.length) continue;
 
-        has_or_lines = true;
+        has_condition_line = true;
 
-        result += "# Block " + (parseInt(j) + 1) + "\n";
+        result += "# Block " + (this.get_block_index(condition_block.pk)) + "\n";
 
         let conditions = [];
-        for (var i in or_line.lines) {
-          var and_line = or_line.lines[i];
-          var condition = and_line.condition;
-          var condition_var = and_line.condition_variable;
-          var condition_val = and_line.condition_value;
-          var action = and_line.action;
-          var result_var = and_line.result_variable;
-          var result_val = and_line.result_value;
+        for (let condition_line of condition_block.lines) {
+          let condition = condition_line.condition;
+          let condition_var = condition_line.condition_variable;
+          let condition_val = condition_line.condition_value;
+          let action = condition_line.action;
+          let result_var = condition_line.result_variable;
+          let result_val = condition_line.result_value;
 
           let cond_str = "";
           let comment = "";
@@ -951,15 +973,15 @@ var custom_operations_vue = new Vue({
           } else {
             result += `if ${conditions[i].condition} then { ${conditions[i].comment}\n  `;
           }
-          result += `${conditions[i].action}\n`;
+          result += `${conditions[i].action};\n`;
         }
         if (conditions.length !== 1 || conditions[0].condition !== "") {
           result += "}\n";
         }
       }
 
-      if (!has_or_lines) {
-        result = "# No rules defined\n";
+      if (!has_condition_line) {
+        result = "# No configuration defined\n";
       }
 
       this.rule = result
@@ -968,207 +990,212 @@ var custom_operations_vue = new Vue({
         .join('\n');
     },
 
-    get_or_index: function (or_id) {
-      for (let i in this.or_lines) {
-        if (this.or_lines[i].pk === or_id) return i;
+    get_block_index: function (block_id) {
+      for (let i in this.condition_blocks) {
+        if (this.condition_blocks[i].pk === block_id) return i;
       }
       return -1;
     },
 
-    check_config: function (and_line) {
-      let errors = [];
+    add_condition_block: function () {
+      let pk = this.generate_id();
+      this.condition_blocks.push({
+        pk: pk,
+        lines: []
+      });
+      // this.render_config();
+      this.add_line(pk);
+    },
 
-      if (!and_line.condition) errors.push('condition');
+    remove_condition_block: function (block_id) {
+      let index = this.get_block_index(block_id);
+      if (index !== -1) {
+        this.condition_blocks.splice(index, 1);
+        this.render_config();
+      }
+      this.reconstruct_configs();
+    },
 
-      if (and_line.condition !== "always" && !and_line.condition_variable) errors.push('condition_variable');
-      if (!['always', 'exists', 'not exists'].includes(and_line.condition) && !and_line.condition_value) errors.push('condition_value');
+    add_line: function (block_id) {
+      let index = this.get_block_index(block_id);
+      this.reconstruct_configs();
 
-      if (!and_line.action) errors.push('action');
+      this.condition_blocks[index].lines.push({
+        condition: "always",
+        condition_variable: "",
+        condition_value: "",
+        action: "",
+        result_variable: "",
+        result_value: "",
+        errors: []
+      });
 
-      if (['set', 'unset'].includes(and_line.action) && !and_line.result_variable) errors.push('result_variable');
-      if (and_line.action === 'set' && !and_line.result_value) errors.push('result_value');
+      var self = this;
+      this.$nextTick(() => {
+        $('.action, .condition').on('change', function () { self.reconstruct_configs(); self.render_config(); });
+        $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', function () { self.reconstruct_configs(); self.render_config(); });
+      });
 
-      return errors.length ? errors : null;
+      this.render_config();
+    },
+
+    remove_line: function (block_id, line_index) {
+      let index = this.get_block_index(block_id);
+      if (index !== -1) {
+        this.condition_blocks[index].lines.splice(line_index, 1);
+        this.render_config();
+      }
+      this.reconstruct_configs();
     },
 
     render_error: function (errors, input) {
       if (!input) return errors ? "<i class='fas fa-exclamation-triangle fa-2x'></i>" : "";
-      return errors !== null && errors.includes(input) ? "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + gettext('This input is mandatory') : "";
+      return errors !== null && errors.length > 0 && errors.includes(input) ? "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + gettext('Error with this input') : "";
     },
 
-    render_class_and_line: function (error) {
-      return error ? "and_line and_line_error" : "and_line";
+    render_class_condition_line: function (errors) {
+      return errors !== null && errors.length > 0 ? "and_line_error" : "condition_line";
     },
 
-    add_or: function () {
-      let pk = this.generate_id();
-      this.or_lines.push({
-        pk: pk,
-        lines: []
-      });
-      this.render_config();
-      this.add_and(pk);
+    render_id: function (block_index, line_index) {
+      return `condition_line_${block_index}_${line_index}`;
     },
 
-    remove_or: function (or_id) {
-      let index = this.get_or_index(or_id);
-      if (index !== -1) {
-        this.or_lines.splice(index, 1);
-        this.render_config();
+    check_config: function (condition_line) {
+      let errors = [];
+
+      if (!condition_line.condition) errors.push('condition');
+
+      if (condition_line.condition !== "always" && !condition_line.condition_variable) errors.push('condition_variable');
+      if (!['always', 'exists', 'not exists'].includes(condition_line.condition) && !condition_line.condition_value) errors.push('condition_value');
+
+      if (!condition_line.action) errors.push('action');
+
+      if (['set', 'unset'].includes(condition_line.action) && !condition_line.result_variable) errors.push('result_variable');
+      if (condition_line.action === 'set' && !condition_line.result_value) errors.push('result_value');
+
+      return errors.length ? errors : [];
+    },
+
+    validate_condition_block: function (condition_block) {
+      const lines = condition_block.lines;
+      let errors = [];
+      let always_count = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].condition === 'always') {
+          always_count++;
+
+          if (always_count > 1) {
+            errors.push({
+              message: gettext('Only one "Always" condition is allowed per group')
+            });
+            lines[i].errors.push('condition');
+          }
+          if (always_count >= 1 && i !== lines.length - 1) {
+            errors.push({
+              message: gettext('The "Always" condition must be the last rule in the group')
+            });
+            lines[i].errors.push('condition');
+          }
+        }
       }
+
+      return errors;
     },
 
-    render_id: function (or_index, and_index) {
-      return `and_line_${or_index}_${and_index}`;
-    },
-
-    reconstruct_rules: function () {
+    reconstruct_configs: function () {
       var self = this;
-      $('.condition_block').each(function () {
-        var or_index = $(this).data('index');
-        $(this).find('.and_line').each(function () {
-          var and_index = $(this).data('index');
-          var and_line = self.or_lines[or_index].lines[and_index];
+      this.global_errors = [];
 
-          and_line.condition = $(`#and_line_${or_index}_${and_index} .condition`).val();
-          and_line.condition_variable = $(`#and_line_${or_index}_${and_index} .condition_variable`).val();
-          and_line.condition_value = $(`#and_line_${or_index}_${and_index} .condition_value`).val();
-          and_line.action = $(`#and_line_${or_index}_${and_index} .action`).val();
-          and_line.result_variable = $(`#and_line_${or_index}_${and_index} .result_variable`).val();
-          and_line.result_value = $(`#and_line_${or_index}_${and_index} .result_value`).val();
+      $('.condition_group').each(function () {
+        let block_index = $(this).data('index');
+        $(this).find('.condition_line').each(function () {
+          let line_index = $(this).data('index');
 
-          and_line.error = self.check_config(and_line);
-          self.or_lines[or_index].lines[and_index] = and_line;
+          if (self.condition_blocks[block_index] !== undefined) {
+            let condition_line = self.condition_blocks[block_index].lines[line_index];
+            if (condition_line !== undefined) {
+              let query_id = self.render_id(block_index, line_index)
+
+              condition_line.condition = $(`#${query_id} .condition`).val();
+              condition_line.condition_variable = $(`#${query_id} .condition_variable`).val();
+              condition_line.condition_value = $(`#${query_id} .condition_value`).val();
+              condition_line.action = $(`#${query_id} .action`).val();
+              condition_line.result_variable = $(`#${query_id} .result_variable`).val();
+              condition_line.result_value = $(`#${query_id} .result_value`).val();
+
+              condition_line.errors = self.check_config(condition_line);
+              self.condition_blocks[block_index].lines[line_index] = condition_line;
+            }
+          }
         });
+        if (self.condition_blocks[block_index] !== undefined &&
+          self.condition_blocks[block_index].lines !== undefined &&
+          self.condition_blocks[block_index].lines.length > 0) {
+          let block_errors = self.validate_condition_block(self.condition_blocks[block_index]);
+          if (block_errors.length > 0) {
+            self.global_errors.push(...block_errors);
+          }
+        }
       });
     },
 
-    add_and: function (or_id) {
-      var self = this;
-      let index = self.get_or_index(or_id);
-      self.reconstruct_rules();
-
-      this.or_lines[index].lines.push({
-        condition: "always",
-        condition_variable: "",
-        condition_value: "",
-        action: "set",
-        result_variable: "",
-        result_value: "",
-        error: null
-      });
-
-      this.$nextTick(() => {
-        $('.action').on('change', function () { self.render_config(); });
-        $('.condition').on('change', function () { self.render_config(); });
-        $('.condition_variable, .condition_value, .result_variable, .result_value').on('keyup', function () { self.render_config(); });
-      });
-
-      this.render_config();
-    },
-
-    remove_and: function (or_id, and_index) {
-      let index = this.get_or_index(or_id);
-      if (index !== -1) {
-        this.or_lines[index].lines.splice(and_index, 1);
-        this.render_config();
-      }
-    },
-
-    dragStart(e, or_index, and_index) {
-      e.dataTransfer.setData('text/plain', JSON.stringify({ or_index, and_index }));
+    dragStart(e, block_index, line_index) {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ block_index, line_index }));
       e.dataTransfer.effectAllowed = 'move';
-      document.querySelectorAll('.and_line').forEach(el => el.classList.add('dragging'));
-      document.querySelector(`#and_line_${or_index}_${and_index}`)?.classList.add('dragging-active');
+      document.querySelectorAll('.condition_line').forEach(el => el.classList.add('dragging'));
+      document.querySelector(`#condition_line_${block_index}_${line_index}`)?.classList.add('dragging-active');
     },
 
     dragEnter(e) {
       e.dataTransfer.dropEffect = 'move';
     },
 
-    dragDrop(e, target_or_index, target_and_index) {
+    dragDrop(e, target_block_index, target_line_index) {
       e.preventDefault();
       const data = e.dataTransfer.getData('text/plain');
       if (!data) return;
 
-      const { or_index, and_index } = JSON.parse(data);
+      const { block_index, line_index } = JSON.parse(data);
+      if (block_index === target_block_index && line_index === target_line_index) return;
+      if (block_index !== target_block_index) return;
 
-      if (or_index === target_or_index && and_index === target_and_index) return;
-
-      if (or_index !== target_or_index) return;
-
-      const lines = this.or_lines[or_index].lines;
-
-      const draggedLine = lines.splice(and_index, 1)[0];
-
-      lines.splice(target_and_index, 0, draggedLine);
+      const lines = this.condition_blocks[block_index].lines;
+      const draggedLine = lines.splice(line_index, 1)[0];
+      lines.splice(target_line_index, 0, draggedLine);
 
       this.$nextTick(() => {
+        this.reconstruct_configs();
         this.render_config();
-        this.reconstruct_rules();
       });
     },
 
     save_form: function () {
-      var txt = $('#save_form_btn').html();
+      let txt = $('#save_form_btn').html();
       $('#save_form_btn').html('<i class="fa fa-spinner fa-spin"></i>');
       $('#save_form_btn').prop('disabled', 'disabled');
 
-      var self = this;
-      self.reconstruct_rules();
-      self.render_config();
+      this.reconstruct_configs();
+      this.render_config();
 
-      for (var or_line of self.or_lines) {
-        for (var and_line of or_line.lines) {
-          if (self.check_config(and_line)) return false;
+      for (let condition_block of this.condition_blocks) {
+        for (let condition_line of condition_block.lines) {
+          if (this.check_config(condition_line)) return false;
         }
       }
 
-      var data = {
-        or_lines: JSON.stringify(self.or_lines),
-        rule: self.rule,
+      let data = {
+        condition_blocks: JSON.stringify(this.condition_blocks),
+        rule: this.rule,
         name: $('#id_name').val(),
         enabled: $('#id_enabled').is(':checked')
       };
-
-      $.ajax({
-        url: '',
-        data: data,
-        type: "POST",
-        success: function (response) {
-          $('#save_form_btn').html(txt);
-          $('#save_form_btn').prop('disabled', '');
-          if (check_json_error(response)) {
-            notify('success', gettext('Saved successfully'));
-            setTimeout(() => window.location.href = frontend_list_uri, 1000);
-          }
-        },
-        error: function () {
-          $('#save_form_btn').html(txt);
-          $('#save_form_btn').prop('disabled', '');
-        }
-      });
     }
   },
 
   mounted: function () {
-    var self = this;
-    // if (pk_frontend) {
-    //   $.post(frontend_get_uri, {'pk': pk_frontend}, function(response) {
-    //     if (check_json_error(response)) {
-    //       self.or_lines = JSON.parse(response.frontend.rules);
-    //       self.render_config();
-    //     }
-    //   });
-    // } else {
-    self.add_or();
-    // }
+    this.reconstruct_configs();
+    this.render_config(); // no need to keep this after preview removal
   },
-
-  updated: function () {
-    $('.condition_block').each(function () {
-      var index = $(this).data('index');
-      $(this).css('marginLeft', index * 50 + "px");
-    });
-  }
 });
