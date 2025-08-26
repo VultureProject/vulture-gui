@@ -1048,9 +1048,8 @@ class LogOMSentinel(LogOM):
             else:
                 raw_proxy = get_proxy()
                 if raw_proxy:
-                    # Using the 'http' version is the safest option, but that may raise some issues for HTTPS-only proxies
-                    raw_proxy = raw_proxy.get('http')
-                              
+                    raw_proxy = raw_proxy.get('https')
+
             if raw_proxy:
                 faup_parser.decode(raw_proxy)
                 if not faup_parser.get_scheme():
