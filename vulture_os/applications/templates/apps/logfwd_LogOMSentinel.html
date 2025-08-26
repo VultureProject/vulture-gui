@@ -152,6 +152,30 @@
                   </div>
                 </div>
               </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">{{form.use_proxy.label}}</label>
+                    <div class="col-sm-5">
+                      {{ form.use_proxy }}
+                      {{ form.use_proxy.errors|safe }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="custom-proxy">
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <label class="col-sm-4 control-label">{{ form.custom_proxy.label }}</label>
+                      <div class="col-sm-5">
+                        {{ form.custom_proxy }}
+                        {{ form.custom_proxy.errors|safe }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <!-- Advanced tab -->
               <div class="row log-mode">
                 <div class="col-sm-4 pull-right">
@@ -420,6 +444,24 @@
       }
     }).trigger('change');
 
+
+    $('#id_enable_disk_assist').on('change', function(e){
+      if ($(this).is(':checked')) {
+        $('#tab-disk').show();
+      } else {
+        $('#tab-disk').hide();
+      }
+    }).trigger('change');
+
+
+    $('#id_use_proxy').on('change', function(e){
+      if ($(this).is(':checked')) {
+        $('#custom-proxy').show();
+      } else {
+        $('#custom-proxy').hide();
+      }
+    }).trigger('change');
+    
   }); // end of function()
 
 {% endblock %}

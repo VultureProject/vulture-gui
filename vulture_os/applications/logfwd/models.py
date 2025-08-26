@@ -32,6 +32,8 @@ from djongo import models
 
 # Django project imports
 from system.pki.models import X509Certificate, TLSProfile
+from toolkit.network.network import get_proxy
+from pyfaup.faup import Faup
 
 # Extern modules imports
 from jinja2 import Environment, FileSystemLoader
@@ -964,6 +966,18 @@ class LogOMSentinel(LogOM):
         help_text=_("TLSProfile object to use."),
         verbose_name=_("Use a TLS Profile")
     )
+    use_proxy = models.BooleanField(
+        default=False,
+        help_text=_("Use a proxy to connect to the OMSentinel APIs"),
+        verbose_name=_("Use Proxy")
+    )
+    custom_proxy = models.TextField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text=_("Custom proxy to use (will use system proxy if not set)"),
+        verbose_name=_("Custom Proxy")
+    )
 
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)
@@ -988,6 +1002,7 @@ class LogOMSentinel(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
+        proxy = self.parse_proxy
         template = super().to_template(**kwargs)
         template.update({
             'tenant_id': self.tenant_id,
@@ -1000,6 +1015,9 @@ class LogOMSentinel(LogOM):
             'batch_maxsize': self.batch_maxsize,
             'batch_maxbytes': self.batch_maxbytes,
             'compression_level': self.compression_level,
+            'use_proxy': self.use_proxy,
+            'proxy_host': proxy['proxy_host'],
+            'proxy_port': proxy['proxy_port'],
             'type': 'Sentinel',
             'output': f"https://{self.dce}/dataCollectionRules/{self.dcr}/streams/{self.stream_name}?api-version=2023-01-01",
         })
@@ -1021,3 +1039,23 @@ class LogOMSentinel(LogOM):
     @property
     def mapping_id(self):
         return 'mapping_'+self.template_id()
+    
+    @property
+    def parse_proxy(self):
+        # proxy uri parse
+        if(self.use_proxy):
+            f = Faup()
+            if(self.custom_proxy):
+                f.decode(self.custom_proxy)
+                if(f.get_scheme() == None):
+                    return {'proxy_host': f'{f.get_host()}', 'proxy_port': f.get_port() }
+                else:
+                    return {'proxy_host': f'{f.get_scheme()}://{f.get_host()}', 'proxy_port': f.get_port() }
+            else:
+                system_proxy = get_proxy()
+                if(system_proxy == {}):
+                    raise Exception(f"System proxy not found. Please check if /etc/rc.conf.proxy exists.")
+                elif(system_proxy['http'] == None):
+                    raise Exception(f"No system proxy is defined.")
+                else:
+                    return {'proxy_host': f'{f.get_scheme()}://{f.get_host()}', 'proxy_port': f.get_port() }
