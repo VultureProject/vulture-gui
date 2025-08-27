@@ -286,6 +286,11 @@ def frontend_edit(request, object_id=None, api=False):
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
+        if hasattr(form, "cleaned_data"):
+            custom_actions = form.cleaned_data.get("custom_actions", [])
+        else:
+            custom_actions = form.initial.get("custom_actions", [])
+
         filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
         if front and front.filebeat_module and front.filebeat_config:
             filebeat_configs[front.filebeat_module]=front.filebeat_config
@@ -296,6 +301,7 @@ def frontend_edit(request, object_id=None, api=False):
                        'reputation_contexts': reputationctx_form_list,
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
+                       'custom_actions': custom_actions,
                        'filebeat_module_config': filebeat_configs,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 

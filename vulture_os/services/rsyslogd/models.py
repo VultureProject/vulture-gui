@@ -69,6 +69,7 @@ class RsyslogSettings(models.Model):
     def __str__(self):
         return "Rsyslogd settings"
 
+
 class RsyslogQueue(models.Model):
     """ Parameters used for Rsyslog actions and queues
     """
