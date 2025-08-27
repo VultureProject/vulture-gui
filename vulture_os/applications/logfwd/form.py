@@ -416,8 +416,6 @@ class LogOMSentinelForm(LogOMForm):
         f.decode(custom_proxy)
         if f.get_scheme() not in scheme:
             raise ValidationError("Invalid scheme. Allowed values are: http, https, ftp, socks4, socks5.")
-        elif not f.get_host():
-            raise ValidationError("Please provide a valid IP/Hostname.")
         return custom_proxy
 
     def clean_dce(self):
