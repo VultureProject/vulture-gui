@@ -28,8 +28,11 @@ class Migration(migrations.Migration):
                 ('batch_maxsize', models.PositiveIntegerField(default=100, help_text='Controls how many messages should be sent at most in one request', verbose_name='Batch max size')),
                 ('batch_maxbytes', models.PositiveIntegerField(default=10485760, help_text='Defines the maximum size (in bytes) of one request', verbose_name='Batch max bytes')),
                 ('compression_level', models.IntegerField(choices=[(-1, 'Balanced'), (0, 'No compression'), (1, 'Fastest compression'), (2, 'Compression level 2'), (3, 'Compression level 3'), (4, 'Compression level 4'), (5, 'Compression level 5'), (6, 'Compression level 6'), (7, 'Compression level 7'), (8, 'Compression level 8'), (9, 'Best compression')], default=-1, help_text='Activates and defines the level of compression of requests', validators=[django.core.validators.MinValueValidator(-1, message='Minimum allowed value is -1 (Balanced).'), django.core.validators.MaxValueValidator(9, message='Maximum allowed value is 9. (Best compression)')], verbose_name='Compression level')),
+                ('use_proxy', models.BooleanField(default=False, help_text='Use a proxy to connect to the OMSentinel APIs', verbose_name='Use Proxy')),
+                ('custom_proxy', models.TextField(blank=True, default=None, help_text='Custom proxy to use (will use system proxy if not set)', null=True, verbose_name='Custom Proxy')),
                 ('tls_profile', models.ForeignKey(blank=True, default=None, help_text='TLSProfile object to use.', null=True, on_delete=django.db.models.deletion.RESTRICT, to='system.tlsprofile', verbose_name='Use a TLS Profile')),
             ],
             bases=('applications.logom',),
         ),
+
     ]
