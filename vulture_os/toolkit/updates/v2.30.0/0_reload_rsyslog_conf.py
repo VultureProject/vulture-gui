@@ -48,6 +48,7 @@ if __name__ == "__main__":
         try:
             print("Rebuilding main Rsyslog configuration...")
             node.api_request('services.rsyslogd.rsyslog.build_conf')
+            node.api_request('services.rsyslogd.rsyslog.configure_node')
             node.api_request("services.rsyslogd.rsyslog.restart_service")
 
         except Exception as e:
