@@ -12,6 +12,14 @@ action(type="omsentinel"
             batch.maxbytes="{{batch_maxbytes}}"
             template="{% if send_as_raw %}raw_message{% else %}{{ out_template }}_json{% endif %}"
             errorfile="/var/log/internal/{{output_name}}_error.log"
+        {%- if use_proxy %}
+            {%- if proxy_host %}
+            proxyhost="{{proxy_host}}"
+            {%- endif %}
+            {%- if proxy_port %}
+            proxyport="{{proxy_port}}"
+            {%- endif %}
+        {%- endif %}
         {%- if compression_level %}
             compress="on"
             compress.level="{{compression_level}}"

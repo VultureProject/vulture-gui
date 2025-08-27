@@ -38,6 +38,7 @@ from django.forms import ValidationError
 
 # Additional module imports
 from ast import literal_eval as ast_literal_eval
+from pyfaup.faup import Faup
 
 # Logger configuration imports
 import logging
@@ -390,12 +391,12 @@ class LogOMSentinelForm(LogOMForm):
         model = LogOMSentinel
         fields = LogOMForm.Meta.fields + ('tenant_id', 'client_id', 'client_secret',
                                           'dcr', 'dce', 'stream_name', 'compression_level', 'scope',
-                                          'batch_maxsize', 'batch_maxbytes', 'tls_profile')
+                                          'batch_maxsize', 'batch_maxbytes', 'tls_profile', 'use_proxy', 'custom_proxy')
 
         widgets = {
             'tenant_id': TextInput(attrs={'class': 'form-control', 'placeholder': '47673b71-c5ae-4a2a-8d8a-e86e79f1f967'}),
             'client_id': TextInput(attrs={'class': 'form-control', 'placeholder': '47673b71-c5ae-4a2a-8d8a-e86e79f1f967'}),
-            'client_secret': TextInput(attrs={'class': 'form-control'}),
+            'client_secret': TextInput(attrs={'class': 'form-control', 'type': 'password'}),
             'dcr': TextInput(attrs={'class': 'form-control', 'placeholder': 'dcr-cbb3586665ebdbc6ebadd796e3ba5bcf'}),
             'dce': TextInput(attrs={'class': 'form-control', 'placeholder': 'example-a1b2.francecentral-1.ingest.monitor.azure.com'}),
             'stream_name': TextInput(attrs={'class': 'form-control', 'placeholder': 'table name / stream name'}),
@@ -403,6 +404,24 @@ class LogOMSentinelForm(LogOMForm):
             'scope': URLInput(attrs={'class': 'form-control'}),
             'batch_maxsize': NumberInput(attrs={'class': 'form-control', 'placeholder': 'nb of messages per request'}),
             'batch_maxbytes': NumberInput(attrs={'class': 'form-control', 'placeholder': 'Max size per request (bytes)'}),
-
+            'use_proxy': CheckboxInput(attrs={'class': 'js-switch'}),
+            'custom_proxy': TextInput(attrs={'class': 'form-control', 'placeholder': 'use system proxy'})
         }
         widgets.update(LogOMForm.Meta.widgets)
+
+    def clean_custom_proxy(self):
+        custom_proxy = self.cleaned_data.get('custom_proxy')
+        scheme={"http", "https", "ftp", "socks4", "socks5", None}
+        f = Faup()
+        f.decode(custom_proxy)
+        if f.get_scheme() not in scheme:
+            raise ValidationError("Invalid scheme. Allowed values are: http, https, ftp, socks4, socks5.")
+        elif not f.get_host():
+            raise ValidationError("Please provide a valid IP/Hostname.")
+        return custom_proxy
+
+    def clean_dce(self):
+        dce = self.cleaned_data.get('dce')
+        f = Faup()
+        f.decode(dce)
+        return f.get_host()
