@@ -409,16 +409,17 @@ class LogOMSentinelForm(LogOMForm):
         }
         widgets.update(LogOMForm.Meta.widgets)
 
-    def clean_custom_proxy_scheme(self):
+    def clean_custom_proxy(self):
         custom_proxy = self.cleaned_data.get('custom_proxy')
         scheme={"http", "https", "ftp", "socks4", "socks5", None}
         f = Faup()
         f.decode(custom_proxy)
-        if(f.get_scheme() in scheme):
-            return custom_proxy
-        else:
+        if f.get_scheme() not in scheme:
             raise ValidationError("Invalid scheme. Allowed values are: http, https, ftp, socks4, socks5.")
-    
+        elif not f.get_host():
+            raise ValidationError("Please provide a valid IP/Hostname.")
+        return custom_proxy
+
     def clean_dce(self):
         dce = self.cleaned_data.get('dce')
         f = Faup()

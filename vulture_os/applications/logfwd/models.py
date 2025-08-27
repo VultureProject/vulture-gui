@@ -1002,7 +1002,7 @@ class LogOMSentinel(LogOM):
 
     def to_template(self, **kwargs):
         """  returns the attributes of the class """
-        proxy = self.get_parsed_proxy
+        proxy = self.get_parsed_proxy()
         template = super().to_template(**kwargs)
         template.update({
             'tenant_id': self.tenant_id,
@@ -1039,7 +1039,7 @@ class LogOMSentinel(LogOM):
     @property
     def mapping_id(self):
         return 'mapping_'+self.template_id()
-    
+
     def get_parsed_proxy(self):
         if self.use_proxy:
             faup_parser = Faup()
@@ -1056,7 +1056,5 @@ class LogOMSentinel(LogOM):
                     return {'proxy_host': f'{faup_parser.get_host()}', 'proxy_port': faup_parser.get_port() }
                 else:
                     return {'proxy_host': f'{faup_parser.get_scheme()}://{faup_parser.get_host()}', 'proxy_port': faup_parser.get_port() }
-                
+
         return {'proxy_host': '', 'proxy_port': ''}
-    
-       
