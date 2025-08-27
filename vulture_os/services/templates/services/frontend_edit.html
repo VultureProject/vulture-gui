@@ -2732,15 +2732,16 @@
   var log_om_table_td = `{{log_om_table.as_table_td|safe}}`;
   var reputationctx_form_td = `{{reputationctx_form.as_table_td|safe}}`;
   var old_mode = $('id_mode').val();
-  //var custom_actions = {% if form.custom_actions %}{{form.custom_actions.initial}}{% else %}[]{% endif %};
-  var custom_actions = [{% for condition_block in form.custom_actions.initial %}
-    {'lines': [{% for condition_line in condition_block %}
-      {{% for k, v in condition_line.items %}
-        '{{k}}': '{{v}}',
-      {% endfor %}
-        'errors': []
-    },
-    {% endfor %}]},
+
+  var custom_actions = [{% for condition_block in custom_actions %}
+    {'lines': [{% for condition_line in condition_block %}{
+        {% for k, v in condition_line.items %}
+          '{{k}}': '{{v}}',
+        {% endfor %}
+          'errors': []}{% if not forloop.last %},{% endif %}
+      {% endfor %}],
+      pk: Math.random().toString(36).substring(5)
+    }{% if not forloop.last %},{% endif %}
   {% endfor %}]
 
   var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";

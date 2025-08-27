@@ -731,7 +731,7 @@ $(function() {
     for (let condition_block of custom_actions_vue.condition_blocks) {
       let condition_block_array = new Array();
       for (let condition_line of condition_block.lines) {
-        if (custom_actions_vue.check_config(condition_line).length > 0) {
+        if (custom_actions_vue.validate_condition_line(condition_line).length > 0) {
           notify('error', gettext('Error'), gettext('Error identified in custom operations tab'))
           event.preventDefault()
         };
@@ -916,15 +916,15 @@ var custom_actions_vue = new Vue({
               comment = "#equals";
               break;
             case "iequals":
-              cond_str = `ieq(${condition_var}, "${condition_val}")`;
+              cond_str = `re_match_i(${condition_var}, "^${condition_val}$")`;
               comment = "#iequals";
               break;
             case "contains":
-              cond_str = `${condition_var} contains "${condition_val}"`;
+              cond_str = `re_match(${condition_var}, ".*${condition_val}.*")`;
               comment = "#contains";
               break;
             case "icontains":
-              cond_str = `icontains(${condition_var}, "${condition_val}")`;
+              cond_str = `re_match_i(${condition_var}, ".*${condition_val}.*")`;
               comment = "#icontains";
               break;
             case "regex":
@@ -1013,7 +1013,6 @@ var custom_actions_vue = new Vue({
         this.condition_blocks.splice(index, 1);
         this.render_config();
       }
-      this.reconstruct_configs();
     },
 
     add_line: function (block_id) {
@@ -1030,10 +1029,9 @@ var custom_actions_vue = new Vue({
         errors: []
       });
 
-      var self = this;
       this.$nextTick(() => {
-        $('.action, .condition').on('change', function () { self.reconstruct_configs(); self.render_config(); });
-        $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', function () { self.reconstruct_configs(); self.render_config(); });
+        $('.action, .condition').on('change', () => { this.reconstruct_configs(); this.render_config(); });
+        $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', () => { this.reconstruct_configs(); this.render_config(); });
       });
 
       this.render_config();
@@ -1045,12 +1043,19 @@ var custom_actions_vue = new Vue({
         this.condition_blocks[index].lines.splice(line_index, 1);
         this.render_config();
       }
-      this.reconstruct_configs();
     },
 
     render_error: function (errors, input) {
       if (!input) return errors ? "<i class='fas fa-exclamation-triangle fa-2x'></i>" : "";
-      return errors !== null && errors.length > 0 && errors.includes(input) ? "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + gettext('Error with this input') : "";
+      if (errors !== null && errors.length > 0) {
+        for (error of errors) {
+          if (error.field === input) {
+            return "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + error.message;
+          }
+        }
+        return errors.includes(input) ? "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + gettext('Error with this input') : "";
+      }
+      return "";
     },
 
     render_class_condition_line: function (errors) {
@@ -1061,24 +1066,42 @@ var custom_actions_vue = new Vue({
       return `condition_line_${block_index}_${line_index}`;
     },
 
-    check_config: function (condition_line) {
+    validate_condition_line: function (condition_line) {
       let errors = [];
 
-      if (!condition_line.condition) errors.push('condition');
+      if (!condition_line.condition)
+        errors.push({field: 'condition', message: gettext('This field is mandatory')});
 
-      if (condition_line.condition !== "always" && !condition_line.condition_variable) errors.push('condition_variable');
-      if (!['always', 'exists', 'not exists'].includes(condition_line.condition) && !condition_line.condition_value) errors.push('condition_value');
+      if (!condition_line.condition_variable) {
+        if (condition_line.condition !== "always")
+          errors.push({field: 'condition_variable', message: gettext('This field is mandatory')});
+      } else if (condition_line.condition_variable[0] !== "$")
+        errors.push({field: 'condition_variable', message: gettext('Invalid variable name')});
 
-      if (!condition_line.action) errors.push('action');
+      if (!condition_line.condition_value) {
+        if (!['always', 'exists', 'not exists'].includes(condition_line.condition))
+          errors.push({field: 'condition_value', message: gettext('This field is mandatory')});
+      } else if (condition_line.condition_value[0] === "$")
+        errors.push({field: 'condition_value', message: gettext('Cannot use a variable here')});
 
-      if (['set', 'unset'].includes(condition_line.action) && !condition_line.result_variable) errors.push('result_variable');
-      if (condition_line.action === 'set' && !condition_line.result_value) errors.push('result_value');
+      if (!condition_line.action)
+        errors.push({field: 'action', message: gettext('This field is mandatory')});
+
+      if (!condition_line.result_variable) {
+        if (['set', 'unset'].includes(condition_line.action))
+          errors.push({field: 'result_variable', message: gettext('This field is mandatory')});
+      } else if (condition_line.result_variable[0] !== "$")
+        errors.push({field: 'result_variable', message: gettext('Invalid variable name')});
+
+      if (condition_line.action === 'set' && !condition_line.result_value)
+        errors.push({field: 'result_value', message: gettext('This field is mandatory')});
 
       return errors.length ? errors : [];
     },
 
     validate_condition_block: function (condition_block) {
       const lines = condition_block.lines;
+      this.global_errors = [];
       let errors = [];
       let always_count = 0;
 
@@ -1087,26 +1110,30 @@ var custom_actions_vue = new Vue({
           always_count++;
 
           if (always_count > 1) {
-            errors.push({
+            this.global_errors.push({
               message: gettext('Only one "Always" condition is allowed per group')
             });
-            lines[i].errors.push('condition');
+            lines[i].errors.push({
+              field: 'condition',
+              message: gettext('Only one "Always" allowed')
+            });
           }
           if (always_count >= 1 && i !== lines.length - 1) {
-            errors.push({
-              message: gettext('The "Always" condition must be the last rule in the group')
+            this.global_errors.push({
+              message: gettext('"Always" condition must be the last rule in the group')
             });
-            lines[i].errors.push('condition');
+            lines[i].errors.push({
+              field: 'condition',
+              message: gettext('This line should go down')
+            });
           }
         }
       }
-
       return errors;
     },
 
     reconstruct_configs: function () {
       var self = this;
-      this.global_errors = [];
 
       $('.condition_group').each(function () {
         let block_index = $(this).data('index');
@@ -1116,7 +1143,7 @@ var custom_actions_vue = new Vue({
           if (self.condition_blocks[block_index] !== undefined) {
             let condition_line = self.condition_blocks[block_index].lines[line_index];
             if (condition_line !== undefined) {
-              let query_id = self.render_id(block_index, line_index)
+              let query_id = self.render_id(block_index, line_index);
 
               condition_line.condition = $(`#${query_id} .condition`).val();
               condition_line.condition_variable = $(`#${query_id} .condition_variable`).val();
@@ -1125,7 +1152,7 @@ var custom_actions_vue = new Vue({
               condition_line.result_variable = $(`#${query_id} .result_variable`).val();
               condition_line.result_value = $(`#${query_id} .result_value`).val();
 
-              condition_line.errors = self.check_config(condition_line);
+              condition_line.errors = self.validate_condition_line(condition_line);
               self.condition_blocks[block_index].lines[line_index] = condition_line;
             }
           }
@@ -1133,10 +1160,7 @@ var custom_actions_vue = new Vue({
         if (self.condition_blocks[block_index] !== undefined &&
           self.condition_blocks[block_index].lines !== undefined &&
           self.condition_blocks[block_index].lines.length > 0) {
-          let block_errors = self.validate_condition_block(self.condition_blocks[block_index]);
-          if (block_errors.length > 0) {
-            self.global_errors.push(...block_errors);
-          }
+            self.validate_condition_block(self.condition_blocks[block_index]);
         }
       });
     },
@@ -1170,31 +1194,13 @@ var custom_actions_vue = new Vue({
         this.render_config();
       });
     },
-
-    save_form: function () {
-      let txt = $('#save_form_btn').html();
-      $('#save_form_btn').html('<i class="fa fa-spinner fa-spin"></i>');
-      $('#save_form_btn').prop('disabled', 'disabled');
-
-      this.reconstruct_configs();
-      this.render_config();
-
-      for (let condition_block of this.condition_blocks) {
-        for (let condition_line of condition_block.lines) {
-          if (this.check_config(condition_line)) return false;
-        }
-      }
-
-      let data = {
-        condition_blocks: JSON.stringify(this.condition_blocks),
-        rule: this.rule,
-        name: $('#id_name').val(),
-        enabled: $('#id_enabled').is(':checked')
-      };
-    }
   },
 
   mounted: function () {
+    this.$nextTick(() => {
+      $('.action, .condition').on('change', () => { this.reconstruct_configs(); this.render_config(); });
+      $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', () => { this.reconstruct_configs(); this.render_config(); });
+    });
     this.reconstruct_configs();
     this.render_config(); // no need to keep this after preview removal
   },
