@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [CROWDSTRIKE] Add identities to fetched information
+### Fixed
+- [LOG_FORMAT] [HAPROXY] Use correct log-format field for haproxy HTTP path only
 
 
 ## [2.30.0]
