@@ -226,8 +226,8 @@ class CrowdstrikeParser(ApiParser):
         # first retrieve the detections raw ids
         filter = f"updated_timestamp:>'{since}'"
         filter += f"+updated_timestamp:<='{to}'"
-        filter += "+data_domains:'Endpoint'"
-        filter += "+product:['epp', 'ngsiem', 'thirdparty']"
+        filter += "+data_domains:['Endpoint', 'Identity']"
+        filter += "+product:['epp', 'ngsiem', 'thirdparty', 'idp']"
         ids = self.get_ids(query={
                                 "filter": filter,
                                 "sort": "updated_timestamps|asc",
