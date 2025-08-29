@@ -1115,9 +1115,10 @@
                               </div>
                             </div>
                             <div class="panel-body">
-                              <table class="table table_acl">
+                              <table class="table" style="margin-bottom: 0px !important">
                                 <thead>
                                   <tr>
+                                    <th></th>
                                     <th>{% translate "Condition" %}</th>
                                     <th>{% translate "Variable" %}</th>
                                     <th>{% translate "Value" %}</th>
@@ -1132,6 +1133,10 @@
                                   :class="render_class_condition_line(condition_line.errors)" :data-index="line_index" draggable="true"
                                   @dragstart="dragStart($event, block_index, line_index)" @dragover.prevent @drop="dragDrop($event, block_index, line_index)"
                                   @dragenter="dragEnter($event)" class="condition_line">
+
+                                    <td style="width: 30px; text-align: center; vertical-align: middle; border-right: 1px solid #ddd;">
+                                      <i class="fas fa-grip-vertical text-muted" style="cursor: move;"></i>
+                                    </td>
 
                                     <!-- Condition -->
                                     <td>
@@ -1199,9 +1204,10 @@
                                     <td></td>
                                     <td></td>
                                     <td></td>
+                                    <td></td>
                                     <td>
                                       <button type="button" v-on:click="add_line(condition_block.pk, block_index)" class="btn btn-success btn-flat">
-                                        <i class="fa fa-plus">&nbsp;&nbsp;</i> {% translate "Add condition" %}
+                                        <i class="fa fa-plus">&nbsp;&nbsp;</i> {% translate "Add" %}
                                       </button>
                                     </td>
                                   </tr>
@@ -1217,7 +1223,7 @@
                       <br>
                       <div class="row">
                         <div class="col-md-12">
-                          <pre v-html="rule"></pre>
+                          <pre v-html="preview"></pre>
                         </div>
                       </div>
                     </section>

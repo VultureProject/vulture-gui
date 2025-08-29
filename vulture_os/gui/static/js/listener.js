@@ -861,7 +861,7 @@ var custom_actions_vue = new Vue({
   data: {
     condition_blocks: custom_actions.length > 0 ? custom_actions : [],
     global_errors: [],
-    rule: ""
+    preview: ""
   },
 
   methods: {
@@ -984,7 +984,7 @@ var custom_actions_vue = new Vue({
         result = "# No configuration defined\n";
       }
 
-      this.rule = result
+      this.preview = result
         .split('\n')
         .map(line => line)
         .join('\n');
@@ -1166,6 +1166,13 @@ var custom_actions_vue = new Vue({
     },
 
     dragStart(e, block_index, line_index) {
+      let mainnav_hidden = $('#container').hasClass('mainnav-sm');
+      let max_x = 90 + 220 * !mainnav_hidden + 55 * mainnav_hidden;
+      if (['INPUT', 'SELECT'].includes(e.target.tagName) || e.x > max_x) {
+        e.preventDefault();
+        return;
+      }
+
       e.dataTransfer.setData('text/plain', JSON.stringify({ block_index, line_index }));
       e.dataTransfer.effectAllowed = 'move';
       document.querySelectorAll('.condition_line').forEach(el => el.classList.add('dragging'));
