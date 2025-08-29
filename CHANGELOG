@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORWARDER] [SENTINEL] Add new Log Forwarder to Vulture GUI
 ### Fixed
 - [API_PARSER] [GATEWATCHER_ALERTS] Reduce the page size to 10 to avoid timeout errors
+- [PORTAL] Correctly filter users on Authentication ACLs enabled Workflows for any type of authentication
+- [PORTAL] [SELF_SERVICE] Only show allowed (Authentication ACLs) Apps to authenticated user
 
 
 ## [2.29.1] - 2025-08-22

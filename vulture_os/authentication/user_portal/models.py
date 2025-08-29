@@ -528,7 +528,7 @@ class UserAuthentication(models.Model):
         if self.user_scope:
             return self.user_scope.get_user_scope(claims, repo_attrs)
         else:
-            return claims
+            return claims | repo_attrs
 
     def generate_conf(self):
         """ Render the conf with Jinja template and self.to_template() method

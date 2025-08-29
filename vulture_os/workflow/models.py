@@ -397,13 +397,16 @@ class Workflow(models.Model):
                 url = "http://" + str(self.fqdn) + ":" + str(port) + str(self.public_dir)
         return url
 
-    def get_and_validate_scope(self, claims, repo_attributes):
+    def get_user_scope(self, claims, repo_attributes):
         user_scope = {}
         if self.authentication:
             user_scope = self.authentication.get_user_scope(claims, repo_attributes)
-            if self.authentication_filter:
-                if not self.authentication_filter.apply_rules_on_scope(user_scope):
-                    logger.warning(f"scope '{user_scope}' could not be validated with filtering rules '{self.authentication_filter.name}'")
-                    raise ACLError(f"Could not validate user scope against filtering rules '{self.authentication_filter.name}'")
+        return user_scope
+
+    def validate_scope(self, user_scope):
+        if self.authentication_filter:
+            if not self.authentication_filter.apply_rules_on_scope(user_scope):
+                logger.warning(f"scope '{user_scope}' could not be validated with filtering rules '{self.authentication_filter.name}'")
+                raise ACLError(f"Could not validate user scope against filtering rules '{self.authentication_filter.name}'")
 
         return user_scope
