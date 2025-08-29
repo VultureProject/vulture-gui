@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [CROWDSTRIKE] Add identities to fetched information
 ### Fixed
 - [LOG_FORMAT] [HAPROXY] Use correct log-format field for haproxy HTTP path only
+- [PORTAL] [JWT] Correctly write IDP certificate files on system for JWT validation
 
 
 ## [2.30.0]

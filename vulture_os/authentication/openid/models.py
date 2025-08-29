@@ -254,7 +254,7 @@ class OpenIDRepository(BaseRepository):
         }
 
     def get_jwt_key_filename(self):
-        return path_join(settings.DBS_PATH, "pki/openid-{self.pk}.pub")
+        return path_join(settings.DBS_PATH, f"pki/openid-{self.pk}.pub")
 
     @staticmethod
     def jwt_validate_with_certificate(jwt_signature_type):
