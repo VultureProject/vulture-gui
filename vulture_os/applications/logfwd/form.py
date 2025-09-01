@@ -89,21 +89,21 @@ class LogOMForm(ModelForm):
         """ Verify needed fields - depending on mode chosen """
         cleaned_data = super().clean()
         logger.info(self.initial)
-        if cleaned_data['enable_disk_assist'] is True:
-            if cleaned_data['queue_size'] is not None and cleaned_data['high_watermark'] is not None:
-                if cleaned_data['queue_size'] < cleaned_data['high_watermark']:
-                    self.add_error("queue_size", "Queue size is lower than the high watermark")
-            if cleaned_data['queue_size'] is not None and cleaned_data['low_watermark'] is not None:
+        if cleaned_data.get('enable_disk_assist') is True:
+            if cleaned_data.get('queue_size') is not None and cleaned_data.get('low_watermark') is not None:
                 if cleaned_data['queue_size'] < cleaned_data['low_watermark']:
                     self.add_error("queue_size", "Queue size is lower than the low watermark")
-            if cleaned_data['low_watermark'] is not None and cleaned_data['high_watermark'] is not None:
+            if cleaned_data.get('queue_size') is not None and cleaned_data.get('high_watermark') is not None:
+                if cleaned_data['queue_size'] < cleaned_data['high_watermark']:
+                    self.add_error("queue_size", "Queue size is lower than the high watermark")
+            if cleaned_data.get('low_watermark') is not None and cleaned_data.get('high_watermark') is not None:
                 if cleaned_data['high_watermark'] < cleaned_data['low_watermark']:
                     self.add_error("high_watermark", "High watermark is lower than the low watermark value")
                     self.add_error("low_watermark", "Low watermark is higher than the high watermark value")
-            if cleaned_data['max_disk_space'] is not None and cleaned_data['max_file_size'] is not None:
+            if cleaned_data.get('max_disk_space') is not None and cleaned_data.get('max_file_size') is not None:
                 if cleaned_data['max_disk_space'] > 0 and cleaned_data['max_file_size'] > cleaned_data.get('max_disk_space'):
                     self.add_error("max_file_size", "File size is higher than the disk space")
-        if cleaned_data['new_worker_minimum_messages'] is not None and cleaned_data['queue_size'] is not None:
+        if cleaned_data.get('new_worker_minimum_messages') is not None and cleaned_data.get('queue_size') is not None:
             if cleaned_data['new_worker_minimum_messages'] > cleaned_data['queue_size']:
                 self.add_error("new_worker_minimum_messages", "This value cannot be over the queue size")
         return cleaned_data
