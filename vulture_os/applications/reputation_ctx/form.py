@@ -48,7 +48,7 @@ class ReputationContextForm(ModelForm):
     class Meta:
         model = ReputationContext
         fields = ('name', 'description', 'db_type', 'method', 'url', 'verify_cert', 'post_data', 'auth_type', 'user',
-                  'password', 'tags')
+                  'password', 'tags', 'enable_hour_download')
 
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
@@ -57,6 +57,7 @@ class ReputationContextForm(ModelForm):
             'method': Select(choices=HTTP_METHOD_CHOICES, attrs={'class': 'form-control select2'}),
             'url': TextInput(attrs={'class': 'form-control'}),
             'verify_cert': CheckboxInput(attrs={'class': "form-control js-switch"}),
+            'enable_hour_download': CheckboxInput(attrs={'class': "form-control js-switch"}),
             'post_data': TextInput(attrs={'class': 'form-control'}),
             'auth_type': Select(choices=HTTP_AUTH_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
             'user': TextInput(attrs={'class': 'form-control'}),
