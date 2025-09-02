@@ -2189,19 +2189,17 @@ class Frontend(RsyslogQueue, models.Model):
 
             for i, condition in enumerate(conditions):
                 if i != 0:
-                    result += "    } else "
-                else:
-                    result += "    "
+                    result += "} else "
                 if condition['condition'] == "":
                     if len(conditions) > 1:
-                        result += "{" + f" {condition['comment']}\n    "
+                        result += "{" + f" {condition['comment']}\n"
                 else:
-                    result += f"if {condition['condition']} then " + "{" + f" {condition['comment']}\n    "
+                    result += f"if {condition['condition']} then " + "{" + f" {condition['comment']}\n"
 
                 result += f"    {condition['action']}{';' if condition['action'] != 'stop' else ''}\n"
 
                 if i == len(conditions) - 1 and (len(conditions) > 1 or condition['condition'] != ""):
-                    result += "    }\n"
+                    result += "}\n"
 
         logger.debug(f"[RENDER CUSTOM ACTIONS] result : {result}")
         return result
