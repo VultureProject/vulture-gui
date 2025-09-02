@@ -61,8 +61,8 @@ class ReputationContextForm(ModelForm):
             'post_data': TextInput(attrs={'class': 'form-control'}),
             'auth_type': Select(choices=HTTP_AUTH_TYPE_CHOICES, attrs={'class': 'form-control select2'}),
             'user': TextInput(attrs={'class': 'form-control'}),
-            'password': TextInput(attrs={'class': 'form-control'}),
-            'tags': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"})
+            'password': TextInput(attrs={'type':'password', 'class': 'form-control'}),
+            'tags': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -71,7 +71,7 @@ class ReputationContextForm(ModelForm):
         for field_name in ['auth_type', 'verify_cert', 'post_data', 'user', 'password', 'tags']:
             self.fields[field_name].required = False
         # Set readonly if internal reputation context
-        if kwargs.get('instance') and kwargs.get('instance').internal:
+        if kwargs.get('instance') and kwargs['instance'].internal:
             for field in self.fields:
                 self.fields[field].widget.attrs['readonly'] = True
         self.initial['tags'] = ','.join(self.initial.get('tags', []) or self.fields['tags'].initial)
