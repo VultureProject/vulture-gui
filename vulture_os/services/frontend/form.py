@@ -776,31 +776,6 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                 data = list()
         elif not isinstance(data, list):
                 self.add_error('custom_actions', "This field must be a list.")
-
-        always_count = 0
-        for condition_block in data:
-            for i, condition_line in enumerate(condition_block):
-                # Verify mandatory arguments
-                if not condition_line.get("condition"):
-                    self.add_error('custom_actions', "A line is missing a condition")
-                if not condition_line.get("action"):
-                    self.add_error('custom_actions', "A line is missing an action")
-                if condition_line.get("condition") != "always" and not condition_line.get("condition_variable"):
-                    self.add_error('custom_actions', "A line is missing a condition variable")
-                if condition_line.get("condition") not in ['always', 'exists', 'not exists'] and not condition_line.get("condition_value"):
-                    self.add_error('custom_actions', "A line is missing a condition value")
-                if condition_line.get("action") in ['set', 'unset'] and not condition_line.get("result_variable"):
-                    self.add_error('custom_actions', "A line is missing a result variable")
-                if condition_line.get("action") == 'set' and not condition_line.get("result_value"):
-                    self.add_error('custom_actions', "A line is missing a result value")
-
-                # Verify number and order of "always" condition in a group
-                if condition_line.get("condition") == "always":
-                    always_count += 1
-                    if always_count > 1:
-                        self.add_error('custom_actions', "Only one 'Always' condition is allowed per group")
-                    if always_count >= 1 and i != len(condition_block) - 1:
-                        self.add_error('custom_actions', "The 'Always' condition must be the last rule in the group")
         return data
 
     def clean_cisco_umbrella_managed_org_customers_id(self):

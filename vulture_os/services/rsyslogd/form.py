@@ -24,7 +24,8 @@ __doc__ = 'Rsyslog dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, Select, NumberInput, CheckboxInput
+from django.forms import ModelForm, Form, TextInput, Select, NumberInput, CheckboxInput, ChoiceField, CharField, JSONField
+from django.utils.crypto import get_random_string
 
 # Django project imports
 from services.rsyslogd.models import RsyslogSettings, RsyslogQueue
@@ -32,6 +33,7 @@ from services.rsyslogd.models import RsyslogSettings, RsyslogQueue
 # Required exceptions imports
 
 # Extern modules imports
+from json import loads as json_loads
 
 # Logger configuration imports
 import logging
@@ -136,3 +138,180 @@ class RsyslogQueueForm(ModelForm):
                     self.add_error("max_disk_space", "Max disk space needs to be at least twice the size of a single file size to allow to use at least 2 files")
 
         return cleaned_data
+
+
+class CustomActionsForm(Form):
+
+    custom_actions = JSONField()
+
+    def clean_custom_actions(self):
+        data = self.cleaned_data.get("custom_actions")
+        if isinstance(data, str):
+            if data != "":
+                try:
+                    data = json_loads(data)
+                except Exception as e:
+                    logger.error(f"Could not parse custom_actions as json: {str(e)}")
+                    self.add_error('custom_actions', "This field must be a valid list.")
+                    return list()
+            else:
+                data = list()
+        elif not isinstance(data, list):
+                self.add_error('custom_actions', "This field must be a list.")
+
+        for i, condition_block in enumerate(data):
+            always_count = 0
+            for j, condition_line in enumerate(condition_block):
+                condition_line_form = RsyslogConditionForm(condition_line, auto_id=False)
+                if not condition_line_form.is_valid():
+                    condition_block[j] = condition_line_form.as_json()
+                    self.add_error('custom_actions', "Validation error")
+
+                # Verify number and order of "always" condition in a group
+                if condition_line.get("condition") == "always":
+                    always_count += 1
+                    if always_count > 1:
+                        condition_block[j]['errors'] = {
+                            'field' : "condition",
+                            'message': "Only one 'Always' condition is allowed per group"
+                        }
+                        self.add_error('custom_actions', "Only one 'Always' condition is allowed per group")
+                    if always_count >= 1 and j != len(condition_block) - 1:
+                        condition_block[j]['errors'] = {
+                            'field' : "condition",
+                            'message': "The 'Always' condition must be the last rule in the group"
+                        }
+                        self.add_error('custom_actions', "The 'Always' condition must be the last rule in the group")
+            data[i]
+        return data
+
+    def as_json(self):
+        """ Format as json """
+        result = []
+        for condition_block in self.data.get("custom_actions", []):
+            block_list = []
+            for condition_line in condition_block:
+                block_list.append(RsyslogConditionForm(condition_line, auto_id=False).as_json())
+
+            result.append({
+                'lines': block_list,
+                'pk': get_random_string(length=5)
+            })
+        return result
+
+
+class RsyslogConditionForm(Form):
+    CUSTOM_CONDITION_CHOICES = (
+        ('always', "Always"),
+        ('exists', "Exists"),
+        ('not exists', "Not exists"),
+        ('equals', "Equals"),
+        ('iequals', "iEquals"),
+        ('contains', "Contains"),
+        ('icontains', "iContains"),
+        ('regex', "Regex"),
+        ('iregex', "iRegex")
+    )
+    CUSTOM_ACTION_CHOICES = (
+        ('set', "Set"),
+        ('unset', "Unset"),
+        ('drop', "Drop")
+    )
+
+    condition = ChoiceField(
+        label="Condition",
+        widget=Select(attrs={'class': 'form-control condition', 'v-model': 'condition_line.condition'}),
+        choices=CUSTOM_CONDITION_CHOICES
+    )
+    condition_variable = CharField(label="Variable", required=False,
+        widget=TextInput(attrs={
+            'class': 'form-control condition_variable', 'v-model': 'condition_line.condition_variable',
+            ':disabled': "condition_line.condition === 'always'", 'placeholder': "ex: $!source!ip"
+        })
+    )
+    condition_value = CharField(label="Value", required=False,
+        widget=TextInput(attrs={'class': 'form-control condition_value', 'v-model': 'condition_line.condition_value',
+            ':disabled': "['always', 'exists', 'not exists'].includes(condition_line.condition)", 'placeholder': "Enter value"
+        })
+    )
+    action = ChoiceField(
+        label="Action",
+        widget=Select(attrs={'class': 'form-control action', 'v-model': 'condition_line.action'}),
+        choices=CUSTOM_ACTION_CHOICES
+    )
+    result_variable = CharField(label="Result Variable", required=False,
+        widget=TextInput(attrs={'class': 'form-control result_variable', 'v-model': 'condition_line.result_variable',
+            ':disabled': "condition_line.action === 'drop'", 'placeholder': "ex: $internal!log"
+        })
+    )
+    result_value = CharField(label="Result Value", required=False,
+        widget=TextInput(attrs={'class': 'form-control result_value', 'v-model': 'condition_line.result_value',
+            ':disabled': "['unset', 'drop'].includes(condition_line.action)", 'placeholder': "Enter value or variable"
+        })
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        errors = []
+        # Verify mandatory arguments
+        if not cleaned_data.get("condition"):
+            errors.append({'field' : "condition", 'message': "This field is mandatory"})
+            self.add_error('condition', "This field is mandatory")
+        if not cleaned_data.get("action"):
+            errors.append({'field' : "action", 'message': "This field is mandatory"})
+            self.add_error('action', "This field is mandatory")
+        if cleaned_data.get("condition") != "always" and not cleaned_data.get("condition_variable"):
+            errors.append({'field' : "condition_variable", 'message': "This field is mandatory"})
+            self.add_error('condition_variable', "This field is mandatory")
+        if cleaned_data.get("condition") not in ['always', 'exists', 'not exists'] and not cleaned_data.get("condition_value"):
+            errors.append({'field' : "condition_value", 'message': "This field is mandatory"})
+            self.add_error('condition_value', "This field is mandatory")
+        if cleaned_data.get("action") in ['set', 'unset'] and not cleaned_data.get("result_variable"):
+            errors.append({'field' : "condition_value", 'message': "This field is mandatory"})
+            self.add_error('result_variable', "This field is mandatory")
+        if cleaned_data.get("action") == 'set' and not cleaned_data.get("result_value"):
+            errors.append({'field' : "result_value", 'message': "This field is mandatory"})
+            self.add_error('result_value', "This field is mandatory")
+
+        cleaned_data['errors'] = errors
+        return cleaned_data
+
+    def as_json(self):
+        """ Format as json """
+        result = {}
+        if hasattr(self, "cleaned_data"):
+            result.update(self.cleaned_data)
+        elif self.data:
+            result.update(self.data)
+        else:
+            result.update(self.initial)
+
+        if result.get("errors") is None:
+            result['errors'] = []
+        return result
+
+    def as_table_headers(self):
+        """ Format field names as table head """
+        result = "<tr><th></th>\n"
+        for field in self:
+            result += f"<th>{field.label}</th>\n"
+        result += "<th>Delete</th></tr>\n"
+        return result
+
+    def as_table_footers(self):
+        result = f'<tr><td></td>{"".join("<td></td>" for _ in self)}' \
+                 '<td><button type="button" v-on:click="add_line(condition_block.pk, block_index)" class="btn btn-success btn-flat">' \
+                 '<i class="fa fa-plus">&nbsp;&nbsp;</i> Add</button></td></tr>'
+        return result
+
+    def as_table_td(self):
+        """ Format fields as a table with <td></td> """
+        result = '<td style="width: 30px; text-align: center; vertical-align: middle; border-right: 1px solid #ddd;">' \
+                 '<i class="fas fa-grip-vertical text-muted" style="cursor: move;"></i></td>'
+        for field in self:
+            result += f"<td>{field}\n"
+            result += f'<span class="text-danger" v-html="render_error(condition_line.errors, \'{field.name}\')"></span>\n</td>\n'
+        result += '<td><button class="btn btn-xs btn-danger" type="button" v-on:click="remove_line(condition_block.pk, line_index)">' \
+                  '<i class="fas fa-trash-alt"></i> Delete</button></td>'
+        return result

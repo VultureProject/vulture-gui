@@ -37,6 +37,7 @@ from darwin.policy.models import DarwinBuffering, DarwinPolicy
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener, FILEBEAT_MODULE_CONFIG
+from services.rsyslogd.form import CustomActionsForm, RsyslogConditionForm
 from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
@@ -84,9 +85,11 @@ def frontend_clone(request, object_id=None):
     reputationctx_form_list = []
     # Do NOT clone listeners to prevent overriding
     for h_tmp in frontend.headers.all():
-        header_form_list.append(HeaderForm(instance=h_tmp))
+        header_form_list.append(HeaderForm(instance=h_tmp, auto_id=False))
     for r_tmp in frontend.frontendreputationcontext_set.all():
         reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
+
+    custom_actions = CustomActionsForm({'custom_actions': frontend.custom_actions}, auto_id=False)
 
     filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
     if frontend.filebeat_module and frontend.filebeat_config:
@@ -99,10 +102,12 @@ def frontend_clone(request, object_id=None):
 
     return render(request, 'services/frontend_edit.html', {
         'form': form, 'listener_form': ListenerForm(),
-        'headers': header_form_list, 'header_form': HeaderForm(),
+        'headers': header_form_list, 'header_form': HeaderForm(auto_id=False),
         'reputation_contexts': reputationctx_form_list,
         'reputationctx_form': FrontendReputationContextForm(),
         'log_om_table': LogOMTableForm(auto_id=False),
+        'custom_actions': custom_actions,
+        'condition_line_form': RsyslogConditionForm(auto_id=False),
         'filebeat_module_config': filebeat_configs,
         'object_id': ""
     })
@@ -280,16 +285,16 @@ def frontend_edit(request, object_id=None, api=False):
         # If it is a new object, add default-example headers
         if not front and request.method == "GET":
             for header in DEFAULT_FRONTEND_HEADERS:
-                header_form_list.append(HeaderForm(header))
+                header_form_list.append(HeaderForm(header, auto_id=False))
 
         if not reputationctx_form_list and front and front.pk:
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
         if hasattr(form, "cleaned_data"):
-            custom_actions = form.cleaned_data.get("custom_actions", [])
+            custom_actions = custom_actions_form
         else:
-            custom_actions = form.initial.get("custom_actions", [])
+            custom_actions = CustomActionsForm({'custom_actions': form.initial.get("custom_actions", [])}, auto_id=False)
 
         filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
         if front and front.filebeat_module and front.filebeat_config:
@@ -297,11 +302,12 @@ def frontend_edit(request, object_id=None, api=False):
 
         return render(request, 'services/frontend_edit.html',
                       {'form': form, 'listeners': listener_form_list, 'listener_form': ListenerForm(),
-                       'headers': header_form_list, 'header_form': HeaderForm(),
+                       'headers': header_form_list, 'header_form': HeaderForm(auto_id=False),
                        'reputation_contexts': reputationctx_form_list,
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
                        'custom_actions': custom_actions,
+                       'condition_line_form': RsyslogConditionForm(auto_id=False),
                        'filebeat_module_config': filebeat_configs,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 
@@ -416,6 +422,10 @@ def frontend_edit(request, object_id=None, api=False):
                             node_listeners[nic.node] = list()
                         node_listeners[nic.node].append(listener_obj)
 
+        custom_actions_form = CustomActionsForm({'custom_actions': json_loads(form.data.get('custom_actions'))})
+        if not custom_actions_form.is_valid():
+            form.add_error("custom_actions", custom_actions_form.errors.as_json() if api else [error for error_list in custom_actions_form.errors.as_data().values() for error in error_list])
+
         old_nodes = frontend.get_nodes() if frontend else []
         old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.has_rsyslog_conf else ""
         old_filebeat_filename = frontend.get_filebeat_base_filename() if frontend and frontend.has_filebeat_conf else ""
@@ -436,6 +446,7 @@ def frontend_edit(request, object_id=None, api=False):
         # Save the form to get an id if there is not already one
         frontend = form.save(commit=False)
         frontend.configuration = {}
+        frontend.custom_actions = custom_actions_form.cleaned_data.get('custom_actions', [])
 
         try:
             """ For each node, the conf differs if listener chosen """
