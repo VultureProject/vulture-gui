@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - [API_PARSER] [CROWDSTRIKE] Add identities to fetched information
+- [FRONTEND] New Rsyslog custom actions
 ### Changed
 - [API_PARSER] [GATEWATCHER_ALERTS] Only fetch at most 1 hour time ranges
 ### Fixed
