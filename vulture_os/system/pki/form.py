@@ -54,10 +54,6 @@ class X509InternalCertificateForm(ModelForm):
             'cn': TextInput(attrs={'class': 'form-control'})
         }
 
-    def clean_name(self):
-        """ Prohibit spaces in X509Certificate name, replace them by _ """
-        return self.cleaned_data['name'].replace(' ', '_')
-
 
 class X509ExternalCertificateForm(ModelForm):
 
@@ -78,10 +74,6 @@ class X509ExternalCertificateForm(ModelForm):
             'crl_uri': TextInput(attrs={'class': 'form-control'}),
             'crl': Textarea(attrs={'class': 'form-control'})
         }
-
-    def clean_name(self):
-        """ Prohibit spaces in X509Certificate name, replace them by _ """
-        return self.cleaned_data['name'].replace(' ', '_')
 
     def clean_cert(self):
         """ Ensure cert is a valid PEM certificate

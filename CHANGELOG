@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [LOG_FORMAT] [HAPROXY] Use correct log-format field for haproxy HTTP path only
 - [PORTAL] [JWT] Correctly write IDP certificate files on system for JWT validation
 - [LOGFWD] [FORM] Avoid KeyError exceptions when updating a LogForwarder
-- [SYSTEM] [PKI] Prohibit spaces in X509Certificate name
+- [SYSTEM] [PKI] Correctly handle whitespaces in X509Certificate filenames
 
 
 ## [2.30.0]

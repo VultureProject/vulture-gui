@@ -193,7 +193,7 @@ def delete_conf(logger, filenames):
 
     allowed_files_regex = ["{}/\w+_\d+\.html".format(ERROR_TPL_PATH),
                            "{}/.*\.(mmdb|netset|lookup)".format(REPUTATION_CTX_DB_PATH),
-                           "{}/[\w\_\-\. ]+-\d+\.(chain|crt|pem|key|pub)".format(CERT_PATH),
+                           "{}/[\w\_\-\.]+-\d+\.(chain|crt|pem|key|pub)".format(CERT_PATH),
                            "{}/parser_[0-9]+\.rb".format(RSYSLOG_PATH),
                            "{}/f[\w-]+/f[\w-]+_[0-9]+.conf".format(DARWIN_PATH)]
 
