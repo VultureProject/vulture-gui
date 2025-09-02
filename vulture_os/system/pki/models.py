@@ -215,7 +215,9 @@ class X509Certificate(models.Model):
         return result
 
     def get_base_filename(self):
-        return "{}/{}-{}".format(CERT_PATH, self.name, self.id)
+        # replace whitespaces with underscores for filename
+        safe_name = "_".join(self.name.split())
+        return "{}/{}-{}".format(CERT_PATH, safe_name, self.id)
 
     def gen_letsencrypt(self, cn, name):
         """
