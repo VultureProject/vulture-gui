@@ -150,7 +150,11 @@ class GatewatcherAlertsParser(ApiParser):
 
     def execute(self):
         since = self.frontend.last_api_call or (timezone.now() - timedelta(hours=24))
-        to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=24))
+        to = min(timezone.now() - timedelta(minutes=5), since + timedelta(hours=1))
+
+        if to < since:
+            logger.info(f"[{__parser__}]:execute: The last_api_call {since} is less than 5 minutes ago. Cannot retrieve new logs.", extra={'frontend': str(self.frontend)})
+            return
 
         logs = self.get_logs(since, to)
         self.update_lock()
