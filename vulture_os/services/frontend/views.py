@@ -89,8 +89,6 @@ def frontend_clone(request, object_id=None):
     for r_tmp in frontend.frontendreputationcontext_set.all():
         reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
-    custom_actions = CustomActionsForm({'custom_actions': frontend.custom_actions}, auto_id=False)
-
     filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
     if frontend.filebeat_module and frontend.filebeat_config:
         filebeat_configs[frontend.filebeat_module]=frontend.filebeat_config
@@ -106,7 +104,7 @@ def frontend_clone(request, object_id=None):
         'reputation_contexts': reputationctx_form_list,
         'reputationctx_form': FrontendReputationContextForm(),
         'log_om_table': LogOMTableForm(auto_id=False),
-        'custom_actions': custom_actions,
+        'custom_actions': CustomActionsForm({'custom_actions': frontend.custom_actions}, auto_id=False),
         'condition_line_form': RsyslogConditionForm(auto_id=False),
         'filebeat_module_config': filebeat_configs,
         'object_id': ""
@@ -291,10 +289,9 @@ def frontend_edit(request, object_id=None, api=False):
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
-        if hasattr(form, "cleaned_data"):
-            custom_actions = custom_actions_form
-        else:
-            custom_actions = CustomActionsForm({'custom_actions': form.initial.get("custom_actions", [])}, auto_id=False)
+        # If not a form error
+        if not hasattr(form, "cleaned_data"):
+            custom_actions_form = CustomActionsForm({'custom_actions': form.initial.get("custom_actions", [])}, auto_id=False)
 
         filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
         if front and front.filebeat_module and front.filebeat_config:
@@ -306,7 +303,7 @@ def frontend_edit(request, object_id=None, api=False):
                        'reputation_contexts': reputationctx_form_list,
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
-                       'custom_actions': custom_actions,
+                       'custom_actions': custom_actions_form,
                        'condition_line_form': RsyslogConditionForm(auto_id=False),
                        'filebeat_module_config': filebeat_configs,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
@@ -422,9 +419,9 @@ def frontend_edit(request, object_id=None, api=False):
                             node_listeners[nic.node] = list()
                         node_listeners[nic.node].append(listener_obj)
 
-        custom_actions_form = CustomActionsForm({'custom_actions': json_loads(form.data.get('custom_actions'))})
+        custom_actions_form = CustomActionsForm({'custom_actions': form.data.get("custom_actions", [])}, auto_id=False)
         if not custom_actions_form.is_valid():
-            form.add_error("custom_actions", custom_actions_form.errors.as_json() if api else [error for error_list in custom_actions_form.errors.as_data().values() for error in error_list])
+            form.add_error("custom_actions", custom_actions_form.errors.get("custom_actions", []) if api else custom_actions_form.errors.as_data().get("custom_actions", []))
 
         old_nodes = frontend.get_nodes() if frontend else []
         old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.has_rsyslog_conf else ""
@@ -446,7 +443,7 @@ def frontend_edit(request, object_id=None, api=False):
         # Save the form to get an id if there is not already one
         frontend = form.save(commit=False)
         frontend.configuration = {}
-        frontend.custom_actions = custom_actions_form.cleaned_data.get('custom_actions', [])
+        frontend.custom_actions = custom_actions_form.cleaned_data.get("custom_actions", [])
 
         try:
             """ For each node, the conf differs if listener chosen """
