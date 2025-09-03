@@ -288,13 +288,6 @@ class Authentication(object):
     def del_redirect_url(self):
         self.redis_portal_session.del_redirect_url(self.workflow.id)
 
-    def get_url_portal(self):
-        try:
-            # FIXME : auth_portal attribute ?
-            return self.workflow.auth_portal or self.workflow.get_redirect_uri()
-        except:
-            return self.workflow.get_redirect_uri()
-
     def get_redirect_url_domain(self):
         return split_domain(self.get_redirect_url())
 
@@ -302,14 +295,14 @@ class Authentication(object):
         if not self.credentials[0]:
             try:
                 self.retrieve_credentials(request)
-            except:
+            except Exception:
                 self.credentials[0] = self.redis_portal_session.get_login(self.backend_id)
         logger.debug("AUTH::get_credentials: User's login successfully retrieved from Redis session : '{}'".format(
             self.credentials[0]))
         if not self.credentials[1]:
             try:
                 self.retrieve_credentials(request)
-            except:
+            except Exception:
                 if not self.backend_id:
                     self.backend_id = self.authenticated_on_backend()
                 self.credentials[1] = self.redis_portal_session.getAutologonPassword(self.backend_id,

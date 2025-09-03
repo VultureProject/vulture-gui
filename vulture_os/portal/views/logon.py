@@ -287,7 +287,7 @@ def openid_callback(request, workflow_id, repo_id):
 
 def openid_authorize(request, portal_id):
     try:
-        scheme = request.headers['x-forwarded-proto']
+        _ = request.headers['x-forwarded-proto']
     except KeyError:
         logger.error("PORTAL::openid_authorize: could not get scheme from request")
         return HttpResponseServerError()
@@ -436,7 +436,7 @@ def openid_token(request, portal_id):
 
         elif request.POST.get('grant_type') == "refresh_token":
             # TODO This assumes all applications are considered public, as no client_secret is enforced
-            if client_secret != None:
+            if client_secret is not None:
                 assert client_secret == portal.oauth_client_secret, "Invalid client_secret."
 
             refresh_token = request.POST.get('refresh_token')
@@ -448,7 +448,7 @@ def openid_token(request, portal_id):
             assert (refresh['portal_id'] == f"portal_{portal_id}"), "Invalid IDP."
 
 
-            if refresh['overridden_by'] != None:
+            if refresh['overridden_by'] is not None:
                 logger.error("PORTAL::openid_token: The refresh token provided has been expired.")
 
                 # Delete this invalid refresh token
@@ -456,11 +456,11 @@ def openid_token(request, portal_id):
                 refresh.delete()
 
                 # Delete every token pair in the chain
-                while refresh['overridden_by'] != None:
+                while refresh['overridden_by'] is not None:
                     refresh_token = refresh['overridden_by']
                     refresh = REDISRefreshSession(REDISBase(), f"refresh_{refresh_token}")
 
-                    if refresh['overridden_by'] == None:
+                    if refresh['overridden_by'] is None:
                         # Delete current active access token
                         logger.warn(f"PORTAL::openid_token: invalidating access_token {refresh['access_token']}")
                         REDISOauth2Session(REDISBase(), f"oauth2_{refresh['access_token']}").delete()
@@ -540,7 +540,7 @@ def openid_token(request, portal_id):
 def openid_userinfo(request, portal_id=None, workflow_id=None):
     token = None
     try:
-        scheme = request.headers['x-forwarded-proto']
+        _ = request.headers['x-forwarded-proto']
     except KeyError:
         logger.error("PORTAL::openid_userinfo: could not get scheme from request")
         return HttpResponseServerError()
@@ -679,7 +679,7 @@ def authenticate(request, workflow, portal_cookie, token_name, double_auth_only=
                     logger.debug(f"Filtered user scopes are: {user_scope}")
 
                     # Register authentication results in Redis
-                    portal_cookie, oauth2_token, refresh_token = authentication.register_user(authentication_results, user_scope)
+                    portal_cookie, oauth2_token, _ = authentication.register_user(authentication_results, user_scope)
                     logger.debug(f"PORTAL::log_in: User {authentication.credentials[0]} successfully registered in Redis")
 
                     if authentication_results.get('password_expired', None):
@@ -978,12 +978,6 @@ def log_in(request, workflow_id=None):
         return HttpResponseServerError()
 
     response = authenticate(request, workflow, portal_cookie, token_name, keep_method=True)
-
-    try:
-        kerberos_token_resp = authentication_results['data']['token_resp']
-        response['WWW-Authenticate'] = 'Negotiate ' + str(kerberos_token_resp)
-    except:
-        pass
 
     logger.info("PORTAL::log_in: Return response {}".format(response))
     return set_portal_cookie(response, portal_cookie_name, portal_cookie, connection_url)

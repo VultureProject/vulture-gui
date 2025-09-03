@@ -255,8 +255,8 @@ class REDISPortalSession(REDISSession):
                 if key.startswith("portal_") and value == "1":
                     self.delete_in_redis(f"{self.key}_{key}")
             return self.handler.delete(self.key)
-        except:
-            logger.info("REDISPortalSession: portal_session '{}' cannot be destroyed".format(self.key))
+        except Exception as e:
+            logger.warning(f"REDISPortalSession: portal_session '{self.key}' cannot be destroyed -> {e}")
             pass
 
     """ Verify in REDIS if the portal_cookie is present """

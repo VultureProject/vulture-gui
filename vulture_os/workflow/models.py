@@ -374,10 +374,10 @@ class Workflow(models.Model):
 
     def get_redirect_uri(self):
         listener = None
-        for l in self.frontend.listener_set.all().only('tls_profiles', 'port'):
+        for obj in self.frontend.listener_set.all().only('tls_profiles', 'port'):
             """ TLS priority """
-            if l.tls_profiles.count() > 0:
-                listener = l
+            if obj.tls_profiles.count() > 0:
+                listener = obj
 
         """ No TLS listener, get the first one """
         if not listener:
