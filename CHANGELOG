@@ -15,11 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SYSTEM] [PKI] Correctly handle whitespaces in X509Certificate filenames
 
 
-## [2.30.0]
+## [2.30.0] - 2025-09-04
 ### Added
 - [LOG_FORWARDER] [SENTINEL] Add new Log Forwarder to Vulture GUI
 ### Fixed
-- [API_PARSER] [GATEWATCHER_ALERTS] Reduce the page size to 10 to avoid timeout errors
 - [PF] [CONF] Add missing CARP rule to allow inter-cluster broadcasting and enable correct MASTER/BACKUP switch
 - [NET] [CARP] Correctly clean system configurations when removing some interface(s) from an existing CARP conf
 - [NET] [CARP] Correctly use existing carp password and priorities for added interface(s) on an existing CARP conf
