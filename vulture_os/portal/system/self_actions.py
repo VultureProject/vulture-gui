@@ -47,7 +47,7 @@ from workflow.models import Workflow
 from authentication.openid.models import OpenIDRepository
 
 # Required exceptions imports
-from portal.system.exceptions import RedirectionNeededError, PasswordMatchError, PasswordEmptyError, TokenNotFoundError
+from portal.system.exceptions import RedirectionNeededError, PasswordMatchError, PasswordEmptyError, TokenNotFoundError, ACLError
 from toolkit.auth.exceptions import AuthenticationError, AuthenticationFailed, UserNotFound
 
 # Extern modules imports
@@ -101,7 +101,6 @@ class SELFService(object):
 
 
     def get_user_by_username(self, repositories, username):
-        e = None
         for repo in repositories:
             try:
                 if repo.subtype == "internal":
@@ -168,11 +167,11 @@ class SELFService(object):
         portal_cookie_name = self.workflow.authentication.auth_cookie_name or self.config.portal_cookie_name
         """ Get portal cookie value (if exists) """
         portal_cookie = request.COOKIES.get(portal_cookie_name, None)
-        if portal_cookie == None:
+        if portal_cookie is None:
             raise TokenNotFoundError("User has no session")
 
         self.redis_portal_session = REDISPortalSession(self.redis_base, portal_cookie)
-        if self.redis_portal_session == None:
+        if self.redis_portal_session is None:
             raise TokenNotFoundError("Invalid portal session")
 
         if not self.redis_portal_session.authenticated_app(self.workflow.id):
@@ -181,6 +180,7 @@ class SELFService(object):
         # And get username from redis_portal_session
         self.backend_id = self.redis_portal_session.get_auth_backend(self.workflow.id)
         self.username = self.redis_portal_session.get_login(str(self.backend_id))
+        self.user_filtered_user_infos = self.redis_portal_session.get_filtered_user_infos(self.backend_id)
 
         assert self.username, "Unable to find username in portal session !"
         return self.username
@@ -196,6 +196,11 @@ class SELFService(object):
             repo_id = OpenIDRepository.objects.get(client_id=self.workflow.authentication.oauth_client_id).id
 
         for workflow in Workflow.objects.filter(authentication__repositories_id__exact=repo_id, enabled=True):
+            try:
+                workflow.validate_scope(self.user_filtered_user_infos)
+            except ACLError:
+                logger.info(f"User {self.username} doesn't have access to app {workflow}, skipping...")
+                continue
             # Workflow links needs to go through OpenID redirection if that was the repo used to authenticate
             if self.workflow.authentication.enable_external or backend_subtype == "openid":
                 port = workflow.frontend.listener_set.first().port
@@ -325,33 +330,6 @@ class SELFServiceChange(SELFService):
         new_passwd = request.POST[INPUT_PASSWORD_1]
 
         rdm = (request.GET.get(RESET_PASSWORD_NAME, None) or request.POST.get(RESET_PASSWORD_NAME, None))
-
-        # Check if password meets required complexity
-        upper_case = 0
-        lower_case = 0
-        number = 0
-        symbol = 0
-
-        # min_len = int(self.workflow.pw_min_len)
-        # min_upper = int(self.workflow.pw_min_upper)
-        # min_lower = int(self.workflow.pw_min_lower)
-        # min_number = int(self.workflow.pw_min_number)
-        # min_symbol = int(self.workflow.pw_min_symbol)
-        #
-        # for i in new_passwd:
-        #     if i.isupper():
-        #         upper_case += 1
-        #     elif i.islower():
-        #         lower_case += 1
-        #     elif i.isdigit():
-        #         number += 1
-        #     else:
-        #         symbol += 1
-        #
-        # if not (len(
-        #         new_passwd) >= min_len and upper_case >= min_upper and lower_case >= min_lower and number >= min_number and symbol >= min_symbol):
-        #     logger.info("SELF::change_password: Password is too weak")
-        #     raise AuthenticationError("Password do not meet complexity requirements")
 
         if self.backend.subtype == "internal":
             user = User.objects.get(username=str(self.username))

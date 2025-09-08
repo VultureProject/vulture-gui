@@ -255,8 +255,8 @@ class REDISPortalSession(REDISSession):
                 if key.startswith("portal_") and value == "1":
                     self.delete_in_redis(f"{self.key}_{key}")
             return self.handler.delete(self.key)
-        except:
-            logger.info("REDISPortalSession: portal_session '{}' cannot be destroyed".format(self.key))
+        except Exception as e:
+            logger.warning(f"REDISPortalSession: portal_session '{self.key}' cannot be destroyed -> {e}")
             pass
 
     """ Verify in REDIS if the portal_cookie is present """
@@ -317,6 +317,13 @@ class REDISPortalSession(REDISSession):
     def set_user_infos(self, backend_id, user_infos):
         self.keys[f'user_infos_{backend_id}'] = user_infos
         return self.handler.hset(self.key, f'user_infos_{backend_id}', json.dumps(user_infos or {}))
+
+    def get_filtered_user_infos(self, backend_id):
+        return json.loads(self.handler.hget(self.key, f'user_infos_filtered_{backend_id}') or "{}")
+
+    def set_filtered_user_infos(self, backend_id, filtered_claims):
+        self.keys[f'user_infos_filtered_{backend_id}'] = filtered_claims
+        return self.handler.hset(self.key, f'user_infos_filtered_{backend_id}', json.dumps(filtered_claims or {}))
 
     def delete_key(self, key):
         # Remove key in keys attribute to prevent cache re-use
@@ -398,7 +405,7 @@ class REDISPortalSession(REDISSession):
         self.write_in_redis(timeout)
 
     def register_authentication(self, app_id, app_name, backend_id, dbauthentication_required, username, password,
-                                oauth2_token, refresh_token, authentication_datas, timeout):
+                                oauth2_token, refresh_token, authentication_datas, filtered_claims, timeout):
         if dbauthentication_required:
             self.keys[str(app_id)] = 0
         else:
@@ -425,6 +432,9 @@ class REDISPortalSession(REDISSession):
         #self.keys['user_email'] = authentication_datas.get('user_email', 'N/A')
         # Save all user infos
         self.set_user_infos(backend_id, authentication_datas)
+
+        # Save filtered claims
+        self.set_filtered_user_infos(backend_id, filtered_claims)
 
         if password:
             # Encrypt the password with the backend id and user login and store it in portal session

@@ -87,6 +87,9 @@ class Authentication(object):
     def get_user_infos(self, workflow_id):
         return self.redis_portal_session.get_user_infos(self.redis_portal_session.get_auth_backend(workflow_id))
 
+    def get_user_filtered_claims(self, workflow_id):
+        return self.redis_portal_session.get_filtered_user_infos(self.redis_portal_session.get_auth_backend(workflow_id))
+
     def double_authentication_required(self):
         return self.workflow.authentication.otp_repository is not None and \
             not self.redis_portal_session.is_double_authenticated(self.workflow.authentication.otp_repository.id)
@@ -211,6 +214,7 @@ class Authentication(object):
                                                                           self.oauth2_token,
                                                                           self.refresh_token,
                                                                           authentication_results,
+                                                                          oauth2_scope,
                                                                           self.workflow.authentication.auth_timeout)
 
         logger.debug("AUTH::register_user: Authentication results successfully written in Redis portal session")
@@ -284,13 +288,6 @@ class Authentication(object):
     def del_redirect_url(self):
         self.redis_portal_session.del_redirect_url(self.workflow.id)
 
-    def get_url_portal(self):
-        try:
-            # FIXME : auth_portal attribute ?
-            return self.workflow.auth_portal or self.workflow.get_redirect_uri()
-        except:
-            return self.workflow.get_redirect_uri()
-
     def get_redirect_url_domain(self):
         return split_domain(self.get_redirect_url())
 
@@ -298,14 +295,14 @@ class Authentication(object):
         if not self.credentials[0]:
             try:
                 self.retrieve_credentials(request)
-            except:
+            except Exception:
                 self.credentials[0] = self.redis_portal_session.get_login(self.backend_id)
         logger.debug("AUTH::get_credentials: User's login successfully retrieved from Redis session : '{}'".format(
             self.credentials[0]))
         if not self.credentials[1]:
             try:
                 self.retrieve_credentials(request)
-            except:
+            except Exception:
                 if not self.backend_id:
                     self.backend_id = self.authenticated_on_backend()
                 self.credentials[1] = self.redis_portal_session.getAutologonPassword(self.backend_id,
