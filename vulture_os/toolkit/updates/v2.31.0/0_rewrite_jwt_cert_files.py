@@ -51,12 +51,13 @@ if __name__ == "__main__":
             reload_haproxy = False
             print("Rewriting OpenID repos' JWT cert files...")
             for repository in OpenIDRepository.objects.filter(enable_jwt=True):
-                print(f"Rewriting {repository.name} JWT certs...")
-                repository.write_jwt_certificate()
-                for workflow in Workflow.objects.filter(authentication__repositories=repository):
-                    reload_haproxy = True
-                    print(f"Reloading Workflow configuration {workflow.name}...")
-                    node.api_request("workflow.workflow.build_conf", workflow.pk)
+                if OpenIDRepository.jwt_validate_with_certificate(repository.jwt_signature_type):
+                    print(f"Rewriting {repository.name} JWT certs...")
+                    repository.write_jwt_certificate()
+                    for workflow in Workflow.objects.filter(authentication__repositories=repository):
+                        reload_haproxy = True
+                        print(f"Reloading Workflow configuration {workflow.name}...")
+                        node.api_request("workflow.workflow.build_conf", workflow.pk)
             if reload_haproxy:
                 print("Reloading Haproxy service...")
                 node.api_request("services.haproxy.haproxy.reload_service")
