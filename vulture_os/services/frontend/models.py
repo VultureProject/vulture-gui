@@ -2128,6 +2128,8 @@ class Frontend(RsyslogQueue, models.Model):
         """
         result = ""
         logger.debug(f"[RENDER CUSTOM ACTIONS] self.custom_actions : {self.custom_actions}")
+
+        custom_actions = []
         for condition_block in self.custom_actions:
             if not len(condition_block):
                 continue
@@ -2136,10 +2138,9 @@ class Frontend(RsyslogQueue, models.Model):
             for condition_line in condition_block:
                 cond_str = ""
                 comment = ""
-                # Do not quote variable name
-                if condition_line['condition_value'] and condition_line['condition_value'][0] != "$" \
-                and condition_line['condition'] not in ["iequals", "contains", "icontains"]:
-                    condition_line['condition_value'] = '"' + condition_line['condition_value'].replace('$', '\$') + '"'
+                # Escape '$' sign
+                if condition_line['condition_value']:
+                    condition_line['condition_value'] = condition_line['condition_value'].replace('$', '\$')
                 match condition_line['condition']:
                     case "always":
                         cond_str = ""
@@ -2151,7 +2152,7 @@ class Frontend(RsyslogQueue, models.Model):
                         cond_str = f"not exists({condition_line['condition_variable']})"
                         comment = "#not exists"
                     case "equals":
-                        cond_str = f"{condition_line['condition_variable']} == {condition_line['condition_value']}"
+                        cond_str = f"{condition_line['condition_variable']} == \"{condition_line['condition_value']}\""
                         comment = "#equals"
                     case "iequals":
                         cond_str = f"re_match_i({condition_line['condition_variable']}, \"^{condition_line['condition_value']}\$\")"
@@ -2163,10 +2164,10 @@ class Frontend(RsyslogQueue, models.Model):
                         cond_str = f"re_match_i({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"
                         comment = "#icontains"
                     case "regex":
-                        cond_str = f"re_match({condition_line['condition_variable']}, {condition_line['condition_value']})"
+                        cond_str = f"re_match({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
                         comment = "#regex"
                     case "iregex":
-                        cond_str = f"re_match_i({condition_line['condition_variable']}, {condition_line['condition_value']})"
+                        cond_str = f"re_match_i({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
                         comment = "#iregex"
 
                 action_str = ""
@@ -2187,19 +2188,11 @@ class Frontend(RsyslogQueue, models.Model):
                     'comment': comment
                 })
 
-            for i, condition in enumerate(conditions):
-                if i != 0:
-                    result += "} else "
-                if condition['condition'] == "":
-                    if len(conditions) > 1:
-                        result += "{" + f" {condition['comment']}\n"
-                else:
-                    result += f"if {condition['condition']} then " + "{" + f" {condition['comment']}\n"
+            custom_actions.append(conditions)
 
-                result += f"    {condition['action']}{';' if condition['action'] != 'stop' else ''}\n"
-
-                if i == len(conditions) - 1 and (len(conditions) > 1 or condition['condition'] != ""):
-                    result += "}\n"
+        jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
+        template = jinja2_env.get_template("custom_actions.tpl")
+        result = template.render({'custom_actions': custom_actions})
 
         logger.debug(f"[RENDER CUSTOM ACTIONS] result : {result}")
         return result
