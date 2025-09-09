@@ -220,37 +220,12 @@ class RsyslogConditionForm(Form):
         ('drop', "Drop")
     )
 
-    condition = ChoiceField(
-        label="Condition",
-        widget=Select(attrs={'class': 'form-control condition', 'v-model': 'condition_line.condition'}),
-        choices=CUSTOM_CONDITION_CHOICES
-    )
-    condition_variable = CharField(label="Variable", required=False,
-        widget=TextInput(attrs={
-            'class': 'form-control condition_variable', 'v-model': 'condition_line.condition_variable',
-            ':disabled': "condition_line.condition === 'always'", 'placeholder': "ex: $!source!ip"
-        })
-    )
-    condition_value = CharField(label="Value", required=False,
-        widget=TextInput(attrs={'class': 'form-control condition_value', 'v-model': 'condition_line.condition_value',
-            ':disabled': "['always', 'exists', 'not exists'].includes(condition_line.condition)", 'placeholder': "Enter value"
-        })
-    )
-    action = ChoiceField(
-        label="Action",
-        widget=Select(attrs={'class': 'form-control action', 'v-model': 'condition_line.action'}),
-        choices=CUSTOM_ACTION_CHOICES
-    )
-    result_variable = CharField(label="Result Variable", required=False,
-        widget=TextInput(attrs={'class': 'form-control result_variable', 'v-model': 'condition_line.result_variable',
-            ':disabled': "condition_line.action === 'drop'", 'placeholder': "ex: $internal!log"
-        })
-    )
-    result_value = CharField(label="Result Value", required=False,
-        widget=TextInput(attrs={'class': 'form-control result_value', 'v-model': 'condition_line.result_value',
-            ':disabled': "['unset', 'drop'].includes(condition_line.action)", 'placeholder': "Enter value or variable"
-        })
-    )
+    condition = ChoiceField(label="Condition", choices=CUSTOM_CONDITION_CHOICES)
+    condition_variable = CharField(label="Variable", required=False, widget=TextInput())
+    condition_value = CharField(label="Value", required=False, widget=TextInput())
+    action = ChoiceField(label="Action", choices=CUSTOM_ACTION_CHOICES)
+    result_variable = CharField(label="Result Variable", required=False)
+    result_value = CharField(label="Result Value", required=False)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -311,18 +286,5 @@ class RsyslogConditionForm(Form):
         return result
 
     def as_table_footers(self):
-        result = f'<tr><td></td>{"".join("<td></td>" for _ in self)}' \
-                 '<td><button type="button" v-on:click="add_line(condition_block.pk, block_index)" class="btn btn-success btn-flat">' \
-                 '<i class="fa fa-plus">&nbsp;&nbsp;</i> Add</button></td></tr>'
-        return result
-
-    def as_table_td(self):
-        """ Format fields as a table with <td></td> """
-        result = '<td style="width: 30px; text-align: center; vertical-align: middle; border-right: 1px solid #ddd;">' \
-                 '<i class="fas fa-grip-vertical text-muted" style="cursor: move;"></i></td>'
-        for field in self:
-            result += f"<td>{field}\n"
-            result += f'<span class="text-danger" v-html="render_error(condition_line.errors, \'{field.name}\')"></span>\n</td>\n'
-        result += '<td><button class="btn btn-xs btn-danger" type="button" v-on:click="remove_line(condition_block.pk, line_index)">' \
-                  '<i class="fas fa-trash-alt"></i> Delete</button></td>'
-        return result
+        """ Format fields as a table footer """
+        return f'<td></td>{"".join("<td></td>" for _ in self)}'

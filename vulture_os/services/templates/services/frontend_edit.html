@@ -1092,53 +1092,7 @@
                   <div class="tab-pane" id="tab_custom_rsyslog">
                     {{ form.custom_actions }}
                     {{ form.custom_actions.errors|safe }}
-                    <section class="content form-horizontal" id="custom_actions_vue">
-                      <div v-if="global_errors && global_errors.length > 0" class="alert alert-danger alert-dismissible" role="alert">
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                        <strong>{% translate "Global Errors" %}:</strong>
-                        <ul class="mb-0">
-                          <li v-for="err in global_errors" :key="err.message">
-                            <span v-html="err.message"></span>
-                          </li>
-                        </ul>
-                      </div>
-                      <div class="row logging-conf">
-                        <div class="col-md-12" id="condition-list">
-                          <div v-for="(condition_block, block_index) in condition_blocks" class="panel panel-bordered-primary condition_group" style="background-color: rgba(250,240,210,.5)" :data-index="block_index">
-                            <div class="panel-heading">
-                              <div class="panel-control">
-                                <button type="button" class="btn btn-xs btn-danger btn-flat" v-on:click="remove_condition_block(condition_block.pk)">
-                                  <i class="fas fa-trash-alt"></i>
-                                </button>
-                              </div>
-                            </div>
-                            <div class="panel-body">
-                              <table class="table" style="margin-bottom: 0px !important">
-                                <thead>
-                                  {{ condition_line_form.as_table_headers|safe }}
-                                </thead>
-                                <tbody class="body_lines">
-                                  <tr v-for="(condition_line, line_index) in condition_block.lines" :id="render_id(block_index, line_index)"
-                                  :class="render_class_condition_line(condition_line.errors)" :data-index="line_index" draggable="true"
-                                  @dragstart="dragStart($event, block_index, line_index)" @dragover.prevent @drop="dragDrop($event, block_index, line_index)"
-                                  @dragenter="dragEnter($event)" class="condition_line">
-                                    {{ condition_line_form.as_table_td|safe }}
-                                  </tr>
-                                </tbody>
-                                <tfoot>
-                                  {{ condition_line_form.as_table_footers|safe }}
-                                </tfoot>
-                              </table>
-                            </div>
-                          </div>
-                          <button type="button" class="btn btn-warning btn-flat pull-right" v-on:click="add_condition_block">
-                            <i class="fas fa-plus">&nbsp;&nbsp;</i> {% translate "Add group" %}
-                          </button>
-                        </div>
-                      </div>
-                    </section>
+                    {% include "custom_actions.html" %}
                   </div> <!-- /.tab-pane tab_custom_rsyslog -->
                   <div class="tab-pane" id="tab_custom_haproxy">
                     <div class="row haproxy-conf">

@@ -1,0 +1,116 @@
+{% load i18n %}
+
+<section class="content form-horizontal" id="custom_actions_vue">
+  <div v-if="global_errors && global_errors.length > 0" class="alert alert-danger alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    <strong>{% translate "Global Errors" %}:</strong>
+    <ul class="mb-0">
+      <li v-for="err in global_errors" :key="err.message">
+        <span v-html="err.message"></span>
+      </li>
+    </ul>
+  </div>
+  <div class="row logging-conf">
+    <div class="col-md-12" id="condition-list">
+      <div v-for="(condition_block, block_index) in condition_blocks" class="panel panel-bordered-primary condition_group" :data-index="block_index">
+        <div class="panel-heading">
+          <div class="panel-control">
+            <button type="button" class="btn btn-xs btn-danger btn-flat" v-on:click="remove_condition_block(condition_block.pk)">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <table class="table table_opts">
+            <thead>
+              {{ condition_line_form.as_table_headers|safe }}
+            </thead>
+            <tbody class="body_lines">
+              <tr v-for="(condition_line, line_index) in condition_block.lines" :id="render_id(block_index, line_index)"
+              :class="render_class_condition_line(condition_line.errors)" :data-index="line_index" draggable="true"
+              @dragstart="dragStart($event, block_index, line_index)" @dragover.prevent @drop="dragDrop($event, block_index, line_index)"
+              @dragenter="dragEnter($event)" class="condition_line">
+                <!-- Dragging Icon -->
+                <td class="drag_opts">
+                  <i class="fas fa-grip-vertical text-muted"></i>
+                </td>
+
+                <!-- Condition -->
+                <td>
+                  <select class="form-control condition" v-model="condition_line.condition">
+                    <option value="always">{% translate "Always" %}</option>
+                    <option value="exists">{% translate "Exists" %}</option>
+                    <option value="not exists">{% translate "Not exists" %}</option>
+                    <option value="equals">{% translate "Equals" %}</option>
+                    <option value="iequals">{% translate "iEquals" %}</option>
+                    <option value="contains">{% translate "Contains" %}</option>
+                    <option value="icontains">{% translate "iContains" %}</option>
+                    <option value="regex">{% translate "Regex" %}</option>
+                    <option value="iregex">{% translate "iRegex" %}</option>
+                  </select>
+                  <span class="text-danger" v-html="render_error(condition_line.errors, 'condition')"></span>
+                </td>
+
+                <!-- Condition Variable -->
+                <td>
+                  <input type="text" class="form-control condition_variable" v-model="condition_line.condition_variable" :disabled="condition_line.condition === 'always'" placeholder="ex: $!source!ip" />
+                  <span class="text-danger" v-html="render_error(condition_line.errors, 'condition_variable')"></span>
+                </td>
+
+                <!-- Condition Value -->
+                <td>
+                  <input type="text" class="form-control condition_value" v-model="condition_line.condition_value" :disabled="['always', 'exists', 'not exists'].includes(condition_line.condition)" placeholder="{% translate 'Enter value' %}" />
+                  <span class="text-danger" v-html="render_error(condition_line.errors, 'condition_value')"></span>
+                </td>
+
+                <!-- Action -->
+                <td>
+                  <select class="form-control action" v-model="condition_line.action">
+                    <option value="set">{% translate "Set" %}</option>
+                    <option value="unset">{% translate "Unset" %}</option>
+                    <option value="drop">{% translate "Drop" %}</option>
+                  </select>
+                  <span class="text-danger" v-html="render_error(condition_line.errors, 'action')"></span>
+                </td>
+
+                <!-- Result Variable -->
+                <td>
+                  <input type="text" class="form-control result_variable" v-model="condition_line.result_variable" :disabled="condition_line.action === 'drop'" placeholder="ex: $internal!log" />
+                  <span class="text-danger" v-html="render_error(condition_line.errors, 'result_variable')"></span>
+                </td>
+
+                <!-- Result Value -->
+                <td>
+                  <input type="text" class="form-control result_value" v-model="condition_line.result_value" :disabled="['unset', 'drop'].includes(condition_line.action)" placeholder="{% translate 'Enter value or $var' %}" />
+                  <span class="text-danger" v-html="render_error(condition_line.errors, 'result_value')"></span>
+                </td>
+
+                <!-- Delete button -->
+                <td>
+                  <button class="btn btn-xs btn-danger" type="button" v-on:click="remove_line(condition_block.pk, line_index)">
+                    <i class="fas fa-trash-alt"></i> {% translate "Delete" %}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                {{ condition_line_form.as_table_footers|safe }}
+                <td>
+                  <button type="button" v-on:click="add_line(condition_block.pk, block_index)" class="btn btn-success btn-flat">
+                    <i class="fa fa-plus">&nbsp;&nbsp;</i> {% translate "Add" %}
+                  </button>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <button type="button" class="btn btn-warning btn-flat pull-right" v-on:click="add_condition_block">
+        <i class="fas fa-plus">&nbsp;&nbsp;</i> {% translate "Add group" %}
+      </button>
+    </div>
+  </div>
+</section>

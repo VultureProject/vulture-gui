@@ -791,6 +791,10 @@ ul li{
     background-color: rgba(250,240,210,.5);
 }
 
+.condition_group{
+    background-color: rgba(250,240,210,.5);
+}
+
 .condition_block > .panel-heading{
     height: 0px;
 }
@@ -809,6 +813,14 @@ ul li{
     border-width: 0 0 2px 2px;
 }
 
+.drag_opts{
+    width: 30px;
+    text-align: center;
+    vertical-align: middle;
+    border-right: 1px solid #ddd;
+    cursor: move;
+}
+
 #condition-list>:first-child::before{
     content: '';
     display: none;
@@ -819,7 +831,7 @@ ul li{
     border-color: #f99;
 }
 
-.table_acl{
+.table_acl, .table_opts{
     margin-bottom: 0px !important;
 }
 
