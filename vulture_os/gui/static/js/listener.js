@@ -860,8 +860,7 @@ var custom_actions_vue = new Vue({
   delimiters: ['${', '}'],
   data: {
     condition_blocks: custom_actions.length > 0 ? custom_actions : [],
-    global_errors: [],
-    preview: ""
+    global_errors: []
   },
 
   methods: {
@@ -871,123 +870,6 @@ var custom_actions_vue = new Vue({
 
     generate_id: function () {
       return Math.random().toString(36).substring(5);
-    },
-
-    render_config: function () {
-      if (jQuery.isEmptyObject(this.condition_blocks)) return;
-
-      let result = "";
-      let has_condition_line = false;
-
-      for (let condition_block of this.condition_blocks) {
-        if (!condition_block.lines.length) continue;
-
-        has_condition_line = true;
-
-        result += "# Block " + (this.get_block_index(condition_block.pk)) + "\n";
-
-        let conditions = [];
-        for (let condition_line of condition_block.lines) {
-          let condition = condition_line.condition;
-          let condition_var = condition_line.condition_variable;
-          let condition_val = condition_line.condition_value;
-          let action = condition_line.action;
-          let result_var = condition_line.result_variable;
-          let result_val = condition_line.result_value;
-
-          let cond_str = "";
-          let comment = "";
-
-          switch (condition) {
-            case "always":
-              cond_str = "";
-              comment = "#always";
-              break;
-            case "exists":
-              cond_str = `exists(${condition_var})`;
-              comment = "#exists";
-              break;
-            case "not exists":
-              cond_str = `not exists(${condition_var})`;
-              comment = "#not exists";
-              break;
-            case "equals":
-              cond_str = `${condition_var} == "${condition_val}"`;
-              comment = "#equals";
-              break;
-            case "iequals":
-              cond_str = `re_match_i(${condition_var}, "^${condition_val}$")`;
-              comment = "#iequals";
-              break;
-            case "contains":
-              cond_str = `re_match(${condition_var}, ".*${condition_val}.*")`;
-              comment = "#contains";
-              break;
-            case "icontains":
-              cond_str = `re_match_i(${condition_var}, ".*${condition_val}.*")`;
-              comment = "#icontains";
-              break;
-            case "regex":
-              cond_str = `re_match(${condition_var}, "${condition_val}")`;
-              comment = "#regex";
-              break;
-            case "iregex":
-              cond_str = `re_match_i(${condition_var}, "${condition_val}")`;
-              comment = "#iregex";
-              break;
-            default:
-              cond_str = "";
-              comment = "#unknown";
-          }
-
-          let action_str = "";
-          switch (action) {
-            case "set":
-              action_str = `set ${result_var} = "${result_val}"`;
-              break;
-            case "unset":
-              action_str = `unset ${result_var}`;
-              break;
-            case "drop":
-              action_str = "drop";
-              break;
-            default:
-              action_str = "noaction";
-          }
-
-          conditions.push({
-            condition: cond_str,
-            action: action_str,
-            comment: comment
-          });
-        }
-
-        for (let i = 0; i <= conditions.length - 1; i++) {
-          if (i !== 0) {
-            result += "} else "
-          }
-          if (conditions[i].condition === "") {
-            if (conditions.length !== 1) {
-              result += `{ ${conditions[i].comment}\n  `;
-            }
-          } else {
-            result += `if ${conditions[i].condition} then { ${conditions[i].comment}\n  `;
-          }
-          result += `${conditions[i].action};\n`;
-        }
-        if (conditions.length !== 1 || conditions[0].condition !== "") {
-          result += "}\n";
-        }
-      }
-
-      if (!has_condition_line) {
-        result = "# No configuration defined\n";
-      }
-
-      this.preview = result
-        .split('\n')
-        .map(line => line)
-        .join('\n');
     },
 
     get_block_index: function (block_id) {
@@ -1003,7 +885,6 @@ var custom_actions_vue = new Vue({
         pk: pk,
         lines: []
       });
-      // this.render_config();
       this.add_line(pk);
     },
 
@@ -1011,7 +892,6 @@ var custom_actions_vue = new Vue({
       let index = this.get_block_index(block_id);
       if (index !== -1) {
         this.condition_blocks.splice(index, 1);
-        this.render_config();
       }
     },
 
@@ -1030,18 +910,15 @@ var custom_actions_vue = new Vue({
       });
 
       this.$nextTick(() => {
-        $('.action, .condition').on('change', () => { this.reconstruct_configs(); this.render_config(); });
-        $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', () => { this.reconstruct_configs(); this.render_config(); });
+        $('.action, .condition').on('change', () => { this.reconstruct_configs(); });
+        $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', () => { this.reconstruct_configs(); });
       });
-
-      this.render_config();
     },
 
     remove_line: function (block_id, line_index) {
       let index = this.get_block_index(block_id);
       if (index !== -1) {
         this.condition_blocks[index].lines.splice(line_index, 1);
-        this.render_config();
       }
     },
 
@@ -1198,17 +1075,15 @@ var custom_actions_vue = new Vue({
 
       this.$nextTick(() => {
         this.reconstruct_configs();
-        this.render_config();
       });
     },
   },
 
   mounted: function () {
     this.$nextTick(() => {
-      $('.action, .condition').on('change', () => { this.reconstruct_configs(); this.render_config(); });
-      $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', () => { this.reconstruct_configs(); this.render_config(); });
+      $('.action, .condition').on('change', () => { this.reconstruct_configs(); });
+      $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', () => { this.reconstruct_configs(); });
     });
     this.reconstruct_configs();
-    this.render_config(); // no need to keep this after preview removal
   },
 });
