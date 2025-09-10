@@ -33,7 +33,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'vulture_os.settings')
 import django
 django.setup()
 
-from django.db.models import Q
 from system.cluster.models import Cluster
 from applications.reputation_ctx.models import ReputationContext
 
@@ -47,32 +46,28 @@ if __name__ == "__main__":
         print("Current node not found. Maybe the cluster has not been initialised yet.")
     else:
         try:
-            if ReputationContext.objects.filter(Q(name="Geolite2 Country")).exists():
-                    db = ReputationContext.objects.filter(Q(name="Geolite2 Country")).first()
-                    if db.internal is True:
-                        print("Modifying GeoLite Country default DB...")
-                        db.url = "https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz"
-                        db.auth_type = "basic"
-                        db.user = "YOURACCOUNTID"
-                        db.password = "YOURLICENSEKEY"
-                        db.description = "Maxmind DBs Geoip country database.\n" \
-                            "PLEASE FILL-IN YOUR PERSONAL ACCOUNDID AND LICENSEKEY TO USE THOSE DBS"
-                        db.enable_hour_download = False
-                        db.internal = False
-                        db.save()
-            if ReputationContext.objects.filter(Q(name="Geolite2 City")).exists():
-                    db = ReputationContext.objects.filter(Q(name="Geolite2 City")).first()
-                    if db.internal is True:
-                        print("Modifying GeoLite City default DB...")
-                        db.url = "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz"
-                        db.auth_type = "basic"
-                        db.user = "YOURACCOUNTID"
-                        db.password = "YOURLICENSEKEY"
-                        db.description = "Maxmind DBs Geoip city database.\n" \
-                            "PLEASE FILL-IN YOUR PERSONAL ACCOUNDID AND LICENSEKEY TO USE THOSE DBS"
-                        db.enable_hour_download = False
-                        db.internal = False
-                        db.save()
+            if db := ReputationContext.objects.filter(name="Geolite2 Country", internal=True).first():
+                print("Modifying GeoLite Country default DB...")
+                db.url = "https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz"
+                db.auth_type = "basic"
+                db.user = "YOURACCOUNTID"
+                db.password = "YOURLICENSEKEY"
+                db.description = "Maxmind DBs Geoip country database.\n" \
+                    "PLEASE FILL-IN YOUR PERSONAL ACCOUNDID AND LICENSEKEY TO USE THOSE DBS"
+                db.enable_hour_download = False
+                db.internal = False
+                db.save()
+            if db := ReputationContext.objects.filter(name="Geolite2 City", internal=True).first():
+                print("Modifying GeoLite City default DB...")
+                db.url = "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz"
+                db.auth_type = "basic"
+                db.user = "YOURACCOUNTID"
+                db.password = "YOURLICENSEKEY"
+                db.description = "Maxmind DBs Geoip city database.\n" \
+                    "PLEASE FILL-IN YOUR PERSONAL ACCOUNDID AND LICENSEKEY TO USE THOSE DBS"
+                db.enable_hour_download = False
+                db.internal = False
+                db.save()
         except Exception as e:
             print(f"Failed to update Reputation Contexts: {e}")
             print("Please relaunch this script after solving the issue.")
