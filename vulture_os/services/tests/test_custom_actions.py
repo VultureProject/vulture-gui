@@ -42,11 +42,11 @@ class CustomActionsCase(TestCase):
         condition_line_form = RsyslogConditionForm({'condition': 'always', 'action': 'set'})
         self.assertFalse(condition_line_form.is_valid())
 
-    def test_json_validation(self):
+    def test_json_string_validation(self):
         custom_actions_form = CustomActionsForm({'custom_actions': '[[{"condition": "always", "action": "drop"}]]'})
         self.assertTrue(custom_actions_form.is_valid())
 
-    def test_json_string_validation(self):
+    def test_json_validation(self):
         custom_actions_form = CustomActionsForm({'custom_actions': [[{'condition': 'always', 'action': 'drop'}]]})
         self.assertTrue(custom_actions_form.is_valid())
 
@@ -173,7 +173,7 @@ class FrontendCase(TestCase):
 
     def test_constant_rendering(self):
         """Test that render_custom_actions produces correct Rsyslog output."""
-        expected_rsyslog = '''if re_match($.email_from_address, ".*toto@test.com.*") then { #contains\n    set $.email_from_address = "xxxxxx@test.com";\n}\nif re_match($!techno, ".*rocket.*") then { #contains\n    unset $!fuel;\n} else if exists($.life) then { #exists\n    unset $!believes;\n} else if re_match_i($.sitename, "^pluto\\$") then { #iequals\n    stop\n} else if $.sitename == "Universe" then { #equals\n    set $!iplocation!where = "kekpar";\n} else if re_match($.sitename, "^[a-z]{6}\\$") then { #regex\n    unset $!location_unknown;\n} else { #always\n    set $!location = "nowhere";\n}\n'''
+        expected_rsyslog = '''# Block 1\nif $.email_from_address contains "toto@test.com" then { #contains\n    set $.email_from_address = "xxxxxx@test.com";\n}\n# Block 2\nif $!techno contains "rocket" then { #contains\n    unset $!fuel;\n} else if exists($.life) then { #exists\n    unset $!believes;\n} else if re_match_i($.sitename, "^pluto\\$") then { #iequals\n    stop\n} else if $.sitename == "Universe" then { #equals\n    set $!iplocation!where = "kekpar";\n} else if re_match($.sitename, "^[a-z]{6}\\$") then { #regex\n    unset $!location_unknown;\n} else { #always\n    set $!location = "nowhere";\n}\n'''
 
         rendered = self.frontend.render_custom_actions()
-        self.assertEqual(rendered, expected_rsyslog.strip)
+        self.assertEqual(rendered, expected_rsyslog)
