@@ -85,7 +85,7 @@ def frontend_clone(request, object_id=None):
     reputationctx_form_list = []
     # Do NOT clone listeners to prevent overriding
     for h_tmp in frontend.headers.all():
-        header_form_list.append(HeaderForm(instance=h_tmp, auto_id=False))
+        header_form_list.append(HeaderForm(instance=h_tmp))
     for r_tmp in frontend.frontendreputationcontext_set.all():
         reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
@@ -100,7 +100,7 @@ def frontend_clone(request, object_id=None):
 
     return render(request, 'services/frontend_edit.html', {
         'form': form, 'listener_form': ListenerForm(),
-        'headers': header_form_list, 'header_form': HeaderForm(auto_id=False),
+        'headers': header_form_list, 'header_form': HeaderForm(),
         'reputation_contexts': reputationctx_form_list,
         'reputationctx_form': FrontendReputationContextForm(),
         'log_om_table': LogOMTableForm(auto_id=False),

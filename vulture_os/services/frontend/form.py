@@ -280,7 +280,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                            "extrahop_host", "extrahop_id", "extrahop_secret",
                            "hornetsecurity_app_id", "hornetsecurity_token",
                            "ubika_base_refresh_token", "ubika_namespaces",
-                           "sentinel_one_graph_token", "sentinel_one_graph_console_url",
+                            "sentinel_one_graph_token", "sentinel_one_graph_console_url",
                            ]:
             self.fields[field_name].required = False
 

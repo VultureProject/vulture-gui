@@ -34,6 +34,7 @@ from services.rsyslogd.models import RsyslogSettings, RsyslogQueue
 
 # Extern modules imports
 from json import loads as json_loads
+from json import JSONDecodeError
 
 # Logger configuration imports
 import logging
@@ -150,7 +151,7 @@ class CustomActionsForm(Form):
             if data != "":
                 try:
                     data = json_loads(data)
-                except Exception as e:
+                except JSONDecodeError as e:
                     logger.error(f"Could not parse custom_actions as json: {str(e)}")
                     self.add_error('custom_actions', "This field must be a valid list.")
                     return list()
@@ -190,7 +191,7 @@ class CustomActionsForm(Form):
         """ Format as json """
         result = []
         data = self.cleaned_data if hasattr(self, "cleaned_data") else self.data
-        for condition_block in data.get("custom_actions", []):
+        for condition_block in data.get("custom_actions") or []:
             block_list = []
             for condition_line in condition_block:
                 block_list.append(RsyslogConditionForm(condition_line).as_json())

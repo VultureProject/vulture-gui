@@ -897,7 +897,6 @@ var custom_actions_vue = new Vue({
 
     add_line: function (block_id) {
       let index = this.get_block_index(block_id);
-      this.reconstruct_configs();
 
       this.condition_blocks[index].lines.push({
         condition: "always",
@@ -908,6 +907,8 @@ var custom_actions_vue = new Vue({
         result_value: "",
         errors: []
       });
+
+      this.reconstruct_configs();
 
       this.$nextTick(() => {
         $('.action, .condition').on('change', () => { this.reconstruct_configs(); });

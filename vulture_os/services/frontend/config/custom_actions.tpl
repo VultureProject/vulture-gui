@@ -7,7 +7,7 @@
     {%- else -%}
     if {{ condition.condition }} then { {{ condition.comment }}
     {%- endif -%}{# if condition.condition == "" #}
-    {{ condition.action }}{{ ';' if condition.action != 'stop' else '' }}
+    {{ condition.action }}
 {% if loop.last and (loop.length > 1 or condition.condition != "") %}}{% endif %}
 {%- endfor %}{# for condition in condition_block #}
 {% endfor %}{# for condition_block in custom_actions #}

@@ -2137,38 +2137,28 @@ class Frontend(RsyslogQueue, models.Model):
             conditions = []
             for condition_line in condition_block:
                 cond_str = ""
-                comment = ""
                 # Escape '$' sign
                 if condition_line.get("condition_value"):
                     condition_line['condition_value'] = condition_line['condition_value'].replace('$', '\$')
                 match condition_line['condition']:
                     case "always":
                         cond_str = ""
-                        comment = "#always"
                     case "exists":
                         cond_str = f"exists({condition_line['condition_variable']})"
-                        comment = "#exists"
                     case "not exists":
                         cond_str = f"not exists({condition_line['condition_variable']})"
-                        comment = "#not exists"
                     case "equals":
                         cond_str = f"{condition_line['condition_variable']} == \"{condition_line['condition_value']}\""
-                        comment = "#equals"
                     case "iequals":
                         cond_str = f"re_match_i({condition_line['condition_variable']}, \"^{condition_line['condition_value']}\$\")"
-                        comment = "#iequals"
                     case "contains":
                         cond_str = f"{condition_line['condition_variable']} contains \"{condition_line['condition_value']}\""
-                        comment = "#contains"
                     case "icontains":
                         cond_str = f"re_match_i({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"
-                        comment = "#icontains"
                     case "regex":
                         cond_str = f"re_match({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
-                        comment = "#regex"
                     case "iregex":
                         cond_str = f"re_match_i({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
-                        comment = "#iregex"
 
                 action_str = ""
                 # Do not quote variable name
@@ -2176,16 +2166,16 @@ class Frontend(RsyslogQueue, models.Model):
                     condition_line['result_value'] = '"' + condition_line['result_value'].replace('$', '\$') + '"'
                 match condition_line['action']:
                     case "set":
-                        action_str = f"set {condition_line['result_variable']} = {condition_line['result_value']}"
+                        action_str = f"set {condition_line['result_variable']} = {condition_line['result_value']};"
                     case "unset":
-                        action_str = f"unset {condition_line['result_variable']}"
+                        action_str = f"unset {condition_line['result_variable']};"
                     case "drop":
                         action_str = "stop"
 
                 conditions.append({
                     'condition': cond_str,
                     'action': action_str,
-                    'comment': comment
+                    'comment': f"#{condition_line['condition']}"
                 })
 
             custom_actions.append(conditions)
