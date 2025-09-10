@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [SERVICES] [RSYSLOGD] Output queues in default rulesets
 ### Changed
 - [DEPENDENCIES]
   - aiohappyeyeballs 2.4.4 -> 2.6.1
