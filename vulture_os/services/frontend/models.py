@@ -2158,7 +2158,7 @@ class Frontend(RsyslogQueue, models.Model):
                         cond_str = f"re_match_i({condition_line['condition_variable']}, \"^{condition_line['condition_value']}\$\")"
                         comment = "#iequals"
                     case "contains":
-                        cond_str = f"re_match({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"
+                        cond_str = f"{condition_line['condition_variable']} contains \"{condition_line['condition_value']}\""
                         comment = "#contains"
                     case "icontains":
                         cond_str = f"re_match_i({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"

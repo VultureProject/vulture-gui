@@ -1,4 +1,5 @@
 {% for condition_block in custom_actions -%}
+# Block {{ loop.index }}
 {% for condition in condition_block -%}
     {%- if not loop.first %}} else {% endif -%}
     {%- if condition.condition == "" -%}
