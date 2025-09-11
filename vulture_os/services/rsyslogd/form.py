@@ -31,10 +31,10 @@ from django.utils.crypto import get_random_string
 from services.rsyslogd.models import RsyslogSettings, RsyslogQueue
 
 # Required exceptions imports
+from json import JSONDecodeError
 
 # Extern modules imports
 from json import loads as json_loads
-from json import JSONDecodeError
 
 # Logger configuration imports
 import logging
@@ -167,7 +167,7 @@ class CustomActionsForm(Form):
                 condition_line_form = RsyslogConditionForm(condition_line)
                 if not condition_line_form.is_valid():
                     condition_block[j] = condition_line_form.as_json()
-                    self.add_error('custom_actions', "Validation error")
+                    self.add_error('custom_actions', condition_block[j]['errors'])
 
                 # Verify number and order of "always" condition in a group
                 if condition_line.get("condition") == "always":
@@ -261,7 +261,7 @@ class RsyslogConditionForm(Form):
             cleaned_data['errors'].append({'field' : "result_value", 'message': "This field is mandatory"})
 
         if cleaned_data['errors'] != []:
-            self.add_error(None, "Validation error")
+            self.add_error(None, cleaned_data['errors'])
         return cleaned_data
 
     def as_json(self):
