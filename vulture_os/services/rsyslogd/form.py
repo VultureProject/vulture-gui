@@ -242,19 +242,19 @@ class RsyslogConditionForm(Form):
         if not cleaned_data.get("condition_variable"):
             if cleaned_data.get("condition") != "always":
                 cleaned_data['errors'].append({'field' : "condition_variable", 'message': "This field is mandatory"})
-        elif cleaned_data.get("condition_variable")[0] != "$":
+        elif cleaned_data["condition_variable"][0] != "$":
             cleaned_data['errors'].append({'field' : "condition_variable", 'message': "Invalid variable name"})
 
         if not cleaned_data.get("condition_value"):
            if cleaned_data.get("condition") not in ['always', 'exists', 'not exists']:
                 cleaned_data['errors'].append({'field' : "condition_value", 'message': "This field is mandatory"})
-        elif cleaned_data.get("condition_value")[0] == "$":
+        elif cleaned_data["condition_value"][0] == "$":
             cleaned_data['errors'].append({'field' : "condition_value", 'message': "Cannot use a variable here"})
 
         if not cleaned_data.get("result_variable"):
             if cleaned_data.get("action") in ['set', 'unset']:
                 cleaned_data['errors'].append({'field' : "result_variable", 'message': "This field is mandatory"})
-        elif cleaned_data.get("result_variable")[0] != "$":
+        elif cleaned_data["result_variable"][0] != "$":
             cleaned_data['errors'].append({'field' : "result_variable", 'message': "Invalid variable name"})
 
         if cleaned_data.get("action") == 'set' and not cleaned_data.get("result_value"):

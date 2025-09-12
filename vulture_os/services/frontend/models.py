@@ -2180,7 +2180,7 @@ class Frontend(RsyslogQueue, models.Model):
 
             custom_actions.append(conditions)
 
-        jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH))
+        jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH), autoescape=False)
         template = jinja2_env.get_template("custom_actions.tpl")
         result = template.render({'custom_actions': custom_actions})
 
