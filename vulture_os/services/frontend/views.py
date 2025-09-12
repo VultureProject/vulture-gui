@@ -243,6 +243,7 @@ def frontend_edit(request, object_id=None, api=False):
     header_form_list = []
     reputationctx_form_list = []
     node_listeners = dict()
+    custom_actions_form = None
     darwin_buffering_needs_refresh = False
     if object_id:
         try:
@@ -289,9 +290,7 @@ def frontend_edit(request, object_id=None, api=False):
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
 
-        # If not a form error
-        if not hasattr(form, "cleaned_data"):
-            custom_actions_form = CustomActionsForm({'custom_actions': form.initial.get("custom_actions", [])}, auto_id=False)
+        custom_actions_form = kwargs.get('custom_actions_form', CustomActionsForm({'custom_actions': form.initial.get("custom_actions", [])}, auto_id=False))
 
         filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
         if front and front.filebeat_module and front.filebeat_config:
@@ -438,7 +437,10 @@ def frontend_edit(request, object_id=None, api=False):
         # If errors has been added in form
         if not form.is_valid():
             logger.error("Frontend form errors: {}".format(form.errors.as_json()))
-            return render_form(frontend)
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form
+            )
 
         # Save the form to get an id if there is not already one
         frontend = form.save(commit=False)
@@ -462,12 +464,20 @@ def frontend_edit(request, object_id=None, api=False):
                         logger.warning(f"FRONTEND::Edit: Configuration test skipped on node {node.name} (state {node.state})")
         except ServiceError as e:
             logger.exception(e)
-            return render_form(frontend, save_error=[str(e), e.traceback])
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form,
+                save_error=[str(e), e.traceback]
+            )
 
         except Exception as e:
             logger.exception(e)
-            return render_form(frontend, save_error=["No referenced error",
-                                                     str.join('', format_exception(*exc_info()))])
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form,
+                save_error=["No referenced error",
+                        str.join('', format_exception(*exc_info()))]
+            )
 
         """ If the conf is OK, save the Frontend object """
         # Is that object already in db or not
@@ -488,7 +498,10 @@ def frontend_edit(request, object_id=None, api=False):
                         log_forwarders.add(log_om.id)
                     except ObjectDoesNotExist:
                         form.add_error("log_condition", "LogForwarder not found.")
-                        return render_form(frontend)
+                        return render_form(
+                            frontend,
+                            custom_actions_form=custom_actions_form,
+                        )
 
                 frontend.log_forwarders_id = log_forwarders
 
@@ -604,13 +617,21 @@ def frontend_edit(request, object_id=None, api=False):
                 frontend.delete()
 
             logger.exception(e)
-            return render_form(frontend, save_error=[str(e), e.traceback])
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form,
+                save_error=[str(e), e.traceback]
+            )
 
         except Exception as e:
             """ If we arrive here, the object has not been saved """
             logger.exception(e)
-            return render_form(frontend, save_error=["Failed to save object in database :\n{}".format(e),
-                                                     str.join('', format_exception(*exc_info()))])
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form,
+                save_error=["Failed to save object in database :\n{}".format(e),
+                    str.join('', format_exception(*exc_info()))]
+            )
 
         if api:
             return build_response(frontend.id, "services.frontend.api", COMMAND_LIST)
