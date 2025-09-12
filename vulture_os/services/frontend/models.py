@@ -380,6 +380,14 @@ class Frontend(RsyslogQueue, models.Model):
         verbose_name=_("Additional frame delimiter"),
         validators=[MinValueValidator(-1), MaxValueValidator(255)]
     )
+    """ Custom Rsyslog operations """
+    custom_actions = models.JSONField(
+        null=True,
+        blank=True,
+        default=[],
+        help_text=_("Rsyslog custom operations inserted in the ruleset."),
+        verbose_name=_("Rsyslog custom operations")
+    )
     """ *** HTTP OPTIONS *** """
     """ Log forwarder - File """
     headers = models.ArrayReferenceField(
@@ -1876,7 +1884,6 @@ class Frontend(RsyslogQueue, models.Model):
             'log_level': self.log_level,
             'log_condition': self.log_condition,
             'ruleset_name': self.get_ruleset(),
-            'ruleset_options': self.render_ruleset_options(),
             'parser_tag': self.parser_tag,
             'ratelimit_interval': self.ratelimit_interval,
             'ratelimit_burst': self.ratelimit_burst,
@@ -2115,6 +2122,71 @@ class Frontend(RsyslogQueue, models.Model):
         result = " ".join(f'queue.{k}="{v}"' for k,v in options_dict.items())
         return result
 
+    def render_custom_actions(self):
+        """ Render Rsyslog custom options
+        :return  Str containing the rendered config
+        """
+        result = ""
+        logger.debug(f"[RENDER CUSTOM ACTIONS] self.custom_actions : {self.custom_actions}")
+
+        custom_actions = []
+        for condition_block in self.custom_actions:
+            if not len(condition_block):
+                continue
+
+            conditions = []
+            for condition_line in condition_block:
+                cond_str = ""
+                # Escape '$' sign
+                if condition_line.get("condition_value"):
+                    condition_line['condition_value'] = condition_line['condition_value'].replace('$', '\$')
+                match condition_line['condition']:
+                    case "always":
+                        cond_str = ""
+                    case "exists":
+                        cond_str = f"exists({condition_line['condition_variable']})"
+                    case "not exists":
+                        cond_str = f"not exists({condition_line['condition_variable']})"
+                    case "equals":
+                        cond_str = f"{condition_line['condition_variable']} == \"{condition_line['condition_value']}\""
+                    case "iequals":
+                        cond_str = f"re_match_i({condition_line['condition_variable']}, \"^{condition_line['condition_value']}\$\")"
+                    case "contains":
+                        cond_str = f"{condition_line['condition_variable']} contains \"{condition_line['condition_value']}\""
+                    case "icontains":
+                        cond_str = f"re_match_i({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"
+                    case "regex":
+                        cond_str = f"re_match({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
+                    case "iregex":
+                        cond_str = f"re_match_i({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
+
+                action_str = ""
+                # Do not quote variable name
+                if condition_line.get("result_value") and condition_line['result_value'][0] != "$":
+                    condition_line['result_value'] = '"' + condition_line['result_value'].replace('$', '\$') + '"'
+                match condition_line['action']:
+                    case "set":
+                        action_str = f"set {condition_line['result_variable']} = {condition_line['result_value']};"
+                    case "unset":
+                        action_str = f"unset {condition_line['result_variable']};"
+                    case "drop":
+                        action_str = "stop"
+
+                conditions.append({
+                    'condition': cond_str,
+                    'action': action_str,
+                    'comment': f"#{condition_line['condition']}"
+                })
+
+            custom_actions.append(conditions)
+
+        jinja2_env = Environment(loader=FileSystemLoader(JINJA_PATH), autoescape=False)
+        template = jinja2_env.get_template("custom_actions.tpl")
+        result = template.render({'custom_actions': custom_actions})
+
+        logger.debug(f"[RENDER CUSTOM ACTIONS] result : {result}")
+        return result
+
     @property
     def api_rsyslog_port(self):
         return 20000+self.id
@@ -2149,9 +2221,11 @@ class Frontend(RsyslogQueue, models.Model):
             template = jinja2_env.get_template(template_name)
             conf = self.to_template()
             conf['ruleset'] = self.ruleset
+            conf['ruleset_options'] = self.render_ruleset_options()
             conf['log_condition'] = self.render_log_condition() if self.enabled and self.enable_logging else ""
             conf['log_condition_failure'] = self.render_log_condition_failure() if self.enabled and self.enable_logging else ""
             conf['pre_ruleset'] = self.render_pre_ruleset() if self.enabled and self.enable_logging else ""
+            conf['rendered_custom_actions'] = self.render_custom_actions() if self.enabled and self.custom_actions else ""
             conf['not_internal_forwarders'] = self.log_forwarders.exclude(internal=True)
 
             darwin_actions = []

@@ -24,14 +24,17 @@ __doc__ = 'Rsyslog dedicated form class'
 
 # Django system imports
 from django.conf import settings
-from django.forms import ModelForm, TextInput, Select, NumberInput, CheckboxInput
+from django.forms import ModelForm, Form, TextInput, Select, NumberInput, CheckboxInput, ChoiceField, CharField, JSONField
+from django.utils.crypto import get_random_string
 
 # Django project imports
 from services.rsyslogd.models import RsyslogSettings, RsyslogQueue
 
 # Required exceptions imports
+from json import JSONDecodeError
 
 # Extern modules imports
+from json import loads as json_loads
 
 # Logger configuration imports
 import logging
@@ -136,3 +139,153 @@ class RsyslogQueueForm(ModelForm):
                     self.add_error("max_disk_space", "Max disk space needs to be at least twice the size of a single file size to allow to use at least 2 files")
 
         return cleaned_data
+
+
+class CustomActionsForm(Form):
+    custom_actions = JSONField(required=False)
+
+    def clean_custom_actions(self):
+        if (data := self.cleaned_data.get("custom_actions")) is None:
+            return list()
+        if isinstance(data, str):
+            if data != "":
+                try:
+                    data = json_loads(data)
+                except JSONDecodeError as e:
+                    logger.error(f"Could not parse custom_actions as json: {str(e)}")
+                    self.add_error('custom_actions', "This field must be a valid list.")
+                    return list()
+            else:
+                return list()
+        elif not isinstance(data, list):
+            self.add_error('custom_actions', "This field must be a list.")
+            return list()
+
+        for i, condition_block in enumerate(data):
+            always_count = 0
+            for j, condition_line in enumerate(condition_block):
+                condition_line_form = RsyslogConditionForm(condition_line)
+                if not condition_line_form.is_valid():
+                    condition_block[j] = condition_line_form.as_json()
+                    self.add_error('custom_actions', condition_block[j]['errors'])
+
+                # Verify number and order of "always" condition in a group
+                if condition_line.get("condition") == "always":
+                    always_count += 1
+                    if always_count > 1:
+                        condition_block[j]['errors'] = {
+                            'field' : "condition",
+                            'message': "Only one 'Always' condition is allowed per group"
+                        }
+                        self.add_error('custom_actions', "Only one 'Always' condition is allowed per group")
+                    if always_count >= 1 and j != len(condition_block) - 1:
+                        condition_block[j]['errors'] = {
+                            'field' : "condition",
+                            'message': "The 'Always' condition must be the last rule in the group"
+                        }
+                        self.add_error('custom_actions', "The 'Always' condition must be the last rule in the group")
+            data[i] = condition_block
+        return data
+
+    def as_json(self):
+        """ Format as json """
+        result = []
+        data = self.cleaned_data if hasattr(self, "cleaned_data") else self.data
+        for condition_block in data.get("custom_actions") or []:
+            block_list = []
+            for condition_line in condition_block:
+                block_list.append(RsyslogConditionForm(condition_line).as_json())
+
+            result.append({
+                'lines': block_list,
+                'pk': get_random_string(length=5)
+            })
+        return result
+
+
+class RsyslogConditionForm(Form):
+    CUSTOM_CONDITION_CHOICES = (
+        ('always', "Always"),
+        ('exists', "Exists"),
+        ('not exists', "Not exists"),
+        ('equals', "Equals"),
+        ('iequals', "iEquals"),
+        ('contains', "Contains"),
+        ('icontains', "iContains"),
+        ('regex', "Regex"),
+        ('iregex', "iRegex")
+    )
+    CUSTOM_ACTION_CHOICES = (
+        ('set', "Set"),
+        ('unset', "Unset"),
+        ('drop', "Drop")
+    )
+
+    condition = ChoiceField(label="Condition", choices=CUSTOM_CONDITION_CHOICES)
+    condition_variable = CharField(label="Variable", required=False, widget=TextInput())
+    condition_value = CharField(label="Value", required=False, widget=TextInput())
+    action = ChoiceField(label="Action", choices=CUSTOM_ACTION_CHOICES)
+    result_variable = CharField(label="Result Variable", required=False)
+    result_value = CharField(label="Result Value", required=False)
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        cleaned_data['errors'] = []
+        # Verify mandatory arguments
+        if not cleaned_data.get("condition"):
+            cleaned_data['errors'].append({'field' : "condition", 'message': "This field is mandatory"})
+
+        if not cleaned_data.get("action"):
+            cleaned_data['errors'].append({'field' : "action", 'message': "This field is mandatory"})
+
+        if not cleaned_data.get("condition_variable"):
+            if cleaned_data.get("condition") != "always":
+                cleaned_data['errors'].append({'field' : "condition_variable", 'message': "This field is mandatory"})
+        elif cleaned_data["condition_variable"][0] != "$":
+            cleaned_data['errors'].append({'field' : "condition_variable", 'message': "Invalid variable name"})
+
+        if not cleaned_data.get("condition_value"):
+           if cleaned_data.get("condition") not in ['always', 'exists', 'not exists']:
+                cleaned_data['errors'].append({'field' : "condition_value", 'message': "This field is mandatory"})
+        elif cleaned_data["condition_value"][0] == "$":
+            cleaned_data['errors'].append({'field' : "condition_value", 'message': "Cannot use a variable here"})
+
+        if not cleaned_data.get("result_variable"):
+            if cleaned_data.get("action") in ['set', 'unset']:
+                cleaned_data['errors'].append({'field' : "result_variable", 'message': "This field is mandatory"})
+        elif cleaned_data["result_variable"][0] != "$":
+            cleaned_data['errors'].append({'field' : "result_variable", 'message': "Invalid variable name"})
+
+        if cleaned_data.get("action") == 'set' and not cleaned_data.get("result_value"):
+            cleaned_data['errors'].append({'field' : "result_value", 'message': "This field is mandatory"})
+
+        if cleaned_data['errors'] != []:
+            self.add_error(None, cleaned_data['errors'])
+        return cleaned_data
+
+    def as_json(self):
+        """ Format as json """
+        result = {}
+        if hasattr(self, "cleaned_data"):
+            result.update(self.cleaned_data)
+        elif self.data:
+            result.update(self.data)
+        else:
+            result.update(self.initial)
+
+        if result.get("errors") is None:
+            result['errors'] = []
+        return result
+
+    def as_table_headers(self):
+        """ Format field names as table head """
+        result = "<tr><th></th>\n"
+        for field in self:
+            result += f"<th>{field.label}</th>\n"
+        result += "<th>Delete</th></tr>\n"
+        return result
+
+    def as_table_footers(self):
+        """ Format fields as a table footer """
+        return f'<td></td>{"".join("<td></td>" for _ in self)}'

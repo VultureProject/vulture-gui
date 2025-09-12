@@ -66,7 +66,8 @@
                   <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% translate "HTTP Headers" %}</a></li>
                   <li><a href="#tab_enrichment" data-toggle="tab" class="logging">{% translate "Logs Enrichment" %}</a></li>
                   <li><a href="#tab_logging" data-toggle="tab" class="logging">{% translate "Logs Forwarder" %}</a></li>
-                  <li><a href="#tab_custom" data-toggle="tab" class="haproxy-conf">{% translate "Custom conf" %}</a></li>
+                  <li><a href="#tab_custom_rsyslog" data-toggle="tab" class="logging">{% translate "Custom operations" %}</a></li>
+                  <li><a href="#tab_custom_haproxy" data-toggle="tab" class="haproxy-conf">{% translate "Custom conf" %}</a></li>
                 </ul>
                 <div class="tab-content">
                   <br/>
@@ -1088,7 +1089,12 @@
                       {% endif %}
                     </div>
                   </div> <!-- /.tab-pane tab_enrichment -->
-                  <div class="tab-pane" id="tab_custom">
+                  <div class="tab-pane" id="tab_custom_rsyslog">
+                    {{ form.custom_actions }}
+                    {{ form.custom_actions.errors|safe }}
+                    {% include "custom_actions.html" %}
+                  </div> <!-- /.tab-pane tab_custom_rsyslog -->
+                  <div class="tab-pane" id="tab_custom_haproxy">
                     <div class="row haproxy-conf">
                       <div class="col-md-12">
                         <div class="form-group">
@@ -1100,7 +1106,7 @@
                         </div>
                       </div>
                     </div>
-                  </div> <!-- /.tab-pane tab_custom -->
+                  </div> <!-- /.tab-pane tab_custom_haproxy -->
                   <div class="tab-pane" id="tab_api_client">
                     <div class="row">
                       <div class="col-md-12 api-mode">
@@ -2598,6 +2604,8 @@
   var log_om_table_td = `{{log_om_table.as_table_td|safe}}`;
   var reputationctx_form_td = `{{reputationctx_form.as_table_td|safe}}`;
   var old_mode = $('id_mode').val();
+
+  var custom_actions = {{ custom_actions.as_json|default:"[]"|safe }};
 
   var test_frontend_apiparser_uri = "{% url 'services.frontend.test_apiparser' %}";
   var fetch_frontend_api_parser_data_uri = "{% url 'services.frontend.fetch_apiparser_data' %}";

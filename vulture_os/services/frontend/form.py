@@ -27,7 +27,7 @@ import ast
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.forms import (BooleanField, CharField, CheckboxInput, ChoiceField, ModelChoiceField, ModelMultipleChoiceField, Form,
-                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField)
+                          ModelForm, NumberInput, Select, SelectMultiple, TextInput, Textarea, URLField, HiddenInput)
 from django.utils.translation import gettext_lazy as _
 
 # Django project imports
@@ -208,7 +208,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         self.fields['error_template'].empty_label = "No template"
         # Set required in POST data to False
         for field_name in ['log_condition', 'keep_source_fields', 'ruleset', 'log_level', 'listening_mode',
-                           'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'headers', 'custom_haproxy_conf',
+                           'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'headers', 'custom_actions', 'custom_haproxy_conf',
                            'cache_total_max_size', 'cache_max_age', 'compression_algos', 'compression_mime_types',
                            'error_template', 'tenants_config', 'enable_logging_reputation', 'tags', 'timeout_client', 'timeout_keep_alive',
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst', 'expected_timezone',
@@ -327,8 +327,8 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
     class Meta:
         model = Frontend
         fields = ['enabled', 'tags', 'name', 'mode', 'enable_logging', 'log_level', 'log_condition', 'keep_source_fields', 'ruleset',
-                  'listening_mode', 'filebeat_listening_mode', 'filebeat_module', 'filebeat_config', 'custom_haproxy_conf',
-                  'enable_cache', 'cache_total_max_size', 'cache_max_age',
+                  'listening_mode', 'filebeat_listening_mode', 'filebeat_module', 'filebeat_config',
+                  'custom_actions', 'custom_haproxy_conf', 'enable_cache', 'cache_total_max_size', 'cache_max_age',
                   'enable_compression', 'compression_algos', 'compression_mime_types', 'error_template',
                   'log_forwarders', 'tenants_config', 'enable_logging_reputation', 'logging_reputation_database_v4',
                   'logging_reputation_database_v6', 'logging_geoip_database', 'timeout_client',
@@ -429,6 +429,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'filebeat_config': Textarea(attrs={'class': 'form-control'}),
             'disable_octet_counting_framing': CheckboxInput(attrs={'class': " js-switch"}),
             'custom_tl_frame_delimiter': NumberInput(attrs={'class': 'form-control'}),
+            'custom_actions': HiddenInput(),
             'custom_haproxy_conf': Textarea(attrs={'class': 'form-control'}),
             'enable_cache': CheckboxInput(attrs={'class': " js-switch"}),
             'cache_total_max_size': NumberInput(attrs={'class': 'form-control'}),
@@ -760,6 +761,10 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         if data and data < 10:
             self.add_error('redis_batch_size', "Redis dequeue size should be greater than 10")
         return data
+
+    def clean_custom_actions(self):
+        # Bypass validation and avoid database error
+        return list()
 
     def clean_cisco_umbrella_managed_org_customers_id(self):
         data = self.cleaned_data.get('cisco_umbrella_managed_org_customers_id')

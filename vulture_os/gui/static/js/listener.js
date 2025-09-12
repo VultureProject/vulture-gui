@@ -725,6 +725,29 @@ $(function() {
 
     /* Enable button before posting, it won't be in post data otherwize */
     $('#id_enable_logging').prop('disabled', false);
+
+    let custom_actions = new Array();
+    custom_actions_vue.reconstruct_configs();
+    for (let condition_block of custom_actions_vue.condition_blocks) {
+      let condition_block_array = new Array();
+      for (let condition_line of condition_block.lines) {
+        if (custom_actions_vue.validate_condition_line(condition_line).length > 0) {
+          notify('error', gettext('Error'), gettext('Error identified in custom operations tab'))
+          event.preventDefault()
+        };
+        condition_block_array.push({
+          'condition': condition_line.condition,
+          'condition_variable': condition_line.condition_variable,
+          'condition_value': condition_line.condition_value,
+          'action': condition_line.action,
+          'result_variable': condition_line.result_variable,
+          'result_value': condition_line.result_value
+        });
+      }
+      custom_actions.push(condition_block_array)
+    }
+    $('#id_custom_actions').val(JSON.stringify(custom_actions));
+
     // event.preventDefault();
   });
 
@@ -831,3 +854,237 @@ $(function(){
                     }
                 });
 })
+
+var custom_actions_vue = new Vue({
+  el: '#custom_actions_vue',
+  delimiters: ['${', '}'],
+  data: {
+    condition_blocks: custom_actions.length > 0 ? custom_actions : [],
+    global_errors: []
+  },
+
+  methods: {
+    is_selected: function (type, line, value) {
+      return line[type] === value ? "selected" : "";
+    },
+
+    generate_id: function () {
+      return Math.random().toString(36).substring(5);
+    },
+
+    get_block_index: function (block_id) {
+      for (let i in this.condition_blocks) {
+        if (this.condition_blocks[i].pk === block_id) return i;
+      }
+      return -1;
+    },
+
+    add_condition_block: function () {
+      let pk = this.generate_id();
+      this.condition_blocks.push({
+        pk: pk,
+        lines: []
+      });
+      this.add_line(pk);
+    },
+
+    remove_condition_block: function (block_id) {
+      let index = this.get_block_index(block_id);
+      if (index !== -1) {
+        this.condition_blocks.splice(index, 1);
+      }
+    },
+
+    add_line: function (block_id) {
+      let index = this.get_block_index(block_id);
+
+      this.condition_blocks[index].lines.push({
+        condition: "always",
+        condition_variable: "",
+        condition_value: "",
+        action: "",
+        result_variable: "",
+        result_value: "",
+        errors: []
+      });
+
+      this.reconstruct_configs();
+
+      this.$nextTick(() => {
+        $('.action, .condition').on('change', () => { this.reconstruct_configs(); });
+        $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', () => { this.reconstruct_configs(); });
+      });
+    },
+
+    remove_line: function (block_id, line_index) {
+      let index = this.get_block_index(block_id);
+      if (index !== -1) {
+        this.condition_blocks[index].lines.splice(line_index, 1);
+      }
+    },
+
+    render_error: function (errors, input) {
+      if (!input) return errors ? "<i class='fas fa-exclamation-triangle fa-2x'></i>" : "";
+      if (errors !== null && errors.length > 0) {
+        for (error of errors) {
+          if (error.field === input) {
+            return "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + error.message;
+          }
+        }
+        return errors.includes(input) ? "<i class='fas fa-exclamation-triangle'></i>&nbsp;&nbsp;&nbsp;" + gettext('Error with this input') : "";
+      }
+      return "";
+    },
+
+    render_class_condition_line: function (errors) {
+      return errors !== null && errors.length > 0 ? "and_line_error" : "condition_line";
+    },
+
+    render_id: function (block_index, line_index) {
+      return `condition_line_${block_index}_${line_index}`;
+    },
+
+    validate_condition_line: function (condition_line) {
+      let errors = [];
+
+      if (!condition_line.condition)
+        errors.push({field: 'condition', message: gettext('This field is mandatory')});
+
+      if (!condition_line.condition_variable) {
+        if (condition_line.condition !== "always")
+          errors.push({field: 'condition_variable', message: gettext('This field is mandatory')});
+      } else if (condition_line.condition_variable[0] !== "$")
+        errors.push({field: 'condition_variable', message: gettext('Invalid variable name')});
+
+      if (!condition_line.condition_value) {
+        if (!['always', 'exists', 'not exists'].includes(condition_line.condition))
+          errors.push({field: 'condition_value', message: gettext('This field is mandatory')});
+      } else if (condition_line.condition_value[0] === "$")
+        errors.push({field: 'condition_value', message: gettext('Cannot use a variable here')});
+
+      if (!condition_line.action)
+        errors.push({field: 'action', message: gettext('This field is mandatory')});
+
+      if (!condition_line.result_variable) {
+        if (['set', 'unset'].includes(condition_line.action))
+          errors.push({field: 'result_variable', message: gettext('This field is mandatory')});
+      } else if (condition_line.result_variable[0] !== "$")
+        errors.push({field: 'result_variable', message: gettext('Invalid variable name')});
+
+      if (condition_line.action === 'set' && !condition_line.result_value)
+        errors.push({field: 'result_value', message: gettext('This field is mandatory')});
+
+      return errors.length ? errors : [];
+    },
+
+    validate_condition_block: function (condition_block) {
+      const lines = condition_block.lines;
+      this.global_errors = [];
+      let errors = [];
+      let always_count = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].condition === 'always') {
+          always_count++;
+
+          if (always_count > 1) {
+            this.global_errors.push({
+              message: gettext('Only one "Always" condition is allowed per group')
+            });
+            lines[i].errors.push({
+              field: 'condition',
+              message: gettext('Only one "Always" allowed')
+            });
+          }
+          if (always_count >= 1 && i !== lines.length - 1) {
+            this.global_errors.push({
+              message: gettext('"Always" condition must be the last rule in the group')
+            });
+            lines[i].errors.push({
+              field: 'condition',
+              message: gettext('This line should go down')
+            });
+          }
+        }
+      }
+      return errors;
+    },
+
+    reconstruct_configs: function () {
+      var self = this;
+
+      $('.condition_group').each(function () {
+        let block_index = $(this).data('index');
+        $(this).find('.condition_line').each(function () {
+          let line_index = $(this).data('index');
+
+          if (self.condition_blocks[block_index] !== undefined) {
+            let condition_line = self.condition_blocks[block_index].lines[line_index];
+            if (condition_line !== undefined) {
+              let query_id = self.render_id(block_index, line_index);
+
+              condition_line.condition = $(`#${query_id} .condition`).val();
+              condition_line.condition_variable = $(`#${query_id} .condition_variable`).val();
+              condition_line.condition_value = $(`#${query_id} .condition_value`).val();
+              condition_line.action = $(`#${query_id} .action`).val();
+              condition_line.result_variable = $(`#${query_id} .result_variable`).val();
+              condition_line.result_value = $(`#${query_id} .result_value`).val();
+
+              condition_line.errors = self.validate_condition_line(condition_line);
+              self.condition_blocks[block_index].lines[line_index] = condition_line;
+            }
+          }
+        });
+        if (self.condition_blocks[block_index] !== undefined &&
+          self.condition_blocks[block_index].lines !== undefined &&
+          self.condition_blocks[block_index].lines.length > 0) {
+            self.validate_condition_block(self.condition_blocks[block_index]);
+        }
+      });
+    },
+
+    dragStart(e, block_index, line_index) {
+      let mainnav_hidden = $('#container').hasClass('mainnav-sm');
+      let max_x = 90 + 220 * !mainnav_hidden + 55 * mainnav_hidden;
+      if (['INPUT', 'SELECT'].includes(e.target.tagName) || e.x > max_x) {
+        e.preventDefault();
+        return;
+      }
+
+      e.dataTransfer.setData('text/plain', JSON.stringify({ block_index, line_index }));
+      e.dataTransfer.effectAllowed = 'move';
+      document.querySelectorAll('.condition_line').forEach(el => el.classList.add('dragging'));
+      document.querySelector(`#condition_line_${block_index}_${line_index}`)?.classList.add('dragging-active');
+    },
+
+    dragEnter(e) {
+      e.dataTransfer.dropEffect = 'move';
+    },
+
+    dragDrop(e, target_block_index, target_line_index) {
+      e.preventDefault();
+      const data = e.dataTransfer.getData('text/plain');
+      if (!data) return;
+
+      const { block_index, line_index } = JSON.parse(data);
+      if (block_index === target_block_index && line_index === target_line_index) return;
+      if (block_index !== target_block_index) return;
+
+      const lines = this.condition_blocks[block_index].lines;
+      const draggedLine = lines.splice(line_index, 1)[0];
+      lines.splice(target_line_index, 0, draggedLine);
+
+      this.$nextTick(() => {
+        this.reconstruct_configs();
+      });
+    },
+  },
+
+  mounted: function () {
+    this.$nextTick(() => {
+      $('.action, .condition').on('change', () => { this.reconstruct_configs(); });
+      $('.condition_variable, .condition_value, .result_variable, .result_value').on('blur', () => { this.reconstruct_configs(); });
+    });
+    this.reconstruct_configs();
+  },
+});

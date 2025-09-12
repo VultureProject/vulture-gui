@@ -37,6 +37,7 @@ from darwin.policy.models import DarwinBuffering, DarwinPolicy
 from gui.forms.form_utils import DivErrorList
 from services.frontend.form import FrontendForm, ListenerForm, LogOMTableForm, FrontendReputationContextForm
 from services.frontend.models import Frontend, FrontendReputationContext, Listener, FILEBEAT_MODULE_CONFIG
+from services.rsyslogd.form import CustomActionsForm, RsyslogConditionForm
 from system.cluster.models import Cluster
 from toolkit.api.responses import build_response, build_form_errors
 from toolkit.http.headers import HeaderForm, DEFAULT_FRONTEND_HEADERS
@@ -103,6 +104,8 @@ def frontend_clone(request, object_id=None):
         'reputation_contexts': reputationctx_form_list,
         'reputationctx_form': FrontendReputationContextForm(),
         'log_om_table': LogOMTableForm(auto_id=False),
+        'custom_actions': CustomActionsForm({'custom_actions': frontend.custom_actions}, auto_id=False),
+        'condition_line_form': RsyslogConditionForm(auto_id=False),
         'filebeat_module_config': filebeat_configs,
         'object_id': ""
     })
@@ -240,6 +243,7 @@ def frontend_edit(request, object_id=None, api=False):
     header_form_list = []
     reputationctx_form_list = []
     node_listeners = dict()
+    custom_actions_form = None
     darwin_buffering_needs_refresh = False
     if object_id:
         try:
@@ -280,11 +284,13 @@ def frontend_edit(request, object_id=None, api=False):
         # If it is a new object, add default-example headers
         if not front and request.method == "GET":
             for header in DEFAULT_FRONTEND_HEADERS:
-                header_form_list.append(HeaderForm(header))
+                header_form_list.append(HeaderForm(header, auto_id=False))
 
         if not reputationctx_form_list and front and front.pk:
             for r_tmp in front.frontendreputationcontext_set.all():
                 reputationctx_form_list.append(FrontendReputationContextForm(instance=r_tmp))
+
+        custom_actions_form = kwargs.get('custom_actions_form', CustomActionsForm({'custom_actions': form.initial.get("custom_actions", [])}, auto_id=False))
 
         filebeat_configs = deepcopy(FILEBEAT_MODULE_CONFIG)
         if front and front.filebeat_module and front.filebeat_config:
@@ -292,10 +298,12 @@ def frontend_edit(request, object_id=None, api=False):
 
         return render(request, 'services/frontend_edit.html',
                       {'form': form, 'listeners': listener_form_list, 'listener_form': ListenerForm(),
-                       'headers': header_form_list, 'header_form': HeaderForm(),
+                       'headers': header_form_list, 'header_form': HeaderForm(auto_id=False),
                        'reputation_contexts': reputationctx_form_list,
                        'reputationctx_form': FrontendReputationContextForm(),
                        'log_om_table': LogOMTableForm(auto_id=False),
+                       'custom_actions': custom_actions_form,
+                       'condition_line_form': RsyslogConditionForm(auto_id=False),
                        'filebeat_module_config': filebeat_configs,
                        'object_id': (frontend.id if frontend else "") or "", **kwargs})
 
@@ -410,6 +418,10 @@ def frontend_edit(request, object_id=None, api=False):
                             node_listeners[nic.node] = list()
                         node_listeners[nic.node].append(listener_obj)
 
+        custom_actions_form = CustomActionsForm({'custom_actions': form.data.get("custom_actions", [])}, auto_id=False)
+        if not custom_actions_form.is_valid():
+            form.add_error("custom_actions", custom_actions_form.errors.get("custom_actions", []) if api else custom_actions_form.errors.as_data().get("custom_actions", []))
+
         old_nodes = frontend.get_nodes() if frontend else []
         old_rsyslog_filename = frontend.get_rsyslog_base_filename() if frontend and frontend.has_rsyslog_conf else ""
         old_filebeat_filename = frontend.get_filebeat_base_filename() if frontend and frontend.has_filebeat_conf else ""
@@ -425,11 +437,15 @@ def frontend_edit(request, object_id=None, api=False):
         # If errors has been added in form
         if not form.is_valid():
             logger.error("Frontend form errors: {}".format(form.errors.as_json()))
-            return render_form(frontend)
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form
+            )
 
         # Save the form to get an id if there is not already one
         frontend = form.save(commit=False)
         frontend.configuration = {}
+        frontend.custom_actions = custom_actions_form.cleaned_data.get("custom_actions", [])
 
         try:
             """ For each node, the conf differs if listener chosen """
@@ -448,12 +464,20 @@ def frontend_edit(request, object_id=None, api=False):
                         logger.warning(f"FRONTEND::Edit: Configuration test skipped on node {node.name} (state {node.state})")
         except ServiceError as e:
             logger.exception(e)
-            return render_form(frontend, save_error=[str(e), e.traceback])
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form,
+                save_error=[str(e), e.traceback]
+            )
 
         except Exception as e:
             logger.exception(e)
-            return render_form(frontend, save_error=["No referenced error",
-                                                     str.join('', format_exception(*exc_info()))])
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form,
+                save_error=["No referenced error",
+                        str.join('', format_exception(*exc_info()))]
+            )
 
         """ If the conf is OK, save the Frontend object """
         # Is that object already in db or not
@@ -474,7 +498,10 @@ def frontend_edit(request, object_id=None, api=False):
                         log_forwarders.add(log_om.id)
                     except ObjectDoesNotExist:
                         form.add_error("log_condition", "LogForwarder not found.")
-                        return render_form(frontend)
+                        return render_form(
+                            frontend,
+                            custom_actions_form=custom_actions_form,
+                        )
 
                 frontend.log_forwarders_id = log_forwarders
 
@@ -590,13 +617,21 @@ def frontend_edit(request, object_id=None, api=False):
                 frontend.delete()
 
             logger.exception(e)
-            return render_form(frontend, save_error=[str(e), e.traceback])
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form,
+                save_error=[str(e), e.traceback]
+            )
 
         except Exception as e:
             """ If we arrive here, the object has not been saved """
             logger.exception(e)
-            return render_form(frontend, save_error=["Failed to save object in database :\n{}".format(e),
-                                                     str.join('', format_exception(*exc_info()))])
+            return render_form(
+                frontend,
+                custom_actions_form=custom_actions_form,
+                save_error=["Failed to save object in database :\n{}".format(e),
+                    str.join('', format_exception(*exc_info()))]
+            )
 
         if api:
             return build_response(frontend.id, "services.frontend.api", COMMAND_LIST)
