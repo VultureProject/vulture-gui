@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.31.0] - 2025-09-12
 ### Added
 - [API_PARSER] [CROWDSTRIKE] Add identities to fetched information
 - [FRONTEND] New Rsyslog custom actions
