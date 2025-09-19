@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [REPUTATION_CTX] Allow to configure if custom Reputation Context DBs should be downloaded every hour
+- [REPUTATION_CTX] Set back update crontab to download Reputation Context files every hour
 
 
 ## [2.31.0] - 2025-09-12
@@ -14,8 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] New Rsyslog custom actions
 ### Changed
 - [API_PARSER] [GATEWATCHER_ALERTS] Only fetch at most 1 hour time ranges
-- [REPUTATION_CTX] Allow to configure if custom Reputation Context DBs should be downloaded every hour
-- [REPUTATION_CTX] Set back update crontab to download Reputation Context files every hour
 ### Fixed
 - [LOG_FORMAT] [HAPROXY] Use correct log-format field for haproxy HTTP path only
 - [PORTAL] [JWT] Correctly write IDP certificate files on system for JWT validation
