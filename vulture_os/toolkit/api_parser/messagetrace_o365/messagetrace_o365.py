@@ -24,12 +24,13 @@ __doc__ = 'MessageTrace O365 API Parser'
 __parser__ = 'MESSAGETRACE O365'
 
 
-import datetime
+from datetime import datetime, timedelta
 import json
 import logging
 import requests
 
 from django.conf import settings
+from django.utils import timezone
 from toolkit.api_parser.api_parser import ApiParser
 import msal
 
@@ -37,11 +38,7 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
 
-class Office365ParseError(Exception):
-    pass
-
-
-class Office365APIError(Exception):
+class MessageTraceO365APIError(Exception):
     pass
 
 
@@ -84,6 +81,7 @@ class MessageTraceO365Parser(ApiParser):
 
     def _get_logs(self, since, to):
         access_token = self._get_access_token()
+        # TODO : filter can sort ?
         filter_str = f"StartDate eq datetime'{since}' and EndDate eq datetime'{to}'"
 
         # Paramètres de la requête
@@ -92,24 +90,22 @@ class MessageTraceO365Parser(ApiParser):
             "$top": 100
         }
 
-        # TODO : proxy
         response = requests.get(self.url,
                                 headers=self.headers,
                                 params=params,
                                 proxies=self.proxies,
                                 verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
-        data = response
+        data = response.json()
 
         if response.status_code != 200:
-            # TODO : change exception
-            raise Office365APIError(f"Error on URL: {self.url} Status: {response.status_code} Content: {response.content}")
+            raise MessageTraceO365APIError(f"Error on URL: {self.url} Status: {response.status_code} Content: {response.content}")
 
-        return data
+        return data["value"]
 
     def test(self):
         try:
-            end_date = datetime.datetime(2025, 9, 22, 14, 16, 2)
-            start_date = datetime.datetime(2025, 9, 15, 14, 16, 1)
+            end_date = datetime(2025, 9, 22, 14, 16, 2)
+            start_date = datetime(2025, 9, 15, 14, 16, 1)
 
             to = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
             since = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -118,30 +114,29 @@ class MessageTraceO365Parser(ApiParser):
                 'status': True,
                 'data': data
             }
-        except Office365APIError as e:
+        except MessageTraceO365APIError as e:
             return {
                 'status': False,
                 'error': str(e)
             }
 
-    def execute(self, test=False):
-        # TODO
+    def format_log(self, log):
+        return json.dumps(log)
+
+    def execute(self):
+        # TODO : check for duplicate logs
+        since = self.last_api_call or (timezone.now() - timedelta(days=7))
+        to = min(timezone.now(), since + timedelta(hours=24))
         try:
-            for feed_url in self._get_feed(test=test):
-                data = []
-                for log in self._get_logs(feed_url):
-                    data.append(json.dumps(self.parse_log(log)))
+            logs = self._get_logs(since, to)
+            if len(logs) > 0:
+                self.write_to_file([self.format_log(log) for log in logs])
+                # looking for the most recent timestamp
+                last_timestamp = max(logs, key=lambda log: datetime.fromisoformat(log["Received"]))["Received"]
+                logger.info(f"[{__parser__}]:execute: Received data, update timestamp to {last_timestamp}", extra={'frontend': str(self.frontend)})
 
-                    if test:
-                        return {
-                            'status': True,
-                            'data': data
-                        }
-
-                self.write_to_file(data)
-
-            self.frontend.last_api_call = self.last_api_call
-            self.frontend.save(update_fields=["last_api_call"])
+                self.frontend.last_api_call = last_timestamp
+                self.frontend.save(update_fields=["last_api_call"])
 
         except Exception as e:
-            raise Office365ParseError(e)
+            raise MessageTraceO365APIError(e)
