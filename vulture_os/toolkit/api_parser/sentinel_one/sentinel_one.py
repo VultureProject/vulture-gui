@@ -42,13 +42,7 @@ class SentinelOneAPIError(Exception):
 
 class SentinelOneParser(ApiParser):
     LOGIN_URI_TOKEN = "web/api/v2.1/users/login/by-api-token"
-    LOGIN_URI = "/web/api/v2.1/users/login"
-    VERSION_URI = "/web/api/v2.1/system/info"
-    ACCOUNTS = "/web/api/v2.1/accounts"
-    SITES = "/web/api/v2.1/sites"
-    AGENTS = "/web/api/v2.1/agents"
     THREATS = "web/api/v2.1/threats"
-    POLICY_BY_SITE = "/web/api/v2.1/sites/{id}/policy"
     ACTIVITIES = "web/api/v2.1/activities"
 
     HEADERS = {
