@@ -57,37 +57,30 @@ class MessageTraceO365Parser(ApiParser):
 
         self.url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace"
 
-    def _get_access_token(self):
-        # TODO : expires_on ?
-        self.__connect()
-
-        return self.access_token
-
     def __connect(self):
         logger.info(f"[{__parser__}]:connect: Requesting a new token", extra={'frontend': str(self.frontend)})
         app = msal.ConfidentialClientApplication(
             self.messagetrace_o365_client_id, authority=self.authority, client_credential=self.messagetrace_o365_client_secret
         )
         token_result = app.acquire_token_for_client(scopes=self.scope)
+        if "error" in token_result:
+            raise MessageTraceO365APIError("Could not retrieve token : " + token_result["error_description"])
+        logger.info(f"[{__parser__}]:connect: Token result = {token_result}", extra={'frontend': str(self.frontend)})
         self.access_token = token_result.get("access_token")
+
         self.headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Accept": "application/json"
         }
 
-        # TODO : check response
-        # TODO : expires on ?
-
-
-    def _get_logs(self, since, to):
-        access_token = self._get_access_token()
-        # TODO : filter can sort ?
+    def _get_logs(self, since, to, limit=None):
+        self.__connect()
         filter_str = f"StartDate eq datetime'{since}' and EndDate eq datetime'{to}'"
 
-        # Paramètres de la requête
+        # without limit, max 2000 results
         params = {
             "$filter": filter_str,
-            "$top": 100
+            "$top": limit
         }
 
         response = requests.get(self.url,
@@ -104,12 +97,9 @@ class MessageTraceO365Parser(ApiParser):
 
     def test(self):
         try:
-            end_date = datetime(2025, 9, 22, 14, 16, 2)
-            start_date = datetime(2025, 9, 15, 14, 16, 1)
-
-            to = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            since = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            data = self._get_logs(since, to)
+            since = timezone.now() - timedelta(minutes=5)
+            to = timezone.now() - timedelta(minutes=1)
+            data = self._get_logs(since, to, limit=10)
             return {
                 'status': True,
                 'data': data
@@ -121,18 +111,25 @@ class MessageTraceO365Parser(ApiParser):
             }
 
     def format_log(self, log):
+        # StartDate and EndDate are just the "since" and "to" queried and do not convey any log-related information
+        del log["StartDate"]
+        del log["EndDate"]
         return json.dumps(log)
 
     def execute(self):
-        # TODO : check for duplicate logs
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
+        # avoid duplicate logs
+        since = since + timedelta(milliseconds=1)
         to = min(timezone.now(), since + timedelta(hours=24))
         try:
+            logger.info(f"[{__parser__}]:execute: Querying logs from {since} to {to}",
+                        extra={'frontend': str(self.frontend)})
             logs = self._get_logs(since, to)
+            # the API does not support sorting by date
+            logs.sort(key=lambda log: log["Received"])
             if len(logs) > 0:
                 self.write_to_file([self.format_log(log) for log in logs])
-                # looking for the most recent timestamp
-                last_timestamp = max(logs, key=lambda log: datetime.fromisoformat(log["Received"]))["Received"]
+                last_timestamp = logs[-1]['Received']
                 logger.info(f"[{__parser__}]:execute: Received data, update timestamp to {last_timestamp}", extra={'frontend': str(self.frontend)})
 
                 self.frontend.last_api_call = last_timestamp
