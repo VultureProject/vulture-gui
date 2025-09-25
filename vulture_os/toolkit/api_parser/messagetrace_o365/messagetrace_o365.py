@@ -134,6 +134,14 @@ class MessageTraceO365Parser(ApiParser):
 
                 self.frontend.last_api_call = last_timestamp
                 self.frontend.save(update_fields=["last_api_call"])
+            elif since < timezone.now() - timedelta(hours=24):
+                # If no logs where retrieved during the last 24hours,
+                # move forward 1h to prevent stagnate ad vitam eternam
+                logger.info(f"[{__parser__}]:execute: Update timestamp "
+                            f"to {since + timedelta(hours=1)}",
+                            extra={'frontend': str(self.frontend)})
+                self.frontend.last_api_call = since + timedelta(hours=1)
+                self.frontend.save(update_fields=["last_api_call"])
 
         except Exception as e:
             raise MessageTraceO365APIError(e)
