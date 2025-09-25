@@ -24,7 +24,7 @@ __doc__ = 'MessageTrace O365 API Parser'
 __parser__ = 'MESSAGETRACE O365'
 
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import json
 import logging
 import requests
