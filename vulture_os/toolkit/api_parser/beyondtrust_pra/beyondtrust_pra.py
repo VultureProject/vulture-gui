@@ -306,11 +306,13 @@ class BeyondtrustPRAParser(ApiParser):
                     last_datetime = datetime.fromtimestamp(int(last_datetime), tz=timezone.utc) + timedelta(seconds=1)
                     self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = last_datetime
                 except (TypeError, ValueError):
-                    # Update timestamp +24 if since < now, otherwise +1
-                    delta = 24 if since < timezone.now() - timedelta(hours=24) else 1
-                    msg = f"No logs, advancing timestamp by {delta} hour(s)"
-                    logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
-                    self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = since + timedelta(hours=delta)
+                    # except if no logs because "last_datetime" == None
+                    # If no logs where retrieved during the last 24hours,
+                    # move forward 1h to prevent stagnate ad vitam eternam
+                    if since < timezone.now() - timedelta(hours=24):
+                        msg = f"No logs, advancing timestamp by 1 hour(s)"
+                        logger.debug(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+                        self.last_collected_timestamps[f"beyondtrust_pra_{report_type}"] = since + timedelta(hours=1)
                 finally:
                     msg = "Current timestamp for {report_type} is {timestamp}".format(
                         report_type=report_type,
