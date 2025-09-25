@@ -181,7 +181,7 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-REDISIP = env.str('REDIS_HOST', '127.0.0.1')
+REDISIP = env.str('REDIS_HOST', '127.0.0.5')
 REDISPORT = env.int('REDIS_PORT', 6379)
 
 LOGIN_URL = "/login/"
