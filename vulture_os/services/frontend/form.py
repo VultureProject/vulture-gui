@@ -652,7 +652,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'sentinel_one_graph_console_url': TextInput(attrs={'class': 'form-control'}),
             'messagetrace_o365_tenant_id': TextInput(attrs={'class': 'form-control'}),
             'messagetrace_o365_client_id': TextInput(attrs={'class': 'form-control'}),
-            'messagetrace_o365_client_secret': TextInput(attrs={'class': 'form-control'}),
+            'messagetrace_o365_client_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
         } | RsyslogQueueForm.Meta.widgets
 
     def clean_name(self):
