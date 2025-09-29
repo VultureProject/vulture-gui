@@ -1685,6 +1685,11 @@ class Frontend(RsyslogQueue, models.Model):
         default=""
     )
 
+    messagetrace_o365_serialized_token = models.TextField(
+        help_text=_('MessageTrace O365 Serialized Token'),
+        default=""
+    )
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """

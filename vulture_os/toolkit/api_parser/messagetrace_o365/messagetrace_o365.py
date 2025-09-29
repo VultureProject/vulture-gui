@@ -57,10 +57,18 @@ class MessageTraceO365Parser(ApiParser):
 
         self.url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace"
 
+        self.token_cache = msal.SerializableTokenCache()
+        if self.frontend.messagetrace_o365_serialized_token:
+            logger.info(f"[{__parser__}]:__init__: Loading cache", extra={'frontend': str(self.frontend)})
+            self.token_cache.deserialize(self.frontend.messagetrace_o365_serialized_token)
+
     def __connect(self):
-        logger.info(f"[{__parser__}]:connect: Requesting a new token", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:connect: Fetching token", extra={'frontend': str(self.frontend)})
         app = msal.ConfidentialClientApplication(
-            self.messagetrace_o365_client_id, authority=self.authority, client_credential=self.messagetrace_o365_client_secret
+            self.messagetrace_o365_client_id,
+            authority=self.authority,
+            client_credential=self.messagetrace_o365_client_secret,
+            token_cache=self.token_cache
         )
         token_result = app.acquire_token_for_client(scopes=self.scope)
         if "error" in token_result:
@@ -144,3 +152,7 @@ class MessageTraceO365Parser(ApiParser):
 
         except Exception as e:
             raise MessageTraceO365APIError(e)
+        finally:
+            if self.token_cache.has_state_changed:
+                self.frontend.messagetrace_o365_serialized_token = self.token_cache.serialize()
+                self.frontend.save(update_fields=["messagetrace_o365_serialized_token"])
