@@ -64,13 +64,24 @@ class MessageTraceO365Parser(ApiParser):
 
     def __connect(self):
         logger.info(f"[{__parser__}]:connect: Fetching token", extra={'frontend': str(self.frontend)})
-        app = msal.ConfidentialClientApplication(
-            self.messagetrace_o365_client_id,
-            authority=self.authority,
-            client_credential=self.messagetrace_o365_client_secret,
-            token_cache=self.token_cache
-        )
-        token_result = app.acquire_token_for_client(scopes=self.scope)
+        try:
+            app = msal.ConfidentialClientApplication(
+                self.messagetrace_o365_client_id,
+                authority=self.authority,
+                client_credential=self.messagetrace_o365_client_secret,
+                token_cache=self.token_cache
+            )
+            token_result = app.acquire_token_for_client(scopes=self.scope)
+        # handle network-related errors
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"[{__parser__}]:connect: Network error while trying to get a new token: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise MessageTraceO365APIError("Could not retrieve token, network error")
+        except Exception as e:
+            logger.error(f"[{__parser__}]:connect: Error while trying to get a new token: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise MessageTraceO365APIError("Could not retrieve token, unknown error")
+
         if "error" in token_result:
             raise MessageTraceO365APIError("Could not retrieve token : " + token_result.get("error_description", "unknown error"))
         self.access_token = token_result.get("access_token")
