@@ -162,5 +162,6 @@ class MessageTraceO365Parser(ApiParser):
             raise MessageTraceO365APIError(e)
         finally:
             if self.token_cache.has_state_changed:
+                logger.info(f"[{__parser__}]:execute: Token was refreshed", extra={'frontend': str(self.frontend)})
                 self.frontend.messagetrace_o365_serialized_token = self.token_cache.serialize()
                 self.frontend.save(update_fields=["messagetrace_o365_serialized_token"])
