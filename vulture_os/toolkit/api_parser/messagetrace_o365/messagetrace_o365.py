@@ -72,7 +72,7 @@ class MessageTraceO365Parser(ApiParser):
         )
         token_result = app.acquire_token_for_client(scopes=self.scope)
         if "error" in token_result:
-            raise MessageTraceO365APIError("Could not retrieve token : " + token_result["error_description"])
+            raise MessageTraceO365APIError("Could not retrieve token : " + token_result.get("error_description", "unknown error"))
         self.access_token = token_result.get("access_token")
 
         self.headers = {
