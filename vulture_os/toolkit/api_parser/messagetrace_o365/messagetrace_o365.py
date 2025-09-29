@@ -162,8 +162,6 @@ class MessageTraceO365Parser(ApiParser):
             }
 
     def format_log(self, log):
-        log["Received"] = timezone.make_aware(datetime.fromisoformat(log["Received"])).isoformat()
-
         # StartDate and EndDate are just the "since" and "to" queried and do not convey any log-related information
         del log["StartDate"]
         del log["EndDate"]
@@ -181,7 +179,7 @@ class MessageTraceO365Parser(ApiParser):
 
             if len(logs) > 0:
                 self.write_to_file([self.format_log(log) for log in logs])
-                last_timestamp = logs[-1]['Received']
+                last_timestamp = timezone.make_aware(datetime.fromisoformat(logs[-1]["Received"]))
                 logger.info(f"[{__parser__}]:execute: Received data, update timestamp to {last_timestamp}", extra={'frontend': str(self.frontend)})
 
                 self.frontend.last_api_call = last_timestamp
