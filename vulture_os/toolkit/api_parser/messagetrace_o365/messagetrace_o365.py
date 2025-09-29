@@ -80,16 +80,7 @@ class MessageTraceO365Parser(ApiParser):
             "Accept": "application/json"
         }
 
-    def _get_logs(self, since, to, limit=None):
-        self.__connect()
-        filter_str = f"StartDate eq datetime'{since}' and EndDate eq datetime'{to}'"
-
-        # without limit, max 2000 results
-        params = {
-            "$filter": filter_str,
-            "$top": limit
-        }
-
+    def __execute_query(self, params):
         response = requests.get(self.url,
                                 headers=self.headers,
                                 params=params,
@@ -100,7 +91,25 @@ class MessageTraceO365Parser(ApiParser):
         if response.status_code != 200:
             raise MessageTraceO365APIError(f"Error on URL: {self.url} Status: {response.status_code} Content: {response.content}")
 
-        return data["value"]
+        return data
+
+    def _get_logs(self, since, to, limit=None):
+        self.__connect()
+        filter_str = f"StartDate eq datetime'{since}' and EndDate eq datetime'{to}'"
+
+        # without limit, max 2000 results
+        params = {
+            "$filter": filter_str,
+            "$top": limit
+        }
+
+        data = self.__execute_query(params)
+
+        logs = data["value"]
+        # the API does not support sorting by date
+        logs.sort(key=lambda log: log["Received"])
+
+        return logs
 
     def test(self):
         try:
@@ -132,8 +141,7 @@ class MessageTraceO365Parser(ApiParser):
             logger.info(f"[{__parser__}]:execute: Querying logs from {since} to {to}",
                         extra={'frontend': str(self.frontend)})
             logs = self._get_logs(since, to)
-            # the API does not support sorting by date
-            logs.sort(key=lambda log: log["Received"])
+
             if len(logs) > 0:
                 self.write_to_file([self.format_log(log) for log in logs])
                 last_timestamp = logs[-1]['Received']
