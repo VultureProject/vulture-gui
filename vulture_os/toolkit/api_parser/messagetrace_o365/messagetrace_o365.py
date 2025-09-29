@@ -81,6 +81,7 @@ class MessageTraceO365Parser(ApiParser):
         }
 
     def __execute_query(self, params):
+        logger.info(f"[{__parser__}]:__execute_query: Sending query with params {params}", extra={'frontend': str(self.frontend)})
         response = requests.get(self.url,
                                 headers=self.headers,
                                 params=params,
