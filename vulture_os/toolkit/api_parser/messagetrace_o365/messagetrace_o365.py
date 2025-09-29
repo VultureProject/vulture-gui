@@ -24,7 +24,7 @@ __doc__ = 'MessageTrace O365 API Parser'
 __parser__ = 'MESSAGETRACE O365'
 
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
 import logging
 import requests
@@ -128,6 +128,8 @@ class MessageTraceO365Parser(ApiParser):
             }
 
     def format_log(self, log):
+        log["Received"] = timezone.make_aware(datetime.fromisoformat(log["Received"])).isoformat()
+
         # StartDate and EndDate are just the "since" and "to" queried and do not convey any log-related information
         del log["StartDate"]
         del log["EndDate"]
