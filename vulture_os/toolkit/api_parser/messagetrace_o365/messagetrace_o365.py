@@ -93,17 +93,35 @@ class MessageTraceO365Parser(ApiParser):
 
     def __execute_query(self, params):
         logger.info(f"[{__parser__}]:__execute_query: Sending query with params {params}", extra={'frontend': str(self.frontend)})
-        response = requests.get(self.url,
-                                headers=self.headers,
-                                params=params,
-                                proxies=self.proxies,
-                                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
-        data = response.json()
-
-        if response.status_code != 200:
-            raise MessageTraceO365APIError(f"Error on URL: {self.url} Status: {response.status_code} Content: {response.content}")
-
-        return data
+        data = None
+        response = None
+        try:
+            response = requests.get(self.url,
+                                    headers=self.headers,
+                                    params=params,
+                                    proxies=self.proxies,
+                                    verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
+            response.raise_for_status()
+            data = response.json()
+            return data
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"[{__parser__}]:__execute_query: Network Error while executing query: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise MessageTraceO365APIError("Could not fetch logs, network error")
+        except requests.HTTPError as e:
+            logger.error(f"[{__parser__}]:__execute_query: HTTP Error while executing query: {e}",
+                         extra={'frontend': str(self.frontend)})
+            if response and response.content:
+                logger.info(f"[{__parser__}]:__execute_query: Status: {response.status_code}, Content: {response.content}",
+                            extra={'frontend': str(self.frontend)})
+            raise MessageTraceO365APIError("Could not fetch logs, HTTP error")
+        except json.JSONDecodeError as e:
+            logger.error(f"[{__parser__}]:__execute_query: error while decoding json result: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise MessageTraceO365APIError("Could not fetch logs, JSON decoding error")
+        except Exception as e:
+            logger.error(f"[{__parser__}]:__execute_query: unknown error {e}", extra={'frontend': str(self.frontend)})
+            raise MessageTraceO365APIError("Could not fetch logs, unknown error")
 
     def _get_logs(self, since, to, limit=None):
         self.__connect()
@@ -116,8 +134,13 @@ class MessageTraceO365Parser(ApiParser):
         }
 
         data = self.__execute_query(params)
+        try:
+            logs = data["value"]
+        except KeyError:
+            logger.error(f"[{__parser__}]:_get_logs: Missing key 'value' in logs, reply is {data}",
+                         extra={'frontend': str(self.frontend)})
+            raise MessageTraceO365APIError("Could not fetch logs, response malformed")
 
-        logs = data["value"]
         # the API does not support sorting by date
         logs.sort(key=lambda log: log["Received"])
 
