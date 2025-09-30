@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- [API_PARSER] [MESSAGETRACE_O365] New collector
 ### Changed
 - [REPUTATION_CTX] Allow to configure if custom Reputation Context DBs should be downloaded every hour
 - [REPUTATION_CTX] Set back update crontab to download Reputation Context files every hour
