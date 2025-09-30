@@ -182,9 +182,8 @@ class MessageTraceO365Parser(ApiParser):
 
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
-        # avoid duplicate logs
-        since = since + timedelta(milliseconds=1)
         to = min(timezone.now(), since + timedelta(hours=24))
+
         try:
             logger.info(f"[{__parser__}]:execute: Querying logs from {since} to {to}",
                         extra={'frontend': str(self.frontend)})
@@ -193,6 +192,8 @@ class MessageTraceO365Parser(ApiParser):
             if len(logs) > 0:
                 self.write_to_file([self.format_log(log) for log in logs])
                 last_timestamp = timezone.make_aware(datetime.fromisoformat(logs[-1]["Received"]))
+                # avoid duplicate logs
+                last_timestamp = last_timestamp + timedelta(milliseconds=1)
                 logger.info(f"[{__parser__}]:execute: Received data, update timestamp to {last_timestamp}", extra={'frontend': str(self.frontend)})
 
                 self.frontend.last_api_call = last_timestamp
