@@ -72,6 +72,10 @@ class MessageTraceO365Parser(ApiParser):
                 token_cache=self.token_cache
             )
             token_result = app.acquire_token_for_client(scopes=self.scope)
+            if self.token_cache.has_state_changed and self.frontend:
+                logger.info(f"[{__parser__}]:execute: Token was refreshed", extra={'frontend': str(self.frontend)})
+                self.frontend.messagetrace_o365_serialized_token = self.token_cache.serialize()
+                self.frontend.save(update_fields=["messagetrace_o365_serialized_token"])
         # handle network-related errors
         except (ConnectionError, TimeoutError) as e:
             logger.error(f"[{__parser__}]:connect: Network error while trying to get a new token: {e}",
@@ -195,8 +199,4 @@ class MessageTraceO365Parser(ApiParser):
 
         except Exception as e:
             raise MessageTraceO365APIError(e)
-        finally:
-            if self.token_cache.has_state_changed:
-                logger.info(f"[{__parser__}]:execute: Token was refreshed", extra={'frontend': str(self.frontend)})
-                self.frontend.messagetrace_o365_serialized_token = self.token_cache.serialize()
-                self.frontend.save(update_fields=["messagetrace_o365_serialized_token"])
+
