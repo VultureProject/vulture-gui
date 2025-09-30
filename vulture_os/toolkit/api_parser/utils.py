@@ -85,6 +85,7 @@ from toolkit.api_parser.extrahop.extrahop import ExtrahopParser
 from toolkit.api_parser.hornetsecurity.hornetsecurity import HornetSecurityParser
 from toolkit.api_parser.ubika.ubika import UbikaParser
 from toolkit.api_parser.sentinel_one_graph.sentinel_one_graph import SentinelOneGraphParser
+from toolkit.api_parser.messagetrace_o365.messagetrace_o365 import MessageTraceO365Parser
 
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('gui')
@@ -150,6 +151,7 @@ PARSER_LIST = {
     "hornetsecurity": HornetSecurityParser,
     "ubika": UbikaParser,
     "sentinel_one_graph": SentinelOneGraphParser,
+    "messagetrace_o365": MessageTraceO365Parser,
 }
 
 class ParserDoesNotExist(Exception):
