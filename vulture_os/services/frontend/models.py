@@ -1684,7 +1684,6 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_('MessageTrace O365 Client Secret'),
         default=""
     )
-
     messagetrace_o365_serialized_token = models.TextField(
         help_text=_('MessageTrace O365 Serialized Token'),
         default=""

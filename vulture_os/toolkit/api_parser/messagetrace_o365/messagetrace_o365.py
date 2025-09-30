@@ -58,9 +58,10 @@ class MessageTraceO365Parser(ApiParser):
         self.url = "https://reports.office365.com/ecp/reportingwebservice/reporting.svc/MessageTrace"
 
         self.token_cache = msal.SerializableTokenCache()
-        if self.frontend.messagetrace_o365_serialized_token:
-            logger.info(f"[{__parser__}]:__init__: Loading cache", extra={'frontend': str(self.frontend)})
+        if self.frontend and self.frontend.messagetrace_o365_serialized_token:
+            logger.info(f"[{__parser__}]:__init__: Loading cached token", extra={'frontend': str(self.frontend)})
             self.token_cache.deserialize(self.frontend.messagetrace_o365_serialized_token)
+
 
     def __connect(self):
         logger.info(f"[{__parser__}]:connect: Fetching token", extra={'frontend': str(self.frontend)})
@@ -88,12 +89,16 @@ class MessageTraceO365Parser(ApiParser):
 
         if "error" in token_result:
             raise MessageTraceO365APIError("Could not retrieve token : " + token_result.get("error_description", "unknown error"))
-        self.access_token = token_result.get("access_token")
+        if "access_token" not in token_result:
+            raise MessageTraceO365APIError("Could not retrieve token : missing access_token key")
+
+        self.access_token = token_result["access_token"]
 
         self.headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Accept": "application/json"
         }
+
 
     def __execute_query(self, params):
         logger.info(f"[{__parser__}]:__execute_query: Sending query with params {params}", extra={'frontend': str(self.frontend)})
@@ -127,6 +132,7 @@ class MessageTraceO365Parser(ApiParser):
             logger.error(f"[{__parser__}]:__execute_query: unknown error {e}", extra={'frontend': str(self.frontend)})
             raise MessageTraceO365APIError("Could not fetch logs, unknown error")
 
+
     def _get_logs(self, since, to, limit=None):
         self.__connect()
         filter_str = f"StartDate eq datetime'{since}' and EndDate eq datetime'{to}'"
@@ -150,6 +156,7 @@ class MessageTraceO365Parser(ApiParser):
 
         return logs
 
+
     def test(self):
         try:
             since = timezone.now() - timedelta(minutes=5)
@@ -165,11 +172,13 @@ class MessageTraceO365Parser(ApiParser):
                 'error': str(e)
             }
 
+
     def format_log(self, log):
         # StartDate and EndDate are just the "since" and "to" queried and do not convey any log-related information
         del log["StartDate"]
         del log["EndDate"]
         return json.dumps(log)
+
 
     def execute(self):
         since = self.last_api_call or (timezone.now() - timedelta(days=7))
