@@ -24,6 +24,7 @@ __doc__ = 'Rsyslog dedicated form class'
 
 # Django system imports
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.forms import ModelForm, Form, TextInput, Select, NumberInput, CheckboxInput, ChoiceField, CharField, JSONField
 from django.utils.crypto import get_random_string
 
@@ -31,6 +32,7 @@ from django.utils.crypto import get_random_string
 from services.rsyslogd.models import RsyslogSettings, RsyslogQueue
 
 # Required exceptions imports
+from django.forms import ValidationError
 from json import JSONDecodeError
 
 # Extern modules imports
@@ -231,7 +233,8 @@ class RsyslogConditionForm(Form):
     def clean(self):
         cleaned_data = super().clean()
 
-        cleaned_data['errors'] = []
+        if 'errors' not in self.cleaned_data:
+            self.cleaned_data['errors'] = []
         # Verify mandatory arguments
         if not cleaned_data.get("condition"):
             cleaned_data['errors'].append({'field' : "condition", 'message': "This field is mandatory"})
@@ -263,6 +266,45 @@ class RsyslogConditionForm(Form):
         if cleaned_data['errors'] != []:
             self.add_error(None, cleaned_data['errors'])
         return cleaned_data
+
+
+    def clean_condition_variable(self):
+        data = self.cleaned_data.get('condition_variable', '')
+        if 'errors' not in self.cleaned_data:
+            self.cleaned_data['errors'] = []
+        try:
+            RegexValidator(r'^\$[A-Za-z0-9.!]+$')(data)
+        except Exception:
+            self.cleaned_data['errors'].append({'field' : "condition_variable", 'message': "variables should respect Rsyslog variables' syntax"})
+
+        return data
+
+
+    def clean_result_variable(self):
+        data = self.cleaned_data.get('result_variable', '')
+        if 'errors' not in self.cleaned_data:
+            self.cleaned_data['errors'] = []
+        try:
+            RegexValidator(r'^\$[A-Za-z0-9.!]+$')(data)
+        except Exception:
+            self.cleaned_data['errors'].append({'field' : "result_variable", 'message': "variables should respect Rsyslog variables' syntax"})
+
+        return data
+
+
+    def clean_result_value(self):
+        data = self.cleaned_data.get('result_value', '')
+        if 'errors' not in self.cleaned_data:
+            self.cleaned_data['errors'] = []
+        # value is an Rsyslog variable
+        if data[0] == '$':
+            try:
+                RegexValidator(r'^\$[A-Za-z0-9.!]+$')(data)
+            except Exception:
+                self.cleaned_data['errors'].append({'field' : "result_value", 'message': "values begining with a '$' should respect Rsyslog variables' syntax"})
+
+        return data
+
 
     def as_json(self):
         """ Format as json """

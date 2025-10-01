@@ -2157,7 +2157,7 @@ class Frontend(RsyslogQueue, models.Model):
                 cond_str = ""
                 # Escape '$' sign
                 if condition_line.get("condition_value"):
-                    condition_line['condition_value'] = condition_line['condition_value'].replace('$', '\$')
+                    condition_line['condition_value'] = condition_line['condition_value'].replace('$', '\$').replace('"', '\\"')
                 match condition_line['condition']:
                     case "always":
                         cond_str = ""
@@ -2181,7 +2181,7 @@ class Frontend(RsyslogQueue, models.Model):
                 action_str = ""
                 # Do not quote variable name
                 if condition_line.get("result_value") and condition_line['result_value'][0] != "$":
-                    condition_line['result_value'] = '"' + condition_line['result_value'].replace('$', '\$') + '"'
+                    condition_line['result_value'] = '"' + condition_line['result_value'].replace('$', '\$').replace('"', '\\"') + '"'
                 match condition_line['action']:
                     case "set":
                         action_str = f"set {condition_line['result_variable']} = {condition_line['result_value']};"
