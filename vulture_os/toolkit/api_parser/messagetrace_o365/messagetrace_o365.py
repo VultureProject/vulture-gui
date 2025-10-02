@@ -70,7 +70,9 @@ class MessageTraceO365Parser(ApiParser):
                 self.messagetrace_o365_client_id,
                 authority=self.authority,
                 client_credential=self.messagetrace_o365_client_secret,
-                token_cache=self.token_cache
+                token_cache=self.token_cache,
+                proxies=self.proxies,
+                verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl
             )
             token_result = app.acquire_token_for_client(scopes=self.scope)
             if self.token_cache.has_state_changed and self.frontend:
