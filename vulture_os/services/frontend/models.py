@@ -2166,17 +2166,17 @@ class Frontend(RsyslogQueue, models.Model):
                     case "not exists":
                         cond_str = f"not exists({condition_line['condition_variable']})"
                     case "equals":
-                        cond_str = f"{condition_line['condition_variable']} == \"{condition_line['condition_value']}\""
+                        cond_str = f"exists({condition_line['condition_variable']}) and {condition_line['condition_variable']} == \"{condition_line['condition_value']}\""
                     case "iequals":
-                        cond_str = f"re_match_i({condition_line['condition_variable']}, \"^{condition_line['condition_value']}\$\")"
+                        cond_str = f"exists({condition_line['condition_variable']}) and re_match_i({condition_line['condition_variable']}, \"^{condition_line['condition_value']}\$\")"
                     case "contains":
-                        cond_str = f"{condition_line['condition_variable']} contains \"{condition_line['condition_value']}\""
+                        cond_str = f"exists({condition_line['condition_variable']}) and {condition_line['condition_variable']} contains \"{condition_line['condition_value']}\""
                     case "icontains":
-                        cond_str = f"re_match_i({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"
+                        cond_str = f"exists({condition_line['condition_variable']}) and re_match_i({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"
                     case "regex":
-                        cond_str = f"re_match({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
+                        cond_str = f"exists({condition_line['condition_variable']}) and re_match({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
                     case "iregex":
-                        cond_str = f"re_match_i({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
+                        cond_str = f"exists({condition_line['condition_variable']}) and re_match_i({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
 
                 action_str = ""
                 # Do not quote variable name
