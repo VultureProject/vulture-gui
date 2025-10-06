@@ -29,10 +29,9 @@ from django.forms import ModelForm, Form, TextInput, Select, NumberInput, Checkb
 from django.utils.crypto import get_random_string
 
 # Django project imports
-from services.rsyslogd.models import RsyslogSettings, RsyslogQueue
+from services.rsyslogd.models import RsyslogSettings, RsyslogQueue, RSYSLOG_INTERNAL_PROPERTIES
 
 # Required exceptions imports
-from django.forms import ValidationError
 from json import JSONDecodeError
 
 # Extern modules imports
@@ -272,10 +271,26 @@ class RsyslogConditionForm(Form):
         data = self.cleaned_data.get('condition_variable', '')
         if 'errors' not in self.cleaned_data:
             self.cleaned_data['errors'] = []
-        try:
-            RegexValidator(r'^\$[A-Za-z0-9.!_-]+$')(data)
-        except Exception:
-            self.cleaned_data['errors'].append({'field' : "condition_variable", 'message': "variables should respect Rsyslog variables' syntax"})
+        if data:
+            try:
+                RegexValidator(r'^\$[A-Za-z0-9.!_-]+$')(data)
+            except Exception:
+                self.cleaned_data['errors'].append({
+                    'field' : "condition_variable",
+                    'message': "variables should respect Rsyslog variables' syntax"
+                    })
+
+            if data[0] != "$":
+                self.cleaned_data['errors'].append({
+                    'field' : "condition_variable",
+                    'message': "Invalid variable name"
+                    })
+            # system/message rsyslog property
+            if data[1] not in ['!', '.'] and data[1:] not in RSYSLOG_INTERNAL_PROPERTIES:
+                self.cleaned_data['errors'].append({
+                    'field' : "condition_variable",
+                    'message': f"Invalid rsyslog system message property '{data[1:]}'"
+                    })
 
         return data
 
@@ -284,10 +299,26 @@ class RsyslogConditionForm(Form):
         data = self.cleaned_data.get('result_variable', '')
         if 'errors' not in self.cleaned_data:
             self.cleaned_data['errors'] = []
-        try:
-            RegexValidator(r'^\$[A-Za-z0-9.!_-]+$')(data)
-        except Exception:
-            self.cleaned_data['errors'].append({'field' : "result_variable", 'message': "variables should respect Rsyslog variables' syntax"})
+        if data:
+            try:
+                RegexValidator(r'^\$[A-Za-z0-9.!_-]+$')(data)
+            except Exception:
+                self.cleaned_data['errors'].append({
+                    'field' : "result_variable",
+                    'message': "variables should respect Rsyslog variables' syntax"
+                    })
+
+            if data[0] != "$":
+                self.cleaned_data['errors'].append({
+                    'field' : "result_variable",
+                    'message': "Invalid variable name"
+                    })
+            # system/message rsyslog property
+            if data[1] not in ['!', '.'] and data[1:] not in RSYSLOG_INTERNAL_PROPERTIES:
+                self.cleaned_data['errors'].append({
+                    'field' : "result_variable",
+                    'message': f"Invalid rsyslog system message property '{data[1:]}'"
+                    })
 
         return data
 

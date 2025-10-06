@@ -36,6 +36,54 @@ logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('services')
 
 
+RSYSLOG_INTERNAL_PROPERTIES = [
+    # Message properties
+    "msg",
+    "rawmsg",
+    "rawmsg-after-pri",
+    "hostname",
+    "source",
+    "fromhost",
+    "fromhost-ip",
+    "fromhost-port",
+    "syslogtag",
+    "programname",
+    "pri",
+    "pri-text",
+    "iut",
+    "syslogfacility",
+    "syslogfacility-text",
+    "syslogseverity",
+    "syslogseverity-text",
+    "syslogpriority",
+    "syslogpriority-text",
+    "timegenerated",
+    "timereported",
+    "timestamp",
+    "protocol-version",
+    "structured-data",
+    "app-name",
+    "procid",
+    "msgid",
+    "inputname",
+    "uuid",
+    "jsonmesg",
+    #System properties
+    "bom",
+    "myhostname",
+    "now",
+    "year",
+    "month",
+    "day",
+    "wday",
+    "hour",
+    "hhour",
+    "qhour",
+    "minute",
+    "now-unixtimestamp",
+]
+
+
 class RsyslogSettings(models.Model):
     """ Model used to manage global configuration fields of Rsyslogd """
 
