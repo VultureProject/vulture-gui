@@ -273,7 +273,7 @@ class RsyslogConditionForm(Form):
             self.cleaned_data['errors'] = []
         if data:
             try:
-                RegexValidator(r'^\$[A-Za-z0-9.!_-]+$')(data)
+                RegexValidator(r'^\$[.!]?[A-Za-z0-9!_-]+$')(data)
             except Exception:
                 self.cleaned_data['errors'].append({
                     'field' : "condition_variable",
@@ -301,7 +301,7 @@ class RsyslogConditionForm(Form):
             self.cleaned_data['errors'] = []
         if data:
             try:
-                RegexValidator(r'^\$[A-Za-z0-9.!_-]+$')(data)
+                RegexValidator(r'^\$[.!]?[A-Za-z0-9!_-]+$')(data)
             except Exception:
                 self.cleaned_data['errors'].append({
                     'field' : "result_variable",
