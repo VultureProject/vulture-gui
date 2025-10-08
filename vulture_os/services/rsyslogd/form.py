@@ -330,7 +330,7 @@ class RsyslogConditionForm(Form):
         # value is an Rsyslog variable
         if data[0] == '$':
             try:
-                RegexValidator(r'^\$[A-Za-z0-9.!]+$')(data)
+                RegexValidator(r'^\$[.!]?[A-Za-z0-9!_-]+$')(data)
             except Exception:
                 self.cleaned_data['errors'].append({'field' : "result_value", 'message': "values begining with a '$' should respect Rsyslog variables' syntax"})
 
