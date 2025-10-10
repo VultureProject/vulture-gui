@@ -221,8 +221,9 @@ class VectraParser(ApiParser):
 
             # And update lock after sending lines to Rsyslog
             self.update_lock()
-            self.frontend.last_api_call = to
-            self.frontend.save(update_fields=['last_api_call'])
+            if results:
+                self.frontend.last_api_call = datetime.fromisoformat(results[-1]["event_timestamp"].replace("Z", "+00:00")) + timedelta(milliseconds=1)
+                self.frontend.save(update_fields=['last_api_call'])
         except Exception as e:
             logger.exception(f"[{__parser__}]:execute: {e}", extra={'frontend': str(self.frontend)})
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
