@@ -41,14 +41,8 @@ class SentinelOneAPIError(Exception):
 
 
 class SentinelOneParser(ApiParser):
-    LOGIN_URI_TOKEN = "/web/api/v2.1/users/login/by-api-token"
-    LOGIN_URI = "/web/api/v2.1/users/login"
-    VERSION_URI = "/web/api/v2.1/system/info"
-    ACCOUNTS = "/web/api/v2.1/accounts"
-    SITES = "/web/api/v2.1/sites"
-    AGENTS = "/web/api/v2.1/agents"
-    THREATS = "/web/api/v2.1/threats"
-    POLICY_BY_SITE = "/web/api/v2.1/sites/{id}/policy"
+    LOGIN_URI_TOKEN = "web/api/v2.1/users/login/by-api-token"
+    THREATS = "web/api/v2.1/threats"
     ACTIVITIES = "web/api/v2.1/activities"
 
     HEADERS = {
@@ -59,7 +53,7 @@ class SentinelOneParser(ApiParser):
     def __init__(self, data):
         super().__init__(data)
 
-        self.sentinel_one_host = data["sentinel_one_host"]
+        self.sentinel_one_host = data["sentinel_one_host"].rstrip("/")
         if not self.sentinel_one_host.startswith('https://'):
             self.sentinel_one_host = f"https://{self.sentinel_one_host}"
 
