@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+
+## [2.32.0] - 2025-10-13
 ### Added
 - [FRONTEND] New Rsyslog custom actions
 - [API_PARSER] [MESSAGETRACE_O365] New collector
