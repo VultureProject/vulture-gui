@@ -36,3 +36,4 @@ google-api-python-client
 https://github.com/VultureProject/Sophos-Central-SIEM-Integration/archive/refs/heads/add_setup-py.zip
 defusedxml
 xmltodict
+msal ~= 1.34

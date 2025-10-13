@@ -1671,6 +1671,24 @@ class Frontend(RsyslogQueue, models.Model):
         default=""
     )
 
+    # MessageTrace O365 attributes
+    messagetrace_o365_tenant_id = models.TextField(
+        help_text=_('MessageTrace O365 Tenant ID'),
+        default=""
+    )
+    messagetrace_o365_client_id = models.TextField(
+        help_text=_('MessageTrace O365 Client ID'),
+        default=""
+    )
+    messagetrace_o365_client_secret = models.TextField(
+        help_text=_('MessageTrace O365 Client Secret'),
+        default=""
+    )
+    messagetrace_o365_serialized_token = models.TextField(
+        help_text=_('MessageTrace O365 Serialized Token'),
+        default=""
+    )
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
@@ -2139,7 +2157,7 @@ class Frontend(RsyslogQueue, models.Model):
                 cond_str = ""
                 # Escape '$' sign
                 if condition_line.get("condition_value"):
-                    condition_line['condition_value'] = condition_line['condition_value'].replace('$', '\$')
+                    condition_line['condition_value'] = condition_line['condition_value'].replace('$', '\$').replace('"', '\\"')
                 match condition_line['condition']:
                     case "always":
                         cond_str = ""
@@ -2148,22 +2166,22 @@ class Frontend(RsyslogQueue, models.Model):
                     case "not exists":
                         cond_str = f"not exists({condition_line['condition_variable']})"
                     case "equals":
-                        cond_str = f"{condition_line['condition_variable']} == \"{condition_line['condition_value']}\""
+                        cond_str = f"exists({condition_line['condition_variable']}) and {condition_line['condition_variable']} == \"{condition_line['condition_value']}\""
                     case "iequals":
-                        cond_str = f"re_match_i({condition_line['condition_variable']}, \"^{condition_line['condition_value']}\$\")"
+                        cond_str = f"exists({condition_line['condition_variable']}) and re_match_i({condition_line['condition_variable']}, \"^{condition_line['condition_value']}\$\")"
                     case "contains":
-                        cond_str = f"{condition_line['condition_variable']} contains \"{condition_line['condition_value']}\""
+                        cond_str = f"exists({condition_line['condition_variable']}) and {condition_line['condition_variable']} contains \"{condition_line['condition_value']}\""
                     case "icontains":
-                        cond_str = f"re_match_i({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"
+                        cond_str = f"exists({condition_line['condition_variable']}) and re_match_i({condition_line['condition_variable']}, \".*{condition_line['condition_value']}.*\")"
                     case "regex":
-                        cond_str = f"re_match({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
+                        cond_str = f"exists({condition_line['condition_variable']}) and re_match({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
                     case "iregex":
-                        cond_str = f"re_match_i({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
+                        cond_str = f"exists({condition_line['condition_variable']}) and re_match_i({condition_line['condition_variable']}, \"{condition_line['condition_value']}\")"
 
                 action_str = ""
                 # Do not quote variable name
                 if condition_line.get("result_value") and condition_line['result_value'][0] != "$":
-                    condition_line['result_value'] = '"' + condition_line['result_value'].replace('$', '\$') + '"'
+                    condition_line['result_value'] = '"' + condition_line['result_value'].replace('$', '\$').replace('"', '\\"') + '"'
                 match condition_line['action']:
                     case "set":
                         action_str = f"set {condition_line['result_variable']} = {condition_line['result_value']};"

@@ -24,11 +24,12 @@ __doc__ = 'Rsyslog dedicated form class'
 
 # Django system imports
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.forms import ModelForm, Form, TextInput, Select, NumberInput, CheckboxInput, ChoiceField, CharField, JSONField
 from django.utils.crypto import get_random_string
 
 # Django project imports
-from services.rsyslogd.models import RsyslogSettings, RsyslogQueue
+from services.rsyslogd.models import RsyslogSettings, RsyslogQueue, RSYSLOG_INTERNAL_PROPERTIES
 
 # Required exceptions imports
 from json import JSONDecodeError
@@ -231,7 +232,8 @@ class RsyslogConditionForm(Form):
     def clean(self):
         cleaned_data = super().clean()
 
-        cleaned_data['errors'] = []
+        if 'errors' not in self.cleaned_data:
+            self.cleaned_data['errors'] = []
         # Verify mandatory arguments
         if not cleaned_data.get("condition"):
             cleaned_data['errors'].append({'field' : "condition", 'message': "This field is mandatory"})
@@ -263,6 +265,77 @@ class RsyslogConditionForm(Form):
         if cleaned_data['errors'] != []:
             self.add_error(None, cleaned_data['errors'])
         return cleaned_data
+
+
+    def clean_condition_variable(self):
+        data = self.cleaned_data.get('condition_variable', '')
+        if 'errors' not in self.cleaned_data:
+            self.cleaned_data['errors'] = []
+        if data:
+            try:
+                RegexValidator(r'^\$[.!]?[A-Za-z0-9!_-]+$')(data)
+            except Exception:
+                self.cleaned_data['errors'].append({
+                    'field' : "condition_variable",
+                    'message': "variables should respect Rsyslog variables' syntax"
+                    })
+
+            if data[0] != "$":
+                self.cleaned_data['errors'].append({
+                    'field' : "condition_variable",
+                    'message': "Invalid variable name"
+                    })
+            # system/message rsyslog property
+            if data[1] not in ['!', '.'] and data[1:] not in RSYSLOG_INTERNAL_PROPERTIES:
+                self.cleaned_data['errors'].append({
+                    'field' : "condition_variable",
+                    'message': f"Invalid rsyslog system message property '{data[1:]}'"
+                    })
+
+        return data
+
+
+    def clean_result_variable(self):
+        data = self.cleaned_data.get('result_variable', '')
+        if 'errors' not in self.cleaned_data:
+            self.cleaned_data['errors'] = []
+        if data:
+            try:
+                RegexValidator(r'^\$[.!]?[A-Za-z0-9!_-]+$')(data)
+            except Exception:
+                self.cleaned_data['errors'].append({
+                    'field' : "result_variable",
+                    'message': "variables should respect Rsyslog variables' syntax"
+                    })
+
+            if data[0] != "$":
+                self.cleaned_data['errors'].append({
+                    'field' : "result_variable",
+                    'message': "Invalid variable name"
+                    })
+            # system/message rsyslog property
+            if data[1] not in ['!', '.'] and data[1:] not in RSYSLOG_INTERNAL_PROPERTIES:
+                self.cleaned_data['errors'].append({
+                    'field' : "result_variable",
+                    'message': f"Invalid rsyslog system message property '{data[1:]}'"
+                    })
+
+        return data
+
+
+    def clean_result_value(self):
+        data = self.cleaned_data.get('result_value', '')
+        if 'errors' not in self.cleaned_data:
+            self.cleaned_data['errors'] = []
+        # value is an Rsyslog variable
+        if data[0] == '$':
+            try:
+                RegexValidator(r'^\$[.!]?[A-Za-z0-9!_-]+$')(data)
+            except Exception:
+                self.cleaned_data['errors'].append({'field' : "result_value", 'message': "values begining with a '$' should respect Rsyslog variables' syntax"})
+
+        return data
+
 
     def as_json(self):
         """ Format as json """

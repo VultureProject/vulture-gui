@@ -11,10 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [REPUTATION_CTX] Set back update crontab to download Reputation Context files every hour
 
 
+## [2.32.0] - 2025-10-13
+### Added
+- [FRONTEND] New Rsyslog custom actions
+- [API_PARSER] [MESSAGETRACE_O365] New collector
+### Changed
+- [DEPENDENCIES]
+  - msal added -> 1.34.0
+
+
 ## [2.31.0] - 2025-09-12
 ### Added
 - [API_PARSER] [CROWDSTRIKE] Add identities to fetched information
-- [FRONTEND] New Rsyslog custom actions
 ### Changed
 - [API_PARSER] [GATEWATCHER_ALERTS] Only fetch at most 1 hour time ranges
 ### Fixed
