@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [REPUTATION_CTX] Allow to configure if custom Reputation Context DBs should be downloaded every hour
 - [REPUTATION_CTX] Set back update crontab to download Reputation Context files every hour
+### Fixed
+- [API_PARSER] [SENTINEL_ONE] Fix double slashes in URLs
 
 
 ## [2.32.0] - 2025-10-13
