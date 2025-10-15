@@ -148,8 +148,7 @@ for module in glob.glob(FILEBEAT_MODULE_PATH+'/*.yml*', recursive=True):
 FILEBEAT_LISTENING_MODE = (
     ('tcp', "TCP"),
     ('udp', "UDP"),
-    ('file', "File"),
-    ('api', 'Vendor specific API')
+    ('file', "File")
 )
 
 def get_available_timezones() -> list[tuple]:
@@ -1780,8 +1779,7 @@ class Frontend(RsyslogQueue, models.Model):
         if self.mode == "log" and self.listening_mode == "file" or\
             self.mode == "filebeat" and self.filebeat_listening_mode == "file":
             listeners_list = [self.file_path]
-        elif self.mode == "log" and self.listening_mode == "api" or\
-            self.mode == "filebeat" and self.filebeat_listening_mode == "api":
+        elif self.mode == "log" and self.listening_mode == "api":
             listeners_list = [self.api_parser_type]
         elif self.mode == "log" and self.listening_mode == "redis":
             listeners_list = ["Redis:", f"{self.redis_server}:{self.redis_port}"]
@@ -2375,7 +2373,7 @@ class Frontend(RsyslogQueue, models.Model):
         nodes = set()
         if self.mode == "log" and self.listening_mode in ["file", "kafka", "redis"]:
             nodes = {self.node} if self.node else set(Node.objects.all())
-        elif self.mode == "filebeat" and self.filebeat_listening_mode in ["file", "api"]:
+        elif self.mode == "filebeat" and self.filebeat_listening_mode == "file":
             nodes = {self.node}
         elif self.mode == "log" and self.listening_mode == "api":
             nodes = set(Node.objects.all())
@@ -2464,7 +2462,7 @@ class Frontend(RsyslogQueue, models.Model):
     @property
     def filebeat_only_conf(self):
         """ Check if this frontend has only filebeat configuration, not haproxy at all """
-        return self.mode == "filebeat" and self.filebeat_listening_mode in ("udp", "file", "api")
+        return self.mode == "filebeat" and self.filebeat_listening_mode != "tcp"
 
     @property
     def has_rsyslog_conf(self):

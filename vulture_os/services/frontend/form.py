@@ -852,12 +852,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             if not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
 
-        if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
-            if not cleaned_data.get('node'):
-                self.add_error('node', "This field is required.")
-
-        if mode == "log" and cleaned_data.get('listening_mode') == "api" or \
-        mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
+        if mode == "log" and cleaned_data.get('listening_mode') == "api":
             if cleaned_data.get('api_parser_use_proxy', True) and cleaned_data.get('api_parser_custom_proxy', None):
                 # parse_proxy_url will validate and return a correct url
                 custom_proxy = parse_proxy_url(cleaned_data.get('api_parser_custom_proxy', None))

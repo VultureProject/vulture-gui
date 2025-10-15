@@ -247,15 +247,7 @@ $(function() {
       $('.redis-mode').hide();
       // ALWAYS put show at last
       $('.file-mode').show();
-    } else if (mode === "filebeat" && filebeat_listening_mode === "api") {
-      $('.network-mode').hide();
-      $('.file-mode').hide();
-      $('.kafka-mode').hide();
-      $('.redis-mode').hide();
-      $('.api-mode').hide();
-      // ALWAYS put show at last
-      $('.filebeat-api-mode').show();
-    }else if (mode === "log" && listening_mode === "api") {
+    } else if (mode === "log" && listening_mode === "api") {
       $('.network-mode').hide();
       $('.file-mode').hide();
       $('.kafka-mode').hide();
@@ -290,7 +282,7 @@ $(function() {
   function show_custom_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an UDP mode only => HAProxy is useless */
     if( (mode === "log" && ["udp", "file", "api", "kafka", "redis"].includes(listening_mode)) ||
-        (mode === "filebeat" && ["udp", "file", "api"].includes(filebeat_listening_mode)) ) {
+        (mode === "filebeat" && ["udp", "file"].includes(filebeat_listening_mode)) ) {
       $('.haproxy-conf').hide();
     } else {
       $('.haproxy-conf').show();
@@ -327,8 +319,8 @@ $(function() {
   /* Show node field, or hide them, depending on chosen listening mode */
   function show_node(mode, listening_mode, filebeat_listening_mode) {
     /* If listening mode is TCP, show according options */
-    if( (mode === "log" && ["file", "api", "kafka", "redis"].includes(listening_mode)) ||
-    (mode === "filebeat" && ["file", "api"].includes(filebeat_listening_mode)) ) {
+    if ((mode === "log" && ["file", "api", "kafka", "redis"].includes(listening_mode)) ||
+      (mode === "filebeat" && filebeat_listening_mode === "file")) {
       $('#node-div').show();
     } else {
       $('#node-div').hide();
@@ -342,7 +334,7 @@ $(function() {
     }
     else {
       $('#ruleset-div').hide();
-      if((mode === "log" && listening_mode === "api") || (mode === "filebeat" && filebeat_listening_mode === "api") ){
+      if(mode === "log" && listening_mode === "api"){
         // Bind API inputs
         $("#tab_api_client input").each(function(){
           $(this).unbind('click');
@@ -658,7 +650,7 @@ $(function() {
       // Need to check if the API Parser has been tested
       if ($('#id_api_parser_has_been_tested').val() === "0"){
         event.preventDefault();
-        notify('error', gettext('Error'), gettext('Test your API configuration before saving this frontend'))
+        notify('error', gettext('Error'), gettext('Test your API configuration before saving this frontend'));
         return;
       }
     }
@@ -732,8 +724,7 @@ $(function() {
       let condition_block_array = new Array();
       for (let condition_line of condition_block.lines) {
         if (custom_actions_vue.validate_condition_line(condition_line).length > 0) {
-          notify('error', gettext('Error'), gettext('Error identified in custom operations tab'))
-          event.preventDefault()
+          notify('error', gettext('Error'), gettext('Error identified in custom operations tab'));
         };
         condition_block_array.push({
           'condition': condition_line.condition,
