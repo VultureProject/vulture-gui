@@ -382,7 +382,7 @@ def frontend_edit(request, object_id=None, api=False):
         listener_objs = []
         if form.data.get('mode') in ("http", "tcp") \
         or form.data.get('mode') == "log" and form.data.get('listening_mode') in ("tcp", "udp", "tcp,udp", "relp") \
-        or form.data.get('mode') == "filebeat" and form.data.get('filebeat_listening_mode') in ("tcp", "udp"):
+        or form.data.get('mode') == "filebeat" and "%ip%" in form.data.get('filebeat_config'):
 
             # At least one Listener is required if Frontend enabled, except for listener of type "File", and "API"
             if form.data.get('enabled') and not listener_ids:

@@ -161,21 +161,21 @@
                     <div class="row filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% translate "Filebeat Listening mode" %}</label>
-                          <div class="col-sm-5">
-                            {{form.filebeat_listening_mode}}
-                            {{form.filebeat_listening_mode.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row filebeat-mode -->
-                    <div class="row filebeat-mode">
-                      <div class="col-md-12">
-                        <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Filebeat Module" %}</label>
                           <div class="col-sm-5">
                             {{form.filebeat_module}}
                             {{form.filebeat_module.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row filebeat-mode -->
+                    <div class="row filebeat-mode" id="filebeat-input-div">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% translate "Filebeat Input" %}</label>
+                          <div class="col-sm-5">
+                            {{form.filebeat_listening_mode}}
+                            {{form.filebeat_listening_mode.errors|safe}}
                           </div>
                         </div>
                       </div>

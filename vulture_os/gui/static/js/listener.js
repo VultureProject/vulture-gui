@@ -281,11 +281,12 @@ $(function() {
   /* Show rsyslog only fields, or hide them */
   function show_custom_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an UDP mode only => HAProxy is useless */
-    if( (mode === "log" && ["udp", "file", "api", "kafka", "redis"].includes(listening_mode)) ||
-        (mode === "filebeat" && ["udp", "file"].includes(filebeat_listening_mode)) ) {
-      $('.haproxy-conf').hide();
-    } else {
+    if (mode === "tcp" || mode === "http" ||
+      (mode === "log" && ["tcp", "tcp,udp", "relp"].includes(listening_mode)) ||
+      (mode === "filebeat" && $('#id_filebeat_config').val().includes("%ip%"))) {
       $('.haproxy-conf').show();
+    } else {
+      $('.haproxy-conf').hide();
     }
   }
 
@@ -324,6 +325,15 @@ $(function() {
       $('#node-div').show();
     } else {
       $('#node-div').hide();
+    }
+  }
+
+  /* Show filebeat input field, or hide it, depending on chosen filebeat module */
+  function show_filebeat_input(mode, filebeat_module) {
+    if ((mode === "filebeat" && filebeat_module === "_custom")) {
+      $('#filebeat-input-div').show();
+    } else {
+      $('#filebeat-input-div').hide();
     }
   }
 
@@ -437,6 +447,7 @@ $(function() {
     show_network_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_redis_conf(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
     show_node(mode, $('#id_listening_mode').val(), $('#id_filebeat_listening_mode').val());
+    show_filebeat_input(mode, $('#id_filebeat_module').val());
     show_log_condition_failure();
     old_mode = mode;
   }).trigger('change');
@@ -537,11 +548,22 @@ $(function() {
   }
 
   $('#id_filebeat_module').on("change", function(e) {
+    show_filebeat_input($('#id_mode').val(), $(this).val());
+    $('#id_filebeat_config').trigger('change');
     refresh_filebeat_module();
     // Automatically select parser if present
     refresh_filebeat_ruleset($(this).val());
+  }).trigger('change');
+
+  $('#id_filebeat_config').on("change", function(e) {
+    if ($(this).val().includes("%ip%")) {
+      $('.network-mode').show();
+      $('.haproxy-conf').show();
+    } else {
+      $('.network-mode').hide();
+      $('.haproxy-conf').hide();
+    }
   });
-  refresh_filebeat_module();
 
   /* Show log_condition_failure depending on mode and ruleset */
   function show_log_condition_failure() {

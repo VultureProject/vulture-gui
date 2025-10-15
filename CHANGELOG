@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Removed
 - [HAPROXY] [SPOE] Remove unused configuration files
+### Added
+- [FRONTEND] Add new inputs for filebeat listeners
 ### Changed
 - [FRONTEND] [GUI] Correctly show 'Log forwarders - parse failure' for Filebeat Listeners
 ### Fixed

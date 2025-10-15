@@ -148,7 +148,25 @@ for module in glob.glob(FILEBEAT_MODULE_PATH+'/*.yml*', recursive=True):
 FILEBEAT_LISTENING_MODE = (
     ('tcp', "TCP"),
     ('udp', "UDP"),
-    ('file', "File")
+    ('file', "File"),
+    ('aws-cloudwatch', "AWS Cloudwatch"),
+    ('aws-s3', "AWS S3"),
+    ('azure-eventhub', "Azure Event hub"),
+    ('azure-blob-storage', "Azure Blob Storage"),
+    ('benchmark', "Benchmark"),
+    ('cel', "CEL"),
+    ('cloudfoundry', "Cloud Foundry"),
+    ('cometd', "CometD"),
+    ('entity-analytics', "Entity Analytics"),
+    ('filestream', "Filestream"),
+    ('gcp-pubsub', "GCP Pub/Sub"),
+    ('gcs', "Google Cloud Storage"),
+    ('http_endpoint', "HTTP Endpoint"),
+    ('httpjson', "HTTP JSON"),
+    ('mqtt', "MQTT"),
+    ('netflow', "NetFlow"),
+    ('salesforce', "Salesforce"),
+    ('streaming', "Streaming")
 )
 
 def get_available_timezones() -> list[tuple]:
@@ -2219,7 +2237,7 @@ class Frontend(RsyslogQueue, models.Model):
         """ Generate filebeat configuration of this frontend
         """
         conf = self.to_template()
-        if self.filebeat_listening_mode in ["udp", "tcp"]:
+        if "%ip%" in self.filebeat_config:
             conf['filebeat_config'] = conf['filebeat_config'].replace ("%ip%", JAIL_ADDRESSES['rsyslog'][conf['listeners'][0].network_address.family])
             conf['filebeat_config'] = conf['filebeat_config'].replace ("%port%", str(conf['listeners'][0].rsyslog_port))
 
