@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [API_PARSER] [CNAPP_WIZ] New collector
 - [SCRIPTS] [REFRESH_NIC] Support CARP configuration import from rc.conf
+- [LOG_FORWARDER] [HIREDIS] Make TLS configurable for HIREDIS from GUI
 ### Changed
 - [GUI] [NETIF] Show CARP information for addresses imported from rc.conf (support for externally managed CARP)
 ### Fixed

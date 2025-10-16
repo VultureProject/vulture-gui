@@ -18,6 +18,24 @@
         {%- if mode == "set" %}
             Expiration="{{expire_key}}"
         {%- endif %}
+        {%- if use_tls %}
+            use_tls="{{use_tls}}"
+            {%- if ca_cert_bundle %}
+            ca_cert_bundle="{{ca_cert_bundle}}"
+            {%- endif %}
+            {%- if ca_cert_dir %}
+            ca_cert_dir="{{ca_cert_dir}}"
+            {%- endif %}
+            {%- if client_cert %}
+            client_cert="{{client_cert}}"
+            {%- endif %}
+            {%- if client_key %}
+            client_key="{{client_key}}"
+            {%- endif %}
+            {%- if sni %}
+            sni="{{sni}}"
+            {%- endif %}
+        {%- endif %}
         {%- if mode == "stream" %}
             stream.outField="{{stream_outfield}}"
             stream.capacityLimit="{{stream_capacitylimit}}"
