@@ -497,6 +497,15 @@ class LogOMHIREDIS(LogOM):
         help_text=_("Set a stream capacity limit, if set to more than 0 (zero), oldest values in the stream will be evicted to stay under the max value"),
         verbose_name=_("Maximum stream size"),
     )
+    redis_tls_profile = models.ForeignKey(
+        TLSProfile,
+        on_delete=models.RESTRICT,
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("TLSProfile object to use."),
+        verbose_name=_("Use a TLS Profile")
+    )
 
     def to_dict(self, fields=None):
         result = model_to_dict(self, fields=fields)
@@ -543,8 +552,15 @@ class LogOMHIREDIS(LogOM):
             'type': 'Redis',
             'output': f"{self.target}:{self.port} (key = {self.key})"
         })
+        if self.redis_tls_profile:
+            template['use_tls'] = "on"
+            if self.redis_tls_profile.ca_cert:
+                template['ca_cert_bundle'] = self.redis_tls_profile.ca_cert.bundle_filename()
+            if self.redis_tls_profile.x509_certificate:
+                template['client_cert'] = self.redis_tls_profile.x509_certificate.get_base_filename() + ".crt"
+                template['client_key'] = self.redis_tls_profile.x509_certificate.get_base_filename() + ".key"
         return template
-
+    
     def get_rsyslog_template(self):
         from services.frontend.models import Frontend
         if self.dynamic_key and Frontend.objects.filter(log_forwarders=self.pk).exists() | Frontend.objects.filter(log_forwarders_parse_failure=self.pk).exists():
