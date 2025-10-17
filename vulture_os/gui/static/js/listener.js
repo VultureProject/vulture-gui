@@ -553,7 +553,7 @@ $(function() {
 
   /* Show log_condition_failure depending on mode and ruleset */
   function show_log_condition_failure() {
-    if( $('#id_mode').val() == "log" && ['raw_to_json'].indexOf($('#id_ruleset').val()) < 0 ) {
+    if(['log', 'filebeat'].includes($('#id_mode').val()) && !['raw_to_json'].includes($('#id_ruleset').val())) {
       $('.log-failure').show();
     } else {
       $('.log-failure').hide();
