@@ -1616,6 +1616,11 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Perception Point X Ray API Key"),
         default="",
     )
+    perception_point_x_ray_organization_id = models.TextField(
+        verbose_name=_("Perception Point X Ray Organization ID"),
+        help_text=_("Perception Point X Ray Organization ID"),
+        default="",
+    )
 
     extrahop_host = models.TextField(
         verbose_name=_("Extrahop host"),
