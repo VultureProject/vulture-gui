@@ -58,6 +58,8 @@ class PerceptionPointXRayParser(ApiParser):
         self.perception_point_x_ray_host = "https://" + data["perception_point_x_ray_host"].split("://")[-1].rstrip()
         self.token = data['perception_point_x_ray_token']
         self.perception_point_x_ray_organization_id = data['perception_point_x_ray_organization_id']
+        self.perception_point_x_ray_environment_id = data['perception_point_x_ray_environment_id']
+        self.perception_point_x_ray_case_types = data['perception_point_x_ray_case_types']
 
         self.session = None
 
@@ -258,9 +260,9 @@ class PerceptionPointXRayParser(ApiParser):
         else:
             url = f"{self.perception_point_x_ray_host}/api/v2/xdr/cases/details/"
             payload = {
-                "environment_id": 1,
+                "environment_id": self.perception_point_x_ray_environment_id,
                 "from_date": int(since.timestamp()),
-                "case_types[]": "354",
+                "case_types[]": self.perception_point_x_ray_case_types,
                 "statuses[]": "OPEN",
                 "organization_id": self.perception_point_x_ray_organization_id
             }
@@ -273,12 +275,12 @@ class PerceptionPointXRayParser(ApiParser):
         logs = []
         for log in last_cases.get('results', []):
             # Filter only see hours, not min/sec. So we have to compare with last_api_call to avoid duplicates
-            updated_ts = dateparse.parse_datetime(log["updated_timestamp_utc"])
-            if updated_ts >= since:
-                log["updated_timestamp"] = int(updated_ts.timestamp() * 1000000)
-                logs.append(log)
+            if updated_ts := dateparse.parse_datetime(log.get("updated_timestamp_utc")):
+                if updated_ts >= since:
+                    log["updated_timestamp"] = int(updated_ts.timestamp() * 1000000)
+                    logs.append(log)
             else:
-                logger.info(f"[{__parser__}]:get_case_logs: {updated_ts} < {since}, skipping...",
+                logger.error(f"[{__parser__}]:get_case_logs: Unable to parse {log.get('updated_timestamp_utc')} date, skipping...",
                                  extra={'frontend': str(self.frontend)})
 
         return logs, last_cases.get('next')
