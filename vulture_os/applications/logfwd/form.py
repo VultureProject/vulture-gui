@@ -159,10 +159,18 @@ class LogOMRELPForm(LogOMForm):
 
 class LogOMHIREDISForm(LogOMForm):
 
+    redis_tls_profile = ModelChoiceField(
+        queryset=TLSProfile.objects.all(),
+        required=False,
+        widget=Select(attrs={'class': 'form-control select2'}),
+        label=LogOMHIREDIS.redis_tls_profile.field.verbose_name,
+        empty_label="No TLS"
+    )
+
     class Meta(LogOMForm.Meta):
         model = LogOMHIREDIS
         fields = LogOMForm.Meta.fields + ('target', 'port', 'mode', 'key', 'dynamic_key', 'pwd',
-                  'use_rpush', 'expire_key', 'stream_outfield', 'stream_capacitylimit')
+                  'use_rpush', 'expire_key', 'stream_outfield', 'stream_capacitylimit', 'redis_tls_profile')
 
         widgets = {
             'target': TextInput(attrs={'class': 'form-control'}),
