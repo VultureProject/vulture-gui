@@ -36,9 +36,6 @@ from json import dumps, decoder
 
 from datetime import datetime, timedelta
 
-from toolkit.api_parser.perception_point_x_ray.scans import ScanMixin
-from toolkit.api_parser.perception_point_x_ray.cases import CaseMixin
-
 logging.config.dictConfig(settings.LOG_SETTINGS)
 logger = logging.getLogger('api_parser')
 
@@ -47,16 +44,16 @@ class PerceptionPointXRayAPIError(Exception):
     pass
 
 
-class PerceptionPointXRayParser(ApiParser, ScanMixin, CaseMixin):
+class PerceptionPointXRayParser(ApiParser):
 
     HEADERS = {
         "Accept": "application/json"
     }
 
+    SCAN_LOG_TYPES = ["SUS", "MAL", "SPM"]  # Suspicious, Malicious and Spam
+
     def __init__(self, data):
         super().__init__(data)
-
-        self.logger = logger
 
         self.perception_point_x_ray_host = "https://" + data["perception_point_x_ray_host"].split("://")[-1].rstrip()
         self.token = data['perception_point_x_ray_token']
@@ -148,3 +145,181 @@ class PerceptionPointXRayParser(ApiParser, ScanMixin, CaseMixin):
         self.execute_scans()
 
         logger.info(f"[{__parser__}]:execute: Parsing done.", extra={'frontend': str(self.frontend)})
+
+
+    # SCAN methods
+    def get_scan_details(self, scan_id):
+        # Get details for every scan
+        url = f"{self.perception_point_x_ray_host}/api/v1/scans/list/{scan_id}/"
+        return self._execute_query(url)
+
+    def get_last_scans(self, since, to, log_type, next=None):
+        if next:
+            url = next
+            payload = {}
+        else:
+            url = f"{self.perception_point_x_ray_host}/api/v1/scans/list/"
+            payload = {
+                "end": int(to.timestamp()),
+                "start": int(since.timestamp()),
+                "verbose_verdict": log_type,
+            }
+
+        return self._execute_query(url, payload)
+
+    def get_scan_logs(self, since, to, log_type, next=None):
+        last_scans = {}
+        while not self.evt_stop.is_set():
+            # Get the ideal timerange of logs to avoid errors if API returns more of 1000 logs
+            last_scans = self.get_last_scans(since, to, log_type, next)
+            if last_scans.get('count') >= 1000:
+                to -= (to - since) / 2
+                msg = f"API returns more than 1000 logs. Updating 'to' to {to} for log_type {log_type}"
+                logger.warning(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+            else:
+                break
+
+        logs = []
+        for scan in last_scans.get('results', []):
+            scan_log = self.get_scan_details(scan["full_scan_id"])
+            logs.append(scan_log)
+
+        return logs, last_scans.get('has_more', False), last_scans.get('next'), to
+
+    @staticmethod
+    def format_scan_log(log):
+        log['timestamp_epoch'] = log['timestamp']
+        log["attachment_details"] = [
+            {
+                "url": log.get("attachment", ""),
+                "count": log.get("attachments_count", 0),
+                "names": log.get("names", ""),
+                "payload_type": log.get("payload_type", ""),
+                "file": {
+                    "extension": log.get("sample_file_type", ""),
+                    "size": log.get("sample", {}).get("file_size", "")
+                }
+            }
+        ]
+        # Remove unused and big fields
+        unused_fields = ["timestamp", "search_descendants", "warning_texts", "scan_tree"]
+        for field in unused_fields:
+            if field in log:
+                del log[field]
+        if "sample" in log:
+            if "similarity_content_vector" in log["sample"]:
+                del log["sample"]["similarity_content_vector"]
+            if "disclaimers" in log["sample"]:
+                del log["sample"]["disclaimers"]
+        return dumps(log)
+
+    def execute_scans(self):
+        # Get "SCAN" logs
+
+        # Warning : the fetched logs are ordered in ASC (no option is available in API doc)
+        for log_type in self.SCAN_LOG_TYPES:
+            since = self.last_collected_timestamps.get(f"perception_point_x_ray_scan_{log_type}") or (
+                        timezone.now() - timedelta(days=30))
+            to = min(since + timedelta(days=1), timezone.now())
+
+            msg = f"Parser starting from {since} to {to} for log_type {log_type}"
+            logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
+            has_more_logs = True
+            next_url = None
+            while not self.evt_stop.is_set() and has_more_logs:
+
+                logs, has_more_logs, next_url, to = self.get_scan_logs(since, to, log_type, next_url)
+
+                self.write_to_file([self.format_scan_log(log) for log in logs])
+                # Downloading may take some while, so refresh token in Redis
+                self.update_lock()
+
+                if logs:
+                    if has_more_logs:
+                        max_timestamp = max(int(log.get("timestamp_epoch") * 10000000) for log in logs)
+                        last_timestamp = datetime.fromtimestamp(max_timestamp / 10000000, tz=timezone.utc)
+                        self.last_collected_timestamps[
+                            f"perception_point_x_ray_{log_type}"] = last_timestamp + timedelta(
+                            milliseconds=1)  # Add +1 ms for inclusive timestamp
+                    else:
+                        self.last_collected_timestamps[f"perception_point_x_ray_scan_{log_type}"] = to + timedelta(
+                            milliseconds=1)  # Add +1 ms for inclusive timestamp
+                elif since < timezone.now() - timedelta(hours=24):
+                    # If no logs where retrieved during the last 24hours,
+                    # move forward 1h to prevent stagnate ad vitam eternam
+                    self.last_collected_timestamps[f"perception_point_x_ray_scan_{log_type}"] = since + timedelta(hours=1)
+
+    # CASES methods
+    def get_last_cases(self, since, next=None):
+        if next:
+            url = next
+            payload = {}
+        else:
+            url = f"{self.perception_point_x_ray_host}/api/v2/xdr/cases/details/"
+            payload = {
+                "environment_id": 1,
+                "from_date": int(since.timestamp()),
+                "case_types[]": "354",
+                "statuses[]": "OPEN",
+                "organization_id": self.perception_point_x_ray_organization_id
+            }
+
+        return self._execute_query(url, payload)
+
+    def get_case_logs(self, since, next=None):
+        last_cases = self.get_last_cases(since, next)
+
+        logs = []
+        for log in last_cases.get('results', []):
+            # Filter only see hours, not min/sec. So we have to compare with last_api_call to avoid duplicates
+            updated_ts = dateparse.parse_datetime(log["updated_timestamp_utc"])
+            if updated_ts >= since:
+                log["updated_timestamp"] = int(updated_ts.timestamp() * 1000000)
+                logs.append(log)
+            else:
+                logger.info(f"[{__parser__}]:get_case_logs: {updated_ts} < {since}, skipping...",
+                                 extra={'frontend': str(self.frontend)})
+
+        return logs, last_cases.get('next')
+
+    @staticmethod
+    def format_case_log(log):
+        # Remove unused and big fields
+        allowed_fields = ["updated_timestamp", "org_id", "case_id", "status", "validity", "humanly_touched",
+                          "severity",
+                          "case_type", "creation_timestamp_utc", "updated_timestamp_utc", "name", "metadata"]
+        new_log = {k: log[k] for k in allowed_fields if k in log}
+        return dumps(new_log)
+
+    def execute_cases(self):
+        # Get "ATO" (CASES) logs
+
+        since = self.last_collected_timestamps.get("perception_point_x_ray_cases") or (
+                    timezone.now() - timedelta(days=30))
+
+        msg = f"Parser starting from {since} to now for CASE logs"
+        logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
+
+        has_more_logs = True
+        next_url = None
+        while not self.evt_stop.is_set() and has_more_logs:
+
+            logs, next_url = self.get_case_logs(since, next_url)
+            self.write_to_file([self.format_case_log(log) for log in logs])
+            # Downloading may take some while, so refresh token in Redis
+            self.update_lock()
+
+            if logs:
+                max_timestamp = max(log.get("updated_timestamp") for log in logs)
+                last_timestamp = datetime.fromtimestamp(max_timestamp / 1000000, tz=timezone.utc)
+                self.last_collected_timestamps["perception_point_x_ray_cases"] = last_timestamp + timedelta(
+                    microseconds=1)  # Add +1 ms for inclusive timestamp
+
+            elif since < timezone.now() - timedelta(hours=24):
+                # If no logs where retrieved during the last 24hours,
+                # move forward 1h to prevent stagnate ad vitam eternam
+                self.last_collected_timestamps["perception_point_x_ray_cases"] = since + timedelta(hours=1)
+
+            if not next_url:
+                has_more_logs = False
