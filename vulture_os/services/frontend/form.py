@@ -831,12 +831,11 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             if not cleaned_data.get('filebeat_config'):
                 self.add_error('filebeat_config', "This field is required.")
             else:
-                if "output." in cleaned_data.get('filebeat_config'):
-                    self.add_error('filebeat_config', "Filebeat config cannot contains 'output', this is managed by Vulture")
-                elif "fields:" in cleaned_data.get('filebeat_config'):
-                    self.add_error('filebeat_config', "Filebeat config cannot contains 'fields', this is managed by Vulture")
-                elif "type:" in cleaned_data.get('filebeat_config'):
-                    self.add_error('filebeat_config', "Filebeat config cannot contains 'type', this is managed by Vulture")
+                for line in cleaned_data.get('filebeat_config', '').split('\n'):
+                    if re_match(r"^type:", line) or re_match(r"^\s*-\s*type:", line):
+                        print("Filebeat config cannot contains 'type', this is managed by Vulture")
+                    if re_match(r"^output:", line):
+                        print("Filebeat config cannot contains 'output', this is managed by Vulture")
 
         if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "tcp":
             if not cleaned_data.get('timeout_client'):
@@ -852,12 +851,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             if not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
 
-        if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
-            if not cleaned_data.get('node'):
-                self.add_error('node', "This field is required.")
-
-        if mode == "log" and cleaned_data.get('listening_mode') == "api" or \
-        mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "api":
+        if mode == "log" and cleaned_data.get('listening_mode') == "api":
             if cleaned_data.get('api_parser_use_proxy', True) and cleaned_data.get('api_parser_custom_proxy', None):
                 # parse_proxy_url will validate and return a correct url
                 custom_proxy = parse_proxy_url(cleaned_data.get('api_parser_custom_proxy', None))

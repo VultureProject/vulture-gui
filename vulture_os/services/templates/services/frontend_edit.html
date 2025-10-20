@@ -61,7 +61,7 @@
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
                   <li><a href="#tab_network" data-toggle="tab" class="network-mode">{% translate "Listeners" %}</a></li>
-                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode filebeat-api-mode">{% translate "Vendor API" %}</a></li>
+                  <li><a href="#tab_api_client" data-toggle="tab" class="api-mode">{% translate "Vendor API" %}</a></li>
                   <li><a href="#tab_http" data-toggle="tab" class="http-mode">{% translate "HTTP Options" %}</a></li>
                   <li><a href="#tab_headers" data-toggle="tab" class="http-mode">{% translate "HTTP Headers" %}</a></li>
                   <li><a href="#tab_enrichment" data-toggle="tab" class="logging">{% translate "Logs Enrichment" %}</a></li>
@@ -161,21 +161,21 @@
                     <div class="row filebeat-mode">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label class="col-sm-4 control-label">{% translate "Filebeat Listening mode" %}</label>
-                          <div class="col-sm-5">
-                            {{form.filebeat_listening_mode}}
-                            {{form.filebeat_listening_mode.errors|safe}}
-                          </div>
-                        </div>
-                      </div>
-                    </div> <!-- /.row filebeat-mode -->
-                    <div class="row filebeat-mode">
-                      <div class="col-md-12">
-                        <div class="form-group">
                           <label class="col-sm-4 control-label">{% translate "Filebeat Module" %}</label>
                           <div class="col-sm-5">
                             {{form.filebeat_module}}
                             {{form.filebeat_module.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row filebeat-mode -->
+                    <div class="row filebeat-mode" id="filebeat-input-div">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{% translate "Filebeat Input" %}</label>
+                          <div class="col-sm-5">
+                            {{form.filebeat_listening_mode}}
+                            {{form.filebeat_listening_mode.errors|safe}}
                           </div>
                         </div>
                       </div>
@@ -1118,7 +1118,7 @@
                           </div>
                         </div>
                       </div>
-                      <div class="col-md-12 api-mode filebeat-api-mode">
+                      <div class="col-md-12 api-mode">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{% translate "Use proxy" %}</label>
                           <div class="col-sm-5">
@@ -1136,7 +1136,7 @@
                           </div>
                         </div>
                       </div>
-                      <div class="col-md-12 api-mode filebeat-api-mode">
+                      <div class="col-md-12 api-mode">
                         <div class="form-group">
                           <label class="col-sm-3 control-label">{{ form.api_parser_verify_ssl.label }}</label>
                           <div class="col-sm-5">
