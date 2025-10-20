@@ -278,7 +278,7 @@ $(function() {
     }
   }
 
-  /* Show rsyslog only fields, or hide them */
+  /* Show haproxy-only fields, or hide them */
   function show_custom_conf(mode, listening_mode, filebeat_listening_mode) {
     /* If it is an UDP mode only => HAProxy is useless */
     if (mode === "tcp" || mode === "http" ||
@@ -535,6 +535,7 @@ $(function() {
   function refresh_filebeat_module() {
     var module = $("#id_filebeat_module").val();
     $('#id_filebeat_config').text(filebeat_config[module]);
+    $('#id_filebeat_config').trigger('change');
   }
 
   function refresh_filebeat_ruleset(module) {
@@ -549,7 +550,6 @@ $(function() {
 
   $('#id_filebeat_module').on("change", function(e) {
     show_filebeat_input($('#id_mode').val(), $(this).val());
-    $('#id_filebeat_config').trigger('change');
     refresh_filebeat_module();
     // Automatically select parser if present
     refresh_filebeat_ruleset($(this).val());

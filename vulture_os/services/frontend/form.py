@@ -831,10 +831,10 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             if not cleaned_data.get('filebeat_config'):
                 self.add_error('filebeat_config', "This field is required.")
             else:
-                for line in cleaned_data.get('filebeat_config').split('\n'):
-                    if re_match("^type:", line) or re_match("^\s*-\s*type:", line):
+                for line in cleaned_data.get('filebeat_config', '').split('\n'):
+                    if re_match(r"^type:", line) or re_match(r"^\s*-\s*type:", line):
                         print("Filebeat config cannot contains 'type', this is managed by Vulture")
-                    if re_match("^output:", line):
+                    if re_match(r"^output:", line):
                         print("Filebeat config cannot contains 'output', this is managed by Vulture")
 
         if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "tcp":
