@@ -116,6 +116,13 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
     redis_use_local = BooleanField(
         widget=CheckboxInput(attrs={'class': 'js-switch'})
     )
+    redis_tls_profile = ModelChoiceField(
+            queryset=TLSProfile.objects.all(),
+            required=False,
+            widget=Select(attrs={'class': 'form-control select2'}),
+            label=_('Use a TLS profile'),
+            empty_label="No TLS"
+    )
 
     REDIS_DEFAULT_SERVER = '127.0.0.5'
     REDIS_DEFAULT_PORT = 6379
@@ -213,7 +220,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                            'parser_tag', 'file_path', 'ratelimit_interval', 'ratelimit_burst', 'expected_timezone',
                            'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                            'healthcheck_service', 'mmdb_cache_size','redis_batch_size', 'redis_use_local',
-                           'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_key', 'redis_password',
+                           'redis_mode', 'redis_use_lpop', 'redis_server', 'redis_port', 'redis_tls_profile', 'redis_key', 'redis_password',
                            'node', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy', 'api_parser_custom_proxy',
                            'api_parser_verify_ssl', 'api_parser_custom_certificate',
                            'forcepoint_host', 'forcepoint_username', 'forcepoint_password', "symantec_username", "symantec_password",
@@ -338,7 +345,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
                   'ratelimit_interval', 'ratelimit_burst', 'expected_timezone', 'file_path',
                   'kafka_brokers', 'kafka_topic', 'kafka_consumer_group', 'kafka_options',
                   'healthcheck_service', 'mmdb_cache_size','redis_batch_size', 'redis_mode', 'redis_use_lpop',
-                  'redis_server', 'redis_port', 'redis_key', 'redis_password', 'redis_stream_consumerGroup',
+                  'redis_server', 'redis_port', 'redis_tls_profile', 'redis_key', 'redis_password', 'redis_stream_consumerGroup',
                   'redis_stream_consumerName', 'redis_stream_startID', 'redis_stream_acknowledge', 'redis_stream_reclaim_timeout',
                   'node', 'darwin_policies', 'darwin_mode', 'api_parser_type', 'api_parser_use_proxy',
                   'api_parser_custom_proxy', 'api_parser_verify_ssl', 'api_parser_custom_certificate',

@@ -307,6 +307,17 @@
                         </div>
                       </div>
                     </div> <!-- /.row filebeat-mode redis-mode redis-connect -->
+                    <div class="row filebeat-mode redis-mode redis-connect">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label class="col-sm-4 control-label">{{ form.redis_tls_profile.label }}</label>
+                          <div class="col-sm-5">
+                            {{form.redis_tls_profile}}
+                            {{form.redis_tls_profile.errors|safe}}
+                          </div>
+                        </div>
+                      </div>
+                    </div> <!-- /.row filebeat-mode redis-mode redis-connect -->
                     <div class="row redis-mode">
                       <div class="col-md-12">
                         <div class="form-group">
