@@ -315,6 +315,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         self.initial['kafka_options'] = ",".join(self.initial.get('kafka_options', []) or self.fields['kafka_options'].initial)
         self.initial['cisco_umbrella_managed_org_customers_id'] = ",".join(self.initial.get('cisco_umbrella_managed_org_customers_id', []) or self.fields['cisco_umbrella_managed_org_customers_id'].initial)
         self.initial['ubika_namespaces'] = ",".join(self.initial.get('ubika_namespaces', []) or self.fields['ubika_namespaces'].initial)
+        self.initial['perception_point_x_ray_case_types'] = ",".join(self.initial.get('perception_point_x_ray_case_types', []) or self.fields['perception_point_x_ray_case_types'].initial)
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
@@ -643,7 +644,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             'perception_point_x_ray_token': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
             'perception_point_x_ray_organization_id': TextInput(attrs={'class': 'form-control'}),
             'perception_point_x_ray_environment_id': TextInput(attrs={'class': 'form-control'}),
-            'perception_point_x_ray_case_types': TextInput(attrs={'class': 'form-control'}),
+            'perception_point_x_ray_case_types': TextInput(attrs={'class': 'form-control', 'data-role': "tagsinput"}),
             'extrahop_host': TextInput(attrs={'class': 'form-control'}),
             'extrahop_id': TextInput(attrs={'class': 'form-control'}),
             'extrahop_secret': TextInput(attrs={'type': 'password', 'class': 'form-control'}),
@@ -784,6 +785,14 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
     def clean_ubika_namespaces(self):
         data = self.cleaned_data.get('ubika_namespaces')
+        if not data:
+            return []
+        if "[" in data and "]" in data:
+            return ast.literal_eval(data)
+        return data.split(',')
+
+    def clean_perception_point_x_ray_case_types(self):
+        data = self.cleaned_data.get('perception_point_x_ray_case_types')
         if not data:
             return []
         if "[" in data and "]" in data:

@@ -24,7 +24,6 @@ __email__ = "contact@vultureproject.org"
 __doc__ = 'PERCEPTION POINT X RAY API Parser'
 __parser__ = 'PERCEPTION_POINT_X_RAY'
 
-import json
 import logging
 from django.conf import settings
 from django.utils import timezone, dateparse
@@ -220,7 +219,7 @@ class PerceptionPointXRayParser(ApiParser):
 
         # Warning : the fetched logs are ordered in ASC (no option is available in API doc)
         for log_type in self.SCAN_LOG_TYPES:
-            since = self.last_collected_timestamps.get(f"perception_point_x_ray_scan_{log_type}") or (
+            since = self.last_collected_timestamps.get(f"perception_point_x_ray_{log_type}") or (
                         timezone.now() - timedelta(days=30))
             to = min(since + timedelta(days=1), timezone.now())
 
@@ -245,12 +244,12 @@ class PerceptionPointXRayParser(ApiParser):
                             f"perception_point_x_ray_{log_type}"] = last_timestamp + timedelta(
                             milliseconds=1)  # Add +1 ms for inclusive timestamp
                     else:
-                        self.last_collected_timestamps[f"perception_point_x_ray_scan_{log_type}"] = to + timedelta(
+                        self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = to + timedelta(
                             milliseconds=1)  # Add +1 ms for inclusive timestamp
                 elif since < timezone.now() - timedelta(hours=24):
                     # If no logs where retrieved during the last 24hours,
                     # move forward 1h to prevent stagnate ad vitam eternam
-                    self.last_collected_timestamps[f"perception_point_x_ray_scan_{log_type}"] = since + timedelta(hours=1)
+                    self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = since + timedelta(hours=1)
 
     # CASES methods
     def get_last_cases(self, since, next=None):
@@ -266,7 +265,6 @@ class PerceptionPointXRayParser(ApiParser):
                 "statuses[]": "OPEN",
                 "organization_id": self.perception_point_x_ray_organization_id
             }
-
         return self._execute_query(url, payload)
 
     def get_case_logs(self, since, next=None):
