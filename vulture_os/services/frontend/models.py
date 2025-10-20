@@ -2004,13 +2004,6 @@ class Frontend(RsyslogQueue, models.Model):
             'external_idps': self.userauthentication_set.filter(enable_external=True) if self.pk else [],
         }
 
-        if self.redis_tls_profile:
-            if self.redis_tls_profile.ca_cert:
-                result['redis_ca_cert_bundle'] = self.redis_tls_profile.ca_cert.bundle_filename()
-            if self.redis_tls_profile.x509_certificate:
-                result['redis_client_cert'] = self.redis_tls_profile.x509_certificate.get_base_filename() + ".crt"
-                result['redis_client_key'] = self.redis_tls_profile.x509_certificate.get_base_filename() + ".key"
-
         """ And returns the attributes of the class """
         return result
 
