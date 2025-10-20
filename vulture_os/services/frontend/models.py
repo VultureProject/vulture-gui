@@ -496,6 +496,15 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Default redis port is 6379"),
         verbose_name=_("Redis port to use")
     )
+    redis_tls_profile = models.ForeignKey(
+        TLSProfile,
+        on_delete=models.RESTRICT,
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("TLSProfile object to use."),
+        verbose_name=_("Use a TLS Profile")
+    )
     redis_key = models.TextField(
         default="vulture",
         help_text=_("The redis key you want to pop from the queue / the redis channel you want to subscribe to"),
@@ -1769,7 +1778,7 @@ class Frontend(RsyslogQueue, models.Model):
         if not fields or "api_parser_custom_certificate" in fields:
             if result['api_parser_custom_certificate'] is None:
                 result['api_parser_custom_certificate'] = {}
-
+        
         return result
 
     def to_html_template(self):
@@ -1939,6 +1948,13 @@ class Frontend(RsyslogQueue, models.Model):
             # Test self.pk to prevent M2M errors when object isn't saved in DB
             'external_idps': self.userauthentication_set.filter(enable_external=True) if self.pk else [],
         }
+
+        if self.redis_tls_profile:
+            if self.redis_tls_profile.ca_cert:
+                result['redis_ca_cert_bundle'] = self.redis_tls_profile.ca_cert.bundle_filename()
+            if self.redis_tls_profile.x509_certificate:
+                result['redis_client_cert'] = self.redis_tls_profile.x509_certificate.get_base_filename() + ".crt"
+                result['redis_client_key'] = self.redis_tls_profile.x509_certificate.get_base_filename() + ".key"
 
         """ And returns the attributes of the class """
         return result
