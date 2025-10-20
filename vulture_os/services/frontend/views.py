@@ -582,8 +582,7 @@ def frontend_edit(request, object_id=None, api=False):
                         node.api_request('services.filebeat.filebeat.delete_conf', old_filebeat_filename)
 
                 if old_haproxy_filename:
-                    if frontend.rsyslog_only_conf \
-                    or frontend.filebeat_only_conf \
+                    if not frontend.has_haproxy_conf \
                     or node not in new_nodes:
                         logger.info(f"HAProxy config '{old_haproxy_filename}' deletion asked on node {node}.")
                         # API request deletion of frontend filename

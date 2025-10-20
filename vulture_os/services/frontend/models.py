@@ -1964,7 +1964,7 @@ class Frontend(RsyslogQueue, models.Model):
         :return     The generated configuration as string, or raise
         """
         """ If no HAProxy conf - Rsyslog only conf """
-        if self.rsyslog_only_conf or self.filebeat_only_conf:
+        if not self.has_haproxy_conf:
             return ""
         # The following var is only used by error, do not forget to adapt if needed
         template_name = JINJA_PATH + JINJA_TEMPLATE
@@ -2473,16 +2473,6 @@ class Frontend(RsyslogQueue, models.Model):
         return f"Stop frontend '{self.name}' asked on nodes {','.join([n.name for n in self.get_nodes()])}"
 
     @property
-    def rsyslog_only_conf(self):
-        """ Check if this frontend has only rsyslog configuration, not haproxy at all """
-        return (self.mode == "log" and (self.listening_mode in ("udp", "file", "api", "kafka", "redis")))
-
-    @property
-    def filebeat_only_conf(self):
-        """ Check if this frontend has only filebeat configuration, not haproxy at all """
-        return self.mode == "filebeat" and self.filebeat_listening_mode != "tcp"
-
-    @property
     def has_rsyslog_conf(self):
         return self.mode in ("log", "filebeat") or self.enable_logging
 
@@ -2494,7 +2484,7 @@ class Frontend(RsyslogQueue, models.Model):
     def has_haproxy_conf(self):
         return self.mode in ("tcp", "http") or \
             self.mode == "log" and self.listening_mode in ("tcp", "tcp,udp", "relp") or \
-            self.mode == "filebeat" and self.filebeat_listening_mode == "tcp"
+            self.mode == "filebeat" and "%ip%" in self.filebeat_config
 
     def has_tls(self):
         # Test self.pk to prevent M2M errors when object isn't saved in DB
