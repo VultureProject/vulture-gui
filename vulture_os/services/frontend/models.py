@@ -496,6 +496,15 @@ class Frontend(RsyslogQueue, models.Model):
         help_text=_("Default redis port is 6379"),
         verbose_name=_("Redis port to use")
     )
+    redis_tls_profile = models.ForeignKey(
+        TLSProfile,
+        on_delete=models.RESTRICT,
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("TLSProfile object to use."),
+        verbose_name=_("Use a TLS Profile")
+    )
     redis_key = models.TextField(
         default="vulture",
         help_text=_("The redis key you want to pop from the queue / the redis channel you want to subscribe to"),
@@ -1769,7 +1778,7 @@ class Frontend(RsyslogQueue, models.Model):
         if not fields or "api_parser_custom_certificate" in fields:
             if result['api_parser_custom_certificate'] is None:
                 result['api_parser_custom_certificate'] = {}
-
+        
         return result
 
     def to_html_template(self):
