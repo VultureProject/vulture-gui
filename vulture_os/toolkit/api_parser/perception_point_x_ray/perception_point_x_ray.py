@@ -81,7 +81,7 @@ class PerceptionPointXRayParser(ApiParser):
                 response.raise_for_status()
                 return response.json()
             except exceptions.Timeout:
-                logger.warning(f"[{__parser__}]:__execute_query: TimeoutError: retry += 1 (waiting 10s)",
+                logger.warning(f"[{__parser__}]:__execute_query: TimeoutError: retry {retry}/3 (waiting 10s)",
                              extra={'frontend': str(self.frontend)})
                 retry += 1
                 self.evt_stop.wait(10.0)
@@ -298,7 +298,7 @@ class PerceptionPointXRayParser(ApiParser):
         since = self.last_collected_timestamps.get("perception_point_x_ray_cases") or (
                     timezone.now() - timedelta(days=30))
 
-        msg = f"Parser starting from {since} to now for CASE logs"
+        msg = f"Parser starting from {since} to {datetime.now(timezone.utc)} for CASE logs"
         logger.info(f"[{__parser__}]:execute: {msg}", extra={'frontend': str(self.frontend)})
 
         has_more_logs = True
