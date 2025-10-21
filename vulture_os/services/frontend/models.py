@@ -1689,6 +1689,16 @@ class Frontend(RsyslogQueue, models.Model):
         default=""
     )
 
+    # Cnapp Wiz attributes
+    cnapp_wiz_client_id = models.TextField(
+        help_text=_('Cnapp Wiz Client ID'),
+        default=""
+    )
+    cnapp_wiz_client_secret = models.TextField(
+        help_text=_('Cnapp Wiz Client Secret'),
+        default=""
+    )
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """

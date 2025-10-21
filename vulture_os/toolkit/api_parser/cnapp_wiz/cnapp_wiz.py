@@ -1,0 +1,314 @@
+#!/home/vlt-os/env/bin/python
+"""This file is part of Vulture OS.
+
+Vulture OS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Vulture OS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Vulture OS.  If not, see http://www.gnu.org/licenses/.
+"""
+__author__ = "Robin Langlois"
+__credits__ = []
+__license__ = "GPLv3"
+__version__ = "4.0.0"
+__maintainer__ = "Vulture OS"
+__email__ = "contact@vultureproject.org"
+__doc__ = 'CNAPP WIZ API Parser'
+__parser__ = 'CNAPP WIZ'
+
+
+from datetime import timedelta, datetime
+import json
+import logging
+import requests
+
+from django.conf import settings
+from django.utils import timezone
+from toolkit.api_parser.api_parser import ApiParser
+
+logging.config.dictConfig(settings.LOG_SETTINGS)
+logger = logging.getLogger('api_parser')
+
+
+class CnappWizAPIError(Exception):
+    pass
+
+
+class CnappWizParser(ApiParser):
+    def __init__(self, data):
+        super().__init__(data)
+
+        self.cnapp_wiz_client_id = data.get('cnapp_wiz_client_id')
+        self.cnapp_wiz_client_secret = data.get('cnapp_wiz_client_secret')
+        self.auth_url = "https://auth.app.wiz.io/oauth/token"
+        self.api_url = "https://api.eu15.app.wiz.io/graphql"
+
+    def __connect(self):
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json"
+        }
+        data = {
+            "grant_type": "client_credentials",
+            "audience": "wiz-api",
+            "client_id": self.cnapp_wiz_client_id,
+            "client_secret": self.cnapp_wiz_client_secret,
+        }
+
+        logger.info(f"[{__parser__}]:__connect: Fetching token", extra={'frontend': str(self.frontend)})
+
+        try:
+            response = requests.post(self.auth_url,
+                                     data=data,
+                                     headers=headers,
+                                     proxies=self.proxies,
+                                     verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
+
+            response.raise_for_status()
+
+            return response.json().get("access_token")
+            # TODO : store token ?
+        except requests.HTTPError as e:
+            logger.error(f"[{__parser__}]:__connect: HTTP Error while trying to get a new token: {e}",
+                         extra={'frontend': str(self.frontend)})
+            if response and response.content:
+                logger.info(
+                    f"[{__parser__}]:__connect: Status: {response.status_code}, Content: {response.content}",
+                    extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not fetch logs, HTTP error")
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"[{__parser__}]:__connect: Network error while trying to get a new token: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not retrieve token, network error")
+        except Exception as e:
+            logger.error(f"[{__parser__}]:__connect: Error while trying to get a new token: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not retrieve token, unknown error")
+
+    def __execute_query(self, since, to, limit):
+        logger.info(f"[{__parser__}]:__execute_query: Sending query with params since={since}, to={to}, limit={limit}",
+                    extra={'frontend': str(self.frontend)})
+        issue_list = []
+
+        # this is the graphql query string, we need double-brackets in order to format some variables inside the query
+        QUERY = f"""
+                        query GetIssuesQuery {{
+                          issuesV2(
+                            first: {limit}
+                            after: null
+                            orderBy: {{ direction: ASC, field: CREATED_AT }}
+                            filterBy: {{
+                              createdAt: {{
+                                before: "{to.isoformat()}"
+                                after: "{since.isoformat()}"
+                              }}
+                              type: [THREAT_DETECTION]
+                              status: [OPEN, IN_PROGRESS]
+                              severity: [CRITICAL, HIGH, MEDIUM, LOW]
+                            }}
+                          ) {{
+                            totalCount
+                            pageInfo {{
+                              endCursor
+                              hasNextPage
+                            }}
+                            nodes {{
+                              id
+                              remediationStrategies{{
+                                id
+                              }}
+                              aiClassification {{
+                                scenario
+                                description
+                              }}
+                              commentThread {{
+                                id
+                              }}
+                              resolvedAt
+                              reopenedAt
+                              resolutionReason
+
+                              resolutionEvidence {{
+                                id
+
+                              }}
+                              projects {{
+                                id
+
+                              }}
+                              cloudAccounts {{
+                                id
+
+                              }}
+                              cloudOrganizations {{
+                                id
+                              }}
+                              evidenceQuery
+                              entitySnapshot {{
+                                id
+                              }}
+                              resolvedBy{{
+                                user {{
+                                  id
+                                }}
+                              }}
+                              serviceTickets {{
+                                id
+                              }}
+                              resolutionNote
+                              openReason
+                              dueAt
+                              rejectionExpiredAt
+                              statusChangedAt
+                              suggestions
+                              threatDetectionDetails {{
+                                id
+                              }}
+                              applicationServices {{
+                                id
+                              }}
+                              environments
+                              url
+                              groupingType
+                              applicationServiceIssueDetails {{
+                                issuesTotalCount
+                              }}
+                              threatCenterActors {{
+                                id
+
+                              }}
+                              responseActions {{
+                                edges {{
+                                  node {{
+                                    id
+                                  }}
+                                }}
+                              }}
+
+                              assignee {{
+                                id
+                              }}
+                              sourceRules {{
+                                id
+                              }}
+                              status
+                              type
+                              severity
+                              createdAt
+                              updatedAt
+                              description
+                              entity {{
+                                id
+                                name
+                                type
+                                lastSeen
+                              }},
+                            }}
+                          }}
+                        }}
+                    """
+
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
+
+        query = {
+            "query": QUERY
+        }
+
+        try:
+            response = requests.post(self.api_url,
+                                     headers=headers,
+                                     json=query,
+                                     proxies=self.proxies,
+                                     verify=self.api_parser_custom_certificate or self.api_parser_verify_ssl)
+            response.raise_for_status()
+
+            data = response.json()
+            total = data["data"]["issuesV2"]["totalCount"]  # TODO
+
+            for issue in data["data"]["issuesV2"]["nodes"]:
+                issue_list.append(issue)
+
+            return issue_list
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"[{__parser__}]:__execute_query: Network Error while executing query: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not fetch logs, network error")
+        except requests.HTTPError as e:
+            logger.error(f"[{__parser__}]:__execute_query: HTTP Error while executing query: {e}",
+                         extra={'frontend': str(self.frontend)})
+            if response and response.content:
+                logger.info(
+                    f"[{__parser__}]:__execute_query: Status: {response.status_code}, Content: {response.content}",
+                    extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not fetch logs, HTTP error")
+        except json.JSONDecodeError as e:
+            logger.error(f"[{__parser__}]:__execute_query: error while decoding json result: {e}",
+                         extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not fetch logs, JSON decoding error")
+        except Exception as e:
+            logger.error(f"[{__parser__}]:__execute_query: unknown error {e}", extra={'frontend': str(self.frontend)})
+            raise CnappWizAPIError("Could not fetch logs, unknown error")
+
+    def _get_logs(self, since, to, limit=100):
+        self.access_token = self.__connect()
+
+        return self.__execute_query(since, to, limit)
+
+    def test(self):
+        try:
+            since = (timezone.now() - timedelta(days=90))
+            to = timezone.now()
+            data = self._get_logs(since, to, limit=10)
+            return {
+                'status': True,
+                'data': data
+            }
+        except CnappWizAPIError as e:
+            return {
+                'status': False,
+                'error': str(e)
+            }
+
+    def format_log(self, log):
+        return json.dumps(log)
+
+    def execute(self):
+        since = self.last_api_call or (timezone.now() - timedelta(days=7))
+        to = min(timezone.now(), since + timedelta(hours=24))
+
+        try:
+            logger.info(f"[{__parser__}]:execute: Querying logs from {since} to {to}",
+                        extra={'frontend': str(self.frontend)})
+            logs = self._get_logs(since, to)
+
+            if len(logs) > 0:
+                self.write_to_file([self.format_log(log) for log in logs])
+                last_timestamp = datetime.fromisoformat(logs[-1]['createdAt'])
+                # avoid duplicate logs
+                last_timestamp = last_timestamp + timedelta(milliseconds=1)
+                logger.info(f"[{__parser__}]:execute: Received data, update timestamp to {last_timestamp}", extra={'frontend': str(self.frontend)})
+
+                self.frontend.last_api_call = last_timestamp
+                self.frontend.save(update_fields=["last_api_call"])
+            elif since < timezone.now() - timedelta(hours=24):
+                # If no logs where retrieved during the last 24hours,
+                # move forward 1h to prevent stagnate ad vitam eternam
+                logger.info(f"[{__parser__}]:execute: No data retrieved, update timestamp "
+                            f"to {since + timedelta(hours=1)}",
+                            extra={'frontend': str(self.frontend)})
+                self.frontend.last_api_call = since + timedelta(hours=1)
+                self.frontend.save(update_fields=["last_api_call"])
+
+        except Exception as e:
+            raise CnappWizAPIError(e)
+
