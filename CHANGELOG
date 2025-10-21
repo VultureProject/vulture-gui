@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] [FILEBEAT] Add new inputs for filebeat listeners
 ### Changed
 - [FRONTEND] [GUI] Correctly show 'Log forwarders - parse failure' for Filebeat Listeners
+- [API_PARSER] [PERCEPTION_POINT_X_RAY] Add support for case ("ATO") logs
 ### Fixed
 - [API_PARSER] [SENTINEL_ONE] Fix double slashes in URLs
 
