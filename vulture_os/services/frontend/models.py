@@ -2402,7 +2402,7 @@ class Frontend(RsyslogQueue, models.Model):
         nodes = set()
         if self.mode == "log" and self.listening_mode in ["file", "kafka", "redis"]:
             nodes = {self.node} if self.node else set(Node.objects.all())
-        elif self.mode == "filebeat" and self.filebeat_listening_mode == "file":
+        elif self.mode == "filebeat" and "%ip%" not in self.filebeat_config:
             nodes = {self.node}
         elif self.mode == "log" and self.listening_mode == "api":
             nodes = set(Node.objects.all())
