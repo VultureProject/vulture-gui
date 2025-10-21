@@ -231,6 +231,8 @@ class PerceptionPointXRayParser(ApiParser):
             while not self.evt_stop.is_set() and has_more_logs:
 
                 logs, has_more_logs, next_url, to = self.get_scan_logs(since, to, log_type, next_url)
+                logger.info(f"[{__parser__}]:execute: Got {len(logs)} {log_type} logs",
+                        extra={'frontend': str(self.frontend)})
 
                 self.write_to_file([self.format_scan_log(log) for log in logs])
                 # Downloading may take some while, so refresh token in Redis
@@ -244,9 +246,13 @@ class PerceptionPointXRayParser(ApiParser):
                             f"perception_point_x_ray_{log_type}"] = last_timestamp + timedelta(
                             milliseconds=1)  # Add +1 ms for inclusive timestamp
                     else:
+                        logger.info(f"[{__parser__}]:execute: End of {log_type} logs",
+                            extra={'frontend': str(self.frontend)})
                         self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = to + timedelta(
                             milliseconds=1)  # Add +1 ms for inclusive timestamp
                 elif since < timezone.now() - timedelta(hours=24):
+                    logger.info(f"[{__parser__}]:execute: No logs for the past 24h, advancing 1h",
+                            extra={'frontend': str(self.frontend)})
                     # If no logs where retrieved during the last 24hours,
                     # move forward 1h to prevent stagnate ad vitam eternam
                     self.last_collected_timestamps[f"perception_point_x_ray_{log_type}"] = since + timedelta(hours=1)
@@ -306,6 +312,9 @@ class PerceptionPointXRayParser(ApiParser):
         while not self.evt_stop.is_set() and has_more_logs:
 
             logs, next_url = self.get_case_logs(since, next_url)
+            logger.info(f"[{__parser__}]:execute: Got {len(logs)} CASE logs",
+                        extra={'frontend': str(self.frontend)})
+
             self.write_to_file([self.format_case_log(log) for log in logs])
             # Downloading may take some while, so refresh token in Redis
             self.update_lock()
@@ -317,9 +326,13 @@ class PerceptionPointXRayParser(ApiParser):
                     microseconds=1)  # Add +1 ms for inclusive timestamp
 
             elif since < timezone.now() - timedelta(hours=24):
+                logger.info(f"[{__parser__}]:execute: No logs for the past 24h, advancing 1h",
+                            extra={'frontend': str(self.frontend)})
                 # If no logs where retrieved during the last 24hours,
                 # move forward 1h to prevent stagnate ad vitam eternam
                 self.last_collected_timestamps["perception_point_x_ray_cases"] = since + timedelta(hours=1)
 
             if not next_url:
+                logger.info(f"[{__parser__}]:execute: End of CASE logs",
+                            extra={'frontend': str(self.frontend)})
                 has_more_logs = False
