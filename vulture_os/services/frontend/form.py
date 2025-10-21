@@ -315,7 +315,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
         self.initial['kafka_options'] = ",".join(self.initial.get('kafka_options', []) or self.fields['kafka_options'].initial)
         self.initial['cisco_umbrella_managed_org_customers_id'] = ",".join(self.initial.get('cisco_umbrella_managed_org_customers_id', []) or self.fields['cisco_umbrella_managed_org_customers_id'].initial)
         self.initial['ubika_namespaces'] = ",".join(self.initial.get('ubika_namespaces', []) or self.fields['ubika_namespaces'].initial)
-        self.initial['perception_point_x_ray_case_types'] = ",".join(self.initial.get('perception_point_x_ray_case_types', []) or self.fields['perception_point_x_ray_case_types'].initial)
+        self.initial['perception_point_x_ray_case_types'] = ",".join([str(case_type) for case_type in (self.initial.get('perception_point_x_ray_case_types', []) or self.fields['perception_point_x_ray_case_types'].initial)])
 
         if not self.fields['keep_source_fields'].initial:
             self.fields['keep_source_fields'].initial = dict(self.initial.get('keep_source_fields') or {}) or "{}"
