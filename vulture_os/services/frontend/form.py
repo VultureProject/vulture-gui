@@ -857,10 +857,10 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
             if not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
 
-        if mode == "filebeat" and cleaned_data.get('filebeat_listening_mode') == "file":
+        if mode == "filebeat" and "%ip%" not in cleaned_data.get('filebeat_config'):
             if not cleaned_data.get('node'):
                 self.add_error('node', "This field is required.")
-            if not cleaned_data.get('tags'):
+            if cleaned_data.get('filebeat_listening_mode') == "file" and not cleaned_data.get('tags'):
                 self.add_error('tags', "This field is required.")
 
         if mode == "log" and cleaned_data.get('listening_mode') == "api":
