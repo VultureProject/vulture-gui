@@ -35,7 +35,7 @@
             <div class="panel-body">
               {# Print form errors correctly #}
               {% if form.non_field_errors %}
-                <div>
+                <div class="alert alert-danger">
                   {{ form.non_field_errors|safe }}
                 </div>
               {% endif %}
@@ -57,6 +57,9 @@
           {% endif %}
           <div class="panel">
             <div class="panel-body">
+              <div class="panel-heading">
+                  <h1 class="panel-title"><i class="fa fa-sitemap">&nbsp;</i>{% translate "Listeners" %}</h1>
+              </div>
               <div class="nav-tabs-custom nav-tabs-no-margin">
                 <ul class="nav nav-tabs">
                   <li class="active"><a href="#tab_general" data-toggle="tab">{% translate "General" %}</a></li>
