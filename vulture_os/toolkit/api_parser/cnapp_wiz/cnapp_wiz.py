@@ -50,6 +50,13 @@ class CnappWizParser(ApiParser):
         self.auth_url = "https://auth.app.wiz.io/oauth/token"
         self.api_url = "https://api.eu15.app.wiz.io/graphql"
 
+        self.access_token = None
+        self.access_expires_at = None
+        if self.frontend and self.frontend.cnapp_wiz_access_token and self.frontend.cnapp_wiz_access_expires_at:
+            logger.info(f"[{__parser__}]:__init__: Loading cached token", extra={'frontend': str(self.frontend)})
+            self.access_token = self.frontend.cnapp_wiz_access_token
+            self.access_expires_at = self.frontend.cnapp_wiz_access_expires_at
+
     def __connect(self):
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -62,7 +69,7 @@ class CnappWizParser(ApiParser):
             "client_secret": self.cnapp_wiz_client_secret,
         }
 
-        logger.info(f"[{__parser__}]:__connect: Fetching token", extra={'frontend': str(self.frontend)})
+        logger.info(f"[{__parser__}]:__connect: Fetching a new token", extra={'frontend': str(self.frontend)})
 
         try:
             response = requests.post(self.auth_url,
@@ -73,8 +80,12 @@ class CnappWizParser(ApiParser):
 
             response.raise_for_status()
 
-            return response.json().get("access_token")
-            # TODO : store token ?
+            self.access_token = response.json().get("access_token")
+            self.access_expires_at = datetime.now() + timedelta(seconds=response.json().get('expires_in'))
+            if self.frontend:
+                self.frontend.cnapp_wiz_access_token = self.access_token
+                self.frontend.cnapp_wiz_access_expires_at = self.access_expires_at
+                self.frontend.save(update_fields=["cnapp_wiz_access_token", "cnapp_wiz_access_expires_at"])
         except requests.HTTPError as e:
             logger.error(f"[{__parser__}]:__connect: HTTP Error while trying to get a new token: {e}",
                          extra={'frontend': str(self.frontend)})
@@ -260,7 +271,9 @@ class CnappWizParser(ApiParser):
             raise CnappWizAPIError("Could not fetch logs, unknown error")
 
     def _get_logs(self, since, to, limit=100):
-        self.access_token = self.__connect()
+        if not self.access_token or not self.access_expires_at or (self.access_expires_at <= (timezone.now() + timedelta(minutes=1))):
+            logger.info(f"[{__parser__}]:_get_logs: No valid token found", extra={'frontend': str(self.frontend)})
+            self.__connect()
 
         return self.__execute_query(since, to, limit)
 

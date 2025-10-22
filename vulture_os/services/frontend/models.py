@@ -1732,6 +1732,17 @@ class Frontend(RsyslogQueue, models.Model):
         default=""
     )
 
+    cnapp_wiz_access_token = models.TextField(
+        verbose_name=_("Cnapp Wiz access token"),
+        help_text=_("Cnapp Wiz access token"),
+        default=""
+    )
+    cnapp_wiz_access_expires_at = models.DateTimeField(
+        default=timezone.now,
+        help_text=_("Cnapp Wiz refresh token expiration timestamp"),
+        verbose_name=_("Cnapp Wiz refresh token expiration timestamp")
+    )
+
     @staticmethod
     def str_attrs():
         """ List of attributes required by __str__ method """
