@@ -244,7 +244,6 @@ class CnappWizParser(ApiParser):
             response.raise_for_status()
 
             data = response.json()
-            total = data["data"]["issuesV2"]["totalCount"]  # TODO
 
             for issue in data["data"]["issuesV2"]["nodes"]:
                 issue_list.append(issue)
