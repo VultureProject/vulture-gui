@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [FRONTEND] [GUI] Correctly show 'Log forwarders - parse failure' for Filebeat Listeners
 - [API_PARSER] [PERCEPTION_POINT_X_RAY] Add support for case ("ATO") logs
 - [FRONTEND] [GUI] Rename "Vendor Specific API" tab to "LOG Settings"
+- [HAPROXY] [REDIS-PROXY] Update client/server timeouts for stability
 ### Fixed
 - [API_PARSER] [SENTINEL_ONE] Fix double slashes in URLs
 - [FRONTEND] [REDIS] Correctly use the local redis password when set for rsyslog/filebeat configurations
