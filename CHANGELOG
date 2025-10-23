@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [API_PARSER] [PERCEPTION_POINT_X_RAY] Add support for case ("ATO") logs
 ### Fixed
 - [API_PARSER] [SENTINEL_ONE] Fix double slashes in URLs
+- [FRONTEND] [REDIS] Correctly use the local redis password when set for rsyslog/filebeat configurations
 
 
 ## [2.32.0] - 2025-10-13

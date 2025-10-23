@@ -119,7 +119,6 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
     REDIS_DEFAULT_SERVER = '127.0.0.5'
     REDIS_DEFAULT_PORT = 6379
-    REDIS_DEFAULT_PASSWORD = ''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -322,8 +321,7 @@ class FrontendForm(RsyslogQueueForm, ModelForm):
 
         if  not self.instance or \
             self.instance.redis_server == self.REDIS_DEFAULT_SERVER and \
-            self.instance.redis_port == self.REDIS_DEFAULT_PORT and \
-            self.instance.redis_password == self.REDIS_DEFAULT_PASSWORD:
+            self.instance.redis_port == self.REDIS_DEFAULT_PORT:
             self.fields['redis_use_local'].initial = True
 
     class Meta:

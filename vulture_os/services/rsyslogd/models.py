@@ -111,7 +111,8 @@ class RsyslogSettings(models.Model):
             'max_tcp_listeners': Listener.objects.filter(frontend__listening_mode__icontains="tcp",frontend__enabled=True).count() + Frontend.objects.filter(enabled=True, listening_mode="api").count() + 1,
             'log_forwarders': LogOM.objects.all(),
             'DATABASES_PATH': DATABASES_PATH,
-            'tenants_name': Config.objects.get().internal_tenants.name
+            'tenants_name': Config.objects.get().internal_tenants.name,
+            'cluster_redis_password': Cluster.get_global_config().redis_password,
         }
 
     def __str__(self):
